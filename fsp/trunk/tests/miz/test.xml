@@ -1,0 +1,1124 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xml" href="/home/claudio/unison_homes/lix/local/bin/miz.xsl"?>
+<Article aid="TEST">
+<Consider nr="1">
+<Proposition line="5" col="24">
+<Not>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</For>
+</Not>
+</Proposition>
+<By line="5" col="24"/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+
+<DefPred>
+<ArgTypes/>
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</DefPred>
+
+<Consider nr="3">
+<Proposition line="8" col="24">
+<Not>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</For>
+</Not>
+</Proposition>
+<By line="8" col="24"/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+
+<DefPred>
+<ArgTypes/>
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</DefPred>
+
+<Consider nr="5">
+<Proposition line="11" col="24">
+<Not>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</For>
+</Not>
+</Proposition>
+<By line="11" col="24"/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+
+<DefPred>
+<ArgTypes/>
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</DefPred>
+
+<Consider nr="7">
+<Proposition line="14" col="24">
+<Not>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<For>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Not>
+<Verum/>
+</Not>
+</For>
+</For>
+</Not>
+</Proposition>
+<By line="14" col="24"/>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+<Cluster/>
+</Typ>
+</Consider>
+
+<DefPred>
+<ArgTypes/>
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</DefPred>
+
+<JustifiedTheorem>
+<Proposition line="22" col="3" nr="1">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+<Proof nr="1" line="23" col="5">
+<BlockThesis>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</BlockThesis>
+<Assume>
+<Proposition line="24" col="9" nr="2">
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="25" col="10" nr="3">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="26" col="10" nr="4">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="27" col="11" nr="5">
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="28" col="2">
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<Proof line="28" col="10">
+<BlockThesis>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</BlockThesis>
+<Conclusion>
+<Proposition line="29" col="16">
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="29" col="16">
+<Ref nr="3" line="29" col="19"/>
+<Ref nr="2" line="29" col="21"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="31" col="4"/>
+</Proof>
+<Conclusion>
+<Proposition line="32" col="15">
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="32" col="15">
+<Ref nr="5" line="32" col="19"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="34" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+<JustifiedTheorem>
+<Proposition line="41" col="3" nr="2">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+<Proof nr="2" line="42" col="5">
+<BlockThesis>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</BlockThesis>
+<Assume>
+<Proposition line="43" col="9" nr="3">
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="44" col="10" nr="4">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="45" col="10" nr="5">
+<Not>
+<And>
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<Not>
+<And>
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+<ThesisExpansions/>
+</Thesis>
+<Assume>
+<Proposition line="46" col="11" nr="6">
+<Not>
+<And>
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+<Not>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Not>
+</And>
+</Not>
+</Proposition>
+</Assume>
+<Thesis>
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+<ThesisExpansions/>
+</Thesis>
+<Proposition line="47" col="10" nr="7">
+<PrivPred nr="1">
+<Pred kind="R" nr="1">
+<Const nr="1"/>
+<Const nr="2"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="47" col="10">
+<Ref nr="3" line="47" col="12"/>
+</By>
+<Proposition line="48" col="10" nr="8">
+<PrivPred nr="2">
+<Pred kind="R" nr="1">
+<Const nr="3"/>
+<Const nr="4"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="48" col="10">
+<Ref nr="4" line="48" col="13"/>
+<Ref nr="7" line="48" col="16"/>
+</By>
+<Proposition line="49" col="10" nr="9">
+<PrivPred nr="3">
+<Pred kind="R" nr="1">
+<Const nr="5"/>
+<Const nr="6"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="49" col="10">
+<Ref nr="5" line="49" col="13"/>
+<Ref nr="7" line="49" col="16"/>
+</By>
+<Conclusion>
+<Proposition line="50" col="15">
+<PrivPred nr="4">
+<Pred kind="R" nr="1">
+<Const nr="7"/>
+<Const nr="8"/>
+</Pred>
+</PrivPred>
+</Proposition>
+<By line="50" col="15">
+<Ref nr="6" line="50" col="19"/>
+<Ref nr="8" line="50" col="21"/>
+<Ref nr="9" line="50" col="23"/>
+</By>
+</Conclusion>
+<Thesis>
+<Verum/>
+<ThesisExpansions/>
+</Thesis>
+<EndPosition line="51" col="3"/>
+</Proof>
+</JustifiedTheorem>
+
+</Article>

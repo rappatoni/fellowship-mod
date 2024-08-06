@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xml" href="/home/claudio/unison_homes/lix/local/bin/miz.xsl"?>
+<Notations aid="TEST">
+<Pattern kind="M" formatnr="2" constrkind="M" constrnr="1">
+<ArgTypes/>
+<Visible/>
+</Pattern>
+<Pattern kind="R" formatnr="3" constrkind="R" constrnr="1">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+<Pattern kind="R" formatnr="4" constrkind="R" constrnr="1" antonymic="true">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+<Pattern kind="R" formatnr="5" constrkind="R" constrnr="2">
+<ArgTypes>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+<Typ kind="M" nr="1">
+<Cluster/>
+</Typ>
+</ArgTypes>
+<Visible>
+<Int x="1"/>
+<Int x="2"/>
+</Visible>
+</Pattern>
+</Notations>

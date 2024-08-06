@@ -1,0 +1,24 @@
+lj. minimal.
+
+declare N: type.
+declare O: N.
+declare S: N -> N.
+declare Even: N -> bool.
+declare Odd: N -> bool.
+
+theorem even_2 :
+ (Even [O] ->
+  (forall n:N, Even [n] -> Odd [S n]) ->
+  (forall n:N, Odd [n] -> Even [S n]) ->
+  Even [S (S O)]).
+ elim EO; elim OS; elim ES.
+ elim in ES th [S O].
+ elim.
+  elim in OS th [O].
+  elim; axiom.
+  axiom.
+qed.
+
+checkout coq.
+checkout proof term coq.
+checkout natural language.

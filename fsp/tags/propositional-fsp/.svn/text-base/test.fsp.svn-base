@@ -1,0 +1,6 @@
+define a.
+goal a->a.
+right imply x.
+axiom.
+checkout pvs.
+quit.

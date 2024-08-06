@@ -1,0 +1,53 @@
+lj. minimal.
+
+declare N: type.
+declare O: N.
+declare S: N -> N.
+declare Even: N -> bool.
+declare Odd: N -> bool.
+declare Eq: N -> N -> bool.
+declare Plus: N -> N -> N.
+
+(* This cannot be proved (yet?) since we are in f.o.l. *)
+(* goal *)
+(* ((Even O) -> *)
+(*  (forall n:N, Even n -> Odd (S n)) -> *)
+(*  (forall n:N, Odd n -> Even (S n)) -> *)
+(*  (forall n,m:N, Eq n m -> Eq m n) -> *)
+(*  (forall n:N, Eq (Plus O n) n) -> *)
+(*  (forall n,m:N, Eq (Plus (S n) m) (S (Plus n m))) -> *)
+(*  (forall n,m:N, forall P:N -> bool, Eq n m -> P n -> P m) -> *)
+(*  (forall P:N -> bool, P O -> (forall n:N, P n -> P (S n)) -> forall n:N, P n)-> *)
+(*  (forall n:N, Even (Plus n n))). *)
+
+(* Here we have already instantiated the induction schemata to the predicates we need *)
+goal
+ ((Even O) ->
+  (forall n:N, Even n -> Odd (S n)) ->
+  (forall n:N, Odd n -> Even (S n)) ->
+  (forall n,m:N, Eq n m -> Eq m n) ->
+  (forall n:N, Eq (Plus O n) n) ->
+  (forall n,m:N, Eq (Plus (S n) m) (S (Plus n m))) ->
+  (forall n,m:N, Eq n m -> Even n -> Even m) ->
+  (Even(Plus O O) -> (forall n:N, Even (Plus n n) -> Even (Plus (S n) (S n))) -> forall n:N, Even (Plus n n)) ->
+  (forall n:N, Even (Plus n n))).
+ elim EO; elim OS; elim ES; elim sym; elim PO; elim PS; elim Rewrite; elim Ind; elim.
+ elim in Ind th.
+   elim in PO th [O].
+   elim in Rewrite eq [O].
+   elim [Plus O O].
+   elim.
+   elim in sym th [Plus O O].
+   elim [O].
+   elim.
+     axiom.
+     
+     axiom.
+
+   elim; axiom.
+     
+  elim.
+    elim.
+    elim HInd.
+    elim in PS th [n].
+    

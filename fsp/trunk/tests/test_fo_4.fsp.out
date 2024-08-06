@@ -1,0 +1,694 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+fsp < fsp < 
+    > A defined.
+      
+fsp < 
+    > R defined.
+      
+fsp < 
+    > Eq defined.
+      
+fsp < 
+    > Assym defined.
+      
+fsp < 
+    > Trans defined.
+      
+fsp < 
+    > f defined.
+      
+fsp < 
+    > Incr defined.
+      
+fsp < 
+    > M defined.
+      
+fsp < 
+    > Up defined.
+      
+fsp < 
+    > Least defined.
+      
+fsp < fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<?1||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:Eq M (f M)
+      
+fsp < 
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||?1.2>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1) <======
+        ...(1.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+       |-----  1.1
+      *:R M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||?1.2>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+        ...(1.2) <======
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:R M (f M)
+       |-----  1.2
+      th:Eq M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*?1.2.2.1.1>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+        ...(1.2.2.1.1) <======
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:R M (f M)⇒R (f M) M⇒Eq M (f M)
+      a1:R M (f M)
+       |-----  1.2.2.1.1
+      th:Eq M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*?1.2.2.1.1.2>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+        ...(1.2.2.1.1.2) <======
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:R (f M) M⇒Eq M (f M)
+      a1:R M (f M)
+       |-----  1.2.2.1.1.2
+      th:Eq M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*?1.2.2.1.1.2.1*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and .... (1.2.2.1.1.2.1) <======
+        done
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a1:R M (f M)
+       |-----  1.2.2.1.1.2.1
+      *:R (f M) M
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*?1.2.2.1.1.2.1.2.1>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+          ...(1.2.2.1.1.2.1.2.1) <======
+        done
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:R (f M) (f (f M))⇒R (f M) M
+      a1:R M (f M)
+       |-----  1.2.2.1.1.2.1.2.1
+      th:R (f M) M
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*?1.2.2.1.1.2.1.2.1.1*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and .... (1.2.2.1.1.2.1.2.1.1) <======
+          done
+        done
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a1:R M (f M)
+       |-----  1.2.2.1.1.2.1.2.1.1
+      *:R (f M) (f (f M))
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*?1.2.2.1.1.2.1.2.1.1.2.1.1>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1)
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+            ...(1.2.2.1.1.2.1.2.1.1.2.1.1) <======
+          done
+        done
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:R M (f M)⇒R (f M) (f (f M))
+      a1:R M (f M)
+       |-----  1.2.2.1.1.2.1.2.1.1.2.1.1
+      th:R (f M) (f (f M))
+      
+fsp < 
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<?1.1||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          .... (1.1) <======
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1.1
+      *:R M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*?1.1.2.1>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+          ...(1.1.2.1) <======
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:∀y:A.R y (f y)⇒R y (f M)⇒R M (f M)
+       |-----  1.1.2.1
+      th:R M (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*?1.1.2.1.1*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and .... (1.1.2.1.1) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1.1.2.1.1
+      *:∀y:A.R y (f y)⇒R y (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).?1.1.2.1.1.1.1*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            .... (1.1.2.1.1.1.1) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1
+      *:R y1 (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*?1.1.2.1.1.1.1.2.1>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+            ...(1.1.2.1.1.1.1.2.1) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:∀y,z:A.R y1 y⇒R y z⇒R y1 z
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1
+      th:R y1 (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*?1.1.2.1.1.1.1.2.1.1>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+            ...(1.1.2.1.1.1.1.2.1.1) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:∀z:A.R y1 (f y1)⇒R (f y1) z⇒R y1 z
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1
+      th:R y1 (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*?1.1.2.1.1.1.1.2.1.1.1>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+            ...(1.1.2.1.1.1.1.2.1.1.1) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:R y1 (f y1)⇒R (f y1) (f M)⇒R y1 (f M)
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1
+      th:R y1 (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*?1.1.2.1.1.1.1.2.1.1.1.2>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+            ...(1.1.2.1.1.1.1.2.1.1.1.2) <======
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:R (f y1) (f M)⇒R y1 (f M)
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1.2
+      th:R y1 (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*?1.1.2.1.1.1.1.2.1.1.1.2.1*th>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+              and .... (1.1.2.1.1.1.1.2.1.1.1.2.1) <======
+            done
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1.2.1
+      *:R (f y1) (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*μth:R (f y1) (f M).<Incr||y1*M*?1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1>*th>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+              and we need to prove R (f y1) (f M)
+                by Incr
+              ...(1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1) <======
+            done
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:R y1 M⇒R (f y1) (f M)
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1
+      th:R (f y1) (f M)
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*μth:R (f y1) (f M).<Incr||y1*M*?1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1*th>*th>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+              and we need to prove R (f y1) (f M)
+                by Incr
+                and .... (1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1) <======
+              done
+            done
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1
+      *:R y1 M
+      
+fsp < 
+    > Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*μth:R (f y1) (f M).<Incr||y1*M*μth:R y1 M.<Up||y1*?1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1.2.1>*th>*th>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+              and we need to prove R (f y1) (f M)
+                by Incr
+                and we need to prove R y1 M
+                  by Up
+                ...(1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1.2.1) <======
+              done
+            done
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      1 goal yet to prove!
+      y1:A
+      
+      *:R y1 (f y1)⇒R y1 M
+      a2:R y1 (f y1)
+       |-----  1.1.2.1.1.1.1.2.1.1.1.2.1.2.1.1.1.2.1
+      th:R y1 M
+      
+fsp < 
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:Eq M (f M).<μth:Eq M (f M).<μth:R M (f M).<Least||f M*λy1:A.λa2:R y1 (f y1).μth:R y1 (f M).<Trans||y1*f y1*f M*a2*μth:R (f y1) (f M).<Incr||y1*M*μth:R y1 M.<Up||y1*a2*th>*th>*th>*th>||μ'a1:R M (f M).<Assym||M*f M*a1*μth:R (f M) M.<Up||f M*μth:R (f M) (f (f M)).<Incr||M*f M*a1*th>*th>*th>>||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        we need to prove Eq M (f M)
+          we need to prove R M (f M)
+            by Least
+            and consider an arbitrary but fixed y1 of type A
+            assume R y1 (f y1) (a2)
+            we need to prove R y1 (f M)
+              by Trans
+              and by a2
+              and we need to prove R (f y1) (f M)
+                by Incr
+                and we need to prove R y1 M
+                  by Up
+                  and by a2
+                done
+              done
+            done
+          done
+          we proved R M (f M) (a1)
+          by Assym
+          and by a1
+          and we need to prove R (f M) M
+            by Up
+            and we need to prove R (f M) (f (f M))
+              by Incr
+              and by a1
+            done
+          done
+        done
+      done
+      
+      
+fsp < 
+    > tarski_fp defined.
+      
+fsp < fsp < 
+    > Firing up Coq for confirmation.
+      
+fsp < 
+    > Firing up Coq for confirmation.
+      
+fsp < 
+    > File ./test_fo_4.nl written. Enjoy the reading.
+      
+fsp < 
+    > EOF!
+

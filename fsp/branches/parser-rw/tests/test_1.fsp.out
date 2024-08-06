@@ -1,0 +1,1237 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: minimal intuitionistic sequent calculus.
+      
+
+    > A,B,C,D defined.
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<?1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.?1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        .... (1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      a:A
+       |-----  1.1
+      *:(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.?1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        .... (1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      ab:A⇒B
+      a:A
+       |-----  1.1.1
+      *:(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.?1.1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        .... (1.1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1
+      *:(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.?1.1.1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        .... (1.1.1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1
+      *:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<?1.1.1.1.1.1||?1.1.1.1.1.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          .... (1.1.1.1.1.1) <======
+        ...(1.1.1.1.1.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.1
+      *:B⇒C⇒D
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||?1.1.1.1.1.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+        ...(1.1.1.1.1.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:B⇒C⇒D
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||?1.1.1.1.1.2.1*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and .... (1.1.1.1.1.2.1) <======
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1
+      *:B
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<?1.1.1.1.1.2.1.1||?1.1.1.1.1.2.1.2>*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            .... (1.1.1.1.1.2.1.1) <======
+          ...(1.1.1.1.1.2.1.2)
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1.1
+      *:A⇒B
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||?1.1.1.1.1.2.1.2>*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+          ...(1.1.1.1.1.2.1.2) <======
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:A⇒B
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1.2
+      b:B
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||?1.1.1.1.1.2.1.2.1*?1.1.1.1.1.2.1.2.2>*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and .... (1.1.1.1.1.2.1.2.1) <======
+          ...(1.1.1.1.1.2.1.2.2)
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1.2.1
+      *:A
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*?1.1.1.1.1.2.1.2.2>*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          ...(1.1.1.1.1.2.1.2.2) <======
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:B
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1.2.2
+      b:B
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*?1.1.1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+        ...(1.1.1.1.1.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:C⇒D
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*?1.1.1.1.1.2.2.1*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and .... (1.1.1.1.1.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1
+      *:C
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<?1.1.1.1.1.2.2.1.1||?1.1.1.1.1.2.2.1.2>*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            .... (1.1.1.1.1.2.2.1.1) <======
+          ...(1.1.1.1.1.2.2.1.2)
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1.1
+      *:A⇒C
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<ac||?1.1.1.1.1.2.2.1.2>*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            by ac
+          ...(1.1.1.1.1.2.2.1.2) <======
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:A⇒C
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1.2
+      c:C
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<ac||?1.1.1.1.1.2.2.1.2.1*?1.1.1.1.1.2.2.1.2.2>*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            by ac
+            and .... (1.1.1.1.1.2.2.1.2.1) <======
+          ...(1.1.1.1.1.2.2.1.2.2)
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1.2.1
+      *:A
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<ac||a*?1.1.1.1.1.2.2.1.2.2>*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            by ac
+            and by a
+          ...(1.1.1.1.1.2.2.1.2.2) <======
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:C
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1.2.2
+      c:C
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<ac||a*c>*?1.1.1.1.1.2.2.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            by ac
+            and by a
+          done
+        ...(1.1.1.1.1.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:D
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2
+      d:D
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<bcd||μb:B.<ab||a*b>*μc:C.<ac||a*c>*d>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by bcd
+          and we need to prove B
+            by ab
+            and by a
+          done
+          and we need to prove C
+            by ac
+            and by a
+          done
+        done
+      done
+      
+      
+
+    > t1 defined.
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<?1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.?1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        .... (1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      a:A
+       |-----  1.1
+      *:(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.?1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        .... (1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      ab:A⇒B
+      a:A
+       |-----  1.1.1
+      *:(A⇒C)⇒(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.?1.1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        .... (1.1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1
+      *:(B⇒C⇒D)⇒D
+      
+
+    > Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.?1.1.1.1.1||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        .... (1.1.1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1
+      *:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<?1.1.1.1.1.1||?1.1.1.1.1.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          .... (1.1.1.1.1.1) <======
+        ...(1.1.1.1.1.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.1
+      *:A
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||?1.1.1.1.1.2>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+        ...(1.1.1.1.1.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<?1.1.1.1.1.2.1||?1.1.1.1.1.2.2>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          .... (1.1.1.1.1.2.1) <======
+        ...(1.1.1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.1
+      *:A⇒B
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||?1.1.1.1.1.2.2>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+        ...(1.1.1.1.1.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:A⇒B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||?1.1.1.1.1.2.2.1*?1.1.1.1.1.2.2.2>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and .... (1.1.1.1.1.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.1
+      *:A
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*?1.1.1.1.1.2.2.2>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+        ...(1.1.1.1.1.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<?1.1.1.1.1.2.2.2.1||?1.1.1.1.1.2.2.2.2>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          .... (1.1.1.1.1.2.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.1
+      *:A⇒C
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||?1.1.1.1.1.2.2.2.2>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+        ...(1.1.1.1.1.2.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:A⇒C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||?1.1.1.1.1.2.2.2.2.1*?1.1.1.1.1.2.2.2.2.2>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and .... (1.1.1.1.1.2.2.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.1
+      *:A
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*?1.1.1.1.1.2.2.2.2.2>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+        ...(1.1.1.1.1.2.2.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<?1.1.1.1.1.2.2.2.2.2.1||?1.1.1.1.1.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          .... (1.1.1.1.1.2.2.2.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.1
+      *:B⇒C⇒D
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||?1.1.1.1.1.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+        ...(1.1.1.1.1.2.2.2.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:B⇒C⇒D
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||?1.1.1.1.1.2.2.2.2.2.2.1*?1.1.1.1.1.2.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+          and .... (1.1.1.1.1.2.2.2.2.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2.2.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.2.1
+      *:B
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||b*?1.1.1.1.1.2.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+          and by b
+        ...(1.1.1.1.1.2.2.2.2.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:C⇒D
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.2.2
+      d:D
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||b*?1.1.1.1.1.2.2.2.2.2.2.2.1*?1.1.1.1.1.2.2.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+          and by b
+          and .... (1.1.1.1.1.2.2.2.2.2.2.2.1) <======
+        ...(1.1.1.1.1.2.2.2.2.2.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.2.2.1
+      *:C
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||b*c*?1.1.1.1.1.2.2.2.2.2.2.2.2>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+          and by b
+          and by c
+        ...(1.1.1.1.1.2.2.2.2.2.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:D
+      c:C
+      b:B
+      a2:A
+      bcd:B⇒C⇒D
+      ac:A⇒C
+      ab:A⇒B
+      a:A
+       |-----  1.1.1.1.1.2.2.2.2.2.2.2.2
+      d:D
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D.<λa:A.λab:A⇒B.λac:A⇒C.λbcd:B⇒C⇒D.μd:D.<a||μ'a2:A.<ab||a2*μ'b:B.<ac||a2*μ'c:C.<bcd||b*c*d>>>>||thesis>
+      Natural language:
+      we need to prove A⇒(A⇒B)⇒(A⇒C)⇒(B⇒C⇒D)⇒D
+        assume A (a)
+        assume A⇒B (ab)
+        assume A⇒C (ac)
+        assume B⇒C⇒D (bcd)
+        we need to prove D
+          by a
+          we proved A (a2)
+          by ab
+          and by a2
+          we proved B (b)
+          by ac
+          and by a2
+          we proved C (c)
+          by bcd
+          and by b
+          and by c
+        done
+      done
+      
+      
+
+    > t2 defined.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > File ./test_1.nl written. Enjoy the reading.
+      
+
+    > EOF!
+

@@ -1,0 +1,164 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: classic sequent calculus.
+      
+
+    > A,B defined.
+      
+
+    > Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<?1||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:(¬B⇒¬A)⇒A⇒B
+      
+
+    > Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.?1.1.1||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        .... (1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1
+      *:B
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||?1.1.1.2.1*?1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by mt
+          and .... (1.1.1.2.1) <======
+        ...(1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1.2.1
+      *:¬B
+      b:B
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||μtoimprove1:¬B.<λtoimprove2:B.μtoimprove3:⊥.<toimprove2||b>||toimprove1>*?1.1.1.2.2>||thesis>
+      Natural language:
+      !!! The proof is classical; converted to the following LJ + EM proof:
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μx1:B.<classic||(μ'x2:B.<x2||x1>,μ'b:¬B.<mt||μtoimprove1:¬B.<λtoimprove2:B.μtoimprove3:⊥.<toimprove2||μ'x2:B.<b||x2*_F_>>||toimprove1>*?1.1.1.2.2>)>||thesis>
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by classic
+          by cases: 
+            first case:
+              by case hypothesis
+              we proved B (x2)
+              by x2
+            done
+            second case:
+              by case hypothesis
+              we proved ¬B (b)
+              by mt
+              and we need to prove ¬B
+                assume B (toimprove2)
+                we need to prove ⊥
+                  by toimprove2
+                  we proved B (x2)
+                  by b
+                  and by x2
+                absurd
+              done
+            ...(1.1.1.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:¬A
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1.2.2
+      b:B
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||μtoimprove1:¬B.<λtoimprove2:B.μtoimprove3:⊥.<toimprove2||b>||toimprove1>*μ'toimprove4:¬A.<toimprove4||a*_F_>>||thesis>
+      Natural language:
+      !!! The proof is classical; converted to the following LJ + EM proof:
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μx1:B.<classic||(μ'x2:B.<x2||x1>,μ'b:¬B.<mt||μtoimprove1:¬B.<λtoimprove2:B.μtoimprove3:⊥.<toimprove2||μ'x2:B.<b||x2*_F_>>||toimprove1>*μ'toimprove4:¬A.<toimprove4||a*_F_>>)>||thesis>
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by classic
+          by cases: 
+            first case:
+              by case hypothesis
+              we proved B (x2)
+              by x2
+            done
+            second case:
+              by case hypothesis
+              we proved ¬B (b)
+              by mt
+              and we need to prove ¬B
+                assume B (toimprove2)
+                we need to prove ⊥
+                  by toimprove2
+                  we proved B (x2)
+                  by b
+                  and by x2
+                absurd
+              done
+              we proved ¬A (toimprove4)
+              by toimprove4
+              and by a
+            absurd
+      done
+      
+      
+
+    > t1 defined.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > File ./test_3.nl written. Enjoy the reading.
+      
+
+    > EOF!
+

@@ -1,0 +1,1593 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: minimal intuitionistic sequent calculus.
+      
+
+    > N defined.
+      
+
+    > O defined.
+      
+
+    > S defined.
+      
+
+    > Even defined.
+      
+
+    > Odd defined.
+      
+
+    > Eq defined.
+      
+
+    > Plus defined.
+      
+
+    > EO defined.
+      
+
+    > OS defined.
+      
+
+    > ES defined.
+      
+
+    > sym defined.
+      
+
+    > PO defined.
+      
+
+    > PS defined.
+      
+
+    > RewriteE defined.
+      
+
+    > RewriteO defined.
+      
+
+    > Ind defined.
+      
+
+    > Plussym defined.
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<?1||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:∀n:N.Even (Plus n n)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||?1.2.1*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and .... (1.2.1) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+       |-----  1.2.1
+      *:Even (Plus O O)
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||?1.2.1.2>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+          ...(1.2.1.2) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:∀n:N.Eq (Plus O n) n
+       |-----  1.2.1.2
+      th:Even (Plus O O)
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*?1.2.1.2.1>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+          ...(1.2.1.2.1) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:Eq (Plus O O) O
+       |-----  1.2.1.2.1
+      th:Even (Plus O O)
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||?1.2.1.2.1.2>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+          ...(1.2.1.2.1.2) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:∀n,m:N.Eq n m⇒Even n⇒Even m
+      eq:Eq (Plus O O) O
+       |-----  1.2.1.2.1.2
+      th:Even (Plus O O)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*?1.2.1.2.1.2.1.1.1*?1.2.1.2.1.2.1.1.2>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and .... (1.2.1.2.1.2.1.1.1) <======
+          ...(1.2.1.2.1.2.1.1.2)
+        ...(1.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      eq:Eq (Plus O O) O
+       |-----  1.2.1.2.1.2.1.1.1
+      *:Eq O (Plus O O)
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*?1.2.1.2.1.2.1.1.2>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+          ...(1.2.1.2.1.2.1.1.2) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:Even O⇒Even (Plus O O)
+      eq:Eq (Plus O O) O
+       |-----  1.2.1.2.1.2.1.1.2
+      th:Even (Plus O O)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*?1.2.1.2.1.2.1.1.2.1*?1.2.1.2.1.2.1.1.2.2>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and .... (1.2.1.2.1.2.1.1.2.1) <======
+          ...(1.2.1.2.1.2.1.1.2.2)
+        ...(1.2.2)
+      done
+      
+      3 goals yet to prove!
+      
+      
+      eq:Eq (Plus O O) O
+       |-----  1.2.1.2.1.2.1.1.2.1
+      *:Even O
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*?1.2.1.2.1.2.1.1.2.2>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          ...(1.2.1.2.1.2.1.1.2.2) <======
+        ...(1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:Even (Plus O O)
+      eq:Eq (Plus O O) O
+       |-----  1.2.1.2.1.2.1.1.2.2
+      th:Even (Plus O O)
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*?1.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+        ...(1.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:∀n:N.Even (Plus n n)⇒Even (Plus (S n) (S n))⇒∀n:N.Even (Plus n n)
+       |-----  1.2.2
+      th:∀n:N.Even (Plus n n)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*?1.2.2.1*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and .... (1.2.2.1) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+       |-----  1.2.2.1
+      *:∀n:N.Even (Plus n n)⇒Even (Plus (S n) (S n))
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).?1.2.2.1.1.1*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          .... (1.2.2.1.1.1) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      n:N
+      
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1
+      *:Even (Plus (S n) (S n))
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*?1.2.2.1.1.1.2.1.1>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+          ...(1.2.2.1.1.1.2.1.1) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      n:N
+      
+      *:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1
+      th:Even (Plus (S n) (S n))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*?1.2.2.1.1.1.2.1.1.2.1.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and .... (1.2.2.1.1.1.2.1.1.2.1.1.1) <======
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2)
+        ...(1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      n:N
+      
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.1
+      *:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*?1.2.2.1.1.1.2.1.1.2.1.1.2>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      n:N
+      
+      *:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2
+      th:Even (Plus (S n) (S n))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.1) <======
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2)
+        ...(1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      n:N
+      
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.1
+      *:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      n:N
+      
+      *:Even (S (Plus n (S n)))⇒Even (Plus (S n) (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2
+      th:Even (Plus (S n) (S n))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1) <======
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      n:N
+      
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1
+      *:Even (S (Plus n (S n)))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1) <======
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      4 goals yet to prove!
+      n:N
+      
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1
+      *:Odd (Plus n (S n))
+      
+
+    > Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1) <======
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      4 goals yet to prove!
+      n:N
+      
+      *:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1
+      th:Odd (Plus n (S n))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.1) <======
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      5 goals yet to prove!
+      n:N
+      
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.1
+      *:Eq (Plus (S n) n) (Plus n (S n))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2) <======
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      4 goals yet to prove!
+      n:N
+      
+      *:Odd (Plus (S n) n)⇒Odd (Plus n (S n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2
+      th:Odd (Plus n (S n))
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1) <======
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      5 goals yet to prove!
+      n:N
+      
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1
+      *:Odd (Plus (S n) n)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.1) <======
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2)
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      6 goals yet to prove!
+      n:N
+      
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.1
+      *:Even (Plus n n)
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2) <======
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      5 goals yet to prove!
+      n:N
+      
+      *:Odd (S (Plus n n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2
+      th:Odd (Plus (S n) n)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1) <======
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2)
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      6 goals yet to prove!
+      n:N
+      
+      H:Odd (S (Plus n n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1
+      *:Eq (S (Plus n n)) (Plus (S n) n)
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.1*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and .... (1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.1) <======
+                  ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.2)
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2)
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      7 goals yet to prove!
+      n:N
+      
+      H:Odd (S (Plus n n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.1
+      *:Eq (Plus (S n) n) (S (Plus n n))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.2) <======
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2)
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      6 goals yet to prove!
+      n:N
+      
+      *:Eq (S (Plus n n)) (Plus (S n) n)
+      H:Odd (S (Plus n n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.1.2.1.1.2
+      th:Eq (S (Plus n n)) (Plus (S n) n)
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2) <======
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2)
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      5 goals yet to prove!
+      n:N
+      
+      *:Odd (S (Plus n n))⇒Odd (Plus (S n) n)
+      H:Odd (S (Plus n n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.1.2.1.2.2.1.1.2
+      th:Odd (Plus (S n) n)
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*H*th>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                  and by H
+                done
+              ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2) <======
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2)
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      4 goals yet to prove!
+      n:N
+      
+      *:Odd (Plus n (S n))
+      eq2:Eq (Plus (S n) n) (Plus n (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.1.2.1.1.2.1.1.2.2
+      th:Odd (Plus n (S n))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*H*th>>*th>>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                  and by H
+                done
+              done
+            ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2) <======
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2)
+        ...(1.2.2.2)
+      done
+      
+      3 goals yet to prove!
+      n:N
+      
+      *:Even (S (Plus n (S n)))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.1.2.1.2
+      th:Even (S (Plus n (S n)))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*H*th>>*th>>*th>*?1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                  and by H
+                done
+              done
+            done
+          ...(1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2) <======
+        ...(1.2.2.2)
+      done
+      
+      2 goals yet to prove!
+      n:N
+      
+      *:Even (Plus (S n) (S n))
+      eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n))
+      eq:Eq (Plus (S n) (S n)) (S (Plus n (S n)))
+      IH:Even (Plus n n)
+       |-----  1.2.2.1.1.1.2.1.1.2.1.1.2.2.1.1.2.2
+      th:Even (Plus (S n) (S n))
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*H*th>>*th>>*th>*th>>>*?1.2.2.2>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                  and by H
+                done
+              done
+            done
+          done
+        ...(1.2.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:∀n:N.Even (Plus n n)
+       |-----  1.2.2.2
+      th:∀n:N.Even (Plus n n)
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:∀n:N.Even (Plus n n).<μth:∀n:N.Even (Plus n n).<Ind||μth:Even (Plus O O).<PO||O*μ'eq:Eq (Plus O O) O.<RewriteE||O*Plus O O*μth:Eq O (Plus O O).<sym||Plus O O*O*eq*th>*μth:Even O.<EO||th>*th>>*λn:N.λIH:Even (Plus n n).μth:Even (Plus (S n) (S n)).<PS||n*S n*μ'eq:Eq (Plus (S n) (S n)) (S (Plus n (S n))).<sym||Plus (S n) (S n)*S (Plus n (S n))*eq*μ'eqs:Eq (S (Plus n (S n))) (Plus (S n) (S n)).<RewriteE||S (Plus n (S n))*Plus (S n) (S n)*eqs*μth:Even (S (Plus n (S n))).<ES||Plus n (S n)*μth:Odd (Plus n (S n)).<Plussym||S n*n*μ'eq2:Eq (Plus (S n) n) (Plus n (S n)).<RewriteO||Plus (S n) n*Plus n (S n)*eq2*μth:Odd (Plus (S n) n).<OS||Plus n n*IH*μ'H:Odd (S (Plus n n)).<RewriteO||S (Plus n n)*Plus (S n) n*μth:Eq (S (Plus n n)) (Plus (S n) n).<sym||Plus (S n) n*S (Plus n n)*μth:Eq (Plus (S n) n) (S (Plus n n)).<PS||n*n*th>*th>*H*th>>*th>>*th>*th>>>*th>||thesis>
+      Natural language:
+      we need to prove ∀n:N.Even (Plus n n)
+        we need to prove ∀n:N.Even (Plus n n)
+          by Ind
+          and we need to prove Even (Plus O O)
+            by PO
+            we proved Eq (Plus O O) O (eq)
+            by RewriteE
+            and we need to prove Eq O (Plus O O)
+              by sym
+              and by eq
+            done
+            and we need to prove Even O
+              by EO
+            done
+          done
+          and consider an arbitrary but fixed n of type N
+          assume Even (Plus n n) (IH)
+          we need to prove Even (Plus (S n) (S n))
+            by PS
+            we proved Eq (Plus (S n) (S n)) (S (Plus n (S n))) (eq)
+            by sym
+            and by eq
+            we proved Eq (S (Plus n (S n))) (Plus (S n) (S n)) (eqs)
+            by RewriteE
+            and by eqs
+            and we need to prove Even (S (Plus n (S n)))
+              by ES
+              and we need to prove Odd (Plus n (S n))
+                by Plussym
+                we proved Eq (Plus (S n) n) (Plus n (S n)) (eq2)
+                by RewriteO
+                and by eq2
+                and we need to prove Odd (Plus (S n) n)
+                  by OS
+                  and by IH
+                  we proved Odd (S (Plus n n)) (H)
+                  by RewriteO
+                  and we need to prove Eq (S (Plus n n)) (Plus (S n) n)
+                    by sym
+                    and we need to prove Eq (Plus (S n) n) (S (Plus n n))
+                      by PS
+                    done
+                  done
+                  and by H
+                done
+              done
+            done
+          done
+        done
+      done
+      
+      
+
+    > even_plus defined.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > File ./test_fo_2.nl written. Enjoy the reading.
+      
+
+    > EOF!
+

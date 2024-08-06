@@ -1,0 +1,76 @@
+Known bugs:
+ 0. lk_to_lj_plus_em does not produce well typed terms when applied to
+    Lambda' (but later on it produces well typed lambda terms)
+ 1. translation of not and False to PVS and Coq for minimal logic.
+    Notice: instead of Classical.classic in minimal logic one should
+    have the weak excluded middle (see Hugo's paper): \forall A B, A \/ A -> B
+ 2. translation of - for minimal logic (???)
+ 3. syntactic error messages could be more informative
+ 4. next/prev breaks the Coq and PVS proof scripts
+
+Wish list:
+ 0. improve the help for formulae/types/sorts
+ 1. just one name for the continuation when in non-subtractive LJ
+    (what to do with subtraction ???)
+
+Possible user's wishes:
+ 1. an high level tactic to simulate additive elimination for conjunction
+ 2. an high level tactic to simulate multiplicative elimination for
+    disjunction in LK
+ 3. a. high level tactics to simulate weakening/contraction
+    b. "fake" clear tactic (or maybe a real one; requires resource aware
+       proof terms "a la Wadler?")
+    c. exchange tactic? (does not make sense in general for dependent types)
+ 4. primitive additive conjunction and multiplicative disjunction + a flag
+    to bind the notations /\ and \/ to one of them.
+ 5. a (very) high level tactic to simulate ND apply
+ 6. a tactic "focus n" and/or "focus name". It is fundamental for a GUI and
+    it is very easy to implement.
+
+To be understood:
+ 1. in non minimal logic not is a primitive connective; in minimal logic
+    it is derived. Pros: closer to classical LK/LJ; one tactic less
+    Cons: the proof script changes if you use the option "-min". So far
+    every script accepted by "-lj" was also accepted by "-lk" (nice
+    property). Note: it could be a bit improved (at lest the right rule)
+    by automatically adding a cut and an axiom so that the stoup goes
+    to the left hand side (it is now on false instead of P when eliminating
+    ~P)
+ 2. additive conjunction? (does it have sense for sigma types?)
+    multiplicative disjunction? (no sense in LJ)
+ 3. Do the proof scripts for external provers need to be adjusted when
+    tacticals are used? Might they introduce 'steps' in the proof too big for
+    tauto to solve?
+ 4. state.goals and state.pt contain redundant, possibly (if bug) conflicting
+    information. Feature or Bug? Should we keep only the pt --or assimilated?
+    Should the pt be built only at the end of the proof?
+
+LaTeX/XHTML Documentation:
+ 1. document the logical system(s)
+ 2. document the tactics and commands language
+
+Future work (???) for me:
+ 1. understand and fix natural language rendering of proof terms
+ 2. an analyser of proof terms (to understand the logic from the proof
+    term). Cool. For instance: "is this proof really in LJ even if I made
+    it in LK? is it minimal? etc."
+ 2. a parser for proof terms (???)
+ 3. a type-checker for proof terms (???)
+ 4. a cbv and a cbn reduction machine for proof terms (???)
+
+Future work (????):
+ 0. deal with PVS's TTCs.
+ 1. full merge with trunk (i.e. adding quantifiers to the proof terms; easy
+    up to crazy notation and subtraction)
+ 2. should the distinction between \Pi and \forall be introduced?
+    (ask Alexandre Miguel about his opinion)
+ 3. enhance the manual to include proof terms (as soon as they are
+    implemented).
+ 4. a brand new gui / integration with an existing gui
+    (I am already tired of cut & pasting :-)
+ 5. scale proof scripts: introduce named theorems.
+ 6. start working on the Real library
+    -> emulate HO in FO: eg type SR = Sets of R ; function In = SR -> bool
+    -> introduce some 2nd order? eg A = {x | 0 < x < x^2 }
+    -> benchmark checkout coq vs. checkout pt coq
+

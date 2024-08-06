@@ -1,0 +1,239 @@
+\documentclass[psamsfonts]{amsart}
+
+\usepackage{bussproofs}
+
+%% Macros
+\def\G{\Gamma}
+\def\D{\Delta}
+\def\th{\vdash}
+\def\imp{\Rightarrow}
+
+\def\right#1{$\mathrm{#1}_\mathcal{R}$}
+\def\left#1{$\mathrm{#1}_\mathcal{L}$}
+
+\def\fsp{\textsf{Fellowship}}
+\def\lbmm{\bar{\lambda}\mu\tilde{\mu}}
+
+%% Title 
+\title[Fellowship]{Fellowship: Who needs a manual anyway?}
+\author[F. Kirchner]{Florent Kirchner}
+%\author{}   add yourself if you dare!
+\address{LIX, \'Ecole Polytechnique, 91128 Palaiseau, France}
+
+
+\begin{document}
+
+\begin{abstract}
+Indeed, the \texttt{help} command of the \fsp\ toplevel is your best friend.
+However, a deeper insight of the logical structure of the prover might prove
+helpful, thus this note.
+\end{abstract}
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Inference rules --\textsl{a.k.a. typing rules, a.k.a. tactics}}
+
+\subsection{Syntax}
+
+$\lbmm$-terms~\cite{Lbmm:CurienHerbelin00} are used as proof terms. The syntax
+of the $\lbmm$-calculus defines commands $c$, terms $v$ and contexts $e$ as
+follows:
+\begin{eqnarray*}
+c &::=& \langle v|e \rangle \\
+v &::=& x\ \|\ \mu\alpha.c\ \|\ \lambda x.v\ \|\ e\cdot v \\
+e &::=& \alpha\ \|\ \tilde{\mu}x.c\ \|\ v\cdot e\ \|\ \alpha\lambda'.e
+\end{eqnarray*}
+
+\subsection{Classical logic sequent calculus.}
+
+Figure~\ref{LK} describes the inference rules.
+
+\begin{figure}[htbp]
+\fbox{
+\begin{minipage}{\textwidth}
+
+% AXIOM
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{axiom}}
+\UnaryInfC{$ \G ; *:A \th \D,x:A,\D' $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{axiom}}
+\UnaryInfC{$\G,x:A,\G' \th *:A ; \D $}
+\DisplayProof
+\end{center}
+
+% TRUE - FALSE
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{false}}
+\UnaryInfC{$ \G ; *:\textsl{false} \th \D $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{true}}
+\UnaryInfC{$\G \th *:\textsl{true} ; \D $}
+\DisplayProof
+\end{center}
+
+% CUT
+\begin{center}
+\AxiomC{$x:A , \G \th *:B ; \D$}
+\AxiomC{$x:a , \G ; *:B \th \D$}
+\LeftLabel{\left{cut}}
+\BinaryInfC{$\G ; *:A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; x:A, \D$}
+\AxiomC{$\G ; *:B \th x:A, \D$}
+\LeftLabel{\right{cut}}
+\BinaryInfC{$\G \th *:A ; \D$}
+\DisplayProof
+\end{center}
+
+% IMPLY
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{imply}}
+\BinaryInfC{$\G ; *:A\imp B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G, x:A \th *:B, \D$}
+\LeftLabel{\right{imply}}
+\UnaryInfC{$\G \th *:A\imp B ; \D$}
+\DisplayProof
+\end{center}
+
+% MINUS
+%\begin{center}
+%\AxiomC{$\G; *:A \th x:B, \D$}
+%\LeftLabel{\left{minus}}
+%\UnaryInfC{$\G ; *:A - B \th \D$}
+%\DisplayProof
+%\quad
+%\AxiomC{$\G ; *:B \th \D$}
+%\AxiomC{$\G \th *:A; \D$}
+%\LeftLabel{\right{minus}}
+%\BinaryInfC{$\G \th *: A - B ; \D$}
+%\DisplayProof
+%\end{center}
+
+% CONJ (and - wedge)
+\begin{center}
+\AxiomC{$\G, x:A, y:B \th *:C ; \D$}
+\AxiomC{$\G, x:A, y:B ; *:C \th \D$}
+\LeftLabel{\left{conj}}
+\BinaryInfC{$\G ; *:A\wedge B$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:A ; \D$}
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{conj}}
+\BinaryInfC{$\G \th *:A\wedge B ; \D$}
+\DisplayProof
+\end{center}
+
+% DISJ (or - vee)
+\begin{center}
+\AxiomC{$\G ; *:A \th \D$}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{disj}}
+\BinaryInfC{$\G ; *:A\vee B \th \D$}
+\DisplayProof
+\end{center}
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\LeftLabel{\right{disj_1}}
+\UnaryInfC{$\G \th *:A\vee B ; \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{disj_2}}
+\UnaryInfC{$\G \th *:A\vee B ; \D$}
+\DisplayProof
+\end{center}
+
+% NEG
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\LeftLabel{\left{neg}}
+\UnaryInfC{$\G ; *:\neg A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; *:A \th \D$}
+\LeftLabel{\right{neg}}
+\UnaryInfC{$\G \th *:\neg A ; \D$}
+\DisplayProof
+\end{center}
+
+% FORALL
+\begin{center}
+\AxiomC{$\G ; *:B[x\leftarrow t] \th \D$}
+\LeftLabel{\left{forall}}
+\UnaryInfC{$\G ; *:\forall (x:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{forall}}
+\UnaryInfC{$\G \th *:\forall (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+% EXISTS
+\begin{center}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{exists}}
+\UnaryInfC{$\G ; *:\exists (x:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B[x\leftarrow t] ; \D$}
+\LeftLabel{\right{exists}}
+\UnaryInfC{$\G \th *:\exists (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+\end{minipage}
+}
+\caption{Classical logic sequent calculus.}
+\label{LK}
+\end{figure}
+
+In the case of substractive logic, the elimination rules for the $-$
+connective are added:
+% MINUS
+\begin{center}
+\AxiomC{$\G; *:A \th x:B, \D$}
+\LeftLabel{\left{minus}}
+\UnaryInfC{$\G ; *:A - B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; *:B \th \D$}
+\AxiomC{$\G \th *:A; \D$}
+\LeftLabel{\right{minus}}
+\BinaryInfC{$\G \th *: A - B ; \D$}
+\DisplayProof
+\end{center}
+
+Finally in the case of minimal logic, the \left{neg} and \right{neg} rules are
+discarded, as well as the \left{false} rule. $\neg A$ is considered as
+syntactic sugar for $A \imp \textsl{false}$, and is eliminated using the rules
+for implication.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\bibliographystyle{amsplain} 
+\bibliography{bib}
+
+\end{document}
+% That's all folks !
+
+
+\AxiomC{$$}
+\AxiomC{$$}
+\LeftLabel{}
+\BinaryInfC{$$}
+\DisplayProof
+

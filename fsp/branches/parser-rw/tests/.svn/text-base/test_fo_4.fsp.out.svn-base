@@ -1,0 +1,55 @@
+Line 15, character 10:
+.Parse error: syntactical analysis.
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > A defined.
+      
+
+    > R defined.
+      
+
+    > Eq defined.
+      
+
+    > Assym defined.
+      
+
+    > Trans defined.
+      
+
+    > f defined.
+      
+
+    > Incr defined.
+      
+
+    > M defined.
+      
+
+    > Up defined.
+      
+
+    > Least defined.
+      
+
+    > Proof term: 
+      μthesis:Eq M (f M).<?1||thesis>
+      Natural language:
+      we need to prove Eq M (f M)
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:Eq M (f M)
+      

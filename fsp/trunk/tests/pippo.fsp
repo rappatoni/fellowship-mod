@@ -1,0 +1,27 @@
+lj. minimal.
+
+(* fully top-down *)
+declare A,B,C,D : bool.
+theorem t1: (A -> (A -> B) -> (A -> C) -> (B -> C -> D) -> D).
+elim a.
+elim ab.
+elim ac.
+elim bcd.
+cut (B -> C -> D) d.
+axiom.
+elim.
+cut (A -> B) b.
+axiom.
+elim.
+axiom.
+axiom.
+elim.
+cut (A -> C) c.
+axiom.
+elim.
+axiom.
+axiom.
+axiom.
+qed.
+export natural language.
+checkout proof term isabelle.

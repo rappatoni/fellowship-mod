@@ -1,0 +1,181 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: minimal intuitionistic sequent calculus.
+      
+
+    > A,B,C defined.
+      
+
+    > Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<?1||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:A∨B⇒(B⇒C)⇒A∨C
+      
+
+    > Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<λab:A∨B.λbc:B⇒C.?1.1.1||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        assume A∨B (ab)
+        assume B⇒C (bc)
+        .... (1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      bc:B⇒C
+      ab:A∨B
+       |-----  1.1.1
+      *:A∨C
+      
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<λab:A∨B.λbc:B⇒C.μac:A∨C.<ab||(?1.1.1.2.1,?1.1.1.2.2)>||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        assume A∨B (ab)
+        assume B⇒C (bc)
+        we need to prove A∨C
+          by ab
+          by cases: 
+            first case:
+              by case hypothesis
+            ...(1.1.1.2.1) <======
+            second case:
+              by case hypothesis
+            ...(1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:A
+      bc:B⇒C
+      ab:A∨B
+       |-----  1.1.1.2.1
+      ac:A∨C
+      
+
+    > Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<λab:A∨B.λbc:B⇒C.μac:A∨C.<ab||(?1.1.1.2.1,?1.1.1.2.2)>||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        assume A∨B (ab)
+        assume B⇒C (bc)
+        we need to prove A∨C
+          by ab
+          by cases: 
+            first case:
+              by case hypothesis
+            ...(1.1.1.2.1)
+            second case:
+              by case hypothesis
+            ...(1.1.1.2.2) <======
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:B
+      bc:B⇒C
+      ab:A∨B
+       |-----  1.1.1.2.2
+      ac:A∨C
+      
+
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<λab:A∨B.λbc:B⇒C.μac:A∨C.<ab||(?1.1.1.2.1,μ'b:B.<bc||b*μ'c:C.<R(c)||ac>>)>||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        assume A∨B (ab)
+        assume B⇒C (bc)
+        we need to prove A∨C
+          by ab
+          by cases: 
+            first case:
+              by case hypothesis
+            ...(1.1.1.2.1) <======
+            second case:
+              by case hypothesis
+              we proved B (b)
+              by bc
+              and by b
+              we proved C (c)
+              by c
+              trivial
+            done
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:A
+      bc:B⇒C
+      ab:A∨B
+       |-----  1.1.1.2.1
+      ac:A∨C
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:A∨B⇒(B⇒C)⇒A∨C.<λab:A∨B.λbc:B⇒C.μac:A∨C.<ab||(μ'a:A.<L(a)||ac>,μ'b:B.<bc||b*μ'c:C.<R(c)||ac>>)>||thesis>
+      Natural language:
+      we need to prove A∨B⇒(B⇒C)⇒A∨C
+        assume A∨B (ab)
+        assume B⇒C (bc)
+        we need to prove A∨C
+          by ab
+          by cases: 
+            first case:
+              by case hypothesis
+              we proved A (a)
+              by a
+              trivial
+            done
+            second case:
+              by case hypothesis
+              we proved B (b)
+              by bc
+              and by b
+              we proved C (c)
+              by c
+              trivial
+            done
+      done
+      
+      
+
+    > t1 defined.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > File ./test_2.nl written. Enjoy the reading.
+      
+
+    > EOF!
+

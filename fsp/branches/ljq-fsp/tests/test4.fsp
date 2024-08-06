@@ -1,0 +1,15 @@
+(* This file tests tacticals and derived tactics *)
+lj.
+minimal.
+
+declare A,B,C : bool.
+
+goal (A\/B -> (B -> C) -> A\/C).
+ elim ab; elim bc.
+ elim in ab ac.
+ next.
+ elim in bc b; [ axiom | elim in ac c right; axiom ].
+ focus ac a ; elim left ; axiom.
+checkout coq.
+checkout proof term coq.
+discard.

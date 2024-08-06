@@ -1,0 +1,17 @@
+lj. full.
+declare A,B : bool.
+goal (~(A - B) -> (~B -> ~A)).
+ elim nab.
+ elim nb.
+ elim.
+ cut (~(A - B)) a.
+ axiom.
+ elim.
+ elim.
+ cut (~B) b.
+ axiom.
+ elim.
+ axiom.
+ axiom.
+checkout coq.
+checkout proof term coq.

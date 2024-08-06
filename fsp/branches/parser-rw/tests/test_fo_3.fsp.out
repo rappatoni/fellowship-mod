@@ -1,0 +1,176 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: intuitionistic sequent calculus.
+      
+
+    > Current logic: minimal intuitionistic sequent calculus.
+      
+
+    > N defined.
+      
+
+    > P defined.
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<?1||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.?1.1||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        .... (1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      H:∃y:N.∀x:N.P x y
+       |-----  1.1
+      *:∀x:N.∃y:N.P x y
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.μth:∀x:N.∃y:N.P x y.<H||(y:N).?1.1.2.1>||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        we need to prove ∀x:N.∃y:N.P x y
+          by H
+          let y be the element of type N that satisfies the property
+        ...(1.1.2.1) <======
+      done
+      
+      1 goal yet to prove!
+      y:N
+      
+      *:∀x:N.P x y
+      H:∃y:N.∀x:N.P x y
+       |-----  1.1.2.1
+      th:∀x:N.∃y:N.P x y
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.μth:∀x:N.∃y:N.P x y.<H||(y:N).μ'K:∀x:N.P x y.<λx:N.?1.1.2.1.1.1||th>>||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        we need to prove ∀x:N.∃y:N.P x y
+          by H
+          let y be the element of type N that satisfies the property
+          we proved ∀x:N.P x y (K)
+          consider an arbitrary but fixed x of type N
+          .... (1.1.2.1.1.1) <======
+        done
+      done
+      
+      1 goal yet to prove!
+      x:N
+y:N
+      
+      K:∀x:N.P x y
+      H:∃y:N.∀x:N.P x y
+       |-----  1.1.2.1.1.1
+      *:∃y:N.P x y
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.μth:∀x:N.∃y:N.P x y.<H||(y:N).μ'K:∀x:N.P x y.<λx:N.(y,?1.1.2.1.1.1.1)||th>>||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        we need to prove ∀x:N.∃y:N.P x y
+          by H
+          let y be the element of type N that satisfies the property
+          we proved ∀x:N.P x y (K)
+          consider an arbitrary but fixed x of type N
+          .... (1.1.2.1.1.1.1) <======
+        done
+      done
+      
+      1 goal yet to prove!
+      x:N
+y:N
+      
+      K:∀x:N.P x y
+      H:∃y:N.∀x:N.P x y
+       |-----  1.1.2.1.1.1.1
+      *:P x y
+      
+
+    > Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.μth:∀x:N.∃y:N.P x y.<H||(y:N).μ'K:∀x:N.P x y.<λx:N.(y,μth:P x y.<K||x*?1.1.2.1.1.1.1.2.1>)||th>>||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        we need to prove ∀x:N.∃y:N.P x y
+          by H
+          let y be the element of type N that satisfies the property
+          we proved ∀x:N.P x y (K)
+          consider an arbitrary but fixed x of type N
+          we need to prove P x y
+            by K
+          ...(1.1.2.1.1.1.1.2.1) <======
+        done
+      done
+      
+      1 goal yet to prove!
+      x:N
+y:N
+      
+      *:P x y
+      K:∀x:N.P x y
+      H:∃y:N.∀x:N.P x y
+       |-----  1.1.2.1.1.1.1.2.1
+      th:P x y
+      
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y.<λH:∃y:N.∀x:N.P x y.μth:∀x:N.∃y:N.P x y.<H||(y:N).μ'K:∀x:N.P x y.<λx:N.(y,μth:P x y.<K||x*th>)||th>>||thesis>
+      Natural language:
+      we need to prove ∃y:N.∀x:N.P x y⇒∀x:N.∃y:N.P x y
+        assume ∃y:N.∀x:N.P x y (H)
+        we need to prove ∀x:N.∃y:N.P x y
+          by H
+          let y be the element of type N that satisfies the property
+          we proved ∀x:N.P x y (K)
+          consider an arbitrary but fixed x of type N
+          we need to prove P x y
+            by K
+          done
+        done
+      done
+      
+      
+
+    > t1 defined.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > Firing up Coq for confirmation.
+      
+
+    > File ./test_fo_3.nl written. Enjoy the reading.
+      
+
+    > EOF!
+

@@ -1,0 +1,40 @@
+lk.
+full.
+declare A,B : bool.
+theorem t1 : (((A - B) -> ~(~B -> ~A)) /\ (~(~B -> ~A) -> (A - B))).
+ elim.
+   elim ab.
+   elim.
+   elim.
+     elim.
+     cut (A - B) b.
+     axiom.
+     elim b2.
+     cut (B) a.
+     axiom.
+     axiom.
+
+     elim.
+     cut (A - B) a.
+     axiom.
+     elim b.
+     axiom.
+
+   elim mt.
+   elim.
+     elim in mt b.
+     elim nb.
+     cut (~B) na.
+     axiom.
+     elim.
+     axiom.
+
+     elim in mt a.
+     elim nb.
+     elim.
+     axiom.
+qed.
+
+checkout coq.
+checkout proof term coq.
+checkout natural language.

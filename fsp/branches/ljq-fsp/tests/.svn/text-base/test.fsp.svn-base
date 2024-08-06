@@ -1,0 +1,55 @@
+lj. minimal.
+
+(* fully top-down *)
+declare A,B,C,D : bool.
+goal (A -> (A -> B) -> (A -> C) -> (B -> C -> D) -> D).
+elim a.
+elim ab.
+elim ac.
+elim bcd.
+cut (B -> C -> D) d.
+axiom.
+elim.
+cut (A -> B) b.
+axiom.
+elim.
+axiom.
+axiom.
+elim.
+cut (A -> C) c.
+axiom.
+elim.
+axiom.
+axiom.
+axiom.
+checkout coq.
+checkout proof term coq.
+discard.
+
+(* fully bottom-up *)
+declare A,B,C,D : bool.
+goal (A -> (A -> B) -> (A -> C) -> (B -> C -> D) -> D).
+elim a.
+elim ab.
+elim ac.
+elim bcd.
+cut (A) d.
+axiom.
+cut (A -> B) a2.
+axiom.
+elim.
+axiom.
+cut (A -> C) b.
+axiom.
+elim.
+axiom.
+cut (B -> C -> D) c.
+axiom.
+elim.
+axiom.
+elim.
+axiom.
+axiom.
+checkout coq.
+checkout proof term coq.
+discard.

@@ -1,0 +1,164 @@
+
+    > Current logic: intuitionistic sequent calculus.
+      
+fsp < 
+    > Current logic: classic sequent calculus.
+      
+fsp < fsp < 
+    > A,B defined.
+      
+fsp < 
+    > Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<?1||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        .... (1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+       |-----  1
+      *:(¬B⇒¬A)⇒A⇒B
+      
+fsp < 
+    > Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.?1.1.1||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        .... (1.1.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1
+      *:B
+      
+fsp < 
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||?1.1.1.2.1*?1.1.1.2.2>||thesis>
+      Natural language:
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by mt
+          and .... (1.1.1.2.1) <======
+        ...(1.1.1.2.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1.2.1
+      *:¬B
+      b:B
+      
+fsp < 
+    > Closed a branch. 
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||μH1:¬B.<λH2:B.μH3:⊥.<H2||b>||H1>*?1.1.1.2.2>||thesis>
+      Natural language:
+      !!! The proof is classical; converted to the following LJ + EM proof:
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μx1:B.<classic||(μ'x2:B.<x2||x1>,μ'b:¬B.<mt||μH1:¬B.<λH2:B.μH3:⊥.<H2||μ'x2:B.<b||x2*_F_>>||H1>*?1.1.1.2.2>)>||thesis>
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by classic
+          by cases: 
+            first case:
+              by case hypothesis
+              we proved B (x2)
+              by x2
+            done
+            second case:
+              by case hypothesis
+              we proved ¬B (b)
+              by mt
+              and we need to prove ¬B
+                assume B (H2)
+                we need to prove ⊥
+                  by H2
+                  we proved B (x2)
+                  by b
+                  and by x2
+                absurd
+              done
+            ...(1.1.1.2.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:¬A
+      a:A
+      mt:¬B⇒¬A
+       |-----  1.1.1.2.2
+      b:B
+      
+fsp < 
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μb:B.<mt||μH1:¬B.<λH2:B.μH3:⊥.<H2||b>||H1>*μ'H1:¬A.<H1||a*_F_>>||thesis>
+      Natural language:
+      !!! The proof is classical; converted to the following LJ + EM proof:
+      μthesis:(¬B⇒¬A)⇒A⇒B.<λmt:¬B⇒¬A.λa:A.μx1:B.<classic||(μ'x2:B.<x2||x1>,μ'b:¬B.<mt||μH1:¬B.<λH2:B.μH3:⊥.<H2||μ'x2:B.<b||x2*_F_>>||H1>*μ'H1:¬A.<H1||a*_F_>>)>||thesis>
+      we need to prove (¬B⇒¬A)⇒A⇒B
+        assume ¬B⇒¬A (mt)
+        assume A (a)
+        we need to prove B
+          by classic
+          by cases: 
+            first case:
+              by case hypothesis
+              we proved B (x2)
+              by x2
+            done
+            second case:
+              by case hypothesis
+              we proved ¬B (b)
+              by mt
+              and we need to prove ¬B
+                assume B (H2)
+                we need to prove ⊥
+                  by H2
+                  we proved B (x2)
+                  by b
+                  and by x2
+                absurd
+              done
+              we proved ¬A (H1)
+              by H1
+              and by a
+            absurd
+      done
+      
+      
+fsp < 
+    > t1 defined.
+      
+fsp < 
+    > Firing up Coq for confirmation.
+      
+fsp < 
+    > Firing up Coq for confirmation.
+      
+fsp < 
+    > File ./test_3.nl written. Enjoy the reading.
+      
+fsp < 
+    > EOF!
+

@@ -1,0 +1,67 @@
+lj. minimal.
+
+declare N: type.
+declare O: N.
+declare S: N -> N.
+declare Even: N -> bool.
+declare Odd: N -> bool.
+declare Eq: N -> N -> bool.
+declare Plus: N -> N -> N.
+
+declare EO: (Even [O]).
+declare OS: (forall n:N, Even [n] -> Odd [S n]).
+declare ES: (forall n:N, Odd [n] -> Even [S n]).
+declare sym: (forall n,m:N, Eq [n] [m] -> Eq [m] [n]).
+declare PO: (forall n:N, Eq [Plus O n] [n]).
+declare PS: (forall n,m:N, Eq [Plus (S n) m] [S (Plus n m)]).
+declare RewriteE: (forall n,m:N, Eq [n] [m] -> Even [n] -> Even [m]).
+declare RewriteO: (forall n,m:N, Eq [n] [m] -> Odd [n] -> Odd [m]).
+declare Ind:
+ (Even [Plus O O] ->
+  (forall n:N, Even [Plus n n] -> Even [Plus (S n) (S n)]) ->
+  forall n:N, Even [Plus n n]).
+
+(* I give this to me for free *)
+declare Plussym: (forall n,m:N, Eq [Plus n m] [Plus m n]).
+
+theorem even_plus : (forall n:N, Even [Plus n n]).
+ focus Ind th; elim.
+   focus PO th.
+   elim [O].
+   focus RewriteE eq.
+   elim [O]; elim [Plus O O]; elim.
+   focus sym th; elim [Plus O O]; elim [O]; elim; axiom.
+   elim.
+   focus EO th; axiom.
+   axiom.
+
+   elim.
+   elim; elim IH.
+   focus PS th; elim [n]; elim [S n].
+   focus sym eq; elim [Plus (S n) (S n)];
+    elim [S (Plus n (S n))]; elim.
+   axiom.
+   focus RewriteE eqs; elim [S (Plus n (S n))];
+    elim [Plus (S n) (S n)]; elim.
+   axiom.
+   elim.
+   focus ES th; elim [Plus n (S n)]; elim.
+   focus Plussym th; elim [S n]; elim [n].
+   focus RewriteO eq2; elim [Plus (S n) n]; elim [Plus n (S n)]; elim.
+   axiom.
+   elim.
+   focus OS th; elim [Plus n n]; elim.
+   axiom.
+   focus RewriteO H; elim [S (Plus n n)]; elim [Plus (S n) n]; elim.
+   focus sym th; elim [Plus (S n) n]; elim [S (Plus n n)]; elim.
+   focus PS th; elim [n]; elim [n]; axiom.
+   axiom.
+   elim; axiom.
+   axiom.
+   axiom.
+   axiom.
+   axiom.
+qed.
+(* THIS REQUIRES AGES! checkout coq. *)
+checkout proof term coq.
+export natural language.

@@ -1,0 +1,49 @@
+8
+
+dir
+254
+svn+ssh://sacerdot@hikitech.dynalias.com/home/flo/svn/code/ocaml/fsp
+
+
+
+
+2005-05-27T13:45:25.892763Z
+253
+flo
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+04060765-aee8-0310-9bcb-e450e80dd529
+
+trunk
+dir
+
+branches
+dir
+
+.depend
+file
+
+
+
+
+2005-02-23T11:20:56.000000Z
+ee08fe46bfe79903316b2f6b655a980c
+2004-11-12T12:32:28.569574Z
+1
+flo
+
+tags
+dir
+

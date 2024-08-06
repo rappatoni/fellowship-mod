@@ -1,0 +1,37 @@
+// Fellowship :: version 0.1.0
+// Released May 27th, 2005
+// Installation intructions.
+
+1. Make sure you have the O'Caml compiler installed, and that its version
+   number is at least 3.08 (typing "ocamlc -v" can help you with that). 
+
+2. Untar the fellowship-0.1.0.tar.gz package in you directory of choice:
+    "tar zxvf fellowship-0.1.0.tar.gz"
+
+3. Change directory to the newly created directory. Type "make" to compile
+   the executable. This creates a binary file named "fsp". 
+   
+If you just want to play around / develop with Fellowship's sequent calculus,
+you are set: skip to point 5. If you want to be able to export proofs in Coq
+and PVS, you need to go through 4 before.
+
+4a. (Optional) Install Coq. Make sure you have an environment variable COQBIN
+   pointing to the directory containing the "coqtop" executable (use "which
+   coqtop" to locate that baby, and "export
+   COQBIN=/the/path/of/coqtops/parent/dir/" to set the environment variable).
+
+4b. (Optional) Install PVS. Install the Prooflite library which can be found 
+   at "http://research.nianet.org/~munoz/ProofLite/". As for Coq, set a
+   PVSBIN variable to point to the parent directory of the "proveit"
+   executable.
+
+4c. (Optional) Type "make tests" to compile the regression tests and make sure
+   your installation is complete. You will need to have Coq installed for
+   this.
+
+5. Type "./fsp" to launch fellowship... and off you go!
+
+
+
+// http://www.lix.polytechnique.fr/Labo/Florent.Kirchner/fellowship
+
