@@ -13,5 +13,5 @@ As of late 2024, the system still works on Linux (tested on WSL) and MacOS
 
 ## Usage
 
-Use ./fsp to run the prover. Use 'help.' to get help. For further questions refer to Florent Kirchner's [PhD-thesis]([)](https://pastel.hal.science/pastel-00003192v1/document), especially chapter 7.
+Use ./fsp to run the prover. Use 'help.' to get help. For further questions refer to Florent Kirchner's [PhD-thesis](https://pastel.hal.science/pastel-00003192v1/document), especially chapter 7.
 The tests folder contains some examples to run.
