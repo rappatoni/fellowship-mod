@@ -388,6 +388,36 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
 
+
+#Argument Reducer Helpers
+
+def _var_occurs(name: str, node: ProofTerm) -> bool:
+    """Return True iff *name* appears free inside *node*."""
+    if isinstance(node, (ID, DI)):
+        return node.name == name
+    if isinstance(node, Lamda):
+        # variable shadowing inside lamda binder (node.di.di.name)
+        if node.di.di.name == name:
+            return False  # bound, not free
+    if isinstance(node, Mu):
+        if node.id.name == name:
+            return False
+    if isinstance(node, Mutilde):
+        if node.di.name == name:
+            return False
+    # recurse
+    for child in getattr(node, 'term', None), getattr(node, 'context', None):
+        if child and _var_occurs(name, child):
+            return True
+    return False
+
+def _is_affine(varname: str, command: ProofTerm) -> bool:
+    """A binder is *affine* if its bound variable occurs nowhere in the
+    command body (term + context)."""
+    if isinstance(command, (Mu, Mutilde)):
+        return not _var_occurs(varname, command.term) and not _var_occurs(varname, command.context)
+    return False
+    
 class ArgumentTermReducer(ProofTermVisitor):
     """
     Implements the following reduction rules (each left and right):
@@ -426,6 +456,44 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
+            return node
+
+         # affine helper --------------------------------------------------
+        def _guards(inner_mu: Mu, ctx_mt: Mutilde):
+            # both binders affine in their own commands
+            if not (_is_affine(inner_mu.id.name, inner_mu) and
+                    _is_affine(ctx_mt.di.name,   ctx_mt)):
+                return False
+            # both protect goals with equal prop (we ignore number for now)
+            if not (isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.term, Goal)):
+                return False
+            if not isinstance(ctx_mt.context, Mutilde):
+                return node
+            return inner_mu.term.prop == ctx_mt.term.prop
+
+        
+        # affine μ‑rule --------------------------------------------
+        if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
+            inner_mu: Mu = node.term
+            ctx_mt:   Mutilde = node.context
+
+            if not _guards(inner_mu, ctx_mt):
+                return node
+
+            # Case 1: ctx_mt.context is a µ or µ̃ with affine binder → throw‑away
+            if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
+                # Apply rewrite: μ α .⟨ G || α ⟩
+                node.term    = deepcopy(inner_mu.term)
+                node.context = deepcopy(inner_mu.context)  # should be ID α
+                return node
+
+            # Case 2: ctx_mt.context already in normal form (no more redexes we know)
+            # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
+            # matches in that sub‑tree, regard it as normal‑form.
+            if not self._has_next_redex(ctx_mt.context):
+                node.term    = deepcopy(inner_mu.term)
+                node.context = deepcopy(ctx_mt.context)  # t*
+                return node
 
         
         return node
@@ -452,9 +520,56 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
+            return node
 
+        # # TODO: affine μ‑rule --------------------------------------------
+        # if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
+        #     inner_mu: Mu = node.term
+        #     ctx_mt:   Mutilde = node.context
+
+        #     #same_var = inner_mu.id.name == ctx_mt.di.name
+        #     #if not same_var:
+        #     #    return node
+        #     var_term = inner_mu.id.name
+        #     var_context = ctx_mt.di.name
+
+        #     if not (_is_affine(var_term, inner_mu) and _is_affine(var_term, ctx_mt)):
+        #         return node
+
+        #     # same goal guard.
+        #     if not (isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.term, Goal)):
+        #         return node
+        #     if inner_mu.term.prop != ctx_mt.term.prop:
+        #         return node
+        #     if not isinstance(ctx_mt.context, Mutilde):
+        #         return node
+        #     #if ctx_mt.context.id.name != var:
+        #         #return node
+
+        #     # Apply rewrite: μ α .⟨ G || α ⟩
+        #     node.term    = deepcopy(inner_mu.term)
+        #     node.context = deepcopy(inner_mu.context)  # should be ID α
+        #     return node
         
         return node
+
+    def _has_next_redex(self, n: ProofTerm) -> bool:
+        """Very lightweight check: look for patterns we *currently* reduce."""
+        if isinstance(n, Mu):
+            # λ‑redex?
+            if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
+                return True
+            # affine pattern 1 or 2?
+            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
+                return True
+        if isinstance(n, Mutilde):
+            if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
+                return True
+        # recurse quickly
+        for child in getattr(n, 'term', None), getattr(n, 'context', None):
+            if child and self._has_next_redex(child):
+                return True
+        return False
 
 class Rendering_Semantics:
     def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, ID, DI):
