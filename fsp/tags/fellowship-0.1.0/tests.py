@@ -11,14 +11,6 @@ from non_affine_test import *
 # Tests
 # TODO: refactor this using a standard test library such as unittest.
 
-def setup_prover():
-    prover = ProverWrapper('./fsp')
-    prover.register_custom_tactic('pop', pop)
-    # Switch to classical logic
-    prover.send_command('lk.')
-    # Declare some booleans to work with.
-    prover.send_command('declare A,B,C,D:bool.')
-    return prover
 
 def declaration_test():
     print("DECLARATION TEST")

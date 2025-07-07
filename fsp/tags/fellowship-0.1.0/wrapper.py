@@ -3,6 +3,8 @@ import re
 from lark import Lark, Transformer, v_args
 import parser
 import warnings
+from pathlib import Path
+import argparse
 
 class ProverWrapper:
     def __init__(self, prover_cmd):
@@ -773,9 +775,40 @@ class Argument:
         adapted_argument =  alternative_proof_adapter.chain(other_argument)
         final_argument = self.chain(adapted_argument)
         return final_argument
-        
+
+def setup_prover():
+    prover = ProverWrapper('./fsp')
+    prover.register_custom_tactic('pop', pop)
+    # Switch to classical logic
+    prover.send_command('lk.')
+    # Declare some booleans to work with.
+    prover.send_command('declare A,B,C,D:bool.')
+    return prover
+
+def main() -> None:
+    ap = argparse.ArgumentParser(
+        prog='fellowship-wrapper',
+        description='Run Fellowship prover in interactive or batch mode')
+    g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument('--interactive', action='store_true',
+                   help='start an interactive Fellowship REPL')
+    g.add_argument('--script', metavar='FILE',
+                   help='execute commands in FILE (same grammar as interactive mode)')
+    args = ap.parse_args()
+
+    prover = setup_prover()             # ⇐ creates the ProverWrapper, 
+                                        #    registers pop, declares A,B,C,D …
+
+    if args.interactive:                # --- REPL -----------------
+        interactive_mode(prover)
+
+    else:                               # --- batch ----------------
+        script = Path(args.script).expanduser()
+        if not script.is_file():
+            ap.error(f'script file {script} does not exist')
+        execute_script(prover, script)
+
 if __name__ == '__main__':
-    prover = setup_prover()
-    interactive_mode(prover)
+    main()
 
         
