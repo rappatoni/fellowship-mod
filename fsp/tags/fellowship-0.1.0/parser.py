@@ -322,9 +322,12 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
-        if node.name in self.axiom_props and node.prop is None:
-            print(f'Enriching Axiom with type {self.axiom_props[node.name]}')
-            node.prop = self.axiom_props[node.name]
+        if node.name in self.axiom_props and node.name not in self.bound_vars:
+            if node.prop is None:
+                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")}')
+                node.prop = self.axiom_props[node.name].strip("()")
+            else:
+                print(f'Axiom {node.name} already enriched with type {node.prop}')
         elif node.name in self.bound_vars and node.prop is None:
             print(f'Enriching bound variable with type {self.bound_vars[node.name]}')
             node.prop = self.bound_vars[node.name]
@@ -342,9 +345,12 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
-        if node.name in self.axiom_props and node.name not in self.bound_vars and node.prop is None:
-            print(f'Enriching Axiom with type {self.axiom_props[node.name]}')
-            node.prop = self.axiom_props[node.name]
+        if node.name in self.axiom_props and node.name not in self.bound_vars:
+            if node.prop is None:
+                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")}')
+                node.prop = self.axiom_props[node.name].strip("()")
+            else:
+                print(f'Axiom {node.name} already enriched with type {node.prop}')
         elif node.name in self.bound_vars and node.prop is None:
             print(f'Enriching bound variable with type {self.bound_vars[node.name]}')
             node.prop = self.bound_vars[node.name]
@@ -355,7 +361,10 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             node.flag = "Falsum"
             print("Falsum flagged for instruction generation.")
         else:
-            warnings.warn(f"Enrichment of node {node} not possible.")
+            print(self.axiom_props, self.bound_vars)
+            print(node.name in self.axiom_props)
+            print(node.prop)
+            warnings.warn(f'Enrichment of node {node.name} not possible.')
         return node
 
     def visit_Lamda(self, node: Lamda):
@@ -495,6 +504,8 @@ class ArgumentTermReducer(ProofTermVisitor):
                 node.context = deepcopy(ctx_mt.context)  # t*
                 return node
 
+        # general μ‑rule --------------------------------------------
+        #if isinstance(node.term, Mu):
         
         return node
 

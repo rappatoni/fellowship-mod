@@ -5,6 +5,7 @@ import parser
 import warnings
 from pathlib import Path
 import argparse
+import copy
 
 class ProverWrapper:
     def __init__(self, prover_cmd):
@@ -253,6 +254,19 @@ def execute_script(prover, script_path):
                         tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
                         output = prover.execute_tactic(tactic_name, *tactic_args)
                         #print(output)
+
+                    elif command.startswith("reduce "):
+                        reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+                    elif command.startswith("render-nf "):
+                        render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
+                    elif command.startswith("render "):
+                        ("Rendering argument:")
+                        render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+                    elif command.startswith("normalize "):
+                        name = command.split(maxsplit=1)[1]
+                        arg = prover.get_argument(name)
+                        if arg: arg.normalize(); print("normal form stored in .normal_form")
+                        else:   print(f"Argument '{name}' not found.")
                     elif command.startswith('chain '):
                         # Handle chaining of arguments
                         # Format: chain arg1 arg2
@@ -293,6 +307,19 @@ def interactive_mode(prover):
             #command = command.rstrip('.').strip()
             if command.lower() in ['exit', 'quit']:
                 break
+            elif command.startswith("reduce "):
+                reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+            elif command.startswith("render-nf "):
+                    render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
+            elif command.startswith("render "):
+                    render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+            elif command.startswith("normalize "):
+                name = command.split(maxsplit=1)[1]
+                arg = prover.get_argument(name)
+                if arg: arg.normalize(); print("normal form stored in .normal_form")
+                else:   print(f"Argument '{name}' not found.")
+                return
+
             elif command.startswith('start argument '):
                 # Parse the start argument command
                 if recording:
@@ -424,6 +451,9 @@ class Argument:
         self.executed = False  # Flag to check if the argument has been executed
         #self.coloring = ## Colors the accepted, rejected and undecided parts of the argument starting from assumptions.
         self.attacks = {}  #Dict of self-attacks with corresponding subargument
+        self.normal_body           = None  # reduced AST (deep‑copy)
+        self.normal_form           = None  # textual proof term
+        self.normal_representation = None  # NL rendering of normal form
         
     def execute(self):
         if self.executed:
@@ -493,7 +523,7 @@ class Argument:
         preassumptions = []
         # temporarily ignore past proof steps. THIS IS DANGEROUS. While idtac should not change anything, it is risky to change the prover state merely to get a copy of the last output again.
         temp_output = self.prover.send_command(f'idtac.', 1)
-        #print(temp_output)
+        
         # Find the number of goals
         num_goals = self.prover.parse_proof_state(temp_output)['goals']
         if num_goals > 0 :
@@ -511,10 +541,10 @@ class Argument:
             #print(match)
             antimatch = goal_pattern_refu.search(temp_output)
             # print("HERE!")
-            # print(match, antimatch)
-            preassumptions = [(match.group(3).strip(), 0, match.group(1).strip())] if match else [(antimatch.group(1).strip()+'_bar', 0, match.group(3).strip())]
+            print(" Match, Antimatch", match, antimatch)
+            preassumptions = [(match.group(3).strip(), 0, match.group(1).strip())] if match else [(antimatch.group(1).strip()+'_bar', 0, antimatch.group(3).strip())]
             i=1
-            print(preassumptions)
+            print(" Preassumptions", preassumptions)
             #Test the while loop, may be buggy.
             while i<num_goals:
                 #print(i)
@@ -534,7 +564,7 @@ class Argument:
                 if plus_match:
                     preassumptions.append((plus_match.group(3).strip(), i, plus_match.group(1).strip()))
                 else:
-                    preassumptions.append((plus_antimatch.group(1).strip()+'_bar', i, plus_antimatch.group(1).strip()))
+                    preassumptions.append((plus_antimatch.group(1).strip()+'_bar', i, plus_antimatch.group(3).strip()))
                 #print(assumptions)
                 i+=1
         assumptions = {}
@@ -776,6 +806,59 @@ class Argument:
         final_argument = self.chain(adapted_argument)
         return final_argument
 
+    def normalize(self, enrich: bool = True):
+        """Compute and cache the normal form without mutating *self.body*."""
+        if not self.executed:
+            self.execute()
+        #if self.normal_body is not None:
+         #   return self.normal_body
+
+        # 1. deep‑copy then reduce
+        red_ast = copy.deepcopy(self.body)
+        red_ast = parser.ArgumentTermReducer().reduce(red_ast)
+
+        # 2. optionally enrich props/types
+        if enrich:
+            red_ast = parser.PropEnrichmentVisitor(assumptions=self.assumptions,
+                                             axiom_props=self.prover.declarations).visit(red_ast)
+
+        # 3. generate textual proof term
+        red_ast = parser.ProofTermGenerationVisitor().visit(red_ast)
+        self.normal_body = red_ast
+        self.normal_form = red_ast.pres
+
+        # 4. natural‑language rendering
+        style = {
+            "argumentation": parser.natural_language_argumentative_rendering,
+            "dialectical":   parser.natural_language_dialectical_rendering,
+            "intuitionistic": parser.natural_language_rendering,
+        }[self.rendering]
+        self.normal_representation = parser.pretty_natural(red_ast, style)
+        return self.normal_body
+
+    def render(self, normalized: bool = False):
+        """Return NL rendering.  If *normalized* is True, ensure normal form
+        is computed first."""
+        if normalized:
+            #if self.normal_representation is None:
+             #   self.normalize()
+            return self.normal_representation
+        else:
+            if self.representation is None:
+                self.execute()          # fills original representation
+            return self.representation
+
+    def reduce(self):
+        """Normalise and print proof term + NL; keep originals intact."""
+        self.normalize()
+        print("— reduction finished —\n")
+        print("Normal‑form proof term:\n", self.normal_form)
+        print("\nNatural language:\n", self.normal_representation)
+
+# ---------------------------------------------------------------------------
+#  CLI helper commands                                                       
+# ---------------------------------------------------------------------------
+
 def setup_prover():
     prover = ProverWrapper('./fsp')
     prover.register_custom_tactic('pop', pop)
@@ -784,6 +867,26 @@ def setup_prover():
     # Declare some booleans to work with.
     prover.send_command('declare A,B,C,D:bool.')
     return prover
+
+
+def reduce_argument_cmd(prover: ProverWrapper, name: str):
+    arg = prover.get_argument(name)
+    if not arg:
+        print(f"Argument '{name}' not found.")
+        return
+    print(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
+    arg.reduce()
+
+def render_argument_cmd(prover: ProverWrapper, name: str, normalized=False):
+    arg = prover.get_argument(name)
+    if not arg:
+        print(f"Argument '{name}' not found.")
+        return
+    if normalized==True:
+        print(f"Rendering argument {arg.name} in normal form.")
+    else:
+        print(f"Rendering argument {arg.name}")
+    print(arg.render(normalized=normalized))
 
 def main() -> None:
     ap = argparse.ArgumentParser(
