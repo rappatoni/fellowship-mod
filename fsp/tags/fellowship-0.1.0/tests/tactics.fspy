@@ -1,0 +1,16 @@
+lk
+
+# This document specifies a bunch of theorems that can be converted into helpful tactics.
+
+declare A,B,C : bool.
+
+start argument implication_elimination B
+cut (A->B) H.
+next.
+elim.
+next.
+axiom.
+
+end argument
+
+
