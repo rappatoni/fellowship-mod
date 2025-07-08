@@ -260,7 +260,6 @@ def execute_script(prover, script_path):
                     elif command.startswith("render-nf "):
                         render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
                     elif command.startswith("render "):
-                        ("Rendering argument:")
                         render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
                     elif command.startswith("normalize "):
                         name = command.split(maxsplit=1)[1]
@@ -318,7 +317,6 @@ def interactive_mode(prover):
                 arg = prover.get_argument(name)
                 if arg: arg.normalize(); print("normal form stored in .normal_form")
                 else:   print(f"Argument '{name}' not found.")
-                return
 
             elif command.startswith('start argument '):
                 # Parse the start argument command
@@ -439,8 +437,6 @@ class Argument:
         self.conclusion = conclusion
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str, attackers : some_list_of_arguments}}
-        #self.assumption_mapping = {} # Dictionary for assumptions. This is redundant. Unify with asssumptions.
-        # self.axiom_props = {}
         self.labelling = False #Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
@@ -797,7 +793,7 @@ class Argument:
             other_argument.execute()
                 # Find if other_argument has an assumption that matches self.conclusion
 
-        matching_assumption = match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
+        matching_assumption = self.match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
         # The adapter 
         alternative_proof_adapter = Argument(self.prover, f'supports_on_{other_argument.assumptions[matching_assumption]["prop"]}', other_argument.assumptions[matching_assumption]["prop"], [f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt1.', f'next.', f'axiom support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt2.', f'next.', f'axiom support.'])
         alternative_proof_adapter.execute()

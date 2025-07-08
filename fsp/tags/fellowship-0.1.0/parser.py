@@ -426,6 +426,35 @@ def _is_affine(varname: str, command: ProofTerm) -> bool:
     if isinstance(command, (Mu, Mutilde)):
         return not _var_occurs(varname, command.term) and not _var_occurs(varname, command.context)
     return False
+
+def _subst(node, name: str, replacement):
+    """Return a **deep‑copied** version of *node* where every **free**
+    occurrence of the variable *name* (i.e. an ``ID``/``DI`` whose *name*
+    equals *name*) is replaced by a deep‑copy of *replacement*.
+
+    The substitution is *capture‑avoiding*: whenever we descend beneath a
+    binder that *re‑binds* the same name – namely λ, µ, or μ̃ – we stop
+    the traversal along that branch.
+    """
+    # Atomic cases -----------------------------------------------------------
+    if isinstance(node, (ID, DI)):
+        return deepcopy(replacement) if node.name == name else deepcopy(node)
+
+    # Binder blocks substitution under shadowing -----------------------------
+    if isinstance(node, Lamda) and node.di.di.name == name:
+        return deepcopy(node)                  # λx. …  — shadowed
+    if isinstance(node, Mu) and node.id.name == name:
+        return deepcopy(node)                  # μx. …  — shadowed
+    if isinstance(node, Mutilde) and node.di.name == name:
+        return deepcopy(node)                  # μ' x. … — shadowed
+
+    # Recursive descent ------------------------------------------------------
+    new_node = deepcopy(node)
+    if hasattr(new_node, 'term') and new_node.term is not None:
+        new_node.term = _subst(new_node.term, name, replacement)
+    if hasattr(new_node, 'context') and new_node.context is not None:
+        new_node.context = _subst(new_node.context, name, replacement)
+    return new_node
     
 class ArgumentTermReducer(ProofTermVisitor):
     """
@@ -505,7 +534,29 @@ class ArgumentTermReducer(ProofTermVisitor):
                 return node
 
         # general μ‑rule --------------------------------------------
-        #if isinstance(node.term, Mu):
+    # ────────────────────────────────────────────────────────────────────
+        # GENERAL µ‑REDUCTION  ⟨ µ x.c  ∥  E ⟩  →  [E/x]c
+        # Pattern in the AST:  node.term  is a *Mu*  (µ x.c)
+        #                      node.context           is  E
+        # After substitution we replace *node* by the command *c* with the
+        # variable occurrences rewritten.  To stay within the current AST
+        # we *mutate* *node* in‑place so that it *becomes* that command
+        # (its *id/prop* remain untouched — this is adequate for our use
+        # cases because outer binders are unaffected by the rewrite).
+        # ────────────────────────────────────────────────────────────────────
+        if isinstance(node.term, Mu):
+            inner = node.term          # µ x.c
+            x     = inner.id.name
+            E     = node.context       # replacement
+
+            # Perform capture‑avoiding substitution inside the *command* c.
+            new_term    = _subst(inner.term,    x, deepcopy(E))
+            new_context = _subst(inner.context, x, deepcopy(E))
+
+            # Splice the substituted command into *node* (drop µ x.).
+            node.term    = new_term
+            node.context = new_context
+            return node
         
         return node
 
