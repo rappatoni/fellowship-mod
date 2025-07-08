@@ -476,13 +476,13 @@ class ArgumentTermReducer(ProofTermVisitor):
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
         # inner positions.
-        node = super().visit_Mu(node)
+        
 
         # λ‑rule ---------------------------------------------------------
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
             lam: Lamda = node.term
             cons: Cons = node.context
-
+            print("Applying Lamda rule")
             v      = cons.term      # the argument v
             E      = cons.context  # the continuation E (might itself be None)
             # Build the new µ'‑binder that will become the *context* part.
@@ -494,9 +494,11 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
+            self.visit_Mu(node)
+            
             return node
 
-         # affine helper --------------------------------------------------
+        # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
             if not (_is_affine(inner_mu.id.name, inner_mu) and
@@ -506,7 +508,9 @@ class ArgumentTermReducer(ProofTermVisitor):
             if not (isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.term, Goal)):
                 return False
             if not isinstance(ctx_mt.context, Mutilde):
-                return node
+                return False
+            if not node.id.name == inner_mu.context.name:
+                return False
             return inner_mu.term.prop == ctx_mt.term.prop
 
         
@@ -514,24 +518,28 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
+            print("Alternative Arguments detected.")
+            if _guards(inner_mu, ctx_mt)==True:
 
-            if not _guards(inner_mu, ctx_mt):
-                return node
+                # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
+                if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
+                    print("Applying defence rule")
+                    # Apply rewrite: μ α .⟨ G || α ⟩
+                    node.term    = deepcopy(inner_mu.term)
+                    node.context = deepcopy(inner_mu.context)  # should be ID α
+                    self.visit_Mu(node)
+                    return node
 
-            # Case 1: ctx_mt.context is a µ or µ̃ with affine binder → throw‑away
-            if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
-                # Apply rewrite: μ α .⟨ G || α ⟩
-                node.term    = deepcopy(inner_mu.term)
-                node.context = deepcopy(inner_mu.context)  # should be ID α
-                return node
+                # Case 2: ctx_mt.context already in normal form (no more redexes we know)
+                # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
+                # matches in that sub‑tree, regard it as normal‑form.
+                if not self._has_next_redex(ctx_mt.context):
+                    print("Applying defeat rule")
+                    node.term    = deepcopy(ctx_mt.term)
+                    node.context = deepcopy(ctx_mt.context)  # t*
+                    self.visit_Mu(node)
+                    return node
 
-            # Case 2: ctx_mt.context already in normal form (no more redexes we know)
-            # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
-            # matches in that sub‑tree, regard it as normal‑form.
-            if not self._has_next_redex(ctx_mt.context):
-                node.term    = deepcopy(inner_mu.term)
-                node.context = deepcopy(ctx_mt.context)  # t*
-                return node
 
         # general μ‑rule --------------------------------------------
     # ────────────────────────────────────────────────────────────────────
@@ -545,6 +553,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         # cases because outer binders are unaffected by the rewrite).
         # ────────────────────────────────────────────────────────────────────
         if isinstance(node.term, Mu):
+            print("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
@@ -556,14 +565,33 @@ class ArgumentTermReducer(ProofTermVisitor):
             # Splice the substituted command into *node* (drop µ x.).
             node.term    = new_term
             node.context = new_context
+            self.visit_Mu(node)
             return node
+        if isinstance(node.context, Mutilde):
+            print("Applying general Mutilde rule")
+            inner = node.context       # µ x.c
+            alpha     = inner.di.name
+            v     = node.term       # replacement
+
+            # Perform capture‑avoiding substitution inside the *command* c.
+            new_term    = _subst(inner.term,    alpha, deepcopy(v))
+            new_context = _subst(inner.context, alpha, deepcopy(v))
+
+            # Splice the substituted command into *node* (drop µ x.).
+            node.term    = new_term
+            node.context = new_context
+            self.visit_Mu(node)
+            return node
+        #node = super().visit_Mu(node)
+
+        node = super().visit_Mu(node)
         
         return node
 
     def visit_Mutilde(self, node: Mutilde):
         # First, normalise the sub‑components so that the rule also fires in
         # inner positions.
-        node = super().visit_Mutilde(node)
+        # node = super().visit_Mutilde(node)
 
         # λ‑rule ---------------------------------------------------------
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
@@ -582,36 +610,81 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
+            self.visit_Mutilde(node)
             return node
 
-        # # TODO: affine μ‑rule --------------------------------------------
-        # if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
-        #     inner_mu: Mu = node.term
-        #     ctx_mt:   Mutilde = node.context
+        # affine helper --------------------------------------------------
+        def _guards(inner_mu: Mu, ctx_mt: Mutilde):
+            # both binders affine in their own commands
+            if not (_is_affine(inner_mu.id.name, inner_mu) and
+                    _is_affine(ctx_mt.di.name,   ctx_mt)):
+                return False
+            # both protect goals with equal prop (we ignore number for now)
+            if not (isinstance(inner_mu.context, Laog) and isinstance(ctx_mt.context, Laog)):
+                return False
+            if not isinstance(inner_mu.term, Mu):
+                return False
+            if not node.di.name == ctx_mt.term.name:
+                return False
+            return inner_mu.context.prop == ctx_mt.context.prop
+        
+        # affine μ'‑rule --------------------------------------------
+        if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
+            inner_mu: Mu = node.term
+            ctx_mt:   Mutilde = node.context
+            print("Alternative Counterarguments detected.")
+            if _guards(inner_mu, ctx_mt)==True:
 
-        #     #same_var = inner_mu.id.name == ctx_mt.di.name
-        #     #if not same_var:
-        #     #    return node
-        #     var_term = inner_mu.id.name
-        #     var_context = ctx_mt.di.name
+                # Case 1: inner_mu.term is µ̃ with affine binder → throw‑away
+                if _is_affine(inner_mu.term.id.name, inner_mu.term):
+                    print("Applying Mutilde defence rule")
+                    # Apply rewrite: μ α .⟨ G || α ⟩
+                    node.term    = deepcopy(ctx_mt.term)
+                    node.context = deepcopy(ctx_mt.context)  # should be ID α
+                    self.visit_Mutilde(node)
+                    return node
 
-        #     if not (_is_affine(var_term, inner_mu) and _is_affine(var_term, ctx_mt)):
-        #         return node
+                # Case 2: ctx_mt.context already in normal form (no more redexes we know)
+                # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
+                # matches in that sub‑tree, regard it as normal‑form.
+                if not self._has_next_redex(inner_mu.term):
+                    print("Applying Mutilde defeat rule")
+                    node.term    = deepcopy(inner_mu.term)
+                    node.context = deepcopy(inner_mu.context)  # t*
+                    self.visit_Mutilde(node)
+                    return node
 
-        #     # same goal guard.
-        #     if not (isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.term, Goal)):
-        #         return node
-        #     if inner_mu.term.prop != ctx_mt.term.prop:
-        #         return node
-        #     if not isinstance(ctx_mt.context, Mutilde):
-        #         return node
-        #     #if ctx_mt.context.id.name != var:
-        #         #return node
+        if isinstance(node.term, Mu):
+            print("Applying general Mu reduction rule")
+            inner = node.term          # µ x.c
+            x     = inner.id.name
+            E     = node.context       # replacement
 
-        #     # Apply rewrite: μ α .⟨ G || α ⟩
-        #     node.term    = deepcopy(inner_mu.term)
-        #     node.context = deepcopy(inner_mu.context)  # should be ID α
-        #     return node
+            # Perform capture‑avoiding substitution inside the *command* c.
+            new_term    = _subst(inner.term,    x, deepcopy(E))
+            new_context = _subst(inner.context, x, deepcopy(E))
+
+            # Splice the substituted command into *node* (drop µ x.).
+            node.term    = new_term
+            node.context = new_context
+            self.visit_Mutilde(node)
+            return node
+
+        if isinstance(node.context, Mutilde):
+            print("Applying general Mutilde rule")
+            inner = node.context       # µ x.c
+            alpha     = inner.di.name
+            v     = node.term       # replacement
+            # Perform capture‑avoiding substitution inside the *command* c.
+            new_term    = _subst(inner.term,    alpha, deepcopy(v))
+            new_context = _subst(inner.context, alpha, deepcopy(v))
+
+            # Splice the substituted command into *node* (drop µ x.).
+            node.term    = new_term
+            node.context = new_context
+            self.visit_Mutilde(node)
+            return node
+        node = super().visit_Mutilde(node)
         
         return node
 
@@ -621,11 +694,14 @@ class ArgumentTermReducer(ProofTermVisitor):
             # λ‑redex?
             if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
                 return True
-            # affine pattern 1 or 2?
-            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
+            # any mu or mutilde pattern?
+            if isinstance(n.term, Mu) or isinstance(n.context, Mutilde):
                 return True
         if isinstance(n, Mutilde):
             if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
+                return True
+            # any mu or mutilde pattern?
+            if isinstance(n.term, Mu) or isinstance(n.context, Mutilde):
                 return True
         # recurse quickly
         for child in getattr(n, 'term', None), getattr(n, 'context', None):
@@ -1041,6 +1117,10 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Goal(self, node : Goal):
         node = super().visit_Goal(node)
+        node.pres = f'{node.number}:{node.prop}'
+        return node
+    def visit_Laog(self, node : Laog):
+        node = super().visit_Laog(node)
         node.pres = f'{node.number}:{node.prop}'
         return node
 

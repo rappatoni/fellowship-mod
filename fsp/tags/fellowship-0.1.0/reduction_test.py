@@ -41,16 +41,15 @@ def lambda_rule_test():
             # --- structural assertions -------------------------------------
                 assert isinstance(result, Mu), "Root must remain a Mu node"
                 # term part becomes the argument "y"
-                assert isinstance(result.term, DI) and result.term.name == "y", (
-                    f"Expected term to be ID 'y', got {type(result.term).__name__}:{getattr(result.term, 'name', '-')}")
+                assert isinstance(result.term, DI) and result.term.name == "t", (
+                    f"Expected term to be DI 't', got {type(result.term).__name__}:{getattr(result.term, 'name', '-')}")
 
                 # context part becomes a fresh µ' binder
-                assert isinstance(result.context, Mutilde), "Context must be a Mutilde after reduction"
+                assert isinstance(result.context, ID), "Context must be an ID after reduction"
                 ctx = result.context
-                assert ctx.di.name == "x", "µ' must bind the variable 'x'"
-                assert ctx.prop == "A",  "Binder should keep original hypothesis type 'A'"
-                assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
-                assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
+                assert ctx.name == "thesis",  "thesis gets substituted in by mu' rule"
+                #assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
+                #assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
             counter += 1
             print(counter)
         print("LAMBDA RULE REDUCTION TEST PASSED\n")

@@ -8,6 +8,7 @@ from reduction_test import *
 from affine_test import *
 from non_affine_test import *
 from mu_reduction_test import *
+from mutilde_reduction_test import *
 
 # Tests
 # TODO: refactor this using a standard test library such as unittest.
@@ -1503,7 +1504,8 @@ if __name__ == '__main__':
         'lambda_rule_test': lambda_rule_test,
         'affine_mu_rule_test' : affine_mu_rule_test,
         'affine_mu_rule_nonaffine_test' : affine_mu_rule_nonaffine_test,
-        'mu_general_rule_test': mu_general_rule_test
+        'mu_general_rule_test': mu_general_rule_test,
+        'mutilde_affine_defence_test' : mutilde_affine_defence_test
     }
     # Parse keyword arguments if provided
     kwargs_dict = {}
