@@ -769,7 +769,7 @@ class Argument:
 
         #invert the conclusion:
         issue = self.conclusion.strip('~')
-        adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut (~{issue}) undercut.', f'next.', f'elim.'])
+                adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
         adapter_arg.execute()
         adapted_argument = adapter_arg.chain(other_argument)
         print("ADAPTED")
