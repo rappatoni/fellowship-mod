@@ -705,6 +705,7 @@ class Argument:
             #print("GOAL INDEX")
             #print(goal_index)
             # The prover starts at the first goal (index 0), so we need to move to goal_index
+            #Bug! The fsp " next"  command appears to be buggy and behaves in non-reproducable ways across arguments. The same sequence of instructions therefore does not always yield the same proof. Have to reimplement this in a principled way to replace this hack. Chain will become "Graft" and act on Argument bodies (ASTs) avoiding any ambiguity.
             if goal_index > 0:
                 combined_instructions.extend(['next'] * goal_index)
 
@@ -771,6 +772,7 @@ class Argument:
         issue = self.conclusion.strip('~')
                 adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
         adapter_arg.execute()
+        #The chain method is brittle and relies on the buggy "next" command of fsp. It needs reimplementation based on grafts on the argument body.
         adapted_argument = adapter_arg.chain(other_argument)
         print("ADAPTED")
         print(adapted_argument)
