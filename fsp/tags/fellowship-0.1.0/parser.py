@@ -183,16 +183,16 @@ class Cons(ProofTerm):
         # self.prop = term.prop + "->"+context.prop if term.prop and context.prop else None
 
 class Goal(ProofTerm):
-    def __init__(self, number):
+    def __init__(self, number, prop = None):
         self.number = number
-        self.prop = None
+        self.prop = prop
         self.pres = None
         self.flag = None
 
 class Laog(ProofTerm):
-    def __init__(self, number):
+    def __init__(self, number, prop = None):
         self.number = number
-        self.prop = None
+        self.prop = prop
         self.pres = None
         self.flag = None
 
@@ -1195,6 +1195,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             else:
                 self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
         else:
+            print("Here", node, node.di.name, node.contr, node.prop)
             raise Exception("Could not identify cut proposition.")
 
         

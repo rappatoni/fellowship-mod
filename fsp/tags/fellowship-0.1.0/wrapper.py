@@ -459,8 +459,10 @@ class Argument:
             if self.body == None:
                 raise Exception("Argument instructions and body missing.")       
             else:
+                self.enrich_props()
                 generator = parser.InstructionsGenerationVisitor()
-                self.instructions = generator.return_instructions(body)
+                print("GOT HERE")
+                self.instructions = generator.return_instructions(self.body)
         # Start the theorem
         output = self.prover.send_command(f'theorem {self.name} : ({self.conclusion}).')
         #print(output)
@@ -800,6 +802,7 @@ class Argument:
         return f"{concl}_bar"
 
     def focussed_undercut(self, other_argument, *, on:str = "GoFigure"):
+        from parser import Mu, Mutilde, Goal, Laog, ID, DI
         # This is a focussed, backwards reasoning version of undercut where stashing of the attacked argument is not necessary.
         if on is "GoFigure":
             on = self.resolve_attacked_assumption()
@@ -815,10 +818,24 @@ class Argument:
                 attacked_assumption = key
                 break
         issue = other_argument.assumptions[attacked_assumption]["prop"]
-        print("issue", issue)
+ 
         if issue.endswith('_bar'):
-            issue[:-4]         
-        adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
+            issue[:-4]
+            adaptercontext = Mutilde(DI("aff", issue), issue, Goal(2,issue), Laog(3,issue))
+            adapterterm = Mu(ID("aff", issue), issue, Goal(1, issue), ID("alt",issue))
+            adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
+
+        else:
+            
+            adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
+            adapterterm = Mu(ID("aff", issue), issue, Goal("1"), ID("alt",issue))
+            adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
+            adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
+            print("Adding body")
+            adapter_arg.body = adapterbody
+            #adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
+        #else: 
+            #adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
         adapter_arg.execute()
         adapted_argument = adapter_arg.chain(other_argument)
         final_argument = self.chain(adapted_argument)
