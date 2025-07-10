@@ -635,11 +635,6 @@ class Argument:
             if self.assumptions[key]["label"][0]=="OUT":
                 self.assumptions[key]["attackers"] = "Sth"
         return
-
-    def generate_cycle(self):
-        """ Converts a self-attacking argument into a cycle (for an arbitrary number of cycles, uses the first independent cycles)."""
-        # Independent vs dependent cycles: a contradiction corresponds to an independent cycle, i.e. the contrary/negation of which assumption can be proven initially? The contradiction may then be used to introduce arbitrary additional cycles. These are dependent cycles. Use type of contradiction to identify independent contradictions.
-        pass
          
     def pop_arg(self, subargument):
         """ Stash the current argument and pop a subargument. TODO: implement blocking."""
@@ -686,51 +681,29 @@ class Argument:
             self.execute()
         if not other_argument.executed:
             other_argument.execute()
-        # Find if other_argument has an assumption that matches self.conclusion
-        matching_assumption = self.match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
-        print(matching_assumption)
-        if matching_assumption is not None:
-            # Combine the instructions and navigate to the correct goal
-            combined_name = f"{self.name}_{other_argument.name}"
-            combined_conclusion = other_argument.conclusion
-            #combined_instructions = []
-            combined_body = parser.graft_single(other_argument.body, matching_assumption, self.body)
-            enricher = parser.PropEnrichmentVisitor()
-            ptgenerator = parser.ProofTermGenerationVisitor()
-            generator = parser.InstructionsGenerationVisitor()
-            combined_body = ptgenerator.visit(enricher.visit(combined_body))
-            combined_instructions = generator.return_instructions(combined_body)
-            # First, execute other_argument.instructions
-            #combined_instructions.extend(other_argument.instructions)
-            print(" HERE TOO")
-            # Then, execute self_argument.instructions, but first navigate to the correct goal
-            # Use 'next' commands to navigate to the goal at matching_assumption[1]
-            #goal_index = other_argument.assumptions[matching_assumption]["index"]
-            #num_goals = len(other_argument.assumptions)
-            #print("GOAL INDEX")
-            #print(goal_index)
-            # The prover starts at the first goal (index 0), so we need to move to goal_index
-            #Bug! The fsp " next"  command appears to be buggy and behaves in non-reproducable ways across arguments. The same sequence of instructions therefore does not always yield the same proof. Have to reimplement this in a principled way to replace this hack. Chain will become "Graft" and act on Argument bodies (ASTs) avoiding any ambiguity.
-            #if goal_index > 0:
-            #    combined_instructions.extend(['next'] * goal_index)
-
-            # Now append own instructions 
-            #combined_instructions.extend(self.instructions)
-
-            # Optionally close available goals using assumptions propagated from other to self:
-            if close==True:
-                # This is an ugly and brittle hack. Will figute out something better.
-                combined_instructions.extend([f'axiom.', f'next.']*(len(self.assumptions)+2))
-            # Create a new Argument instance
-            combined_argument = Argument(self.prover, combined_name, combined_conclusion, combined_instructions)
-            # Execute the combined argument
-            combined_argument.execute()
-            return combined_argument
-        else:
-            print(f"Cannot chain arguments '{self.name}' and '{other_argument.name}' because the conclusions and assumptions do not match.")
-            return None
+        # Combine the instructions and navigate to the correct goal
+        combined_name = f"{self.name}_{other_argument.name}"
+        combined_conclusion = other_argument.conclusion
+        #combined_instructions = []
+        combined_body = parser.graft_uniform(other_argument.body,  self.body)
+        enricher = parser.PropEnrichmentVisitor()
+        ptgenerator = parser.ProofTermGenerationVisitor()
+        generator = parser.InstructionsGenerationVisitor()
+        combined_body = ptgenerator.visit(enricher.visit(combined_body))
+        combined_instructions = generator.return_instructions(combined_body)
+        # Optionally close available goals using assumptions propagated from other to self:
+        if close==True:
+            # This is an ugly and brittle hack. Will figute out something better.
+            combined_instructions.extend([f'axiom.', f'next.']*(len(self.assumptions)+2))
+        # Create a new Argument instance
+        combined_argument = Argument(self.prover, combined_name, combined_conclusion, combined_instructions)
+        # Execute the combined argument
+        combined_argument.execute()
+        
+        return combined_argument
 
     def undercut(self, other_argument):
+        print ("Deprecated!")
         # Forward, exploratory version of undercut were the attacked argument is stashed.
         if not self.executed:
             self.execute()
@@ -758,29 +731,96 @@ class Argument:
         final_argument = self.chain(adapted_argument, close=True)
         return final_argument
 
+    def resolve_attacked_assumption(self) -> str:
+        """
+        Decide which assumption an argument with conclusion *self.conclusion*
+        is meant to attack.
 
-    def focussed_undercut(self, other_argument):
+        There are two cases:
+
+        1.  **Pure outer negation** – the whole conclusion is a negation
+            “~φ” (or “¬φ”).  In that case the attacked assumption is *φ*.
+
+        2.  **Anything else**       – the conclusion is *not* merely a
+            top-level negation (examples:  “φ”,  “~φ -> ψ”,  “ψ ∧ ¬φ”, …).
+            In that case we follow the wrapper convention and attack the
+            *barred* form, i.e. we return “φ_bar”.
+
+        Precedence is handled in a minimal but robust way: we only regard
+        the negation as *outer* if after stripping the leading ‘~’/‘¬’
+        **no binary connective appears at the top level**.
+        """
+
+        def _strip_parens(s: str) -> str:
+            """Remove one pair of *outer* parentheses ( ( … ) )."""
+            while s.startswith('(') and s.endswith(')'):
+                depth = 0
+                balanced = True
+                for i, ch in enumerate(s):
+                    if ch == '(':
+                        depth += 1
+                    elif ch == ')':
+                        depth -= 1
+                        if depth == 0 and i != len(s) - 1:
+                            balanced = False
+                            break
+                if balanced:
+                    s = s[1:-1].strip()
+                else:
+                    break
+            return s
+
+        def _has_top_level_binary(s: str) -> bool:
+            """Is there a ‘->’ (or other binary op) at paren-depth 0?"""
+            depth = 0
+            i = 0
+            while i < len(s) - 1:
+                ch = s[i]
+                if ch == '(':
+                    depth += 1
+                elif ch == ')':
+                    depth -= 1
+                elif depth == 0 and s[i:i+2] == '->':
+                    return True
+                i += 1
+            return False
+
+        concl = self.conclusion.strip()
+        concl = _strip_parens(concl)
+
+        # Case 1 – try to recognise an outer ‘~’ / ‘¬’
+        if concl.startswith(('~', '¬')):
+            inner = concl[1:].strip()
+            inner = _strip_parens(inner)
+            if not _has_top_level_binary(inner):
+                # genuine outer negation
+                return inner
+
+        # Case 2 – default: attack barred form
+        return f"{concl}_bar"
+
+    def focussed_undercut(self, other_argument, *, on:str = "GoFigure"):
         # This is a focussed, backwards reasoning version of undercut where stashing of the attacked argument is not necessary.
+        if on is "GoFigure":
+            on = self.resolve_attacked_assumption()
+            print("ON", on)
         if not self.executed:
             self.execute()
         if not other_argument.executed:
             other_argument.execute()
-        #Find the assumption that is to be attacked. This does not currently account for multiple assumptions of the same type.
+        #Find the assumption that is to be attacked. The uniiform graft method is used, so it does not matter which assumption is chosen if there are multiple ones with the same prop.
         attacked_assumption = None
         for key in other_argument.assumptions:
-            if self.conclusion.strip('~') in other_argument.assumptions[key]["prop"]:
+            if on in other_argument.assumptions[key]["prop"]:
                 attacked_assumption = key
                 break
-            #The conclusion of the new argument will be the conclusion of the attacked argument.
-
-        #invert the conclusion:
-        issue = self.conclusion.strip('~')
+        issue = other_argument.assumptions[attacked_assumption]["prop"]
+        print("issue", issue)
+        if issue.endswith('_bar'):
+            issue[:-4]         
         adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
         adapter_arg.execute()
-        #The chain method is brittle and relies on the buggy "next" command of fsp. It needs reimplementation based on grafts on the argument body.
         adapted_argument = adapter_arg.chain(other_argument)
-        print("ADAPTED")
-        print(adapted_argument)
         final_argument = self.chain(adapted_argument)
         return final_argument
     
