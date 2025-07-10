@@ -693,24 +693,29 @@ class Argument:
             # Combine the instructions and navigate to the correct goal
             combined_name = f"{self.name}_{other_argument.name}"
             combined_conclusion = other_argument.conclusion
-            combined_instructions = []
-
+            #combined_instructions = []
+            combined_body = parser.graft_single(other_argument.body, matching_assumption, self.body)
+            enricher = parser.PropEnrichmentVisitor()
+            ptgenerator = parser.ProofTermGenerationVisitor()
+            generator = parser.InstructionsGenerationVisitor()
+            combined_body = ptgenerator.visit(enricher.visit(combined_body))
+            combined_instructions = generator.return_instructions(combined_body)
             # First, execute other_argument.instructions
-            combined_instructions.extend(other_argument.instructions)
+            #combined_instructions.extend(other_argument.instructions)
             print(" HERE TOO")
             # Then, execute self_argument.instructions, but first navigate to the correct goal
             # Use 'next' commands to navigate to the goal at matching_assumption[1]
-            goal_index = other_argument.assumptions[matching_assumption]["index"]
-            num_goals = len(other_argument.assumptions)
+            #goal_index = other_argument.assumptions[matching_assumption]["index"]
+            #num_goals = len(other_argument.assumptions)
             #print("GOAL INDEX")
             #print(goal_index)
             # The prover starts at the first goal (index 0), so we need to move to goal_index
             #Bug! The fsp " next"  command appears to be buggy and behaves in non-reproducable ways across arguments. The same sequence of instructions therefore does not always yield the same proof. Have to reimplement this in a principled way to replace this hack. Chain will become "Graft" and act on Argument bodies (ASTs) avoiding any ambiguity.
-            if goal_index > 0:
-                combined_instructions.extend(['next'] * goal_index)
+            #if goal_index > 0:
+            #    combined_instructions.extend(['next'] * goal_index)
 
             # Now append own instructions 
-            combined_instructions.extend(self.instructions)
+            #combined_instructions.extend(self.instructions)
 
             # Optionally close available goals using assumptions propagated from other to self:
             if close==True:

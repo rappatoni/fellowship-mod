@@ -503,14 +503,20 @@ class ArgumentTermReducer(ProofTermVisitor):
             # both binders affine in their own commands
             if not (_is_affine(inner_mu.id.name, inner_mu) and
                     _is_affine(ctx_mt.di.name,   ctx_mt)):
+                print("A")
                 return False
             # both protect goals with equal prop (we ignore number for now)
-            if not (isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.term, Goal)):
+            if not isinstance(inner_mu.term, Goal) and (isinstance(ctx_mt.context, Goal) or isinstance(ctx_mt.context.context.term, Goal)):
+                print("B")
                 return False
             if not isinstance(ctx_mt.context, Mutilde):
+                print("C")
                 return False
             if not node.id.name == inner_mu.context.name:
+                print("D")
                 return False
+            if isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.context.context.term, Goal):
+                return inner_mu.term.prop == ctx_mt.context.context.term.prop
             return inner_mu.term.prop == ctx_mt.term.prop
 
         
@@ -519,9 +525,11 @@ class ArgumentTermReducer(ProofTermVisitor):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
             print("Alternative Arguments detected.")
+            print("Guards", _guards(inner_mu, ctx_mt))
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
+                print("Case 1?", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
                 if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
                     print("Applying defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
@@ -636,6 +644,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: inner_mu.term is µ̃ with affine binder → throw‑away
+                print("Case 1?", _is_affine(inner_mu.term.id.name, inner_mu.term))
                 if _is_affine(inner_mu.term.id.name, inner_mu.term):
                     print("Applying Mutilde defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
@@ -647,6 +656,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Case 2: ctx_mt.context already in normal form (no more redexes we know)
                 # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
                 # matches in that sub‑tree, regard it as normal‑form.
+                print("Case 2?",  not self._has_next_redex(inner_mu.term))
                 if not self._has_next_redex(inner_mu.term):
                     print("Applying Mutilde defeat rule")
                     node.term    = deepcopy(inner_mu.term)
@@ -709,6 +719,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 return True
         return False
 
+
+
+    
 class Rendering_Semantics:
     def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, ID, DI):
         self.indentation = indentation
@@ -1106,7 +1119,6 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Lamda(self, node : Lamda):
         node = super().visit_Lamda(node)
-        print("lamdaprop", node.di.prop)
         node.pres = f'λ{node.di.di.name}:{node.di.prop}.{node.term.pres}'
         return node
 
@@ -1243,3 +1255,228 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
     def visit_unhandled(self, node):
         raise Exception("Unhandled node type: {type(node)}")
         return node
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Graft operator
+#     • *graft_single*   — replace one specific open goal ?k / !k having prop P
+#     • *graft_uniform*  — replace **all** open goals / laogs whose prop is P
+#
+#  Capturing semantics
+#  -------------------
+#  When we splice an argument *A* (its proof‑term AST) in place of a Goal or
+#  Laog that sits underneath binders introducing variables
+#
+#        x₁:P₁  …  xₘ:Pₘ     (μ‑IDs capture **Laogs** )
+#        y₁:Q₁  …  yₙ:Qₙ     (λ / μ̃‑DIs capture **Goals** )
+#
+#  then **inside the clone of A** any *open* Goal whose proposition is some Qⱼ is
+#  replaced by the DI‑variable yⱼ, and any *open* Laog whose proposition equals
+#  Pᵢ **or Pᵢ_bar** (wrapper convention) is replaced by the ID‑variable xᵢ.
+# ────────────────────────────────────────────────────────────────────────────────
+
+#__all__ = ["graft_single", "graft_uniform"]
+
+# ---------------------------------------------------------------------------
+#  Helper – capture‑aware substitution of Goals / Laogs by variables
+# ---------------------------------------------------------------------------
+
+class _CapturingSubst(ProofTermVisitor):
+    """Replace captured Goals / Laogs by the corresponding variable."""
+
+    def __init__(self, *, goal_map: dict[str, str], laog_map: dict[str, str]):
+        # prop → DI‑var  /  prop → ID‑var
+        self.goal_map = goal_map
+        self.laog_map = laog_map
+
+    # generic traversal -------------------------------------------------
+    def visit(self, node):
+        if node is None:
+            return None
+        if isinstance(node, Goal):
+            return self._rewrite_goal(node)
+        if isinstance(node, Laog):
+            return self._rewrite_laog(node)
+        new_node = deepcopy(node)
+        if hasattr(node, 'term') and node.term is not None:
+            new_node.term = self.visit(node.term)
+        if hasattr(node, 'context') and node.context is not None:
+            new_node.context = self.visit(node.context)
+        return new_node
+
+    # leaves ------------------------------------------------------------
+    def _rewrite_goal(self, node: Goal):
+        print("Goal Map", self.goal_map)
+        var = self.goal_map.get(node.prop)
+        return DI(var, node.prop) if var is not None else deepcopy(node)
+
+    def _rewrite_laog(self, node: Laog):
+        print("Laog Map", self.laog_map)
+        var = self.laog_map.get(node.prop)
+        return ID(var, node.prop) if var is not None else deepcopy(node)
+
+# ---------------------------------------------------------------------------
+#  Helper – traversal that performs the grafting itself
+# ---------------------------------------------------------------------------
+
+class _GraftVisitor(ProofTermVisitor):
+    """Walk *body_B* and replace matching Goal/Laog by *replacement_ast*."""
+
+    def __init__(self, *, replacement_ast, target_prop: str,
+                 target_number: str | None, target_is_goal: bool):
+        self.replacement_proto = deepcopy(replacement_ast)
+        self.target_prop   = target_prop
+        self.target_number = target_number       # None ⇒ uniform graft
+        self.target_is_goal = target_is_goal
+        # Binder stacks --------------------------------------------------
+        self.id_stack: list[tuple[str, str]] = []   # μ‑binders (Laog)
+        self.di_stack: list[tuple[str, str]] = []   # λ / μ̃ binders (Goal)
+
+    # binder helpers ----------------------------------------------------
+    def _push_id(self, name: str, prop: str):
+        self.id_stack.append((name, prop))
+    def _pop_id(self):
+        self.id_stack.pop()
+    def _push_di(self, name: str, prop: str):
+        self.di_stack.append((name, prop))
+    def _pop_di(self):
+        self.di_stack.pop()
+
+    # traversal ---------------------------------------------------------
+    def visit(self, node):
+        if node is None:
+            return None
+        if isinstance(node, Goal):
+            return self._maybe_graft(node, is_goal=True)
+        if isinstance(node, Laog):
+            return self._maybe_graft(node, is_goal=False)
+
+        if isinstance(node, Mu):               # ID‑binder (captures Laog)
+            self._push_id(node.id.name, node.prop)
+            new = deepcopy(node)
+            new.term    = self.visit(node.term)
+            new.context = self.visit(node.context)
+            self._pop_id()
+            return new
+
+        if isinstance(node, (Mutilde, Lamda)):
+            varname = node.di.name if isinstance(node, Mutilde) else node.di.di.name
+            varprop = node.prop  if isinstance(node, Mutilde) else node.di.prop
+            self._push_di(varname, varprop)
+            new = deepcopy(node)
+            new.term = self.visit(node.term)
+            if hasattr(node, 'context'):
+                new.context = self.visit(node.context)
+            self._pop_di()
+            return new
+
+        if isinstance(node, Cons):
+            new = deepcopy(node)
+            new.term    = self.visit(node.term)
+            new.context = self.visit(node.context)
+            return new
+
+        return deepcopy(node)
+
+    # ------------------------------------------------------------------
+    def _make_maps(self):
+        goal_map = {prop: name for name, prop in reversed(self.di_stack)}
+        laog_map = {}
+        for name, prop in reversed(self.id_stack):
+            laog_map[prop] = name
+            laog_map[f"{prop}_bar"] = name
+        return goal_map, laog_map
+
+    def _maybe_graft(self, node, *, is_goal: bool):
+        # wrong kind? -> leave untouched
+        if is_goal != self.target_is_goal:
+            return deepcopy(node)
+        # proposition must match
+        if node.prop != self.target_prop:
+            return deepcopy(node)
+        # single‑site mode: number must line up
+        if self.target_number is not None and node.number.strip() != self.target_number:
+            return deepcopy(node)
+
+        goal_map, laog_map = self._make_maps()
+        subst   = _CapturingSubst(goal_map=goal_map, laog_map=laog_map)
+        grafted = subst.visit(deepcopy(self.replacement_proto))
+        return grafted
+
+# ---------------------------------------------------------------------------
+#  Utilities
+# ---------------------------------------------------------------------------
+
+def _find_target_info(ast, number: str):
+    """Locate ?number / !number in *ast* – return (prop, is_goal)."""
+    res = {'prop': None, 'kind': None}
+    class _Find(ProofTermVisitor):
+        def visit_Goal(self, n):
+            if n.number.strip() == number:
+                res['prop'], res['kind'] = n.prop, 'goal'
+            return n
+        def visit_Laog(self, n):
+            if n.number.strip() == number:
+                res['prop'], res['kind'] = n.prop, 'laog'
+            return n
+    _Find().visit(ast)
+    if res['prop'] is None:
+        return None, None
+    return res['prop'], (res['kind'] == 'goal')
+
+
+def _check_conclusion_matches(repl_ast, *, target_is_goal: bool, target_prop: str):
+    """Ensure *repl_ast*’s root binder fits the Goal/Laog it replaces."""
+    if isinstance(repl_ast, Mu):
+        root_kind, root_prop = 'mu', repl_ast.prop
+    elif isinstance(repl_ast, Mutilde):
+        root_kind, root_prop = 'mutilde', repl_ast.prop
+    else:
+        raise TypeError("replacement AST must start with Mu or Mutilde binder")
+
+    if target_is_goal:
+        if root_kind != 'mu' or root_prop != target_prop:
+            raise TypeError("Goal expects Mu‑binder with matching prop")
+    else:
+        plain_target = target_prop.rstrip("_bar")
+        if root_kind != 'mutilde' or root_prop.rstrip("_bar") != plain_target:
+            raise TypeError("Laog expects Mutilde‑binder with matching prop")
+
+# ---------------------------------------------------------------------------
+#  Public API functions
+# ---------------------------------------------------------------------------
+
+def graft_single(body_B, goal_number: str, body_A):
+    """Replace the unique Goal/Laog *goal_number* in *body_B* by *body_A*."""
+    tgt_prop, is_goal = _find_target_info(body_B, goal_number)
+    if tgt_prop is None:
+        raise ValueError(f"no Goal/Laog numbered {goal_number} found")
+
+    # type‑check replacement
+    _check_conclusion_matches(body_A, target_is_goal=is_goal, target_prop=tgt_prop)
+
+    visitor = _GraftVisitor(replacement_ast=body_A,
+                            target_prop=tgt_prop,
+                            target_number=goal_number,
+                            target_is_goal=is_goal)
+    return visitor.visit(body_B)
+
+
+def graft_uniform(body_B, body_A):
+    """Uniform graft: replace **all** Goals/Laogs with the conclusion of *A*."""
+
+    # determine conclusion of A from its *root* binder
+    if isinstance(body_A, Mu):
+        concl_prop      = body_A.prop
+        target_is_goal  = True      # replaces Goals
+    elif isinstance(body_A, Mutilde):
+        concl_prop      = body_A.prop.rstrip("_bar")
+        target_is_goal  = False     # replaces Laogs
+    else:
+        raise TypeError("argument A must start with Mu or Mutilde binder")
+
+    # No extra type‑check needed – we built criteria from A itself.
+    visitor = _GraftVisitor(replacement_ast=body_A,
+                            target_prop=concl_prop,
+                            target_number=None,
+                            target_is_goal=target_is_goal)
+    return visitor.visit(body_B)
