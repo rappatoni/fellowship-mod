@@ -260,11 +260,15 @@ def focussed_undercut_test(reduce:bool=False):
             name='argA',
             conclusion='~A',
             instructions=[
-                'cut (C-> ~A) Fresh2',
+                'elim.',
+                'cut (~A) H4.',
+                'cut (C-> ~A) Fresh2.',
                 'axiom r2.',
                 'elim.',
                 'next.',
-                'axiom.'
+                'axiom.',
+                'elim.',
+                'axiom H4.'
             ]
         )
         # Argument B: Proves B assuming A
@@ -299,7 +303,7 @@ def focussed_undercut_test(reduce:bool=False):
         return final_arg
     except Exception as e:
         print("FOCUSSED UNDERCUT TEST FAILED WITH EXCEPTION:")
-        print(e)
+        print(type(e).__name__,e)
         prover.close()
         return
     

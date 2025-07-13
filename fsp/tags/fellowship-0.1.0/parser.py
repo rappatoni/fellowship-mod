@@ -316,8 +316,8 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_Laog(node)
         laog_num = node.number.strip()
         if self.assumptions.get(laog_num):
-            print(f'Enriching Laog with type {self.assumptions[laog_num]["prop"]}')
-            node.prop = self.assumptions[laog_num]["prop"]
+            print(f'Enriching Laog with type {self.assumptions[laog_num]["prop"][:-4]}')
+            node.prop = self.assumptions[laog_num]["prop"][:-4]
         return node
 
     def visit_ID(self, node: ID):
@@ -347,12 +347,12 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_DI(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")}')
+                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")} based on declared axiom {node.name}')
                 node.prop = self.axiom_props[node.name].strip("()")
             else:
                 print(f'Axiom {node.name} already enriched with type {node.prop}')
         elif node.name in self.bound_vars and node.prop is None:
-            print(f'Enriching bound variable with type {self.bound_vars[node.name]}')
+            print(f'Enriching bound variable with type {self.bound_vars[node.name]} based on bound variable {node.name}')
             node.prop = self.bound_vars[node.name]
             if node.prop.startswith("~") or node.prop.startswith("¬"):
                 node.flag = "bound_negation"
@@ -384,7 +384,6 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         return node
 
     def visit_Mu(self, node: Mu):
-        
         self.bound_vars[node.id.name]=node.prop
         node = super().visit_Mu(node)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
@@ -1464,14 +1463,16 @@ def graft_single(body_B, goal_number: str, body_A):
 
 def graft_uniform(body_B, body_A):
     """Uniform graft: replace **all** Goals/Laogs with the conclusion of *A*."""
-
+    print(f"Uniformly grafting {body_A} on {body_B} ")
     # determine conclusion of A from its *root* binder
     if isinstance(body_A, Mu):
         concl_prop      = body_A.prop
         target_is_goal  = True      # replaces Goals
     elif isinstance(body_A, Mutilde):
-        concl_prop      = body_A.prop.rstrip("_bar")
+        concl_prop      = body_A.prop
         target_is_goal  = False     # replaces Laogs
+        print(f"Target now {concl_prop} is LAOG")
+        print("Target found", _find_target_info(body_B, "1.2.1.2.2" ))
     else:
         raise TypeError("argument A must start with Mu or Mutilde binder")
 
@@ -1481,3 +1482,63 @@ def graft_uniform(body_B, body_A):
                             target_number=None,
                             target_is_goal=target_is_goal)
     return visitor.visit(body_B)
+
+
+class NegIntroRewriter(ProofTermVisitor):
+    """
+    Collapse the pattern
+    
+        μ thesis:¬A . ⟨ μ H1:¬A . ⟨ λ H2:A . μ H3:⊥ . ⟨ H2 ∥ ?k ⟩ ∥ H1 ⟩ ∥ thesis ⟩
+    
+    to the command that sat in the Laog/Goal “?k”.
+
+    *If the pattern is not encountered*, we emit a **warnings.warn** and leave the
+    AST untouched; the caller can inspect the ``changed`` attribute afterwards.
+    """
+    def __init__(self):
+        self.changed = False          # set to True when a rewrite fires
+
+    # generic traversal -------------------------------------------------
+    def visit(self, node):
+        print(f"Rewriting negation {node} to counterargument")
+        if node is None:
+            return None
+        if isinstance(node, Mu) and node.id.name == "thesis" and node.prop.startswith("¬"):
+            body = self._match_neg_intro(node)
+            if body is not None:
+                self.changed = True
+                return deepcopy(body)         # splice B in
+        # default: deep-copy & recurse
+        new = deepcopy(node)
+        for attr in ("term", "context"):
+            if hasattr(node, attr) and getattr(node, attr) is not None:
+                setattr(new, attr, self.visit(getattr(node, attr)))
+        if isinstance(node, Lamda):            # Lamda only has .term
+            new.term = self.visit(node.term)
+        return new
+
+    # try to recognise the concrete pattern -----------------------------
+    def _match_neg_intro(self, thesis_mu: Mu):
+        """
+        Return the sub-command *B* if the pattern matches, else *None*.
+        Only syntactic checks – props & variable names – are done.
+        """
+        print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
+        inner_mu = thesis_mu.term
+        if not (isinstance(inner_mu, Mu) and inner_mu.prop == thesis_mu.prop):
+            return None
+        lam = inner_mu.term
+        if not isinstance(lam, Lamda):
+            return None
+        mu_bot = lam.term
+        if not (isinstance(mu_bot, Mu) and mu_bot.prop == "⊥"):
+            return None
+        # shape looks good: body sits in mu_bot.context, which is ?k or !k
+        return mu_bot.context
+
+    # -------------------------------------------------------------------
+    def rewrite(self, ast):
+        out = self.visit(ast)
+        if not self.changed:
+            warnings.warn("NegIntroRewriter: no outer negation-introduction pattern found")
+        return out

@@ -28,6 +28,7 @@ class ProverWrapper:
                 output = self.prover.before
                 # 3) extract names of successful declarations.
                 success_names = self._extract_successfully_defined_names(output)
+                print("SUCCESS NAMES", success_names)
                 # 4) For each declarations, check if it was successful and add it to the dictionary
                 for nm in names:
                     if nm in success_names:
@@ -450,6 +451,8 @@ class Argument:
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # textual proof term
         self.normal_representation = None  # NL rendering of normal form
+        self.neg_norm_body = None
+        self.neg_norm_form = None
         
     def execute(self):
         if self.executed:
@@ -461,7 +464,6 @@ class Argument:
             else:
                 self.enrich_props()
                 generator = parser.InstructionsGenerationVisitor()
-                print("GOT HERE")
                 self.instructions = generator.return_instructions(self.body)
         # Start the theorem
         output = self.prover.send_command(f'theorem {self.name} : ({self.conclusion}).')
@@ -509,10 +511,10 @@ class Argument:
             self.representation = parser.pretty_natural(self.body, parser.natural_language_rendering)
         # Discard the theorem to prevent closing it (since it may have open goals)
         self.prover.send_command('discard theorem.')
+        print(f"Argument {self.name} executed")
         if self.enrich == "PROPS":    
             self.enrich_props()
             self.generate_proof_term()
-        
         self.executed = True
 
     def extract_assumptions(self, output):
@@ -577,9 +579,11 @@ class Argument:
         and axiom_props = self.axiom_props to fill .prop for each node.
         """
         from parser import PropEnrichmentVisitor
+        print(f"Enriching argument {self.name}.")
         visitor = PropEnrichmentVisitor(assumptions=self.assumptions,
                                         axiom_props=self.prover.declarations)
         self.body = visitor.visit(self.body)
+        print(f"Argument {self.name} enriched.")
         return
 
     def generate_proof_term(self):
@@ -687,7 +691,12 @@ class Argument:
         combined_name = f"{self.name}_{other_argument.name}"
         combined_conclusion = other_argument.conclusion
         #combined_instructions = []
-        combined_body = parser.graft_uniform(other_argument.body,  self.body)
+        if self.neg_norm_body:
+            print("Negnorm", self.neg_norm_body)
+            print("other_assumptions", other_argument.assumptions)
+            combined_body = parser.graft_uniform(other_argument.body,  self.neg_norm_body)
+        else:
+            combined_body = parser.graft_uniform(other_argument.body,  self.body)
         enricher = parser.PropEnrichmentVisitor()
         ptgenerator = parser.ProofTermGenerationVisitor()
         generator = parser.InstructionsGenerationVisitor()
@@ -801,24 +810,31 @@ class Argument:
         # Case 2 – default: attack barred form
         return f"{concl}_bar"
 
-    def focussed_undercut(self, other_argument, *, on:str = "GoFigure"):
+    def focussed_undercut(self, other_argument, *, on:str = "GoFigure", negated_attacker = True):
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
-        # This is a focussed, backwards reasoning version of undercut where stashing of the attacked argument is not necessary.
         if on is "GoFigure":
             on = self.resolve_attacked_assumption()
             print("ON", on)
+        # arguments.executed:
         if not self.executed:
             self.execute()
+        if negated_attacker == True:
+            print("Turning negation into counterargument")
+            self.negation_norm_body = self.negation_normalize()
+            print(self.neg_norm_body)
         if not other_argument.executed:
             other_argument.execute()
+
         #Find the assumption that is to be attacked. The uniiform graft method is used, so it does not matter which assumption is chosen if there are multiple ones with the same prop.
         attacked_assumption = None
         for key in other_argument.assumptions:
+            print("on")
             if on in other_argument.assumptions[key]["prop"]:
+                print("Looking for assumptions")
                 attacked_assumption = key
                 break
         issue = other_argument.assumptions[attacked_assumption]["prop"]
- 
+        print("Issue", issue)
         if issue.endswith('_bar'):
             issue[:-4]
             adaptercontext = Mutilde(DI("aff", issue), issue, Goal(2,issue), Laog(3,issue))
@@ -838,6 +854,7 @@ class Argument:
             #adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
         adapter_arg.execute()
         adapted_argument = adapter_arg.chain(other_argument)
+        print("adapter argument constructed", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
     
@@ -915,6 +932,44 @@ class Argument:
         print("Normal‑form proof term:\n", self.normal_form)
         print("\nNatural language:\n", self.normal_representation)
 
+    def negation_normalize(self):
+        """
+        Replace the outer ¬-introduction wrapper by its inner command.
+
+        On success the fields
+        • self.neg_norm_body
+        • self.neg_norm_form
+        are filled.
+
+        If the pattern is *not* present we raise a ValueError.
+        """
+        from parser import NegIntroRewriter
+        print("Negation normalizing")
+        if not self.executed:
+            self.execute()
+
+        rewriter = NegIntroRewriter()
+        new_body = rewriter.rewrite(self.body)
+
+        if not rewriter.changed:
+            raise ValueError("negation_normalize: argument is not in the expected "
+                                 "outer negation-introduction form")
+
+        # cache results -----------------------------------------------------
+        self.neg_norm_body = new_body
+        # regenerate textual & NL forms – re-use existing visitors
+        gen = parser.ProofTermGenerationVisitor()
+        new_body = gen.visit(copy.deepcopy(new_body))
+        self.neg_norm_form = new_body.pres
+        self.neg_norm_representation = parser.pretty_natural(
+            new_body,
+            {
+                "argumentation": parser.natural_language_argumentative_rendering,
+                "dialectical":   parser.natural_language_dialectical_rendering,
+                "intuitionistic":parser.natural_language_rendering
+            }[self.rendering]
+        )
+        return self.neg_norm_body
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
