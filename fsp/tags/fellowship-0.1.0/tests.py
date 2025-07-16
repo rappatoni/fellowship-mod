@@ -306,6 +306,9 @@ def focussed_undercut_test(reduce:bool=False):
         print(type(e).__name__,e)
         prover.close()
         return
+
+def reinstatement_test():
+    pass
     
 def arg_pop_test(): #TODO
     prover=setup_prover()
@@ -343,11 +346,15 @@ def undercut_test():
             name='argA',
             conclusion='~A',
             instructions=[
-                'cut (C-> ~A) Fresh2',
+                'elim.',
+                'cut (~A) H4.',
+                'cut (C-> ~A) Fresh2.',
                 'axiom r2.',
                 'elim.',
                 'next.',
-                'axiom.'
+                'axiom.',
+                'elim.',
+                'axiom H4.'
             ]
         )
 
@@ -380,7 +387,7 @@ def undercut_test():
         arg_b.execute()
         print("ARGB")
         print(arg_b.assumptions)
-        undercut_arg = arg_a.undercut(arg_b)
+        undercut_arg = arg_a.focussed_undercut(arg_b)
         final_arg = arg_c.support(undercut_arg)
         print(final_arg.name)
         print(final_arg.assumptions)
@@ -388,6 +395,9 @@ def undercut_test():
         print(final_arg.proof_term)
         print(final_arg.representation)
         print("UNDERCUT AND SUPPORT TEST PASSED")
+        print("Reducing argument")
+        final_arg.reduce()
+        print("Normalized Proof Term", final_arg.normal_form)
         prover.close()
         return final_arg
     except Exception as e:

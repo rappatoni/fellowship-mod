@@ -531,10 +531,6 @@ class Argument:
             # Extract each goal
             goal_pattern_proof = re.compile(r'\|-----\s*(\d\.*.*\d*)\s*(\s*[^:]*:[^\s]*\s*)*\*:([^\s]*)')
             goal_pattern_refu = re.compile(r'\*:([^\s]*)\s*(\s*[^:]*:[^\s]*\s*)*\|-----\s*(\d\.*.*\d*)')
-            test_match= goal_pattern_refu.findall("1.2.2.3 *:A")
-            print("TEST MATCH")
-            print(test_match)
-            print("DONE TESTING")
 
             match = goal_pattern_proof.search(temp_output)
             #print("matching")
@@ -828,30 +824,29 @@ class Argument:
         #Find the assumption that is to be attacked. The uniiform graft method is used, so it does not matter which assumption is chosen if there are multiple ones with the same prop.
         attacked_assumption = None
         for key in other_argument.assumptions:
-            print("on")
             if on in other_argument.assumptions[key]["prop"]:
                 print("Looking for assumptions")
                 attacked_assumption = key
                 break
         issue = other_argument.assumptions[attacked_assumption]["prop"]
         print("Issue", issue)
-        if issue.endswith('_bar'):
+        if issue.endswith('_bar'): #This still needs to be tested.
             issue[:-4]
-            adaptercontext = Mutilde(DI("aff", issue), issue, Goal(2,issue), Laog(3,issue))
-            adapterterm = Mu(ID("aff", issue), issue, Goal(1, issue), ID("alt",issue))
-            adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
+            #TODO
+            print("Not implemented yet.")
+            pass
+            #adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2",issue), Laog("3",issue))
+            #adapterterm = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt",issue))
+            #adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
 
         else:
-            
+            #BUG: This will fail if variable names are not fresh. Need to implement helper that generates fresh  variable names.
             adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
             adapterterm = Mu(ID("aff", issue), issue, Goal("1"), ID("alt",issue))
             adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
-            adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
-            print("Adding body")
-            adapter_arg.body = adapterbody
-            #adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
-        #else: 
-            #adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue, [f'cut ({issue}) alt.', f'cut ({issue}) aff', f'next', f'axiom alt', f'cut (~{issue}) aff', f'next', f'elim'])
+        adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
+        print("Adding body")
+        adapter_arg.body = adapterbody
         adapter_arg.execute()
         adapted_argument = adapter_arg.chain(other_argument)
         print("adapter argument constructed", adapted_argument.proof_term)
@@ -868,6 +863,7 @@ class Argument:
 
     def support(self, other_argument):
         #Akin to chain but instead of filling in an assumption, provide an alternative proof for the assumption. Could be generalized to provide an alternative proof for any intermediate derivation of an argument.
+        from parser import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             self.execute()
         if not other_argument.executed:
@@ -875,11 +871,21 @@ class Argument:
                 # Find if other_argument has an assumption that matches self.conclusion
 
         matching_assumption = self.match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
-        # The adapter 
-        alternative_proof_adapter = Argument(self.prover, f'supports_on_{other_argument.assumptions[matching_assumption]["prop"]}', other_argument.assumptions[matching_assumption]["prop"], [f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt1.', f'next.', f'axiom support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt2.', f'next.', f'axiom support.'])
+        issue = other_argument.assumptions[matching_assumption]["prop"]
+        print("Issue", issue)
+        # The adapter
+
+        adaptercontext = Mutilde(DI("aff2", issue), issue, Goal("2", issue), ID("alt1", issue))
+        adapterterm = Mu(ID("aff1", issue), issue, Goal("1"), ID("alt1",issue))
+        adapterbody = Mu(ID("alt1", issue), issue, adapterterm, adaptercontext)
+        alternative_proof_adapter = Argument(self.prover, f'supports_on_{other_argument.assumptions[matching_assumption]["prop"]}', other_argument.assumptions[matching_assumption]["prop"])
+        print("Adding body")
+        alternative_proof_adapter.body = adapterbody
+
+                                             #[f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt1.', f'next.', f'axiom support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt2.', f'next.', f'axiom support.'])
         alternative_proof_adapter.execute()
-        print("ADAPTARG")
         adapted_argument =  alternative_proof_adapter.chain(other_argument)
+        print("adapter argument constructed", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
 

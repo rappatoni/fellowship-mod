@@ -460,12 +460,11 @@ class ArgumentTermReducer(ProofTermVisitor):
     """
     Implements the following reduction rules (each left and right):
        - lambda
-       - undercut
-       - rebut
-       - support
-       - command (critical pair, this handles alternative proofs)
+       - undercut (defeat and defence)
+       - TODO: rebut
+       - TODO: support
        - mu
-       - eta
+       - TODO: eta
     """
 
     def __init__(self, *, verbose: bool = True, assumptions=None, axiom_props=None):
@@ -628,7 +627,6 @@ class ArgumentTermReducer(ProofTermVisitor):
         #node = super().visit_Mu(node)
 
         node = super().visit_Mu(node)
-        #self._print_current()
         return node
 
     def visit_Mutilde(self, node: Mutilde):
@@ -1506,6 +1504,9 @@ def graft_single(body_B, goal_number: str, body_A):
     # type‑check replacement
     _check_conclusion_matches(body_A, target_is_goal=is_goal, target_prop=tgt_prop)
 
+    # 2) freshness workaround: rename scion binders if they clash
+    body_A = _alpha_rename_if_needed(body_A, body_B)
+
     visitor = _GraftVisitor(replacement_ast=body_A,
                             target_prop=tgt_prop,
                             target_number=goal_number,
@@ -1523,11 +1524,11 @@ def graft_uniform(body_B, body_A):
     elif isinstance(body_A, Mutilde):
         concl_prop      = body_A.prop
         target_is_goal  = False     # replaces Laogs
-        print(f"Target now {concl_prop} is LAOG")
-        print("Target found", _find_target_info(body_B, "1.2.1.2.2" ))
+        print(f"Target {concl_prop} is LAOG")
     else:
         raise TypeError("argument A must start with Mu or Mutilde binder")
 
+    body_A = _alpha_rename_if_needed(body_A, body_B)
     # No extra type‑check needed – we built criteria from A itself.
     visitor = _GraftVisitor(replacement_ast=body_A,
                             target_prop=concl_prop,
@@ -1575,7 +1576,7 @@ class NegIntroRewriter(ProofTermVisitor):
         Return the sub-command *B* if the pattern matches, else *None*.
         Only syntactic checks – props & variable names – are done.
         """
-        print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
+        # print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
         inner_mu = thesis_mu.term
         if not (isinstance(inner_mu, Mu) and inner_mu.prop == thesis_mu.prop):
             return None
@@ -1594,3 +1595,76 @@ class NegIntroRewriter(ProofTermVisitor):
         if not self.changed:
             warnings.warn("NegIntroRewriter: no outer negation-introduction pattern found")
         return out
+
+def _collect_binder_names(node: ProofTerm, names=None):
+    """Return the **set** of all µ / µ̃ / λ *binder* names occurring in *node*."""
+    if names is None:
+        names = set()
+    if isinstance(node, Mu):
+        names.add(node.id.name)
+    elif isinstance(node, Mutilde):
+        names.add(node.di.name)
+    elif isinstance(node, Lamda):
+        names.add(node.di.di.name)  # di holds a Hyp → DI → name
+    # recurse
+    for child in (getattr(node, 'term', None), getattr(node, 'context', None)):
+        if child is not None:
+            _collect_binder_names(child, names)
+    return names
+
+def _fresh(prefix: str, taken: set[str]) -> str:
+    """Generate a fresh variable starting with *prefix* not in *taken*."""
+    if prefix not in taken:
+        return prefix
+    i = 2
+    while f"{prefix}{i}" in taken:
+        i += 1
+    return f"{prefix}{i}"
+
+def _alpha_rename_if_needed(scion: ProofTerm, root: ProofTerm):
+    """Return *scion* with all **conflicting binders** α‑renamed fresh w.r.t. *root*."""
+    root_names = _collect_binder_names(root)
+    scion_names = _collect_binder_names(scion)
+    mapping = {}
+    for nm in scion_names:
+        if nm in root_names:
+            fresh_nm = _fresh(nm, root_names | scion_names)
+            mapping[nm] = fresh_nm
+    if mapping:
+        scion = deepcopy(scion)
+        _AlphaRename(mapping).visit(scion)
+    return scion
+
+class _AlphaRename(ProofTermVisitor):
+    """Capture‑avoiding α‑renamer.  *mapping* is old‑name → new‑name."""
+    def __init__(self, mapping: dict[str, str]):
+        self.mapping = mapping
+
+    # binders – rename & recurse -------------------------------------
+    def visit_Mu(self, node: Mu):
+        if node.id.name == "thesis":
+            return super().visit_Mu(node)
+        if node.id.name in self.mapping:
+            node.id.name = self.mapping[node.id.name]
+        return super().visit_Mu(node)
+
+    def visit_Mutilde(self, node: Mutilde):
+        if node.di.name in self.mapping:
+            node.di.name = self.mapping[node.di.name]
+        return super().visit_Mutilde(node)
+
+    def visit_Lamda(self, node: Lamda):
+        if node.di.di.name in self.mapping:
+            node.di.di.name = self.mapping[node.di.di.name]
+        return super().visit_Lamda(node)
+
+    # leaves – replace occurrences -----------------------------------
+    def visit_ID(self, node: ID):
+        if node.name in self.mapping:
+            node.name = self.mapping[node.name]
+        return node
+
+    def visit_DI(self, node: DI):
+        if node.name in self.mapping:
+            node.name = self.mapping[node.name]
+        return node
