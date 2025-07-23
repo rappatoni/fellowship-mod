@@ -255,5 +255,9 @@ let echo pp_fsp_fun =
     pp_close_box ui_frm () ;
   pp_close_box ui_frm () ;
   pp_print_newline ui_frm () ;
-  Buffer.output_buffer stdout ui_buffer
+  Buffer.output_buffer stdout ui_buffer ;
+  if !Machine.machine_mode then begin
+    let payload = Machine.snapshot !Core.cairn in
+    Printf.printf ";;BEGIN_ML_DATA;; %s ;;END_ML_DATA;;\n%!" payload;
+  end
 

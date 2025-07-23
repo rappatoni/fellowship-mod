@@ -5,7 +5,7 @@
 # Variable definition
 
 RESULT=fsp
-SOURCES=core.ml interpreter.ml interpreter_proof_terms.ml print.ml tactics.ml instructions.ml help.ml parser.mly lexer.mll main.ml
+SOURCES= core.ml machine.ml interpreter.ml interpreter_proof_terms.ml print.ml tactics.ml instructions.ml help.ml parser.mly lexer.mll main.ml 
 LIBS=unix
 TRASH=parser.output
 
