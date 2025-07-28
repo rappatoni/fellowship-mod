@@ -10,6 +10,7 @@ from non_affine_test import *
 from mu_reduction_test import *
 from mutilde_reduction_test import *
 from graft_tests import *
+from smoketest import *
 
 # Tests
 # TODO: refactor this using a standard test library such as unittest.
@@ -763,7 +764,8 @@ if __name__ == '__main__':
         'affine_mu_rule_nonaffine_test' : affine_mu_rule_nonaffine_test,
         'mu_general_rule_test': mu_general_rule_test,
         'mutilde_affine_defence_test' : mutilde_affine_defence_test,
-        'graft_operator_test': graft_operator_test
+        'graft_operator_test': graft_operator_test,
+        'test_machine_stub': test_machine_stub
     }
     # Parse keyword arguments if provided
     kwargs_dict = {}

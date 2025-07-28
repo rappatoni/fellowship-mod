@@ -1,3 +1,5 @@
+from __future__ import annotations
+import os
 import pexpect
 import re
 from lark import Lark, Transformer, v_args
@@ -6,103 +8,122 @@ import warnings
 from pathlib import Path
 import argparse
 import copy
+from typing import Any, List, Tuple, Optional, Dict
+
+from sexp_parser import SexpParser
+
+MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
+HUMAN_UI = os.getenv("FSP_HUMAN_UI", "0") not in {"0", "false", "False", ""}
 
 class ProverWrapper:
     def __init__(self, prover_cmd):
         self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5)
         self.prover.expect('fsp <')
-        self.custom_tactics = {}
-        self.arguments = {}  # Dictionary to store arguments by name
-        self.declarations = {}
+        self.custom_tactics : Dict[str, Any] = {}
+        self.arguments : Dict[str, Any]= {}  # Dictionary to store arguments by name
+        self.declarations : Dict[str, str] = {}
+        self.last_state: Any = None
+        self._sexp = SexpParser()
 
-    def send_command(self, command, silent=0):
+    def send_command(self, command: str, silent: int=0):
         stripped = command.strip()
-        if stripped.startswith("declare "):
+        if stripped.startswith("declare ") and HUMAN_UI:
             # 1) parse out the declared names & type
             names, declared_type = self._parse_declare_line(stripped)
             
             # 2) send line to the prover
-            try:
-                self.prover.sendline(command)
-                self.prover.expect('fsp <')
-                output = self.prover.before
-                # 3) extract names of successful declarations.
-                success_names = self._extract_successfully_defined_names(output)
-                print("SUCCESS NAMES", success_names)
-                # 4) For each declarations, check if it was successful and add it to the dictionary
-                for nm in names:
-                    if nm in success_names:
-                        self.declarations[nm] = declared_type
-                    else:
-                        warnings.warn("Declaration not recorded.")
+            self.prover.sendline(command)
+            self.prover.expect('fsp <')
+            output = self.prover.before
+            # 3) extract names of successful declarations.
+            success_names = self._extract_successfully_defined_names(output)
+            print("SUCCESS NAMES", success_names)
+            # 4) For each declarations, check if it was successful and add it to the dictionary
+            for nm in names:
+                if nm in success_names:
+                    self.declarations[nm] = declared_type
+                else:
+                    warnings.warn("Declaration not recorded.")
+            return output
 
-            except pexpect.EOF:
-              print("Error: Unexpected EOF received from the prover process.")
-              self.close()
-              raise
-            except pexpect.TIMEOUT:
-              print("Error: Prover did not respond in time.")
-              self.close()
-              raise
-          
-        else:
-            try:
-              self.prover.sendline(command)
-              self.prover.expect('fsp <')
-              output = self.prover.before
-              if silent == 0:
-                  print(output)
-              return output
-            except pexpect.EOF:
-              print("Error: Unexpected EOF received from the prover process.")
-              self.close()
-              raise
-            except pexpect.TIMEOUT:
-              print("Error: Prover did not respond in time.")
-              self.close()
-              raise
+        self.prover.sendline(command)
+        self.prover.expect('fsp <')
+        output = self.prover.before
+        state = self._extract_machine_block(output)
+        if state is None:
+            raise RuntimeError("Machine block missing in prover output.")
+        self.last_state = state
+        self._update_declarations_from_state(state)
+        if not silent:
+            print(state)
+        return state
 
-    def _parse_declare_line(self, line):
-        """
-        Takes something like: "declare A,B:bool." 
-        or "declare test: (A)."
-        returns ( ["A","B"], "bool" ) or (["test"], "(A)")
-        We do not store them in self.declarations yet.
-        """
-        # remove leading 'declare '
+    
+    # ---------------- legacy helpers kept for now ----------------------
+    def _expect_ui(self, command: str) -> str:
+        try:
+            self.prover.sendline(command)
+            self.prover.expect('fsp <')
+            return self.prover.before
+        except pexpect.EOF:
+            print("Error: Unexpected EOF received from the prover process.")
+            self.close(); raise
+        except pexpect.TIMEOUT:
+            print("Error: Prover did not respond in time.")
+            self.close(); raise
+
+    def _parse_declare_line(self, line: str) -> Tuple[List[str], Optional[str]]:
         decl_str = line[len("declare"):].strip()
-        # remove trailing '.' if any
-        if decl_str.endswith('.'):
-            decl_str = decl_str[:-1].strip()
-
-        if ':' not in decl_str:
-            return [], None  # no parse
-
+        if decl_str.endswith('.'): decl_str = decl_str[:-1].strip()
+        if ':' not in decl_str: return [], None
         names_part, type_part = decl_str.split(':', 1)
-        names_part = names_part.strip()
-        type_part = type_part.strip()
         names = [n.strip() for n in names_part.split(',')]
-        return (names, type_part)
+        return names, type_part.strip()
 
-    def _extract_successfully_defined_names(self, output):
-        """
-        Fellowship typically outputs lines like:
-           > A defined.
-           > A,B defined.
-        We'll parse them with a regex capturing the part after '> '
-        up to ' defined.'
-        Return a set of all declared names found in these lines.
-        """
+    def _extract_successfully_defined_names(self, output: str) -> set[str]:
         success_pattern = re.compile(r'>\s+([^>]+?)\s+defined\.')
-        # e.g. match:  "> A defined." => group(1) = 'A'
-        # or  "> A,B defined." => group(1) = 'A,B'
         results = set()
         for match in success_pattern.finditer(output):
-            names_str = match.group(1).strip()
-            # if there's a comma, e.g. "A,B", split
-            for nm in names_str.split(','):
+            for nm in match.group(1).strip().split(','):
                 results.add(nm.strip())
         return results
+
+    # ---------------- new machine helpers -----------------------------
+    def _extract_machine_block(self, output: str) -> Optional[Dict[str, Any]]:
+        m = MACHINE_BLOCK_RE.search(output)
+        if not m:
+            return None
+        payload = m.group(1).strip().encode('utf-8')
+        sexp = self._sexp.parse(payload)
+        return self._from_machine_payload(sexp)
+
+    def _from_machine_payload(self, sexp) -> Dict[str, Any]:
+        if not (isinstance(sexp, list) and sexp and sexp[0] == 'state'):
+            raise ValueError(f"unexpected top‑level in payload: {sexp!r}")
+        res: Dict[str, Any] = {}
+        for item in sexp[1:]:
+            if isinstance(item, list) and len(item) == 2:
+                k, v = item
+                res[k] = v
+        print("RES", res)
+        return res
+
+    def _update_declarations_from_state(self, state: Dict[str, Any]):
+        """Sync self.declarations from snapshot ((decls …))."""
+        decls = state.get('decls', [])
+        for entry in decls:
+            if not (isinstance(entry, list)):
+                continue
+            kv = {k: v for [k, v] in entry if isinstance(k, str)}
+            nm = kv.get('name', '').strip('"')
+            if not nm:
+                continue
+            kind = kv.get('kind')
+            if kind == 'sort':
+                # only record simple sort decls for now
+                self.declarations[nm] = kv.get('sort', '').strip('"')
+
+
 
     def parse_proof_state(self, output):
         # Extract proof term
@@ -146,10 +167,12 @@ class ProverWrapper:
 
     def get_argument(self, name):
         return self.arguments.get(name)
-
+    
     def close(self):
-        self.prover.sendline('quit.')
-        self.prover.close
+        try:
+            self.prover.sendline('quit.')
+        finally:
+            self.prover.close()
 
 
 def check_for_errors(output,errors):
@@ -808,7 +831,7 @@ class Argument:
 
     def focussed_undercut(self, other_argument, *, on:str = "GoFigure", negated_attacker = True):
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
-        if on is "GoFigure":
+        if on == "GoFigure":
             on = self.resolve_attacked_assumption()
             print("ON", on)
         # arguments.executed:
