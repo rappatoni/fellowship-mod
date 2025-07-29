@@ -12,13 +12,14 @@ from mutilde_reduction_test import *
 from graft_tests import *
 from smoketest import *
 
-# Tests
+# Tests3
 # TODO: refactor this using a standard test library such as unittest.
 
 
 def declaration_test():
     print("DECLARATION TEST")
     prover = setup_prover()
+    #prover.send_command()
     test_declarations = {"A": "bool",
                          "B": "bool",
                          "C": "bool",
@@ -28,10 +29,10 @@ def declaration_test():
         print(prover.declarations)
     else:
         print("Test part 1 failed:")
-        print(prover_declarations)
+        print(prover.declarations)
 
-    prover.send_command('declare X:A.')
-    print(prover.declarations)
+    prover.send_command('declare X:(A).')
+    print("Expect X:A", prover.declarations)
     prover.close
     return
 

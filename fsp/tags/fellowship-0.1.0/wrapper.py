@@ -49,6 +49,7 @@ class ProverWrapper:
         self.prover.sendline(command)
         self.prover.expect('fsp <')
         output = self.prover.before
+        print("Output", output)
         state = self._extract_machine_block(output)
         if state is None:
             raise RuntimeError("Machine block missing in prover output.")
@@ -94,36 +95,89 @@ class ProverWrapper:
         if not m:
             return None
         payload = m.group(1).strip().encode('utf-8')
+        print("payload", payload)
         sexp = self._sexp.parse(payload)
         return self._from_machine_payload(sexp)
 
-    def _from_machine_payload(self, sexp) -> Dict[str, Any]:
-        if not (isinstance(sexp, list) and sexp and sexp[0] == 'state'):
-            raise ValueError(f"unexpected top‑level in payload: {sexp!r}")
-        res: Dict[str, Any] = {}
-        for item in sexp[1:]:
-            if isinstance(item, list) and len(item) == 2:
-                k, v = item
-                res[k] = v
-        print("RES", res)
-        return res
 
-    def _update_declarations_from_state(self, state: Dict[str, Any]):
-        """Sync self.declarations from snapshot ((decls …))."""
-        decls = state.get('decls', [])
+    def _from_machine_payload(self, sexp: Any) -> Dict[str, Any]:
+         """Map the (very small) S‑exp structure to a dict. Extend here later."""
+         if not isinstance(sexp, list) or not sexp or sexp[0] != 'state':
+             raise ValueError(f"unexpected payload root: {sexp!r}")
+         out: Dict[str, Any] = {"raw": sexp}
+         for item in sexp[1:]:
+             if not isinstance(item, list) or not item:
+                 continue
+             key = item[0]
+             if key == 'decls':
+                entries = []
+                for entry in item[1:]:
+                    if isinstance(entry, list):
+                        entries.append(self._kv_list_to_dict(entry))
+                out['decls'] = entries
+             elif len(item) == 2 and isinstance(item[1], (str, list)):
+                 out[key] = item[1]
+                 continue
+             #variadic lists like: (decls <entry> <entry> ...)
+             
+             elif key == 'goals':
+                 goals = []
+                 for g in item[1:]:
+                     if isinstance(g, list) and g and g[0] == 'goal':
+                         goals.append(self._kv_list_to_dict(g[1:]))
+                 out['goals'] = goals
+             else:
+                 # keep raw for anything we don't special‑case yet
+                 out[key] = item[1:]
+         return out
+
+    def _kv_list_to_dict(self, node):
+        """Convert a list like [(k v) (k v) ...] into a dict {k: v}."""
+        out = {}
+        for el in node:
+            if isinstance(el, list) and len(el) == 2 and isinstance(el[0], str):
+                out[el[0]] = el[1]
+        return out
+    
+    # ------------------------------------------------------------------
+    #  Decls sync from machine payload
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _unquote(atom: Any) -> Any:
+        """Strip surrounding double quotes from simple atoms like '"A"'."""
+        if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
+            return atom[1:-1]
+        return atom
+
+    def _update_declarations_from_state(self, state: Dict[str, Any]) -> None:
+        """Merge `(decls ...)` from machine payload into `self.declarations`.
+
+        Expected shape (per `machine.ml`):
+            decls = [ [ ['name', '"A"'], ['kind','sort'], ['sort','"bool"'] ], ... ]
+        """
+        decls = state.get('decls')
+        if not isinstance(decls, list):
+            return
+
         for entry in decls:
-            if not (isinstance(entry, list)):
+            nm   = entry.get('name')
+            kind = entry.get('kind')
+            if not nm or not kind:
                 continue
-            kv = {k: v for [k, v] in entry if isinstance(k, str)}
-            nm = kv.get('name', '').strip('"')
-            if not nm:
-                continue
-            kind = kv.get('kind')
+            if isinstance(nm, str):
+                nm = nm.strip('"')
             if kind == 'sort':
-                # only record simple sort decls for now
-                self.declarations[nm] = kv.get('sort', '').strip('"')
-
-
+                typ = entry.get('sort')
+                if isinstance(typ, str):
+                    typ = typ.strip('"')
+                    self.declarations[nm]= typ
+            elif kind == 'prop':
+                # We store the proposition string for axioms/theorems.
+                pr = entry.get('prop')
+                if isinstance(pr, str):
+                    pr = pr.strip('"')
+                self.declarations[nm] = pr
+            
 
     def parse_proof_state(self, output):
         # Extract proof term
@@ -1005,11 +1059,14 @@ class Argument:
 
 def setup_prover():
     prover = ProverWrapper('./fsp')
+    env = os.environ.copy()
+    env.setdefault("FSP_MACHINE", "1")   # force machine mode
     prover.register_custom_tactic('pop', pop)
     # Switch to classical logic
     prover.send_command('lk.')
     # Declare some booleans to work with.
     prover.send_command('declare A,B,C,D:bool.')
+    print("Prover decls", prover.declarations)
     return prover
 
 

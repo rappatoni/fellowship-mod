@@ -1,7 +1,6 @@
 (* machine.ml – minimal toggle & dummy snapshot *)
 
 open Core
-let wrap_decl d = Printf.sprintf "(%s)" d
 
 (** Global flag – set via environment variable FSP_MACHINE. *)
 let machine_mode : bool ref = ref (
@@ -74,13 +73,11 @@ let snapshot (cairn : Core.cairn) : string =
   let decls_sexp =
     let sig_sexp = Core.Coll.fold (fun nm srt acc ->
       let d = Printf.sprintf "((name %s)(kind sort)(sort %s))"
-                (sexp_string nm) (sexp_sort srt) in
-      wrap_decl d :: acc)
+                (sexp_string nm) (sexp_sort srt) in d :: acc)
         st.sign [] in
     let thm_sexp = Core.Coll.fold (fun nm pr acc ->
       let d = Printf.sprintf "((name %s)(kind prop)(prop %s))"
-                (sexp_string nm) (sexp_prop pr) in
-      wrap_decl d :: acc)   
+                (sexp_string nm) (sexp_prop pr) in d :: acc)   
         st.thms [] in
     String.concat " " (List.rev_append sig_sexp thm_sexp) in
 
