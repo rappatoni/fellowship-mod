@@ -26,31 +26,18 @@ class ProverWrapper:
         self._sexp = SexpParser()
 
     def send_command(self, command: str, silent: int=1):
-        stripped = command.strip()
-        # if stripped.startswith("declare ") and HUMAN_UI:
-        #     # 1) parse out the declared names & type
-        #     names, declared_type = self._parse_declare_line(stripped)
-            
-        #     # 2) send line to the prover
-        #     self.prover.sendline(command)
-        #     self.prover.expect('fsp <')
-        #     output = self.prover.before
-        #     #print("Output", output)
-        #     # 3) extract names of successful declarations.
-        #     success_names = self._extract_successfully_defined_names(output)
-        #     print("SUCCESS NAMES", success_names)
-        #     # 4) For each declarations, check if it was successful and add it to the dictionary
-        #     for nm in names:
-        #         if nm in success_names:
-        #             self.declarations[nm] = declared_type
-        #         else:
-        #             warnings.warn("Declaration not recorded.")
-        #     return output
+        """Send a command to Fellowship
 
+        command -- The command string
+        silent -- A flag determining verbosity (off if 1). TODO: Replace by dedicated logger.
+
+        Returns a preparsed (sexp) proof state.
+        """
+        
+        stripped = command.strip()
         self.prover.sendline(command)
         self.prover.expect('fsp <')
         output = self.prover.before
-        #print("Output", output)
         state = self._extract_machine_block(output)
         if state is None:
             raise RuntimeError("Machine block missing in prover output.")
@@ -62,36 +49,40 @@ class ProverWrapper:
 
     
     # ---------------- legacy helpers kept for now ----------------------
-    def _expect_ui(self, command: str) -> str:
-        try:
-            self.prover.sendline(command)
-            self.prover.expect('fsp <')
-            return self.prover.before
-        except pexpect.EOF:
-            print("Error: Unexpected EOF received from the prover process.")
-            self.close(); raise
-        except pexpect.TIMEOUT:
-            print("Error: Prover did not respond in time.")
-            self.close(); raise
+    # def _expect_ui(self, command: str) -> str:
+    #     try:
+    #         self.prover.sendline(command)
+    #         self.prover.expect('fsp <')
+    #         return self.prover.before
+    #     except pexpect.EOF:
+    #         print("Error: Unexpected EOF received from the prover process.")
+    #         self.close(); raise
+    #     except pexpect.TIMEOUT:
+    #         print("Error: Prover did not respond in time.")
+    #         self.close(); raise
 
-    def _parse_declare_line(self, line: str) -> Tuple[List[str], Optional[str]]:
-        decl_str = line[len("declare"):].strip()
-        if decl_str.endswith('.'): decl_str = decl_str[:-1].strip()
-        if ':' not in decl_str: return [], None
-        names_part, type_part = decl_str.split(':', 1)
-        names = [n.strip() for n in names_part.split(',')]
-        return names, type_part.strip()
+    # def _parse_declare_line(self, line: str) -> Tuple[List[str], Optional[str]]:
+    #     decl_str = line[len("declare"):].strip()
+    #     if decl_str.endswith('.'): decl_str = decl_str[:-1].strip()
+    #     if ':' not in decl_str: return [], None
+    #     names_part, type_part = decl_str.split(':', 1)
+    #     names = [n.strip() for n in names_part.split(',')]
+    #     return names, type_part.strip()
 
-    def _extract_successfully_defined_names(self, output: str) -> set[str]:
-        success_pattern = re.compile(r'>\s+([^>]+?)\s+defined\.')
-        results = set()
-        for match in success_pattern.finditer(output):
-            for nm in match.group(1).strip().split(','):
-                results.add(nm.strip())
-        return results
+    # def _extract_successfully_defined_names(self, output: str) -> set[str]:
+    #     success_pattern = re.compile(r'>\s+([^>]+?)\s+defined\.')
+    #     results = set()
+    #     for match in success_pattern.finditer(output):
+    #         for nm in match.group(1).strip().split(','):
+    #             results.add(nm.strip())
+    #     return results
 
     # ---------------- new machine helpers -----------------------------
     def _extract_machine_block(self, output: str) -> Optional[Dict[str, Any]]:
+        """Takes the raw machine output (a sexp), parses it and converts it into a dict.
+        output: the raw machine output. 
+        TODO: This needs to handle error messages/warnings from the prover. E.g. when a prover command such as "axiom" does not obviously apply, the proof state will not change and the prover will emit a warning such as "This is not trivial. Work some more." This needs to be parsed and properly surfaced here, probably as a warning.
+        """
         m = MACHINE_BLOCK_RE.search(output)
         if not m:
             return None
