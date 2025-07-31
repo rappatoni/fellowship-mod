@@ -307,10 +307,15 @@ class PropEnrichmentVisitor(ProofTermVisitor):
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
         goal_num = node.number.strip()
-        if self.assumptions.get(goal_num):
-            print(f'Enriching Goal with type {self.assumptions[goal_num]["prop"]}')
-            node.prop = self.assumptions[goal_num]["prop"]
-        return node
+        if node.prop:
+            return node
+        else:
+            if self.assumptions.get(goal_num):
+                print(f'Enriching Goal with type {self.assumptions[goal_num]["prop"]}')
+                node.prop = self.assumptions[goal_num]["prop"]
+            else:
+                warnings.warn(f'Enrichment of node {node} not possible: {goal_num} not a key in {self.assumptions}')
+            return node
 
     def visit_Laog(self, node: Laog):
         node = super().visit_Laog(node)
@@ -361,9 +366,6 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             node.flag = "Falsum"
             print("Falsum flagged for instruction generation.")
         else:
-            print(self.axiom_props, self.bound_vars)
-            print(node.name in self.axiom_props)
-            print(node.prop)
             warnings.warn(f'Enrichment of node {node.name} not possible.')
         return node
 
@@ -393,6 +395,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
        
         self.bound_vars[node.di.name]=node.prop
         node = super().visit_Mutilde(node)
+        #print("node.term, node.context", node.term.prop, node.context.prop)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
 
@@ -1159,7 +1162,6 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Mutilde(self, node : Mutilde):
         node = super().visit_Mutilde(node)
-        print(node.prop)
         if self.verbose == True:
             node.pres = f"μ'{node.di.name}:{node.prop}.<{node.term.pres}|{node.contr}|{node.context.pres}>"
         else:
@@ -1244,7 +1246,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             else:
                 self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
         else:
-            print("Here", node, node.di.name, node.contr, node.prop)
             raise Exception("Could not identify cut proposition.")
 
         
@@ -1355,12 +1356,12 @@ class _CapturingSubst(ProofTermVisitor):
 
     # leaves ------------------------------------------------------------
     def _rewrite_goal(self, node: Goal):
-        print("Goal Map", self.goal_map)
+        #print("Goal Map", self.goal_map)
         var = self.goal_map.get(node.prop)
         return DI(var, node.prop) if var is not None else deepcopy(node)
 
     def _rewrite_laog(self, node: Laog):
-        print("Laog Map", self.laog_map)
+        #print("Laog Map", self.laog_map)
         var = self.laog_map.get(node.prop)
         return ID(var, node.prop) if var is not None else deepcopy(node)
 
@@ -1579,14 +1580,18 @@ class NegIntroRewriter(ProofTermVisitor):
         # print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
         inner_mu = thesis_mu.term
         if not (isinstance(inner_mu, Mu) and inner_mu.prop == thesis_mu.prop):
+            print(f'Failed: {inner_mu} is not Mu node or its prop {inner_mu.prop} does not equal the thesis prop {thesis_mu.prop}')
             return None
         lam = inner_mu.term
         if not isinstance(lam, Lamda):
+            print(f'Failed: {inner_mu.term} is not the expected Lamda term')
             return None
         mu_bot = lam.term
         if not (isinstance(mu_bot, Mu) and mu_bot.prop == "⊥"):
+            print(f'Failed: {mu_bot} is not Mu node or its prop {inner_mu.prop} does not equal ⊥')
             return None
         # shape looks good: body sits in mu_bot.context, which is ?k or !k
+        print("Returning negation normalized body")
         return mu_bot.context
 
     # -------------------------------------------------------------------

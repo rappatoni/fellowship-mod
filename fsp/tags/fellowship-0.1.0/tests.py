@@ -11,6 +11,7 @@ from mu_reduction_test import *
 from mutilde_reduction_test import *
 from graft_tests import *
 from smoketest import *
+import traceback
 
 # Tests3
 # TODO: refactor this using a standard test library such as unittest.
@@ -256,6 +257,7 @@ def focussed_undercut_test(reduce:bool=False):
         prover=setup_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (C->~A).')
+        print("Declarations", prover.declarations)
          # Argument A: Proves ~A using C
         arg_a = Argument(
             prover,
@@ -273,6 +275,7 @@ def focussed_undercut_test(reduce:bool=False):
                 'axiom H4.'
             ]
         )
+        
         # Argument B: Proves B assuming A
         arg_b = Argument(
             prover,
@@ -306,6 +309,7 @@ def focussed_undercut_test(reduce:bool=False):
     except Exception as e:
         print("FOCUSSED UNDERCUT TEST FAILED WITH EXCEPTION:")
         print(type(e).__name__,e)
+        print(traceback.format_exc())
         prover.close()
         return
 

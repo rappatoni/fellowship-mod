@@ -13,7 +13,7 @@ from typing import Any, List, Tuple, Optional, Dict
 from sexp_parser import SexpParser
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
-HUMAN_UI = os.getenv("FSP_HUMAN_UI", "0") not in {"0", "false", "False", ""}
+#HUMAN_UI = os.getenv("FSP_HUMAN_UI", "0") not in {"0", "false", "False", ""}
 
 class ProverWrapper:
     def __init__(self, prover_cmd):
@@ -25,38 +25,39 @@ class ProverWrapper:
         self.last_state: Any = None
         self._sexp = SexpParser()
 
-    def send_command(self, command: str, silent: int=0):
+    def send_command(self, command: str, silent: int=1):
         stripped = command.strip()
-        if stripped.startswith("declare ") and HUMAN_UI:
-            # 1) parse out the declared names & type
-            names, declared_type = self._parse_declare_line(stripped)
+        # if stripped.startswith("declare ") and HUMAN_UI:
+        #     # 1) parse out the declared names & type
+        #     names, declared_type = self._parse_declare_line(stripped)
             
-            # 2) send line to the prover
-            self.prover.sendline(command)
-            self.prover.expect('fsp <')
-            output = self.prover.before
-            # 3) extract names of successful declarations.
-            success_names = self._extract_successfully_defined_names(output)
-            print("SUCCESS NAMES", success_names)
-            # 4) For each declarations, check if it was successful and add it to the dictionary
-            for nm in names:
-                if nm in success_names:
-                    self.declarations[nm] = declared_type
-                else:
-                    warnings.warn("Declaration not recorded.")
-            return output
+        #     # 2) send line to the prover
+        #     self.prover.sendline(command)
+        #     self.prover.expect('fsp <')
+        #     output = self.prover.before
+        #     #print("Output", output)
+        #     # 3) extract names of successful declarations.
+        #     success_names = self._extract_successfully_defined_names(output)
+        #     print("SUCCESS NAMES", success_names)
+        #     # 4) For each declarations, check if it was successful and add it to the dictionary
+        #     for nm in names:
+        #         if nm in success_names:
+        #             self.declarations[nm] = declared_type
+        #         else:
+        #             warnings.warn("Declaration not recorded.")
+        #     return output
 
         self.prover.sendline(command)
         self.prover.expect('fsp <')
         output = self.prover.before
-        print("Output", output)
+        #print("Output", output)
         state = self._extract_machine_block(output)
         if state is None:
             raise RuntimeError("Machine block missing in prover output.")
         self.last_state = state
         self._update_declarations_from_state(state)
-        if not silent:
-            print(state)
+        if silent == 0:
+            print("State", state)
         return state
 
     
@@ -95,7 +96,7 @@ class ProverWrapper:
         if not m:
             return None
         payload = m.group(1).strip().encode('utf-8')
-        print("payload", payload)
+        #print("payload", payload)
         sexp = self._sexp.parse(payload)
         return self._from_machine_payload(sexp)
 
@@ -105,6 +106,8 @@ class ProverWrapper:
          if not isinstance(sexp, list) or not sexp or sexp[0] != 'state':
              raise ValueError(f"unexpected payload root: {sexp!r}")
          out: Dict[str, Any] = {"raw": sexp}
+        
+        
          for item in sexp[1:]:
              if not isinstance(item, list) or not item:
                  continue
@@ -124,11 +127,15 @@ class ProverWrapper:
                  goals = []
                  for g in item[1:]:
                      if isinstance(g, list) and g and g[0] == 'goal':
-                         goals.append(self._kv_list_to_dict(g[1:]))
+                         goals.append(g)
+                         #goals.append(self._kv_list_to_dict(g[1:]))
+                     else:
+                         warnings.warn(f'Unable to convert goal list to dict')
                  out['goals'] = goals
              else:
                  # keep raw for anything we don't special‑case yet
                  out[key] = item[1:]
+                 
          return out
 
     def _kv_list_to_dict(self, node):
@@ -142,12 +149,6 @@ class ProverWrapper:
     # ------------------------------------------------------------------
     #  Decls sync from machine payload
     # ------------------------------------------------------------------
-    @staticmethod
-    def _unquote(atom: Any) -> Any:
-        """Strip surrounding double quotes from simple atoms like '"A"'."""
-        if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
-            return atom[1:-1]
-        return atom
 
     def _update_declarations_from_state(self, state: Dict[str, Any]) -> None:
         """Merge `(decls ...)` from machine payload into `self.declarations`.
@@ -544,7 +545,6 @@ class Argument:
                 self.instructions = generator.return_instructions(self.body)
         # Start the theorem
         output = self.prover.send_command(f'theorem {self.name} : ({self.conclusion}).')
-        #print(output)
         # Execute each instruction
         for instr in self.instructions:
             if instr.startswith('tactic '):
@@ -552,26 +552,32 @@ class Argument:
                 parts = instr.split()
                 tactic_name = parts[1]
                 tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                output_instr = self.prover.execute_tactic(tactic_name, *tactic_args)
-                output += output_instr
+                output = self.prover.execute_tactic(tactic_name, *tactic_args)
+                #output += output_instr
             else:
-                output_instr = self.prover.send_command(instr.strip() + '.')
-                output += output_instr
+                output = self.prover.send_command(instr.strip() + '.')
+                print(output)
+                #output += output_instr
             #print(output)
         # Capture the assumptions (open goals)
-        self.assumptions = self.extract_assumptions(output)
+        self._parse_proof_state(output)
+        #self.assumptions = output.get('goals')(
+        #print("Assumptions",  self.assumptions)
+        #self.assumptions = self.extract_assumptions(output)
         #self.assumptions = number.strip() : { "prop" : assumption_text.strip(), "index" : goal_index } for (assumption_text, goal_index, number) in self.assumptions}
         # Capture the proof_term (use of idtac dangerous!)
-        output = self.prover.send_command("idtac.")
+        #output = self.prover.send_command("idtac.")
         # Type check if appropriate:
-        if self.proof_term:
-            if self.proof_term == self.prover.parse_proof_state(output)['proof_term']:
-                print("Type check passed.")
-            else:
-                raise Exception("Type Error: input body and generated proof term don't match")     
-        else:
-            self.proof_term = self.prover.parse_proof_state(output)['proof_term']
-            print(self.proof_term)
+        #print("REached")
+        #print("Self Proof Term", self.proof_term)
+        #if self.proof_term:
+        #    if self.proof_term == self.prover.parse_proof_state(output)['proof_term']:
+        #        print("Type check passed.")
+        #    else:
+        #        raise Exception("Type Error: input body and generated proof term don't match")     
+        #else:
+        #    self.proof_term = self.prover.parse_proof_state(output)['proof_term']
+        #    print(self.proof_term)
         # Parse proof term
         grammar = parser.Grammar()
         # parser = Lark(proof_term_grammar, start='start')
@@ -593,6 +599,73 @@ class Argument:
             self.enrich_props()
             self.generate_proof_term()
         self.executed = True
+
+    
+    @staticmethod
+    def _normalize_pt_to_unicode(pt_ascii: str) -> str:
+        """Map Fellowship's ASCII fallbacks to the Unicode tokens your
+        parser expects.  The examples observed were:
+          • 'μ'   encoded as ";:"   (two chars)
+          • 'μ̃'  (mu-tilde) encoded as ";:'" or ";:\'"
+          • 'λ'   encoded as '\\' (backslash)
+        Adjust if your printer uses slightly different sentinels.
+        """
+        s = pt_ascii
+        # unify the two spellings we saw for mu-tilde first
+        s = s.replace(";:\'", "μ'" )
+        s = s.replace(";:'",  "μ'" )   # plain apostrophe variant
+        # plain mu next (do *after* mu-tilde)
+        s = s.replace(";:",   "μ")
+        # lambda
+        s = s.replace("\\",   "λ")
+        s = s.replace("~", "¬")
+        s = s.replace("false", "⊥")
+        return s
+    
+    @staticmethod
+    def _unquote(atom):
+        """Strip surrounding double quotes from atoms like '"A"'."""
+        if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
+            return atom[1:-1]
+        return atom
+
+    def _parse_proof_state(self, proof_state):
+        """
+        Build {goal_number: {"prop": some_str, "label": None}} from the
+        machine payload dict produced by the wrapper.
+
+        - goal_number := value of (meta ...)
+        - prop        := value of (active-prop ...) (quotes removed)
+        """
+        self.proof_term = self._normalize_pt_to_unicode(proof_state.get('proof-term').strip('"'))
+        res = {}
+        goals = proof_state.get('goals')
+    
+
+        # Normalize: 'goals' may be a single `(goal ...)` list or a list of them.
+        def _as_goal_list(gval):
+            if isinstance(gval, list) and gval and gval[0] == 'goal':
+                return [gval]
+            if isinstance(gval, list):            
+                #return [g for g in gval if isinstance(g, dict)]
+                return gval
+            return []
+
+        goal_entries = _as_goal_list(goals)
+
+
+        for g in goal_entries:
+        #for g in goals:
+            attrs = {}
+            for item in g[1:]:
+                if isinstance(item, list) and len(item) == 2:
+                    k, v = item
+                    attrs[k] = self._unquote(v)
+            meta = self._unquote(attrs.get('meta')) if 'meta' in attrs else None
+            prop = self._unquote(attrs.get('active-prop')) if 'active-prop' in attrs else None
+            if meta and prop is not None:
+                res[meta] = {"prop": prop, "label": None}
+        self.assumptions = res
 
     def extract_assumptions(self, output):
         #print("Match conclusion to assumption.")
@@ -653,6 +726,7 @@ class Argument:
         """
         from parser import PropEnrichmentVisitor
         print(f"Enriching argument {self.name}.")
+        print("self.prover.declarations", self.prover.declarations)
         visitor = PropEnrichmentVisitor(assumptions=self.assumptions,
                                         axiom_props=self.prover.declarations)
         self.body = visitor.visit(self.body)
@@ -770,7 +844,9 @@ class Argument:
             combined_body = parser.graft_uniform(other_argument.body,  self.neg_norm_body)
         else:
             combined_body = parser.graft_uniform(other_argument.body,  self.body)
-        enricher = parser.PropEnrichmentVisitor()
+        print("assumptions", self.assumptions, other_argument.assumptions)
+        enricher = parser.PropEnrichmentVisitor(assumptions=other_argument.assumptions,
+                                        axiom_props=self.prover.declarations)
         ptgenerator = parser.ProofTermGenerationVisitor()
         generator = parser.InstructionsGenerationVisitor()
         combined_body = ptgenerator.visit(enricher.visit(combined_body))
@@ -887,14 +963,14 @@ class Argument:
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
         if on == "GoFigure":
             on = self.resolve_attacked_assumption()
-            print("ON", on)
+            #print("ON", on)
         # arguments.executed:
         if not self.executed:
             self.execute()
         if negated_attacker == True:
             print("Turning negation into counterargument")
             self.negation_norm_body = self.negation_normalize()
-            print(self.neg_norm_body)
+            #print(self.neg_norm_body)
         if not other_argument.executed:
             other_argument.execute()
 
@@ -906,7 +982,7 @@ class Argument:
                 attacked_assumption = key
                 break
         issue = other_argument.assumptions[attacked_assumption]["prop"]
-        print("Issue", issue)
+        #print("Issue", issue)
         if issue.endswith('_bar'): #This still needs to be tested.
             issue[:-4]
             #TODO
@@ -919,14 +995,16 @@ class Argument:
         else:
             #BUG: This will fail if variable names are not fresh. Need to implement helper that generates fresh  variable names.
             adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
-            adapterterm = Mu(ID("aff", issue), issue, Goal("1"), ID("alt",issue))
+            adapterterm = Mu(ID("aff", issue), issue, Goal("1",issue), ID("alt",issue))
             adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
         adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
-        print("Adding body")
+        #print("Adding body")
         adapter_arg.body = adapterbody
         adapter_arg.execute()
+        #print("Adapter_arg proof term",adapter_arg.proof_term)
+        #print("Other arg proof term", other_argument.proof_term)
         adapted_argument = adapter_arg.chain(other_argument)
-        print("adapter argument constructed", adapted_argument.proof_term)
+        #print("adapter argument constructed", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
     
@@ -1030,7 +1108,7 @@ class Argument:
         print("Negation normalizing")
         if not self.executed:
             self.execute()
-
+        print("proof_term_neg", self.proof_term)
         rewriter = NegIntroRewriter()
         new_body = rewriter.rewrite(self.body)
 
@@ -1044,6 +1122,7 @@ class Argument:
         gen = parser.ProofTermGenerationVisitor()
         new_body = gen.visit(copy.deepcopy(new_body))
         self.neg_norm_form = new_body.pres
+        print("negation normalized proof term", self.neg_norm_form)
         self.neg_norm_representation = parser.pretty_natural(
             new_body,
             {
