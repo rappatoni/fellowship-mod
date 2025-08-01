@@ -16,12 +16,18 @@ MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 #HUMAN_UI = os.getenv("FSP_HUMAN_UI", "0") not in {"0", "false", "False", ""}
 
 class ProverWrapper:
+    """
+    The main class for the argumentation layer on top of the Fellowship prover. Includes utilities to execute an instance of the fellowship prover (self.prover, self.prover.expect), send commands to it and receive and process its output (send_command, self._sexp). Maintains a state in the form of Dicts of registered constant declarations and arguments (self.declarations, self.arguments) and parsed prover ouput (self.last_state). Allows for the registration and execution of custom tactics (self.custom_tactics).
+
+TODO: Unified exception handling and logging.
+TODO: Consistent use of type annotations.
+    """
     def __init__(self, prover_cmd):
         self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5)
         self.prover.expect('fsp <')
-        self.custom_tactics : Dict[str, Any] = {}
+        self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
         self.arguments : Dict[str, Any]= {}  # Dictionary to store arguments by name
-        self.declarations : Dict[str, str] = {}
+        self.declarations : Dict[str, str] = {} #Stores prover declarations materialized via "declare X : Y.".
         self.last_state: Any = None
         self._sexp = SexpParser()
 
@@ -49,6 +55,7 @@ class ProverWrapper:
 
     
     # ---------------- legacy helpers kept for now ----------------------
+    # Deprecated, delete upon tests passing.
     # def _expect_ui(self, command: str) -> str:
     #     try:
     #         self.prover.sendline(command)
@@ -93,7 +100,15 @@ class ProverWrapper:
 
 
     def _from_machine_payload(self, sexp: Any) -> Dict[str, Any]:
-         """Map the (very small) S‑exp structure to a dict. Extend here later."""
+         """Maps the  S‑exp structure to a dict.
+         sexp: S-exp of the proof state.
+         
+         The raw S-exp is kept for debugging purtposes. Declarations and Goals are handled both for the case where is a single declaration/goal and for lists of declarations/goals.
+         
+         TODO: Pass on error messages from the prover.
+         TODO: Handle additional content of the S-exp as it becomes useful.
+
+         """
          if not isinstance(sexp, list) or not sexp or sexp[0] != 'state':
              raise ValueError(f"unexpected payload root: {sexp!r}")
          out: Dict[str, Any] = {"raw": sexp}
@@ -119,7 +134,6 @@ class ProverWrapper:
                  for g in item[1:]:
                      if isinstance(g, list) and g and g[0] == 'goal':
                          goals.append(g)
-                         #goals.append(self._kv_list_to_dict(g[1:]))
                      else:
                          warnings.warn(f'Unable to convert goal list to dict')
                  out['goals'] = goals
@@ -171,50 +185,54 @@ class ProverWrapper:
                 self.declarations[nm] = pr
             
 
-    def parse_proof_state(self, output):
-        # Extract proof term
-        proof_term_match = re.search(r'Proof term:\s*\n\s*(.*?)\n', output, re.DOTALL)
-        proof_term = proof_term_match.group(1) if proof_term_match else None
+    # def parse_proof_state(self, output):
+    #     # Deprecated
+    #     # Extract proof term
+    #     proof_term_match = re.search(r'Proof term:\s*\n\s*(.*?)\n', output, re.DOTALL)
+    #     proof_term = proof_term_match.group(1) if proof_term_match else None
 
-        # Extract natural language explanation
-        nl_match = re.search(r'Natural language:\s*\n\s*(.*?)\n\s*done', output, re.DOTALL)
-        natural_language = nl_match.group(1) if nl_match else None
+    #     # Extract natural language explanation
+    #     nl_match = re.search(r'Natural language:\s*\n\s*(.*?)\n\s*done', output, re.DOTALL)
+    #     natural_language = nl_match.group(1) if nl_match else None
 
-        # Extract goals
-        goals_matches = re.findall(r'(\d+) goal[s]? yet to prove!', output)
-        goals_match = goals_matches[-1] if len(goals_matches)>0 else None
-        #goals = int(goals_match.group(1)) if goals_match else 0
-        goals = int(goals_match) if goals_match else 0
+    #     # Extract goals
+    #     goals_matches = re.findall(r'(\d+) goal[s]? yet to prove!', output)
+    #     goals_match = goals_matches[-1] if len(goals_matches)>0 else None
+    #     #goals = int(goals_match.group(1)) if goals_match else 0
+    #     goals = int(goals_match) if goals_match else 0
 
-        # Extract current goal
-        current_goal_match = re.search(r'\|-----\s*([\d\.])\s*\n\s*([^\r\n]*)', output, re.DOTALL)
-        current_goal = current_goal_match.group(2).strip() if current_goal_match else None
+    #     # Extract current goal
+    #     current_goal_match = re.search(r'\|-----\s*([\d\.])\s*\n\s*([^\r\n]*)', output, re.DOTALL)
+    #     current_goal = current_goal_match.group(2).strip() if current_goal_match else None
 
-        return {
-            'proof_term': proof_term,
-            'natural_language': natural_language,
-            'goals': goals,
-            'current_goal': current_goal,
-        }
+    #     return {
+    #         'proof_term': proof_term,
+    #         'natural_language': natural_language,
+    #         'goals': goals,
+    #         'current_goal': current_goal,
+    #     }
     
     def register_custom_tactic(self, name, function):
-        # Register a custom tactic with its associated function
+        """ Register a custom tactic with its associated function """
         self.custom_tactics[name] = function
 
     def execute_tactic(self, tactic_name, *args):
-        # Execute a tactic, either a custom or predefined tactic
+        """ Execute a tactic, either a custom or predefined tactic """
         if tactic_name in self.custom_tactics:
             return self.custom_tactics[tactic_name](self, *args)
         else:
             return f"Error: Tactic '{tactic_name}' is not defined."
 
     def register_argument(self, argument):
+        """ Register a new argument (i.e. a partial Fellowship proof.)"""
         self.arguments[argument.name] = argument
 
     def get_argument(self, name):
+        """ Retrieve a registered argument """
         return self.arguments.get(name)
     
     def close(self):
+        """ Close the prover """
         try:
             self.prover.sendline('quit.')
         finally:
@@ -222,6 +240,9 @@ class ProverWrapper:
 
 
 def check_for_errors(output,errors):
+    """ Rudimentary exception surfacing from prover output.
+    TODO: Update and test this for machine-oriented output.
+    """
     for error in errors:
         if error in output:
             # print('Error detected: {error}.')
@@ -232,13 +253,10 @@ def check_for_errors(output,errors):
 
 
 def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.']):
+    """DEPRECATED: Currently not used and code needs updating.
+    """
 
     instructions = [f'cut ({y}) stash.', f'next.', f'cut ({x}) affine.',f'next.', f'axiom.']
-    # if closed == True: 
-    #     instructions = [f'cut ({x}->{y}) stash.', f'elim H.',f'next.',f'elim.',f'axiom.',f'cut ({x}) affine.',f'axiom.',f'axiom.']
-    # else:
-    #     instructions = [f'cut ({x}->{y}) stash.', f'elim H.',f'next.',f'elim.',f'next.',f'cut ({x}) affine.',f'next.',f'axiom.']
-        
     output = ''
     counter = 0
     for instruction in instructions:
@@ -261,6 +279,17 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
     return output
 
 def execute_script(prover, script_path):
+    """ Executes a .fspy script.
+        script_path: .fspy file to be run.
+        
+        Syntax for scripts: 
+          - All fellowship commands;
+          - (Custom) tactics: tactic "<TacticName> <Args>"
+          - Arguments: "start argument / end argument";
+          - Executing/Reducing an argument : "reduce <ArgName>"
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Chaining (Graftin) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
+    """
     recording = False
     current_argument = None
     with open(script_path, 'r') as script_file:
