@@ -251,6 +251,10 @@ def check_for_errors(output,errors):
         else:
             pass
 
+        
+# ---------------------------------------TACTICS-------------------------------------------------
+#TODO: Add Implication Elimination tactic.
+#TODO: Add Negation expansion tactic.
 
 def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.']):
     """DEPRECATED: Currently not used and code needs updating.
@@ -278,6 +282,8 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
             
     return output
 
+# -----------------------------------------Scripts/Interactive Mode -----------------------------
+
 def execute_script(prover, script_path):
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
@@ -297,8 +303,8 @@ def execute_script(prover, script_path):
     with open(script_path, 'r') as script_file:
         for line in script_file:
             command = line.strip()
-            print(f'Sending command {command} to Fellowship.')
             if command and not command.startswith('#'):
+                print(f'Sending command {command} to Fellowship.')
                 if command.startswith('start argument '):
                     if recording:
                         print("Already recording an argument. Please end the current recording first.")

@@ -33,11 +33,17 @@ elim.
 axiom.
 qed.
 
+# Counterargument in negation-expanded form
+
 start argument arg1 ~EfficientMetro
+elim.
+cut (~EfficientMetro) nef.
 cut (StrikeMetro -> ~EfficientMetro) th.
 axiom r2.
 elim.
 next.
+axiom.
+elim.
 axiom.
 end argument
 
@@ -49,47 +55,47 @@ next.
 axiom.
 end argument
 
-start argument undercut ~EfficientMetro
-elim.
-tactic pop EfficientMetro UseMetro
-end argument
+# start argument undercut ~EfficientMetro
+# elim.
+# tactic pop EfficientMetro UseMetro
+# end argument
 
-theorem undercut: (~EfficientMetro).
-cut (EfficientMetro) issue.
-tactic pop EfficientMetro UseMetro
-elim.
-axiom a2.
-# replace by axiom to end proof early:
-elim.
-tactic pop EfficientMetro UseMetro
-axiom a1.
-axiom r1.
-axiom a1.
+# theorem undercut: (~EfficientMetro).
+# cut (EfficientMetro) issue.
+# tactic pop EfficientMetro UseMetro
+# elim.
+# axiom a2.
+# # replace by axiom to end proof early:
+# elim.
+# tactic pop EfficientMetro UseMetro
+# axiom a1.
+# axiom r1.
+# axiom a1.
 
-theorem undercut: (~EfficientMetro).
-cut (EfficientMetro) issue.
-tactic pop EfficientMetro UseMetro
-cut (~EfficientMetro) attacker.
-next.
-elim.
-axiom.
-axiom.
+# theorem undercut: (~EfficientMetro).
+# cut (EfficientMetro) issue.
+# tactic pop EfficientMetro UseMetro
+# cut (~EfficientMetro) attacker.
+# next.
+# elim.
+# axiom.
+# axiom.
 
 
-theorem undercut: (~EfficientMetro).
-elim.
-cut (EfficientMetro->UseMetro) stash.
-tactic pop EfficientMetro UseMetro
+# theorem undercut: (~EfficientMetro).
+# elim.
+# cut (EfficientMetro->UseMetro) stash.
+# tactic pop EfficientMetro UseMetro
 
-axiom.
-axiom.
-cut (EfficientMetro->UseMetro) stash.
-next.
-elim.
-next.
-next.
-axiom.
-next.
-axiom.
-next.
-axiom.
+# axiom.
+# axiom.
+# cut (EfficientMetro->UseMetro) stash.
+# next.
+# elim.
+# next.
+# next.
+# axiom.
+# next.
+# axiom.
+# next.
+# axiom.
