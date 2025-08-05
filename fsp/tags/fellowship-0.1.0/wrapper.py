@@ -297,6 +297,7 @@ def execute_script(prover, script_path):
     with open(script_path, 'r') as script_file:
         for line in script_file:
             command = line.strip()
+            print(f'Sending command {command} to Fellowship.')
             if command and not command.startswith('#'):
                 if command.startswith('start argument '):
                     if recording:
@@ -394,6 +395,7 @@ def execute_script(prover, script_path):
 
 
 def interactive_mode(prover):
+    #TODO: implement human-oriented REPL output.
     recording = False
     current_argument = None
     try:

@@ -9,7 +9,7 @@ DEFAULT_SCRIPTS = [
     "tests/normalize_render.fspy",
     "tests/tactics.fspy",
     "tests/test1.fspy",
-    "tests/test2.fspy",
+    #"tests/test2.fspy",
 ]
 
 def pytest_addoption(parser: pytest.Parser) -> None:

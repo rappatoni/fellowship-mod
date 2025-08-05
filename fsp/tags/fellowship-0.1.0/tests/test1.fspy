@@ -6,7 +6,7 @@ declare r2: (StrikeMetro -> ~EfficientMetro).
 declare a1: (EfficientMetro).
 declare a2: (StrikeMetro).
 
-declare ax : (~EfficientMetro)
+declare ax : (~EfficientMetro).
 
 theorem arg1: (UseMetro).
 cut (EfficientMetro -> UseMetro) th.
