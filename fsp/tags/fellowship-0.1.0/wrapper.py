@@ -284,11 +284,13 @@ def execute_script(prover, script_path):
         
         Syntax for scripts: 
           - All fellowship commands;
-          - (Custom) tactics: tactic "<TacticName> <Args>"
+          - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
           - Executing/Reducing an argument : "reduce <ArgName>"
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
-          - Chaining (Graftin) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
+          - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+          - TODO: undercut, support, rebut.
     """
     recording = False
     current_argument = None
@@ -533,7 +535,7 @@ class Argument:
     def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS" ):
         self.prover = prover
         self.name = name
-        self.conclusion = conclusion
+        self.conclusion = conclusion #Conclusion of the argument.
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str, attackers : some_list_of_arguments}}
         self.labelling = False #Flag to check if argument has been labelled.
@@ -541,16 +543,16 @@ class Argument:
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
         self.body = None # parsed proof term created from proof_term
         self.rendering = rendering # Which rendering should be generated?
-        self.enrich = enrich
+        self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
         self.executed = False  # Flag to check if the argument has been executed
         #self.coloring = ## Colors the accepted, rejected and undecided parts of the argument starting from assumptions.
         self.attacks = {}  #Dict of self-attacks with corresponding subargument
         self.normal_body           = None  # reduced AST (deep‑copy)
-        self.normal_form           = None  # textual proof term
-        self.normal_representation = None  # NL rendering of normal form
-        self.neg_norm_body = None
-        self.neg_norm_form = None
+        self.normal_form           = None  # Normalized proof term.
+        self.normal_representation = None  # NL rendering of normal form.
+        self.neg_norm_body = None # Stores the negation-normalized body (Workaround for Counterarguments in Fellowship).
+        self.neg_norm_form = None # Negation-normalized proof term.
         
     def execute(self):
         if self.executed:
@@ -687,57 +689,57 @@ class Argument:
                 res[meta] = {"prop": prop, "label": None}
         self.assumptions = res
 
-    def extract_assumptions(self, output):
-        #print("Match conclusion to assumption.")
-        # Parse the output to find open goals (assumptions)
-        preassumptions = []
-        # temporarily ignore past proof steps. THIS IS DANGEROUS. While idtac should not change anything, it is risky to change the prover state merely to get a copy of the last output again.
-        temp_output = self.prover.send_command(f'idtac.', 1)
+    # def extract_assumptions(self, output):
+    #     #print("Match conclusion to assumption.")
+    #     # Parse the output to find open goals (assumptions)
+    #     preassumptions = []
+    #     # temporarily ignore past proof steps. THIS IS DANGEROUS. While idtac should not change anything, it is risky to change the prover state merely to get a copy of the last output again.
+    #     temp_output = self.prover.send_command(f'idtac.', 1)
         
-        # Find the number of goals
-        num_goals = self.prover.parse_proof_state(temp_output)['goals']
-        if num_goals > 0 :
-            # num_goals = int(goals_match.group(1))
-            # Extract each goal
-            goal_pattern_proof = re.compile(r'\|-----\s*(\d\.*.*\d*)\s*(\s*[^:]*:[^\s]*\s*)*\*:([^\s]*)')
-            goal_pattern_refu = re.compile(r'\*:([^\s]*)\s*(\s*[^:]*:[^\s]*\s*)*\|-----\s*(\d\.*.*\d*)')
+    #     # Find the number of goals
+    #     num_goals = self.prover.parse_proof_state(temp_output)['goals']
+    #     if num_goals > 0 :
+    #         # num_goals = int(goals_match.group(1))
+    #         # Extract each goal
+    #         goal_pattern_proof = re.compile(r'\|-----\s*(\d\.*.*\d*)\s*(\s*[^:]*:[^\s]*\s*)*\*:([^\s]*)')
+    #         goal_pattern_refu = re.compile(r'\*:([^\s]*)\s*(\s*[^:]*:[^\s]*\s*)*\|-----\s*(\d\.*.*\d*)')
 
-            match = goal_pattern_proof.search(temp_output)
-            #print("matching")
-            #print(match)
-            antimatch = goal_pattern_refu.search(temp_output)
-            # print("HERE!")
-            print(" Match, Antimatch", match, antimatch)
-            preassumptions = [(match.group(3).strip(), 0, match.group(1).strip())] if match else [(antimatch.group(1).strip()+'_bar', 0, antimatch.group(3).strip())]
-            i=1
-            print(" Preassumptions", preassumptions)
-            #Test the while loop, may be buggy.
-            while i<num_goals:
-                #print(i)
-                #print('WARNING')
-                temp_output = self.prover.send_command('next.')
-                #print(temp_output)
-                plus_match = goal_pattern_proof.search(temp_output)
-                plus_antimatch = goal_pattern_refu.search(temp_output)
-                print("Test")
-                test = goal_pattern_refu.search('2 goals yet to prove! \n *:A \n issue:A \n |-----  1.1.2 ')
-                print(test)
-                print(plus_match)
-                print('ANTI')
-                print(plus_antimatch)
-                #print('append attempt')
-                #print(plus_antimatch.group(1).strip()+'_bar')
-                if plus_match:
-                    preassumptions.append((plus_match.group(3).strip(), i, plus_match.group(1).strip()))
-                else:
-                    preassumptions.append((plus_antimatch.group(1).strip()+'_bar', i, plus_antimatch.group(3).strip()))
-                #print(assumptions)
-                i+=1
-        assumptions = {}
-        assumptions = {number.strip() : { "prop" : assumption_text.strip(), "index" : goal_index, "label" : None } for (assumption_text, goal_index, number) in preassumptions}
-        print("Assumptions extracted:")
-        print(assumptions)
-        return assumptions
+    #         match = goal_pattern_proof.search(temp_output)
+    #         #print("matching")
+    #         #print(match)
+    #         antimatch = goal_pattern_refu.search(temp_output)
+    #         # print("HERE!")
+    #         print(" Match, Antimatch", match, antimatch)
+    #         preassumptions = [(match.group(3).strip(), 0, match.group(1).strip())] if match else [(antimatch.group(1).strip()+'_bar', 0, antimatch.group(3).strip())]
+    #         i=1
+    #         print(" Preassumptions", preassumptions)
+    #         #Test the while loop, may be buggy.
+    #         while i<num_goals:
+    #             #print(i)
+    #             #print('WARNING')
+    #             temp_output = self.prover.send_command('next.')
+    #             #print(temp_output)
+    #             plus_match = goal_pattern_proof.search(temp_output)
+    #             plus_antimatch = goal_pattern_refu.search(temp_output)
+    #             print("Test")
+    #             test = goal_pattern_refu.search('2 goals yet to prove! \n *:A \n issue:A \n |-----  1.1.2 ')
+    #             print(test)
+    #             print(plus_match)
+    #             print('ANTI')
+    #             print(plus_antimatch)
+    #             #print('append attempt')
+    #             #print(plus_antimatch.group(1).strip()+'_bar')
+    #             if plus_match:
+    #                 preassumptions.append((plus_match.group(3).strip(), i, plus_match.group(1).strip()))
+    #             else:
+    #                 preassumptions.append((plus_antimatch.group(1).strip()+'_bar', i, plus_antimatch.group(3).strip()))
+    #             #print(assumptions)
+    #             i+=1
+    #     assumptions = {}
+    #     assumptions = {number.strip() : { "prop" : assumption_text.strip(), "index" : goal_index, "label" : None } for (assumption_text, goal_index, number) in preassumptions}
+    #     print("Assumptions extracted:")
+    #     print(assumptions)
+    #     return assumptions
 
     def enrich_props(self):
         """
@@ -1065,7 +1067,7 @@ class Argument:
         return final_argument
 
     def normalize(self, enrich: bool = True):
-        """Compute and cache the normal form without mutating *self.body*."""
+        """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
         if not self.executed:
             self.execute()
         #if self.normal_body is not None:
@@ -1170,6 +1172,7 @@ def setup_prover():
 
 
 def reduce_argument_cmd(prover: ProverWrapper, name: str):
+    """ CLI for Argument Reduction """
     arg = prover.get_argument(name)
     if not arg:
         print(f"Argument '{name}' not found.")
@@ -1178,6 +1181,7 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str):
     arg.reduce()
 
 def render_argument_cmd(prover: ProverWrapper, name: str, normalized=False):
+    """ CLI for Argument Rendering. The normalized proof term can be selected."""
     arg = prover.get_argument(name)
     if not arg:
         print(f"Argument '{name}' not found.")
