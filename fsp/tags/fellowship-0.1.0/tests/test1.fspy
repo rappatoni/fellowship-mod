@@ -55,6 +55,8 @@ next.
 axiom.
 end argument
 
+undercut arg1 arg2
+
 # start argument undercut ~EfficientMetro
 # elim.
 # tactic pop EfficientMetro UseMetro

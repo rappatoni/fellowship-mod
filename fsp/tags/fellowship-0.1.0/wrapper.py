@@ -21,6 +21,7 @@ class ProverWrapper:
 
 TODO: Unified exception handling and logging.
 TODO: Consistent use of type annotations.
+TODO: Mechanism to declare a scenario of default assumptions.
     """
     def __init__(self, prover_cmd):
         self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5)
@@ -401,7 +402,21 @@ def execute_script(prover, script_path):
 
 
 def interactive_mode(prover):
-    #TODO: implement human-oriented REPL output.
+     """Enables command line interaction with the wrapper.
+        
+        Syntax for commands: 
+          - All fellowship commands;
+          - (Custom) tactics: "tactic <TacticName> <Args>"
+          - Arguments: "start argument / end argument";
+          - Executing/Reducing an argument : "reduce <ArgName>"
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+          - TODO: undercut, support, rebut.
+
+        #TODO: implement human-oriented REPL output.
+    """
+    
     recording = False
     current_argument = None
     try:
@@ -540,13 +555,22 @@ def interactive_mode(prover):
         prover.close()
                 
 class Argument:
+    """Implementation of deductive arguments in \bar{\lamda}\mu\tilde{\mu} calculus. Atomic (counter-)arguments are terms of the (co-)intuitionistic (or (co-)minimal) fragment of the calculus enriched with default assumptions. Argumentation terms are constructed from atomic arguments and the undercut, rebut, support and chain operators.
+
+       Argumentation terms are in normal form if they are \bar{\lamda}\mu\tilde{\mu} normal forms. Eta reduction is optional (TODO). 
+
+Currently, a normalization of an argumentation Arg about issue A returns a non-affine term for A iff the top-level argument for A is skeptically accetable under admissible semantics (?) in the abstract argumentation framework induced by Arg.
+    
+    
+    """
+    
     def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS" ):
         self.prover = prover
         self.name = name
         self.conclusion = conclusion #Conclusion of the argument.
         self.instructions = instructions  # List of instruction strings
-        self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str, attackers : some_list_of_arguments}}
-        self.labelling = False #Flag to check if argument has been labelled.
+        self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
+        self.labelling = False # Deprecated: Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
         self.body = None # parsed proof term created from proof_term
@@ -554,8 +578,7 @@ class Argument:
         self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
         self.executed = False  # Flag to check if the argument has been executed
-        #self.coloring = ## Colors the accepted, rejected and undecided parts of the argument starting from assumptions.
-        self.attacks = {}  #Dict of self-attacks with corresponding subargument
+        self.attacks = {}  # Deprecated: Dict of self-attacks with corresponding subargument
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # Normalized proof term.
         self.normal_representation = None  # NL rendering of normal form.
@@ -563,6 +586,8 @@ class Argument:
         self.neg_norm_form = None # Negation-normalized proof term.
         
     def execute(self):
+        """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
+        """
         if self.executed:
             print(f"Argument '{self.name}' has already been executed.")
             return
@@ -591,23 +616,6 @@ class Argument:
             #print(output)
         # Capture the assumptions (open goals)
         self._parse_proof_state(output)
-        #self.assumptions = output.get('goals')(
-        #print("Assumptions",  self.assumptions)
-        #self.assumptions = self.extract_assumptions(output)
-        #self.assumptions = number.strip() : { "prop" : assumption_text.strip(), "index" : goal_index } for (assumption_text, goal_index, number) in self.assumptions}
-        # Capture the proof_term (use of idtac dangerous!)
-        #output = self.prover.send_command("idtac.")
-        # Type check if appropriate:
-        #print("REached")
-        #print("Self Proof Term", self.proof_term)
-        #if self.proof_term:
-        #    if self.proof_term == self.prover.parse_proof_state(output)['proof_term']:
-        #        print("Type check passed.")
-        #    else:
-        #        raise Exception("Type Error: input body and generated proof term don't match")     
-        #else:
-        #    self.proof_term = self.prover.parse_proof_state(output)['proof_term']
-        #    print(self.proof_term)
         # Parse proof term
         grammar = parser.Grammar()
         # parser = Lark(proof_term_grammar, start='start')
@@ -775,6 +783,8 @@ class Argument:
         
 
     def label_own_assumptions(self):
+        """Deprecated: Label the assumptions of an argument as IN, OUT, or UNDEC. This is currently not needed/was replaced by the reduction system.
+        """
         for key in self.assumptions:
             self.assumptions[key]["label"] = parser.label_assumption(self.body, self.assumptions[key]["prop"],self.assumptions)
             self.labelling = True
@@ -782,7 +792,7 @@ class Argument:
         return 
 
     def check_self_attacks(self):
-        """Checks consistency up to (i.e. without) logical inference."""
+        """Deprecated: Checks consistency up to (i.e. without) logical inference. Self-attacks are simply handled by the reduction system."""
         # Self-attacks are cycles of length 1. This implies that the argument is hopeless/can never be accepted.
         # Generally, a proposition A is skeptically acceptable in a set S, if there is an exhaustive (all possible counterarguments refuted) non-cyclical argument from S for A.
         # It is credulously acceptable if there is an exhaustive even-cyclical argument from S for A.
@@ -820,7 +830,7 @@ class Argument:
         return
          
     def pop_arg(self, subargument):
-        """ Stash the current argument and pop a subargument. TODO: implement blocking."""
+        """Deprecated: Stash the current argument and pop a subargument. Currently all argumentation functionality is bottom-up, proceeding from a known conclusion. Investigating a top-down exploratory mode is future work. """
         # Execute args if necessary.
         if not self.executed:
             self.execute()
