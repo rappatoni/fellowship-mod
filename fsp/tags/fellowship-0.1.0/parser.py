@@ -3,6 +3,9 @@ import re
 import warnings
 import collections
 from copy import deepcopy
+import logging
+
+logger = logging.getLogger('fsp.parser')
 
 class Grammar():
     def __init__(self):
@@ -299,10 +302,11 @@ class PropEnrichmentVisitor(ProofTermVisitor):
     For each ID or DI named 'r1', we set .prop = axiom_props['r1'], etc.
     Optionally, for Lamda, Cons, Mu, etc., we can set node.prop if we have enough info.
     """
-    def __init__(self, axiom_props = None, assumptions = None, bound_vars = None):
+    def __init__(self, axiom_props=None, assumptions=None, bound_vars=None, verbose: bool = False):
         self.assumptions = assumptions if assumptions else {}
         self.axiom_props = axiom_props if axiom_props else {}
         self.bound_vars = bound_vars if bound_vars else {}
+        self.verbose = verbose
  
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
@@ -311,7 +315,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             return node
         else:
             if self.assumptions.get(goal_num):
-                print(f'Enriching Goal with type {self.assumptions[goal_num]["prop"]}')
+                logger.info("Enriching Goal with type %s", self.assumptions[goal_num]["prop"])
                 node.prop = self.assumptions[goal_num]["prop"]
             else:
                 warnings.warn(f'Enrichment of node {node} not possible: {goal_num} not a key in {self.assumptions}')
@@ -321,7 +325,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_Laog(node)
         laog_num = node.number.strip()
         if self.assumptions.get(laog_num):
-            print(f'Enriching Laog with type {self.assumptions[laog_num]["prop"][:-4]}')
+            logger.info("Enriching Laog with type %s", self.assumptions[laog_num]["prop"][:-4])
             node.prop = self.assumptions[laog_num]["prop"][:-4]
         return node
 
@@ -329,21 +333,24 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_ID(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")}')
+                logger.info("Enriching axiom %s with type %s",
+                            node.name, self.axiom_props[node.name].strip("()"))
                 node.prop = self.axiom_props[node.name].strip("()")
             else:
-                print(f'Axiom {node.name} already enriched with type {node.prop}')
+                logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
-            print(f'Enriching bound variable with type {self.bound_vars[node.name]}')
+            logger.info("Enriching bound variable %s with type %s",
+                        node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
             if node.prop.startswith("~") or node.prop.startswith("¬"):
                 node.flag = "bound_negation"
-                print(f'Bound negation flagged for instruction generation.')
+                if self.verbose: pass
+                logger.debug('Bound negation flagged for instruction generation.')
         elif node.prop:
             self.bound_vars[node.name] = node.prop
         elif node.name == "_F_":
             node.flag = "Falsum"
-            print("Falsum flagged for instruction generation.")
+            logger.debug("Falsum flagged for instruction generation.")
         else:
             warnings.warn(f'Enrichment of node {node} not possible.')
         return node
@@ -352,19 +359,22 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_DI(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                print(f'Enriching Axiom with type {self.axiom_props[node.name].strip("()")} based on declared axiom {node.name}')
+                logger.info("Enriching axiom %s with type %s based on declared axiom",
+                            node.name, self.axiom_props[node.name].strip("()"))
                 node.prop = self.axiom_props[node.name].strip("()")
             else:
-                print(f'Axiom {node.name} already enriched with type {node.prop}')
+                logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
-            print(f'Enriching bound variable with type {self.bound_vars[node.name]} based on bound variable {node.name}')
+            logger.info("Enriching bound variable %s with type %s based on bound variable",
+                        node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
             if node.prop.startswith("~") or node.prop.startswith("¬"):
                 node.flag = "bound_negation"
-                print(f'Bound negation flagged for instruction generation.')
+                if self.verbose: pass
+                logger.debug('Bound negation flagged for instruction generation.')
         elif node.name == "_F_":
             node.flag = "Falsum"
-            print("Falsum flagged for instruction generation.")
+            logger.debug("Falsum flagged for instruction generation.")
         else:
             warnings.warn(f'Enrichment of node {node.name} not possible.')
         return node
@@ -494,7 +504,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                                      axiom_props=self.axiom_props).visit(show)
         show = ProofTermGenerationVisitor().visit(show)
         self._step += 1
-        print(f"[reduction step {self._step}]\n{show.pres}\n")
+        logger.info("[reduction step %d]\n%s\n", self._step, show.pres)
 
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
@@ -505,7 +515,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
             lam: Lamda = node.term
             cons: Cons = node.context
-            print("Applying Lamda rule")
+            if self.verbose: logger.info("Applying λ‑rule")
             v      = cons.term      # the argument v
             E      = cons.context  # the continuation E (might itself be None)
             # Build the new µ'‑binder that will become the *context* part.
@@ -527,23 +537,23 @@ class ArgumentTermReducer(ProofTermVisitor):
             # both binders affine in their own commands
             if not (_is_affine(inner_mu.id.name, inner_mu) and
                     _is_affine(ctx_mt.di.name,   ctx_mt)):
-                print("A")
+                if self.verbose: logger.debug("Guard A failed")
                 return False
             # both protect goals with equal prop (we ignore number for now)
             if not isinstance(inner_mu.term, Goal) and (isinstance(ctx_mt.context, Goal) or isinstance(ctx_mt.context.context.term, Goal)):
-                print("B")
+                if self.verbose: logger.debug("Guard B failed")
                 return False
             if not isinstance(ctx_mt.context, Mutilde):
-                print("C")
+                if self.verbose: logger.debug("Guard C failed")
                 return False
             if not node.id.name == inner_mu.context.name:
-                print("D")
+                if self.verbose: logger.debug("Guard D failed")
                 return False
             #if isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.context.context.term, Goal):
                 #What is the point of this guard again?
              #   print(f"termprop {inner_mu.term.prop} vs Contextprop {ctx_mt.term.prop}")
               #  return inner_mu.term.prop == ctx_mt.context.context.term.prop
-            print(f"termprop {inner_mu.term.prop} vs Contextprop {ctx_mt.term.prop}")
+            if self.verbose: logger.debug("termprop %s vs contextprop %s", inner_mu.term.prop, ctx_mt.term.prop)
             return inner_mu.term.prop == ctx_mt.term.prop
 
         
@@ -551,14 +561,14 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
-            print(f"Alternative Arguments {inner_mu.id.name} and {ctx_mt.di.name} detected.")
-            print("Guards", _guards(inner_mu, ctx_mt))
+            if self.verbose: logger.info("Alternative Arguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
+            if self.verbose: logger.info("Guards %s", _guards(inner_mu, ctx_mt))
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
-                print("Case 1?", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
+                if self.verbose: logger.info("Case 1? %s", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
                 if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
-                    print("Applying defence rule")
+                    if self.verbose: logger.info("Applying defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # should be ID α
@@ -569,16 +579,16 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Case 2: ctx_mt.context already in normal form (no more redexes we know)
                 # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
                 # matches in that sub‑tree, regard it as normal‑form.
-                print("Case 2?",  not self._has_next_redex(ctx_mt.context))
+                if self.verbose: logger.info("Case 2? %s",  not self._has_next_redex(ctx_mt.context))
                 if not self._has_next_redex(ctx_mt.context):
-                    print("Applying defeat rule")
+                    if self.verbose: logger.info("Applying defeat rule")
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # t*
                     self._print_current()
                     self.visit_Mu(node)
                     return node
                 else:
-                    print("Simplifying attacker argument")
+                    if self.verbose: logger.info("Simplifying attacker argument")
                     ctx_mt.context = self.visit_Mutilde(ctx_mt.context)
                     self.visit_Mu(node)
                     return node
@@ -596,7 +606,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         # cases because outer binders are unaffected by the rewrite).
         # ────────────────────────────────────────────────────────────────────
         if isinstance(node.term, Mu):
-            print("Applying general Mu reduction rule")
+            if self.verbose: logger.info("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
@@ -612,7 +622,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             self.visit_Mu(node)
             return node
         if isinstance(node.context, Mutilde):
-            print("Applying general Mutilde rule")
+            if self.verbose: logger.info("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
@@ -663,31 +673,31 @@ class ArgumentTermReducer(ProofTermVisitor):
             # both binders affine in their own commands
             if not (_is_affine(inner_mu.id.name, inner_mu) and
                     _is_affine(ctx_mt.di.name,   ctx_mt)):
-                print("Atilde")
+                if self.verbose: logger.debug("Guard Atilde failed")
                 return False
             # both protect goals with equal prop (we ignore number for now)
             if not (isinstance(inner_mu.context, Laog) and isinstance(ctx_mt.context, Laog)):
-                print("Btilde")
+                if self.verbose: logger.debug("Guard Btilde failed")
                 return False
             if not isinstance(inner_mu.term, Mu):
                 return False
             if not node.di.name == ctx_mt.term.name:
-                print("Ctilde")
+                if self.verbose: logger.debug("Guard Ctilde failed")
                 return False
-            print(f"termprop {inner_mu.term.prop} vs Contextprop {ctx_mt.term.prop}")
+            if self.verbose: logger.debug("termprop %s vs contextprop %s", inner_mu.term.prop, ctx_mt.term.prop)
             return inner_mu.context.prop == ctx_mt.context.prop
         
         # affine μ'‑rule --------------------------------------------
         if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
-            print(f"Alternative Counterarguments {inner_mu.id.name} and {ctx_mt.di.name} detected.")
+            if self.verbose: logger.info("Alternative Counterarguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: inner_mu.term is µ̃ with affine binder → throw‑away
-                print("Case 1?", _is_affine(inner_mu.term.id.name, inner_mu.term))
+                if self.verbose: logger.info("Case 1? %s", _is_affine(inner_mu.term.id.name, inner_mu.term))
                 if _is_affine(inner_mu.term.id.name, inner_mu.term):
-                    print("Applying Mutilde defence rule")
+                    if self.verbose: logger.info("Applying Mutilde defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # should be ID α
@@ -698,16 +708,16 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Case 2: ctx_mt.context already in normal form (no more redexes we know)
                 # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
                 # matches in that sub‑tree, regard it as normal‑form.
-                print("Case 2?",  not self._has_next_redex(inner_mu.term))
+                if self.verbose: logger.info("Case 2? %s",  not self._has_next_redex(inner_mu.term))
                 if not self._has_next_redex(inner_mu.term):
-                    print("Applying Mutilde defeat rule")
+                    if self.verbose: logger.info("Applying Mutilde defeat rule")
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # t*
                     self._print_current()
                     self.visit_Mutilde(node)
                     return node
                 else:
-                    print("Simplifying attacker argument")
+                    if self.verbose: logger.info("Simplifying attacker argument")
                     inner_mu.term  = self.visit_Mu(inner_mu.term)
                     self.visit_Mu(node)
                     return node
@@ -715,7 +725,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     # self.visit_Mu(inner_mu.term)
 
         if isinstance(node.term, Mu):
-            print("Applying general Mu reduction rule")
+            if self.verbose: logger.info("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
@@ -732,7 +742,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             return node
 
         if isinstance(node.context, Mutilde):
-            print("Applying general Mutilde rule")
+            if self.verbose: logger.info("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
@@ -867,11 +877,9 @@ def traverse_proof_term(semantic, term, lines, indent): # TODO: change to instan
 def match_trees(nodeA, nodeB, mapping):
     # If node types are different, cannot match
     if type(nodeA) != type(nodeB):
-        print(type(nodeA))
-        print(type(nodeB))
-        print("Wrong type")
+        logger.debug("Type mismatch: %s vs %s", type(nodeA), type(nodeB))
         return False
-    print("Match")
+    logger.debug("Match")
     # Handle different node types
     if isinstance(nodeA, Mu):
         # Match id_, prop, term, context
@@ -1007,11 +1015,11 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
 
     if isinstance(node, Goal):
         # Use the goal number to retrieve the corresponding proposition
-        print("ISGOAL")
+        logger.debug("ISGOAL")
         goal_number = node.number.strip()
         goal_prop = assumptions[goal_number]["prop"]
         if goal_prop is None:
-            print(goal_prop)
+            logger.debug("%s", goal_prop)
             return ('UNDEC', node)
 
         elif goal_prop == A:
@@ -1025,7 +1033,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
 
 
     elif isinstance(node, ID):
-        print("ISID")
+        logger.debug("ISID")
         # Rule: An assumption A is OUT if the root is an ID object with prop A
         if node.prop == A:
             return ('OUT',node)
@@ -1033,7 +1041,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
             return ('UNDEC', node)
 
     elif isinstance(node, DI):
-        print("ISDI")
+        logger.debug("ISDI")
         # Rule: An assumption A_bar is OUT if the root is a DI object with prop A
         if node.prop == contrary(A):
             return ('OUT',node)
@@ -1041,7 +1049,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
             return ('UNDEC', node)
 
     elif isinstance(node, Lamda):
-        print("ISLAMDA")
+        logger.debug("ISLAMDA")
         label_di = label_assumption(node.di.di, A, assumptions)[0]
         label_term = label_assumption(node.term, A, assumptions)[0]
 
@@ -1053,7 +1061,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
             return ('UNDEC', node)
 
     elif isinstance(node, Cons):
-        print("ISCONS")
+        logger.debug("ISCONS")
         label_term = label_assumption(node.term, A, assumptions)[0]
         label_context = label_assumption(node.context, A, assumptions)[0]
 
@@ -1065,9 +1073,9 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
             return ('UNDEC', node)
 
     elif isinstance(node, Mu):
-        print("ISMU")
+        logger.debug("ISMU")
         if node.id.name == 'stash':
-            print("ISSTASH")
+            logger.debug("ISSTASH")
             if node.prop == A:
             # An assumption A is IN if the root is a Mu-object with id 'stash' and prop A
                 return ('IN', node)
@@ -1076,7 +1084,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
             else:
                 return ('UNDEC', node)
         elif node.id.name == 'support':
-            print("ISSUPPORT")
+            logger.debug("ISSUPPORT")
             if node.prop == A:
             # An assumption that gets shadowed by an alternative mu-bound continutation is UNDEC. This is because the bound continuation provides an alternative way to derive the assumption so it is no longer needed.. 
                 return ('UNDEC', node)
@@ -1096,7 +1104,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
                     return ('UNDEC', node)
                 
         elif node.prop != contrary(A) and node.prop != neg(A) :
-            print("ISNOTCONTR")
+            logger.debug("ISNOTCONTR")
             label_term = label_assumption(node.term, A, assumptions)[0]
             label_context = label_assumption(node.context, A, assumptions)[0]
             
@@ -1115,7 +1123,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
 
 
     elif isinstance(node, Mutilde):
-        print("ISMUTILDE")
+        logger.debug("ISMUTILDE")
         if node.di.name == 'stash':
             if node.prop == contrary(A) or node.prop == neg(A):
                     # An assumption A_bar is IN if the root is a Mutilde-object with di 'stash' and prop A
@@ -1517,7 +1525,7 @@ def graft_single(body_B, goal_number: str, body_A):
 
 def graft_uniform(body_B, body_A):
     """Uniform graft: replace **all** Goals/Laogs with the conclusion of *A*."""
-    print(f"Uniformly grafting {body_A} on {body_B} ")
+    logger.info("Uniformly grafting %r on %r", body_A, body_B)
     # determine conclusion of A from its *root* binder
     if isinstance(body_A, Mu):
         concl_prop      = body_A.prop
@@ -1525,7 +1533,7 @@ def graft_uniform(body_B, body_A):
     elif isinstance(body_A, Mutilde):
         concl_prop      = body_A.prop
         target_is_goal  = False     # replaces Laogs
-        print(f"Target {concl_prop} is LAOG")
+        logger.debug("Target %s is LAOG", concl_prop)
     else:
         raise TypeError("argument A must start with Mu or Mutilde binder")
 
@@ -1554,7 +1562,7 @@ class NegIntroRewriter(ProofTermVisitor):
 
     # generic traversal -------------------------------------------------
     def visit(self, node):
-        print(f"Rewriting negation {node} to counterargument")
+        logger.debug("Rewriting negation %r to counterargument", node)
         if node is None:
             return None
         if isinstance(node, Mu) and node.id.name == "thesis" and node.prop.startswith("¬"):
@@ -1580,18 +1588,19 @@ class NegIntroRewriter(ProofTermVisitor):
         # print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
         inner_mu = thesis_mu.term
         if not (isinstance(inner_mu, Mu) and inner_mu.prop == thesis_mu.prop):
-            print(f'Failed: {inner_mu} is not Mu node or its prop {inner_mu.prop} does not equal the thesis prop {thesis_mu.prop}')
+            logger.debug("Failed: %r is not Mu node or its prop %s does not equal the thesis prop %s",
+                         inner_mu, inner_mu.prop, thesis_mu.prop)
             return None
         lam = inner_mu.term
         if not isinstance(lam, Lamda):
-            print(f'Failed: {inner_mu.term} is not the expected Lamda term')
+            logger.debug("Failed: %r is not the expected Lamda term", inner_mu.term)
             return None
         mu_bot = lam.term
         if not (isinstance(mu_bot, Mu) and mu_bot.prop == "⊥"):
-            print(f'Failed: {mu_bot} is not Mu node or its prop {inner_mu.prop} does not equal ⊥')
+            logger.debug("Failed: %r is not Mu node or its prop %s does not equal ⊥", mu_bot, inner_mu.prop)
             return None
         # shape looks good: body sits in mu_bot.context, which is ?k or !k
-        print("Returning negation normalized body")
+        logger.debug("Returning negation normalized body")
         return mu_bot.context
 
     # -------------------------------------------------------------------

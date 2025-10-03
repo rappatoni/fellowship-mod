@@ -8,7 +8,7 @@ import warnings
 from pathlib import Path
 import argparse
 import copy
-from typing import Any, List, Tuple, Optional, Dict
+from typing import Any, List, Tuple, Optional, Dict, Callable
 
 from sexp_parser import SexpParser
 
@@ -51,6 +51,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.declarations : Dict[str, str] = {} #Stores prover declarations materialized via "declare X : Y.".
         self.last_state: Any = None
         self._sexp = SexpParser()
+        self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
 
     @staticmethod
     def _unquote(atom: Any) -> Any:
@@ -58,7 +59,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return atom[1:-1]
         return atom
 
-    def send_command(self, command: str, silent: int=1):
+    def send_command(self, command: str, silent: int = 1) -> Dict[str, Any]:
         """Send a command to Fellowship
 
         command -- The command string
@@ -85,7 +86,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
             warnings.warn(w)
         # surface notes from machine payload
         for note in state.get('notes', []):
-            print(f"Prover note: {note}")
+            logger.info("note: %s", note)
+            if self.echo_notes:
+                print(f"Prover note: {note}")
         errs = state.get('errors', [])
         if errs:
             # keep last_state for post-mortem, then raise
@@ -228,7 +231,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                  
          return out
 
-    def _kv_list_to_dict(self, node):
+    def _kv_list_to_dict(self, node) -> Dict[str, Any]:
         """Convert a list like [(k v) (k v) ...] into a dict {k: v}."""
         out = {}
         for el in node:
@@ -297,26 +300,26 @@ TODO: Mechanism to declare a scenario of default assumptions.
     #         'current_goal': current_goal,
     #     }
     
-    def register_custom_tactic(self, name, function):
+    def register_custom_tactic(self, name: str, function: Callable[..., Any]) -> None:
         """ Register a custom tactic with its associated function """
         self.custom_tactics[name] = function
 
-    def execute_tactic(self, tactic_name, *args):
+    def execute_tactic(self, tactic_name: str, *args: Any) -> Any:
         """ Execute a tactic, either a custom or predefined tactic """
         if tactic_name in self.custom_tactics:
             return self.custom_tactics[tactic_name](self, *args)
         else:
             return f"Error: Tactic '{tactic_name}' is not defined."
 
-    def register_argument(self, argument):
+    def register_argument(self, argument: "Argument") -> None:
         """ Register a new argument (i.e. a partial Fellowship proof.)"""
         self.arguments[argument.name] = argument
 
-    def get_argument(self, name):
+    def get_argument(self, name: str) -> Optional["Argument"]:
         """ Retrieve a registered argument """
         return self.arguments.get(name)
     
-    def close(self):
+    def close(self) -> None:
         """ Close the prover """
         try:
             self.prover.sendline('quit.')
@@ -369,7 +372,7 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover, script_path):
+def execute_script(prover: ProverWrapper, script_path: str) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -389,14 +392,14 @@ def execute_script(prover, script_path):
         for line in script_file:
             command = line.strip()
             if command and not command.startswith('#'):
-                print(f'Sending command {command} to Fellowship.')
+                logger.info("Sending command %s to Fellowship.", command)
                 if command.startswith('start argument '):
                     if recording:
-                        print("Already recording an argument. Please end the current recording first.")
+                        logger.warning("Already recording an argument. Please end the current recording first.")
                         continue
                     parts = command.split(' ', 3)
                     if len(parts) < 4:
-                        print("Invalid command. Use: start argument name conclusion")
+                        logger.error("Invalid command. Use: start argument name conclusion")
                         continue
                     name = parts[2]
                     conclusion = parts[3].strip()
@@ -406,10 +409,10 @@ def execute_script(prover, script_path):
                         'instructions': []
                     }
                     recording = True
-                    print(f"Started recording argument '{name}' with conclusion '{conclusion}'.")
+                    logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
                 elif command == 'end argument':
                     if not recording:
-                        print("Not currently recording an argument.")
+                        logger.warning("Not currently recording an argument.")
                         continue
                     # Create and execute the argument
                     arg = Argument(
@@ -421,7 +424,7 @@ def execute_script(prover, script_path):
                     arg.execute()
                     # Store the argument for later use
                     prover.register_argument(arg)
-                    print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
+                    logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
                     # Reset recording state
                     recording = False
                     current_argument = None
@@ -464,7 +467,7 @@ def execute_script(prover, script_path):
                         # Format: chain arg1 arg2
                         parts = command.split()
                         if len(parts) != 3:
-                            print("Invalid chain command. Use: chain arg1 arg2")
+                            logger.error("Invalid chain command. Use: chain arg1 arg2")
                             continue
                         arg1_name = parts[1]
                         arg2_name = parts[2]
@@ -474,25 +477,26 @@ def execute_script(prover, script_path):
                             combined_arg = arg1.chain(arg2)
                             if combined_arg:
                                 prover.register_argument(combined_arg)
-                                print(f"Arguments '{arg1_name}' and '{arg2_name}' chained into '{combined_arg.name}'.")
+                                logger.info("Arguments '%s' and '%s' chained into '%s'.",
+                                            arg1_name, arg2_name, combined_arg.name)
                             else:
-                                print("Failed to chain arguments.")
+                                logger.error("Failed to chain arguments.")
                         else:
-                            print("One or both arguments not found.")
+                            logger.error("One or both arguments not found.")
                     else:
                         # Execute other commands
                         try:
                             output = prover.send_command(command)
                         except ProverError as e:
-                            print(f"Prover error: {e}")
+                            logger.error("Prover error: %s", e)
                             break
                         except MachinePayloadError as e:
-                            print(f"Prover error (no machine payload): {e}")
+                            logger.error("Prover error (no machine payload): %s", e)
                             break
                         # print(output)
 
 
-def interactive_mode(prover):
+def interactive_mode(prover: ProverWrapper) -> None:
     """Enables command line interaction with the wrapper.
         
         Syntax for commands: 
@@ -676,11 +680,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.neg_norm_body = None # Stores the negation-normalized body (Workaround for Counterarguments in Fellowship).
         self.neg_norm_form = None # Negation-normalized proof term.
         
-    def execute(self):
+    def execute(self) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
         """
         if self.executed:
-            print(f"Argument '{self.name}' has already been executed.")
+            logger.warning("Argument '%s' has already been executed.", self.name)
             return
         if self.instructions == None:
             if self.body == None:
@@ -702,7 +706,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 #output += output_instr
             else:
                 output = self.prover.send_command(instr.strip() + '.')
-                print(output)
+                logger.debug("Prover output: %s", output)
                 #output += output_instr
             #print(output)
         # Capture the assumptions (open goals)
@@ -723,7 +727,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = parser.pretty_natural(self.body, parser.natural_language_rendering)
         # Discard the theorem to prevent closing it (since it may have open goals)
         self.prover.send_command('discard theorem.')
-        print(f"Argument {self.name} executed")
+        logger.info("Argument '%s' executed", self.name)
         if self.enrich == "PROPS":    
             self.enrich_props()
             self.generate_proof_term()
@@ -848,21 +852,21 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     #     print(assumptions)
     #     return assumptions
 
-    def enrich_props(self):
+    def enrich_props(self) -> None:
         """
         Use PropEnrichmentVisitor with assumption_mapping = self.assumptions
         and axiom_props = self.axiom_props to fill .prop for each node.
         """
         from parser import PropEnrichmentVisitor
-        print(f"Enriching argument {self.name}.")
-        print("self.prover.declarations", self.prover.declarations)
+        logger.info("Enriching argument '%s'.", self.name)
+        logger.debug("Declarations: %r", self.prover.declarations)
         visitor = PropEnrichmentVisitor(assumptions=self.assumptions,
                                         axiom_props=self.prover.declarations)
         self.body = visitor.visit(self.body)
-        print(f"Argument {self.name} enriched.")
+        logger.info("Argument '%s' enriched.", self.name)
         return
 
-    def generate_proof_term(self):
+    def generate_proof_term(self) -> None:
         """
         Use ProofTermGenerationVisitor to generate the string representation of an enriched proof term.
         """
@@ -948,11 +952,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def match_conclusion_assumptions(self, conclusion : str, assumptions : dict):
         matching_assumption = None
         for key in assumptions:
-            print(key)
-            if conclusion.replace("~","¬"  ) in assumptions[key]["prop"]:
+            logger.debug("Checking assumption key=%s", key)
+            if conclusion.replace("~", "¬") in assumptions[key]["prop"]:
                 matching_assumption = key
-                print("Match found:")
-                print(matching_assumption)
+                logger.debug("Match found: %s", matching_assumption)
                 break
         return matching_assumption
 
@@ -970,12 +973,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         combined_conclusion = other_argument.conclusion
         #combined_instructions = []
         if self.neg_norm_body:
-            print("Negnorm", self.neg_norm_body)
-            print("other_assumptions", other_argument.assumptions)
+            logger.debug("Using negation‑normalized body: %r", self.neg_norm_body)
+            logger.debug("Other argument assumptions: %r", other_argument.assumptions)
             combined_body = parser.graft_uniform(other_argument.body,  self.neg_norm_body)
         else:
             combined_body = parser.graft_uniform(other_argument.body,  self.body)
-        print("assumptions", self.assumptions, other_argument.assumptions)
+        logger.debug("Assumptions (self, other): %r ; %r",
+                     self.assumptions, other_argument.assumptions)
         enricher = parser.PropEnrichmentVisitor(assumptions=other_argument.assumptions,
                                         axiom_props=self.prover.declarations)
         ptgenerator = parser.ProofTermGenerationVisitor()
@@ -1098,8 +1102,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # arguments.executed:
         if not self.executed:
             self.execute()
-        if negated_attacker == True:
-            print("Turning negation into counterargument")
+        if negated_attacker:
+            logger.info("Turning negated attacker into counterargument")
             self.negation_norm_body = self.negation_normalize()
             #print(self.neg_norm_body)
         if not other_argument.executed:
@@ -1109,11 +1113,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         attacked_assumption = None
         for key in other_argument.assumptions:
             if on in other_argument.assumptions[key]["prop"]:
-                print("Looking for assumptions")
+                logger.debug("Found attacked assumption key=%s", key)
                 attacked_assumption = key
                 break
         issue = other_argument.assumptions[attacked_assumption]["prop"]
-        #print("Issue", issue)
+        logger.debug("Attacked issue: %s", issue)
+        logger.debug("Building adapter body")
         if issue.endswith('_bar'): #This still needs to be tested.
             issue[:-4]
             #TODO (I think this TODO is deprecated? Check.)
@@ -1129,22 +1134,22 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             adapterterm = Mu(ID("aff", issue), issue, Goal("1",issue), ID("alt",issue))
             adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
         adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
-        #print("Adding body")
+        logger.debug("Building adapter body")
         adapter_arg.body = adapterbody
         adapter_arg.execute()
         #print("Adapter_arg proof term",adapter_arg.proof_term)
         #print("Other arg proof term", other_argument.proof_term)
         adapted_argument = adapter_arg.chain(other_argument)
-        #print("adapter argument constructed", adapted_argument.proof_term)
+        logger.debug("Adapter argument constructed: %s", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
     
-    def get_assumptions(self):
+    def get_assumptions(self) -> list[str]:
         if not self.executed:
             self.execute()
         return [self.assumptions[key]["prop"] for key in self.assumptions]
 
-    def get_conclusion(self):
+    def get_conclusion(self) -> str:
         return self.conclusion
 
     def support(self, other_argument):
@@ -1158,24 +1163,24 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         matching_assumption = self.match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
         issue = other_argument.assumptions[matching_assumption]["prop"]
-        print("Issue", issue)
+        logger.debug("Issue: %s", issue)
         # The adapter
 
         adaptercontext = Mutilde(DI("aff2", issue), issue, Goal("2", issue), ID("alt1", issue))
         adapterterm = Mu(ID("aff1", issue), issue, Goal("1"), ID("alt1",issue))
         adapterbody = Mu(ID("alt1", issue), issue, adapterterm, adaptercontext)
         alternative_proof_adapter = Argument(self.prover, f'supports_on_{other_argument.assumptions[matching_assumption]["prop"]}', other_argument.assumptions[matching_assumption]["prop"])
-        print("Adding body")
+        logger.debug("Building adapter body")
         alternative_proof_adapter.body = adapterbody
 
                                              #[f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt1.', f'next.', f'axiom support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt2.', f'next.', f'axiom support.'])
         alternative_proof_adapter.execute()
         adapted_argument =  alternative_proof_adapter.chain(other_argument)
-        print("adapter argument constructed", adapted_argument.proof_term)
+        logger.debug("Adapter argument constructed: %s", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
 
-    def normalize(self, enrich: bool = True):
+    def normalize(self, enrich: bool = True) -> parser.ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
         if not self.executed:
             self.execute()
@@ -1205,7 +1210,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.normal_representation = parser.pretty_natural(red_ast, style)
         return self.normal_body
 
-    def render(self, normalized: bool = False):
+    def render(self, normalized: bool = False) -> Optional[str]:
         """Return NL rendering.  If *normalized* is True, ensure normal form
         is computed first."""
         if normalized:
@@ -1217,9 +1222,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.execute()          # fills original representation
             return self.representation
 
-    def reduce(self):
+    def reduce(self) -> None:
         """Normalise and print proof term + NL; keep originals intact."""
         self.normalize()
+        logger.info("Reduction finished for argument '%s'", self.name)
+        logger.debug("Normal‑form proof term: %s", self.normal_form)
+        logger.debug("NL rendering: %s", self.normal_representation)
         print("— reduction finished —\n")
         print("Normal‑form proof term:\n", self.normal_form)
         print("\nNatural language:\n", self.normal_representation)
@@ -1236,10 +1244,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         If the pattern is *not* present we raise a ValueError.
         """
         from parser import NegIntroRewriter
-        print("Negation normalizing")
+        logger.info("Negation normalizing argument '%s'", self.name)
         if not self.executed:
             self.execute()
-        print("proof_term_neg", self.proof_term)
+        logger.debug("Original proof term: %s", self.proof_term)
         rewriter = NegIntroRewriter()
         new_body = rewriter.rewrite(self.body)
 
@@ -1253,7 +1261,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         gen = parser.ProofTermGenerationVisitor()
         new_body = gen.visit(copy.deepcopy(new_body))
         self.neg_norm_form = new_body.pres
-        print("negation normalized proof term", self.neg_norm_form)
+        logger.debug("Negation‑normalized proof term: %s", self.neg_norm_form)
         self.neg_norm_representation = parser.pretty_natural(
             new_body,
             {
@@ -1267,20 +1275,20 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
 
-def setup_prover():
+def setup_prover() -> ProverWrapper:
     env = os.environ.copy()
     env.setdefault("FSP_MACHINE", "1")
     prover = ProverWrapper('./fsp', env=env)
     prover.register_custom_tactic('pop', pop)
     # Switch to classical logic
-    prover.send_command('lk.')
+    #prover.send_command('lk.')
     # Declare some booleans to work with.
-    prover.send_command('declare A,B,C,D:bool.')
+    #prover.send_command('declare A,B,C,D:bool.')
     logger.info("Prover decls %r", prover.declarations)
     return prover
 
 
-def reduce_argument_cmd(prover: ProverWrapper, name: str):
+def reduce_argument_cmd(prover: ProverWrapper, name: str) -> None:
     """ CLI for Argument Reduction """
     arg = prover.get_argument(name)
     if not arg:
@@ -1289,7 +1297,7 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str):
     print(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
     arg.reduce()
 
-def render_argument_cmd(prover: ProverWrapper, name: str, normalized=False):
+def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False) -> None:
     """ CLI for Argument Rendering. The normalized proof term can be selected."""
     arg = prover.get_argument(name)
     if not arg:

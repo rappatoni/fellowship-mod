@@ -12,14 +12,20 @@ from mutilde_reduction_test import *
 from graft_tests import *
 from smoketest import *
 import traceback
+import logging
+import io
+import os
 
 # Tests3
 # TODO: refactor this using a standard test library such as unittest.
-
+def test_prover():
+    prover = setup_prover()
+    prover.send_command('declare A,B,C,D:bool.')
+    return prover
 
 def declaration_test():
     print("DECLARATION TEST")
-    prover = setup_prover()
+    prover = test_prover()
     #prover.send_command()
     test_declarations = {"A": "bool",
                          "B": "bool",
@@ -38,7 +44,7 @@ def declaration_test():
     return
 
 def prop_enrichment_test():
-    prover = setup_prover()
+    prover = test_prover()
     prover.send_command('declare r1: (A->B).')
     arg = Argument(
             prover,
@@ -121,7 +127,7 @@ def print_props(node, indent=0):
 def simple_test():
     print("SIMPLE TEST")
     try:
-        prover = setup_prover()
+        prover = test_prover()
         prover.send_command('declare r1: (A->B).')
         #Argument
         arg_a = Argument(
@@ -156,7 +162,7 @@ def simple_test():
 def chain_test():
     print("CHAIN TEST")
     try:
-        prover = setup_prover()
+        prover = test_prover()
         # Two rules for chaining:
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (B->C).')
@@ -204,7 +210,7 @@ def chain_test():
 def simple_undercut_test():
     print("SIMPLE UNDERCUT TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (C->~A).')
          # Argument A: Proves ~A using C
@@ -254,7 +260,7 @@ def focussed_undercut_test(reduce:bool=False):
     reduce = str(reduce).lower() in ("true", "1", "yes")
     print("FOCUSSED UNDERCUT TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (C->~A).')
         print("Declarations", prover.declarations)
@@ -317,7 +323,7 @@ def reinstatement_test():
     pass
     
 def arg_pop_test(): #TODO
-    prover=setup_prover()
+    prover=test_prover()
     prover.send_command('declare r1: (A->B).')
     prover.send_command('declare r2: (C->~A).')
      # Argument A: Proves ~A using C
@@ -342,7 +348,7 @@ def arg_pop_test(): #TODO
 def undercut_test():
     print("UNDERCUT AND SUPPORT TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (C->~A).')
         prover.send_command('declare r3: (D->C).')
@@ -417,7 +423,7 @@ def undercut_test():
 def subargument_test(): #TODO
     print("SUBARGUMENT TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (B->C).')
         superargument = Argument(
@@ -480,7 +486,7 @@ def subargument_test(): #TODO
 def pop_subargument_test():
     print("POP SUBARGUMENT TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (B->C).')
         superargument = Argument(
@@ -524,7 +530,7 @@ def pop_subargument_test():
 def label_assumptions_test(test_argument=None, test_assumption_mapping = {'1':{'prop' : 'C' , 'index' : None, 'label' : None}, '2' :{'prop' : 'B_bar' , 'index' : None, 'label' : None}}):
     print("LABEL ASSUMPTIONS TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare first: (A->B).')
         if test_argument == None:
             print("USING DEFAULT ARGUMENT")
@@ -569,7 +575,7 @@ def label_assumptions_test(test_argument=None, test_assumption_mapping = {'1':{'
 def self_attack_test():
     print("SELF ATTACK TEST")
     try:
-        prover=setup_prover()
+        prover=test_prover()
         prover.send_command('declare r1: (A->B).')
         prover.send_command('declare r2: (B->~A).')
         test_argument = Argument(
@@ -631,7 +637,7 @@ def self_labelling_test(argument=None):
         return
 
 def generate_instructions_test():
-    prover = setup_prover()
+    prover = test_prover()
     prover.send_command('declare r1: (A->B).')
     prover.send_command('declare r2: (B->C).')
     prover.send_command
@@ -696,7 +702,7 @@ def generate_instructions_test():
     return
 
 def proof_term_generation_test():
-    prover = setup_prover()
+    prover = test_prover()
     prover.send_command('declare r1: (A->B).')
     prover.send_command('declare r2: (B->C).')
     prover.send_command('declare c2: (C->~A).')
@@ -725,7 +731,7 @@ def proof_term_generation_test():
 
 def machine_integration_test():
     print("MACHINE INTEGRATION TEST")
-    prover = setup_prover()
+    prover = test_prover()
     try:
         st = prover.send_command('idtac.')
         # Snapshot fields present
@@ -757,8 +763,45 @@ def machine_integration_test():
         prover.close()
 
         
+def logger_test():
+    """Capture the fsp.wrapper logger and assert that notes are logged at INFO."""
+    import io, logging, os
+    # Ensure the wrapper’s logger uses INFO (ProverWrapper reads env at __init__)
+    old_level = os.environ.get('FSP_LOGLEVEL')
+    os.environ['FSP_LOGLEVEL'] = 'INFO'
+    log = logging.getLogger('fsp.wrapper')
+    buf = io.StringIO()
+    h = logging.StreamHandler(buf)
+    h.setLevel(logging.INFO)
+    h.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(message)s'))
+    log.addHandler(h)
+    prover = None
+    try:
+        # Create the prover (setup_prover also sends lk. & declares A,B,C,D)
+        prover = test_prover()
+        # Clear any earlier messages so the assertion targets a fresh command
+        buf.truncate(0); buf.seek(0)
+        # Trigger a note again (logic switch emits a note in machine messages)
+        prover.send_command('lk.')
+        logged = buf.getvalue()
+        print("Captured logs:\n", logged)
+        if ('note:' in logged) and ('Current logic:' in logged):
+            print("LOGGER TEST PASSED")
+        else:
+            print("LOGGER TEST FAILED: expected an INFO note with 'Current logic:'")
+    finally:
+        if prover:
+            try: prover.close()
+            except Exception: pass
+        log.removeHandler(h)
+        h.close()
+        if old_level is None:
+            del os.environ['FSP_LOGLEVEL']
+        else:
+            os.environ['FSP_LOGLEVEL'] = old_level
+
 def interactive_mode_test():
-    prover = setup_prover()
+    prover =setup_prover()
     interactive_mode(prover)
         
 
@@ -804,7 +847,8 @@ if __name__ == '__main__':
         'mu_general_rule_test': mu_general_rule_test,
         'mutilde_affine_defence_test' : mutilde_affine_defence_test,
         'graft_operator_test': graft_operator_test,
-        'test_machine_stub': test_machine_stub
+        'test_machine_stub': test_machine_stub,
+        'logger_test': logger_test
     }
     # Parse keyword arguments if provided
     kwargs_dict = {}
