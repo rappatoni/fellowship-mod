@@ -723,6 +723,39 @@ def proof_term_generation_test():
     return
 
 
+def machine_integration_test():
+    print("MACHINE INTEGRATION TEST")
+    prover = setup_prover()
+    try:
+        st = prover.send_command('idtac.')
+        # Snapshot fields present
+        print("machine keys:", sorted(k for k in st.keys() if k != 'raw'))
+        # No errors expected on a no-op
+        print("errors:", st.get('errors'))
+        print("warnings:", st.get('warnings'))
+        print("notes:", st.get('notes'))
+        if st.get('errors'):
+            raise ProverError("Unexpected errors: " + "; ".join(st['errors']))
+        # Decls synced (A,B,C,D: bool from setup_prover)
+        expected = {"A":"bool","B":"bool","C":"bool","D":"bool"}
+        ok = all(prover.declarations.get(k) == v for k, v in expected.items())
+        print("decls synced:", ok, prover.declarations)
+        # Proof term present (string from machine payload)
+        print("proof-term present:", bool(st.get('proof-term')))
+        # Goals list (should exist; count may vary)
+        print("goals count:", len(st.get('goals', [])))
+        # Optional: try a bad command to see message surfacing
+        try:
+            prover.send_command('axiom nonexistent_rule.')
+        except ProverError as e:
+            print("ProverError surfaced (as expected on bad axiom):", e)
+        except Exception as e:
+            print("Non-ProverError exception:", type(e).__name__, e)
+        else:
+            print("No ProverError for bad axiom name (prover may return a note).")
+    finally:
+        prover.close()
+
         
 def interactive_mode_test():
     prover = setup_prover()
@@ -764,6 +797,7 @@ if __name__ == '__main__':
         'self_labelling_test': self_labelling_test,
         'proof_term_generation_test': proof_term_generation_test,
         'interactive_mode_test': interactive_mode_test,
+        'machine_integration_test': machine_integration_test,
         'lambda_rule_test': lambda_rule_test,
         'affine_mu_rule_test' : affine_mu_rule_test,
         'affine_mu_rule_nonaffine_test' : affine_mu_rule_nonaffine_test,
