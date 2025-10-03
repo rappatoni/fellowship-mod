@@ -95,3 +95,12 @@ def pytest_ignore_collect(collection_path: Path, config):
         return collection_path.name == "tests.py"
     except Exception:
         return False
+
+def pytest_report_header(config):
+    # Shows up at the top of every pytest run; override via NEXT_TODO env var
+    import os
+    msg = os.getenv(
+        "NEXT_TODO",
+        "NEXT TODO: Focus next on graft_test.py::test_graft_operator"
+    )
+    return msg
