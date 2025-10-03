@@ -2,6 +2,10 @@
 
 open Core
 
+let external_error : string option ref = ref None
+let set_external_error (s : string) : unit =
+  external_error := Some s
+
 (** Global flag – set via environment variable FSP_MACHINE. *)
 let machine_mode : bool ref = ref (
   match Sys.getenv_opt "FSP_MACHINE" with
@@ -35,7 +39,7 @@ let sexp_hyp (nm, pr, vis) =
 let sexp_env (nm, srt) =
   Printf.sprintf "((name %s)(sort %s))" (sexp_string nm) (sexp_sort srt)
 
-let sexp_goal (meta, g : Core.metaid * Core.goal) =
+let sexp_goal ((meta, g) : Core.metaid * Core.goal) =
   let side = match fst g.active with LeftHandSide -> "lhs" | RightHandSide -> "rhs" in
   let hyps = String.concat " " (List.map sexp_hyp g.hyp) in
   let ccls = String.concat " " (List.map sexp_hyp g.ccl) in
@@ -83,16 +87,33 @@ let snapshot (cairn : Core.cairn) : string =
 
   (* messages -------------------------------------------------------*)
   let messages_sexp =
-    match Core.get_msg cairn with
-    | None ->
+    (* collect an externally supplied parse error once, then clear it *)
+    let ext_err =
+      match !external_error with
+      | Some s -> external_error := None; Some s
+      | None -> None
+    in
+    (* collect Core message if present *)
+    match ext_err, Core.get_msg cairn with
+    | Some e, Some m when Core.isExn cairn ->
+        Printf.sprintf
+          "(messages (errors %s %s) (warnings) (notes))"
+          (sexp_string e) (sexp_string (m#to_string))
+    | Some e, _ ->
+        Printf.sprintf
+          "(messages (errors %s) (warnings) (notes))"
+          (sexp_string e)
+    | None, Some m when Core.isExn cairn ->
+        Printf.sprintf
+          "(messages (errors %s) (warnings) (notes))"
+          (sexp_string (m#to_string))
+    | None, Some m ->
+        Printf.sprintf
+          "(messages (errors) (warnings) (notes %s))"
+          (sexp_string (m#to_string))
+    | None, None ->
         "(messages (errors) (warnings) (notes))"
-    | Some m ->
-        let txt = m#to_string in
-        if Core.isExn cairn then
-          Printf.sprintf "(messages (errors %s) (warnings) (notes))" (sexp_string txt)
-        else
-          Printf.sprintf "(messages (errors) (warnings) (notes %s))" (sexp_string txt)
-
+  in
   (* restore user ascii preference ----------------------------------*)
   ascii := saved_ascii;
 

@@ -13,6 +13,7 @@ open Tactics
 open Instructions
 open Print
 open Help
+open Machine
 
 (*Global variables. Use only under adult supervision. For more, see core.ml
 and print.ml*)
@@ -73,14 +74,34 @@ let toplevel () =
 	       echo (fun frm -> 
 	        localization (Lexing.lexeme_start_p buf) frm ;
 		fprintf frm "Syntax error: %s@\n" s ;
-		help_hint frm )
+		help_hint frm ) ;
+               let pos = Lexing.lexeme_start_p buf in
+               let col = pos.pos_cnum - pos.pos_bol in
+               let loc = Printf.sprintf "Line %d, character %d:" pos.pos_lnum col in
+               let msg = Printf.sprintf "%s\nParse error: %s" loc s in
+               Machine.set_external_error msg;
+               if !(Machine.machine_mode) then begin
+                 print_endline ";;BEGIN_ML_DATA;;";
+                 print_endline (Machine.snapshot !cairn);
+                 print_endline ";;END_ML_DATA;;";
+               end
 		 
 	   | Parsing.Parse_error -> 
 	       (* Syntactic error *)
 	       echo (fun frm ->
 		localization (Lexing.lexeme_start_p buf) frm ;
 		fprintf frm "Parse error@\n" ;
-                help_hint frm )
+                help_hint frm ) ;
+               let pos = Lexing.lexeme_start_p buf in
+               let col = pos.pos_cnum - pos.pos_bol in
+               let loc = Printf.sprintf "Line %d, character %d:" pos.pos_lnum col in
+               let msg = Printf.sprintf "%s\nParse error: syntactical analysis." loc in
+               Machine.set_external_error msg;
+               if !(Machine.machine_mode) then begin
+                 print_endline ";;BEGIN_ML_DATA;;";
+                 print_endline (Machine.snapshot !cairn);
+                 print_endline ";;END_ML_DATA;;";
+               end
 	);
     done;
   with Failure "end" -> 

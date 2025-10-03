@@ -52,6 +52,12 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.last_state: Any = None
         self._sexp = SexpParser()
 
+    @staticmethod
+    def _unquote(atom: Any) -> Any:
+        if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
+            return atom[1:-1]
+        return atom
+
     def send_command(self, command: str, silent: int=1):
         """Send a command to Fellowship
 
@@ -77,6 +83,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
         # warnings/errors from machine payload
         for w in state.get('warnings', []):
             warnings.warn(w)
+        # surface notes from machine payload
+        for note in state.get('notes', []):
+            print(f"Prover note: {note}")
         errs = state.get('errors', [])
         if errs:
             # keep last_state for post-mortem, then raise
@@ -121,18 +130,40 @@ TODO: Mechanism to declare a scenario of default assumptions.
     #     return results
 
     # ---------------- new machine helpers -----------------------------
+    def _extract_plain_errors(self, output: str) -> Optional[List[str]]:
+        # Capture “fsp < Line …, character …” + following “Parse error …”
+        pat_block = re.compile(
+            r'(?m)(?s)^\s*(?:fsp\s*<\s*)?Line\s+\d+,\s*character\s+\d+:[^\n]*\n\s*\.?\s*Parse error:[^\n]*'
+        )
+        hits = [m.group(0).strip() for m in pat_block.finditer(output)]
+        # Also capture any standalone “Parse error:” lines
+        pat_line = re.compile(r'(?mi)^\s*Parse error:[^\n]*$')
+        hits += [m.group(0).strip() for m in pat_line.finditer(output)]
+        return hits or None
+
     def _extract_machine_block(self, output: str) -> Optional[Dict[str, Any]]:
-        """Takes the raw machine output (a sexp), parses it and converts it into a dict.
-        output: the raw machine output. 
-        TODO: This needs to handle error messages/warnings from the prover. E.g. when a prover command such as "axiom" does not obviously apply, the proof state will not change and the prover will emit a warning such as "This is not trivial. Work some more." This needs to be parsed and properly surfaced here, probably as a warning.
-        """
-        m = MACHINE_BLOCK_RE.search(output)
-        if not m:
+        # There can be multiple machine blocks in one prover turn; pick the last.
+        matches = list(MACHINE_BLOCK_RE.finditer(output))
+        state: Optional[Dict[str, Any]] = None
+        if matches:
+            payload = matches[-1].group(1).strip().encode('utf-8')
+            sexp = self._sexp.parse(payload)
+            state = self._from_machine_payload(sexp)
+        else:
+            state = {}
+
+        # Merge plaintext parse errors regardless of machine block presence
+        errs = self._extract_plain_errors(output)
+        if errs:
+            existing = state.get('errors', []) if state is not None else []
+            if state is None:
+                state = {}
+            state['errors'] = existing + errs
+
+        # If truly nothing present, signal None
+        if not state:
             return None
-        payload = m.group(1).strip().encode('utf-8')
-        #print("payload", payload)
-        sexp = self._sexp.parse(payload)
-        return self._from_machine_payload(sexp)
+        return state
 
 
     def _from_machine_payload(self, sexp: Any) -> Dict[str, Any]:
@@ -225,17 +256,17 @@ TODO: Mechanism to declare a scenario of default assumptions.
             if not nm or not kind:
                 continue
             if isinstance(nm, str):
-                nm = nm.strip('"')
+                nm = self._unquote(nm)
             if kind == 'sort':
                 typ = entry.get('sort')
                 if isinstance(typ, str):
-                    typ = typ.strip('"')
+                    typ = self._unquote(typ)
                     self.declarations[nm]= typ
             elif kind == 'prop':
                 # We store the proposition string for axioms/theorems.
                 pr = entry.get('prop')
                 if isinstance(pr, str):
-                    pr = pr.strip('"')
+                    pr = self._unquote(pr)
                 self.declarations[nm] = pr
             
 
@@ -450,7 +481,14 @@ def execute_script(prover, script_path):
                             print("One or both arguments not found.")
                     else:
                         # Execute other commands
-                        output = prover.send_command(command)
+                        try:
+                            output = prover.send_command(command)
+                        except ProverError as e:
+                            print(f"Prover error: {e}")
+                            break
+                        except MachinePayloadError as e:
+                            print(f"Prover error (no machine payload): {e}")
+                            break
                         # print(output)
 
 
