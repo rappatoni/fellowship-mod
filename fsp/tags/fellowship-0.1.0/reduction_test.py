@@ -1,5 +1,7 @@
 from parser import *
 from copy import deepcopy
+import logging
+logger = logging.getLogger("tests.reduction")
 
 # ------------------------------------------------------------
 #  Lambda-rule regression test for ArgumentTermReducer
@@ -15,7 +17,7 @@ def lambda_rule_test():
     A *minimal* counter-example would reveal itself if the reducer forgot to
     deep-copy sub-trees or failed to re-link the new nodes correctly.
     """
-    print("LAMBDA RULE REDUCTION TEST")
+    logger.info("Lambda rule reduction test")
     try:
         # A tiny proof term that exhibits the redex *once*.
         #    μ thesis:B . < λx:A.x || y * thesis >
@@ -25,7 +27,7 @@ def lambda_rule_test():
         counter = 0
         reduced_terms = []
         for test_term in test_terms:
-            print(test_term)
+            logger.debug("Input term: %s", test_term)
             grammar   = Grammar()
             transformer = ProofTermTransformer()
             tree      = grammar.parser.parse(test_term)
@@ -34,9 +36,9 @@ def lambda_rule_test():
             reducer   = ArgumentTermReducer()            
             result    = reducer.reduce(ast)
             result_term = printer.visit(result).pres
-            print("Reduced proof term ", counter, ": ", result_term)
+            logger.info("Reduced proof term %d: %s", counter, result_term)
             reduced_terms = reduced_terms + [result_term]
-            print(reduced_terms)
+            logger.debug("Reduced terms so far: %r", reduced_terms)
             if counter == 0:                
             # --- structural assertions -------------------------------------
                 assert isinstance(result, Mu), "Root must remain a Mu node"
@@ -51,14 +53,14 @@ def lambda_rule_test():
                 #assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
                 #assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
             counter += 1
-            print(counter)
-        print("LAMBDA RULE REDUCTION TEST PASSED\n")
-        print("Original proof terms:", test_terms)
-        print("Reduced proof terms:", reduced_terms)
+            logger.debug("Counter: %d", counter)
+        logger.info("Lambda rule reduction test passed")
+        logger.debug("Original proof terms: %r", test_terms)
+        logger.debug("Reduced proof terms: %r", reduced_terms)
     except AssertionError as e:
-        print("LAMBDA RULE REDUCTION TEST FAILED:", e)
-    except Exception as exc:
-        print("Unexpected exception during lambda-rule test:", exc)
+        logger.error("Lambda rule reduction test failed: %s", e)
+    except Exception:
+        logger.exception("Unexpected exception during lambda-rule test")
 
 def test_lambda_rule():
     lambda_rule_test()

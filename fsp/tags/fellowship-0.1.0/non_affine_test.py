@@ -1,5 +1,7 @@
 from parser import *
 from copy import deepcopy
+import logging
+logger = logging.getLogger("tests.non_affine")
 
 def affine_mu_rule_nonaffine_test():
     """t* is a µ-term in normal form **and not affine**.
@@ -7,21 +9,21 @@ def affine_mu_rule_nonaffine_test():
     Input:  "μalpha:B.<μx:B.<?1||alpha>||μ'y:B.<?2||μ'w:B.<w||v>>>"
     Expect: µalpha:B.<?2||v>
     """
-    print("AFFINE μ‑RULE #2 (non‑affine t*) TEST")
+    logger.info("Affine μ‑rule #2 (non‑affine t*) test")
 
     term = "μalpha:B.<μx:B.<?1||alpha>||μ'y:B.<?2||μ'w:B.<w||v>>>"
-    print(term)
+    logger.debug("Input term: %s", term)
 
     grammar = Grammar()
     ast = ProofTermTransformer().transform(grammar.parser.parse(term))
     printer = ProofTermGenerationVisitor()
     parsed_term = printer.visit(ast).pres
-    print("parsed term", parsed_term)
+    logger.debug("Parsed term: %s", parsed_term)
     reducer = ArgumentTermReducer()
     res = reducer.reduce(ast)
     #printer = ProofTermGenerationVisitor()
     result_term = printer.visit(res).pres
-    print("result term" , result_term)
+    logger.info("Result term: %s", result_term)
 
     try:
         # root still Mu
@@ -34,9 +36,9 @@ def affine_mu_rule_nonaffine_test():
         assert inner.name == "v", "inner context should be v"
         # binder non‑affine: w occurs in term component (ID w)
         #assert isinstance(inner.term, (ID, DI)) and inner.term.name == "w", "inner term should be w"
-        print("AFFINE μ‑RULE #2 (non‑affine t*) TEST PASSED\n")
+        logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")
     except AssertionError as e:
-        print("AFFINE μ‑RULE #2 (non‑affine t*) TEST FAILED:", e)
+        logger.error("Affine μ‑rule #2 (non‑affine t*) test failed: %s", e)
 
 def test_affine_mu_rule_nonaffine():
     affine_mu_rule_nonaffine_test()

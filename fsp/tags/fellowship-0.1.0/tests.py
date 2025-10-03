@@ -15,6 +15,7 @@ import traceback
 import logging
 import io
 import os
+logger = logging.getLogger("tests.legacy")
 
 # Tests3
 # TODO: refactor this using a standard test library such as unittest.
@@ -24,7 +25,7 @@ def test_prover():
     return prover
 
 def declaration_test():
-    print("DECLARATION TEST")
+    logger.info("Declaration test")
     prover = test_prover()
     #prover.send_command()
     test_declarations = {"A": "bool",
@@ -32,14 +33,14 @@ def declaration_test():
                          "C": "bool",
                          "D": "bool"}
     if prover.declarations == test_declarations:
-        print("Test part 1 passed:")
-        print(prover.declarations)
+        logger.info("Declaration test part 1 passed")
+        logger.debug("Declarations: %r", prover.declarations)
     else:
-        print("Test part 1 failed:")
-        print(prover.declarations)
+        logger.error("Declaration test part 1 failed")
+        logger.debug("Declarations: %r", prover.declarations)
 
     prover.send_command('declare X:(A).')
-    print("Expect X:A", prover.declarations)
+    logger.info("Expect X:A; declarations: %r", prover.declarations)
     prover.close
     return
 
@@ -861,14 +862,14 @@ if __name__ == '__main__':
                 print(f"Warning: Ignoring invalid keyword argument format: {kwarg}")
     if args.test == 'all':
         for test_name, test_func in tests.items():
-            print(f"Running {test_name}...")
+            logger.info("Running %s...", test_name)
             test_func()
     elif args.test in tests:
-        print(f"Running {args.test}...")
+        logger.info("Running %s...", args.test)
         tests[args.test](*(args.args or []), **kwargs_dict)
 
     else:
-        print(f"Error: Test '{args.test}' not found. Available tests are:")
+        logger.error("Error: Test '%s' not found. Available tests are:", args.test)
         for test_name in tests.keys():
-            print(f"  - {test_name}")
+            logger.info("  - %s", test_name)
    

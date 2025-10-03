@@ -319,7 +319,10 @@ class PropEnrichmentVisitor(ProofTermVisitor):
                 logger.info("Enriching Goal with type %s", self.assumptions[goal_num]["prop"])
                 node.prop = self.assumptions[goal_num]["prop"]
             else:
-                warnings.warn(f'Enrichment of node {node} not possible: {goal_num} not a key in {self.assumptions}')
+                if getattr(self, "verbose", False):
+                    warnings.warn(f'Enrichment of node {node} not possible: {goal_num} not a key in {self.assumptions}')
+                else:
+                    logger.info("Enrichment skipped for Goal %s: key %s not in assumptions", node, goal_num)
             return node
 
     def visit_Laog(self, node: Laog):

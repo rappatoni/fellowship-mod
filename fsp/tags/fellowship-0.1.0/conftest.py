@@ -78,9 +78,9 @@ def load_monolith():
     spec.loader.exec_module(mod)
     return mod
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path: Path, config):
     # Prevent legacy tests.py (manual runner) from being auto‑collected by pytest
     try:
-        return path.basename == "tests.py"
+        return collection_path.name == "tests.py"
     except Exception:
         return False
