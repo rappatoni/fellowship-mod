@@ -81,10 +81,22 @@ let snapshot (cairn : Core.cairn) : string =
         st.thms [] in
     String.concat " " (List.rev_append sig_sexp thm_sexp) in
 
+  (* messages -------------------------------------------------------*)
+  let messages_sexp =
+    match Core.get_msg cairn with
+    | None ->
+        "(messages (errors) (warnings) (notes))"
+    | Some m ->
+        let txt = m#to_string in
+        if Core.isExn cairn then
+          Printf.sprintf "(messages (errors %s) (warnings) (notes))" (sexp_string txt)
+        else
+          Printf.sprintf "(messages (errors) (warnings) (notes %s))" (sexp_string txt)
+
   (* restore user ascii preference ----------------------------------*)
   ascii := saved_ascii;
 
   (* assemble final one‑liner ---------------------------------------*)
   Printf.sprintf
-    "(state (mode %s)(current-goal-index %d)(goals %s)(proof-term %s)(proof-term-hash %s)(decls %s))"
-    mode st.index goals_sexp (sexp_string pt_ascii) (sexp_string pt_hash) decls_sexp
+    "(state (mode %s)(current-goal-index %d)(goals %s)(proof-term %s)(proof-term-hash %s)(decls %s)%s)"
+    mode st.index goals_sexp (sexp_string pt_ascii) (sexp_string pt_hash) decls_sexp messages_sexp

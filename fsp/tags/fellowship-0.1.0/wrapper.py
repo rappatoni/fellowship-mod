@@ -12,6 +12,17 @@ from typing import Any, List, Tuple, Optional, Dict
 
 from sexp_parser import SexpParser
 
+import logging
+from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
+
+logger = logging.getLogger('fsp.wrapper')
+
+class ProverError(Exception):
+    pass
+
+class MachinePayloadError(ProverError):
+    pass
+
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 #HUMAN_UI = os.getenv("FSP_HUMAN_UI", "0") not in {"0", "false", "False", ""}
 
@@ -23,8 +34,17 @@ TODO: Unified exception handling and logging.
 TODO: Consistent use of type annotations.
 TODO: Mechanism to declare a scenario of default assumptions.
     """
-    def __init__(self, prover_cmd):
-        self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5)
+    def __init__(self, prover_cmd, env: Optional[dict] = None, log_level: Optional[int] = None):
+        if log_level is None:
+            level_name = os.getenv("FSP_LOGLEVEL", "WARNING")
+            logger.setLevel(getattr(logging, level_name.upper(), logging.WARNING))
+        else:
+            logger.setLevel(log_level)
+
+        env_used = (env or os.environ).copy()
+        env_used.setdefault("FSP_MACHINE", "1")
+
+        self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5, env=env_used)
         self.prover.expect('fsp <')
         self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
         self.arguments : Dict[str, Any]= {}  # Dictionary to store arguments by name
@@ -42,16 +62,31 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """
         
         stripped = command.strip()
-        self.prover.sendline(command)
-        self.prover.expect('fsp <')
+        try:
+            self.prover.sendline(command)
+            self.prover.expect('fsp <')
+        except (PexpectEOF, PexpectTIMEOUT) as e:
+            logger.error("pexpect error on command %r: %s", command, e)
+            raise ProverError(f"Prover I/O error: {e}") from e
+
         output = self.prover.before
         state = self._extract_machine_block(output)
         if state is None:
-            raise RuntimeError("Machine block missing in prover output.")
+            logger.error("Machine block missing in prover output for command %r", command)
+            raise MachinePayloadError("Machine block missing in prover output.")
+        # warnings/errors from machine payload
+        for w in state.get('warnings', []):
+            warnings.warn(w)
+        errs = state.get('errors', [])
+        if errs:
+            # keep last_state for post-mortem, then raise
+            self.last_state = state
+            raise ProverError("; ".join(errs))
+
         self.last_state = state
         self._update_declarations_from_state(state)
         if silent == 0:
-            print("State", state)
+            logger.debug("Machine state: %r", state)
         return state
 
     
@@ -138,6 +173,24 @@ TODO: Mechanism to declare a scenario of default assumptions.
                      else:
                          warnings.warn(f'Unable to convert goal list to dict')
                  out['goals'] = goals
+             elif key == 'messages':
+                 errs, warns, notes = [], [], []
+                 for sub in item[1:]:
+                     if isinstance(sub, list) and sub:
+                         tag = sub[0]
+                         vals = []
+                         for v in sub[1:]:
+                             if isinstance(v, str):
+                                 vals.append(self._unquote(v))
+                         if tag == 'errors':
+                             errs = vals
+                         elif tag == 'warnings':
+                             warns = vals
+                         elif tag == 'notes':
+                             notes = vals
+                 out['errors'] = errs
+                 out['warnings'] = warns
+                 out['notes'] = notes
              else:
                  # keep raw for anything we don't special‑case yet
                  out[key] = item[1:]
@@ -402,7 +455,7 @@ def execute_script(prover, script_path):
 
 
 def interactive_mode(prover):
-     """Enables command line interaction with the wrapper.
+    """Enables command line interaction with the wrapper.
         
         Syntax for commands: 
           - All fellowship commands;
@@ -555,7 +608,7 @@ def interactive_mode(prover):
         prover.close()
                 
 class Argument:
-    """Implementation of deductive arguments in \bar{\lamda}\mu\tilde{\mu} calculus. Atomic (counter-)arguments are terms of the (co-)intuitionistic (or (co-)minimal) fragment of the calculus enriched with default assumptions. Argumentation terms are constructed from atomic arguments and the undercut, rebut, support and chain operators.
+    r"""Implementation of deductive arguments in \bar{\lamda}\mu\tilde{\mu} calculus. Atomic (counter-)arguments are terms of the (co-)intuitionistic (or (co-)minimal) fragment of the calculus enriched with default assumptions. Argumentation terms are constructed from atomic arguments and the undercut, rebut, support and chain operators.
 
        Argumentation terms are in normal form if they are \bar{\lamda}\mu\tilde{\mu} normal forms. Eta reduction is optional (TODO). 
 
@@ -1177,15 +1230,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 # ---------------------------------------------------------------------------
 
 def setup_prover():
-    prover = ProverWrapper('./fsp')
     env = os.environ.copy()
-    env.setdefault("FSP_MACHINE", "1")   # force machine mode
+    env.setdefault("FSP_MACHINE", "1")
+    prover = ProverWrapper('./fsp', env=env)
     prover.register_custom_tactic('pop', pop)
     # Switch to classical logic
     prover.send_command('lk.')
     # Declare some booleans to work with.
     prover.send_command('declare A,B,C,D:bool.')
-    print("Prover decls", prover.declarations)
+    logger.info("Prover decls %r", prover.declarations)
     return prover
 
 
