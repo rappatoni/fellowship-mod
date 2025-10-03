@@ -27,3 +27,6 @@ def affine_mu_rule_test():
         print("AFFINE μ‑RULE REDUCTION TEST FAILED:", e)
     except Exception as exc:
         print("Unexpected exception during affine μ‑rule test:", exc)
+
+def test_affine_mu_rule():
+    affine_mu_rule_test()

@@ -35,3 +35,6 @@ def mu_general_rule_test():
         print("GENERAL μ‑RULE (substitution) TEST FAILED:", e)
     except Exception as exc:
         print("Unexpected exception during general μ‑rule test:", exc)
+
+def test_mu_general_rule():
+    mu_general_rule_test()

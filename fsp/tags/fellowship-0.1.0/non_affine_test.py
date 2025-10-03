@@ -37,3 +37,6 @@ def affine_mu_rule_nonaffine_test():
         print("AFFINE μ‑RULE #2 (non‑affine t*) TEST PASSED\n")
     except AssertionError as e:
         print("AFFINE μ‑RULE #2 (non‑affine t*) TEST FAILED:", e)
+
+def test_affine_mu_rule_nonaffine():
+    affine_mu_rule_nonaffine_test()

@@ -59,3 +59,6 @@ def lambda_rule_test():
         print("LAMBDA RULE REDUCTION TEST FAILED:", e)
     except Exception as exc:
         print("Unexpected exception during lambda-rule test:", exc)
+
+def test_lambda_rule():
+    lambda_rule_test()

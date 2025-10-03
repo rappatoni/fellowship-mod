@@ -9,7 +9,7 @@ from affine_test import *
 from non_affine_test import *
 from mu_reduction_test import *
 from mutilde_reduction_test import *
-from graft_tests import *
+from graft_test import *
 from smoketest import *
 import traceback
 import logging

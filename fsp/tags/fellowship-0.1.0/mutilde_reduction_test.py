@@ -37,3 +37,6 @@ def mutilde_affine_defence_test():
         print("MUTILDE AFFINE DEFENCE TEST PASSED\n")
     except AssertionError as e:
         print("MUTILDE AFFINE DEFENCE TEST FAILED:", e)
+
+def test_mutilde_affine_defence():
+    mutilde_affine_defence_test()

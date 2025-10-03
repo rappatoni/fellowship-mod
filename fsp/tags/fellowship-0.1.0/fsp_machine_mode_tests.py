@@ -20,14 +20,6 @@ from wrapper import *
 # ---------------------------------------------------------------------------
 #  Fixtures
 # ---------------------------------------------------------------------------
-@pytest.fixture(scope="session")
-def prover():
-    """Launch a *single* FSP process for the whole test session."""
-    env = os.environ.copy()
-    env.setdefault("FSP_MACHINE", "1")   # force machine mode
-    pw = ProverWrapper('./fsp')
-    yield pw
-    pw.close()
 # ---------------------------------------------------------------------------
 #  Tests – will be tightened as payload grows
 # ---------------------------------------------------------------------------

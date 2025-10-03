@@ -2,6 +2,7 @@
 from pathlib import Path
 import pytest
 import os
+import importlib.util, sys
 from wrapper import *
 
 
@@ -24,9 +25,8 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 @pytest.fixture(scope="session")
 def prover():
     """Launch a *single* FSP process for the whole test session."""
-    env = os.environ.copy()
-    env.setdefault("FSP_MACHINE", "1")   # force machine mode
-    pw = ProverWrapper('./fsp')
+    os.environ.setdefault("FSP_MACHINE", "1")   # force machine mode
+    pw = setup_prover()
     yield pw
     pw.close()
 
@@ -68,3 +68,12 @@ def script_paths(request) -> list[Path]:
 #             "No `prover` fixture available. Provide one in your project that "
 #             "returns an initialized prover compatible with execute_script()."
 #         )
+
+def load_monolith():
+    p = Path(__file__).parent / "tests.py"
+    spec = importlib.util.spec_from_file_location("fsp_monolith_tests", p)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["fsp_monolith_tests"] = mod
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    return mod
