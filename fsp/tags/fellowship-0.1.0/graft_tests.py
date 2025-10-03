@@ -12,7 +12,9 @@ from copy import deepcopy
 
 from parser import *
 import logging
+from conftest import make_assert_log
 logger = logging.getLogger("tests.graft")
+_assert_log = make_assert_log(logger)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # helper: tiny visitors to inspect a tree
@@ -88,14 +90,14 @@ def graft_operator_test():
     ck_goal.visit(grafted_goal)
     ck_laog.visit(grafted_goal)
     logger.debug("Counts (goal, laog) = (%d, %d)", ck_goal.count, ck_laog.count)
-    assert ck_laog.count != 0, "Goal graft: false positive on y."
-    assert ck_goal.count == 0, "graft unsuccessful."
+    _assert_log(ck_laog.count != 0, "Goal graft: false positive on y.")
+    _assert_log(ck_goal.count == 0, "graft unsuccessful.")
     ck_goal.visit(correct_grafted_goal)
     ck_laog.visit(correct_grafted_goal)
     ck_laog2 = _CountKind(Laog)
     logger.debug("Laog count (post-correct) = %d", ck_laog2.count)
-    assert ck_goal.count == 0, "Goal graft: residual goals present"
-    assert ck_laog2.count == 0, "Substitution of y for laog 8 unsuccessful"
+    _assert_log(ck_goal.count == 0, "Goal graft: residual goals present")
+    _assert_log(ck_laog2.count == 0, "Substitution of y for laog 8 unsuccessful")
 
     fv_y = _FindVar("y", DI)
     fv_y.visit(correct_grafted_goal)
@@ -103,7 +105,7 @@ def graft_operator_test():
     generator = InstructionsGenerationVisitor()
     instructions = generator.return_instructions(grafted_goal)  
     logger.info("Generated instructions: %s", list(instructions))
-    assert fv_y.found, "Goal graft: DI variable y not substituted in"
+    _assert_log(fv_y.found, "Goal graft: DI variable y not substituted in")
     
 
     
@@ -123,11 +125,11 @@ def graft_operator_test():
 
     ck_laog = _CountKind(Laog)
     ck_laog.visit(grafted_laog)
-    assert ck_laog.count == 0, "Laog graft: residual laogs present"
+    _assert_log(ck_laog.count == 0, "Laog graft: residual laogs present")
 
     fv_x = _FindVar("x", ID)
     fv_x.visit(grafted_laog)
-    assert fv_x.found, "Laog graft: ID variable x not substituted in"
+    _assert_log(fv_x.found, "Laog graft: ID variable x not substituted in")
 
     logger.info("Graft operator test passed")
 

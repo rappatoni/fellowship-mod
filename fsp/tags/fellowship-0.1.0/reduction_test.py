@@ -1,7 +1,9 @@
 from parser import *
 from copy import deepcopy
 import logging
+from conftest import make_assert_log
 logger = logging.getLogger("tests.reduction")
+_assert_log = make_assert_log(logger)
 
 # ------------------------------------------------------------
 #  Lambda-rule regression test for ArgumentTermReducer
@@ -41,15 +43,15 @@ def lambda_rule_test():
             logger.debug("Reduced terms so far: %r", reduced_terms)
             if counter == 0:                
             # --- structural assertions -------------------------------------
-                assert isinstance(result, Mu), "Root must remain a Mu node"
+                _assert_log(isinstance(result, Mu), "Root must remain a Mu node")
                 # term part becomes the argument "y"
-                assert isinstance(result.term, DI) and result.term.name == "t", (
+                _assert_log(isinstance(result.term, DI) and result.term.name == "t",
                     f"Expected term to be DI 't', got {type(result.term).__name__}:{getattr(result.term, 'name', '-')}")
 
                 # context part becomes a fresh µ' binder
-                assert isinstance(result.context, ID), "Context must be an ID after reduction"
+                _assert_log(isinstance(result.context, ID), "Context must be an ID after reduction")
                 ctx = result.context
-                assert ctx.name == "thesis",  "thesis gets substituted in by mu' rule"
+                _assert_log(ctx.name == "thesis", "thesis gets substituted in by mu' rule")
                 #assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
                 #assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
             counter += 1

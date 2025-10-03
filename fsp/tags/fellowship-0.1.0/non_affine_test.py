@@ -1,7 +1,9 @@
 from parser import *
 from copy import deepcopy
 import logging
+from conftest import make_assert_log
 logger = logging.getLogger("tests.non_affine")
+_assert_log = make_assert_log(logger)
 
 def affine_mu_rule_nonaffine_test():
     """t* is a µ-term in normal form **and not affine**.
@@ -27,13 +29,13 @@ def affine_mu_rule_nonaffine_test():
 
     try:
         # root still Mu
-        assert isinstance(res, Mu), "root not Mu"
+        _assert_log(isinstance(res, Mu), "root not Mu")
         # term is ?1
-        assert isinstance(res.term, Goal) and res.term.number == "2", "term not goal ?1"
+        _assert_log(isinstance(res.term, Goal) and res.term.number == "2", "term not goal ?2")
         # context is µw<B>
-        assert isinstance(res.context, ID), "context not ID term as expected"
+        _assert_log(isinstance(res.context, ID), "context not ID term as expected")
         inner = res.context
-        assert inner.name == "v", "inner context should be v"
+        _assert_log(inner.name == "v", "inner context should be v")
         # binder non‑affine: w occurs in term component (ID w)
         #assert isinstance(inner.term, (ID, DI)) and inner.term.name == "w", "inner term should be w"
         logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")

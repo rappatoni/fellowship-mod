@@ -1,6 +1,8 @@
 from parser import *
 import logging
+from conftest import make_assert_log
 logger = logging.getLogger("tests.mu")
+_assert_log = make_assert_log(logger)
 def mu_general_rule_test():
     """General µ‑reduction ⟨µx.c ∣∣ E⟩ → [E/x]c.
 
@@ -25,13 +27,13 @@ def mu_general_rule_test():
 
     try:
         # root node should still be the outer Mu (binder alpha)
-        assert isinstance(res, Mu) and res.id.name == "alpha", "root must be outer µalpha"
+        _assert_log(isinstance(res, Mu) and res.id.name == "alpha", "root must be outer µalpha")
         # after reduction: term component becomes ID k
-        assert isinstance(res.term, ID) and res.term.name == "k", "term should be ID k after substitution"
+        _assert_log(isinstance(res.term, ID) and res.term.name == "k", "term should be ID k after substitution")
         # context component becomes ID v
-        assert isinstance(res.context, ID) and res.context.name == "v", "context should be ID v after substitution"
+        _assert_log(isinstance(res.context, ID) and res.context.name == "v", "context should be ID v after substitution")
         # ensure no residual inner µ binder
-        assert not isinstance(res.term, Mu) and not isinstance(res.context, Mu), "inner µ binder should be eliminated"
+        _assert_log(not isinstance(res.term, Mu) and not isinstance(res.context, Mu), "inner µ binder should be eliminated")
         logger.info("General μ‑rule (substitution) test passed")
     except AssertionError as e:
         logger.error("General μ‑rule (substitution) test failed: %s", e)

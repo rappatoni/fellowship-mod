@@ -1,7 +1,9 @@
 from parser import Grammar, ProofTermTransformer, Goal, Laog, Mutilde, ID,  DI, Mu, ProofTermGenerationVisitor
 from parser import ArgumentTermReducer  # uses integrated version in parser.py
 import logging
+from conftest import make_assert_log
 logger = logging.getLogger("tests.mutilde")
+_assert_log = make_assert_log(logger)
 
 
 def mutilde_affine_defence_test():
@@ -30,12 +32,12 @@ def mutilde_affine_defence_test():
 
     try:
         # root binder unchanged (µ')
-        assert isinstance(res, Mutilde), "root should remain µ'"
+        _assert_log(isinstance(res, Mutilde), "root should remain µ'")
         # term should now be the goal ?1
         logger.debug("Context number: %s", res.context.number)
-        assert isinstance(res.context, Laog) and res.context.number == "3", "term should be ?3"
+        _assert_log(isinstance(res.context, Laog) and res.context.number == "3", "term should be ?3")
         # context must be ID alpha
-        assert isinstance(res.term, DI) and res.term.name == "alpha", "context should be ID 'alpha'"
+        _assert_log(isinstance(res.term, DI) and res.term.name == "alpha", "context should be ID 'alpha'")
         logger.info("Mutilde affine defence test passed")
     except AssertionError as e:
         logger.error("Mutilde affine defence test failed: %s", e)

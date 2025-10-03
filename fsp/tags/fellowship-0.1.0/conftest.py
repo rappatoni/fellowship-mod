@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import os
 import importlib.util, sys
+import logging
 from wrapper import *
 
 
@@ -12,6 +13,16 @@ DEFAULT_SCRIPTS = [
     "tests/test1.fspy",
     #"tests/test2.fspy",
 ]
+
+def make_assert_log(logger: logging.Logger):
+    """Return an assertion helper bound to the given logger."""
+    def _assert_log(cond: bool, msg: str) -> None:
+        if cond:
+            logger.debug("assertion passed: %s", msg)
+        else:
+            logger.error("assertion failed: %s", msg)
+        assert cond, msg
+    return _assert_log
 
 def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
