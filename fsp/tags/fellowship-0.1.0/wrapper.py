@@ -1025,7 +1025,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         #print("Issue", issue)
         if issue.endswith('_bar'): #This still needs to be tested.
             issue[:-4]
-            #TODO
+            #TODO (I think this TODO is deprecated? Check.)
             print("Not implemented yet.")
             pass
             #adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2",issue), Laog("3",issue))
