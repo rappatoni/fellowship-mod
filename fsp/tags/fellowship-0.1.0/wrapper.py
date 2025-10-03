@@ -460,8 +460,12 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
                     elif command.startswith("normalize "):
                         name = command.split(maxsplit=1)[1]
                         arg = prover.get_argument(name)
-                        if arg: arg.normalize(); print("normal form stored in .normal_form")
-                        else:   print(f"Argument '{name}' not found.")
+                        if arg:
+                            logger.info("Normalized argument '%s'; normal form cached in .normal_form", name)
+                            arg.normalize(); print("normal form stored in .normal_form")
+                        else:
+                            logger.warning("Argument '%s' not found for normalization", name)
+                            print(f"Argument '{name}' not found.")
                     elif command.startswith('chain '):
                         # Handle chaining of arguments
                         # Format: chain arg1 arg2
@@ -534,8 +538,12 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif command.startswith("normalize "):
                 name = command.split(maxsplit=1)[1]
                 arg = prover.get_argument(name)
-                if arg: arg.normalize(); print("normal form stored in .normal_form")
-                else:   print(f"Argument '{name}' not found.")
+                if arg:
+                    logger.info("Normalized argument '%s'; normal form cached in .normal_form", name)
+                    arg.normalize(); print("normal form stored in .normal_form")
+                else:
+                    print(f"Argument '{name}' not found.")
+                    logger.warning("Argument '%s' not found for normalization (interactive)", name)
 
             elif command.startswith('start argument '):
                 # Parse the start argument command
@@ -555,6 +563,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 }
                 recording = True
                 print(f"Started recording argument '{name}' with conclusion '{conclusion}'.")
+                logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
                 output = prover.send_command(f'theorem {name} : ({conclusion}).')
                 # print(output)
             elif command == 'end argument':
@@ -573,6 +582,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 # Store the argument for later use
                 prover.register_argument(arg)
                 print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
+                logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
                 # Reset recording state
                 recording = False
                 current_argument = None
@@ -613,8 +623,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         arg = Argument(prover, name, conclusion, instructions)
                         arg.execute()
                         print(f"Argument '{name}' defined with conclusion '{conclusion}'.")
+                        logger.info("Argument '%s' defined with conclusion '%s'.", name, conclusion)
                     except Exception as e:
                         print(f"Error parsing argument: {e}")
+                        logger.error("Error parsing argument '%s': %s", name, e)
                 elif command.startswith('tactic '):
                     # Handle custom tactic invocation outside of recording
                     parts = command.split()
@@ -638,10 +650,13 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         if combined_arg:
                             prover.register_argument(combined_arg)
                             print(f"Arguments '{arg1_name}' and '{arg2_name}' chained into '{combined_arg.name}'.")
+                            logger.info("Arguments '%s' and '%s' chained into '%s'.", arg1_name, arg2_name, combined_arg.name)
                         else:
                             print("Failed to chain arguments.")
+                            logger.error("Failed to chain arguments in interactive mode")
                     else:
                         print("One or both arguments not found.")
+                        logger.error("One or both arguments not found in interactive mode")
                 else:
                     # Execute the command normally
                     output = prover.send_command(command)
@@ -756,13 +771,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return s
     
     @staticmethod
-    def _unquote(atom):
+    def _unquote(atom: Any) -> Any:
         """Strip surrounding double quotes from atoms like '"A"'."""
         if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
             return atom[1:-1]
         return atom
 
-    def _parse_proof_state(self, proof_state):
+    def _parse_proof_state(self, proof_state: Dict[str, Any]) -> None:
         """
         Build {goal_number: {"prop": some_str, "label": None}} from the
         machine payload dict produced by the wrapper.
@@ -949,7 +964,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             final_arg = popped_arg.chain(subargument, True)
             return final_arg
 
-    def match_conclusion_assumptions(self, conclusion : str, assumptions : dict):
+    def match_conclusion_assumptions(self, conclusion: str, assumptions: dict) -> Optional[str]:
         matching_assumption = None
         for key in assumptions:
             logger.debug("Checking assumption key=%s", key)
@@ -960,7 +975,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return matching_assumption
 
 
-    def chain(self, other_argument, close=False):
+    def chain(self, other_argument: "Argument", close: bool = False) -> "Argument":
         """ Chains the current argument to another argument by using it to prove an assumption of the other argument. Automatically finds the matching assumption (assuming there is only one)."""
         #TODO: Implement type checking for resulting argument.
         # Check if this argument's conclusion matches any of the other argument's assumptions
@@ -1094,7 +1109,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Case 2 – default: attack barred form
         return f"{concl}_bar"
 
-    def focussed_undercut(self, other_argument, *, on:str = "GoFigure", negated_attacker = True):
+    def focussed_undercut(self, other_argument: "Argument", *, on: str = "GoFigure", negated_attacker: bool = True) -> "Argument":
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
         if on == "GoFigure":
             on = self.resolve_attacked_assumption()
@@ -1152,7 +1167,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def get_conclusion(self) -> str:
         return self.conclusion
 
-    def support(self, other_argument):
+    def support(self, other_argument: "Argument") -> "Argument":
         #Akin to chain but instead of filling in an assumption, provide an alternative proof for the assumption. Could be generalized to provide an alternative proof for any intermediate derivation of an argument.
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
@@ -1232,7 +1247,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         print("Normal‑form proof term:\n", self.normal_form)
         print("\nNatural language:\n", self.normal_representation)
 
-    def negation_normalize(self):
+    def negation_normalize(self) -> parser.ProofTerm:
         """
         Replace the outer ¬-introduction wrapper by its inner command.
 
@@ -1319,6 +1334,14 @@ def main() -> None:
     g.add_argument('--script', metavar='FILE',
                    help='execute commands in FILE (same grammar as interactive mode)')
     args = ap.parse_args()
+
+    # Configure root logger if no handlers (so INFO/ERROR show up by default)
+    if not logging.getLogger().handlers:
+        level_name = os.getenv("FSP_LOGLEVEL", "WARNING").upper()
+        logging.basicConfig(
+            level=getattr(logging, level_name, logging.WARNING),
+            format="%(levelname)s:%(name)s:%(message)s"
+        )
 
     prover = setup_prover()             # ⇐ creates the ProverWrapper, 
                                         #    registers pop, declares A,B,C,D …

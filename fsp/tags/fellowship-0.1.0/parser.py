@@ -4,6 +4,7 @@ import warnings
 import collections
 from copy import deepcopy
 import logging
+from typing import Optional, Any, List, Tuple, Dict
 
 logger = logging.getLogger('fsp.parser')
 
@@ -226,7 +227,7 @@ easy_ast = transformer.transform(easy_test)
 easy_undercut_ast = transformer.transform(easy_undercut_test)
 
 
-def pretty_natural(proof_term, semantic):
+def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
     lines = []
     traverse_proof_term(semantic, proof_term, lines, indent=0)
     return '\n'.join(lines)
@@ -488,7 +489,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._root        = None     # set by reduce()
         self._step        = 0        # counter for pretty printing
         
-    def reduce(self, root):
+    def reduce(self, root: "ProofTerm") -> "ProofTerm":
         """Return the *normal* form obtained by exhaustively applying the
         implemented reduction rules.  For the moment this is equivalent to a
         single traversal because only one local rule is implemented."""
@@ -496,7 +497,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         return self.visit(root)
 
     # helper – pretty‑print current state ------------------------------
-    def _print_current(self):
+    def _print_current(self) -> None:
         if not self.verbose:
             return
         show = deepcopy(self._root)
@@ -874,7 +875,7 @@ def traverse_proof_term(semantic, term, lines, indent): # TODO: change to instan
 # print(arg)
 # print(easy)
 
-def match_trees(nodeA, nodeB, mapping):
+def match_trees(nodeA: "ProofTerm", nodeB: "ProofTerm", mapping: Dict[str, str]) -> bool:
     # If node types are different, cannot match
     if type(nodeA) != type(nodeB):
         logger.debug("Type mismatch: %s vs %s", type(nodeA), type(nodeB))
@@ -964,7 +965,7 @@ def match_trees(nodeA, nodeB, mapping):
         return False
 
 
-def get_child_nodes(node):
+def get_child_nodes(node: "ProofTerm") -> List["ProofTerm"]:
     child_nodes = []
     if isinstance(node, Mu):
         child_nodes.append(node.term)
@@ -980,7 +981,7 @@ def get_child_nodes(node):
     # For ID, DI, and Goal, there are no child nodes
     return child_nodes
 
-def is_subargument(A, B):
+def is_subargument(A: "ProofTerm", B: "ProofTerm") -> bool:
     # Returns True if B is a subargument of A up to variable renaming
     # We need to traverse A and attempt to match B starting from each node
     # Might be worth to also create a convenience method to generate all subarguments.
@@ -996,17 +997,17 @@ def is_subargument(A, B):
         nodes_to_visit.extend(child_nodes)
     return False
 
-def contrary(A):
+def contrary(A: str) -> str:
     # Returns the contrary of assumption A
     if A.endswith('_bar'):
         return A[:-4]
     else:
         return A + '_bar'
 
-def neg(A):
+def neg(A: str) -> str:
     return '¬'+A
 
-def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation of ProofTermVisitor
+def label_assumption(node: "ProofTerm", A: str, assumptions: Dict[str, Dict[str, Any]]) -> Tuple[str, "ProofTerm"]: #TODO: Implement as an instantiation of ProofTermVisitor
     #TODO: Have to first test all own assumptions that are not parts of stashed or supporting subarguments.
     # If any are OUT or UNDEC, any (intermediate) conclusion of the argument becomes UNDEC.
     
@@ -1156,7 +1157,7 @@ def label_assumption(node, A, assumptions): #TODO: Implement as an instantiation
 class ProofTermGenerationVisitor(ProofTermVisitor):
     """Generate a proof term from an (enriched or rewritten) argument body."""
 
-    def __init__(self, verbose = False):
+    def __init__(self, verbose: bool = False):
         self.verbose = verbose
         pass
     
@@ -1465,7 +1466,7 @@ class _GraftVisitor(ProofTermVisitor):
 #  Utilities
 # ---------------------------------------------------------------------------
 
-def _find_target_info(ast, number: str):
+def _find_target_info(ast: "ProofTerm", number: str) -> Tuple[Optional[str], Optional[bool]]:
     """Locate ?number / !number in *ast* – return (prop, is_goal)."""
     res = {'prop': None, 'kind': None}
     class _Find(ProofTermVisitor):
@@ -1483,7 +1484,7 @@ def _find_target_info(ast, number: str):
     return res['prop'], (res['kind'] == 'goal')
 
 
-def _check_conclusion_matches(repl_ast, *, target_is_goal: bool, target_prop: str):
+def _check_conclusion_matches(repl_ast: "ProofTerm", *, target_is_goal: bool, target_prop: str) -> None:
     """Ensure *repl_ast*’s root binder fits the Goal/Laog it replaces."""
     if isinstance(repl_ast, Mu):
         root_kind, root_prop = 'mu', repl_ast.prop
@@ -1504,7 +1505,7 @@ def _check_conclusion_matches(repl_ast, *, target_is_goal: bool, target_prop: st
 #  Public API functions
 # ---------------------------------------------------------------------------
 
-def graft_single(body_B, goal_number: str, body_A):
+def graft_single(body_B: "ProofTerm", goal_number: str, body_A: "ProofTerm") -> "ProofTerm":
     """Replace the unique Goal/Laog *goal_number* in *body_B* by *body_A*."""
     tgt_prop, is_goal = _find_target_info(body_B, goal_number)
     if tgt_prop is None:
@@ -1523,7 +1524,7 @@ def graft_single(body_B, goal_number: str, body_A):
     return visitor.visit(body_B)
 
 
-def graft_uniform(body_B, body_A):
+def graft_uniform(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
     """Uniform graft: replace **all** Goals/Laogs with the conclusion of *A*."""
     logger.info("Uniformly grafting %r on %r", body_A, body_B)
     # determine conclusion of A from its *root* binder
@@ -1604,7 +1605,7 @@ class NegIntroRewriter(ProofTermVisitor):
         return mu_bot.context
 
     # -------------------------------------------------------------------
-    def rewrite(self, ast):
+    def rewrite(self, ast: "ProofTerm") -> "ProofTerm":
         out = self.visit(ast)
         if not self.changed:
             warnings.warn("NegIntroRewriter: no outer negation-introduction pattern found")
@@ -1635,7 +1636,7 @@ def _fresh(prefix: str, taken: set[str]) -> str:
         i += 1
     return f"{prefix}{i}"
 
-def _alpha_rename_if_needed(scion: ProofTerm, root: ProofTerm):
+def _alpha_rename_if_needed(scion: "ProofTerm", root: "ProofTerm") -> "ProofTerm":
     """Return *scion* with all **conflicting binders** α‑renamed fresh w.r.t. *root*."""
     root_names = _collect_binder_names(root)
     scion_names = _collect_binder_names(scion)
