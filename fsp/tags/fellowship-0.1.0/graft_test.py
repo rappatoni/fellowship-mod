@@ -1,16 +1,14 @@
 """Simple unit‑like checks for the graft operator.
 
-These tests are **framework‑free** so that they can be imported from the
-hand‑rolled `tests.py` harness you provided.  After importing this module you
-only need to register `graft_operator_test` in the global `tests` dictionary:
-
-    from graft_operator_test import graft_operator_test
-    tests["graft_operator_test"] = graft_operator_test
 """
 
 from copy import deepcopy
 
 from parser import *
+import logging
+from conftest import make_assert_log
+logger = logging.getLogger("tests.graft")
+_assert_log = make_assert_log(logger)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # helper: tiny visitors to inspect a tree
@@ -51,6 +49,8 @@ class _FindVar(ProofTermVisitor):
 
 def graft_operator_test():
     """Check goal‑grafting **and** laog‑grafting incl. capturing substitution."""
+    logger.info("Graft Operator Test")
+    #logger.info("This test checks if grafts are executed correctly ")
 
     # ------------------------------------------------------------------
     # 1. Goal graft -----------------------------------------------------
@@ -71,36 +71,36 @@ def graft_operator_test():
     body_B_goal = ptgenerator.visit(enricher.visit(body_B_goal))
     body_A_goal = ptgenerator.visit(enricher.visit(body_A_goal))
     correct_body_A_goal = ptgenerator.visit(enricher.visit(correct_body_A_goal))
-    print("Argument Bodies (note second one us actually affine.)", body_B_goal.pres,  body_A_goal.pres, correct_body_A_goal.pres)
+    logger.info("Argument bodies (second is affine): %s | %s | %s", body_B_goal.pres, body_A_goal.pres, correct_body_A_goal.pres)
     # graft: replace ?1 in B by A
     grafted_goal = graft_single(body_B_goal, "1", body_A_goal)
     correct_grafted_goal = graft_single(body_B_goal, "1", correct_body_A_goal)
 
     grafted_goal = ptgenerator.visit(grafted_goal)
     correct_grafted_goal = ptgenerator.visit(correct_grafted_goal)
-    print("First argument", grafted_goal.pres)
-    print("Second argument", correct_grafted_goal.pres)
+    logger.info("First argument: %s", grafted_goal.pres)
+    logger.info("Second argument: %s", correct_grafted_goal.pres)
     # there must be **no** Goal left; goal9 had to be captured by DI("y")
     ck_goal = _CountKind(Goal)
     ck_laog = _CountKind(Laog)
     ck_goal.visit(grafted_goal)
     ck_laog.visit(grafted_goal)
-    print(ck_goal.count, ck_laog.count)
-    assert ck_laog.count != 0, "Goal graft: false positive on y."
-    assert ck_goal.count == 0, "graft unsuccessful."
+    logger.debug("Counts (goal, laog) = (%d, %d)", ck_goal.count, ck_laog.count)
+    _assert_log(ck_laog.count != 0, "Goal graft: false positive on y.")
+    _assert_log(ck_goal.count == 0, "graft unsuccessful.")
     ck_goal.visit(correct_grafted_goal)
     ck_laog.visit(correct_grafted_goal)
     ck_laog2 = _CountKind(Laog)
-    print(ck_laog2.count)
-    assert ck_goal.count == 0, "Goal graft: residual goals present"
-    assert ck_laog2.count == 0, "Substitution of y for laog 8 unsuccessful"
+    logger.debug("Laog count (post-correct) = %d", ck_laog2.count)
+    _assert_log(ck_goal.count == 0, "Goal graft: residual goals present")
+    _assert_log(ck_laog2.count == 0, "Substitution of y for laog 8 unsuccessful")
 
     fv_y = _FindVar("y", DI)
     fv_y.visit(correct_grafted_goal)
    
     generator = InstructionsGenerationVisitor()
     instructions = generator.return_instructions(grafted_goal)  
-    print("Instructions", instructions)
+    logger.info("Generated instructions: %s", list(instructions))
     assert fv_y.found, "Goal graft: DI variable y not substituted in"
     
 
@@ -127,7 +127,7 @@ def graft_operator_test():
     fv_x.visit(grafted_laog)
     assert fv_x.found, "Laog graft: ID variable x not substituted in"
 
-    print("GRAFT OPERATOR TEST PASSED")
+    logger.info("Graft operator test passed")
 
 def test_graft_operator():
     graft_operator_test()

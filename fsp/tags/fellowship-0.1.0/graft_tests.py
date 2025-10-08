@@ -1,12 +1,5 @@
-"""Simple unit‑like checks for the graft operator.
-
-These tests are **framework‑free** so that they can be imported from the
-hand‑rolled `tests.py` harness you provided.  After importing this module you
-only need to register `graft_operator_test` in the global `tests` dictionary:
-
-    from graft_operator_test import graft_operator_test
-    tests["graft_operator_test"] = graft_operator_test
-"""
+import pytest
+pytest.skip("Deprecated duplicate module; use graft_test.py instead.", allow_module_level=True)
 
 from copy import deepcopy
 
