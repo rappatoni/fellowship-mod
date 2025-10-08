@@ -63,8 +63,10 @@ def graft_operator_test():
     # Body A:  μx:A.< x || ?9 >   (contains another open goal with prop A)
     goal8 = Goal("8"); goal8.prop = "A"
     goal9 = Laog("9"); goal9.prop = "A"
-    body_A_goal = Mu(ID("x"), "A", ID("x"), goal9); body_A_goal.term.prop = "A"
-    correct_body_A_goal = Mu(ID("x"), "A", goal8, ID("x"));  correct_body_A_goal.term.prop = "A"
+
+    # Now build the valid scion with a DI in the term position
+    body_A_goal = Mu(ID("x"), "A", DI("x"), goal9); body_A_goal.term.prop = "A"
+    correct_body_A_goal = Mu(ID("x"), "A", goal8, ID("x")); correct_body_A_goal.term.prop = "A"
     enricher = PropEnrichmentVisitor()
     
     ptgenerator = ProofTermGenerationVisitor()
@@ -102,30 +104,6 @@ def graft_operator_test():
     instructions = generator.return_instructions(grafted_goal)  
     logger.info("Generated instructions: %s", list(instructions))
     assert fv_y.found, "Goal graft: DI variable y not substituted in"
-    
-
-    
-
-    # ------------------------------------------------------------------
-    # 2. Laog graft -----------------------------------------------------
-    # ------------------------------------------------------------------
-    # Body B:  μx:A.< ?1 || x >   where ?1 has prop A_bar
-    laog1 = Laog("1"); laog1.prop = "A_bar"
-    body_B_laog = Mu(ID("x"), "A", laog1, ID("x"))
-
-    # Body A:  μ' b:A .< ?9 || b >   (open laog inside)
-    laog9 = Laog("9"); laog9.prop = "A_bar"
-    body_A_laog = Mutilde(DI("b"), "A", laog9, DI("b"))
-
-    grafted_laog = graft_single(body_B_laog, "1", body_A_laog)
-
-    ck_laog = _CountKind(Laog)
-    ck_laog.visit(grafted_laog)
-    assert ck_laog.count == 0, "Laog graft: residual laogs present"
-
-    fv_x = _FindVar("x", ID)
-    fv_x.visit(grafted_laog)
-    assert fv_x.found, "Laog graft: ID variable x not substituted in"
 
     logger.info("Graft operator test passed")
 

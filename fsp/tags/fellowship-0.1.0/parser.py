@@ -60,21 +60,21 @@ class ProofTermTransformer(Transformer):
     def context(self, items):
         return items[0]
 
-    def mu(self, items):
+    def mu(self, items) -> "Mu":
         id_ = items[0]
         prop = items[1]
         term = items[2]
         context = items[3]
         return Mu(id_, prop, term, context)
 
-    def mutilde(self, items):
+    def mutilde(self, items) -> "Mutilde":
         di_ = items[0]
         prop = items[1]
         term = items[2]
         context = items[3]
         return Mutilde(di_, prop, term, context)
 
-    def lamda(self, items):
+    def lamda(self, items) -> "Lamda":
         hyp = items[0]
         term = items[1]
         return Lamda(hyp, term)
@@ -83,16 +83,16 @@ class ProofTermTransformer(Transformer):
     #     id_ = items[0]
     #     return Hyp(id_)
 
-    def cons(self, items):
+    def cons(self, items) -> "Cons":
         term = items[0]
         context = items[1]
         return Cons(term, context)
 
-    def goal(self, items):
+    def goal(self, items) -> "Goal":
         number = items[0]
         return Goal(number)
 
-    def laog(self, items):
+    def laog(self, items) -> "Laog":
         number = items[0]
         return Laog(number)
 
@@ -102,7 +102,7 @@ class ProofTermTransformer(Transformer):
     def prop(self, items):
         return str(items[0])
 
-    def id(self, token):
+    def id(self, token) -> "ID":
         name = str(token[0])
         # if re.fullmatch(re.compile('.*tt.*'),name):
         #     propstring = name.split("tt")[1]
@@ -117,7 +117,7 @@ class ProofTermTransformer(Transformer):
         prop = None
         return ID(name, prop)
 
-    def di(self, token):
+    def di(self, token) -> "DI":
         name = str(token[0])
         # if re.fullmatch(re.compile('.*tt.*'),name):
         #     # print("Matched")
@@ -134,7 +134,7 @@ class ProofTermTransformer(Transformer):
         prop = None
         return DI(name, prop)
 
-    def hyp(self, token):
+    def hyp(self, token) -> "Hyp":
         di = token[0]
         prop = str(token[1])
         return Hyp(di, prop)
@@ -142,8 +142,14 @@ class ProofTermTransformer(Transformer):
 class ProofTerm:
     pass
 
-class Mu(ProofTerm):
-    def __init__(self, id_, prop, term, context):
+class Term(ProofTerm):
+    pass
+
+class Context(ProofTerm):
+    pass
+
+class Mu(Term):
+    def __init__(self, id_: "ID", prop: str, term: "Term", context: "Context"):
         self.id = id_
         self.prop = prop
         self.term = term
@@ -151,10 +157,16 @@ class Mu(ProofTerm):
         self.contr = None
         self.pres = None
         self.flag = None
+        if not isinstance(id_, ID):
+            raise TypeError(f"Mu expects ID binder, got {type(id_).__name__}")
+        if not isinstance(term, Term):
+            raise TypeError(f"Mu.term expects a Term node, got {type(term).__name__}")
+        if not isinstance(context, Context):
+            raise TypeError(f"Mu.context expects a Context node, got {type(context).__name__}")
         # self.contr = term.prop +"vs"+ context.prop if term.prop and context.prop else None
 
-class Mutilde(ProofTerm):
-    def __init__(self, di_, prop, term, context):
+class Mutilde(Context):
+    def __init__(self, di_: "DI", prop: str, term: "Term", context: "Context"):
         self.di = di_
         self.prop = prop
         self.term = term
@@ -162,52 +174,66 @@ class Mutilde(ProofTerm):
         self.contr = None
         self.pres = None
         self.flag = None
+        if not isinstance(di_, DI):
+            raise TypeError(f"Mutilde expects DI binder, got {type(di_).__name__}")
+        if not isinstance(term, Term):
+            raise TypeError(f"Mutilde.term expects a Term node, got {type(term).__name__}")
+        if not isinstance(context, Context):
+            raise TypeError(f"Mutilde.context expects a Context node, got {type(context).__name__}")
         # self.contr = term.prop +"vs"+ context.prop if term.prop and context.prop else None
 
-class Lamda(ProofTerm):
-    def __init__(self, hyp,  term):
+class Lamda(Term):
+    def __init__(self, hyp: "Hyp",  term: "Term"):
         self.di = hyp
         self.term = term
         self.prop = None
         self.pres = None
         self.flag = None
+        if not isinstance(hyp, Hyp):
+            raise TypeError(f"Lamda expects Hyp binder, got {type(hyp).__name__}")
+        if not isinstance(term, Term):
+            raise TypeError(f"Lamda.term expects a Term node, got {type(term).__name__}")
         # self.prop = di.prop+"->"+term.prop if di_.prop and term.prop else None
 
 # class Hyp(ProofTerm):
 #     def __init__(self, id_):
 #         self.id = id_
 
-class Cons(ProofTerm):
-    def __init__(self, term, context):
+class Cons(Context):
+    def __init__(self, term: "Term", context: "Context"):
         self.term = term
         self.context = context
         self.prop = None
         self.pres = None
         self.flag = None
+        if not isinstance(term, Term):
+            raise TypeError(f"Cons.term expects a Term node, got {type(term).__name__}")
+        if not isinstance(context, Context):
+            raise TypeError(f"Cons.context expects a Context node, got {type(context).__name__}")
         # self.prop = term.prop + "->"+context.prop if term.prop and context.prop else None
 
-class Goal(ProofTerm):
+class Goal(Term):
     def __init__(self, number, prop = None):
         self.number = number
         self.prop = prop
         self.pres = None
         self.flag = None
 
-class Laog(ProofTerm):
+class Laog(Context):
     def __init__(self, number, prop = None):
         self.number = number
         self.prop = prop
         self.pres = None
         self.flag = None
 
-class ID(ProofTerm):
+class ID(Context):
     def __init__(self, name, prop = None):
         self.name = name
         self.prop = prop
         self.pres = None
         self.flag = None
 
-class DI(ProofTerm):
+class DI(Term):
     def __init__(self, name, prop = None):
         self.name = name
         self.prop = prop
@@ -215,11 +241,13 @@ class DI(ProofTerm):
         self.flag = None
 
 class Hyp(ProofTerm):
-    def __init__(self, di:DI, prop):
+    def __init__(self, di: "DI", prop: str):
         self.di = di
         self.prop = prop
         self.pres = None
         self.flag = None
+        if not isinstance(di, DI):
+            raise TypeError(f"Hyp expects DI in binder position, got {type(di).__name__}")
         
 transformer = ProofTermTransformer()
 proof_term_ast = transformer.transform(test)
