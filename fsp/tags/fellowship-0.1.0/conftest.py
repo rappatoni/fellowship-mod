@@ -101,6 +101,6 @@ def pytest_report_header(config):
     import os
     msg = os.getenv(
         "NEXT_TODO",
-        "NEXT TODO: Focus next on graft_test.py::test_graft_operator"
+        "NEXT TODO: Parser grafting — capture-avoiding ID/DI renaming vs scion free vars (see parser.py TODO)"
     )
     return msg

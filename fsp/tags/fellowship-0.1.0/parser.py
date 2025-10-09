@@ -1371,6 +1371,42 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
 #  Helper – capture‑aware substitution of Goals / Laogs by variables
 # ---------------------------------------------------------------------------
 
+# TODO(capture-avoidance / renaming during graft)
+# Context:
+#   Grafting currently ensures binder–binder freshness via _alpha_rename_if_needed(scion, root)
+#   and performs capturing substitution of Goals/Laogs by DI/ID variables along the graft path.
+#   What’s missing for full robustness is avoiding accidental capture of SCION FREE VARIABLES
+#   by ROOT binders encountered along the traversal to the graft site.
+#
+# Why this is postponed:
+#   The Fellowship prover does not allow creation of free variables during proof construction;
+#   “free variables” correspond to open Goals/Laogs and not to DI/ID occurrences. Therefore
+#   users cannot build terms that hit this corner case. Only hand-crafted ASTs (e.g., tests)
+#   could exhibit it. We leave the implementation for when/if it becomes necessary.
+#
+# Intended approach (when we pick this up):
+#   1) Compute the scion’s free IDs/DIs:
+#        free_ids, free_dis = _free_vars(scion)
+#   2) While traversing body_B toward the graft site, if a binder would capture one of those
+#      free names, α‑rename that binder locally and rewrite its bound occurrences in its scope:
+#        - For Mu(ID x): if x ∈ free_ids → fresh := _fresh(x, taken); rename binder + uses via _RenameIDUses
+#        - For Lamda/Hyp(DI x) and Mutilde(DI x): if x ∈ free_dis → fresh := _fresh(x, taken);
+#          rename binder + uses via _RenameDIUses
+#   3) Maintain a “taken” set seeded from both root and scion binder names to ensure freshness.
+#   4) Do NOT rewrite scion free variables; only rename root binders along the graft path.
+#
+# Sketch of helpers to add when implementing:
+#   - _free_vars(node) -> tuple[set[str], set[str]]
+#       Collect free ID/DI names respecting local bindings.
+#   - _RenameIDUses(old,new) / _RenameDIUses(old,new): visitors that rename occurrences within
+#       a binder scope, but stop when encountering an inner rebinding of the same name.
+#   - Extend _GraftVisitor.__init__ to precompute free vars/taken names and
+#     modify visit() for Mu/Lamda/Mutilde to perform local binder α-renaming if needed.
+#
+# See also:
+#   - _alpha_rename_if_needed(scion, root): existing binder–binder freshness utility.
+#   - _CapturingSubst: current capturing semantics for Goals/Laogs.
+#
 class _CapturingSubst(ProofTermVisitor):
     """Replace captured Goals / Laogs by the corresponding variable."""
 
