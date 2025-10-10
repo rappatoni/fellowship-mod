@@ -101,6 +101,6 @@ def pytest_report_header(config):
     import os
     msg = os.getenv(
         "NEXT_TODO",
-        "NEXT TODO: Parser grafting — capture-avoiding ID/DI renaming vs scion free vars (see parser.py TODO)"
+        "NEXT TODO: Work on script_test.py (surface parse errors with file:line context)"
     )
     return msg
