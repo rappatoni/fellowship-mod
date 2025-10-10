@@ -11,7 +11,7 @@ def mu_general_rule_test():
     """
 
     logger.info("General μ‑rule (substitution) test")
-    logger.debug("Input: μalpha:B.< μx:B.< x || v > || k >")
+    logger.info("Input: μalpha:B.< μx:B.< x || v > || k >")
 
     term_str = "μalpha:B.<μx:B.<x||v>||k>"
 

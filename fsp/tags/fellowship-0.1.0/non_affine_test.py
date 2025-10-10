@@ -38,7 +38,7 @@ def affine_mu_rule_nonaffine_test():
         _assert_log(inner.name == "v", "inner context should be v")
         # binder non‑affine: w occurs in term component (ID w)
         #assert isinstance(inner.term, (ID, DI)) and inner.term.name == "w", "inner term should be w"
-        logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")
+        #logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")
     except AssertionError as e:
         logger.error("Affine μ‑rule #2 (non‑affine t*) test failed: %s", e)
 

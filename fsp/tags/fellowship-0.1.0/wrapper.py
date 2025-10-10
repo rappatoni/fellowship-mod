@@ -885,10 +885,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         """
         Use ProofTermGenerationVisitor to generate the string representation of an enriched proof term.
         """
+        logger.info("Starting proof term generation for argument '%s'", self.name)
         from parser import ProofTermGenerationVisitor
         visitor = ProofTermGenerationVisitor()
         self.body = visitor.visit(self.body)
         self.enriched_proof_term = self.body.pres
+        logger.info("Finished proof term generation for argument '%s'", self.name)
         return
         
 
@@ -1239,6 +1241,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
     def reduce(self) -> None:
         """Normalise and print proof term + NL; keep originals intact."""
+        logger.info("Starting argument reduction for '%s'", self.name)
         self.normalize()
         logger.info("Reduction finished for argument '%s'", self.name)
         logger.debug("Normal‑form proof term: %s", self.normal_form)

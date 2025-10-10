@@ -3,6 +3,7 @@ import re
 import warnings
 import collections
 from copy import deepcopy
+import os
 import logging
 from typing import Optional, Any, List, Tuple, Dict
 
@@ -344,20 +345,20 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             return node
         else:
             if self.assumptions.get(goal_num):
-                logger.info("Enriching Goal with type %s", self.assumptions[goal_num]["prop"])
+                logger.debug("Enriching Goal with type %s", self.assumptions[goal_num]["prop"])
                 node.prop = self.assumptions[goal_num]["prop"]
             else:
                 if getattr(self, "verbose", False):
                     warnings.warn(f'Enrichment of node {node} not possible: {goal_num} not a key in {self.assumptions}')
                 else:
-                    logger.info("Enrichment skipped for Goal %s: key %s not in assumptions", node, goal_num)
+                    logger.debug("Enrichment skipped for Goal %s: key %s not in assumptions", node, goal_num)
             return node
 
     def visit_Laog(self, node: Laog):
         node = super().visit_Laog(node)
         laog_num = node.number.strip()
         if self.assumptions.get(laog_num):
-            logger.info("Enriching Laog with type %s", self.assumptions[laog_num]["prop"][:-4])
+            logger.debug("Enriching Laog with type %s", self.assumptions[laog_num]["prop"][:-4])
             node.prop = self.assumptions[laog_num]["prop"][:-4]
         return node
 
@@ -365,13 +366,13 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_ID(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                logger.info("Enriching axiom %s with type %s",
+                logger.debug("Enriching axiom %s with type %s",
                             node.name, self.axiom_props[node.name].strip("()"))
                 node.prop = self.axiom_props[node.name].strip("()")
             else:
                 logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
-            logger.info("Enriching bound variable %s with type %s",
+            logger.debug("Enriching bound variable %s with type %s",
                         node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
             if node.prop.startswith("~") or node.prop.startswith("¬"):
@@ -391,13 +392,13 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_DI(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                logger.info("Enriching axiom %s with type %s based on declared axiom",
+                logger.debug("Enriching axiom %s with type %s based on declared axiom",
                             node.name, self.axiom_props[node.name].strip("()"))
                 node.prop = self.axiom_props[node.name].strip("()")
             else:
                 logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
-            logger.info("Enriching bound variable %s with type %s based on bound variable",
+            logger.debug("Enriching bound variable %s with type %s based on bound variable",
                         node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
             if node.prop.startswith("~") or node.prop.startswith("¬"):
@@ -519,24 +520,57 @@ class ArgumentTermReducer(ProofTermVisitor):
         self.axiom_props  = axiom_props or {}
         self._root        = None     # set by reduce()
         self._step        = 0        # counter for pretty printing
+        self._trace_rows: list[tuple[int, str, str, str]] = []
+        self._term_no: int = 0
+        self._printed_header: bool = False
+        self._w_no: int = 3
+        self._w_term: int = int(os.getenv("FSP_REDUCE_TERM_WIDTH", "72"))
+        self._w_rule: int = 16
+        self._w_comment: int = 24
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
-        """Return the *normal* form obtained by exhaustively applying the
-        implemented reduction rules.  For the moment this is equivalent to a
-        single traversal because only one local rule is implemented."""
+        """Return the normal form; log a table of (no, term, rule, comments)."""
+        logger.info("Starting argument term reduction.")
         self._root = root
-        return self.visit(root)
+        # header + input row
+        self._snapshot(rule="input", comment=None)
+        out = self.visit(root)
+        # final row if no further rules applicable
+        try:
+            if not self._has_next_redex(out):
+                self._snapshot(rule="-", comment="no more rules applicable")
+        except Exception:
+            # best-effort; don't break reduction if heuristic fails
+            pass
+        logger.info("Finished argument term reduction.")
+        return out
 
-    # helper – pretty‑print current state ------------------------------
-    def _print_current(self) -> None:
+    # helper – snapshot current state into a table ------------------------------
+    def _snapshot(self, rule: Optional[str] = None, comment: Optional[str] = None) -> None:
         if not self.verbose:
             return
         show = deepcopy(self._root)
         show = PropEnrichmentVisitor(assumptions=self.assumptions,
                                      axiom_props=self.axiom_props).visit(show)
         show = ProofTermGenerationVisitor().visit(show)
-        self._step += 1
-        logger.info("[reduction step %d]\n%s\n", self._step, show.pres)
+        term_txt = show.pres
+
+        def _fmt(text: str, width: int) -> str:
+            s = text or ""
+            return (s[:max(1, width-1)] + "…") if len(s) > width else s.ljust(width)
+
+        # header once
+        if not self._printed_header:
+            hdr = f"{'No'.rjust(self._w_no)} | {_fmt('Term', self._w_term)} | {_fmt('Rule', self._w_rule)} | {_fmt('Comments', self._w_comment)}"
+            logger.info(hdr)
+            self._printed_header = True
+
+        # log a row and advance the counter
+        row = (self._term_no, term_txt, rule or "", comment or "")
+        self._trace_rows.append(row)
+        line = f"{str(row[0]).rjust(self._w_no)} | {_fmt(row[1], self._w_term)} | {_fmt(row[2], self._w_rule)} | {_fmt(row[3], self._w_comment)}"
+        logger.info(line)
+        self._term_no += 1
 
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
@@ -547,7 +581,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
             lam: Lamda = node.term
             cons: Cons = node.context
-            if self.verbose: logger.info("Applying λ‑rule")
+            if self.verbose: logger.debug("Applying λ‑rule")
             v      = cons.term      # the argument v
             E      = cons.context  # the continuation E (might itself be None)
             # Build the new µ'‑binder that will become the *context* part.
@@ -559,7 +593,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
-            self._print_current()
+            self._snapshot("lambda")
             self.visit_Mu(node)
             
             return node
@@ -593,34 +627,34 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
-            if self.verbose: logger.info("Alternative Arguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
-            if self.verbose: logger.info("Guards %s", _guards(inner_mu, ctx_mt))
+            if self.verbose: logger.debug("Alternative Arguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
+            if self.verbose: logger.debug("Guards %s", _guards(inner_mu, ctx_mt))
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
-                if self.verbose: logger.info("Case 1? %s", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
+                if self.verbose: logger.debug("Case 1? %s", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
                 if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
-                    if self.verbose: logger.info("Applying defence rule")
+                    if self.verbose: logger.debug("Applying defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # should be ID α
-                    self._print_current()
+                    self._snapshot("alt-defence-mu")
                     self.visit_Mu(node)
                     return node
 
                 # Case 2: ctx_mt.context already in normal form (no more redexes we know)
                 # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
                 # matches in that sub‑tree, regard it as normal‑form.
-                if self.verbose: logger.info("Case 2? %s",  not self._has_next_redex(ctx_mt.context))
+                if self.verbose: logger.debug("Case 2? %s",  not self._has_next_redex(ctx_mt.context))
                 if not self._has_next_redex(ctx_mt.context):
-                    if self.verbose: logger.info("Applying defeat rule")
+                    if self.verbose: logger.debug("Applying defeat rule")
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # t*
-                    self._print_current()
+                    self._snapshot("alt-defeat-mu")
                     self.visit_Mu(node)
                     return node
                 else:
-                    if self.verbose: logger.info("Simplifying attacker argument")
+                    if self.verbose: logger.debug("Simplifying attacker argument")
                     ctx_mt.context = self.visit_Mutilde(ctx_mt.context)
                     self.visit_Mu(node)
                     return node
@@ -638,7 +672,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         # cases because outer binders are unaffected by the rewrite).
         # ────────────────────────────────────────────────────────────────────
         if isinstance(node.term, Mu):
-            if self.verbose: logger.info("Applying general Mu reduction rule")
+            if self.verbose: logger.debug("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
@@ -650,11 +684,11 @@ class ArgumentTermReducer(ProofTermVisitor):
             # Splice the substituted command into *node* (drop µ x.).
             node.term    = new_term
             node.context = new_context
-            self._print_current()
+            self._snapshot("mu-beta")
             self.visit_Mu(node)
             return node
         if isinstance(node.context, Mutilde):
-            if self.verbose: logger.info("Applying general Mutilde rule")
+            if self.verbose: logger.debug("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
@@ -666,7 +700,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             # Splice the substituted command into *node* (drop µ x.).
             node.term    = new_term
             node.context = new_context
-            self._print_current()
+            self._snapshot("mutilde-beta")
             self.visit_Mu(node)
             return node
         #node = super().visit_Mu(node)
@@ -696,7 +730,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             )
             node.term    = deepcopy(v)
             node.context = new_context
-            self._print_current()
+            self._snapshot("lambda")
             self.visit_Mutilde(node)
             return node
 
@@ -723,33 +757,33 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
-            if self.verbose: logger.info("Alternative Counterarguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
+            if self.verbose: logger.debug("Alternative Counterarguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: inner_mu.term is µ̃ with affine binder → throw‑away
-                if self.verbose: logger.info("Case 1? %s", _is_affine(inner_mu.term.id.name, inner_mu.term))
+                if self.verbose: logger.debug("Case 1? %s", _is_affine(inner_mu.term.id.name, inner_mu.term))
                 if _is_affine(inner_mu.term.id.name, inner_mu.term):
-                    if self.verbose: logger.info("Applying Mutilde defence rule")
+                    if self.verbose: logger.debug("Applying Mutilde defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # should be ID α
-                    self._print_current()
+                    self._snapshot("alt-defence-mutilde")
                     self.visit_Mutilde(node)
                     return node
 
                 # Case 2: ctx_mt.context already in normal form (no more redexes we know)
                 # Rough heuristic: after recursive call, if no λ‑redex or affine‑µ pattern
                 # matches in that sub‑tree, regard it as normal‑form.
-                if self.verbose: logger.info("Case 2? %s",  not self._has_next_redex(inner_mu.term))
+                if self.verbose: logger.debug("Case 2? %s",  not self._has_next_redex(inner_mu.term))
                 if not self._has_next_redex(inner_mu.term):
-                    if self.verbose: logger.info("Applying Mutilde defeat rule")
+                    if self.verbose: logger.debug("Applying Mutilde defeat rule")
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # t*
-                    self._print_current()
+                    self._snapshot("alt-defeat-mutilde")
                     self.visit_Mutilde(node)
                     return node
                 else:
-                    if self.verbose: logger.info("Simplifying attacker argument")
+                    if self.verbose: logger.debug("Simplifying attacker argument")
                     inner_mu.term  = self.visit_Mu(inner_mu.term)
                     self.visit_Mu(node)
                     return node
@@ -757,7 +791,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     # self.visit_Mu(inner_mu.term)
 
         if isinstance(node.term, Mu):
-            if self.verbose: logger.info("Applying general Mu reduction rule")
+            if self.verbose: logger.debug("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
@@ -769,12 +803,12 @@ class ArgumentTermReducer(ProofTermVisitor):
             # Splice the substituted command into *node* (drop µ x.).
             node.term    = new_term
             node.context = new_context
-            self._print_current()
+            self._snapshot("mu-beta")
             self.visit_Mutilde(node)
             return node
 
         if isinstance(node.context, Mutilde):
-            if self.verbose: logger.info("Applying general Mutilde rule")
+            if self.verbose: logger.debug("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
@@ -785,7 +819,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             # Splice the substituted command into *node* (drop µ x.).
             node.term    = new_term
             node.context = new_context
-            self._print_current()
+            self._snapshot("mutilde-beta")
             self.visit_Mutilde(node)
             return node
         node = super().visit_Mutilde(node)
@@ -1578,6 +1612,9 @@ def graft_single(body_B: "ProofTerm", goal_number: str, body_A: "ProofTerm") -> 
     if tgt_prop is None:
         raise ValueError(f"no Goal/Laog numbered {goal_number} found")
 
+    kind = "goal" if is_goal else "laog"
+    logger.info("Starting graft: Replace %s %s:%s in %s by %s", kind, goal_number, tgt_prop, body_B.pres, body_A.pres)
+
     # type‑check replacement
     _check_conclusion_matches(body_A, target_is_goal=is_goal, target_prop=tgt_prop)
 
@@ -1673,9 +1710,11 @@ class NegIntroRewriter(ProofTermVisitor):
 
     # -------------------------------------------------------------------
     def rewrite(self, ast: "ProofTerm") -> "ProofTerm":
+        logger.info("Starting negation-introduction rewrite")
         out = self.visit(ast)
         if not self.changed:
             warnings.warn("NegIntroRewriter: no outer negation-introduction pattern found")
+        logger.info("Finished negation-introduction rewrite (changed=%s)", self.changed)
         return out
 
 def _collect_binder_names(node: ProofTerm, names=None):
