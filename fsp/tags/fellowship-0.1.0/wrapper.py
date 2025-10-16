@@ -373,7 +373,7 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -393,6 +393,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         "Running script %s (strict=%s, stop_on_error=%s, echo_notes=%s)",
         script_path, strict, stop_on_error, echo_notes
     )
+    if isolate:
+        # start a fresh prover session for this script
+        prover = setup_prover()
     prev_echo = getattr(prover, "echo_notes", False)
     prover.echo_notes = echo_notes
 
@@ -408,7 +411,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             if command.startswith('#'):
                 # user-facing comment/log
-                print(command[1:].lstrip())
+                logger.info(command[1:].lstrip())
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
@@ -448,39 +451,14 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     recording = False
                     current_argument = None
             elif recording:
-                    # Record the command as part of the argument
+                    # Record-only during scripts: do not execute lines now.
                     if command.startswith('tactic '):
-                        # Handle tactic commands within recording
-                        parts = command.split()
-                        tactic_name = parts[1]
-                        tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                        output = prover.execute_tactic(tactic_name, *tactic_args)
+                        # Keep the tactic line as-is; Argument.execute will run it.
                         current_argument['instructions'].append(command)
                     else:
-                        # Execute and record other commands
-                        try:
-                            output = prover.send_command(command)
-                        except ProverError as e:
-                            if strict:
-                                prover.echo_notes = prev_echo
-                                logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                            logger.error("Prover error: %s", e)
-                            if stop_on_error:
-                                break
-                            else:
-                                continue
-                        except MachinePayloadError as e:
-                            if strict:
-                                prover.echo_notes = prev_echo
-                                logger.info("Finished script %s", script_path)
-                                raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                            logger.error("Prover error (no machine payload): %s", e)
-                            if stop_on_error:
-                                break
-                            else:
-                                continue
-                        current_argument['instructions'].append(command)
+                        # Strip trailing dot; Argument.execute will add a single '.'
+                        instr = command.rstrip('.').strip()
+                        current_argument['instructions'].append(instr)
             else:
                     # Handle commands outside of recording
                     if command.startswith('tactic '):
@@ -505,7 +483,66 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             arg.normalize(); print("normal form stored in .normal_form")
                         else:
                             logger.warning("Argument '%s' not found for normalization", name)
-                            print(f"Argument '{name}' not found.")
+                            #print(f"Argument '{name}' not found.")
+                    elif command.startswith('undercut '):
+                        # Format: undercut attacker target
+                        parts = command.split()
+                        if len(parts) != 3:
+                            logger.error("Invalid undercut command. Use: undercut attacker target")
+                            continue
+                        attacker_name = parts[1]
+                        target_name = parts[2]
+                        attacker = prover.get_argument(attacker_name)
+                        target = prover.get_argument(target_name)
+                        if attacker and target:
+                            try:
+                                result = attacker.focussed_undercut(target)
+                                prover.register_argument(result)
+                                logger.info("Constructed undercut '%s' of '%s' by '%s'.",
+                                            result.name, target.name, attacker.name)
+                            except ProverError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error during undercut: %s", e)
+                                if stop_on_error:
+                                    break
+                            except MachinePayloadError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error (no machine payload) during undercut: %s", e)
+                                if stop_on_error:
+                                    break
+                        else:
+                            logger.error("Undercut failed: one or both arguments not found ('%s', '%s').",
+                                         attacker_name, target_name)
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: Undercut failed: missing arguments")
+                            if stop_on_error:
+                                break
                     elif command.startswith('chain '):
                         # Handle chaining of arguments
                         # Format: chain arg1 arg2
@@ -533,7 +570,13 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             output = prover.send_command(command)
                         except ProverError as e:
                             if strict:
-                                prover.echo_notes = prev_echo
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error: %s", e)
@@ -541,15 +584,27 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 break
                         except MachinePayloadError as e:
                             if strict:
-                                prover.echo_notes = prev_echo
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
                                 logger.info("Finished script %s", script_path)
                                 raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error (no machine payload): %s", e)
                             if stop_on_error:
                                 break
                         # print(output)
-    # restore echo state and announce completion
-    prover.echo_notes = prev_echo
+    # restore/close and announce completion
+    if isolate:
+        try:
+            prover.close()
+        except Exception:
+            pass
+    else:
+        prover.echo_notes = prev_echo
     logger.info("Finished script %s", script_path)
 
 
