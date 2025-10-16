@@ -16,6 +16,7 @@ import logging
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 
 logger = logging.getLogger('fsp.wrapper')
+logger.propagate = True
 
 class ProverError(Exception):
     pass
@@ -35,11 +36,11 @@ TODO: Consistent use of type annotations.
 TODO: Mechanism to declare a scenario of default assumptions.
     """
     def __init__(self, prover_cmd, env: Optional[dict] = None, log_level: Optional[int] = None):
-        if log_level is None:
-            level_name = os.getenv("FSP_LOGLEVEL", "WARNING")
-            logger.setLevel(getattr(logging, level_name.upper(), logging.WARNING))
-        else:
+        if log_level is not None:
             logger.setLevel(log_level)
+        else:
+            # Inherit level from root/pytest so INFO is visible in test output
+            logger.setLevel(logging.NOTSET)
 
         env_used = (env or os.environ).copy()
         env_used.setdefault("FSP_MACHINE", "1")
@@ -372,7 +373,7 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover: ProverWrapper, script_path: str) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -385,15 +386,33 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
           - TODO: undercut, support, rebut.
+          - Lines starting with '#' are user-facing comments and are printed to stdout.
+          - Lines starting with '%' are invisible comments and are ignored.
     """
+    logger.info(
+        "Running script %s (strict=%s, stop_on_error=%s, echo_notes=%s)",
+        script_path, strict, stop_on_error, echo_notes
+    )
+    prev_echo = getattr(prover, "echo_notes", False)
+    prover.echo_notes = echo_notes
+
     recording = False
     current_argument = None
     with open(script_path, 'r') as script_file:
-        for line in script_file:
+        for lineno, line in enumerate(script_file, start=1):
             command = line.strip()
-            if command and not command.startswith('#'):
-                logger.info("Sending command %s to Fellowship.", command)
-                if command.startswith('start argument '):
+            if not command:
+                continue
+            if command.startswith('%'):
+                # invisible comment, skip silently
+                continue
+            if command.startswith('#'):
+                # user-facing comment/log
+                print(command[1:].lstrip())
+                continue
+            # developer-level trace only
+            logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            if command.startswith('start argument '):
                     if recording:
                         logger.warning("Already recording an argument. Please end the current recording first.")
                         continue
@@ -410,7 +429,7 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
                     }
                     recording = True
                     logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
-                elif command == 'end argument':
+            elif command == 'end argument':
                     if not recording:
                         logger.warning("Not currently recording an argument.")
                         continue
@@ -428,7 +447,7 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
                     # Reset recording state
                     recording = False
                     current_argument = None
-                elif recording:
+            elif recording:
                     # Record the command as part of the argument
                     if command.startswith('tactic '):
                         # Handle tactic commands within recording
@@ -439,9 +458,30 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
                         current_argument['instructions'].append(command)
                     else:
                         # Execute and record other commands
-                        output = prover.send_command(command)
+                        try:
+                            output = prover.send_command(command)
+                        except ProverError as e:
+                            if strict:
+                                prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                            logger.error("Prover error: %s", e)
+                            if stop_on_error:
+                                break
+                            else:
+                                continue
+                        except MachinePayloadError as e:
+                            if strict:
+                                prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
+                            logger.error("Prover error (no machine payload): %s", e)
+                            if stop_on_error:
+                                break
+                            else:
+                                continue
                         current_argument['instructions'].append(command)
-                else:
+            else:
                     # Handle commands outside of recording
                     if command.startswith('tactic '):
                         # Handle tactic commands outside of recording
@@ -492,12 +532,25 @@ def execute_script(prover: ProverWrapper, script_path: str) -> None:
                         try:
                             output = prover.send_command(command)
                         except ProverError as e:
+                            if strict:
+                                prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error: %s", e)
-                            break
+                            if stop_on_error:
+                                break
                         except MachinePayloadError as e:
+                            if strict:
+                                prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error (no machine payload): %s", e)
-                            break
+                            if stop_on_error:
+                                break
                         # print(output)
+    # restore echo state and announce completion
+    prover.echo_notes = prev_echo
+    logger.info("Finished script %s", script_path)
 
 
 def interactive_mode(prover: ProverWrapper) -> None:
