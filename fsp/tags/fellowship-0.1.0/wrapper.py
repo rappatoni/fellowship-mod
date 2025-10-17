@@ -284,17 +284,20 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 continue
             if isinstance(nm, str):
                 nm = self._unquote(nm)
-            if kind == 'sort':
-                typ = entry.get('sort')
-                if isinstance(typ, str):
-                    typ = self._unquote(typ)
+            if not nm in self.declarations:
+                if kind == 'sort':
+                    typ = entry.get('sort')
+                    if isinstance(typ, str):
+                        typ = self._unquote(typ)
                     self.declarations[nm]= typ
-            elif kind == 'prop':
-                # We store the proposition string for axioms/theorems.
-                pr = entry.get('prop')
-                if isinstance(pr, str):
-                    pr = self._unquote(pr)
-                self.declarations[nm] = pr
+                    logger.info("'%s' : '%s'  declared.", nm, typ)
+                elif kind == 'prop':
+                    # We store the proposition string for axioms/theorems.
+                    pr = entry.get('prop')
+                    if isinstance(pr, str):
+                        pr = self._unquote(pr)
+                    self.declarations[nm] = pr
+                    logger.info("'%s' : '%s'  declared.", nm, pr)
             
 
     # def parse_proof_state(self, output):
@@ -460,7 +463,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         logger.warning("Not currently recording an argument.")
                         continue
                     # Create and execute the argument
-                    logger.info("Finished recording argument. Constructing and executing argument '%s'.")
+                    logger.info("Finished recording argument. Constructing and executing argument '%s'.", name)
                     arg = Argument(
                         prover,
                         name=current_argument['name'],
@@ -1251,14 +1254,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
         if on == "GoFigure":
             on = self.resolve_attacked_assumption()
-            #print("ON", on)
         # arguments.executed:
         if not self.executed:
             self.execute()
         if negated_attacker:
             logger.info("Turning negated attacker into counterargument")
             self.negation_norm_body = self.negation_normalize()
-            #print(self.neg_norm_body)
+            #self.negation_norm_body = self.rewrite(self.body)
+            #print(self.neg_norm_body)Negation normalizing argument
         if not other_argument.executed:
             other_argument.execute()
 
@@ -1413,7 +1416,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         gen = parser.ProofTermGenerationVisitor()
         new_body = gen.visit(copy.deepcopy(new_body))
         self.neg_norm_form = new_body.pres
-        logger.debug("Negation‑normalized proof term: %s", self.neg_norm_form)
+        logger.info("Negation‑normalized proof term: %s", self.neg_norm_form)
         self.neg_norm_representation = parser.pretty_natural(
             new_body,
             {
@@ -1422,6 +1425,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 "intuitionistic":parser.natural_language_rendering
             }[self.rendering]
         )
+        logger.info("Natural language representation:")
+        logger.info("")
+        logger.info(self.neg_norm_representation)
+        logger.info("")
         return self.neg_norm_body
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       

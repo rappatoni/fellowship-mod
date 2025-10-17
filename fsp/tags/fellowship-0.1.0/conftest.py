@@ -12,6 +12,7 @@ DEFAULT_SCRIPTS = [
     "tests/tactics.fspy",
     "tests/test1.fspy",
     #"tests/test2.fspy",
+    # "tests/negation_expanded.fspy",  # uncomment when ready
 ]
 
 def make_assert_log(logger: logging.Logger):
@@ -101,6 +102,6 @@ def pytest_report_header(config):
     import os
     msg = os.getenv(
         "NEXT_TODO",
-        "NEXT TODO: Work on script_test.py (surface parse errors with file:line context)"
+        "NEXT TODO: Work on tests/negation_expanded.fspy"
     )
     return msg
