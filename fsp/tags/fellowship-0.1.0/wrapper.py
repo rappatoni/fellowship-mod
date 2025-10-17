@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import sys
 import pexpect
 import re
 from lark import Lark, Transformer, v_args
@@ -17,6 +18,30 @@ from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
+
+def configure_logging_cli() -> None:
+    """
+    Configure root logger for CLI usage:
+      - Level from env FSP_LOGLEVEL (default INFO)
+      - Message-only format
+      - Stream to stdout
+      - Avoid duplicate handlers if already configured
+    """
+    level_name = os.getenv("FSP_LOGLEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    root = logging.getLogger()
+    root.setLevel(level)
+    if not root.handlers:
+        h = logging.StreamHandler(sys.stdout)
+        h.setLevel(level)
+        h.setFormatter(logging.Formatter("%(message)s"))
+        root.addHandler(h)
+    else:
+        for h in root.handlers:
+            try:
+                h.setLevel(level)
+            except Exception:
+                pass
 
 class ProverError(Exception):
     pass
@@ -38,9 +63,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
     def __init__(self, prover_cmd, env: Optional[dict] = None, log_level: Optional[int] = None):
         if log_level is not None:
             logger.setLevel(log_level)
-        else:
-            # Inherit level from root/pytest so INFO is visible in test output
-            logger.setLevel(logging.NOTSET)
 
         env_used = (env or os.environ).copy()
         env_used.setdefault("FSP_MACHINE", "1")
@@ -87,9 +109,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
             warnings.warn(w)
         # surface notes from machine payload
         for note in state.get('notes', []):
-            logger.info("note: %s", note)
             if self.echo_notes:
-                print(f"Prover note: {note}")
+                logger.info("Prover note: %s", note)
+            else:
+                logger.debug("Prover note: %s", note)
         errs = state.get('errors', [])
         if errs:
             # keep last_state for post-mortem, then raise
@@ -437,6 +460,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         logger.warning("Not currently recording an argument.")
                         continue
                     # Create and execute the argument
+                    logger.info("Finished recording argument. Constructing and executing argument '%s'.")
                     arg = Argument(
                         prover,
                         name=current_argument['name'],
@@ -446,7 +470,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     arg.execute()
                     # Store the argument for later use
                     prover.register_argument(arg)
-                    logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
+                    logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
                     # Reset recording state
                     recording = False
                     current_argument = None
@@ -480,7 +504,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         arg = prover.get_argument(name)
                         if arg:
                             logger.info("Normalized argument '%s'; normal form cached in .normal_form", name)
-                            arg.normalize(); print("normal form stored in .normal_form")
+                            arg.normalize(); logger.info("normal form stored in .normal_form")
                         else:
                             logger.warning("Argument '%s' not found for normalization", name)
                             #print(f"Argument '{name}' not found.")
@@ -648,7 +672,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 arg = prover.get_argument(name)
                 if arg:
                     logger.info("Normalized argument '%s'; normal form cached in .normal_form", name)
-                    arg.normalize(); print("normal form stored in .normal_form")
+                    arg.normalize(); logger.info("normal form stored in .normal_form")
                 else:
                     print(f"Argument '{name}' not found.")
                     logger.warning("Argument '%s' not found for normalization (interactive)", name)
@@ -783,6 +807,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     """
     
     def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS" ):
+        # TODO: some of these stil need type hints.
         self.prover = prover
         self.name = name
         self.conclusion = conclusion #Conclusion of the argument.
@@ -791,7 +816,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.labelling = False # Deprecated: Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
-        self.body = None # parsed proof term created from proof_term
+        self.body :ProofTerm = None # parsed proof term created from proof_term
         self.rendering = rendering # Which rendering should be generated?
         self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
@@ -830,13 +855,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             else:
                 output = self.prover.send_command(instr.strip() + '.')
                 logger.debug("Prover output: %s", output)
-                #output += output_instr
-            #print(output)
         # Capture the assumptions (open goals)
         self._parse_proof_state(output)
         # Parse proof term
         grammar = parser.Grammar()
-        # parser = Lark(proof_term_grammar, start='start')
         parsed = grammar.parser.parse(self.proof_term)
         transformer = parser.ProofTermTransformer()
         self.body = transformer.transform(parsed)
@@ -850,7 +872,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = parser.pretty_natural(self.body, parser.natural_language_rendering)
         # Discard the theorem to prevent closing it (since it may have open goals)
         self.prover.send_command('discard theorem.')
-        logger.info("Argument '%s' executed", self.name)
+        logger.info("Argument '%s' executed.", self.name)
+        logger.info("Argument term: '%s'.", self.proof_term)
         if self.enrich == "PROPS":    
             self.enrich_props()
             self.generate_proof_term()
@@ -993,12 +1016,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         """
         Use ProofTermGenerationVisitor to generate the string representation of an enriched proof term.
         """
-        logger.info("Starting proof term generation for argument '%s'", self.name)
+        logger.info("Starting proof term generation for enriched argument '%s'", self.name)
         from parser import ProofTermGenerationVisitor
         visitor = ProofTermGenerationVisitor()
         self.body = visitor.visit(self.body)
         self.enriched_proof_term = self.body.pres
-        logger.info("Finished proof term generation for argument '%s'", self.name)
+        logger.info("Finished proof term generation for enriched argument '%s'", self.name)
+        logger.info("Enriched proof term: '%s'.", self.enriched_proof_term)
         return
         
 
@@ -1352,11 +1376,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("Starting argument reduction for '%s'", self.name)
         self.normalize()
         logger.info("Reduction finished for argument '%s'", self.name)
-        logger.debug("Normal‑form proof term: %s", self.normal_form)
-        logger.debug("NL rendering: %s", self.normal_representation)
-        print("— reduction finished —\n")
-        print("Normal‑form proof term:\n", self.normal_form)
-        print("\nNatural language:\n", self.normal_representation)
+        logger.info("Normal‑form proof term: %s", self.normal_form)
 
     def negation_normalize(self) -> parser.ProofTerm:
         """
@@ -1418,22 +1438,22 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str) -> None:
     """ CLI for Argument Reduction """
     arg = prover.get_argument(name)
     if not arg:
-        print(f"Argument '{name}' not found.")
+        logger.error(f"Argument '{name}' not found.")
         return
-    print(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
+    logger.info(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
     arg.reduce()
 
 def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False) -> None:
     """ CLI for Argument Rendering. The normalized proof term can be selected."""
     arg = prover.get_argument(name)
     if not arg:
-        print(f"Argument '{name}' not found.")
+        logger.error(f"Argument '{name}' not found.")
         return
     if normalized==True:
-        print(f"Rendering argument {arg.name} in normal form.")
+        logger.info(f"Rendering argument {arg.name} in normal form:")
     else:
-        print(f"Rendering argument {arg.name}")
-    print(arg.render(normalized=normalized))
+        logger.info(f"Rendering argument {arg.name}:")
+    logger.info(arg.render(normalized=normalized))
 
 def main() -> None:
     ap = argparse.ArgumentParser(
@@ -1446,13 +1466,8 @@ def main() -> None:
                    help='execute commands in FILE (same grammar as interactive mode)')
     args = ap.parse_args()
 
-    # Configure root logger if no handlers (so INFO/ERROR show up by default)
-    if not logging.getLogger().handlers:
-        level_name = os.getenv("FSP_LOGLEVEL", "WARNING").upper()
-        logging.basicConfig(
-            level=getattr(logging, level_name, logging.WARNING),
-            format="%(levelname)s:%(name)s:%(message)s"
-        )
+    # Configure CLI logging (message‑only, level from FSP_LOGLEVEL, default INFO)
+    configure_logging_cli()
 
     prover = setup_prover()             # ⇐ creates the ProverWrapper, 
                                         #    registers pop, declares A,B,C,D …

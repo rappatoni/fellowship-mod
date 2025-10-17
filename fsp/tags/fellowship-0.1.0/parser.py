@@ -530,7 +530,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
         """Return the normal form; log a table of (no, term, rule, comments)."""
-        logger.info("Starting argument term reduction.")
+        #logger.info("Starting argument term reduction.")
         self._root = root
         # header + input row
         self._snapshot(rule="input", comment=None)
@@ -541,8 +541,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 self._snapshot(rule="-", comment="no more rules applicable")
         except Exception:
             # best-effort; don't break reduction if heuristic fails
+            # TODO: this should raise a warning that termination of reduction could not be determined and surface the exception which caused it.
             pass
-        logger.info("Finished argument term reduction.")
+        #logger.info("Finished argument term reduction.")
         return out
 
     # helper – snapshot current state into a table ------------------------------
@@ -550,6 +551,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         if not self.verbose:
             return
         show = deepcopy(self._root)
+        # TODO: is this enrichment call really necessary?
         show = PropEnrichmentVisitor(assumptions=self.assumptions,
                                      axiom_props=self.axiom_props).visit(show)
         show = ProofTermGenerationVisitor().visit(show)
