@@ -816,7 +816,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.labelling = False # Deprecated: Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
-        self.body :ProofTerm = None # parsed proof term created from proof_term
+        self.body: parser.ProofTerm = None # parsed proof term created from proof_term
         self.rendering = rendering # Which rendering should be generated?
         self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
@@ -873,7 +873,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Discard the theorem to prevent closing it (since it may have open goals)
         self.prover.send_command('discard theorem.')
         logger.info("Argument '%s' executed.", self.name)
+        logger.info("")  # spacer before proof term artifact
         logger.info("Argument term: '%s'.", self.proof_term)
+        logger.info("")  # spacer after proof term artifact
         if self.enrich == "PROPS":    
             self.enrich_props()
             self.generate_proof_term()
@@ -1022,7 +1024,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.body = visitor.visit(self.body)
         self.enriched_proof_term = self.body.pres
         logger.info("Finished proof term generation for enriched argument '%s'", self.name)
+        logger.info("")  # spacer before enriched proof term
         logger.info("Enriched proof term: '%s'.", self.enriched_proof_term)
+        logger.info("")  # spacer after enriched proof term
         return
         
 
@@ -1376,7 +1380,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("Starting argument reduction for '%s'", self.name)
         self.normalize()
         logger.info("Reduction finished for argument '%s'", self.name)
+        logger.info("")  # spacer before proof term
         logger.info("Normal‑form proof term: %s", self.normal_form)
+        logger.info("")  # spacer after proof term
 
     def negation_normalize(self) -> parser.ProofTerm:
         """
@@ -1449,11 +1455,13 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     if not arg:
         logger.error(f"Argument '{name}' not found.")
         return
-    if normalized==True:
+    logger.info("")  # spacer before NL rendering
+    if normalized:
         logger.info(f"Rendering argument {arg.name} in normal form:")
     else:
         logger.info(f"Rendering argument {arg.name}:")
     logger.info(arg.render(normalized=normalized))
+    logger.info("")  # spacer after NL rendering
 
 def main() -> None:
     ap = argparse.ArgumentParser(

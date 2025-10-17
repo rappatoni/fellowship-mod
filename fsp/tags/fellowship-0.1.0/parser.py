@@ -563,6 +563,7 @@ class ArgumentTermReducer(ProofTermVisitor):
 
         # header once
         if not self._printed_header:
+            logger.info("")  # spacer before table
             hdr = f"{'No'.rjust(self._w_no)} | {_fmt('Term', self._w_term)} | {_fmt('Rule', self._w_rule)} | {_fmt('Comments', self._w_comment)}"
             logger.info(hdr)
             self._printed_header = True
@@ -572,6 +573,8 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._trace_rows.append(row)
         line = f"{str(row[0]).rjust(self._w_no)} | {_fmt(row[1], self._w_term)} | {_fmt(row[2], self._w_rule)} | {_fmt(row[3], self._w_comment)}"
         logger.info(line)
+        if (rule == "-" or (comment or "") == "no more rules applicable"):
+            logger.info("")  # spacer after table
         self._term_no += 1
 
     def visit_Mu(self, node: Mu):
