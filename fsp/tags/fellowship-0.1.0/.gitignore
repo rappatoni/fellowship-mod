@@ -6,3 +6,4 @@
 !tests
 !*.ml
 !*.mli
+!*mly
