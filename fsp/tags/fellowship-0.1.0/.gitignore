@@ -4,3 +4,5 @@
 !*.fsp
 !*.fspy
 !tests
+!*.ml
+!*.mli
