@@ -1,0 +1,84 @@
+# This script tests counterarguments in negation-expanded form.
+
+lk.
+
+# First we declare our running example:
+#
+declare EfficientMetro, StrikeMetro, UseMetro: bool.
+declare r1: (EfficientMetro -> UseMetro).
+declare r2: (StrikeMetro -> ~EfficientMetro).
+declare a1: (EfficientMetro).
+declare a2: (StrikeMetro).
+#
+# Then an argument to use the metro.
+#
+start argument arg1 UseMetro
+cut (EfficientMetro -> UseMetro) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+#
+# Next, a counterargument in negation-expanded form
+#
+start argument arg2 ~EfficientMetro
+elim.
+cut (~EfficientMetro) nef.
+cut (StrikeMetro -> ~EfficientMetro) th.
+axiom r2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+end argument
+#
+# Now we test if arg2 undercuts arg1 as intended: 
+#
+undercut arg2 arg1
+
+# start argument undercut ~EfficientMetro
+# elim.
+# tactic pop EfficientMetro UseMetro
+# end argument
+
+# theorem undercut: (~EfficientMetro).
+# cut (EfficientMetro) issue.
+# tactic pop EfficientMetro UseMetro
+# elim.
+# axiom a2.
+# # replace by axiom to end proof early:
+# elim.
+# tactic pop EfficientMetro UseMetro
+# axiom a1.
+# axiom r1.
+# axiom a1.
+
+# theorem undercut: (~EfficientMetro).
+# cut (EfficientMetro) issue.
+# tactic pop EfficientMetro UseMetro
+# cut (~EfficientMetro) attacker.
+# next.
+# elim.
+# axiom.
+# axiom.
+
+
+# theorem undercut: (~EfficientMetro).
+# elim.
+# cut (EfficientMetro->UseMetro) stash.
+# tactic pop EfficientMetro UseMetro
+
+# axiom.
+# axiom.
+# cut (EfficientMetro->UseMetro) stash.
+# next.
+# elim.
+# next.
+# next.
+# axiom.
+# next.
+# axiom.
+# next.
+# axiom.
