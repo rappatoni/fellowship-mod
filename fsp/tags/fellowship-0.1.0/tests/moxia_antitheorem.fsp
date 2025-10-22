@@ -1,0 +1,6 @@
+(* Minimal test for moxia + antitheorem producing machine blocks *)
+declare A : bool.
+moxia mA : (A).
+antitheorem notA : (A).
+axiom mA.
+qed.

@@ -21,6 +21,8 @@
     "next", NEXT;
     "prev", PREV;
     "theorem", THEOREM;
+    "moxia", MOXIA;
+    "antitheorem", ANTITHEOREM;
     "qed", QED;
     "checkout", CHECKOUT;
     "export", EXPORT;

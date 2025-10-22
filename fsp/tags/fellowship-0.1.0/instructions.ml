@@ -18,6 +18,8 @@ type instruction =
   | Min of bool
   | Declare 
   | Theorem
+  | Moxia
+  | AntiTheorem
   | Next 
   | Prev 
   | Qed 
@@ -34,6 +36,8 @@ let pretty_instruction = function
   | Min b -> if b then "minimal" else "full"
   | Declare  -> "declare"
   | Theorem -> "theorem"
+  | Moxia -> "moxia"
+  | AntiTheorem -> "antitheorem"
   | Next  -> "next"
   | Prev  -> "prev"
   | Qed  -> "qed"
@@ -149,12 +153,26 @@ let rec declare args cairn = match args, cairn with
 	  (Need_args "either a type and some variables ranging over it, or an axiom and its name")),s)
   | _, _ -> Exception (new tactic_msg Instr_misuse,(get_state cairn))
 
+let moxia args cairn = match args, cairn with
+  | [Labeled_prop ([name],prop)], Idle (_,s) ->
+      begin match prop_infer prop s.sign with
+        | Inl SProp ->
+            let nc = Idle (Some (new instruction_msg (Defined name)),
+                           { s with mox = Coll.add name prop s.mox }) in
+            history := (nc,!trace)::!history; nc
+        | Inl x -> Idle (Some (new type_msg (Prop_kind (prop,x))), s)
+        | Inr m -> Idle (Some (new type_msg m), s)
+      end
+  | _, Idle (_,s) ->
+      Idle (Some (new tactic_msg (Need_args "an axiom name and its body")), s)
+  | _, _ -> Exception (new tactic_msg Instr_misuse, (get_state cairn))
+
 let theorem args cairn = match args, cairn with
   | [Labeled_prop ([name],prop)], Idle (_,s) -> 
       begin match prop_infer prop s.sign with
 	 | Inl SProp -> 
 	    let ns = {s with index=1;
-	      open_thm=Some (name,prop);
+	      open_thm=Some (name,prop,false);
 	      goals=[initial_meta,(new_goal prop)];
 	      pt=Mu (thesis,prop,Play(TermMeta initial_meta,Concl thesis)) }
 	    in
@@ -167,6 +185,28 @@ let theorem args cairn = match args, cairn with
       end
   | _, Idle (_,s) -> Idle (Some (new tactic_msg (Need_args "the theorem's name and its body")),s)
   | _, _ -> Exception (new tactic_msg Instr_misuse,(get_state cairn))
+
+let antitheorem args cairn = match args, cairn with
+  | [Labeled_prop ([name],prop)], Idle (_,s) ->
+      begin match prop_infer prop s.sign with
+        | Inl SProp ->
+            let g = { (new_goal prop) with active=(LeftHandSide, prop) } in
+            let ns = { s with
+              index = 1;
+              open_thm = Some (name,prop,true);
+              goals = [initial_meta, g];
+              pt = Mu (thesis, prop, Play (Hyp thesis, ContextMeta initial_meta))
+            } in
+            let nc = Subgoals (1, ns) in
+            trace := (T_goal (ns,name))::!trace;
+            history := (nc,!trace)::!history;
+            nc
+        | Inl x -> Idle (Some (new type_msg (Prop_kind (prop,x))), s)
+        | Inr m -> Idle (Some (new type_msg m), s)
+      end
+  | _, Idle (_,s) ->
+      Idle (Some (new tactic_msg (Need_args "the theorem's name and its body")), s)
+  | _, _ -> Exception (new tactic_msg Instr_misuse, (get_state cairn))
 
 let next args cairn = match args, cairn with
   | [], Success s | [], Subgoals (_,s) | [], Exception (_,s) -> 
@@ -200,18 +240,19 @@ let prev args cairn = match args, cairn with
 
 let qed args cairn = match args, cairn with 
   | [], Success s | [], Exception (_,s) when s.goals=[] ->
-      begin match s with
-	| {open_thm = Some (name,prop)} -> 
-	    let nc = Idle (Some (new instruction_msg (Defined name)), 
-	      {s with index = 0 ;
-		open_thm = None ;
-		goals = [] ;
-		thms = (Coll.add name prop s.thms) ;
-		pt = TermMeta initial_meta }) in
-	    trace := (T_qed s.pt)::!trace ;
-	    history := (nc,!trace)::!history ;
-	    nc
-	| _ -> assert false
+      begin match s.open_thm with
+        | Some (name,prop,is_anti) ->
+            let s' =
+              if is_anti
+              then { s with mox = Coll.add name prop s.mox }
+              else { s with thms = Coll.add name prop s.thms }
+            in
+            let nc = Idle (Some (new instruction_msg (Defined name)),
+              { s' with index = 0; open_thm=None; goals=[]; pt=TermMeta initial_meta }) in
+            trace := (T_qed s.pt)::!trace;
+            history := (nc,!trace)::!history;
+            nc
+        | None -> assert false
       end
   | _, Success s | [], Exception (_,s) when s.goals=[] -> 
       Exception (new tactic_msg No_args,s)
@@ -321,6 +362,8 @@ let jack_instruction (instruction,args) cairn =
       | Lj _ | Min _ -> assert false
       | Declare -> declare args cairn
       | Theorem -> theorem args cairn
+      | Moxia -> moxia args cairn
+      | AntiTheorem -> antitheorem args cairn
       | Next -> next args cairn
       | Prev -> prev args cairn
       | Qed -> qed args cairn

@@ -22,6 +22,7 @@
 %token NEG ARROW MINUS AND OR FORALL EXISTS TRUE FALSE LEFT RIGHT ALL
 %token LPAR RPAR LBRA RBRA VIR PVIR PIPE COLON DOT 
 %token EOF 
+%token MOXIA ANTITHEOREM
 
 /* Token priorities / associativity */
 
@@ -64,6 +65,8 @@ instr:
 | FULL                                     { Min false }
 | DECLARE                                  { Declare }
 | THEOREM                                  { Theorem }
+| MOXIA                                    { Moxia }
+| ANTITHEOREM                              { AntiTheorem }
 | NEXT                                     { Next }
 | PREV                                     { Prev }
 | QED                                      { Qed }

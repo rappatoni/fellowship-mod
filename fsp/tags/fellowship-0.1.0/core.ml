@@ -582,13 +582,15 @@ let rec prop_of_goals gl = match gl with
 (* The integer is the 1-based index of the current goal in the list *)
 type state = 
   { index: int;
-    open_thm: (string * prop) option;
+    open_thm: (string * prop * bool) option;  (* false = theorem, true = anti-theorem *)
     goals: (metaid * goal) list;
     sign: (sort Coll.t);
     thms: (prop Coll.t);
+    mox: (prop Coll.t);
     pt: proof_t3rm }
 
-let new_state () = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;pt=TermMeta initial_meta}
+let new_state () =
+  { index=0; open_thm=None; goals=[]; sign=Coll.empty; thms=Coll.empty; mox=Coll.empty; pt=TermMeta initial_meta }
 
 (*Transform states into propositions*)
 let prop_of_state s = 

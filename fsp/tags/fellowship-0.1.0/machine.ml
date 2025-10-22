@@ -81,9 +81,13 @@ let snapshot (cairn : Core.cairn) : string =
         st.sign [] in
     let thm_sexp = Core.Coll.fold (fun nm pr acc ->
       let d = Printf.sprintf "((name %s)(kind prop)(prop %s))"
-                (sexp_string nm) (sexp_prop pr) in d :: acc)   
+                (sexp_string nm) (sexp_prop pr) in d :: acc)
         st.thms [] in
-    String.concat " " (List.rev_append sig_sexp thm_sexp) in
+    let mox_sexp = Core.Coll.fold (fun nm pr acc ->
+      let d = Printf.sprintf "((name %s)(kind moxia)(prop %s))"
+                (sexp_string nm) (sexp_prop pr) in d :: acc)
+        st.mox [] in
+    String.concat " " (List.rev_append sig_sexp (List.rev_append thm_sexp mox_sexp)) in
 
   (* messages -------------------------------------------------------*)
   let messages_sexp =

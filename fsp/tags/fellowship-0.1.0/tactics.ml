@@ -220,20 +220,25 @@ let axiom args (id,g,context,thms,pt) =
   (match args with
     | [Ident x] -> 
       begin
-	try if (snd g.active) = 
-	 match fst g.active with 
-	    RightHandSide -> (search x g.hyp thms)
-          | LeftHandSide ->
-             let _,p,_ = List.find (function (x',p,w) -> x=x' && w) g.ccl in p
-	then 
-	 let pt' =
-	  match (fst g.active) with
-	     RightHandSide -> instantiate_t3rm id (Hyp x) pt
-	   | LeftHandSide -> instantiate_context id (Concl x) pt
-	 in
-	  RSuccess ([],pt')
-	else RException (new tactic_msg Not_trivial)
-	with Not_found -> RException (new tactic_msg (Hyp_ccl_match x)) 
+	try
+	  let target =
+	    match fst g.active with
+	      RightHandSide -> (search x g.hyp thms)
+	    | LeftHandSide ->
+		(try let _,p,_ = List.find (function (x',p,w) -> x=x' && w) g.ccl in p
+		 with Not_found ->
+		   let s = get_state !cairn in
+		   Coll.find x s.mox)
+	  in
+	  if (snd g.active) = target then
+	    let pt' =
+	      match (fst g.active) with
+		 RightHandSide -> instantiate_t3rm id (Hyp x) pt
+	       | LeftHandSide -> instantiate_context id (Concl x) pt
+	    in
+	    RSuccess ([],pt')
+	  else RException (new tactic_msg Not_trivial)
+	with Not_found -> RException (new tactic_msg (Hyp_ccl_match x))
       end
     | _ -> RException (new tactic_msg (Need_args "one identifier")) )
 

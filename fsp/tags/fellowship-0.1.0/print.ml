@@ -35,7 +35,7 @@ let pretty_string s frm =  pp_print_string frm s
 (* CSC: Very bad imperative code, to avoid one extra constant argument of type
    status for the pretty_natural_* functions. *)
 let set_state, is_current_goal =
- let dummy_state = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;pt=TermMeta initial_meta} in
+ let dummy_state = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;mox=Coll.empty;pt=TermMeta initial_meta} in
  let state = ref dummy_state in
  (function state' -> state := state'),
  (function metaid -> fst (List.nth !state.goals (!state.index - 1)) = metaid)
