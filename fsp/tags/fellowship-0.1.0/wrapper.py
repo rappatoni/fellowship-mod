@@ -851,8 +851,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.enrich_props()
                 generator = parser.InstructionsGenerationVisitor()
                 self.instructions = generator.return_instructions(self.body)
-        # Start the theorem
-        output = self.prover.send_command(f'theorem {self.name} : ({self.conclusion}).')
+        # Start theorem or anti-theorem based on body root
+        if self.body and isinstance(self.body, parser.Mutilde):
+            start_cmd = f'antitheorem {self.name} : ({self.body.prop}).'
+        else:
+            start_cmd = f'theorem {self.name} : ({self.conclusion}).'
+        output = self.prover.send_command(start_cmd)
         # Execute each instruction
         for instr in self.instructions:
             if instr.startswith('tactic '):

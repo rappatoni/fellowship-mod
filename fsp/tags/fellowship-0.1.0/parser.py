@@ -358,8 +358,11 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_Laog(node)
         laog_num = node.number.strip()
         if self.assumptions.get(laog_num):
-            logger.debug("Enriching Laog with type %s", self.assumptions[laog_num]["prop"][:-4])
-            node.prop = self.assumptions[laog_num]["prop"][:-4]
+            p = self.assumptions[laog_num]["prop"]
+            if isinstance(p, str) and p.endswith("_bar"):
+                p = p[:-4]
+            logger.debug("Enriching Laog with type %s", p)
+            node.prop = p
         return node
 
     def visit_ID(self, node: ID):
@@ -1364,7 +1367,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             if node.flag == "Falsum":
                 return node
             else:
-                self.instructions.appendleft(f'axiom {node.name}.')
+                self.instructions.appendleft(f'moxia {node.name}.')
         else:
             raise Exception("Axiom name missing.")
         return node
