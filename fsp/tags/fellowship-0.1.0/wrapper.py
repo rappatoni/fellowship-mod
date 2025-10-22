@@ -298,6 +298,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
                         pr = self._unquote(pr)
                     self.declarations[nm] = pr
                     logger.info("'%s' : '%s'  declared.", nm, pr)
+                elif kind == 'moxia':
+                    # Store the proposition string for refutations (deny).
+                    pr = entry.get('prop')
+                    if isinstance(pr, str):
+                        pr = self._unquote(pr)
+                    self.declarations[nm] = pr
+                    logger.info("'%s' : '%s'  denied.", nm, pr)
             
 
     # def parse_proof_state(self, output):
