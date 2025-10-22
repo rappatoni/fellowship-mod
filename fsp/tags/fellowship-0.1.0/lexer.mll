@@ -23,6 +23,7 @@
     "theorem", THEOREM;
     "moxia", MOXIA;
     "antitheorem", ANTITHEOREM;
+    "deny", DENY;
     "qed", QED;
     "checkout", CHECKOUT;
     "export", EXPORT;

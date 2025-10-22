@@ -1,6 +1,6 @@
-(* Minimal test for moxia + antitheorem producing machine blocks *)
+(* Minimal test for deny (declaration) + moxia (tactic) *)
 declare A : bool.
-moxia mA : (A).
+deny mA : (A).
 antitheorem notA : (A).
-axiom mA.
+moxia mA.
 qed.

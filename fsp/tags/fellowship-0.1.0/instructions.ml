@@ -18,7 +18,7 @@ type instruction =
   | Min of bool
   | Declare 
   | Theorem
-  | Moxia
+  | Deny
   | AntiTheorem
   | Next 
   | Prev 
@@ -36,7 +36,7 @@ let pretty_instruction = function
   | Min b -> if b then "minimal" else "full"
   | Declare  -> "declare"
   | Theorem -> "theorem"
-  | Moxia -> "moxia"
+  | Deny -> "deny"
   | AntiTheorem -> "antitheorem"
   | Next  -> "next"
   | Prev  -> "prev"
@@ -153,7 +153,7 @@ let rec declare args cairn = match args, cairn with
 	  (Need_args "either a type and some variables ranging over it, or an axiom and its name")),s)
   | _, _ -> Exception (new tactic_msg Instr_misuse,(get_state cairn))
 
-let moxia args cairn = match args, cairn with
+let deny args cairn = match args, cairn with
   | [Labeled_prop ([name],prop)], Idle (_,s) ->
       begin match prop_infer prop s.sign with
         | Inl SProp ->
@@ -362,7 +362,7 @@ let jack_instruction (instruction,args) cairn =
       | Lj _ | Min _ -> assert false
       | Declare -> declare args cairn
       | Theorem -> theorem args cairn
-      | Moxia -> moxia args cairn
+      | Deny -> deny args cairn
       | AntiTheorem -> antitheorem args cairn
       | Next -> next args cairn
       | Prev -> prev args cairn

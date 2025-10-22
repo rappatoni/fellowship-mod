@@ -45,6 +45,7 @@ type tactic =
   | Elim_In 
   | Contraction 
   | Weaken
+  | Moxia
   
 type tactical = 
   | TPlug of tactic * (arg list) * Lexing.position
@@ -60,6 +61,7 @@ let pretty_tactic = function
   | Elim_In -> "elim in"
   | Contraction -> "contraction"
   | Weaken -> "weaken"
+  | Moxia -> "moxia"
 
 let rec pretty_tactical = function
   | TPlug (t,args,pos) -> 
@@ -225,10 +227,7 @@ let axiom args (id,g,context,thms,pt) =
 	    match fst g.active with
 	      RightHandSide -> (search x g.hyp thms)
 	    | LeftHandSide ->
-		(try let _,p,_ = List.find (function (x',p,w) -> x=x' && w) g.ccl in p
-		 with Not_found ->
-		   let s = get_state !cairn in
-		   Coll.find x s.mox)
+		let _,p,_ = List.find (function (x',p,w) -> x=x' && w) g.ccl in p
 	  in
 	  if (snd g.active) = target then
 	    let pt' =
@@ -241,6 +240,50 @@ let axiom args (id,g,context,thms,pt) =
 	with Not_found -> RException (new tactic_msg (Hyp_ccl_match x))
       end
     | _ -> RException (new tactic_msg (Need_args "one identifier")) )
+
+let rec moxia args (id,g,context,thms,pt) =
+  match args with
+  | [Ident x] ->
+      if fst g.active <> LeftHandSide then
+        RException (new tactic_msg Not_trivial)
+      else
+        begin
+          try
+            let target =
+              try
+                let _,p,_ = List.find (fun (x',p,w) -> x=x' && w) g.ccl in p
+              with Not_found ->
+                let s = get_state !cairn in
+                Coll.find x s.mox
+            in
+            if (snd g.active) = target then
+              RSuccess ([], instantiate_context id (Concl x) pt)
+            else
+              RException (new tactic_msg Not_trivial)
+          with Not_found ->
+            RException (new tactic_msg (Hyp_ccl_match x))
+        end
+  | [] ->
+      if fst g.active <> LeftHandSide then
+        RException (new tactic_msg Not_trivial)
+      else
+        let a = snd g.active in
+        (try
+           let decl,_,_ =
+             List.find (fun (_,p,w) -> p = a && w) g.ccl in
+           moxia [Ident decl] (id,g,context,thms,pt)
+         with Not_found ->
+           let s = get_state !cairn in
+           let pick =
+             let r = ref None in
+             Coll.iter (fun nm pr -> if !r=None && pr=a then r := Some nm) s.mox;
+             !r
+           in
+           match pick with
+           | Some nm -> moxia [Ident nm] (id,g,context,thms,pt)
+           | None -> RException (new tactic_msg Not_trivial))
+  | _ ->
+      RException (new tactic_msg (Need_args "at most one identifier"))
 
 (* Cut rule *)
 let cut args (id,g,context,thms,pt) =
@@ -685,6 +728,7 @@ let jack_tactical tactical cairn =
     | TPlug (Elim_In,args,pos) -> elim_in args , pos
     | TPlug (Contraction,args,pos) -> contraction args , pos
     | TPlug (Weaken,args,pos) -> weaken args , pos
+    | TPlug (Moxia,args,pos) -> moxia args , pos
     | Then (t1,t2,pos) -> 
 	then_ (multiplex t1) (multiplex t2) , pos
     | Thens (t,t_list,pos ) -> 
