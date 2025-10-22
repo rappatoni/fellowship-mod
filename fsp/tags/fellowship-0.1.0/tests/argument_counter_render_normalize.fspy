@@ -1,0 +1,8 @@
+declare A : bool.
+deny mA : (A).
+start counterargument notA A
+moxia mA
+end argument
+render notA
+normalize notA
+render-nf notA

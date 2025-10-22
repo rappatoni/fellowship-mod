@@ -2,6 +2,10 @@ import pytest
 
 import parser as pt
 from wrapper import Argument
+from wrapper import setup_prover, execute_script, ProverError, MachinePayloadError
+from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 
 def test_enrichment_laog_plain_and_bar():
@@ -103,3 +107,119 @@ def test_argument_execute_starts_theorem_for_mu_body(monkeypatch):
     arg.execute()
     assert fake.commands, "no commands sent"
     assert fake.commands[0] == "theorem thA : (A)."
+
+
+def test_fspy_moxia_antitheorem_batch(monkeypatch):
+    # run from tag root so './fsp' is found
+    tests_dir = Path(__file__).resolve().parent
+    tag_root = tests_dir.parent
+    monkeypatch.chdir(tag_root)
+
+    script = tests_dir / "moxia_antitheorem.fspy"
+    assert script.is_file(), "missing tests/moxia_antitheorem.fspy"
+
+    prover = setup_prover()
+    try:
+        execute_script(
+            prover,
+            str(script),
+            strict=True,
+            stop_on_error=True,
+            echo_notes=False,
+            isolate=False
+        )
+        st = prover.last_state or {}
+        assert st.get('mode') == 'idle'
+        assert st.get('errors') == []
+
+        decls = prover.declarations
+        assert decls.get('A') == 'bool'
+        assert decls.get('mA') == 'A'
+        # anti-theorem becomes a named moxia after qed
+        assert decls.get('notA') == 'A'
+        logger.info("decls %r", decls)
+    finally:
+        try:
+            prover.close()
+        except Exception:
+            pass
+
+
+def test_fspy_moxia_smart_batch(monkeypatch):
+    # run from tag root so './fsp' is found
+    tests_dir = Path(__file__).resolve().parent
+    tag_root = tests_dir.parent
+    monkeypatch.chdir(tag_root)
+
+    script = tests_dir / "moxia_smart.fspy"
+    assert script.is_file(), "missing tests/moxia_smart.fspy"
+
+    prover = setup_prover()
+    try:
+        execute_script(
+            prover,
+            str(script),
+            strict=True,
+            stop_on_error=True,
+            echo_notes=False,
+            isolate=False
+        )
+        st = prover.last_state or {}
+        assert st.get('mode') == 'idle'
+        assert st.get('errors') == []
+
+        decls = prover.declarations
+        assert decls.get('A') == 'bool'
+        # smart moxia should auto-pick mA to close the LHS goal
+        assert decls.get('mA') == 'A'
+        # anti-theorem notA2 is recorded as a moxia after qed
+        assert decls.get('notA2') == 'A'
+        logger.info("decls %r", decls)
+    finally:
+        try:
+            prover.close()
+        except Exception:
+            pass
+
+
+def test_fspy_counterargument_recording_and_rendering(monkeypatch):
+    # run from tag root so './fsp' is found
+    tests_dir = Path(__file__).resolve().parent
+    tag_root = tests_dir.parent
+    monkeypatch.chdir(tag_root)
+
+    script = tests_dir / "argument_counter_render_normalize.fspy"
+    assert script.is_file(), "missing tests/argument_counter_render_normalize.fspy"
+
+    prover = setup_prover()
+    try:
+        execute_script(
+            prover,
+            str(script),
+            strict=True,
+            stop_on_error=True,
+            echo_notes=False,
+            isolate=False
+        )
+        # the argument should be registered by the wrapper
+        arg = prover.get_argument("notA")
+        assert arg is not None, "Argument 'notA' was not registered"
+
+        # render/normalize produced artifacts
+        assert isinstance(arg.representation, str) and arg.representation
+        assert isinstance(arg.normal_form, str) and arg.normal_form
+        assert isinstance(arg.normal_representation, str) and arg.normal_representation
+
+        # decls include sort and the denied moxia; recorded counterargument is NOT QED, so it's not in decls
+        decls = prover.declarations
+        assert decls.get('A') == 'bool'
+        assert decls.get('mA') == 'A'
+        assert 'notA' not in decls
+        # also verify we recorded a counterargument intent
+        assert getattr(arg, "is_anti", False) is True
+        logger.info("decls %r", decls)
+    finally:
+        try:
+            prover.close()
+        except Exception:
+            pass

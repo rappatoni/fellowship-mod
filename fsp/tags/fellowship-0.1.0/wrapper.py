@@ -448,6 +448,25 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            if command.startswith('start counterargument ') or command.startswith('start antitheorem '):
+                    if recording:
+                        logger.warning("Already recording an argument. Please end the current recording first.")
+                        continue
+                    parts = command.split(' ', 3)
+                    if len(parts) < 4:
+                        logger.error("Invalid command. Use: start counterargument name conclusion")
+                        continue
+                    name = parts[2]
+                    conclusion = parts[3].strip()
+                    current_argument = {
+                        'name': name,
+                        'conclusion': conclusion,
+                        'instructions': [],
+                        'is_anti': True
+                    }
+                    recording = True
+                    logger.info("Started recording counterargument '%s' with conclusion '%s'.", name, conclusion)
+                    continue
             if command.startswith('start argument '):
                     if recording:
                         logger.warning("Already recording an argument. Please end the current recording first.")
@@ -470,12 +489,13 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         logger.warning("Not currently recording an argument.")
                         continue
                     # Create and execute the argument
-                    logger.info("Finished recording argument. Constructing and executing argument '%s'.", name)
+                    logger.info("Finished recording argument. Constructing and executing argument '%s'.", current_argument['name'])
                     arg = Argument(
                         prover,
                         name=current_argument['name'],
                         conclusion=current_argument['conclusion'],
-                        instructions=current_argument['instructions']
+                        instructions=current_argument['instructions'],
+                        is_anti=current_argument.get('is_anti', False)
                     )
                     arg.execute()
                     # Store the argument for later use
@@ -687,6 +707,28 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"Argument '{name}' not found.")
                     logger.warning("Argument '%s' not found for normalization (interactive)", name)
 
+            elif command.startswith("start counterargument ") or command.startswith("start antitheorem "):
+                if recording:
+                    print("Already recording an argument. Please end the current recording first.")
+                    continue
+                parts = command.split(' ', 3)
+                if len(parts) < 4:
+                    print("Invalid command. Use: start counterargument name conclusion")
+                    continue
+                name = parts[2]
+                conclusion = parts[3].strip()
+                current_argument = {
+                    'name': name,
+                    'conclusion': conclusion,
+                    'instructions': [],
+                    'is_anti': True
+                }
+                recording = True
+                print(f"Started recording counterargument '{name}' with conclusion '{conclusion}'.")
+                logger.info("Started recording counterargument '%s' with conclusion '%s'.", name, conclusion)
+                output = prover.send_command(f'antitheorem {name} : ({conclusion}).')
+                # print(output)
+                continue
             elif command.startswith('start argument '):
                 # Parse the start argument command
                 if recording:
@@ -816,7 +858,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     
     """
     
-    def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS" ):
+    def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS", is_anti: bool = False):
         # TODO: some of these stil need type hints.
         self.prover = prover
         self.name = name
@@ -837,6 +879,17 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.normal_representation = None  # NL rendering of normal form.
         self.neg_norm_body = None # Stores the negation-normalized body (Workaround for Counterarguments in Fellowship).
         self.neg_norm_form = None # Negation-normalized proof term.
+        # Explicit flag recording the user's intent to build a counterargument.
+        # Why we need this:
+        # - In recording mode we only have plain instruction strings; there is no AST
+        #   to inspect when deciding between theorem and antitheorem.
+        # - The prover currently prints anti‑theorems as μ … (not μ̃) at the top, so
+        #   detecting “anti” from the parsed body root is unreliable.
+        # - The start decision must be made before any tactic executes; tactics do not
+        #   reliably encode counterargument intent.
+        # - We need to persist and replay the choice across sessions (render/normalize/
+        #   chain), and transient machine state is not available beforehand.
+        self.is_anti = is_anti
         
     def execute(self) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
@@ -851,9 +904,23 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.enrich_props()
                 generator = parser.InstructionsGenerationVisitor()
                 self.instructions = generator.return_instructions(self.body)
-        # Start theorem or anti-theorem based on body root
-        if self.body and isinstance(self.body, parser.Mutilde):
-            start_cmd = f'antitheorem {self.name} : ({self.body.prop}).'
+        # Decide whether to start a theorem or an antitheorem.
+        # We cannot reliably infer “anti” from available data at this point:
+        # - Recording mode has no AST yet: during scripts/interactive recording we only
+        #   collect strings; when we later construct the Argument (at “end argument”),
+        #   there may still be no body to inspect. Without an explicit flag we would
+        #   always default to theorem.
+        # - Printed anti‑theorem proof‑terms are μ … at the top with current OCaml
+        #   changes, not μ̃; so “detect anti by Mutilde root” is unreliable after parse.
+        # - Tactics are not a signal: you must choose theorem vs antitheorem before any
+        #   tactic runs, and not every counterargument will start with a distinguishing
+        #   instruction.
+        # - Machine state is ephemeral: you only get it after sending the start command,
+        #   and you also need to replay the choice later (possibly in a new session).
+        # Hence we carry user intent via `is_anti`, set by “start counterargument …”.
+        if (self.body and isinstance(self.body, parser.Mutilde)) or getattr(self, "is_anti", False):
+            prop = self.body.prop if (self.body and isinstance(self.body, parser.Mutilde)) else self.conclusion
+            start_cmd = f'antitheorem {self.name} : ({prop}).'
         else:
             start_cmd = f'theorem {self.name} : ({self.conclusion}).'
         output = self.prover.send_command(start_cmd)
