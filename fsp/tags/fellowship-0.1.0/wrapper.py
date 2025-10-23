@@ -877,8 +877,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # Normalized proof term.
         self.normal_representation = None  # NL rendering of normal form.
-        self.neg_norm_body = None # Stores the negation-normalized body (Workaround for Counterarguments in Fellowship).
-        self.neg_norm_form = None # Negation-normalized proof term.
         # Explicit flag recording the user's intent to build a counterargument.
         # Why we need this:
         # - In recording mode we only have plain instruction strings; there is no AST
@@ -1206,12 +1204,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         combined_name = f"{self.name}_{other_argument.name}"
         combined_conclusion = other_argument.conclusion
         #combined_instructions = []
-        if self.neg_norm_body:
-            logger.debug("Using negation‑normalized body: %r", self.neg_norm_body)
-            logger.debug("Other argument assumptions: %r", other_argument.assumptions)
-            combined_body = parser.graft_uniform(other_argument.body,  self.neg_norm_body)
-        else:
-            combined_body = parser.graft_uniform(other_argument.body,  self.body)
+        combined_body = parser.graft_uniform(other_argument.body, self.body)
         logger.debug("Assumptions (self, other): %r ; %r",
                      self.assumptions, other_argument.assumptions)
         enricher = parser.PropEnrichmentVisitor(assumptions=other_argument.assumptions,
@@ -1260,113 +1253,35 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         final_argument = self.chain(adapted_argument, close=True)
         return final_argument
 
-    def resolve_attacked_assumption(self) -> str:
-        """
-        Decide which assumption an argument with conclusion *self.conclusion*
-        is meant to attack.
 
-        There are two cases:
-
-        1.  **Pure outer negation** – the whole conclusion is a negation
-            “~φ” (or “¬φ”).  In that case the attacked assumption is *φ*.
-
-        2.  **Anything else**       – the conclusion is *not* merely a
-            top-level negation (examples:  “φ”,  “~φ -> ψ”,  “ψ ∧ ¬φ”, …).
-            In that case we follow the wrapper convention and attack the
-            *barred* form, i.e. we return “φ_bar”.
-
-        Precedence is handled in a minimal but robust way: we only regard
-        the negation as *outer* if after stripping the leading ‘~’/‘¬’
-        **no binary connective appears at the top level**.
-        """
-
-        def _strip_parens(s: str) -> str:
-            """Remove one pair of *outer* parentheses ( ( … ) )."""
-            while s.startswith('(') and s.endswith(')'):
-                depth = 0
-                balanced = True
-                for i, ch in enumerate(s):
-                    if ch == '(':
-                        depth += 1
-                    elif ch == ')':
-                        depth -= 1
-                        if depth == 0 and i != len(s) - 1:
-                            balanced = False
-                            break
-                if balanced:
-                    s = s[1:-1].strip()
-                else:
-                    break
-            return s
-
-        def _has_top_level_binary(s: str) -> bool:
-            """Is there a ‘->’ (or other binary op) at paren-depth 0?"""
-            depth = 0
-            i = 0
-            while i < len(s) - 1:
-                ch = s[i]
-                if ch == '(':
-                    depth += 1
-                elif ch == ')':
-                    depth -= 1
-                elif depth == 0 and s[i:i+2] == '->':
-                    return True
-                i += 1
-            return False
-
-        concl = self.conclusion.strip()
-        concl = _strip_parens(concl)
-
-        # Case 1 – try to recognise an outer ‘~’ / ‘¬’
-        if concl.startswith(('~', '¬')):
-            inner = concl[1:].strip()
-            inner = _strip_parens(inner)
-            if not _has_top_level_binary(inner):
-                # genuine outer negation
-                return inner
-
-        # Case 2 – default: attack barred form
-        return f"{concl}_bar"
-
-    def focussed_undercut(self, other_argument: "Argument", *, on: str = "GoFigure", negated_attacker: bool = True) -> "Argument":
+    def focussed_undercut(self, other_argument: "Argument", *, on: Optional[str] = None) -> "Argument":
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
-        if on == "GoFigure":
-            on = self.resolve_attacked_assumption()
-        # arguments.executed:
+        # Ensure both arguments are executed
         if not self.executed:
             self.execute()
-        if negated_attacker:
-            logger.info("Turning negated attacker into counterargument")
-            self.negation_norm_body = self.negation_normalize()
-            #self.negation_norm_body = self.rewrite(self.body)
-            #print(self.neg_norm_body)Negation normalizing argument
         if not other_argument.executed:
             other_argument.execute()
+        # Resolve attacked issue: default to the dual of our conclusion
+        issue = on or self.conclusion
 
         #Find the assumption that is to be attacked. The uniiform graft method is used, so it does not matter which assumption is chosen if there are multiple ones with the same prop.
         attacked_assumption = None
-        for key in other_argument.assumptions:
-            if on in other_argument.assumptions[key]["prop"]:
+        for key, info in other_argument.assumptions.items():
+            if info["prop"].strip() == issue:
                 logger.debug("Found attacked assumption key=%s", key)
                 attacked_assumption = key
                 break
+        if attacked_assumption is None:
+            raise ValueError(
+                f"focussed_undercut: target assumption '{issue}' not found in other argument (exact match required)"
+            )
         issue = other_argument.assumptions[attacked_assumption]["prop"]
         logger.debug("Attacked issue: %s", issue)
         logger.debug("Building adapter body")
-        if issue.endswith('_bar'): #This still needs to be tested.
-            issue[:-4]
-            #TODO (I think this TODO is deprecated? Check.)
-            print("Not implemented yet.")
-            pass
-            #adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2",issue), Laog("3",issue))
-            #adapterterm = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt",issue))
-            #adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
-
-        else:
-            #BUG: This will fail if variable names are not fresh. Need to implement helper that generates fresh  variable names.
-            adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
-            adapterterm = Mu(ID("aff", issue), issue, Goal("1",issue), ID("alt",issue))
-            adapterbody = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
+        # BUG: variable names may clash; consider adding a fresh‑name helper.
+        adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
+        adapterterm    = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt", issue))
+        adapterbody    = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
         adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
         logger.debug("Building adapter body")
         adapter_arg.body = adapterbody
@@ -1465,49 +1380,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("Normal‑form proof term: %s", self.normal_form)
         logger.info("")  # spacer after proof term
 
-    def negation_normalize(self) -> parser.ProofTerm:
-        """
-        Replace the outer ¬-introduction wrapper by its inner command.
-
-        On success the fields
-        • self.neg_norm_body
-        • self.neg_norm_form
-        are filled.
-
-        If the pattern is *not* present we raise a ValueError.
-        """
-        from parser import NegIntroRewriter
-        logger.info("Negation normalizing argument '%s'", self.name)
-        if not self.executed:
-            self.execute()
-        logger.debug("Original proof term: %s", self.proof_term)
-        rewriter = NegIntroRewriter()
-        new_body = rewriter.rewrite(self.body)
-
-        if not rewriter.changed:
-            raise ValueError("negation_normalize: argument is not in the expected "
-                                 "outer negation-introduction form")
-
-        # cache results -----------------------------------------------------
-        self.neg_norm_body = new_body
-        # regenerate textual & NL forms – re-use existing visitors
-        gen = parser.ProofTermGenerationVisitor()
-        new_body = gen.visit(copy.deepcopy(new_body))
-        self.neg_norm_form = new_body.pres
-        logger.info("Negation‑normalized proof term: %s", self.neg_norm_form)
-        self.neg_norm_representation = parser.pretty_natural(
-            new_body,
-            {
-                "argumentation": parser.natural_language_argumentative_rendering,
-                "dialectical":   parser.natural_language_dialectical_rendering,
-                "intuitionistic":parser.natural_language_rendering
-            }[self.rendering]
-        )
-        logger.info("Natural language representation:")
-        logger.info("")
-        logger.info(self.neg_norm_representation)
-        logger.info("")
-        return self.neg_norm_body
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
