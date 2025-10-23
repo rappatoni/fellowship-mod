@@ -210,6 +210,11 @@ def test_fspy_counterargument_recording_and_rendering(monkeypatch):
         assert isinstance(arg.normal_form, str) and arg.normal_form
         assert isinstance(arg.normal_representation, str) and arg.normal_representation
 
+         # Check that the argument is correctly executed:
+        assert isinstance(arg.body, pt.Mutilde)
+        assert arg.body.term.DI.name == 'thesis'
+        assert arg.body.context.ID.name == 'mA'
+
         # decls include sort and the denied moxia; recorded counterargument is NOT QED, so it's not in decls
         decls = prover.declarations
         assert decls.get('A') == 'bool'
