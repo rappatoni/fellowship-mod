@@ -359,8 +359,6 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         laog_num = node.number.strip()
         if self.assumptions.get(laog_num):
             p = self.assumptions[laog_num]["prop"]
-            if isinstance(p, str) and p.endswith("_bar"):
-                p = p[:-4]
             logger.debug("Enriching Laog with type %s", p)
             node.prop = p
         return node
@@ -1552,7 +1550,6 @@ class _GraftVisitor(ProofTermVisitor):
         laog_map = {}
         for name, prop in reversed(self.id_stack):
             laog_map[prop] = name
-            laog_map[f"{prop}_bar"] = name
         return goal_map, laog_map
 
     def _maybe_graft(self, node, *, is_goal: bool):
@@ -1606,8 +1603,7 @@ def _check_conclusion_matches(repl_ast: "ProofTerm", *, target_is_goal: bool, ta
         if root_kind != 'mu' or root_prop != target_prop:
             raise TypeError("Goal expects Mu‑binder with matching prop")
     else:
-        plain_target = target_prop.rstrip("_bar")
-        if root_kind != 'mutilde' or root_prop.rstrip("_bar") != plain_target:
+        if root_kind != 'mutilde' or root_prop != target_prop:
             raise TypeError("Laog expects Mutilde‑binder with matching prop")
 
 # ---------------------------------------------------------------------------
