@@ -232,8 +232,8 @@ let axiom args (id,g,context,thms,pt) =
 	  if (snd g.active) = target then
 	    let pt' =
 	      match (fst g.active) with
-		 RightHandSide -> instantiate_t3rm id (Hyp x) pt
-	       | LeftHandSide -> instantiate_context id (Concl x) pt
+		 RightHandSide -> instantiate_pt_t3rm id (Hyp x) pt
+	       | LeftHandSide -> instantiate_pt_context id (Concl x) pt
 	    in
 	    RSuccess ([],pt')
 	  else RException (new tactic_msg Not_trivial)
@@ -257,7 +257,7 @@ let rec moxia args (id,g,context,thms,pt) =
                 Coll.find x s.mox
             in
             if (snd g.active) = target then
-              RSuccess ([], instantiate_context id (Concl x) pt)
+              RSuccess ([], instantiate_pt_context id (Concl x) pt)
             else
               RException (new tactic_msg Not_trivial)
           with Not_found ->
@@ -301,7 +301,7 @@ let cut args (id,g,context,thms,pt) =
 	         RSuccess(
 	          [(id1, {g with ccl=c';active=(RightHandSide,p)});
 	           (id2, {g with ccl=(x,(snd g.active),true)::g.ccl;active=(LeftHandSide,p)})] ,
-	          instantiate_t3rm id
+	          instantiate_pt_t3rm id
 	           (Mu (x, (snd g.active), Play (TermMeta id1, ContextMeta id2))) pt)
             | Inl x -> RException (new type_msg (Prop_kind (p,x)))
             | Inr m -> RException (new type_msg m) )
@@ -314,7 +314,7 @@ let cut args (id,g,context,thms,pt) =
 	           active=(RightHandSide,p)}) ;
 	           (id2,{g with hyp=(x,(snd g.active),true)::g.hyp; 
 	           active=(LeftHandSide,p)})] ,
-	          instantiate_context id
+	          instantiate_pt_context id
 	           (MuTilde (x, (snd g.active), Play (TermMeta id1, ContextMeta id2))) pt)
             | Inl x -> RException (new type_msg (Prop_kind (p,x)))
             | Inr m -> RException (new type_msg m) )
@@ -333,7 +333,7 @@ let rec elim args (id,g,context,thms,pt) =
 	      | None -> let id1 = new_meta id 1 in
 		  RSuccess(
 		  [id1,{g with hyp=(x,a,true)::g.hyp;active=(RightHandSide,b)}],
-		  instantiate_t3rm id (Lambda (x,a,TermMeta id1)) pt) )
+		  instantiate_pt_t3rm id (Lambda (x,a,TermMeta id1)) pt) )
         | _ -> RException (new tactic_msg (Need_args "an identifier")) )
   (* Left Impl *)
   | LeftHandSide, BProp(a,Imp,b) ->
@@ -343,7 +343,7 @@ let rec elim args (id,g,context,thms,pt) =
       RSuccess(
        [(id1,{g with ccl=c'; active=(RightHandSide,a)}) ;
         (id2,{g with active=(LeftHandSide,b)})] ,
-       instantiate_context id (Cons (TermMeta id1, ContextMeta id2)) pt)
+       instantiate_pt_context id (Cons (TermMeta id1, ContextMeta id2)) pt)
   (* Right Minus *)
   | RightHandSide, BProp(a,Minus,b) ->
      let id1 = new_meta id 1 in
@@ -353,7 +353,7 @@ let rec elim args (id,g,context,thms,pt) =
       RSuccess(
        [(id1,{g with active=(LeftHandSide,b)}) ;
         (id2,{g with active=(RightHandSide,a)})] ,
-       instantiate_t3rm id (Cons' (ContextMeta id1, TermMeta id2)) pt)
+       instantiate_pt_t3rm id (Cons' (ContextMeta id1, TermMeta id2)) pt)
   (* Left Minus *)
   | LeftHandSide, BProp(a,Minus,b) ->
       (match args with
@@ -366,7 +366,7 @@ let rec elim args (id,g,context,thms,pt) =
 		  let c' = if !lj then [] else g.ccl in
 		    RSuccess(
 		    [id1,{g with ccl=(x,b,true)::c';active=(LeftHandSide,a)}] ,
-		    instantiate_context id (Lambda' (x,b,ContextMeta id1)) pt) )
+		    instantiate_pt_context id (Lambda' (x,b,ContextMeta id1)) pt) )
         | _ -> RException (new tactic_msg (Need_args "an identifier")) )
   (* Right Conj *)
   | RightHandSide, BProp(a,Conj,b) ->
@@ -375,7 +375,7 @@ let rec elim args (id,g,context,thms,pt) =
       RSuccess(
        [(id1,{g with active=(RightHandSide,a)}) ;
         (id2,{g with active=(RightHandSide,b)})] ,
-       instantiate_t3rm id (TermsPair (TermMeta id1, TermMeta id2)) pt)
+       instantiate_pt_t3rm id (TermsPair (TermMeta id1, TermMeta id2)) pt)
   (* Left Conj *)
   | LeftHandSide, BProp(a,Conj,b) ->
       (match args with
@@ -391,7 +391,7 @@ let rec elim args (id,g,context,thms,pt) =
 		   RSuccess (
 		    [(id1,{g with hyp=h'; ccl=c'; active=(RightHandSide,p)}) ;
 		     (id2,{g with hyp=h'; active=(LeftHandSide,p)})] ,
-		    instantiate_context id
+		    instantiate_pt_context id
 		     (DestructTermsPair (x,a,y,b,
 		       Play (TermMeta id1,ContextMeta id2))) pt) 
 	      | _, Inl x -> RException (new type_msg (Prop_kind (p,x)))
@@ -404,11 +404,11 @@ let rec elim args (id,g,context,thms,pt) =
          [OnTheLeft] ->
            RSuccess (
 	    [id1,{g with active=(RightHandSide,a)}] ,
-            instantiate_t3rm id (Left (TermMeta id1)) pt)
+            instantiate_pt_t3rm id (Left (TermMeta id1)) pt)
        | [OnTheRight] ->
            RSuccess (
 	    [id1,{g with active=(RightHandSide,b)}] ,
-            instantiate_t3rm id (Right (TermMeta id1)) pt)
+            instantiate_pt_t3rm id (Right (TermMeta id1)) pt)
       | _ -> 
 	RException (new tactic_msg (Need_args "either \"left\" or \"right\"")) )
   (* Left Disj *)
@@ -418,7 +418,7 @@ let rec elim args (id,g,context,thms,pt) =
       RSuccess (
        [(id1,{g with active=(LeftHandSide,a)}) ;
         (id2,{g with active=(LeftHandSide,b)})] ,
-       instantiate_context id
+       instantiate_pt_context id
          (ContextsPair (ContextMeta id1, ContextMeta id2)) pt)
   (* Right Negation *)
   | RightHandSide, UProp(Neg,a) ->
@@ -446,7 +446,7 @@ let rec elim args (id,g,context,thms,pt) =
         [id1,{g with ccl = ccl' ;
                      hyp = (y,a,false)::g.hyp ;
                      active=(LeftHandSide,a)}],
-        instantiate_t3rm id
+        instantiate_pt_t3rm id
          (Mu (x,UProp(Neg,a),Play (Lambda (y,a,Mu (z,False,Play(Hyp y,ContextMeta id1))),Concl x))) pt)
   (* Left Negation *)
   | LeftHandSide, UProp(Neg,a) ->
@@ -468,7 +468,7 @@ let rec elim args (id,g,context,thms,pt) =
         [id1,{g with ccl=c';
                      hyp = (x,UProp(Neg,a),false)::g.hyp;
                      active=(RightHandSide,a)}],
-        instantiate_context id
+        instantiate_pt_context id
          (MuTilde (x,UProp(Neg,a),Play(Hyp x,(Cons (TermMeta id1, False_eliminator))))) pt)
   (* Right Forall *) 
   | RightHandSide, Quant(Forall,(names,sort),a) -> 
@@ -478,7 +478,7 @@ let rec elim args (id,g,context,thms,pt) =
 	  (match check_variable names (g.hyp,g.ccl,context) with
 	    | None ->
 	       let pt' =
-		instantiate_t3rm id
+		instantiate_pt_t3rm id
 		 (List.fold_right
 		   (fun name target -> LambdaFO (name,sort,target))
 		   names (TermMeta id1)) pt in
@@ -498,7 +498,7 @@ let rec elim args (id,g,context,thms,pt) =
 		RSuccess (
 		  [id1, {g with active=(RightHandSide,a''); 
 		   env=(x,sort)::g.env}] ,
-		  instantiate_t3rm id (LambdaFO (x,sort,TermMeta id1)) pt )
+		  instantiate_pt_t3rm id (LambdaFO (x,sort,TermMeta id1)) pt )
 	    | Some m -> RException (new tactic_msg m) )
 	| _ -> RException (new tactic_msg (Need_args "at most one identifier")) )
   (* Left Forall *)
@@ -518,7 +518,7 @@ let rec elim args (id,g,context,thms,pt) =
 		      else Quant(Forall,(names',sort),a') in
                     RSuccess (
 		       [id1,{g with active=(LeftHandSide,f)}] ,
-                       instantiate_context id (ConsFO (t, ContextMeta id1)) pt)
+                       instantiate_pt_context id (ConsFO (t, ContextMeta id1)) pt)
 	      | Inr m -> RException (new type_msg m) )
 	| _ -> RException (new tactic_msg (Need_args "a term")) )
   (* Right Exists *)
@@ -538,7 +538,7 @@ let rec elim args (id,g,context,thms,pt) =
 		      else Quant(Exists,(names',sort),a') in
                     RSuccess (
 		      [id1,{g with active=(RightHandSide,f)}] ,
-		      instantiate_t3rm id
+		      instantiate_pt_t3rm id
 			(TermsPairFO ((List.hd names,f), t, TermMeta id1)) pt)
 	      | Inr m -> RException (new type_msg m) )
 	| _ -> RException (new tactic_msg (Need_args "a term")) )
@@ -550,7 +550,7 @@ let rec elim args (id,g,context,thms,pt) =
 	  (match check_variable names (g.hyp,g.ccl,context) with
 	    | None ->
 	       let pt' =
-	        instantiate_context id
+	        instantiate_pt_context id
 	         (List.fold_right
 	           (fun name target -> DestructTermsPairFO (name,sort,target))
 	           names (ContextMeta id1))
@@ -567,7 +567,7 @@ let rec elim args (id,g,context,thms,pt) =
 	    | None -> 
 	       let a' = prop_subst (List.hd names) (TSym x) a in
 	       let pt' =
-	        instantiate_context id
+	        instantiate_pt_context id
 	         (DestructTermsPairFO (x,sort,ContextMeta id1)) pt
                in
                 let names' = List.tl names in
@@ -581,13 +581,13 @@ let rec elim args (id,g,context,thms,pt) =
       )
   (* Right True *)
   | RightHandSide, True ->
-     RSuccess ([],instantiate_t3rm id True_constructor pt)
+     RSuccess ([],instantiate_pt_t3rm id True_constructor pt)
   (* Left False *)
   | LeftHandSide, False ->
      if !minimal then
       RException (new tactic_msg Minimal_undef)
      else
-      RSuccess ([],instantiate_context id False_eliminator pt)
+      RSuccess ([],instantiate_pt_context id False_eliminator pt)
   (* Nothing to do *)
   | LeftHandSide, True
   | RightHandSide, False ->
@@ -704,8 +704,8 @@ let weaken args ((id,g,context,thms,pt) as details) =
          let id1 = new_meta id 1 in
 	 let pt' =
 	  match (fst g.active) with
-	     RightHandSide -> instantiate_t3rm id (TermMeta id1) pt
-	   | LeftHandSide -> instantiate_context id (ContextMeta id1) pt in
+	     RightHandSide -> instantiate_pt_t3rm id (TermMeta id1) pt
+	   | LeftHandSide -> instantiate_pt_context id (ContextMeta id1) pt in
          begin
           try
            let hyp' = aux g.hyp in RSuccess ([id1,{g with hyp = hyp'}], pt')

@@ -70,7 +70,11 @@ let snapshot (cairn : Core.cairn) : string =
   let goals_sexp = String.concat " " (List.map sexp_goal st.goals) in
 
   (* proof term & hash ----------------------------------------------*)
-  let pt_ascii = pretty_t3rm st.pt in
+  let pt_ascii =
+    match st.pt with
+    | Term t -> pretty_t3rm t
+    | Context c -> pretty_context c
+  in
   let pt_hash  = hash pt_ascii in
 
   (* declarations – fold signature + theorems -----------------------*)

@@ -416,11 +416,11 @@ and context =
 and command =
    Play of t3rm * context
 
-type proof_t3rm = t3rm
-
 type context_or_t3rm =
    Context of context
  | Term of t3rm
+
+type proof_t3rm = context_or_t3rm
 
 (*Term pretty-printer*)
 let rec pretty_t3rm =
@@ -516,6 +516,16 @@ and instantiate_in_command id t =
 let instantiate_t3rm    id t = instantiate_in_t3rm id (Term t)
 let instantiate_context id c = instantiate_in_t3rm id (Context c)
 
+let instantiate_pt_t3rm id t =
+ function
+  | Term t0    -> Term (instantiate_in_t3rm id (Term t) t0)
+  | Context c0 -> Context (instantiate_in_context id (Term t) c0)
+
+let instantiate_pt_context id c =
+ function
+  | Term t0    -> Term (instantiate_in_t3rm id (Context c) t0)
+  | Context c0 -> Context (instantiate_in_context id (Context c) c0)
+
 
 (* GOALS *)
 (*
@@ -590,7 +600,7 @@ type state =
     pt: proof_t3rm }
 
 let new_state () =
-  { index=0; open_thm=None; goals=[]; sign=Coll.empty; thms=Coll.empty; mox=Coll.empty; pt=TermMeta initial_meta }
+  { index=0; open_thm=None; goals=[]; sign=Coll.empty; thms=Coll.empty; mox=Coll.empty; pt=Term (TermMeta initial_meta) }
 
 (*Transform states into propositions*)
 let prop_of_state s = 

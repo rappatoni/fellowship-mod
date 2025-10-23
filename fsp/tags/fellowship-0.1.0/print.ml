@@ -15,7 +15,9 @@ let prompts = "fsp <"
 (*There goes the pretty printing*)
 let turnstile     = " |-----  "
 let env_separator = ""
-let ind n frm = fprintf frm "@\n%s" (String.make (n * 2) ' ')
+let ind n frm =
+  let n' = if n < 0 then 0 else n in
+  fprintf frm "@\n%s" (String.make (n' * 2) ' ')
 
 (*Error localization using line and column info*)
 let localization pos frm =
@@ -35,7 +37,7 @@ let pretty_string s frm =  pp_print_string frm s
 (* CSC: Very bad imperative code, to avoid one extra constant argument of type
    status for the pretty_natural_* functions. *)
 let set_state, is_current_goal =
- let dummy_state = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;mox=Coll.empty;pt=TermMeta initial_meta} in
+ let dummy_state = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;mox=Coll.empty;pt=Term (TermMeta initial_meta)} in
  let state = ref dummy_state in
  (function state' -> state := state'),
  (function metaid -> fst (List.nth !state.goals (!state.index - 1)) = metaid)
@@ -179,12 +181,20 @@ let pretty_goal (id,goal) frm =
       fprintf frm "%s%s@\n" turnstile id ;
       pretty_ccls goal.ccl frm
 
-let pretty_pt pt frm = 
-  fprintf frm "Proof term: @\n%s@\n" (pretty_t3rm pt) ;
-  fprintf frm "Natural language:@\n" ;
-  pretty_natural pt frm ;
-  pp_force_newline frm () ;
-  pp_force_newline frm ()
+let pretty_pt pt frm =
+  match pt with
+  | Term t ->
+      fprintf frm "Proof term: @\n%s@\n" (pretty_t3rm t) ;
+      fprintf frm "Natural language:@\n" ;
+      pretty_natural t frm ;
+      pp_force_newline frm () ;
+      pp_force_newline frm ()
+  | Context c ->
+      fprintf frm "Proof term: @\n%s@\n" (pretty_context c) ;
+      fprintf frm "Natural language:@\n" ;
+      pretty_natural_context 0 frm c ;
+      pp_force_newline frm () ;
+      pp_force_newline frm ()
 
 let pretty_goals cur goals frm =
  let n = List.length goals in

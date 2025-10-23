@@ -28,11 +28,6 @@ let help_next =
    "Consider the next open goal. If the current goal is the last one, consider" ^^
    "the first goal.")
 
-let help_next =
-  ("next",
-   "Consider the next open goal. If the current goal is the last one, consider" ^^
-   "the first goal.")
-
 let help_prev =
   ("prev",
    "Consider the previous open goal. If the current goal is the first one," ^^

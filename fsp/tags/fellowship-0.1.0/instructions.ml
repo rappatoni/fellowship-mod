@@ -174,7 +174,7 @@ let theorem args cairn = match args, cairn with
 	    let ns = {s with index=1;
 	      open_thm=Some (name,prop,false);
 	      goals=[initial_meta,(new_goal prop)];
-	      pt=Mu (thesis,prop,Play(TermMeta initial_meta,Concl thesis)) }
+	      pt=Term (Mu (thesis,prop,Play(TermMeta initial_meta,Concl thesis))) }
 	    in
 	    let nc = Subgoals (1, ns) in
 	    trace := (T_goal (ns,name))::!trace ;
@@ -195,7 +195,7 @@ let antitheorem args cairn = match args, cairn with
               index = 1;
               open_thm = Some (name,prop,true);
               goals = [initial_meta, g];
-              pt = Mu (thesis, prop, Play (Hyp thesis, ContextMeta initial_meta))
+              pt = Context (MuTilde (thesis, prop, Play (Hyp thesis, ContextMeta initial_meta)))
             } in
             let nc = Subgoals (1, ns) in
             trace := (T_goal (ns,name))::!trace;
@@ -248,7 +248,7 @@ let qed args cairn = match args, cairn with
               else { s with thms = Coll.add name prop s.thms }
             in
             let nc = Idle (Some (new instruction_msg (Defined name)),
-              { s' with index = 0; open_thm=None; goals=[]; pt=TermMeta initial_meta }) in
+              { s' with index = 0; open_thm=None; goals=[]; pt=Term (TermMeta initial_meta) }) in
             trace := (T_qed s.pt)::!trace;
             history := (nc,!trace)::!history;
             nc
@@ -293,7 +293,9 @@ let export_nl args cairn = match args,cairn with
 	| T_qed pt -> 
 	  (* CSC: very bad imperative code, to be removed. See print.ml *)
 	   Print.set_state s; 
-	   pretty_natural pt frm;
+	   (match pt with
+	    | Term t    -> pretty_natural t frm
+	    | Context c -> pretty_natural_context 0 frm c);
 	   pp_print_newline frm () )
 	(List.rev !trace)
       in

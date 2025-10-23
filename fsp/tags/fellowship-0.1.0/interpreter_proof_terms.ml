@@ -320,14 +320,21 @@ let gen_file prover ohandle trace =
            | Isabelle -> sprintf "lemma %s @.proof -@.%s"
                           (gen_prop_rec prover p) (make_str prover tl)
 	  end
-      | (T_qed pt) :: tl -> 
-	 let pt' =  if !lj then pt else lk_to_lj_plus_em pt in
-	  begin match prover with 
-	   | Coq -> sprintf "%s. @.%s" (coq_of_pt pt') (make_str prover tl)
-	   | Pvs -> raise NotImplemented
-	   | Isabelle -> sprintf "%sthus ?thesis . qed@.%s" 
-			  (isabelle_of_pt pt') (make_str prover tl)
-	  end
+      | (T_qed pt) :: tl ->
+         begin match pt with
+         | Term t ->
+             let t' = if !lj then t else lk_to_lj_plus_em t in
+             begin match prover with
+             | Coq -> sprintf "%s. @.%s" (coq_of_pt t') (make_str prover tl)
+             | Pvs -> raise NotImplemented
+             | Isabelle -> sprintf "%sthus ?thesis . qed@.%s"
+                            (isabelle_of_pt t') (make_str prover tl)
+             end
+         | Context _ ->
+             begin match prover with
+             | Coq | Pvs | Isabelle -> raise NotImplemented
+             end
+         end
   in pp_print_string ohandle.frm (make_str prover trace)
 
 let launch_prover_on_proof_term prover trace ofile_prefix keep_ofile =
