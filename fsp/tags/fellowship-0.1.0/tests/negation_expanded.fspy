@@ -1,4 +1,4 @@
-# This script tests counterarguments in negation-expanded form.
+# This script tests counterarguments and undercut.
 
 lk.
 
@@ -7,8 +7,6 @@ lk.
 declare EfficientMetro, StrikeMetro, UseMetro: bool.
 declare r1: (EfficientMetro -> UseMetro).
 declare r2: (StrikeMetro -> ~EfficientMetro).
-declare a1: (EfficientMetro).
-declare a2: (StrikeMetro).
 #
 # Then an argument to use the metro.
 #
@@ -22,9 +20,9 @@ end argument
 #
 # Next, a counterargument in negation-expanded form
 #
-start argument arg2 ~EfficientMetro
-elim.
-cut (~EfficientMetro) nef.
+start counterargument arg2 EfficientMetro
+
+cut (~EfficientMetro) x.
 cut (StrikeMetro -> ~EfficientMetro) th.
 axiom r2.
 elim.
@@ -34,7 +32,7 @@ elim.
 axiom.
 end argument
 #
-# Now we test if arg2 undercuts arg1 as intended: 
+# Now we test if arg2 undercuts arg1 on EfficientMetro as intended: 
 #
 undercut arg2 arg1
 

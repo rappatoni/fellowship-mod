@@ -1767,8 +1767,6 @@ class _AlphaRename(ProofTermVisitor):
 
     # binders – rename & recurse -------------------------------------
     def visit_Mu(self, node: Mu):
-        if node.id.name == "thesis":
-            return super().visit_Mu(node)
         if node.id.name in self.mapping:
             node.id.name = self.mapping[node.id.name]
         return super().visit_Mu(node)

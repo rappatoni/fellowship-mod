@@ -19,16 +19,27 @@ from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
 
-def configure_logging_cli() -> None:
+# Install TRACE level (below DEBUG) and a Logger.trace() method
+TRACE = 5
+logging.addLevelName(TRACE, "TRACE")
+def _trace(self, msg, *args, **kwargs):
+    if self.isEnabledFor(TRACE):
+        self._log(TRACE, msg, args, **kwargs)
+logging.Logger.trace = _trace
+
+def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[str] = None) -> None:
     """
     Configure root logger for CLI usage:
-      - Level from env FSP_LOGLEVEL (default INFO)
+      - Level from explicit argument or env FSP_LOGLEVEL (default INFO)
       - Message-only format
       - Stream to stdout
       - Avoid duplicate handlers if already configured
     """
-    level_name = os.getenv("FSP_LOGLEVEL", "INFO").upper()
-    level = getattr(logging, level_name, logging.INFO)
+    level_name = (level_name or os.getenv("FSP_LOGLEVEL", "INFO")).upper()
+    level = getattr(logging, level_name, None)
+    if level is None:
+        # Allow custom TRACE
+        level = TRACE if level_name == "TRACE" else logging.INFO
     root = logging.getLogger()
     root.setLevel(level)
     if not root.handlers:
@@ -42,6 +53,11 @@ def configure_logging_cli() -> None:
                 h.setLevel(level)
             except Exception:
                 pass
+    if log_file:
+        fh = logging.FileHandler(log_file, encoding="utf-8")
+        fh.setLevel(level)
+        fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        root.addHandler(fh)
 
 class ProverError(Exception):
     pass
@@ -92,6 +108,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """
         
         stripped = command.strip()
+        logger.trace(">> %s", stripped)
         try:
             self.prover.sendline(command)
             self.prover.expect('fsp <')
@@ -100,6 +117,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             raise ProverError(f"Prover I/O error: {e}") from e
 
         output = self.prover.before
+        logger.trace("<< %s", output)
         state = self._extract_machine_block(output)
         if state is None:
             logger.error("Machine block missing in prover output for command %r", command)
@@ -933,7 +951,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 #output += output_instr
             else:
                 output = self.prover.send_command(instr.strip() + '.')
-                logger.debug("Prover output: %s", output)
+                logger.trace("Prover output: %s", output)
         # Capture the assumptions (open goals)
         self._parse_proof_state(output)
         # Parse proof term
@@ -1202,7 +1220,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             other_argument.execute()
         # Combine the instructions and navigate to the correct goal
         combined_name = f"{self.name}_{other_argument.name}"
+        logger.debug("Combined name: '%s'", combined_name)
         combined_conclusion = other_argument.conclusion
+        logger.debug("Combined conclusion: '%s'", combined_conclusion)
         #combined_instructions = []
         combined_body = parser.graft_uniform(other_argument.body, self.body)
         logger.debug("Assumptions (self, other): %r ; %r",
@@ -1211,7 +1231,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                                         axiom_props=self.prover.declarations)
         ptgenerator = parser.ProofTermGenerationVisitor()
         generator = parser.InstructionsGenerationVisitor()
-        combined_body = ptgenerator.visit(enricher.visit(combined_body))
+        logger.debug("Enriching ")
+        combined_body = enricher.visit(combined_body)
+        logger.debug("Generating proof term")
+        ptgenerator.visit(combined_body)
+        logger.debug("Proof term: '%s'", combined_body.pres)
         combined_instructions = generator.return_instructions(combined_body)
         # Optionally close available goals using assumptions propagated from other to self:
         if close==True:
@@ -1277,7 +1301,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             )
         issue = other_argument.assumptions[attacked_assumption]["prop"]
         logger.debug("Attacked issue: %s", issue)
-        logger.debug("Building adapter body")
         # BUG: variable names may clash; consider adding a fresh‑name helper.
         adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
         adapterterm    = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt", issue))
@@ -1286,10 +1309,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.debug("Building adapter body")
         adapter_arg.body = adapterbody
         adapter_arg.execute()
+        logger.debug("Adapter argument: '%s'", adapter_arg.proof_term)
         #print("Adapter_arg proof term",adapter_arg.proof_term)
         #print("Other arg proof term", other_argument.proof_term)
         adapted_argument = adapter_arg.chain(other_argument)
-        logger.debug("Adapter argument constructed: %s", adapted_argument.proof_term)
+        logger.debug("Adapted argument constructed: %s", adapted_argument.proof_term)
         final_argument = self.chain(adapted_argument)
         return final_argument
     
@@ -1425,14 +1449,19 @@ def main() -> None:
         prog='fellowship-wrapper',
         description='Run Fellowship prover in interactive or batch mode')
     g = ap.add_mutually_exclusive_group(required=True)
+    ap.add_argument('--log-level', dest='log_level',
+                    choices=['TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                    help='set logger level (overrides FSP_LOGLEVEL)')
+    ap.add_argument('--log-file', dest='log_file',
+                    help='write logs to FILE (in addition to stdout)')
     g.add_argument('--interactive', action='store_true',
                    help='start an interactive Fellowship REPL')
     g.add_argument('--script', metavar='FILE',
                    help='execute commands in FILE (same grammar as interactive mode)')
     args = ap.parse_args()
 
-    # Configure CLI logging (message‑only, level from FSP_LOGLEVEL, default INFO)
-    configure_logging_cli()
+    # Configure CLI logging (explicit --log-level wins; else env FSP_LOGLEVEL; default INFO)
+    configure_logging_cli(args.log_level, args.log_file)
 
     prover = setup_prover()             # ⇐ creates the ProverWrapper, 
                                         #    registers pop, declares A,B,C,D …
