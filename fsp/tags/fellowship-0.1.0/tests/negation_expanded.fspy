@@ -36,47 +36,5 @@ end argument
 #
 undercut arg2 arg1
 
-# start argument undercut ~EfficientMetro
-# elim.
-# tactic pop EfficientMetro UseMetro
-# end argument
-
-# theorem undercut: (~EfficientMetro).
-# cut (EfficientMetro) issue.
-# tactic pop EfficientMetro UseMetro
-# elim.
-# axiom a2.
-# # replace by axiom to end proof early:
-# elim.
-# tactic pop EfficientMetro UseMetro
-# axiom a1.
-# axiom r1.
-# axiom a1.
-
-# theorem undercut: (~EfficientMetro).
-# cut (EfficientMetro) issue.
-# tactic pop EfficientMetro UseMetro
-# cut (~EfficientMetro) attacker.
-# next.
-# elim.
-# axiom.
-# axiom.
-
-
-# theorem undercut: (~EfficientMetro).
-# elim.
-# cut (EfficientMetro->UseMetro) stash.
-# tactic pop EfficientMetro UseMetro
-
-# axiom.
-# axiom.
-# cut (EfficientMetro->UseMetro) stash.
-# next.
-# elim.
-# next.
-# next.
-# axiom.
-# next.
-# axiom.
-# next.
-# axiom.
+# Finally, we reduce the resulting argument to confirm that arg1 is defeated.
+reduce arg2_undercuts_on_EfficientMetro_arg1

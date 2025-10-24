@@ -1069,6 +1069,7 @@ def is_subargument(A: "ProofTerm", B: "ProofTerm") -> bool:
     return False
 
 def contrary(A: str) -> str:
+    # Deprecated!
     # Returns the contrary of assumption A
     if A.endswith('_bar'):
         return A[:-4]
@@ -1308,7 +1309,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             pass
         else:
             if node.contr:
-                if (node.prop.startswith("¬") or node.prop.startswith("¬")) and node.prop == node.contr :
+                if (node.prop.startswith("¬") or node.prop.startswith("~")) and node.prop == node.contr :
                     for _ in range(3):
                         self.instructions.popleft()
                     self.instructions.appendleft(f"elim {node.id.name}")
@@ -1321,8 +1322,11 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
     def visit_Mutilde(self, node : Mutilde):
         node = super().visit_Mutilde(node)
         if node.contr:
-            if (node.prop.startswith("¬") or node.prop.startswith("¬")) and node.prop == node.contr:
-                    self.instructions.appendleft(f"elim {node.di.name}")
+            if (node.prop.startswith("¬") or node.prop.startswith("~")) and node.prop == node.contr:
+                #logger.debug("Instructions '%s'", self.instructions)
+                for _ in range(2):
+                    self.instructions.popleft()
+                self.instructions.appendleft(f"elim {node.di.name}")
             else:
                 self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
         else:
