@@ -574,6 +574,9 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._trace_rows.append(row)
         line = f"{str(row[0]).rjust(self._w_no)} | {_fmt(row[1], self._w_term)} | {_fmt(row[2], self._w_rule)} | {_fmt(row[3], self._w_comment)}"
         logger.info(line)
+        # additionally show the full (untruncated) proof term on DEBUG
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Full proof term at step %d: %s", self._term_no, show.pres)
         if (rule == "-" or (comment or "") == "no more rules applicable"):
             logger.info("")  # spacer after table
         self._term_no += 1
@@ -587,22 +590,25 @@ class ArgumentTermReducer(ProofTermVisitor):
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
             lam: Lamda = node.term
             cons: Cons = node.context
-            if self.verbose: logger.debug("Applying λ‑rule")
             v      = cons.term      # the argument v
             E      = cons.context  # the continuation E (might itself be None)
-            # Build the new µ'‑binder that will become the *context* part.
-            new_context = Mutilde(
-                di_=lam.di.di,          # the variable x
-                prop=lam.di.prop,     # its declared type
-                term=deepcopy(lam.term),
-                context=deepcopy(E)
-            )
-            node.term    = deepcopy(v)
-            node.context = new_context
-            self._snapshot("lambda")
-            self.visit_Mu(node)
-            
-            return node
+            if isinstance(v, Goal):
+                if self.verbose: logger.debug("Skipping λ‑rule: argument is bare Goal")
+            else:
+                if self.verbose: logger.debug("Applying λ‑rule")
+                # Build the new µ'‑binder that will become the *context* part.
+                new_context = Mutilde(
+                    di_=lam.di.di,          # the variable x
+                    prop=lam.di.prop,     # its declared type
+                    term=deepcopy(lam.term),
+                    context=deepcopy(E)
+                )
+                node.term    = deepcopy(v)
+                node.context = new_context
+                self._snapshot("lambda")
+                self.visit_Mu(node)
+                
+                return node
 
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
@@ -678,37 +684,41 @@ class ArgumentTermReducer(ProofTermVisitor):
         # cases because outer binders are unaffected by the rewrite).
         # ────────────────────────────────────────────────────────────────────
         if isinstance(node.term, Mu):
-            if self.verbose: logger.debug("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
+            if isinstance(E, Laog):
+                if self.verbose: logger.debug("Skipping μ‑β: context is bare Laog")
+            else:
+                if self.verbose: logger.debug("Applying general Mu reduction rule")
+                # Perform capture‑avoiding substitution inside the *command* c.
+                new_term    = _subst(inner.term,    x, deepcopy(E))
+                new_context = _subst(inner.context, x, deepcopy(E))
 
-            # Perform capture‑avoiding substitution inside the *command* c.
-            new_term    = _subst(inner.term,    x, deepcopy(E))
-            new_context = _subst(inner.context, x, deepcopy(E))
-
-            # Splice the substituted command into *node* (drop µ x.).
-            node.term    = new_term
-            node.context = new_context
-            self._snapshot("mu-beta")
-            self.visit_Mu(node)
-            return node
+                # Splice the substituted command into *node* (drop µ x.).
+                node.term    = new_term
+                node.context = new_context
+                self._snapshot("mu-beta")
+                self.visit_Mu(node)
+                return node
         if isinstance(node.context, Mutilde):
-            if self.verbose: logger.debug("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
+            if isinstance(v, Goal):
+                if self.verbose: logger.debug("Skipping μ̃‑β: term is bare Goal")
+            else:
+                if self.verbose: logger.debug("Applying general Mutilde rule")
+                # Perform capture‑avoiding substitution inside the *command* c.
+                new_term    = _subst(inner.term,    alpha, deepcopy(v))
+                new_context = _subst(inner.context, alpha, deepcopy(v))
 
-            # Perform capture‑avoiding substitution inside the *command* c.
-            new_term    = _subst(inner.term,    alpha, deepcopy(v))
-            new_context = _subst(inner.context, alpha, deepcopy(v))
-
-            # Splice the substituted command into *node* (drop µ x.).
-            node.term    = new_term
-            node.context = new_context
-            self._snapshot("mutilde-beta")
-            self.visit_Mu(node)
-            return node
+                # Splice the substituted command into *node* (drop µ x.).
+                node.term    = new_term
+                node.context = new_context
+                self._snapshot("mutilde-beta")
+                self.visit_Mu(node)
+                return node
         #node = super().visit_Mu(node)
 
         node = super().visit_Mu(node)
@@ -727,18 +737,21 @@ class ArgumentTermReducer(ProofTermVisitor):
             v      = cons.term      # the argument v
             E      = cons.context  # the continuation E (might itself be None)
 
-            # Build the new µ'‑binder that will become the *context* part.
-            new_context = Mutilde(
-                di_=lam.di.di,          # the variable x
-                prop=lam.di.prop,     # its declared type
-                term=deepcopy(lam.term),
-                context=deepcopy(E)
-            )
-            node.term    = deepcopy(v)
-            node.context = new_context
-            self._snapshot("lambda")
-            self.visit_Mutilde(node)
-            return node
+            if isinstance(v, Goal):
+                if self.verbose: logger.debug("Skipping λ‑rule: argument is bare Goal")
+            else:
+                # Build the new µ'‑binder that will become the *context* part.
+                new_context = Mutilde(
+                    di_=lam.di.di,          # the variable x
+                    prop=lam.di.prop,     # its declared type
+                    term=deepcopy(lam.term),
+                    context=deepcopy(E)
+                )
+                node.term    = deepcopy(v)
+                node.context = new_context
+                self._snapshot("lambda")
+                self.visit_Mutilde(node)
+                return node
 
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
@@ -797,37 +810,43 @@ class ArgumentTermReducer(ProofTermVisitor):
                     # self.visit_Mu(inner_mu.term)
 
         if isinstance(node.term, Mu):
-            if self.verbose: logger.debug("Applying general Mu reduction rule")
             inner = node.term          # µ x.c
             x     = inner.id.name
             E     = node.context       # replacement
 
-            # Perform capture‑avoiding substitution inside the *command* c.
-            new_term    = _subst(inner.term,    x, deepcopy(E))
-            new_context = _subst(inner.context, x, deepcopy(E))
+            if isinstance(E, Laog):
+                if self.verbose: logger.debug("Skipping μ‑β: context is bare Laog")
+            else:
+                if self.verbose: logger.debug("Applying general Mu reduction rule")
+                # Perform capture‑avoiding substitution inside the *command* c.
+                new_term    = _subst(inner.term,    x, deepcopy(E))
+                new_context = _subst(inner.context, x, deepcopy(E))
 
-            # Splice the substituted command into *node* (drop µ x.).
-            node.term    = new_term
-            node.context = new_context
-            self._snapshot("mu-beta")
-            self.visit_Mutilde(node)
-            return node
+                # Splice the substituted command into *node* (drop µ x.).
+                node.term    = new_term
+                node.context = new_context
+                self._snapshot("mu-beta")
+                self.visit_Mutilde(node)
+                return node
 
         if isinstance(node.context, Mutilde):
-            if self.verbose: logger.debug("Applying general Mutilde rule")
             inner = node.context       # µ x.c
             alpha     = inner.di.name
             v     = node.term       # replacement
-            # Perform capture‑avoiding substitution inside the *command* c.
-            new_term    = _subst(inner.term,    alpha, deepcopy(v))
-            new_context = _subst(inner.context, alpha, deepcopy(v))
+            if isinstance(v, Goal):
+                if self.verbose: logger.debug("Skipping μ̃‑β: term is bare Goal")
+            else:
+                if self.verbose: logger.debug("Applying general Mutilde rule")
+                # Perform capture‑avoiding substitution inside the *command* c.
+                new_term    = _subst(inner.term,    alpha, deepcopy(v))
+                new_context = _subst(inner.context, alpha, deepcopy(v))
 
-            # Splice the substituted command into *node* (drop µ x.).
-            node.term    = new_term
-            node.context = new_context
-            self._snapshot("mutilde-beta")
-            self.visit_Mutilde(node)
-            return node
+                # Splice the substituted command into *node* (drop µ x.).
+                node.term    = new_term
+                node.context = new_context
+                self._snapshot("mutilde-beta")
+                self.visit_Mutilde(node)
+                return node
         node = super().visit_Mutilde(node)
         
         return node
