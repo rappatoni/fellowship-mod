@@ -6,6 +6,8 @@ import importlib.util, sys
 import logging
 from wrapper import *
 
+PYTEST_TODO = ("Continue with negation_expanded.fspy; rename the file; add a second and third undercut to test robustness; "
+               "change argument name scheme for undercut to user-specified or lexicographic default; implement proof term colouring.")
 
 DEFAULT_SCRIPTS = [
     "tests/normalize_render.fspy",
@@ -98,10 +100,4 @@ def pytest_ignore_collect(collection_path: Path, config):
         return False
 
 def pytest_report_header(config):
-    # Shows up at the top of every pytest run; override via NEXT_TODO env var
-    import os
-    msg = os.getenv(
-        "NEXT_TODO",
-        "NEXT TODO: Work on tests/negation_expanded.fspy"
-    )
-    return msg
+    return f"TODO: {PYTEST_TODO}"
