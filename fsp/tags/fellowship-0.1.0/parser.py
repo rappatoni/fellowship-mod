@@ -864,19 +864,26 @@ class ArgumentTermReducer(ProofTermVisitor):
         return node
 
     def _has_next_redex(self, n: ProofTerm) -> bool:
-        """Very lightweight check: look for patterns we *currently* reduce."""
+        """Lightweight check for patterns we reduce, respecting bare Goal/Laog guards."""
         if isinstance(n, Mu):
-            # λ‑redex?
-            if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
+            # λ‑redex applies only if argument v is not a bare Goal
+            if isinstance(n.term, Lamda) and isinstance(n.context, Cons) and not isinstance(n.context.term, Goal):
                 return True
-            # any mu or mutilde pattern?
-            if isinstance(n.term, Mu) or isinstance(n.context, Mutilde):
+            # μ‑β applies only if the context is not a bare Laog
+            if isinstance(n.term, Mu) and not isinstance(n.context, Laog):
+                return True
+            # μ̃‑β applies only if the term is not a bare Goal
+            if isinstance(n.context, Mutilde) and not isinstance(n.term, Goal):
                 return True
         if isinstance(n, Mutilde):
-            if isinstance(n.term, Lamda) and isinstance(n.context, Cons):
+            # λ‑redex applies only if argument v is not a bare Goal
+            if isinstance(n.term, Lamda) and isinstance(n.context, Cons) and not isinstance(n.context.term, Goal):
                 return True
-            # any mu or mutilde pattern?
-            if isinstance(n.term, Mu) or isinstance(n.context, Mutilde):
+            # μ‑β applies only if the context is not a bare Laog
+            if isinstance(n.term, Mu) and not isinstance(n.context, Laog):
+                return True
+            # μ̃‑β applies only if the term is not a bare Goal
+            if isinstance(n.context, Mutilde) and not isinstance(n.term, Goal):
                 return True
         # recurse quickly
         for child in getattr(n, 'term', None), getattr(n, 'context', None):
