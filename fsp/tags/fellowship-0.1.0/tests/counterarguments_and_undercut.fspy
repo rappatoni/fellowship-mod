@@ -4,7 +4,7 @@ lk.
 
 # First we declare our running example:
 #
-declare EfficientMetro, StrikeMetro, UseMetro, DealMetro: bool.
+declare EfficientMetro, StrikeMetro, UseMetro, DealMetro, LowballOffer : bool.
 declare r1: (EfficientMetro -> UseMetro).
 declare r2: (StrikeMetro -> ~EfficientMetro).
 #
@@ -60,3 +60,22 @@ end argument
 # Introduce the attacker and normalize:
 undercut arg3 arg2_undercuts_on_EfficientMetro_arg1
 reduce arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+#
+# And one last undercut
+#
+declare r4: (LowballOffer -> ~DealMetro).
+#
+start counterargument arg4 DealMetro
+cut (~DealMetro) x.
+cut (LowballOffer -> ~DealMetro) th.
+axiom r4.
+elim.
+next.
+axiom.
+elim.
+axiom.
+end argument
+#
+# Introduce the attacker and normalize:
+undercut arg4 arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+reduce arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
