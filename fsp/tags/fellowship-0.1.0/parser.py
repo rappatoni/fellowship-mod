@@ -2084,7 +2084,12 @@ class AcceptanceColoringVisitor(ProofTermVisitor):
         openP, reset = self._ansi(color)
         t_str = self.visit(node.term)
         c_str = self.visit(node.context)
-        # Color the binder and delimiters with the parent color; children retain their own colors.
+        # Color the binder and delimiters with the parent color.
+        # Additionally, if the direct child is a bare Goal/Laog, color that child with the parent color.
+        if isinstance(node.term, Goal):
+            t_str = f"{openP}{t_str}{reset}"
+        if isinstance(node.context, Laog):
+            c_str = f"{openP}{c_str}{reset}"
         s = (
             f"{openP}μ{node.id.name}:{node.prop}.<"
             f"{reset}{t_str}"
@@ -2099,6 +2104,10 @@ class AcceptanceColoringVisitor(ProofTermVisitor):
         openP, reset = self._ansi(color)
         t_str = self.visit(node.term)
         c_str = self.visit(node.context)
+        if isinstance(node.term, Goal):
+            t_str = f"{openP}{t_str}{reset}"
+        if isinstance(node.context, Laog):
+            c_str = f"{openP}{c_str}{reset}"
         s = (
             f"{openP}μ'{node.di.name}:{node.prop}.<"
             f"{reset}{t_str}"
@@ -2112,6 +2121,8 @@ class AcceptanceColoringVisitor(ProofTermVisitor):
         color = self.classify(node)
         openP, reset = self._ansi(color)
         inner = self.visit(node.term)
+        if isinstance(node.term, Goal):
+            inner = f"{openP}{inner}{reset}"
         s = (
             f"{openP}λ{node.di.di.name}:{node.di.prop}."
             f"{reset}{inner}"
@@ -2123,7 +2134,11 @@ class AcceptanceColoringVisitor(ProofTermVisitor):
         openP, reset = self._ansi(color)
         left  = self.visit(node.term)
         right = self.visit(node.context)
-        # Color only the '*' with the Cons node’s color.
+        if isinstance(node.term, Goal):
+            left = f"{openP}{left}{reset}"
+        if isinstance(node.context, Laog):
+            right = f"{openP}{right}{reset}"
+        # Color the '*' with the Cons node’s color.
         s = f"{left}{openP}*{self.ANSI['reset']}{right}"
         return s
     def visit_Goal(self, node: Goal):
