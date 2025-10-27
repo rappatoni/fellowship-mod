@@ -676,7 +676,11 @@ class ArgumentTermReducer(ProofTermVisitor):
                     ctx_mt.context = self.visit_Mutilde(ctx_mt.context)
                     after  = self._pres_str(ctx_mt.context)
                     if before == after:
-                        raise RuntimeError("Affine μ simplify made no progress; check guards or rewrite rules")
+                        raise RuntimeError(
+                            f"Affine μ simplify made no progress at Mu node {self._pres_str(node)} "
+                            f"while simplifying attacker {self._pres_str(ctx_mt.context)}; "
+                            f"check guards or rewrite rules"
+                        )
                     # Re-enter on this node now that attacker changed
                     return self.visit_Mu(node)
 
@@ -815,7 +819,11 @@ class ArgumentTermReducer(ProofTermVisitor):
                     inner_mu.term = self.visit_Mu(inner_mu.term)
                     after  = self._pres_str(inner_mu.term)
                     if before == after:
-                        raise RuntimeError("Affine μ' simplify made no progress; check guards or rewrite rules")
+                        raise RuntimeError(
+                            f"Affine μ' simplify made no progress at Mutilde node {self._pres_str(node)} "
+                            f"while simplifying attacker {self._pres_str(inner_mu.term)}; "
+                            f"check guards or rewrite rules"
+                        )
                     # Re-enter on this node now that attacker changed
                     return self.visit_Mutilde(node)
 
@@ -1336,6 +1344,11 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
         self.instructions = collections.deque('')
         pass
 
+    def _node_pres(self, n: ProofTerm) -> str:
+        c = deepcopy(n)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(c))
+
     def return_instructions(self, proofterm):
         self.instructions.clear()
         self.visit(proofterm)
@@ -1354,7 +1367,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
                 else:
                     self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.id.name}.")
             else:
-                raise Exception("Could not identify cut proposition.")
+                raise Exception(f"Could not identify cut proposition for Mu node {self._node_pres(node)}")
         return node
 
     def visit_Mutilde(self, node : Mutilde):
@@ -1368,7 +1381,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             else:
                 self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
         else:
-            raise Exception("Could not identify cut proposition.")
+            raise Exception(f"Could not identify cut proposition for Mutilde node {self._node_pres(node)}")
 
         
         return node
@@ -1378,7 +1391,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
         if node.di.di.name:
             self.instructions.appendleft(f'elim {node.di.di.name}.')
         else:
-            raise Exception("Missing hypothesis name.")
+            raise Exception(f"Missing hypothesis name for Lamda node {self._node_pres(node)}")
         return node
 
     def visit_Cons(self, node : Cons):
@@ -1409,7 +1422,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             else:
                 self.instructions.appendleft(f'moxia {node.name}.')
         else:
-            raise Exception("Axiom name missing.")
+            raise Exception(f"Axiom name missing for ID node {self._node_pres(node)}")
         return node
 
     def visit_DI(self, node : DI):
@@ -1422,11 +1435,11 @@ class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class pu
             else:
                 self.instructions.appendleft(f'axiom {node.name}.')
         else:
-            raise Exception("Axiom name missing.")
+            raise Exception(f"Axiom name missing for DI node {self._node_pres(node)}")
         return node
 
     def visit_unhandled(self, node):
-        raise Exception("Unhandled node type: {type(node)}")
+        raise Exception(f"Unhandled node type: {type(node).__name__} {self._node_pres(node)}")
         return node
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -1833,3 +1846,300 @@ class _AlphaRename(ProofTermVisitor):
         if node.name in self.mapping:
             node.name = self.mapping[node.name]
         return node
+
+
+# ────────────────────────────────────────────────────────────────────────────────
+#  Acceptance coloring for normalized proof terms (green / red / yellow)
+#    Grammar (sound and intended complete per spec)
+#      Unattacked_Argument ::=
+#         proof | refutation
+#       | lamda . Goal
+#       | Goal * Unattacked_Argument
+#       | Unattacked_Argument * Laog
+#       | lamda x . Unattacked_Argument
+#       | Unattacked_Argument * Unattacked_Argument
+#       | mu x.< Unattacked_Argument || Unattacked_Argument >
+#       | mu' x.< Unattacked_Argument || Unattacked_Argument >
+#      Green_Argument ::=
+#         Unattacked_Argument
+#       | mu x.< Goal || Red_Argument >
+#       | mu' x.< Red_Argument || Laog >
+#       | lamda x . Green_Argument
+#       | Green_Argument * Green_Argument
+#       | mu x.< Green_Argument || Green_Argument >
+#       | mu' x.< Green_Argument || Green_Argument >
+#      Red_Argument ::=
+#         mu x.< Goal || Green_Argument >
+#       | mu' x.< Green_Argument || Laog >
+#       | lamda x . Red_Argument
+#       | Red_Argument * Not_Red_Argument
+#       | Not_Red_Argument * Red_Argument
+#       | mu x.< Red_Argument || Not_Red_Argument >
+#       | mu x.< Not_Red_Argument || Red_Argument >
+#       | mu' x.< Red_Argument || Not_Red_Argument >
+#       | mu' x.< Not_Red_Argument || Red_Argument >
+#       | Red_Argument * Red_Argument
+#      Yellow_Argument ::=
+#         mu x.< Goal || Yellow_Argument >
+#       | mu' x.< Yellow_Argument || Laog >
+#       | lamda x . Yellow_Argument
+#       | Yellow_Argument * Green_Argument
+#       | Green_Argument * Yellow_Argument
+#       | mu x.< Yellow_Argument || Green_Argument >
+#       | mu x.< Green_Argument || Yellow_Argument >
+#       | mu' x.< Yellow_Argument || Green_Argument >
+#       | mu' x.< Green_Argument || Yellow_Argument >
+#       | Yellow_Argument * Yellow_Argument
+#  Notes:
+#   - Assumes input is normalized (no remaining μ/μ̃/λ redexes).
+#   - If no production applies, we return uncolored text (soundness over completeness).
+# ────────────────────────────────────────────────────────────────────────────────
+class AcceptanceColoringVisitor(ProofTermVisitor):
+    ANSI = {
+        "green": "\x1b[32m",
+        "red": "\x1b[31m",
+        "yellow": "\x1b[33m",
+        "reset": "\x1b[0m",
+    }
+    def __init__(self, verbose: bool = False):
+        super().__init__()
+        self.verbose = verbose
+        self._memo_unattacked: dict[int, bool] = {}
+        self._memo_color: dict[int, Optional[str]] = {}
+
+    # public API
+    def render(self, node: ProofTerm) -> str:
+        return self.visit(node)
+
+    # utilities
+    def _wrap(self, color: Optional[str], s: str) -> str:
+        if not color:
+            return s
+        return f"{self.ANSI[color]}{s}{self.ANSI['reset']}"
+
+    def _ansi(self, color: Optional[str]) -> tuple[str, str]:
+        """Return (open, reset) escape codes for the given color; empty if None."""
+        if not color:
+            return "", ""
+        return self.ANSI[color], self.ANSI["reset"]
+
+
+    def _node_pres(self, n: ProofTerm) -> str:
+        """Return a stable pretty string for the node (used in error messages)."""
+        c = deepcopy(n)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(c))
+
+
+    def _has_open(self, n: ProofTerm) -> bool:
+        if isinstance(n, (Goal, Laog)):
+            return True
+        for child in getattr(n, 'term', None), getattr(n, 'context', None):
+            if child is not None and self._has_open(child):
+                return True
+        return False
+
+    def _unattacked(self, n: ProofTerm) -> bool:
+        mid = id(n)
+        hit = self._memo_unattacked.get(mid)
+        if hit is not None:
+            return hit
+        # proof | refutation: no open goals/laogs anywhere
+        if not self._has_open(n):
+            self._memo_unattacked[mid] = True
+            return True
+        # lamda . Goal
+        if isinstance(n, Lamda) and isinstance(n.term, Goal):
+            self._memo_unattacked[mid] = True
+            return True
+        # Goal * Unattacked
+        if isinstance(n, Cons) and isinstance(n.term, Goal) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        # Unattacked * Laog
+        if isinstance(n, Cons) and self._unattacked(n.term) and isinstance(n.context, Laog):
+            self._memo_unattacked[mid] = True
+            return True
+        # lamda x . Unattacked
+        if isinstance(n, Lamda) and self._unattacked(n.term):
+            self._memo_unattacked[mid] = True
+            return True
+        # Unattacked * Unattacked
+        if isinstance(n, Cons) and self._unattacked(n.term) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        # mu / mu' with unattacked children
+        if isinstance(n, Mu) and self._unattacked(n.term) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        if isinstance(n, Mutilde) and self._unattacked(n.term) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        self._memo_unattacked[mid] = False
+        return False
+
+    def classify(self, n: ProofTerm) -> Optional[str]:
+        mid = id(n)
+        memo = self._memo_color.get(mid)
+        if memo is not None:
+            return memo
+        # Green: unattacked
+        if self._unattacked(n):
+            self._memo_color[mid] = "green"
+            return "green"
+        # Lamda propagation
+        if isinstance(n, Lamda):
+            c = self.classify(n.term)
+            self._memo_color[mid] = c
+            return c
+        # Cons combinations
+        if isinstance(n, Cons):
+            # If one side is a bare Goal/Laog, propagate the other's color
+            if isinstance(n.term, Goal):
+                c2 = self.classify(n.context)
+                self._memo_color[mid] = c2
+                return c2
+            if isinstance(n.context, Laog):
+                c1 = self.classify(n.term)
+                self._memo_color[mid] = c1
+                return c1
+            c1, c2 = self.classify(n.term), self.classify(n.context)
+            # Green * Green
+            if c1 == "green" and c2 == "green":
+                self._memo_color[mid] = "green"; return "green"
+            # Red * Not_Red or Not_Red * Red
+            if (c1 == "red" and c2 in {"green", "yellow"}) or (c2 == "red" and c1 in {"green", "yellow"}):
+                self._memo_color[mid] = "red"; return "red"
+            # Yellow * Green or Green * Yellow
+            if (c1 == "yellow" and c2 == "green") or (c1 == "green" and c2 == "yellow"):
+                self._memo_color[mid] = "yellow"; return "yellow"
+            # Red * Red
+            if c1 == "red" and c2 == "red":
+                self._memo_color[mid] = "red"; return "red"
+            # Yellow * Yellow
+            if c1 == "yellow" and c2 == "yellow":
+                self._memo_color[mid] = "yellow"; return "yellow"
+            raise ValueError(
+                f"Acceptance coloring incomplete for Cons node {self._node_pres(n)}: "
+                f"left={c1}, right={c2}"
+            )
+        # Mu rules
+        if isinstance(n, Mu):
+            # Direct Goal on term: do not classify the Goal leaf
+            if isinstance(n.term, Goal):
+                c_c = self.classify(n.context)
+                if c_c == "red":    self._memo_color[mid] = "green";  return "green"
+                if c_c == "green":  self._memo_color[mid] = "red";    return "red"
+                if c_c == "yellow": self._memo_color[mid] = "yellow"; return "yellow"
+                raise ValueError(
+                    f"Acceptance coloring incomplete for Mu node {self._node_pres(n)}: "
+                    f"term is Goal; context_color={c_c}"
+                )
+            # Non‑direct cases: combine child colors
+            c_t = self.classify(n.term)
+            c_c = self.classify(n.context)
+            if c_t == "green" and c_c == "green":
+                self._memo_color[mid] = "green"; return "green"
+            if (c_t == "red" and c_c in {"green","yellow"}) or (c_c == "red" and c_t in {"green","yellow"}):
+                self._memo_color[mid] = "red"; return "red"
+            if (c_t == "yellow" and c_c == "green") or (c_t == "green" and c_c == "yellow"):
+                self._memo_color[mid] = "yellow"; return "yellow"
+            raise ValueError(
+                f"Acceptance coloring incomplete for Mu node {self._node_pres(n)}: "
+                f"term_color={c_t}, context_color={c_c}"
+            )
+        # Mutilde rules
+        if isinstance(n, Mutilde):
+            # Direct Laog on context: do not classify the Laog leaf
+            if isinstance(n.context, Laog):
+                c_t = self.classify(n.term)
+                if c_t == "red":    self._memo_color[mid] = "green";  return "green"
+                if c_t == "green":  self._memo_color[mid] = "red";    return "red"
+                if c_t == "yellow": self._memo_color[mid] = "yellow"; return "yellow"
+                raise ValueError(
+                    f"Acceptance coloring incomplete for Mutilde node {self._node_pres(n)}: "
+                    f"context is Laog; term_color={c_t}"
+                )
+            # Non‑direct cases: combine child colors
+            c_t = self.classify(n.term)
+            c_c = self.classify(n.context)
+            if c_t == "green" and c_c == "green":
+                self._memo_color[mid] = "green"; return "green"
+            if (c_t == "red" and c_c in {"green","yellow"}) or (c_c == "red" and c_t in {"green","yellow"}):
+                self._memo_color[mid] = "red"; return "red"
+            if (c_t == "yellow" and c_c == "green") or (c_t == "green" and c_c == "yellow"):
+                self._memo_color[mid] = "yellow"; return "yellow"
+            raise ValueError(
+                f"Acceptance coloring incomplete for Mutilde node {self._node_pres(n)}: "
+                f"term_color={c_t}, context_color={c_c}"
+            )
+        # Leaves: no rule unless covered by Unattacked (handled above)
+        raise ValueError(
+            f"Acceptance coloring incomplete for leaf {type(n).__name__} {self._node_pres(n)}"
+        )
+
+    # pretty rendering with color
+    def visit_Mu(self, node: Mu):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        t_str = self.visit(node.term)
+        c_str = self.visit(node.context)
+        # Color the binder and delimiters with the parent color; children retain their own colors.
+        s = (
+            f"{openP}μ{node.id.name}:{node.prop}.<"
+            f"{reset}{t_str}"
+            f"{openP}||"
+            f"{reset}{c_str}"
+            f"{openP}>"
+            f"{self.ANSI['reset']}"
+        )
+        return s
+    def visit_Mutilde(self, node: Mutilde):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        t_str = self.visit(node.term)
+        c_str = self.visit(node.context)
+        s = (
+            f"{openP}μ'{node.di.name}:{node.prop}.<"
+            f"{reset}{t_str}"
+            f"{openP}||"
+            f"{reset}{c_str}"
+            f"{openP}>"
+            f"{self.ANSI['reset']}"
+        )
+        return s
+    def visit_Lamda(self, node: Lamda):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        inner = self.visit(node.term)
+        s = (
+            f"{openP}λ{node.di.di.name}:{node.di.prop}."
+            f"{reset}{inner}"
+            f"{openP}{self.ANSI['reset']}"
+        )
+        return s
+    def visit_Cons(self, node: Cons):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        left  = self.visit(node.term)
+        right = self.visit(node.context)
+        # Color only the '*' with the Cons node’s color.
+        s = f"{left}{openP}*{self.ANSI['reset']}{right}"
+        return s
+    def visit_Goal(self, node: Goal):
+        # Leaves are not colored directly; parents determine color.
+        return f"{node.number}:{node.prop}"
+    def visit_Laog(self, node: Laog):
+        return f"{node.number}:{node.prop}"
+    def visit_ID(self, node: ID):
+        s = f"{node.name}:{node.prop}" if node.prop else f"{node.name}"
+        return self._wrap(self.classify(node), s)
+    def visit_DI(self, node: DI):
+        s = f"{node.name}:{node.prop}" if node.prop else f"{node.name}"
+        return self._wrap(self.classify(node), s)
+    def visit_unhandled(self, node):
+        return self._wrap(self.classify(node), repr(node))
+
+def pretty_colored_proof_term(pt: ProofTerm, verbose: bool = False) -> str:
+    """Return an ANSI-colored pretty string for a normalized proof term."""
+    return AcceptanceColoringVisitor(verbose=verbose).render(pt)

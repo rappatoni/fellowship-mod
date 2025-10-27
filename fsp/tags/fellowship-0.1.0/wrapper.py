@@ -547,6 +547,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
                     elif command.startswith("render "):
                         render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+                    elif command.startswith("color "):
+                        color_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("normalize "):
                         name = command.split(maxsplit=1)[1]
                         arg = prover.get_argument(name)
@@ -715,6 +717,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
             elif command.startswith("render "):
                     render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+            elif command.startswith("color "):
+                color_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("normalize "):
                 name = command.split(maxsplit=1)[1]
                 arg = prover.get_argument(name)
@@ -1443,6 +1447,25 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         logger.info(f"Rendering argument {arg.name}:")
     logger.info(arg.render(normalized=normalized))
     logger.info("")  # spacer after NL rendering
+
+def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI for coloring the normalized proof term of an argument."""
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error(f"Argument '{name}' not found.")
+        return
+    # Ensure normalized body is available
+    if arg.normal_body is None:
+        arg.normalize()
+    try:
+        colored = parser.pretty_colored_proof_term(arg.normal_body, verbose=False)
+    except Exception as e:
+        logger.error("Coloring failed for '%s': %s", arg.name, e)
+        return
+    logger.info("")  # spacer before colored output
+    logger.info("Colored normalized proof term for %s:", arg.name)
+    logger.info(colored)
+    logger.info("")  # spacer after colored output
 
 def main() -> None:
     ap = argparse.ArgumentParser(

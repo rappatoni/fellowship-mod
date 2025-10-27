@@ -36,10 +36,9 @@ end argument
 #
 undercut arg2 arg1
 #
-# Next, we reduce the resulting argument to confirm that arg1 is defeated.
+# Next, we reduce the resulting argument to confirm that arg1 is defeated and color it.
 reduce arg2_undercuts_on_EfficientMetro_arg1
-#
-#TODO: Colouring
+color arg2_undercuts_on_EfficientMetro_arg1
 #
 #We add an attacker to the counterargument to test that the original conclusion is restored as intended.
 #
@@ -57,9 +56,10 @@ elim.
 axiom.
 end argument
 #
-# Introduce the attacker and normalize:
+# Introduce the attacker, normalize and color:
 undercut arg3 arg2_undercuts_on_EfficientMetro_arg1
 reduce arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+color arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
 #
 # And one last undercut
 #
@@ -76,6 +76,7 @@ elim.
 axiom.
 end argument
 #
-# Introduce the attacker and normalize:
+# Introduce the attacker, normalize and color:
 undercut arg4 arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
 reduce arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+color arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
