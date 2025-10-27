@@ -1,0 +1,62 @@
+# This script tests counterarguments and undercut.
+
+lk.
+
+# First we declare our running example:
+#
+declare EfficientMetro, StrikeMetro, UseMetro, DealMetro: bool.
+declare r1: (EfficientMetro -> UseMetro).
+declare r2: (StrikeMetro -> ~EfficientMetro).
+#
+# Then an argument to use the metro.
+#
+start argument arg1 UseMetro
+cut (EfficientMetro -> UseMetro) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+#
+# Next, a counterargument in negation-expanded form
+#
+start counterargument arg2 EfficientMetro
+
+cut (~EfficientMetro) x.
+cut (StrikeMetro -> ~EfficientMetro) th.
+axiom r2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+end argument
+#
+# Now we test if arg2 undercuts arg1 on EfficientMetro as intended: 
+#
+undercut arg2 arg1
+#
+# Next, we reduce the resulting argument to confirm that arg1 is defeated.
+reduce arg2_undercuts_on_EfficientMetro_arg1
+#
+#TODO: Colouring
+#
+#We add an attacker to the counterargument to test that the original conclusion is restored as intended.
+#
+#
+declare r3: (DealMetro -> ~StrikeMetro).
+#
+start counterargument arg3 StrikeMetro
+cut (~StrikeMetro) x.
+cut (DealMetro -> ~StrikeMetro) th.
+axiom r3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+end argument
+#
+# Introduce the attacker and normalize:
+undercut arg3 arg2_undercuts_on_EfficientMetro_arg1
+reduce arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1

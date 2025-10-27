@@ -581,6 +581,11 @@ class ArgumentTermReducer(ProofTermVisitor):
             logger.info("")  # spacer after table
         self._term_no += 1
 
+    def _pres_str(self, n: ProofTerm) -> str:
+        c = deepcopy(n)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(c))
+
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
         # inner positions.
@@ -640,8 +645,8 @@ class ArgumentTermReducer(ProofTermVisitor):
             inner_mu: Mu = node.term
             ctx_mt:   Mutilde = node.context
             if self.verbose: logger.debug("Alternative Arguments %s and %s detected.", inner_mu.id.name, ctx_mt.di.name)
-            if self.verbose: logger.debug("Guards %s", _guards(inner_mu, ctx_mt))
             if _guards(inner_mu, ctx_mt)==True:
+                if self.verbose: logger.debug("Guards passed.")
 
                 # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
                 if self.verbose: logger.debug("Case 1? %s", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
@@ -667,9 +672,13 @@ class ArgumentTermReducer(ProofTermVisitor):
                     return node
                 else:
                     if self.verbose: logger.debug("Simplifying attacker argument")
+                    before = self._pres_str(ctx_mt.context)
                     ctx_mt.context = self.visit_Mutilde(ctx_mt.context)
-                    self.visit_Mu(node)
-                    return node
+                    after  = self._pres_str(ctx_mt.context)
+                    if before == after:
+                        raise RuntimeError("Affine μ simplify made no progress; check guards or rewrite rules")
+                    # Re-enter on this node now that attacker changed
+                    return self.visit_Mu(node)
 
 
         # general μ‑rule --------------------------------------------
@@ -706,7 +715,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             alpha     = inner.di.name
             v     = node.term       # replacement
             if isinstance(v, Goal):
-                if self.verbose: logger.debug("Skipping μ̃‑β: term is bare Goal")
+                if self.verbose: logger.debug("Skipping μ̃‑β application to '%s': term is bare Goal '%s'", inner.pres, v.pres)
             else:
                 if self.verbose: logger.debug("Applying general Mutilde rule")
                 # Perform capture‑avoiding substitution inside the *command* c.
@@ -802,10 +811,13 @@ class ArgumentTermReducer(ProofTermVisitor):
                     self.visit_Mutilde(node)
                     return node
                 else:
-                    if self.verbose: logger.debug("Simplifying attacker argument")
-                    inner_mu.term  = self.visit_Mu(inner_mu.term)
-                    self.visit_Mu(node)
-                    return node
+                    before = self._pres_str(inner_mu.term)
+                    inner_mu.term = self.visit_Mu(inner_mu.term)
+                    after  = self._pres_str(inner_mu.term)
+                    if before == after:
+                        raise RuntimeError("Affine μ' simplify made no progress; check guards or rewrite rules")
+                    # Re-enter on this node now that attacker changed
+                    return self.visit_Mutilde(node)
 
                     # self.visit_Mu(inner_mu.term)
 
