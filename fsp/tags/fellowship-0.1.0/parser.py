@@ -474,13 +474,17 @@ def _is_affine(varname: str, command: ProofTerm) -> bool:
     return False
 
 def _subst(node, name: str, replacement):
-    """Return a **deep‑copied** version of *node* where every **free**
-    occurrence of the variable *name* (i.e. an ``ID``/``DI`` whose *name*
-    equals *name*) is replaced by a deep‑copy of *replacement*.
+    """Return a deep‑copied version of node where every free occurrence
+    of the variable `name` (an ID/DI whose .name equals `name`) is replaced
+    by a deep‑copy of `replacement`.
 
-    The substitution is *capture‑avoiding*: whenever we descend beneath a
-    binder that *re‑binds* the same name – namely λ, µ, or μ̃ – we stop
-    the traversal along that branch.
+    Note:
+      - This function stops descending beneath a binder that re‑binds the
+        same variable name (shadowing across λ, μ, or μ̃).
+      - It does NOT α‑rename unrelated binders to avoid capture of free
+        variables that might occur in `replacement`. Therefore it is intended
+        to be used on closed proof terms as produced by the prover (no free
+        IDs/DIs), not on arbitrary open terms.
     """
     # Atomic cases -----------------------------------------------------------
     if isinstance(node, (ID, DI)):
