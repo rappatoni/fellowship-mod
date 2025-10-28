@@ -6,8 +6,8 @@ import importlib.util, sys
 import logging
 from wrapper import *
 
-PYTEST_TODO = ("Continue with negation_expanded.fspy; rename the file; add a second and third undercut to test robustness; "
-               "change argument name scheme for undercut to user-specified or lexicographic default; implement proof term colouring.")
+PYTEST_TODO = ("Add version of trees with natural language renderings; update/tweak natural language renderings; implement multiple undercuts, support, and rebut; add support for the '-' connective; "
+               "then implement scenarios.")
 
 DEFAULT_SCRIPTS = [
     "tests/normalize_render.fspy",

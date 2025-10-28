@@ -552,7 +552,19 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     elif command.startswith("color "):
                         color_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("tree "):
-                        tree_argument_cmd(prover, command.split(maxsplit=1)[1])
+                        parts = command.split()
+                        # Usage:
+                        #   tree ARG
+                        #   tree ARG nl [argumentation|dialectical|intuitionistic]
+                        #   tree ARG pt
+                        if len(parts) == 2:
+                            tree_argument_cmd(prover, parts[1])
+                        elif len(parts) >= 3:
+                            mode = parts[2]
+                            nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
+                            tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                        else:
+                            logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
                     elif command.startswith("normalize "):
                         name = command.split(maxsplit=1)[1]
                         arg = prover.get_argument(name)
@@ -725,7 +737,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif command.startswith("color "):
                 color_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("tree "):
-                tree_argument_cmd(prover, command.split(maxsplit=1)[1])
+                parts = command.split()
+                if len(parts) == 2:
+                    tree_argument_cmd(prover, parts[1])
+                elif len(parts) >= 3:
+                    mode = parts[2]
+                    nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
+                    tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                else:
+                    logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
             elif command.startswith("normalize "):
                 name = command.split(maxsplit=1)[1]
                 arg = prover.get_argument(name)
@@ -1476,8 +1496,8 @@ def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info(colored)
     logger.info("")  # spacer after colored output
 
-def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg") -> None:
-    """CLI: render the colored acceptance tree and save it as a file."""
+def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
+    """CLI: render the colored acceptance tree (proof terms or NL) and save it as a file."""
     arg = prover.get_argument(name)
     if not arg:
         logger.error("Argument '%s' not found.", name)
@@ -1485,7 +1505,8 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg") -> Non
     if arg.normal_body is None:
         arg.normalize()
     try:
-        dot = parser.render_acceptance_tree_dot(arg.normal_body, verbose=False)
+        label_mode = "proof" if mode != "nl" else "nl"
+        dot = parser.render_acceptance_tree_dot(arg.normal_body, verbose=False, label_mode=label_mode, nl_style=nl_style)
     except Exception as e:
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return

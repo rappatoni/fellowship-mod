@@ -80,5 +80,5 @@ end argument
 undercut u3 arg4 u2
 reduce u3
 color u3
-tree u3
+tree u3 nl
 

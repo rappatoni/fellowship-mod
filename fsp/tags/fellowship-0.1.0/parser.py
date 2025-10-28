@@ -2159,10 +2159,18 @@ class AcceptanceTreeRenderer:
     """
     _gv_colors = {"green": "palegreen2", "red": "lightcoral", "yellow": "khaki1"}
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, *, label_mode: str = "proof", nl_style: str = "argumentation"):
         self.color_v = AcceptanceColoringVisitor(verbose=verbose)
         self._idmap: dict[int, str] = {}
         self._seq = 0
+        self.label_mode = label_mode  # "proof" or "nl"
+        # pick the NL semantics
+        if nl_style == "dialectical":
+            self._nl_sem = natural_language_dialectical_rendering
+        elif nl_style == "intuitionistic":
+            self._nl_sem = natural_language_rendering
+        else:
+            self._nl_sem = natural_language_argumentative_rendering
 
     def _nid(self, n) -> str:
         k = id(n)
@@ -2238,6 +2246,48 @@ class AcceptanceTreeRenderer:
         lbl = pp(n)
         return lbl, found["child"]
 
+    def _nl_label_with_elision(self, n: ProofTerm, child: Optional[ProofTerm]) -> str:
+        lines: list[str] = []
+        sem = self._nl_sem
+        def rec(node: ProofTerm, indent: int) -> None:
+            if child is not None and node is child:
+                lines.append(f"{sem.indentation * indent}...")
+                return
+            if isinstance(node, Mu):
+                lines.append(f"{sem.indentation * indent}{sem.Mu[0]}{node.prop}")
+                rec(node.term, indent + 1)
+                rec(node.context, indent + 1)
+                return
+            if isinstance(node, Mutilde):
+                lines.append(f"{sem.indentation * indent}{sem.Mutilde[0]}{node.prop}")
+                rec(node.term, indent)
+                lines.append(f"{sem.indentation * indent}{sem.Mutilde[1]}")
+                rec(node.context, indent)
+                return
+            if isinstance(node, Lamda):
+                lines.append(f"{sem.indentation * indent}{sem.Lamda}{node.di.prop}({node.di.di.name})")
+                rec(node.term, indent)
+                return
+            if isinstance(node, Cons):
+                lines.append(f"{sem.indentation * indent}{sem.Cons}")
+                rec(node.term, indent)
+                rec(node.context, indent)
+                return
+            if isinstance(node, Goal):
+                lines.append(f"{sem.indentation * indent}{sem.Goal}{node.number}")
+                return
+            if isinstance(node, DI):
+                lines.append(f"{sem.indentation * indent}{sem.DI}{node.name}")
+                return
+            if isinstance(node, ID):
+                lines.append(f"{sem.indentation * indent}{sem.ID}")
+                return
+            c = deepcopy(node)
+            c = ProofTermGenerationVisitor().visit(c)
+            lines.append(f"{sem.indentation * indent}{getattr(c, 'pres', repr(c))}")
+        rec(n, 0)
+        return "\n".join(lines)
+
     def _emit(self, n, lines: list[str], parent: Optional[str], parent_color: Optional[str]) -> None:
         """
         Node = whole outer term A. If A contains (left-to-right) a μ/μ' with
@@ -2245,13 +2295,20 @@ class AcceptanceTreeRenderer:
         one child = the non-Goal/Laog Argument subtree. Otherwise, A is a leaf.
         """
         # Determine this node’s label and (optional) single child
-        label, child = self._label_and_child(n)
+        if self.label_mode == "proof":
+            label, child = self._label_and_child(n)
+        else:
+            # reuse child selection from proof-term variant then build NL label
+            _lbl_proof, child = self._label_and_child(n)
+            label = self._nl_label_with_elision(n, child)
         # Color node by acceptance color of the whole outer term A (inherit on error)
         col  = self._class_or_inherit(n, parent_color)
         fill = self._gv_colors.get(col)
         my = self._nid(n)
         attr = f'shape=box,style=filled,fillcolor="{fill}"' if fill else 'shape=box'
-        lines.append(f'  {my} [label="{label}", {attr}];')
+        # Escape label for DOT (handle newlines and quotes/backslashes)
+        esc_label = label.replace("\\", "\\\\").replace("\"", "\\\"")
+        lines.append(f'  {my} [label="{esc_label}", {attr}];')
         if parent:
             lines.append(f'  {my} -> {parent};')
         # If we found an Argument side, it becomes the single child; else we’re a leaf
@@ -2269,8 +2326,8 @@ class AcceptanceTreeRenderer:
         return "\n".join(lines)
 
 
-def render_acceptance_tree_dot(pt: ProofTerm, verbose: bool = False) -> str:
+def render_acceptance_tree_dot(pt: ProofTerm, verbose: bool = False, *, label_mode: str = "proof", nl_style: str = "argumentation") -> str:
     """
     Return Graphviz DOT source for the colored binary tree of a normalized proof term.
     """
-    return AcceptanceTreeRenderer(verbose=verbose).to_dot(pt)
+    return AcceptanceTreeRenderer(verbose=verbose, label_mode=label_mode, nl_style=nl_style).to_dot(pt)
