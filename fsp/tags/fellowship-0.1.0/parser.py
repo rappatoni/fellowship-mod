@@ -2158,3 +2158,131 @@ class AcceptanceColoringVisitor(ProofTermVisitor):
 def pretty_colored_proof_term(pt: ProofTerm, verbose: bool = False) -> str:
     """Return an ANSI-colored pretty string for a normalized proof term."""
     return AcceptanceColoringVisitor(verbose=verbose).render(pt)
+
+
+class AcceptanceTreeRenderer:
+    """
+    Build a colored binary tree of a normalized proof term:
+      - Mu/Mutilde are internal nodes (parent = binder; children = term/context).
+      - Non Mu/Mutilde nodes are leaves.
+      - Node color is computed via AcceptanceColoringVisitor.classify; for Goal/Laog
+        leaves that fail direct classification, inherit the parent color.
+      - Returns Graphviz DOT source; wrapper can render to SVG/PNG or save .dot.
+    """
+    _gv_colors = {"green": "palegreen2", "red": "lightcoral", "yellow": "khaki1"}
+
+    def __init__(self, verbose: bool = False):
+        self.color_v = AcceptanceColoringVisitor(verbose=verbose)
+        self._idmap: dict[int, str] = {}
+        self._seq = 0
+
+    def _nid(self, n) -> str:
+        k = id(n)
+        v = self._idmap.get(k)
+        if v is None:
+            self._seq += 1
+            v = f"n{self._seq}"
+            self._idmap[k] = v
+        return v
+
+    def _label_leaf(self, n) -> str:
+        c = deepcopy(n)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(c))
+
+    def _class_or_inherit(self, n, parent_color: Optional[str]) -> Optional[str]:
+        try:
+            return self.color_v.classify(n)
+        except Exception:
+            return parent_color
+
+    def _label_and_child(self, n) -> tuple[str, Optional[ProofTerm]]:
+        """
+        Return (label_for_A, child_subtree) where:
+          - label_for_A prints the whole term n, but for the first μ/μ' with
+            a direct Goal/Laog (left-to-right), replaces the non-Goal/Laog side
+            with '…' and keeps the Goal/Laog printed.
+          - child_subtree is the non-Goal/Laog Argument side of that μ/μ' node.
+          - If no such μ/μ' exists anywhere in n, child_subtree is None and
+            label_for_A is the standard pretty proof term for n.
+        """
+        found = {"child": None}  # use dict to allow closure assignment
+
+        def pp(node) -> str:
+            # μ cases
+            if isinstance(node, Mu):
+                if found["child"] is None and isinstance(node.term, Goal):
+                    goal = ProofTermGenerationVisitor().visit(deepcopy(node.term)).pres
+                    found["child"] = node.context
+                    return f"μ{node.id.name}:{node.prop}.<{goal}||…>"
+                if found["child"] is None and isinstance(node.context, Laog):
+                    laog = ProofTermGenerationVisitor().visit(deepcopy(node.context)).pres
+                    found["child"] = node.term
+                    return f"μ{node.id.name}:{node.prop}.<…||{laog}>"
+                return f"μ{node.id.name}:{node.prop}.<{pp(node.term)}||{pp(node.context)}>"
+            # μ' cases
+            if isinstance(node, Mutilde):
+                if found["child"] is None and isinstance(node.term, Goal):
+                    goal = ProofTermGenerationVisitor().visit(deepcopy(node.term)).pres
+                    found["child"] = node.context
+                    return f"μ'{node.di.name}:{node.prop}.<{goal}||…>"
+                if found["child"] is None and isinstance(node.context, Laog):
+                    laog = ProofTermGenerationVisitor().visit(deepcopy(node.context)).pres
+                    found["child"] = node.term
+                    return f"μ'{node.di.name}:{node.prop}.<…||{laog}>"
+                return f"μ'{node.di.name}:{node.prop}.<{pp(node.term)}||{pp(node.context)}>"
+            # other nodes: reuse the same textual rendering as ProofTermGenerationVisitor
+            if isinstance(node, Lamda):
+                return f"λ{node.di.di.name}:{node.di.prop}.{pp(node.term)}"
+            if isinstance(node, Cons):
+                return f"{pp(node.term)}*{pp(node.context)}"
+            if isinstance(node, Goal):
+                g = deepcopy(node); g = ProofTermGenerationVisitor().visit(g); return g.pres
+            if isinstance(node, Laog):
+                l = deepcopy(node); l = ProofTermGenerationVisitor().visit(l); return l.pres
+            if isinstance(node, ID):
+                return f"{node.name}:{node.prop}" if node.prop else f"{node.name}"
+            if isinstance(node, DI):
+                return f"{node.name}:{node.prop}" if node.prop else f"{node.name}"
+            # fallback
+            return self._label_leaf(node)
+
+        lbl = pp(n)
+        return lbl, found["child"]
+
+    def _emit(self, n, lines: list[str], parent: Optional[str], parent_color: Optional[str]) -> None:
+        """
+        Node = whole outer term A. If A contains (left-to-right) a μ/μ' with
+        direct Goal/Laog, label A with '…' on the Argument side and add exactly
+        one child = the non-Goal/Laog Argument subtree. Otherwise, A is a leaf.
+        """
+        # Determine this node’s label and (optional) single child
+        label, child = self._label_and_child(n)
+        # Color node by acceptance color of the whole outer term A (inherit on error)
+        col  = self._class_or_inherit(n, parent_color)
+        fill = self._gv_colors.get(col)
+        my = self._nid(n)
+        attr = f'shape=box,style=filled,fillcolor="{fill}"' if fill else 'shape=box'
+        lines.append(f'  {my} [label="{label}", {attr}];')
+        if parent:
+            lines.append(f'  {parent} -> {my};')
+        # If we found an Argument side, it becomes the single child; else we’re a leaf
+        if child is not None:
+            self._emit(child, lines, my, col)
+
+    def to_dot(self, root: ProofTerm) -> str:
+        lines: list[str] = []
+        lines.append('digraph ProofTree {')
+        lines.append('  graph [rankdir=TB];')
+        lines.append('  node  [fontname="Helvetica"];')
+        lines.append('  edge  [fontname="Helvetica"];')
+        self._emit(root, lines, parent=None, parent_color=None)
+        lines.append('}')
+        return "\n".join(lines)
+
+
+def render_acceptance_tree_dot(pt: ProofTerm, verbose: bool = False) -> str:
+    """
+    Return Graphviz DOT source for the colored binary tree of a normalized proof term.
+    """
+    return AcceptanceTreeRenderer(verbose=verbose).to_dot(pt)

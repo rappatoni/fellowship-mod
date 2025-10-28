@@ -549,6 +549,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
                     elif command.startswith("color "):
                         color_argument_cmd(prover, command.split(maxsplit=1)[1])
+                    elif command.startswith("tree "):
+                        tree_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("normalize "):
                         name = command.split(maxsplit=1)[1]
                         arg = prover.get_argument(name)
@@ -719,6 +721,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
             elif command.startswith("color "):
                 color_argument_cmd(prover, command.split(maxsplit=1)[1])
+            elif command.startswith("tree "):
+                tree_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("normalize "):
                 name = command.split(maxsplit=1)[1]
                 arg = prover.get_argument(name)
@@ -1466,6 +1470,35 @@ def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info("Colored normalized proof term for %s:", arg.name)
     logger.info(colored)
     logger.info("")  # spacer after colored output
+
+def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg") -> None:
+    """CLI: render the colored binary tree of an argument's normalized proof term."""
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error("Argument '%s' not found.", name)
+        return
+    if arg.normal_body is None:
+        arg.normalize()
+    try:
+        dot = parser.render_acceptance_tree_dot(arg.normal_body, verbose=False)
+    except Exception as e:
+        logger.error("Failed to build acceptance tree for '%s': %s", name, e)
+        return
+    out_base = f"{name}_tree"
+    try:
+        import graphviz  # type: ignore
+        src = graphviz.Source(dot)
+        path = src.render(filename=out_base, format=fmt, cleanup=True)
+        logger.info("Acceptance tree written to %s", path)
+    except Exception as e:
+        # Fallback: write .dot
+        dot_path = f"{out_base}.dot"
+        try:
+            with open(dot_path, "w", encoding="utf-8") as f:
+                f.write(dot)
+            logger.warning("Graphviz not available (%s). Wrote DOT to %s", e, dot_path)
+        except Exception as e2:
+            logger.error("Failed to write DOT file: %s", e2)
 
 def main() -> None:
     ap = argparse.ArgumentParser(
