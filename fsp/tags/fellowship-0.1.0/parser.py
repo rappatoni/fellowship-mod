@@ -2269,7 +2269,7 @@ class AcceptanceTreeRenderer:
         attr = f'shape=box,style=filled,fillcolor="{fill}"' if fill else 'shape=box'
         lines.append(f'  {my} [label="{label}", {attr}];')
         if parent:
-            lines.append(f'  {parent} -> {my};')
+            lines.append(f'  {my} -> {parent};')
         # If we found an Argument side, it becomes the single child; else we’re a leaf
         if child is not None:
             self._emit(child, lines, my, col)
@@ -2277,9 +2277,9 @@ class AcceptanceTreeRenderer:
     def to_dot(self, root: ProofTerm) -> str:
         lines: list[str] = []
         lines.append('digraph ProofTree {')
-        lines.append('  graph [rankdir=TB];')
+        lines.append('  graph [rankdir=BT, splines=polyline];')
         lines.append('  node  [fontname="Helvetica"];')
-        lines.append('  edge  [fontname="Helvetica"];')
+        lines.append('  edge  [fontname="Helvetica", color="orangered", penwidth=2, arrowhead="vee"];')
         self._emit(root, lines, parent=None, parent_color=None)
         lines.append('}')
         return "\n".join(lines)
