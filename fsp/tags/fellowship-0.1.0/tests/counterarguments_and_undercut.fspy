@@ -34,11 +34,11 @@ end argument
 #
 # Now we test if arg2 undercuts arg1 on EfficientMetro as intended: 
 #
-undercut arg2 arg1
+undercut u1 arg2 arg1
 #
 # Next, we reduce the resulting argument to confirm that arg1 is defeated and color it.
-reduce arg2_undercuts_on_EfficientMetro_arg1
-color arg2_undercuts_on_EfficientMetro_arg1
+reduce u1
+color u1
 #
 #We add an attacker to the counterargument to test that the original conclusion is restored as intended.
 #
@@ -57,9 +57,9 @@ axiom.
 end argument
 #
 # Introduce the attacker, normalize and color:
-undercut arg3 arg2_undercuts_on_EfficientMetro_arg1
-reduce arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
-color arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+undercut u2 arg3 u1
+reduce u2
+color u2
 #
 # And one last undercut
 #
@@ -77,8 +77,8 @@ axiom.
 end argument
 #
 # Introduce the attacker, normalize and color:
-undercut arg4 arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
-reduce arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
-color arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
-tree arg4_undercuts_on_DealMetro_arg3_undercuts_on_StrikeMetro_arg2_undercuts_on_EfficientMetro_arg1
+undercut u3 arg4 u2
+reduce u3
+color u3
+tree u3
 

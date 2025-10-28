@@ -40,16 +40,6 @@ class Grammar():
 
         self.parser = Lark(self.proof_term_grammar, start='start')
 
-easy_term = "μthesis:B.<μx1:B.<r1ttAimpliesB||?1.2.1*x1>||thesis>"
-easy_undercut_term = " μthesis:¬A.<μH1:¬A.<λH2:A.μH3:⊥.<H2||μ'issue:A.<μstash:A.<λH:A.μFresh:B.<r1||H*Fresh>||issue*μ'affine:B.<issue||stash>>||μ'adapter:A.<μFresh2:¬A.<r2||?1.1.2.1.2.1*Fresh2>||μ'H1:¬A.<H1||adapter*_F_>>>>||H1>||thesis>"
-Example_proof_term = "μthesis:¬A.<μH1:¬A.<λH2:A.μH3:⊥.<H2||μ'issue:A.<μstash:A.<λH:A.μFresh:B.<r1||H*Fresh>||issue*μ'affine:B.<issue||stash>>||μ'adapter:A.<μFresh2:¬A.<r2||μsupport:C.<μalt1:C.<?1.1.2.1.2.1.1.1||support>||μ'alt2:C.<μFresh5:C.<r3||?1.1.2.1.2.1.2.1.2.1*Fresh5>||support>>*Fresh2>||μ'H1:¬A.<H1||adapter*_F_>>>>||H1>||thesis>"
-
-grammar=Grammar()
-easy_test = grammar.parser.parse(easy_term)
-easy_undercut_test = grammar.parser.parse(easy_undercut_term)
-test = grammar.parser.parse(Example_proof_term)
-#print("PARSER_TEST", test)
-
 class ProofTermTransformer(Transformer):
 
     def proof_term(self, items):
@@ -249,12 +239,6 @@ class Hyp(ProofTerm):
         self.flag = None
         if not isinstance(di, DI):
             raise TypeError(f"Hyp expects DI in binder position, got {type(di).__name__}")
-        
-transformer = ProofTermTransformer()
-proof_term_ast = transformer.transform(test)
-easy_ast = transformer.transform(easy_test)
-easy_undercut_ast = transformer.transform(easy_undercut_test)
-
 
 def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
     lines = []

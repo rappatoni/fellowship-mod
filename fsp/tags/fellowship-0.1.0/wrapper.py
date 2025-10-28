@@ -10,6 +10,8 @@ from pathlib import Path
 import argparse
 import copy
 from typing import Any, List, Tuple, Optional, Dict, Callable
+import tempfile
+import shutil
 
 from sexp_parser import SexpParser
 
@@ -561,20 +563,21 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             logger.warning("Argument '%s' not found for normalization", name)
                             #print(f"Argument '{name}' not found.")
                     elif command.startswith('undercut '):
-                        # Format: undercut attacker target
+                        # Format: undercut NEW_NAME attacker target
                         parts = command.split()
-                        if len(parts) != 3:
-                            logger.error("Invalid undercut command. Use: undercut attacker target")
+                        if len(parts) != 4:
+                            logger.error("Invalid undercut command. Use: undercut NEW_NAME attacker target")
                             continue
-                        attacker_name = parts[1]
-                        target_name = parts[2]
+                        new_name = parts[1]
+                        attacker_name = parts[2]
+                        target_name = parts[3]
                         attacker = prover.get_argument(attacker_name)
                         target = prover.get_argument(target_name)
                         if attacker and target:
                             try:
-                                result = attacker.focussed_undercut(target)
+                                result = attacker.focussed_undercut(target, name=new_name)
                                 prover.register_argument(result)
-                                logger.info("Constructed undercut '%s' of '%s' by '%s'.",
+                                logger.info("Constructed undercut '%s' (target '%s' by '%s').",
                                             result.name, target.name, attacker.name)
                             except ProverError as e:
                                 if strict:
@@ -1218,7 +1221,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return matching_assumption
 
 
-    def chain(self, other_argument: "Argument", close: bool = False) -> "Argument":
+    def chain(self, other_argument: "Argument", close: bool = False, name: Optional[str] = None) -> "Argument":
         """ Chains the current argument to another argument by using it to prove an assumption of the other argument. Automatically finds the matching assumption (assuming there is only one)."""
         #TODO: Implement type checking for resulting argument.
         # Check if this argument's conclusion matches any of the other argument's assumptions
@@ -1227,7 +1230,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if not other_argument.executed:
             other_argument.execute()
         # Combine the instructions and navigate to the correct goal
-        combined_name = f"{self.name}_{other_argument.name}"
+        combined_name = name or f"{self.name}_{other_argument.name}"
         logger.debug("Combined name: '%s'", combined_name)
         combined_conclusion = other_argument.conclusion
         logger.debug("Combined conclusion: '%s'", combined_conclusion)
@@ -1286,7 +1289,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return final_argument
 
 
-    def focussed_undercut(self, other_argument: "Argument", *, on: Optional[str] = None) -> "Argument":
+    def focussed_undercut(self, other_argument: "Argument", *, name: Optional[str], on: Optional[str] = None) -> "Argument":
         from parser import Mu, Mutilde, Goal, Laog, ID, DI
         # Ensure both arguments are executed
         if not self.executed:
@@ -1309,6 +1312,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             )
         issue = other_argument.assumptions[attacked_assumption]["prop"]
         logger.debug("Attacked issue: %s", issue)
+        if not name:
+            raise ValueError("focussed_undercut requires a result name: call focussed_undercut(..., name='...')")
         # BUG: variable names may clash; consider adding a fresh‑name helper.
         adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
         adapterterm    = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt", issue))
@@ -1322,7 +1327,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         #print("Other arg proof term", other_argument.proof_term)
         adapted_argument = adapter_arg.chain(other_argument)
         logger.debug("Adapted argument constructed: %s", adapted_argument.proof_term)
-        final_argument = self.chain(adapted_argument)
+        final_argument = self.chain(adapted_argument, name=name)
         return final_argument
     
     def get_assumptions(self) -> list[str]:
@@ -1472,7 +1477,7 @@ def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info("")  # spacer after colored output
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg") -> None:
-    """CLI: render the colored binary tree of an argument's normalized proof term."""
+    """CLI: render the colored acceptance tree and save it as a file."""
     arg = prover.get_argument(name)
     if not arg:
         logger.error("Argument '%s' not found.", name)
@@ -1491,7 +1496,7 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg") -> Non
         path = src.render(filename=out_base, format=fmt, cleanup=True)
         logger.info("Acceptance tree written to %s", path)
     except Exception as e:
-        # Fallback: write .dot
+        # Fallback: write .dot file
         dot_path = f"{out_base}.dot"
         try:
             with open(dot_path, "w", encoding="utf-8") as f:
