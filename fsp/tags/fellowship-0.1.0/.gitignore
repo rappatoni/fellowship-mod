@@ -1,4 +1,8 @@
-*
+/*
+!*/
+documentation/
+auto/
+__pycache__/
 !.gitignore
 !*.py
 !*.fsp
