@@ -4,6 +4,11 @@ import sys
 import pexpect
 import re
 from lark import Lark, Transformer, v_args
+# Make this directory importable as a package root (so 'core', 'pres', etc. resolve)
+import pathlib as _pathlib, sys as _sys
+_BASE = _pathlib.Path(__file__).parent.resolve()
+if str(_BASE) not in _sys.path:
+    _sys.path.insert(0, str(_BASE))
 import parser
 import warnings
 from pathlib import Path
@@ -15,6 +20,15 @@ import shutil
 
 from sexp_parser import SexpParser
 from pres.gen import ProofTermGenerationVisitor
+from pres.nl import (
+    Rendering_Semantics,
+    pretty_natural,
+    natural_language_rendering,
+    natural_language_dialectical_rendering,
+    natural_language_argumentative_rendering,
+)
+from pres.color import pretty_colored_proof_term
+from pres.tree import render_acceptance_tree_dot
 
 import logging
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
@@ -993,12 +1007,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.body = transformer.transform(parsed)
         #Generate natural language representation
         if self.rendering == "argumentation":
-            self.representation = parser.pretty_natural(self.body, parser.natural_language_argumentative_rendering)
+            self.representation = pretty_natural(self.body, natural_language_argumentative_rendering)
         elif self.rendering == "dialectical":
-            self.representation = parser.pretty_natural(self.body, parser.natural_language_dialectical_rendering)
-
+            self.representation = pretty_natural(self.body, natural_language_dialectical_rendering)
         elif self.rendering == "intuitionistic":
-            self.representation = parser.pretty_natural(self.body, parser.natural_language_rendering)
+            self.representation = pretty_natural(self.body, natural_language_rendering)
         # Discard the theorem to prevent closing it (since it may have open goals)
         self.prover.send_command('discard theorem.')
         logger.info("Argument '%s' executed.", self.name)
@@ -1260,7 +1273,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                      self.assumptions, other_argument.assumptions)
         enricher = parser.PropEnrichmentVisitor(assumptions=other_argument.assumptions,
                                         axiom_props=self.prover.declarations)
-        ptgenerator = parser.ProofTermGenerationVisitor()
+        ptgenerator = ProofTermGenerationVisitor()
         generator = parser.InstructionsGenerationVisitor()
         logger.debug("Enriching ")
         combined_body = enricher.visit(combined_body)
@@ -1409,11 +1422,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # 4. natural‑language rendering
         style = {
-            "argumentation": parser.natural_language_argumentative_rendering,
-            "dialectical":   parser.natural_language_dialectical_rendering,
-            "intuitionistic": parser.natural_language_rendering,
+            "argumentation": natural_language_argumentative_rendering,
+            "dialectical":   natural_language_dialectical_rendering,
+            "intuitionistic": natural_language_rendering,
         }[self.rendering]
-        self.normal_representation = parser.pretty_natural(red_ast, style)
+        self.normal_representation = pretty_natural(red_ast, style)
         return self.normal_body
 
     def render(self, normalized: bool = False) -> Optional[str]:
@@ -1487,7 +1500,7 @@ def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
     if arg.normal_body is None:
         arg.normalize()
     try:
-        colored = parser.pretty_colored_proof_term(arg.normal_body, verbose=False)
+        colored = pretty_colored_proof_term(arg.normal_body, verbose=False)
     except Exception as e:
         logger.error("Coloring failed for '%s': %s", arg.name, e)
         return
@@ -1506,7 +1519,7 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
         arg.normalize()
     try:
         label_mode = "proof" if mode != "nl" else "nl"
-        dot = parser.render_acceptance_tree_dot(arg.normal_body, verbose=False, label_mode=label_mode, nl_style=nl_style)
+        dot = render_acceptance_tree_dot(arg.normal_body, verbose=False, label_mode=label_mode, nl_style=nl_style)
     except Exception as e:
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return

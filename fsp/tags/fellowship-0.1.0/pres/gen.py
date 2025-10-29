@@ -3,10 +3,8 @@ from typing import Optional
 
 # Import AST nodes and the base visitor from parser to avoid circular deps
 # while parser still owns the AST and base visitor.
-from parser import (
-    Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI,
-    ProofTerm, ProofTermVisitor,
-)
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.comp.visitor import ProofTermVisitor
 
 class ProofTermGenerationVisitor(ProofTermVisitor):
     """Generate a proof term from an (enriched or rewritten) argument body."""
