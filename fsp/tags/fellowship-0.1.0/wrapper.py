@@ -14,6 +14,7 @@ import tempfile
 import shutil
 
 from sexp_parser import SexpParser
+from pres.gen import ProofTermGenerationVisitor
 
 import logging
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
@@ -1147,7 +1148,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         Use ProofTermGenerationVisitor to generate the string representation of an enriched proof term.
         """
         logger.info("Starting proof term generation for enriched argument '%s'", self.name)
-        from parser import ProofTermGenerationVisitor
         visitor = ProofTermGenerationVisitor()
         self.body = visitor.visit(self.body)
         self.enriched_proof_term = self.body.pres
@@ -1403,7 +1403,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                                              axiom_props=self.prover.declarations).visit(red_ast)
 
         # 3. generate textual proof term
-        red_ast = parser.ProofTermGenerationVisitor().visit(red_ast)
+        red_ast = ProofTermGenerationVisitor().visit(red_ast)
         self.normal_body = red_ast
         self.normal_form = red_ast.pres
 
