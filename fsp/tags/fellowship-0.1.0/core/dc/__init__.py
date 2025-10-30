@@ -1,2 +1,1 @@
-from .graft import graft_single, graft_uniform
-from .argument import Argument
+# core.dc package init kept minimal to avoid import cycles.
