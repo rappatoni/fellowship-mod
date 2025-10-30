@@ -15,6 +15,7 @@ from typing import Optional, Any, List, Tuple, Dict
 from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.comp.visitor import ProofTermVisitor
+from core.dc.graft import graft_single as _graft_single_core, graft_uniform as _graft_uniform_core
 logger = logging.getLogger('fsp.parser')
 
 
@@ -609,6 +610,7 @@ class _ArgumentTermReducer_OLD(ProofTermVisitor):
                 return True
         return False
 
+from core.comp.reduce import ArgumentTermReducer as _ArgumentTermReducer_OLD
 ArgumentTermReducer = _ArgumentTermReducer_OLD
 
     
@@ -1419,8 +1421,8 @@ def graft_uniform_OLD(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
                             target_is_goal=target_is_goal)
     return visitor.visit(body_B)
 
-graft_single = graft_single_OLD
-graft_uniform = graft_uniform_OLD
+graft_single = _graft_single_core
+graft_uniform = _graft_uniform_core
 
 class NegIntroRewriter(ProofTermVisitor):
     """

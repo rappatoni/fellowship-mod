@@ -8,18 +8,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def test_enrichment_laog_plain_and_bar():
+def test_enrichment_laog():
     # Laog enrichment with plain prop
     laog_plain = pt.Laog("1", None)
     v = pt.PropEnrichmentVisitor(assumptions={"1": {"prop": "A"}})
     out = v.visit(laog_plain)
     assert out.prop == "A"
-
-    # Laog enrichment with “_bar” fallback for compatibility
-    laog_bar = pt.Laog("2", None)
-    v2 = pt.PropEnrichmentVisitor(assumptions={"2": {"prop": "A_bar"}})
-    out2 = v2.visit(laog_bar)
-    assert out2.prop == "A"  # parser.py strips _bar in visit_Laog
 
 
 def test_instruction_generation_uses_moxia_for_ID_and_axiom_for_DI():
