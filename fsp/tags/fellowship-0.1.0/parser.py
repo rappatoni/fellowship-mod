@@ -16,6 +16,8 @@ from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.comp.visitor import ProofTermVisitor
 from core.dc.graft import graft_single as _graft_single_core, graft_uniform as _graft_uniform_core
+from core.comp.neg_rewrite import NegIntroRewriter
+from core.ac.instructions import InstructionsGenerationVisitor
 logger = logging.getLogger('fsp.parser')
 
 
@@ -1045,114 +1047,8 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
     def visit_unhandled(self, node):
         return node
 
-def fn(negated_prop : str):
-    return negated_prop.replace("¬","~")
 
 
-class InstructionsGenerationVisitor(ProofTermVisitor): #TODO: make this class purely functional instead of using a side effect.
-    """Generate instructions from an (enriched) argument body."""
-
-    def __init__(self):
-        self.instructions = collections.deque('')
-        pass
-
-    def _node_pres(self, n: ProofTerm) -> str:
-        c = deepcopy(n)
-        c = ProofTermGenerationVisitor().visit(c)
-        return getattr(c, "pres", repr(c))
-
-    def return_instructions(self, proofterm):
-        self.instructions.clear()
-        self.visit(proofterm)
-        return self.instructions
-    
-    def visit_Mu(self, node : Mu):
-        node = super().visit_Mu(node)
-        if node.id.name == 'thesis':
-            pass
-        else:
-            if node.contr:
-                if (node.prop.startswith("¬") or node.prop.startswith("~")) and node.prop == node.contr :
-                    for _ in range(3):
-                        self.instructions.popleft()
-                    self.instructions.appendleft(f"elim {node.id.name}")
-                else:
-                    self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.id.name}.")
-            else:
-                raise Exception(f"Could not identify cut proposition for Mu node {self._node_pres(node)}")
-        return node
-
-    def visit_Mutilde(self, node : Mutilde):
-        node = super().visit_Mutilde(node)
-        if node.contr:
-            if (node.prop.startswith("¬") or node.prop.startswith("~")) and node.prop == node.contr:
-                #logger.debug("Instructions '%s'", self.instructions)
-                for _ in range(2):
-                    self.instructions.popleft()
-                self.instructions.appendleft(f"elim {node.di.name}")
-            else:
-                self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
-        else:
-            raise Exception(f"Could not identify cut proposition for Mutilde node {self._node_pres(node)}")
-
-        
-        return node
-
-    def visit_Lamda(self, node : Lamda):
-        node = super().visit_Lamda(node)
-        if node.di.di.name:
-            self.instructions.appendleft(f'elim {node.di.di.name}.')
-        else:
-            raise Exception(f"Missing hypothesis name for Lamda node {self._node_pres(node)}")
-        return node
-
-    def visit_Cons(self, node : Cons):
-        node = super().visit_Cons(node)
-        self.instructions.appendleft(f'elim.')
-        return node
-
-    def visit_Goal(self, node : Goal):
-        node = super().visit_Goal(node)
-        self.instructions.appendleft(f'next.')
-        return node
-    
-    def visit_Laog(self, node:Laog):
-        node = super().visit_Laog(node)
-        self.instructions.appendleft(f'next.')
-        return node
-    
-
-    def visit_ID(self, node : ID):
-        node = super().visit_ID(node)
-        if node.name:
-            if node.name == "thesis":
-                return node
-            if node.flag == "bound negation":
-                return node
-            if node.flag == "Falsum":
-                return node
-            else:
-                self.instructions.appendleft(f'moxia {node.name}.')
-        else:
-            raise Exception(f"Axiom name missing for ID node {self._node_pres(node)}")
-        return node
-
-    def visit_DI(self, node : DI):
-        node = super().visit_DI(node)
-        if node.name:
-            if node.flag == "bound negation":
-                return node
-            if node.flag == "Falsum":
-                return node
-            else:
-                self.instructions.appendleft(f'axiom {node.name}.')
-        else:
-            raise Exception(f"Axiom name missing for DI node {self._node_pres(node)}")
-        return node
-
-    def visit_unhandled(self, node):
-        raise Exception(f"Unhandled node type: {type(node).__name__} {self._node_pres(node)}")
-        return node
 
 # ────────────────────────────────────────────────────────────────────────────────
 #  Graft operator
@@ -1424,71 +1320,6 @@ def graft_uniform_OLD(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
 graft_single = _graft_single_core
 graft_uniform = _graft_uniform_core
 
-class NegIntroRewriter(ProofTermVisitor):
-    """
-    Collapse the pattern
-    
-        μ thesis:¬A . ⟨ μ H1:¬A . ⟨ λ H2:A . μ H3:⊥ . ⟨ H2 ∥ ?k ⟩ ∥ H1 ⟩ ∥ thesis ⟩
-    
-    to the command that sat in the Laog/Goal “?k”.
-
-    *If the pattern is not encountered*, we emit a **warnings.warn** and leave the
-    AST untouched; the caller can inspect the ``changed`` attribute afterwards.
-    """
-    def __init__(self):
-        self.changed = False          # set to True when a rewrite fires
-
-    # generic traversal -------------------------------------------------
-    def visit(self, node):
-        logger.debug("Rewriting negation %r to counterargument", node)
-        if node is None:
-            return None
-        if isinstance(node, Mu) and node.id.name == "thesis" and node.prop.startswith("¬"):
-            body = self._match_neg_intro(node)
-            if body is not None:
-                self.changed = True
-                return deepcopy(body)         # splice B in
-        # default: deep-copy & recurse
-        new = deepcopy(node)
-        for attr in ("term", "context"):
-            if hasattr(node, attr) and getattr(node, attr) is not None:
-                setattr(new, attr, self.visit(getattr(node, attr)))
-        if isinstance(node, Lamda):            # Lamda only has .term
-            new.term = self.visit(node.term)
-        return new
-
-    # try to recognise the concrete pattern -----------------------------
-    def _match_neg_intro(self, thesis_mu: Mu):
-        """
-        Return the sub-command *B* if the pattern matches, else *None*.
-        Only syntactic checks – props & variable names – are done.
-        """
-        # print(f"Trying to match negation introduction pattern to node of type {thesis_mu} with term {thesis_mu.term}, term prop {thesis_mu.term.prop}, term term {thesis_mu.term.term} and term lambda term {thesis_mu.term.term.term} with prop thesis_mu.term.term.term.prop")
-        inner_mu = thesis_mu.term
-        if not (isinstance(inner_mu, Mu) and inner_mu.prop == thesis_mu.prop):
-            logger.debug("Failed: %r is not Mu node or its prop %s does not equal the thesis prop %s",
-                         inner_mu, inner_mu.prop, thesis_mu.prop)
-            return None
-        lam = inner_mu.term
-        if not isinstance(lam, Lamda):
-            logger.debug("Failed: %r is not the expected Lamda term", inner_mu.term)
-            return None
-        mu_bot = lam.term
-        if not (isinstance(mu_bot, Mu) and mu_bot.prop == "⊥"):
-            logger.debug("Failed: %r is not Mu node or its prop %s does not equal ⊥", mu_bot, inner_mu.prop)
-            return None
-        # shape looks good: body sits in mu_bot.context, which is ?k or !k
-        logger.debug("Returning negation normalized body")
-        return mu_bot.context
-
-    # -------------------------------------------------------------------
-    def rewrite(self, ast: "ProofTerm") -> "ProofTerm":
-        logger.info("Starting negation-introduction rewrite")
-        out = self.visit(ast)
-        if not self.changed:
-            warnings.warn("NegIntroRewriter: no outer negation-introduction pattern found")
-        logger.info("Finished negation-introduction rewrite (changed=%s)", self.changed)
-        return out
 
 def _collect_binder_names(node: ProofTerm, names=None):
     """Return the **set** of all µ / µ̃ / λ *binder* names occurring in *node*."""
