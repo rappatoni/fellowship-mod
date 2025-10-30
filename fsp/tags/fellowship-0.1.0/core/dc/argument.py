@@ -1,6 +1,11 @@
 import logging, copy
 from typing import Optional, Any, Dict
-import parser  # Grammar/Transformer, PropEnrichmentVisitor, ArgumentTermReducer, graft, etc.
+from core.ac.grammar import Grammar, ProofTermTransformer
+from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
+from core.ac.instructions import InstructionsGenerationVisitor
+from core.comp.enrich import PropEnrichmentVisitor
+from core.comp.reduce import ArgumentTermReducer
+from core.dc.graft import graft_uniform, graft_single
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
     pretty_natural,
@@ -32,7 +37,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.labelling = False # Deprecated: Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
-        self.body: parser.ProofTerm = None # parsed proof term created from proof_term
+        self.body: ProofTerm = None # parsed proof term created from proof_term
         self.rendering = rendering # Which rendering should be generated?
         self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
@@ -66,7 +71,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 raise Exception("Argument instructions and body missing.")       
             else:
                 self.enrich_props()
-                generator = parser.InstructionsGenerationVisitor()
+                generator = InstructionsGenerationVisitor()
                 self.instructions = generator.return_instructions(self.body)
         # Decide whether to start a theorem or an antitheorem.
         # We cannot reliably infer “anti” from available data at this point:
@@ -82,8 +87,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - Machine state is ephemeral: you only get it after sending the start command,
         #   and you also need to replay the choice later (possibly in a new session).
         # Hence we carry user intent via `is_anti`, set by “start counterargument …”.
-        if (self.body and isinstance(self.body, parser.Mutilde)) or getattr(self, "is_anti", False):
-            prop = self.body.prop if (self.body and isinstance(self.body, parser.Mutilde)) else self.conclusion
+        if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
+            prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
             start_cmd = f'antitheorem {self.name} : ({prop}).'
         else:
             start_cmd = f'theorem {self.name} : ({self.conclusion}).'
@@ -103,9 +108,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Capture the assumptions (open goals)
         self._parse_proof_state(output)
         # Parse proof term
-        grammar = parser.Grammar()
+        grammar = Grammar()
         parsed = grammar.parser.parse(self.proof_term)
-        transformer = parser.ProofTermTransformer()
+        transformer = ProofTermTransformer()
         self.body = transformer.transform(parsed)
         #Generate natural language representation
         if self.rendering == "argumentation":
@@ -249,7 +254,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         Use PropEnrichmentVisitor with assumption_mapping = self.assumptions
         and axiom_props = self.axiom_props to fill .prop for each node.
         """
-        from parser import PropEnrichmentVisitor
         logger.info("Enriching argument '%s'.", self.name)
         logger.debug("Declarations: %r", self.prover.declarations)
         visitor = PropEnrichmentVisitor(assumptions=self.assumptions,
@@ -276,6 +280,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def label_own_assumptions(self):
         """Deprecated: Label the assumptions of an argument as IN, OUT, or UNDEC. This is currently not needed/was replaced by the reduction system.
         """
+        import parser
         for key in self.assumptions:
             self.assumptions[key]["label"] = parser.label_assumption(self.body, self.assumptions[key]["prop"],self.assumptions)
             self.labelling = True
@@ -322,6 +327,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
          
     def pop_arg(self, subargument):
         """Deprecated: Stash the current argument and pop a subargument. Currently all argumentation functionality is bottom-up, proceeding from a known conclusion. Investigating a top-down exploratory mode is future work. """
+        import parser
         # Execute args if necessary.
         if not self.executed:
             self.execute()
@@ -370,13 +376,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         combined_conclusion = other_argument.conclusion
         logger.debug("Combined conclusion: '%s'", combined_conclusion)
         #combined_instructions = []
-        combined_body = parser.graft_uniform(other_argument.body, self.body)
+        combined_body = graft_uniform(other_argument.body, self.body)
         logger.debug("Assumptions (self, other): %r ; %r",
                      self.assumptions, other_argument.assumptions)
-        enricher = parser.PropEnrichmentVisitor(assumptions=other_argument.assumptions,
+        enricher = PropEnrichmentVisitor(assumptions=other_argument.assumptions,
                                         axiom_props=self.prover.declarations)
         ptgenerator = ProofTermGenerationVisitor()
-        generator = parser.InstructionsGenerationVisitor()
+        generator = InstructionsGenerationVisitor()
         logger.debug("Enriching ")
         combined_body = enricher.visit(combined_body)
         logger.debug("Generating proof term")
@@ -425,7 +431,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
 
     def focussed_undercut(self, other_argument: "Argument", *, name: Optional[str], on: Optional[str] = None) -> "Argument":
-        from parser import Mu, Mutilde, Goal, Laog, ID, DI
+        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         # Ensure both arguments are executed
         if not self.executed:
             self.execute()
@@ -475,7 +481,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
     def support(self, other_argument: "Argument") -> "Argument":
         #Akin to chain but instead of filling in an assumption, provide an alternative proof for the assumption. Could be generalized to provide an alternative proof for any intermediate derivation of an argument.
-        from parser import Mu, Mutilde, Goal, Laog, ID, DI
+        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             self.execute()
         if not other_argument.executed:
@@ -501,7 +507,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         final_argument = self.chain(adapted_argument)
         return final_argument
 
-    def normalize(self, enrich: bool = True) -> parser.ProofTerm:
+    def normalize(self, enrich: bool = True) -> ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
         if not self.executed:
             self.execute()
@@ -510,11 +516,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # 1. deep‑copy then reduce
         red_ast = copy.deepcopy(self.body)
-        red_ast = parser.ArgumentTermReducer().reduce(red_ast)
+        red_ast = ArgumentTermReducer().reduce(red_ast)
 
         # 2. optionally enrich props/types
         if enrich:
-            red_ast = parser.PropEnrichmentVisitor(assumptions=self.assumptions,
+            red_ast = PropEnrichmentVisitor(assumptions=self.assumptions,
                                              axiom_props=self.prover.declarations).visit(red_ast)
 
         # 3. generate textual proof term

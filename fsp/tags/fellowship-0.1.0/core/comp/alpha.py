@@ -67,10 +67,71 @@ class _AlphaRename(ProofTermVisitor):
 
 class FreshenBinderNames(ProofTermVisitor):
     """
-    Placeholder refactor target that applies alpha-renaming to freshen binders.
-    Replace with the verbatim implementation from parser.py.
+    Capture-avoiding global freshener:
+      - Traverses the proof term, keeping a set of already-seen binder names.
+      - When encountering a binder whose name collides with an already-seen name,
+        generate a fresh name and rename the binder together with all its bound
+        occurrences within its scope (term/context).
+      - Leaves non-binder leaves untouched.
     """
+    def __init__(self, taken: set[str] | None = None):
+        super().__init__()
+        self.seen: set[str] = set()
+        self.taken: set[str] = set(taken or ())
 
-    def visit(self, node):
-        # No-op pass-through until real implementation is moved here.
+    def visit_Mu(self, node: Mu):
+        # possibly rename binder id and bound occurrences in scope
+        old = node.id.name
+        new = old
+        if old in self.seen or old in self.taken:
+            new = _fresh(old, self.seen | self.taken)
+            ren = _AlphaRename({old: new})
+            node.id.name = new
+            node.term = ren.visit(node.term)
+            node.context = ren.visit(node.context)
+        self.seen.add(new); self.taken.add(new)
+        node.term = self.visit(node.term)
+        node.context = self.visit(node.context)
+        return node
+
+    def visit_Mutilde(self, node: Mutilde):
+        old = node.di.name
+        new = old
+        if old in self.seen or old in self.taken:
+            new = _fresh(old, self.seen | self.taken)
+            ren = _AlphaRename({old: new})
+            node.di.name = new
+            node.term = ren.visit(node.term)
+            node.context = ren.visit(node.context)
+        self.seen.add(new); self.taken.add(new)
+        node.term = self.visit(node.term)
+        node.context = self.visit(node.context)
+        return node
+
+    def visit_Lamda(self, node: Lamda):
+        old = node.di.di.name
+        new = old
+        if old in self.seen or old in self.taken:
+            new = _fresh(old, self.seen | self.taken)
+            ren = _AlphaRename({old: new})
+            node.di.di.name = new
+            node.term = ren.visit(node.term)
+        self.seen.add(new); self.taken.add(new)
+        node.term = self.visit(node.term)
+        return node
+
+    # Other nodes: default traversal
+    def visit_Cons(self, node: Cons):
+        return super().visit_Cons(node)
+
+    def visit_Goal(self, node: Goal):
+        return node
+
+    def visit_Laog(self, node: Laog):
+        return node
+
+    def visit_ID(self, node: ID):
+        return node
+
+    def visit_DI(self, node: DI):
         return node
