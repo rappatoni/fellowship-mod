@@ -26,7 +26,7 @@ def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> 
     return '\n'.join(lines)
 
 
-class PropEnrichmentVisitor(ProofTermVisitor):
+class _PropEnrichmentVisitor_OLD(ProofTermVisitor):
     """
     Replaces the old hack of parsing 'tt' from ID/DI name. 
     Instead, we rely on global knowledge:
@@ -148,6 +148,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
 
+PropEnrichmentVisitor = _PropEnrichmentVisitor_OLD
 
 #Argument Reducer Helpers
 
@@ -212,7 +213,7 @@ def _subst(node, name: str, replacement):
     return new_node
 
     
-class ArgumentTermReducer(ProofTermVisitor):
+class _ArgumentTermReducer_OLD(ProofTermVisitor):
     """
     Implements the following reduction rules (each left and right):
        - lambda
@@ -608,7 +609,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 return True
         return False
 
-
+ArgumentTermReducer = _ArgumentTermReducer_OLD
 
     
 class Rendering_Semantics:
@@ -1374,7 +1375,7 @@ def _check_conclusion_matches(repl_ast: "ProofTerm", *, target_is_goal: bool, ta
 #  Public API functions
 # ---------------------------------------------------------------------------
 
-def graft_single(body_B: "ProofTerm", goal_number: str, body_A: "ProofTerm") -> "ProofTerm":
+def graft_single_OLD(body_B: "ProofTerm", goal_number: str, body_A: "ProofTerm") -> "ProofTerm":
     """Replace the unique Goal/Laog *goal_number* in *body_B* by *body_A*."""
     tgt_prop, is_goal = _find_target_info(body_B, goal_number)
     if tgt_prop is None:
@@ -1396,7 +1397,7 @@ def graft_single(body_B: "ProofTerm", goal_number: str, body_A: "ProofTerm") -> 
     return visitor.visit(body_B)
 
 
-def graft_uniform(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
+def graft_uniform_OLD(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
     """Uniform graft: replace **all** Goals/Laogs with the conclusion of *A*."""
     logger.info("Uniformly grafting %r on %r", body_A, body_B)
     # determine conclusion of A from its *root* binder
@@ -1418,6 +1419,8 @@ def graft_uniform(body_B: "ProofTerm", body_A: "ProofTerm") -> "ProofTerm":
                             target_is_goal=target_is_goal)
     return visitor.visit(body_B)
 
+graft_single = graft_single_OLD
+graft_uniform = graft_uniform_OLD
 
 class NegIntroRewriter(ProofTermVisitor):
     """
