@@ -143,3 +143,158 @@
   - Keep acceptance coloring/trees operating on normalized proof terms; normalize before color/tree.
 
 + End of notes
+
+Refactor progress snapshot and next steps
+
+Date: [update on commit]
+
+Overview
+- Goal: modularize into core (ac/dc/comp), pres, wrap, mod; keep parser.py as a thin compatibility shim until all callers are switched; no semantic changes during refactor.
+- Current tests: passing after recent moves; continue with small, reversible steps.
+
+Current state
+- core/
+  - ac/
+    - ast.py: ProofTerm, Term/Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp.
+    - grammar.py: Lark grammar + ProofTermTransformer. Produces AST from Fellowship proof-term strings.
+    - instructions.py: InstructionsGenerationVisitor lowers AST to Fellowship commands.
+  - comp/
+    - visitor.py: ProofTermVisitor (pre/post traversal).
+    - enrich.py: PropEnrichmentVisitor (uses assumptions + declarations; sets bound_negation/Falsum flags).
+    - reduce.py: ArgumentTermReducer with helpers (_var_occurs, _is_affine, _subst, _has_next_redex, snapshot). Closed-term substitution by design.
+    - alpha.py: _collect_binder_names, _fresh, _AlphaRename; FreshenBinderNames implemented but not yet used in graft.
+    - neg_rewrite.py: NegIntroRewriter (pattern-based rewrite for negation-intro).
+  - dc/
+    - graft.py: graft_single, graft_uniform with capturing substitution and binder freshness via _alpha_rename_if_needed.
+    - argument.py: Full Argument class (execute, normalize, render, chain, focussed_undercut, support stub). Wrapper imports this.
+  - __init__.py and dc/__init__.py: intentionally minimal to avoid import cycles.
+
+- pres/
+  - gen.py: ProofTermGenerationVisitor (sets .pres).
+  - nl.py: Rendering_Semantics, traverse_proof_term, pretty_natural; three NL styles (argumentation/dialectical/intuitionistic).
+  - color.py: AcceptanceColoringVisitor + pretty_colored_proof_term (operates on normalized terms).
+  - tree.py: AcceptanceTreeRenderer + render_acceptance_tree_dot (proof/NL label modes).
+
+- wrap/
+  - __init__.py present.
+  - prover.py: ProverError, MachinePayloadError, ProverWrapper, MACHINE_BLOCK_RE. Not yet wired into wrapper.py (wrapper still defines its own copy).
+
+- wrapper.py (CLI + runner)
+  - Still monolithic, contains ProverWrapper + helpers and CLI commands; imports Argument from core.dc.argument (already moved).
+  - Contains sys.path injection for tag-local imports.
+
+- parser.py (shim)
+  - Imports types/visitors from core.ac.* and core.comp.*; imports pres.* utilities.
+  - Re-exports:
+    - ArgumentTermReducer from core.comp.reduce
+    - graft_single/graft_uniform from core.dc.graft
+    - NegIntroRewriter from core.comp.neg_rewrite
+    - InstructionsGenerationVisitor from core.ac.instructions
+    - PropEnrichmentVisitor from core.comp.enrich
+  - Still contains legacy utilities:
+    - pretty_natural, Rendering_Semantics, traverse_proof_term
+    - match_trees, get_child_nodes, is_subargument, label_assumption
+    - A duplicate AcceptanceColoringVisitor block at the end (to be removed later; pres.color is canonical).
+
+- mod/
+  - store.py exists with declarations and arguments dicts (not yet adopted by ProverWrapper).
+
+Guardrails
+- No semantic changes during refactor. The reducer guards must remain:
+  - Skip μ-β when context is a bare Laog.
+  - Skip μ̃-β when term is a bare Goal.
+  - Skip λ-rule when argument is a bare Goal.
+- Grafting:
+  - Always call _alpha_rename_if_needed(scion, root) before graft.
+  - Replacement root kind and prop must match the Goal/Laog it replaces (Mu for Goal, Mutilde for Laog).
+- Keep core/__init__.py and core/dc/__init__.py minimal to avoid cycles.
+- Keep parser.py as a facade until all callers are switched.
+
+Incremental next steps (safe, reversible)
+1) Finish wrapper split (wire to wrap/prover.py)
+- Objective: wrapper.py imports ProverWrapper, ProverError, MachinePayloadError from wrap/prover.py and deletes local duplicates. No behavior change.
+- Edits:
+  - wrapper.py: add “from wrap.prover import ProverWrapper, ProverError, MachinePayloadError”.
+  - wrapper.py: remove local classes ProverError, MachinePayloadError, MACHINE_BLOCK_RE, and ProverWrapper.
+- Run tests.
+
+2) Move tree-matching utilities to core and re-export (no behavior change)
+- Create core/dc/match_utils.py with verbatim copies of:
+  - match_trees(nodeA, nodeB, mapping)
+  - get_child_nodes(node)
+  - is_subargument(A, B)
+- Update parser.py:
+  - Remove the duplicate definitions and add “from core.dc.match_utils import match_trees, get_child_nodes, is_subargument”.
+- Run tests.
+
+3) Clean parser shim (remove presentation/coloring duplicates)
+- Remove duplicate AcceptanceColoringVisitor and any duplicate renderers if still present in parser.py.
+- Ensure imports from pres:
+  - from pres.color import AcceptanceColoringVisitor, pretty_colored_proof_term
+  - from pres.tree import AcceptanceTreeRenderer, render_acceptance_tree_dot
+- Optional: add a DeprecationWarning in parser.py on import (skip if tests treat warnings as errors).
+- Run tests.
+
+4) Adopt mod/store in ProverWrapper (backward compatible)
+- In wrap/prover.py:
+  - Add: “from mod import store”.
+  - Replace ProverWrapper.declarations and .arguments as properties proxying mod.store:
+    - @property declarations -> return store.declarations
+    - @property arguments -> return store.arguments
+  - Update _update_declarations_from_state to write to store.declarations (reads via self.declarations still OK).
+  - Keep register_argument/get_argument methods but operate on store.arguments.
+- No change to wrapper CLI; API remains identical.
+- Run tests.
+
+5) Path hygiene (remove sys.path injections)
+- Add pytest.ini at tag root (if missing):
+  - [pytest]
+    pythonpath = .
+- Remove sys.path manipulation blocks from parser.py and wrapper.py that insert the tag directory into sys.path.
+- Run tests from tag root with pytest (imports should still work).
+
+6) Optional: convenient core re-exports (avoid cycles)
+- In core/__init__.py, add safe re-exports (do not import core.dc.argument here):
+  - from .ac.ast import *
+  - from .ac.grammar import Grammar, ProofTermTransformer
+  - from .ac.instructions import InstructionsGenerationVisitor
+  - from .comp.visitor import ProofTermVisitor
+  - from .comp.enrich import PropEnrichmentVisitor
+  - from .comp.reduce import ArgumentTermReducer
+  - from .comp.alpha import _collect_binder_names, _fresh, _AlphaRename
+  - from .comp.neg_rewrite import NegIntroRewriter
+  - from .dc.graft import graft_single, graft_uniform
+- Keep core/dc/__init__.py minimal.
+- Run tests.
+
+7) Deprecate parser.py (final step)
+- After all internal code and tests no longer import parser, remove parser.py.
+- Until then, keep parser.py as a stable shim re-exporting core/pres symbols used by legacy code and tests.
+
+Notes on known pitfalls and how we handled them
+- Circular imports
+  - We avoid importing core.dc.argument in core/__init__.py and keep __init__ files minimal.
+  - parser.py imports only from core/pres and does not feed back into core.
+- Closed-term substitution
+  - reduce._subst is shadowing-aware but not fully capture-avoiding; intended for closed terms produced by the prover. Do not feed open terms into reducer/graft.
+- Logging
+  - reducer snapshot uses pres.gen.ProofTermGenerationVisitor; this comp→pres dependency is acceptable for logging. If needed later, move to lazy import inside _snapshot.
+
+How to resume quickly
+- Implement step 1 (wire wrapper to wrap/prover.py) and run tests.
+- Proceed one step at a time, committing after each passing step with messages like:
+  - refactor(wrapper): import ProverWrapper from wrap.prover; drop local copy
+  - refactor(parser): move match utilities to core.dc.match_utils; re-export
+  - refactor(parser): remove duplicate coloring/tree; import from pres
+  - refactor(wrap): proxy persistence to mod.store
+  - refactor: remove sys.path hacks; add pytest.ini
+
+Reference files verified in this snapshot
+- core/ac: ast.py, grammar.py, instructions.py
+- core/comp: visitor.py, enrich.py, reduce.py, alpha.py, neg_rewrite.py
+- core/dc: graft.py, argument.py, __init__.py
+- pres: gen.py, nl.py, color.py, tree.py
+- wrap: prover.py, wrapper.py (still monolithic; next to be split)
+- parser.py (shim with re-exports + some legacy utilities)
+- mod: store.py
+- tests: tests/test_parser_moxia_utils.py, tests/normalize_render.fspy, tests/counterarguments_and_undercut.fspy
