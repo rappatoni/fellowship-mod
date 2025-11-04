@@ -8,6 +8,10 @@ from mod import store
 
 
 from wrapper import *
+import builtins as _builtins
+# Expose parser-era globals for legacy tests that reference them without import
+_builtins.Grammar = Grammar
+_builtins.ProofTermTransformer = ProofTermTransformer
 
 PYTEST_TODO = ("Add version of trees with natural language renderings; update/tweak natural language renderings; implement multiple undercuts, support, and rebut; add support for the '-' connective; "
                "then implement scenarios.")

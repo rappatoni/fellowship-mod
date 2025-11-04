@@ -5,6 +5,7 @@ import logging
 
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
+from core.ac.grammar import Grammar, ProofTermTransformer
 
 # Install TRACE level (below DEBUG) and a Logger.trace() method
 TRACE = 5
@@ -29,6 +30,7 @@ from wrap.cli import (
 
 __all__ = [
     "ProverWrapper", "ProverError", "MachinePayloadError", "Argument",
+    "Grammar", "ProofTermTransformer",
     "configure_logging_cli", "pop", "execute_script", "interactive_mode",
     "setup_prover", "reduce_argument_cmd", "render_argument_cmd",
     "color_argument_cmd", "tree_argument_cmd", "main",
