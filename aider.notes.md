@@ -146,7 +146,15 @@
 
 Refactor progress snapshot and next steps
 
-Date: [update on commit]
+Date: 2025-11-04
++ Update summary (2025-11-04)
++ - Refactor complete:
++   - parser.py and wrapper.py removed; imports now use wrap.* and core.*.
++   - CLI split into wrap/cli.py; prover integration lives in wrap/prover.py.
++   - pytest.ini present; conftest clears global store.arguments per test.
++   - Readme files added for core/, core/ac, core/comp, core/dc, pres/, wrap/, mod/.
++   - Tests updated to canonical imports; suite is green.
++ - Next up: post‑refactor cleanup (directory moves/renames) and then new features (support/rebut).
 
 Overview
 - Goal: modularize into core (ac/dc/comp), pres, wrap, mod; keep parser.py as a thin compatibility shim until all callers are switched; no semantic changes during refactor.
@@ -298,3 +306,14 @@ Reference files verified in this snapshot
 - parser.py (shim with re-exports + some legacy utilities)
 - mod: store.py
 - tests: tests/test_parser_moxia_utils.py, tests/normalize_render.fspy, tests/counterarguments_and_undercut.fspy
+
++ Post-refactor cleanup plan (Planned)
++ - Move all remaining test modules located at the tag root (e.g., affine_test.py, mu_reduction_test.py, non_affine_test.py, graft_test.py, script_test.py) into tests/.
++ - Move Fellowship-specific wrapper files into wrap/fellowship:
++   - wrap/prover.py → wrap/fellowship/prover.py
++   - Option A: keep wrap/cli.py generic; Option B: move Fellowship-specific CLI pieces to wrap/fellowship/cli.py if needed later.
++ - Rename tag directory:
++   - fsp/tags/fellowship-0.1.0 → fsp/tags/acdc-0.1.0
++   - Update any hard-coded paths (conftest.load_monolith(), docs, CI).
++ - Ensure pytest.ini (pythonpath=.) continues to resolve imports from the new locations.
++ - Run the full test suite; fix any import path regressions.

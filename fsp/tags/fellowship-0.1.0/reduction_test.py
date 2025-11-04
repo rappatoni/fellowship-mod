@@ -1,7 +1,10 @@
-from parser import *
 from copy import deepcopy
 import logging
 from conftest import make_assert_log
+from core.ac.grammar import Grammar, ProofTermTransformer
+from core.comp.reduce import ArgumentTermReducer
+from pres.gen import ProofTermGenerationVisitor
+from core.ac.ast import Mu, DI, ID
 logger = logging.getLogger("tests.reduction")
 _assert_log = make_assert_log(logger)
 
