@@ -3,7 +3,7 @@ from core.ac.ast import Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp
 
 class Grammar():
     def __init__(self):
-        self. proof_term_grammar = r'''
+        self.proof_term_grammar = r'''
             ?start: proof_term
 
             proof_term: term | context | mu | mutilde | lamda | cons | goal
