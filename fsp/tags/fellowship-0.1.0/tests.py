@@ -15,6 +15,10 @@ import traceback
 import logging
 import io
 import os
+from core.ac.grammar import Grammar
+
+# Global grammar instance for parsing proof terms in tests
+grammar = Grammar()
 logger = logging.getLogger("tests.legacy")
 
 # Tests3
@@ -641,7 +645,7 @@ def generate_instructions_test():
     prover = test_prover()
     prover.send_command('declare r1: (A->B).')
     prover.send_command('declare r2: (B->C).')
-    prover.send_command
+    #prover.send_command
     prover.send_command('declare r3: (C->~A).')
     assumptions = {"1.2.1" : {"prop": "A", "index" : None, "label": None, "attackers" : None}}
     argument_term = "μthesis:B.<μx1:B.<r1||?1.2.1*x1>||thesis>"
@@ -665,7 +669,8 @@ def generate_instructions_test():
     test_argument.execute()
     print(test_argument.proof_term)
     print("Moving to second argument.")
-    argument_term = "μthesis:¬A.<μH1:¬A.<λH2:A.μH3:⊥.<H2||μ'issue:A.<μstash:A.<λH:A.μFresh:B.<r1||H*Fresh>||issue*μ'affine:B.<issue||stash>>||μ'adapter:A.<μFresh2:¬A.<r3||μsupport:C.<μalt1:C.<?1.1.2.1.2.1.1.1||support>||μ'alt2:C.<μFresh5:C.<r2||?1.1.2.1.2.1.2.1.2.1*Fresh5>||support>>*Fresh2>||μ'H1:¬A.<H1||adapter*_F_>>>>||H1>||thesis>"
+    argument_term = "μthesis:¬A.<μH1:¬A.<λH2:A.μH3:⊥.<H2||μ'issue:A.<μstash:A.<λH:A.μFresh:B.<r1||H*Fresh>||issue*μ'affine:B.<issue||stash>>||μ'adapter:A.<μFresh2:¬A.<r3||μabc:C.<μalt1:C.<?1.1.2.1.2.1.1.1||abc>||μ'alt2:C.<μFresh5:C.<r2||?1.1.2.1.2.1.2.1.2.1*Fresh5>||abc>>*Fresh2>||μ'H1:¬A.<H1||adapter*_F_>>>>||H1>||thesis>" #"μthesis:¬A.<μH1:¬A.<λH2:A.μH3:⊥.<H2||μ'issue:A.<μstash:A.<λH:A.μFresh:B.<r1||H*Fresh>||issue*μ'affine:B.<issue||stash>>||μ'adapter:A.<μFresh2:¬A.<r3||μsupport:C.<μalt1:C.<?1.1.2.1.2.1.1.1||support>||μ'alt2:C.<μFresh5:C.<r2||?1.1.2.1.2.1.2.1.2.1*Fresh5>||support>>*Fresh2>||μ'H1:¬A.<H1||adapter*_F_>>>>||H1>||thesis>"
+
     assumptions = {"1.1.2.1.2.1.1.1" : {"prop" : "C", 'index' : None, 'label' : None, 'attackers' : None}, '1.1.2.1.2.1.2.1.2.1' : {'prop' : 'B', 'index' : None, 'label' : None, 'attackers' : None}}
     tree = grammar.parser.parse(argument_term)
     body = transformer.transform(tree)
