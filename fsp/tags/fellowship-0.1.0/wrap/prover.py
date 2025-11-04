@@ -3,6 +3,7 @@ from typing import Any, List, Tuple, Optional, Dict, Callable
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from sexp_parser import SexpParser
+from mod import store
 
 logger = logging.getLogger('fsp.wrapper')
 
@@ -32,11 +33,15 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5, env=env_used)
         self.prover.expect('fsp <')
         self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
-        self.arguments : Dict[str, Any]= {}  # Dictionary to store arguments by name
-        self.declarations : Dict[str, str] = {} #Stores prover declarations materialized via "declare X : Y.".
         self.last_state: Any = None
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
+        self.declarations: Dict[str, str] = {}
+ 
+
+    @property
+    def arguments(self) -> Dict[str, Any]:
+        return store.arguments
 
     @staticmethod
     def _unquote(atom: Any) -> Any:
@@ -224,7 +229,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         out = {}
         for el in node:
             if isinstance(el, list) and len(el) == 2 and isinstance(el[0], str):
-                out[el][0] = el[1]
+                out[el[0]] = el[1]
         return out
     
     # ------------------------------------------------------------------
