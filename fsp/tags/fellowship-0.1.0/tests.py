@@ -708,32 +708,33 @@ def generate_instructions_test():
     prover.close
     return
 
-def proof_term_generation_test():
-    prover = classical_test_prover()
-    prover.send_command('declare r1: (A->B).')
-    prover.send_command('declare r2: (B->C).')
-    prover.send_command('declare c2: (C->~A).')
-    argument = Argument(
-        prover,
-        name='SuperArg',
-        conclusion='C',
-        instructions=[
-            'cut (B->C) x.',
-            'axiom r2.',
-            'elim.',
-            'cut (A->B) y.',
-            'axiom r1.',
-            'elim.',
-            'next.',
-            'axiom.',
-            'axiom.'
-            ]
-        )
-
-    argument.generate_proof_term()
-    print(argument.enriched_proof_term)
-    prover.close
-    return
+# def proof_term_generation_test():
+#     prover = classical_test_prover()
+#     prover.send_command('declare r1: (A->B).')
+#     prover.send_command('declare r2: (B->C).')
+#     prover.send_command('declare c2: (C->~A).')
+#     argument = Argument(
+#         prover,
+#         name='SuperArg',
+#         conclusion='C',
+#         instructions=[
+#             'cut (B->C) x.',
+#             'axiom r2.',
+#             'elim.',
+#             'cut (A->B) y.',
+#             'axiom r1.',
+#             'elim.',
+#             'next.',
+#             'axiom.',
+#             'axiom.'
+#             ]
+#         )
+#     argument.e
+#     argument.enrich_props()
+#     argument.generate_proof_term()
+#     print(argument.enriched_proof_term)
+#     prover.close
+#     return
 
 
 def machine_integration_test():

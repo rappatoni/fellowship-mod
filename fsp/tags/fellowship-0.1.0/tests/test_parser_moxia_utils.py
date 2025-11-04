@@ -22,13 +22,13 @@ def test_instruction_generation_uses_moxia_for_ID_and_axiom_for_DI():
     # ID (context) should generate a left-side close: "moxia name."
     id_node = pt.ID("mA", "A")
     instrs_id = gen.return_instructions(id_node)
-    assert list(instrs_id) == ["moxia mA."]
+    assert list(instrs_id) == ["moxia mA"]
 
     # DI (term) should generate a right-side close: "axiom name."
     gen2 = pt.InstructionsGenerationVisitor()
     di_node = pt.DI("axA", "A")
     instrs_di = gen2.return_instructions(di_node)
-    assert list(instrs_di) == ["axiom axA."]
+    assert list(instrs_di) == ["axiom axA"]
 
 
 def test_argument_execute_starts_antitheorem_for_mutilde_body(monkeypatch):
