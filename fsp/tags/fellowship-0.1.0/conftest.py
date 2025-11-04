@@ -4,6 +4,7 @@ import pytest
 import os
 import importlib.util, sys
 import logging
+from mod import store
 
 
 from wrapper import *
@@ -104,3 +105,9 @@ def pytest_ignore_collect(collection_path: Path, config):
 
 def pytest_report_header(config):
     return f"TODO: {PYTEST_TODO}"
+
+@pytest.fixture(autouse=True)
+def reset_global_store():
+    # Keep declarations session-scoped (per ProverWrapper instance).
+    # Arguments are global via mod.store; clear between tests to avoid bleed-through.
+    store.arguments.clear()

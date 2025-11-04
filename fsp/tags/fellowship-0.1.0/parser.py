@@ -19,6 +19,12 @@ from pres.color import AcceptanceColoringVisitor, pretty_colored_proof_term
 from pres.tree import AcceptanceTreeRenderer, render_acceptance_tree_dot
 from core.dc.match_utils import match_trees, get_child_nodes, is_subargument
 logger = logging.getLogger('fsp.parser')
+if os.getenv("FSP_DEPRECATE_PARSER", "").lower() in {"1", "true", "yes"}:
+    warnings.warn(
+        "parser.py is a compatibility shim; import from core.* and pres.* instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
 
 

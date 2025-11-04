@@ -1,16 +1,10 @@
 from __future__ import annotations
 import os
 import sys
-import pexpect
-import re
 from pathlib import Path
 import argparse
-import copy
 from typing import Any, List, Tuple, Optional, Dict, Callable
-import tempfile
-import shutil
 
-from sexp_parser import SexpParser
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
     Rendering_Semantics,
@@ -25,7 +19,6 @@ from pres.tree import render_acceptance_tree_dot
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 import logging
-from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
