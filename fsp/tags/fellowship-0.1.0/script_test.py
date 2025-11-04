@@ -1,10 +1,9 @@
 # tests/test_execute_script.py
 from pathlib import Path
 import pytest
-from wrapper import *
+from wrap.cli import execute_script
+from wrap.prover import ProverError
 from conftest import *
-
-from wrapper import execute_script  # e.g. from fellowship.wrapper import execute_script
 
 
 def test_execute_script_runs_all(script_paths, prover):

@@ -1,5 +1,7 @@
-from parser import Grammar, ProofTermTransformer, Goal, Laog, Mutilde, ID,  DI, Mu, ProofTermGenerationVisitor
-from parser import ArgumentTermReducer  # uses integrated version in parser.py
+from core.ac.grammar import Grammar, ProofTermTransformer
+from core.ac.ast import Goal, Laog, Mutilde, ID, DI, Mu
+from pres.gen import ProofTermGenerationVisitor
+from core.comp.reduce import ArgumentTermReducer
 import logging
 from conftest import make_assert_log
 logger = logging.getLogger("tests.mutilde")

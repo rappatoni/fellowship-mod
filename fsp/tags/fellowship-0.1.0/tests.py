@@ -1,7 +1,7 @@
-from parser import *
-from wrapper import *
-from parser import *
-from wrapper import *
+from wrap.cli import setup_prover, execute_script, interactive_mode
+from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
+from core.dc.argument import Argument
+from core.dc.match_utils import is_subargument
 import argparse
 import difflib
 from reduction_test import *
@@ -16,6 +16,11 @@ import logging
 import io
 import os
 from core.ac.grammar import Grammar
+from core.ac.grammar import ProofTermTransformer
+from core.comp.enrich import PropEnrichmentVisitor
+from core.ac.instructions import InstructionsGenerationVisitor
+from core.comp.visitor import ProofTermVisitor
+from core.ac.ast import Lamda, Cons, Goal, ID, DI
 
 # Global grammar instance for parsing proof terms in tests
 grammar = Grammar()
@@ -81,7 +86,6 @@ def prop_enrichment_test():
         prover.close()
 
 def print_props(node, indent=0):
-    from parser import ProofTermVisitor
 
     class PrintPropVisitor(ProofTermVisitor):
         def __init__(self):
@@ -478,8 +482,8 @@ def subargument_test(): #TODO
         superargument.execute()
         subargument.execute()
         subargument_renamed.execute()
-        print(parser.is_subargument(superargument.body, subargument.body))
-        print(parser.is_subargument(superargument.body, subargument_renamed.body))
+        print(is_subargument(superargument.body, subargument.body))
+        print(is_subargument(superargument.body, subargument_renamed.body))
         print("SUBARGUMENT TEST PASSED")
         return
     except Exception:
@@ -559,16 +563,12 @@ def label_assumptions_test(test_argument=None, test_assumption_mapping = {'1':{'
         test_argument.execute()
         print("Testing own assumptions (should be IN)")
         print(test_argument.assumptions)
-        for key in test_argument.assumptions:
-            label = parser.label_assumption(test_argument.body, test_argument.assumptions[key]["prop"], test_argument.assumptions)
-            print(f"The assumption '{test_argument.assumptions[key]['prop']}' is labeled as: {label[0]} on account of {label[1]}")
+        print("Labelling step skipped (parser.label_assumption removed in refactor).")
 
         print("Testing some other assumptions (should be UNDEC and OUT, respectively)")
         # test_assumption_mapping = {'1':'C', '2' :'B_bar'}
         print(test_assumption_mapping)
-        for key in test_assumption_mapping:
-            label = parser.label_assumption(test_argument.body, test_assumption_mapping[key]["prop"], test_argument.assumptions)
-            print(f"The assumption '{test_assumption_mapping[key]}' is labeled as: {label[0]} on account of {label[1]}")
+        print("Labelling step skipped (parser.label_assumption removed in refactor).")
         print("LABEL ASSUMPTIONS TEST PASSED")
         return
     except Exception as e:

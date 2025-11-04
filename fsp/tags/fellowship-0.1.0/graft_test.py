@@ -4,7 +4,12 @@
 
 from copy import deepcopy
 
-from parser import *
+from core.ac.ast import Goal, Laog, Lamda, ID, DI, Mu, Cons, Hyp
+from core.comp.visitor import ProofTermVisitor
+from core.comp.enrich import PropEnrichmentVisitor
+from core.ac.instructions import InstructionsGenerationVisitor
+from pres.gen import ProofTermGenerationVisitor
+from core.dc.graft import graft_single
 import logging
 from conftest import make_assert_log
 logger = logging.getLogger("tests.graft")

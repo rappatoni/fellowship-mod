@@ -7,7 +7,21 @@ import logging
 from mod import store
 
 
-from wrapper import *
+from wrap.cli import (
+    configure_logging_cli,
+    pop,
+    execute_script,
+    interactive_mode,
+    setup_prover,
+    reduce_argument_cmd,
+    render_argument_cmd,
+    color_argument_cmd,
+    tree_argument_cmd,
+    main,
+)
+from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
+from core.dc.argument import Argument
+from core.ac.grammar import Grammar, ProofTermTransformer
 import builtins as _builtins
 # Expose parser-era globals for legacy tests that reference them without import
 _builtins.Grammar = Grammar

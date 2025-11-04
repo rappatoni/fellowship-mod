@@ -3,7 +3,8 @@ from pathlib import Path
 import pytest
 import logging
 
-from wrapper import setup_prover, execute_script, ProverError, MachinePayloadError
+from wrap.cli import setup_prover, execute_script
+from wrap.prover import ProverError, MachinePayloadError
 logger = logging.getLogger(__name__)
 
 def test_moxia_antitheorem_script(monkeypatch):

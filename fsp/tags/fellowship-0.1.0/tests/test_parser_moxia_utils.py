@@ -1,8 +1,18 @@
 import pytest
 
-import parser as pt
-from wrapper import Argument
-from wrapper import setup_prover, execute_script, ProverError, MachinePayloadError
+import types as _types
+from core.ac.ast import Goal, Laog, ID, DI, Mu, Mutilde
+from core.ac.instructions import InstructionsGenerationVisitor
+from core.comp.enrich import PropEnrichmentVisitor
+from core.dc.argument import Argument
+from wrap.cli import setup_prover, execute_script
+from wrap.prover import ProverError, MachinePayloadError
+
+pt = _types.SimpleNamespace(
+    Goal=Goal, Laog=Laog, ID=ID, DI=DI, Mu=Mu, Mutilde=Mutilde,
+    InstructionsGenerationVisitor=InstructionsGenerationVisitor,
+    PropEnrichmentVisitor=PropEnrichmentVisitor,
+)
 from pathlib import Path
 import logging
 logger = logging.getLogger(__name__)

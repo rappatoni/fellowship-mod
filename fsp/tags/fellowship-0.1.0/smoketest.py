@@ -1,5 +1,5 @@
 import os
-from wrapper import ProverWrapper
+from wrap.prover import ProverWrapper
 
 def test_machine_stub(monkeypatch):
     monkeypatch.setenv("FSP_HUMAN_UI", "0")  # enforce machine mode

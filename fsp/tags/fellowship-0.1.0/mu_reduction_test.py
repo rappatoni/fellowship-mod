@@ -1,4 +1,7 @@
-from parser import *
+from core.ac.grammar import Grammar, ProofTermTransformer
+from core.comp.reduce import ArgumentTermReducer
+from pres.gen import ProofTermGenerationVisitor
+from core.ac.ast import Mu, ID
 import logging
 from conftest import make_assert_log
 logger = logging.getLogger("tests.mu")
