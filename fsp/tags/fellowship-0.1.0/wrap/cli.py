@@ -579,7 +579,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
 def setup_prover() -> ProverWrapper:
     env = os.environ.copy()
     env.setdefault("FSP_MACHINE", "1")
-    prover = ProverWrapper('./fsp', env=env)
+    fsp_path = Path(__file__).resolve().parent / "fellowship" / "fsp"
+    prover = ProverWrapper(str(fsp_path), env=env)
     prover.register_custom_tactic('pop', pop)
     # Switch to classical logic
     #prover.send_command('lk.')

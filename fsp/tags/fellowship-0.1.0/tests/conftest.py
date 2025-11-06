@@ -31,10 +31,10 @@ PYTEST_TODO = ("Add version of trees with natural language renderings; update/tw
                "then implement scenarios.")
 
 DEFAULT_SCRIPTS = [
-    "tests/normalize_render.fspy",
-    "tests/tactics.fspy",
-    "tests/test1.fspy",
-    "tests/counterarguments_and_undercut.fspy"
+    "normalize_render.fspy",
+    "tactics.fspy",
+    "test1.fspy",
+    "counterarguments_and_undercut.fspy"
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]
