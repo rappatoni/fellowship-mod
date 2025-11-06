@@ -2,7 +2,7 @@ import os, re, logging, warnings
 from typing import Any, List, Tuple, Optional, Dict, Callable
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
-from sexp_parser import SexpParser
+from .sexp_parser import SexpParser
 from mod import store
 
 logger = logging.getLogger('fsp.wrapper')
