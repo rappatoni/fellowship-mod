@@ -34,7 +34,8 @@ DEFAULT_SCRIPTS = [
     "normalize_render.fspy",
     "tactics.fspy",
     "test1.fspy",
-    "counterarguments_and_undercut.fspy"
+    "counterarguments_and_undercut.fspy",
+    "multiple_undercuts.fspy"
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]

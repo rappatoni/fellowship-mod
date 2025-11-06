@@ -459,16 +459,17 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
         adapterterm    = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt", issue))
         adapterbody    = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
-        adapter_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', issue)
+        adapter_arg = Argument(self.prover, f'adapter_{self.name}_{other_argument.name}', issue)
         logger.debug("Building adapter body")
         adapter_arg.body = adapterbody
         adapter_arg.execute()
         logger.debug("Adapter argument: '%s'", adapter_arg.proof_term)
         #print("Adapter_arg proof term",adapter_arg.proof_term)
         #print("Other arg proof term", other_argument.proof_term)
-        adapted_argument = adapter_arg.chain(other_argument)
-        logger.debug("Adapted argument constructed: %s", adapted_argument.proof_term)
-        final_argument = self.chain(adapted_argument, name=name)
+        #adapted_argument = adapter_arg.chain(other_argument)
+        adapted_attacker = self.chain(adapter_arg)
+        logger.debug("Adapted attacker constructed: %s", adapted_attacker.proof_term)
+        final_argument = adapted_attacker.chain(other_argument, name=name)
         return final_argument
     
     def get_assumptions(self) -> list[str]:

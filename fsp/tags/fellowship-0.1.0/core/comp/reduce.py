@@ -176,8 +176,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                     term=deepcopy(lam.term),
                     context=deepcopy(E)
                 )
+                dbg_before = self._pres_str(node)
                 node.term    = deepcopy(v)
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mu lambda: before=\n%s", dbg_before)
+                logger.debug("reduce.Mu lambda: after=\n%s", dbg_after)
                 self._snapshot("lambda")
                 self.visit_Mu(node)
                 
@@ -221,8 +225,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
                     if self.verbose: logger.debug("Applying defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
+                    dbg_before = self._pres_str(node)
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # should be ID α
+                    dbg_after = self._pres_str(node)
+                    logger.debug("reduce.Mu alt-defence: before=\n%s", dbg_before)
+                    logger.debug("reduce.Mu alt-defence: after=\n%s", dbg_after)
                     self._snapshot("alt-defence-mu")
                     self.visit_Mu(node)
                     return node
@@ -233,8 +241,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Case 2? %s",  not self._has_next_redex(ctx_mt.context))
                 if not self._has_next_redex(ctx_mt.context):
                     if self.verbose: logger.debug("Applying defeat rule")
+                    dbg_before = self._pres_str(node)
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # t*
+                    dbg_after = self._pres_str(node)
+                    logger.debug("reduce.Mu alt-defeat: before=\n%s", dbg_before)
+                    logger.debug("reduce.Mu alt-defeat: after=\n%s", dbg_after)
                     self._snapshot("alt-defeat-mu")
                     self.visit_Mu(node)
                     return node
@@ -272,6 +284,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Skipping μ‑β: context is bare Laog")
             else:
                 if self.verbose: logger.debug("Applying general Mu reduction rule")
+                dbg_before = self._pres_str(node)
                 # Perform capture‑avoiding substitution inside the *command* c.
                 new_term    = _subst(inner.term,    x, deepcopy(E))
                 new_context = _subst(inner.context, x, deepcopy(E))
@@ -279,6 +292,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Splice the substituted command into *node* (drop µ x.).
                 node.term    = new_term
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mu mu-beta: before=\n%s", dbg_before)
+                logger.debug("reduce.Mu mu-beta: after=\n%s", dbg_after)
                 self._snapshot("mu-beta")
                 self.visit_Mu(node)
                 return node
@@ -290,6 +306,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Skipping μ̃‑β application to '%s': term is bare Goal '%s'", inner.pres, v.pres)
             else:
                 if self.verbose: logger.debug("Applying general Mutilde rule")
+                dbg_before = self._pres_str(node)
                 # Perform capture‑avoiding substitution inside the *command* c.
                 new_term    = _subst(inner.term,    alpha, deepcopy(v))
                 new_context = _subst(inner.context, alpha, deepcopy(v))
@@ -297,6 +314,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Splice the substituted command into *node* (drop µ x.).
                 node.term    = new_term
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mu mutilde-beta: before=\n%s", dbg_before)
+                logger.debug("reduce.Mu mutilde-beta: after=\n%s", dbg_after)
                 self._snapshot("mutilde-beta")
                 self.visit_Mu(node)
                 return node
@@ -328,8 +348,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                     term=deepcopy(lam.term),
                     context=deepcopy(E)
                 )
+                dbg_before = self._pres_str(node)
                 node.term    = deepcopy(v)
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mutilde lambda: before=\n%s", dbg_before)
+                logger.debug("reduce.Mutilde lambda: after=\n%s", dbg_after)
                 self._snapshot("lambda")
                 self.visit_Mutilde(node)
                 return node
@@ -365,8 +389,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if _is_affine(inner_mu.term.id.name, inner_mu.term):
                     if self.verbose: logger.debug("Applying Mutilde defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
+                    dbg_before = self._pres_str(node)
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # should be ID α
+                    dbg_after = self._pres_str(node)
+                    logger.debug("reduce.Mutilde alt-defence: before=\n%s", dbg_before)
+                    logger.debug("reduce.Mutilde alt-defence: after=\n%s", dbg_after)
                     self._snapshot("alt-defence-mutilde")
                     self.visit_Mutilde(node)
                     return node
@@ -377,8 +405,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Case 2? %s",  not self._has_next_redex(inner_mu.term))
                 if not self._has_next_redex(inner_mu.term):
                     if self.verbose: logger.debug("Applying Mutilde defeat rule")
+                    dbg_before = self._pres_str(node)
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # t*
+                    dbg_after = self._pres_str(node)
+                    logger.debug("reduce.Mutilde alt-defeat: before=\n%s", dbg_before)
+                    logger.debug("reduce.Mutilde alt-defeat: after=\n%s", dbg_after)
                     self._snapshot("alt-defeat-mutilde")
                     self.visit_Mutilde(node)
                     return node
@@ -406,6 +438,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Skipping μ‑β: context is bare Laog")
             else:
                 if self.verbose: logger.debug("Applying general Mu reduction rule")
+                dbg_before = self._pres_str(node)
                 # Perform capture‑avoiding substitution inside the *command* c.
                 new_term    = _subst(inner.term,    x, deepcopy(E))
                 new_context = _subst(inner.context, x, deepcopy(E))
@@ -413,6 +446,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Splice the substituted command into *node* (drop µ x.).
                 node.term    = new_term
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mutilde mu-beta: before=\n%s", dbg_before)
+                logger.debug("reduce.Mutilde mu-beta: after=\n%s", dbg_after)
                 self._snapshot("mu-beta")
                 self.visit_Mutilde(node)
                 return node
@@ -425,6 +461,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Skipping μ̃‑β: term is bare Goal")
             else:
                 if self.verbose: logger.debug("Applying general Mutilde rule")
+                dbg_before = self._pres_str(node)
                 # Perform capture‑avoiding substitution inside the *command* c.
                 new_term    = _subst(inner.term,    alpha, deepcopy(v))
                 new_context = _subst(inner.context, alpha, deepcopy(v))
@@ -432,6 +469,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 # Splice the substituted command into *node* (drop µ x.).
                 node.term    = new_term
                 node.context = new_context
+                dbg_after = self._pres_str(node)
+                logger.debug("reduce.Mutilde mutilde-beta: before=\n%s", dbg_before)
+                logger.debug("reduce.Mutilde mutilde-beta: after=\n%s", dbg_after)
                 self._snapshot("mutilde-beta")
                 self.visit_Mutilde(node)
                 return node

@@ -18,7 +18,7 @@ next.
 axiom.
 end argument
 #
-# Next, a counterargument in negation-expanded form
+# Next, a counterargument
 #
 start counterargument arg2 EfficientMetro
 

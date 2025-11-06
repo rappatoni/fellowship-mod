@@ -7,6 +7,15 @@ from core.comp.alpha import _collect_binder_names, _fresh, _AlphaRename
 
 logger = logging.getLogger(__name__)
 
+def _present(pt) -> str:
+    try:
+        from pres.gen import ProofTermGenerationVisitor
+        c = deepcopy(pt)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(pt))
+    except Exception:
+        return repr(pt)
+
 # ---------------------------------------------------------------------------
 #  Helper – alpha-rename scion binders to avoid clashes with root binders
 # ---------------------------------------------------------------------------
@@ -197,8 +206,13 @@ def graft_single(body_B: ProofTerm, goal_number: str, body_A: ProofTerm) -> Proo
         raise ValueError(f"no Goal/Laog numbered {goal_number} found")
 
     kind = "goal" if is_goal else "laog"
-    logger.info("Starting graft: Replace %s %s:%s in %s by %s", kind, goal_number, tgt_prop,
-                getattr(body_B, 'pres', repr(body_B)), getattr(body_A, 'pres', repr(body_A)))
+    logger.debug("graft_single #%s: scion=%s", goal_number, _present(body_A))
+    logger.debug("graft_single #%s: before=\n%s", goal_number, _present(body_B))
+    before_str = _present(body_B)
+    logger.info(
+        "Starting graft: Replace %s %s:%s in %s by %s",
+        kind, goal_number, tgt_prop, _present(body_B), _present(body_A)
+    )
 
     # type‑check replacement
     _check_conclusion_matches(body_A, target_is_goal=is_goal, target_prop=tgt_prop)
@@ -210,12 +224,19 @@ def graft_single(body_B: ProofTerm, goal_number: str, body_A: ProofTerm) -> Proo
                             target_prop=tgt_prop,
                             target_number=goal_number,
                             target_is_goal=is_goal)
-    return visitor.visit(body_B)
+    result = visitor.visit(body_B)
+    after_str = _present(result)
+    logger.debug("graft_single #%s: after=\n%s", goal_number, after_str)
+    if before_str == after_str:
+        logger.info("graft_single #%s: no-op (result identical to input)", goal_number)
+    return result
 
 
 def graft_uniform(body_B: ProofTerm, body_A: ProofTerm) -> ProofTerm:
     """Uniform graft: replace all Goals/Laogs with the conclusion of A."""
-    logger.info("Uniformly grafting %r on %r", body_A, body_B)
+    logger.info("Uniformly grafting scion=%s on root=%s", _present(body_A), _present(body_B))
+    logger.debug("graft_uniform: before=\n%s", _present(body_B))
+    before_str = _present(body_B)
     # determine conclusion of A from its root binder
     if isinstance(body_A, Mu):
         concl_prop      = body_A.prop
@@ -232,4 +253,10 @@ def graft_uniform(body_B: ProofTerm, body_A: ProofTerm) -> ProofTerm:
                             target_prop=concl_prop,
                             target_number=None,
                             target_is_goal=target_is_goal)
-    return visitor.visit(body_B)
+    result = visitor.visit(body_B)
+    after_str = _present(result)
+    logger.debug("graft_uniform: after=\n%s", after_str)
+    if before_str == after_str:
+        target_kind = "Goal" if target_is_goal else "Laog"
+        logger.info("graft_uniform: no-op (no matching %s with prop %s)", target_kind, concl_prop)
+    return result
