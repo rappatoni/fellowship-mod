@@ -1,0 +1,13 @@
+/*
+!*/
+documentation/
+auto/
+__pycache__/
+!.gitignore
+!*.py
+!*.fsp
+!*.fspy
+!tests
+!*.ml
+!*.mli
+!*.mly
