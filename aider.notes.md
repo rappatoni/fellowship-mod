@@ -165,9 +165,23 @@ Date: 2025-11-04
 +   - Grafting/reduction logging upgraded to use pres.gen presentations with before/after DEBUG snapshots; explicit INFO no‑op logs added for graft_single/graft_uniform.
 +   - ProverWrapper: arguments are proxied via mod.store; declarations remain per‑session; machine payload parsing wired to wrap/sexp_parser.
 +   - Coq script.v identified as export helper (not used by runtime/machine mode); left out of the OCaml build move.
-+ - Optional next steps:
-+   - Document the fixed fsp path in README/CLI help.
-+   - Consider tag renaming (acdc-0.1.0) after verifying pytest.ini/pythonpath remain correct.
++ Plan to fix “thesis” instruction leakage (outline)
++ - Problem: Instruction generation sometimes emits commands targeting auto-injected outer binders (thesis, thesis2, …), e.g., “cut (A) thesis”, which the prover rejects. This shows up especially on antitheorem-shaped wrappers in support.
++ - Approach:
++   1) Source-level suppression:
++      - In InstructionsGenerationVisitor, never emit cut/axiom/moxia if the target name matches r'^thesis\\d*$' (case-insensitive).
++      - Apply the same guard where Mu/Mutilde default cuts are added.
++   2) Defensive filtering:
++      - Keep a minimal filter in Argument.execute() and chain() to strip any residual thesis* commands coming from legacy or corner cases.
++   3) Tests:
++      - Add regression using the failing example proof-term shape; confirm no thesis* commands are present and execution succeeds.
++   4) Cleanup:
++      - Once stable, reduce filters to the visitor (single source of truth) and keep a lightweight safety net in Argument.
++
++ Next session focus
++ - Finish debugging basic_support end-to-end (T-0009/T-0010).
++ - Clean and improve logging around argument execution (T-0011/T-0012) and refactor execute() (T-0013).
++ - Extend focussed_undercut to handle laogs and plan rename to undermine (T-0014/T-0015).
 
 Overview
 - Goal: modularize into core (ac/dc/comp), pres, wrap, mod; keep parser.py as a thin compatibility shim until all callers are switched; no semantic changes during refactor.

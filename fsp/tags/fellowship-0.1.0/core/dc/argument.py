@@ -459,26 +459,26 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             supporter_placeholder = Goal("s", issue)   # only this should be replaced now
             some_node = Laog("some", issue)            # preserved; captured in step 2
 
-            # adapter1_body = Mutilde(
-            #     DI("aff", issue), issue,
-            #     supporter_placeholder,
-            #     some_node
-            # )
+            adapter1_body = Mutilde(
+                DI("aff", issue), issue,
+                supporter_placeholder,
+                some_node
+            )
         else:
             # supporting a Laog → next 'alt' is Mutilde (captures Goals) → some must be Goal
             supporter_placeholder = Laog("s", issue)   # only this should be replaced now
             some_node = Goal("some", issue)            # preserved; captured in step 2
-            # adapter1_body = Mutilde(
-            #     DI("aff", issue), issue,
-            #     supporter_placeholder,
-            #     some_node
-            # )
+            adapter1_body = Mutilde(
+                DI("aff", issue), issue,
+                supporter_placeholder,
+                some_node
+            )
 
-        adapter1_body = Mutilde(
-            DI("aff", issue), issue,
-            supporter_placeholder,
-            some_node
-        )
+        # adapter1_body = Mutilde(
+        #     DI("aff", issue), issue,
+        #     supporter_placeholder,
+        #     some_node
+        # )
         adapter1_name = f"adapter_support_step1_{self.name}_{other_argument.name}"
         adapter1_arg = Argument(self.prover, adapter1_name, issue)
         logger.debug("Building adapter1 (basic support step1) on issue '%s'", issue)
