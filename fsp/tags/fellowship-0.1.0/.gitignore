@@ -11,3 +11,13 @@ __pycache__/
 !*.ml
 !*.mli
 !*.mly
+# OCaml build artifacts (keep sources tracked)
+*.cmi
+*.cmo
+*.cmx
+*.cmxa
+*.o
+._bcdi/
+._d/
+# Built Fellowship binary (we rebuild locally under wrap/fellowship/)
+wrap/fellowship/fsp

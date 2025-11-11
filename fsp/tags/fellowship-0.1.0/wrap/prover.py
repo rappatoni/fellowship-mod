@@ -59,7 +59,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """
         
         stripped = command.strip()
-        logger.trace(">> %s", stripped)
+        logger.log(5, ">> %s", stripped)
         try:
             self.prover.sendline(command)
             self.prover.expect('fsp <')
@@ -68,7 +68,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             raise ProverError(f"Prover I/O error: {e}") from e
 
         output = self.prover.before
-        logger.trace("<< %s", output)
+        logger.log(5, "<< %s", output)
         state = self._extract_machine_block(output)
         if state is None:
             logger.error("Machine block missing in prover output for command %r", command)

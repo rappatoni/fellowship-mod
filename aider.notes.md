@@ -155,6 +155,19 @@ Date: 2025-11-04
 +   - Readme files added for core/, core/ac, core/comp, core/dc, pres/, wrap/, mod/.
 +   - Tests updated to canonical imports; suite is green.
 + - Next up: post‑refactor cleanup (directory moves/renames) and then new features (support/rebut).
++
++ Update summary (2025-11-10)
++ - Post‑refactor cleanup completed:
++   - Tests moved under tests/ and passing.
++   - sexp_parser.py moved to wrap/; wrap/prover.py imports from .sexp_parser; wrap/__init__.py re‑exports SexpParser.
++   - Fellowship OCaml sources moved under wrap/fellowship/ and rebuilt; generated/build artifacts removed from the tag root (lexer.ml, parser.ml/mli, *.cmi/*.cmo, fsp at old location, ._bcdi/._d, editor backups).
++   - Wrapper now runs the relocated binary at wrap/fellowship/fsp (wrap/cli.py setup_prover updated to use Path(__file__).parent/"fellowship"/"fsp"; no “finder” shim).
++   - Grafting/reduction logging upgraded to use pres.gen presentations with before/after DEBUG snapshots; explicit INFO no‑op logs added for graft_single/graft_uniform.
++   - ProverWrapper: arguments are proxied via mod.store; declarations remain per‑session; machine payload parsing wired to wrap/sexp_parser.
++   - Coq script.v identified as export helper (not used by runtime/machine mode); left out of the OCaml build move.
++ - Optional next steps:
++   - Document the fixed fsp path in README/CLI help.
++   - Consider tag renaming (acdc-0.1.0) after verifying pytest.ini/pythonpath remain correct.
 
 Overview
 - Goal: modularize into core (ac/dc/comp), pres, wrap, mod; keep parser.py as a thin compatibility shim until all callers are switched; no semantic changes during refactor.
