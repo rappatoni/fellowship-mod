@@ -34,7 +34,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.conclusion = conclusion #Conclusion of the argument.
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
-        self.labelling = False # Deprecated: Flag to check if argument has been labelled.
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
         self.body: ProofTerm = None # parsed proof term created from proof_term
@@ -42,7 +41,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.enrich = enrich # Proof term enriched with additional type information
         self.representation = None # Natural language representation of the argument based on choice of rendering
         self.executed = False  # Flag to check if the argument has been executed
-        self.attacks = {}  # Deprecated: Dict of self-attacks with corresponding subargument
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # Normalized proof term.
         self.normal_representation = None  # NL rendering of normal form.
@@ -63,6 +61,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def execute(self) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
         """
+        logger.info("Executing argument '%s'.", self.name)
         if self.executed:
             logger.warning("Argument '%s' has already been executed.", self.name)
             return
@@ -87,10 +86,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - Machine state is ephemeral: you only get it after sending the start command,
         #   and you also need to replay the choice later (possibly in a new session).
         # Hence we carry user intent via `is_anti`, set by “start counterargument …”.
+        logger.debug("Body '%s'", self.body)
+        logger.debug("ISMUTILDE? '%s'", isinstance(self.body, Mutilde))
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
+            logger.info("Starting antitheorem '%s' for issue '%s'", self.name, prop)
             start_cmd = f'antitheorem {self.name} : ({prop}).'
         else:
+            logger.info("Starting theorem '%s' for issue '%s'", self.name, self.conclusion)
             start_cmd = f'theorem {self.name} : ({self.conclusion}).'
         output = self.prover.send_command(start_cmd)
         # Execute each instruction
@@ -275,56 +278,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("Enriched proof term: '%s'.", self.enriched_proof_term)
         logger.info("")  # spacer after enriched proof term
         return
-        
-
-    def label_own_assumptions(self):
-        """Deprecated: Label the assumptions of an argument as IN, OUT, or UNDEC. This is currently not needed/was replaced by the reduction system.
-        """
-        import parser
-        for key in self.assumptions:
-            self.assumptions[key]["label"] = parser.label_assumption(self.body, self.assumptions[key]["prop"],self.assumptions)
-            self.labelling = True
-        # self.labelling = {assumption_text.strip() :  parser.label_assumption(self.body, assumption_text.strip(), self.assumptions)for (assumption_text, goal_index, number) in self.assumptions}
-        return 
-
-    def check_self_attacks(self):
-        """Deprecated: Checks consistency up to (i.e. without) logical inference. Self-attacks are simply handled by the reduction system."""
-        # Self-attacks are cycles of length 1. This implies that the argument is hopeless/can never be accepted.
-        # Generally, a proposition A is skeptically acceptable in a set S, if there is an exhaustive (all possible counterarguments refuted) non-cyclical argument from S for A.
-        # It is credulously acceptable if there is an exhaustive even-cyclical argument from S for A.
-        # Compute fixpoint of supporting arguments (upper bound) counterarguments (lower bound).
-        # Generate all normal-form supporting arguments (counterarguments);
-        # Start with atomic arguments (alternative proofs, internally no affine mus/mutildes).
-        # Label, check for cycles.
-        # Then generate all counterarguments for each argument (alternative proofs, undercut).
-        # Label, check for cycles.
-        # Iteratively update sets of accepted supporting arguments (counterarguments).
-        # If not labelled, label.
-
-        # If not activity-labelled, activity label.
-        # If any active assumption is out, the argument is self-attacking.
-        # Start naively: all assumptiosn are active. No supports, no attacks.
-
-        #An alternative approach to self-attacks: restrict interaction of mu/lambda with defaults. No affine mu/lambda abstractions over default contradictions (with no other open assumptions) in atomic arguments (See notes).
-        if self.labelling == True:
-            print("ALREADY LABELLED")
-            pass
-        else:
-            print("labelling...")
-            self.label_own_assumptions()
-        # for assumption in labelling:
-        #     if assumption[value]=="OUT":
-        #         # Get subargument:
-                
-        #         subargument = self.body
-        #         self.attacks[assumption]=
-        #     else:
-        print(self.assumptions)
-        for key in self.assumptions:
-            if self.assumptions[key]["label"][0]=="OUT":
-                self.assumptions[key]["attackers"] = "Sth"
-        return
-         
+             
     def pop_arg(self, subargument):
         """Deprecated: Stash the current argument and pop a subargument. Currently all argumentation functionality is bottom-up, proceeding from a known conclusion. Investigating a top-down exploratory mode is future work. """
         import parser
@@ -387,7 +341,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         combined_body = enricher.visit(combined_body)
         logger.debug("Generating proof term")
         ptgenerator.visit(combined_body)
-        logger.debug("Proof term: '%s'", combined_body.pres)
+        combined_proof_term = combined_body.pres
+        logger.debug("Proof term: '%s'", combined_proof_term)
         combined_instructions = generator.return_instructions(combined_body)
         # Optionally close available goals using assumptions propagated from other to self:
         if close==True:
@@ -395,40 +350,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             combined_instructions.extend([f'axiom.', f'next.']*(len(self.assumptions)+2))
         # Create a new Argument instance
         combined_argument = Argument(self.prover, combined_name, combined_conclusion, combined_instructions)
+        combined_argument.body = combined_body
+        logger.debug("Instructions '%s'", combined_instructions)
         # Execute the combined argument
         combined_argument.execute()
         
         return combined_argument
-
-    def undercut(self, other_argument):
-        print ("Deprecated!")
-        # Forward, exploratory version of undercut were the attacked argument is stashed.
-        if not self.executed:
-            self.execute()
-        if not other_argument.executed:
-            other_argument.execute()
-        #Find the assumption that is to be attacked. This does not currently account for multiple assumptions of the same type.
-        attacked_assumption = None
-        for key in other_argument.assumptions:
-            if self.conclusion.strip('~') in other_argument.assumptions[key]["prop"]:
-                attacked_assumption = key
-                break
-        #The conclusion of the new argument is going to be the conclusion of the current argument.
-        #print(attacked_assumption)
-
-        # check if attack is not blocked. Or not? Allow endless oscillation? Even cycles should be acceptable? Determining if an assumption is blocked is itself a provability-complete problem, if arbitrary assumptions are permitted. Two solutions: a) no blocking for attacks, only block popping defeated subproofs; b) arbitrarily cut off blocking at e.g. equality. I.e. we only look for instances of the blocked formula itself. We choose option a) for now, but option b) may be required to ensure termination (or some other tie breaking mechanism).
-        
-        #invert the conclusion:
-        issue = self.conclusion.strip('~')
-        temp_concl_arg = Argument(self.prover, f'undercuts_on_{other_argument.assumptions[attacked_assumption]["prop"]}', self.conclusion, [f'elim.', f'cut ({issue}) issue', f'tactic pop {other_argument.assumptions[attacked_assumption]["prop"]} {other_argument.conclusion}', f'cut (~{issue}) adapter', f'next', f'elim', f'axiom'])
-        temp_concl_arg.execute()
-        #Chain the other argument to the adapter.
-        adapted_argument = other_argument.chain(temp_concl_arg, close=True)
-        print("ADAPTED")
-        #print(adapted_argument)
-        final_argument = self.chain(adapted_argument, close=True)
-        return final_argument
-
 
     def focussed_undercut(self, other_argument: "Argument", *, name: Optional[str], on: Optional[str] = None) -> "Argument":
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
@@ -470,6 +397,142 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapted_attacker = self.chain(adapter_arg)
         logger.debug("Adapted attacker constructed: %s", adapted_attacker.proof_term)
         final_argument = adapted_attacker.chain(other_argument, name=name)
+        return final_argument
+
+    def basic_support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        """
+        Basic Support:
+          - If supporting a Goal in other_argument:
+              μ alt.< μ aff.<?1||alt> ∥ μ' aff.< supporter || alt > >
+          - If supporting a Laog in other_argument:
+              μ' alt.< μ aff.< alt || ?1 > ∥ μ' aff.< alt || supporter > >
+        
+        Steps:
+          - execute both arguments if needed
+          - resolve supported issue (by `on` or match self.conclusion)
+          - find matching assumption in `other_argument`
+          - build and execute adapter argument with the above pattern
+          - adapted_supporter = self.chain(adapter)
+          - result = adapted_supporter.chain(other_argument, name=name)
+        """
+        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
+        # Ensure both arguments are executed
+        if not self.executed:
+            self.execute()
+        if not other_argument.executed:
+            other_argument.execute()
+
+        # Resolve supported issue (proposition string)
+        issue = on or self.conclusion
+        logger.debug("Requested support issue: %s", issue)
+
+        # Find the supported assumption in other_argument (exact match)
+        supported_key = None
+        for key, info in other_argument.assumptions.items():
+            if info["prop"].strip() == issue:
+                supported_key = key
+                break
+        if supported_key is None:
+            raise ValueError(
+                f"basic_support: target assumption '{issue}' not found in other argument (exact match required)"
+            )
+        # Use canonical prop string from the assumptions dict
+        issue = other_argument.assumptions[supported_key]["prop"]
+        logger.debug("Supporting issue resolved to: %s (key=%s)", issue, supported_key)
+
+        # Determine which side we are supporting in the target: Goal vs Laog
+        target_is_laog = bool(getattr(other_argument, "is_anti", False))
+
+        # Enforce supporter kind matches the supported side under pureness:
+        # - supporting a Goal requires a Mu supporter
+        # - supporting a Laog requires a Mutilde supporter
+        if not target_is_laog and not isinstance(self.body, Mu):
+            raise TypeError("basic_support: supporting a Goal requires a Mu supporter")
+        if target_is_laog and not isinstance(self.body, Mutilde):
+            raise TypeError("basic_support: supporting a Laog requires a Mutilde supporter")
+
+        # Two-step construction to avoid substituting both ?1 and supporter:
+        # Step 1: build adapter1 = μ' aff.< supporter || some >
+        #         with 'some' of the kind captured by the next step's 'alt' binder.
+        if not target_is_laog:
+            # supporting a Goal → next 'alt' is Mu (captures Laogs) → some must be Laog
+            supporter_placeholder = Goal("s", issue)   # only this should be replaced now
+            some_node = Laog("some", issue)            # preserved; captured in step 2
+
+            # adapter1_body = Mutilde(
+            #     DI("aff", issue), issue,
+            #     supporter_placeholder,
+            #     some_node
+            # )
+        else:
+            # supporting a Laog → next 'alt' is Mutilde (captures Goals) → some must be Goal
+            supporter_placeholder = Laog("s", issue)   # only this should be replaced now
+            some_node = Goal("some", issue)            # preserved; captured in step 2
+            # adapter1_body = Mutilde(
+            #     DI("aff", issue), issue,
+            #     supporter_placeholder,
+            #     some_node
+            # )
+
+        adapter1_body = Mutilde(
+            DI("aff", issue), issue,
+            supporter_placeholder,
+            some_node
+        )
+        adapter1_name = f"adapter_support_step1_{self.name}_{other_argument.name}"
+        adapter1_arg = Argument(self.prover, adapter1_name, issue)
+        logger.debug("Building adapter1 (basic support step1) on issue '%s'", issue)
+        adapter1_arg.body = adapter1_body
+        adapter1_arg.execute()
+        logger.debug("Adapter1 executed: %s", adapter1_arg.proof_term)
+
+        # Graft supporter into adapter1 (only the supporter placeholder is replaced)
+        adapted1 = self.chain(adapter1_arg)
+        logger.debug("After step1: adapted1 constructed: %s", adapted1.proof_term)
+
+        # Step 2: build adapter2 with outer 'alt' binder and a single 'second' hole
+        if not target_is_laog:
+            # Support a Goal:
+            #   μ alt.< μ aff.<?1||alt> ∥ second >
+            adapter2_term = Mu(
+                ID("aff", issue), issue,
+                Goal("1", issue),
+                ID("alt", issue)
+            )
+            second_hole = Laog("second", issue)  # will be replaced by adapted1; its inner 'some' becomes ID(alt)
+            adapter2_body = Mu(
+                ID("alt", issue), issue,
+                adapter2_term,
+                second_hole
+            )
+        else:
+            # Support a Laog:
+            #   μ' alt.< μ aff.< alt || ?1 > ∥ second >
+            adapter2_term = Mu(
+                ID("aff", issue), issue,
+                ID("alt", issue),
+                Laog("1", issue)
+            )
+            second_hole = Laog("second", issue)  # will be replaced by adapted1; its inner 'some' becomes DI(alt)
+            adapter2_body = Mutilde(
+                DI("alt", issue), issue,
+                adapter2_term,
+                second_hole
+            )
+
+        adapter2_name = f"adapter_support_step2_{self.name}_{other_argument.name}"
+        adapter2_arg = Argument(self.prover, adapter2_name, issue)
+        logger.debug("Building adapter2 (basic support step2) on issue '%s'", issue)
+        adapter2_arg.body = adapter2_body
+        adapter2_arg.execute()
+        logger.debug("Adapter2 executed: %s", adapter2_arg.proof_term)
+
+        # Insert adapted1 into adapter2 (uniform graft replaces the single Laog('second'))
+        adapted2 = adapted1.chain(adapter2_arg)
+        logger.debug("After step2: adapted2 constructed: %s", adapted2.proof_term)
+
+        # Finally graft the fully adapted supporter into the supported argument
+        final_argument = adapted2.chain(other_argument, name=name)
         return final_argument
     
     def get_assumptions(self) -> list[str]:

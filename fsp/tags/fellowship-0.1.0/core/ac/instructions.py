@@ -181,6 +181,9 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
         if node.name:
+            if node.name == "thesis":
+                return node
+        if node.name:
             if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
                 return node
             if node.flag == "Falsum":

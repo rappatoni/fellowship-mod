@@ -308,6 +308,77 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 raise ProverError(f"{script_path}:{lineno}: Undercut failed: missing arguments")
                             if stop_on_error:
                                 break
+
+                    elif command.startswith('support '):
+                        # Format: support NEW_NAME supporter target [on <PROP...>]
+                        parts = command.split()
+                        if len(parts) < 4:
+                            logger.error("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
+                            continue
+                        new_name = parts[1]
+                        supporter_name = parts[2]
+                        target_name = parts[3]
+                        # Optional: parse 'on <prop...>'
+                        on_prop = None
+                        if len(parts) > 4:
+                            try:
+                                on_idx = parts.index('on', 4)
+                                on_prop = " ".join(parts[on_idx+1:]).strip()
+                            except ValueError:
+                                on_prop = None
+
+                        supporter = prover.get_argument(supporter_name)
+                        target = prover.get_argument(target_name)
+                        if supporter and target:
+                            try:
+                                result = supporter.basic_support(target, name=new_name, on=on_prop)
+                                prover.register_argument(result)
+                                logger.info("Constructed support '%s' (target '%s' by '%s'%s).",
+                                            result.name, target.name, supporter.name,
+                                            f" on {on_prop}" if on_prop else "")
+                            except ProverError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error during support: %s", e)
+                                if stop_on_error:
+                                    break
+                            except MachinePayloadError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error (no machine payload) during support: %s", e)
+                                if stop_on_error:
+                                    break
+                        else:
+                            logger.error("Support failed: one or both arguments not found ('%s', '%s').",
+                                         supporter_name, target_name)
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: Support failed: missing arguments")
+                            if stop_on_error:
+                                break
                     elif command.startswith('chain '):
                         # Handle chaining of arguments
                         # Format: chain arg1 arg2
