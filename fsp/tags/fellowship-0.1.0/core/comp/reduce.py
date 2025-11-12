@@ -432,7 +432,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.context):
-                    if not _is_affine(ctx_mt.di.name, ctx_mt):
+                    if not _is_affine(ctx_mt.context.di.name, ctx_mt.context):
                         # Case A: keep Supporter
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # DI(alt)
@@ -597,6 +597,22 @@ class ArgumentTermReducer(ProofTermVisitor):
             # μ̃‑β applies only if the term is not a bare Goal
             if isinstance(n.context, Mutilde) and not isinstance(n.term, Goal):
                 return True
+            # support-laog redex:
+            # μ′ alt . < μ aff . < DI(alt) || Laog >  ∥  μ′ aff . < DI(alt) || Supporter > >
+            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
+                im, cm = n.term, n.context
+                if (isinstance(im.term, DI) and im.term.name == n.di.name and
+                    isinstance(im.context, Laog) and
+                    isinstance(cm.term, DI) and cm.term.name == n.di.name):
+                    return True
+            # support-goal redex:
+            # μ alt . < μ aff . < Goal || ID(alt) >  ∥  μ′ aff . < Supporter || ID(alt) > >
+            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
+                im, cm = n.term, n.context
+                if (isinstance(im.term, Goal) and
+                    isinstance(im.context, ID) and im.context.name == n.id.name and
+                    isinstance(cm.context, ID) and cm.context.name == n.id.name):
+                    return True
         if isinstance(n, Mutilde):
             # λ‑redex applies only if argument v is not a bare Goal
             if isinstance(n.term, Lamda) and isinstance(n.context, Cons) and not isinstance(n.context.term, Goal):
