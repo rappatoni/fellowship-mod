@@ -118,7 +118,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Left of ||: DI named H1; Right of ||: Cons with falsum on term side and adapter on context side.
         left = getattr(node, "term", None)       # H1 is on the left side of ||
         right = getattr(node, "context", None)   # adapter*_F_ sits on the right side of ||
-        if isinstance(left, DI) and getattr(left, "name", None) == getattr(node.di, "name", None):
+        if node.di.name != 'thesis' and isinstance(left, DI) and getattr(left, "name", None) == getattr(node.di, "name", None):
             if isinstance(right, Cons):
                 falsum_term = getattr(right, "term", None)      # ⊥ / _F_ must be on term side
                 if getattr(falsum_term, "flag", None) == "Falsum" or is_falsum_prop(getattr(falsum_term, "prop", "")):
@@ -130,6 +130,8 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                         return node
         # Default traversal and instruction
         node = super().visit_Mutilde(node)
+        if node.di.name == 'thesis':
+            return node
         if node.contr:
             self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
             return node
