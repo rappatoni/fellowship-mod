@@ -86,8 +86,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - Machine state is ephemeral: you only get it after sending the start command,
         #   and you also need to replay the choice later (possibly in a new session).
         # Hence we carry user intent via `is_anti`, set by “start counterargument …”.
-        logger.debug("Body '%s'", self.body)
-        logger.debug("ISMUTILDE? '%s'", isinstance(self.body, Mutilde))
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
             logger.info("Starting antitheorem '%s' for issue '%s'", self.name, prop)

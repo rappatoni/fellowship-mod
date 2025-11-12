@@ -36,6 +36,34 @@ class AcceptanceColoringVisitor:
         c = ProofTermGenerationVisitor().visit(c)
         return getattr(c, "pres", repr(c))
 
+    def _var_occurs(self, name: str, node: Optional[ProofTerm]) -> bool:
+        """Return True iff variable `name` occurs (free w.r.t. outer binder) in node.
+        Shadowing by λ/μ/μ′ with the same name stops descent."""
+        if node is None:
+            return False
+        if isinstance(node, (ID, DI)):
+            return node.name == name
+        # stop under shadowing binders that re-bind the same name
+        if isinstance(node, Lamda) and node.di.di.name == name:
+            return False
+        if isinstance(node, Mu) and node.id.name == name:
+            return False
+        if isinstance(node, Mutilde) and node.di.name == name:
+            return False
+        # recurse
+        for child in getattr(node, 'term', None), getattr(node, 'context', None):
+            if child is not None and self._var_occurs(name, child):
+                return True
+        return False
+
+    def _non_affine_goal_side(self, n: Mu) -> bool:
+        """μ with Goal on term-side is non-affine for attacks iff id occurs in context."""
+        return isinstance(n.term, Goal) and self._var_occurs(n.id.name, n.context)
+
+    def _non_affine_laog_side(self, n: Mutilde) -> bool:
+        """μ′ with Laog on context-side is non-affine for attacks iff di occurs in term."""
+        return isinstance(n.context, Laog) and self._var_occurs(n.di.name, n.term)
+
     def _has_open(self, n: ProofTerm) -> bool:
         if isinstance(n, (Goal, Laog)):
             return True
@@ -71,6 +99,13 @@ class AcceptanceColoringVisitor:
             self._memo_unattacked[mid] = True
             return True
         if isinstance(n, Mutilde) and self._unattacked(n.term) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        # Non-affine binders do not constitute attacks on immediate Goal/Laog
+        if isinstance(n, Mu) and self._non_affine_goal_side(n):
+            self._memo_unattacked[mid] = True
+            return True
+        if isinstance(n, Mutilde) and self._non_affine_laog_side(n):
             self._memo_unattacked[mid] = True
             return True
         self._memo_unattacked[mid] = False
@@ -114,6 +149,10 @@ class AcceptanceColoringVisitor:
             )
         if isinstance(n, Mu):
             if isinstance(n.term, Goal):
+                # Non-affine μ cannot attack the Goal side (assumption is discharged)
+                if self._non_affine_goal_side(n):
+                    self._memo_color[mid] = "green"
+                    return "green"
                 c_c = self.classify(n.context)
                 if c_c == "red":    self._memo_color[mid] = "green";  return "green"
                 if c_c == "green":  self._memo_color[mid] = "red";    return "red"
@@ -136,6 +175,10 @@ class AcceptanceColoringVisitor:
             )
         if isinstance(n, Mutilde):
             if isinstance(n.context, Laog):
+                # Non-affine μ′ cannot attack the Laog side (assumption is discharged)
+                if self._non_affine_laog_side(n):
+                    self._memo_color[mid] = "green"
+                    return "green"
                 c_t = self.classify(n.term)
                 if c_t == "red":    self._memo_color[mid] = "green";  return "green"
                 if c_t == "green":  self._memo_color[mid] = "red";    return "red"
