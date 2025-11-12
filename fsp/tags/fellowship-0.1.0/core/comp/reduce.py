@@ -6,6 +6,7 @@ from core.comp.visitor import ProofTermVisitor
 from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
+from core.comp.color import AcceptanceColoringVisitor
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,13 @@ def _is_affine(varname: str, command: ProofTerm) -> bool:
     if isinstance(command, (Mu, Mutilde)):
         return not _var_occurs(varname, command.term) and not _var_occurs(varname, command.context)
     return False
+
+def _is_red(command: ProofTerm) -> bool:
+    """Return True iff the subtree starting at this binder is colored red."""
+    try:
+        return AcceptanceColoringVisitor(verbose=False).classify(command) == "red"
+    except Exception:
+        return False
 
 def _subst(node, name: str, replacement):
     """Return a deep‑copied version of node where every free occurrence
@@ -208,7 +216,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.term):
-                    if not _is_affine(ctx_mt.term.id.name, ctx_mt.term):
+                    if not _is_red(ctx_mt.term):
                         # Case A: keep Supporter
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # Supporter
@@ -244,7 +252,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
             if not (_is_affine(inner_mu.id.name, inner_mu) and
-                    _is_affine(ctx_mt.di.name,   ctx_mt)):
+                    _is_affine(ctx_mt.di.name, ctx_mt)):
                 if self.verbose: logger.debug("Guard A failed")
                 return False
             # both protect goals with equal prop (we ignore number for now)
@@ -274,8 +282,8 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if self.verbose: logger.debug("Guards passed.")
 
                 # Case 1: ctx_mt.context is µ̃ with affine binder → throw‑away
-                if self.verbose: logger.debug("Case 1? %s", _is_affine(ctx_mt.context.di.name, ctx_mt.context))
-                if _is_affine(ctx_mt.context.di.name, ctx_mt.context):
+                if self.verbose: logger.debug("Case 1? %s", _is_red(ctx_mt.context))
+                if _is_red(ctx_mt.context):
                     if self.verbose: logger.debug("Applying defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     dbg_before = self._pres_str(node)
@@ -432,7 +440,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.context):
-                    if not _is_affine(ctx_mt.context.di.name, ctx_mt.context):
+                    if not _is_red(ctx_mt.context):
                         # Case A: keep Supporter
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # DI(alt)
@@ -467,8 +475,8 @@ class ArgumentTermReducer(ProofTermVisitor):
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
-            if not (_is_affine(inner_mu.id.name, inner_mu) and
-                    _is_affine(ctx_mt.di.name,   ctx_mt)):
+            if not (_is_red(inner_mu) and
+                    _is_red(ctx_mt)):
                 if self.verbose: logger.debug("Guard Atilde failed")
                 return False
             # both protect goals with equal prop (we ignore number for now)
@@ -491,8 +499,8 @@ class ArgumentTermReducer(ProofTermVisitor):
             if _guards(inner_mu, ctx_mt)==True:
 
                 # Case 1: inner_mu.term is µ̃ with affine binder → throw‑away
-                if self.verbose: logger.debug("Case 1? %s", _is_affine(inner_mu.term.id.name, inner_mu.term))
-                if _is_affine(inner_mu.term.id.name, inner_mu.term):
+                if self.verbose: logger.debug("Case 1? %s", _is_red(inner_mu.term))
+                if _is_red(inner_mu.term):
                     if self.verbose: logger.debug("Applying Mutilde defence rule")
                     # Apply rewrite: μ α .⟨ G || α ⟩
                     dbg_before = self._pres_str(node)
