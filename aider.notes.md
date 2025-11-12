@@ -137,6 +137,11 @@
   - Grafting mismatches: Only exact proposition match; ensure _alpha_rename_if_needed runs before graft; ensure replacement binder kind matches (Mu for Goal, μ′ for Laog).
   - Tests failing on import paths: run pytest from tag dir; ensure pytest.ini sets pythonpath=..
 
++ - Support reduction shape sensitivity
++   - Guards require strict name alignment: inner μ.id == ctx μ′.di (aff) and ID/DI(alt) match outer binder name.
++   - Alpha-renaming during graft can change binder names; ensure adapters and support rules use the same canonical names (“aff”, “alt”).
++   - Extra auto-injected thesis/thesisN binders can wrap scions; η-reduce at root as needed.
++
 + Final notes
   - OCaml and Python sides must stay consistent in μ and μ′ shapes, especially for initial proof state and elim commands.
   - Substitution is intentionally limited (closed terms); do not feed open terms with free IDs/DIs into reducer/graft.
@@ -165,6 +170,28 @@ Date: 2025-11-04
 +   - Grafting/reduction logging upgraded to use pres.gen presentations with before/after DEBUG snapshots; explicit INFO no‑op logs added for graft_single/graft_uniform.
 +   - ProverWrapper: arguments are proxied via mod.store; declarations remain per‑session; machine payload parsing wired to wrap/sexp_parser.
 +   - Coq script.v identified as export helper (not used by runtime/machine mode); left out of the OCaml build move.
++ Update summary (2025-11-12)
++ - Acceptance coloring updated:
++   - Added non-affine “unattacked” cases: μ α.<Goal||t(α)> and μ′ x.<t(x)||Laog>.
++   - Guarded Red/Yellow μ<Goal||…> and μ′<…||Laog> cases to require affineness.
++ - Reducer:
++   - Implemented basic support reductions for both orientations:
++     - μ alt.< μ aff.<Goal||alt> ∥ μ′ aff.<Supporter||alt> >
++     - μ′ alt.< μ aff.<DI(alt)||Laog> ∥ μ′ aff.<DI(alt)||Supporter> >
++     - Case A (supporter non-affine): keep supporter via μ̃-β/μ̃ position.
++     - Case B (supporter affine): discard supporter via μ-β/μ position.
++   - Added EtaReducer (one-step root η) and wired it into basic_support after step1.
++ - Basic support still not triggering in some tests:
++   - Likely causes:
++     - Shape mismatch due to remaining wrappers or binder-name divergence after graft.
++     - Our _has_next_redex lacks support-specific detectors, making “fully simplified” checks overly conservative.
++     - Placement of η only after step1 may not always eliminate extra μ′ wrappers encountered after step2 or final graft.
++ - Plan:
++   - Instrument reducer: log binder names/props at support checks.
++   - Add support redex recognition in _has_next_redex for both μ and μ′ cases.
++   - Consider an extra η at adapted2.body or right before final graft if harmless.
++   - Add minimal end-to-end tests for both Goal- and Laog-support flows.
++
 + Plan to fix “thesis” instruction leakage (outline)
 + - Problem: Instruction generation sometimes emits commands targeting auto-injected outer binders (thesis, thesis2, …), e.g., “cut (A) thesis”, which the prover rejects. This shows up especially on antitheorem-shaped wrappers in support.
 + - Approach:
@@ -179,7 +206,11 @@ Date: 2025-11-04
 +      - Once stable, reduce filters to the visitor (single source of truth) and keep a lightweight safety net in Argument.
 +
 + Next session focus
-+ - Finish debugging basic_support end-to-end (T-0009/T-0010).
++ - Finish debugging basic_support reductions (T-0009/T-0016..T-0019):
++   - Add support redex detection to _has_next_redex and re-verify firing order.
++   - Verify exact adapter shapes post-graft with pres.gen snapshots.
++   - Add optional second η-reduction right before step2 graft or final graft.
++   - Add regression tests for Goal and Laog support branches.
 + - Clean and improve logging around argument execution (T-0011/T-0012) and refactor execute() (T-0013).
 + - Extend focussed_undercut to handle laogs and plan rename to undermine (T-0014/T-0015).
 

@@ -201,13 +201,14 @@ class ArgumentTermReducer(ProofTermVisitor):
             shape_ok = (
                 isinstance(inner_mu.term, Goal) and
                 isinstance(inner_mu.context, ID) and inner_mu.context.name == node.id.name and
-                isinstance(ctx_mt.context, ID)   and ctx_mt.context.name   == node.id.name and
-                ctx_mt.di.name == inner_mu.id.name
+                isinstance(ctx_mt.context, ID)   and ctx_mt.context.name   == node.id.name #and
+                #ctx_mt.di.name == inner_mu.id.name
             )
+            logger.debug("Basic Support Shape ok? %s", shape_ok)
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.term):
-                    if not _is_affine(ctx_mt.di.name, ctx_mt):
+                    if not _is_affine(ctx_mt.term.id.name, ctx_mt.term):
                         # Case A: keep Supporter
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # Supporter
@@ -424,9 +425,10 @@ class ArgumentTermReducer(ProofTermVisitor):
             shape_ok = (
                 isinstance(inner_mu.term, DI) and inner_mu.term.name == node.di.name and
                 isinstance(inner_mu.context, Laog) and
-                isinstance(ctx_mt.term, DI) and ctx_mt.term.name == node.di.name and
-                ctx_mt.di.name == inner_mu.id.name
+                isinstance(ctx_mt.term, DI) and ctx_mt.term.name == node.di.name #and
+                #ctx_mt.di.name == inner_mu.id.name
             )
+            logger.debug("Basic Support Shape ok? %s", shape_ok)
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.context):

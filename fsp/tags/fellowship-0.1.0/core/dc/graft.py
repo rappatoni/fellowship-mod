@@ -135,10 +135,14 @@ class _GraftVisitor(ProofTermVisitor):
 
     # ------------------------------------------------------------------
     def _make_maps(self):
-        goal_map = {prop: name for name, prop in reversed(self.di_stack)}
+        # Innermost binder should capture: iterate in push order so later (deeper)
+        # binders override earlier ones for the same prop.
+        goal_map = {}
+        for name, prop in self.di_stack:
+            goal_map[prop] = name  # prop → DI name (for Goals)
         laog_map = {}
-        for name, prop in reversed(self.id_stack):
-            laog_map[prop] = name
+        for name, prop in self.id_stack:
+            laog_map[prop] = name  # prop → ID name (for Laogs)
         return goal_map, laog_map
 
     def _maybe_graft(self, node, *, is_goal: bool):
