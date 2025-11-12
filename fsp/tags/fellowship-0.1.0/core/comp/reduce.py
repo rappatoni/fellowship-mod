@@ -187,6 +187,58 @@ class ArgumentTermReducer(ProofTermVisitor):
                 
                 return node
 
+        # basic support (Goal side):
+        #   μ alt . < μ aff . < Goal || ID(alt) >  ∥  μ′ aff . < Supporter || ID(alt) > >
+        # Cases (when Supporter is fully simplified):
+        #   A) Supporter non-affine w.r.t. aff  → keep Supporter:
+        #        μ alt . < Supporter || ID(alt) >
+        #   B) Supporter affine w.r.t. aff      → discard Supporter (defeated):
+        #        μ alt . < Goal || ID(alt) >
+        if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
+            inner_mu: Mu    = node.term
+            ctx_mt:  Mutilde = node.context
+            # shape guards
+            shape_ok = (
+                isinstance(inner_mu.term, Goal) and
+                isinstance(inner_mu.context, ID) and inner_mu.context.name == node.id.name and
+                isinstance(ctx_mt.context, ID)   and ctx_mt.context.name   == node.id.name and
+                ctx_mt.di.name == inner_mu.id.name
+            )
+            if shape_ok:
+                # only apply when supporter fully simplified
+                if not self._has_next_redex(ctx_mt.term):
+                    if not _is_affine(ctx_mt.di.name, ctx_mt):
+                        # Case A: keep Supporter
+                        dbg_before = self._pres_str(node)
+                        node.term    = deepcopy(ctx_mt.term)     # Supporter
+                        node.context = deepcopy(ctx_mt.context)  # ID(alt)
+                        dbg_after = self._pres_str(node)
+                        logger.debug("reduce.Mu support-keep: before=\n%s", dbg_before)
+                        logger.debug("reduce.Mu support-keep: after=\n%s",  dbg_after)
+                        self._snapshot("support-keep")
+                        return self.visit_Mu(node)
+                    else:
+                        # Case B: discard Supporter (defeated)
+                        dbg_before = self._pres_str(node)
+                        node.term    = deepcopy(inner_mu.term)     # Goal
+                        node.context = deepcopy(inner_mu.context)  # ID(alt)
+                        dbg_after = self._pres_str(node)
+                        logger.debug("reduce.Mu support-discard: before=\n%s", dbg_before)
+                        logger.debug("reduce.Mu support-discard: after=\n%s",  dbg_after)
+                        self._snapshot("support-discard")
+                        return self.visit_Mu(node)
+                else:
+                    # simplify supporter term and re-check
+                    before = self._pres_str(ctx_mt.term)
+                    if isinstance(ctx_mt.term, Mu):
+                        ctx_mt.term = self.visit_Mu(ctx_mt.term)
+                    else:
+                        ctx_mt.term = self.visit(ctx_mt.term)
+                    after = self._pres_str(ctx_mt.term)
+                    if before != after:
+                        return self.visit_Mu(node)
+                    # if no progress, fall through to other rules
+
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
@@ -358,6 +410,58 @@ class ArgumentTermReducer(ProofTermVisitor):
                 self.visit_Mutilde(node)
                 return node
 
+        # basic support (Laog side):
+        #   μ' alt . < μ aff . < DI(alt) || Laog >  ∥  μ' aff . < DI(alt) || Supporter > >
+        # Cases (when Supporter is fully simplified):
+        #   A) Supporter non-affine w.r.t. aff  → keep Supporter:
+        #        μ' alt . < DI(alt) || Supporter >
+        #   B) Supporter affine w.r.t. aff      → discard Supporter (defeated):
+        #        μ' alt . < DI(alt) || Laog >
+        if isinstance(node.term, Mu) and isinstance(node.context, Mutilde):
+            inner_mu: Mu     = node.term
+            ctx_mt:  Mutilde = node.context
+            # shape guards
+            shape_ok = (
+                isinstance(inner_mu.term, DI) and inner_mu.term.name == node.di.name and
+                isinstance(inner_mu.context, Laog) and
+                isinstance(ctx_mt.term, DI) and ctx_mt.term.name == node.di.name and
+                ctx_mt.di.name == inner_mu.id.name
+            )
+            if shape_ok:
+                # only apply when supporter fully simplified
+                if not self._has_next_redex(ctx_mt.context):
+                    if not _is_affine(ctx_mt.di.name, ctx_mt):
+                        # Case A: keep Supporter
+                        dbg_before = self._pres_str(node)
+                        node.term    = deepcopy(ctx_mt.term)     # DI(alt)
+                        node.context = deepcopy(ctx_mt.context)  # Supporter
+                        dbg_after = self._pres_str(node)
+                        logger.debug("reduce.Mutilde support-keep: before=\n%s", dbg_before)
+                        logger.debug("reduce.Mutilde support-keep: after=\n%s",  dbg_after)
+                        self._snapshot("support-keep")
+                        return self.visit_Mutilde(node)
+                    else:
+                        # Case B: discard Supporter (defeated)
+                        dbg_before = self._pres_str(node)
+                        node.term    = deepcopy(inner_mu.term)      # DI(alt)
+                        node.context = deepcopy(inner_mu.context)   # Laog
+                        dbg_after = self._pres_str(node)
+                        logger.debug("reduce.Mutilde support-discard: before=\n%s", dbg_before)
+                        logger.debug("reduce.Mutilde support-discard: after=\n%s",  dbg_after)
+                        self._snapshot("support-discard")
+                        return self.visit_Mutilde(node)
+                else:
+                    # simplify supporter subtree and re-check
+                    before = self._pres_str(ctx_mt.context)
+                    if isinstance(ctx_mt.context, Mu):
+                        ctx_mt.context = self.visit_Mu(ctx_mt.context)
+                    else:
+                        ctx_mt.context = self.visit(ctx_mt.context)
+                    after = self._pres_str(ctx_mt.context)
+                    if before != after:
+                        return self.visit_Mutilde(node)
+                    # if no progress, fall through to other rules
+
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
@@ -506,3 +610,26 @@ class ArgumentTermReducer(ProofTermVisitor):
             if child and self._has_next_redex(child):
                 return True
         return False
+
+class EtaReducer:
+    """
+    One-step η-reduction on the root node only:
+      - μ α . < t || α >   → t
+      - μ' x . < x || t >  → t
+    """
+    def __init__(self, *, verbose: bool = True):
+        self.verbose = verbose
+
+    def reduce(self, root: ProofTerm) -> ProofTerm:
+        # μ α . < t || α >  →  t
+        if isinstance(root, Mu) and isinstance(root.context, ID) and root.context.name == root.id.name:
+            if self.verbose:
+                logger.debug("eta-reduce at root: μ %s . < t || %s >", root.id.name, root.id.name)
+            return deepcopy(root.term)
+        # μ' x . < x || t >  →  t
+        if isinstance(root, Mutilde) and isinstance(root.term, DI) and root.term.name == root.di.name:
+            if self.verbose:
+                logger.debug("eta-reduce at root: μ' %s . < %s || t >", root.di.name, root.di.name)
+            return deepcopy(root.context)
+        # no η-redex at root
+        return root

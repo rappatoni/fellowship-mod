@@ -4,7 +4,7 @@ from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
-from core.comp.reduce import ArgumentTermReducer
+from core.comp.reduce import ArgumentTermReducer, EtaReducer
 from core.dc.graft import graft_uniform, graft_single
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
@@ -487,6 +487,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Graft supporter into adapter1 (only the supporter placeholder is replaced)
         adapted1 = self.chain(adapter1_arg)
         logger.debug("After step1: adapted1 constructed: %s", adapted1.proof_term)
+        # One-step η-reduction at root to drop the extraneous μ′ binder from step1
+        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
 
         # Step 2: build adapter2 with outer 'alt' binder and a single 'second' hole
         if not target_is_laog:
