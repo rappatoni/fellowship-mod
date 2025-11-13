@@ -206,13 +206,31 @@ Date: 2025-11-04
 +      - Once stable, reduce filters to the visitor (single source of truth) and keep a lightweight safety net in Argument.
 +
 + Next session focus
-+ - Finish debugging basic_support reductions (T-0009/T-0016..T-0019):
-+   - Add support redex detection to _has_next_redex and re-verify firing order.
-+   - Verify exact adapter shapes post-graft with pres.gen snapshots.
-+   - Add optional second η-reduction right before step2 graft or final graft.
-+   - Add regression tests for Goal and Laog support branches.
-+ - Clean and improve logging around argument execution (T-0011/T-0012) and refactor execute() (T-0013).
-+ - Extend focussed_undercut to handle laogs and plan rename to undermine (T-0014/T-0015).
++ - Verify basic_support end-to-end with both orientations:
++   - Confirm support redex detection triggers and keep/discard rewrites fire.
++   - Add optional second η (before final graft) if needed (T-0018).
++ - Add regression tests for support (Goal/Laog; defeated vs non-defeated) (T-0019).
++ - Improve support guard diagnostics (T-0017).
++ - Cleanup/normalize logging levels in reducer and argument execution (T-0012, T-0013).
++
++ Update summary (2025-11-12, later)
++ - Acceptance coloring is now a computational dependency:
++   - Moved AcceptanceColoringVisitor to core/comp/color.py; pres/color.py is a thin re-export shim.
++   - Reducer now uses “is red?” checks (via AcceptanceColoringVisitor) instead of “affine?” guards.
++ - Support reductions:
++   - Added support redex detection to _has_next_redex for both μ and μ′ shapes to unblock “fully simplified” gating.
++   - Basic support keep/discard rules implemented and firing once shapes match.
++ - Grafting:
++   - Fixed capture priority: innermost binder now captures open Goal/Laog first (maps built in push order).
++ - Eta:
++   - Added EtaReducer (root-only η); applied after support step1 to strip extraneous outer μ′ wrapper.
++ - Open items:
++   - Consider an additional root η on adapted2 before final graft (see T-0018).
++   - Add targeted DEBUG diagnostics when support shape guard fails (see T-0017).
++
++ Current state deltas
++ - core/comp: now includes color.py (AcceptanceColoringVisitor).
++ - pres/color.py: re-exports from core/comp/color.py.
 
 Overview
 - Goal: modularize into core (ac/dc/comp), pres, wrap, mod; keep parser.py as a thin compatibility shim until all callers are switched; no semantic changes during refactor.
