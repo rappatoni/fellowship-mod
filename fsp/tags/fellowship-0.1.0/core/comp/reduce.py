@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 from typing import Optional, Any
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.color import AcceptanceColoringVisitor
@@ -207,10 +207,8 @@ class ArgumentTermReducer(ProofTermVisitor):
             ctx_mt:  Mutilde = node.context
             # shape guards
             shape_ok = (
-                isinstance(inner_mu.term, Goal) and
                 isinstance(inner_mu.context, ID) and inner_mu.context.name == node.id.name and
-                isinstance(ctx_mt.context, ID)   and ctx_mt.context.name   == node.id.name #and
-                #ctx_mt.di.name == inner_mu.id.name
+                isinstance(ctx_mt.context, ID)   and ctx_mt.context.name   == node.id.name
             )
             logger.debug("Basic Support Shape ok? %s", shape_ok)
             if shape_ok:
@@ -432,9 +430,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             # shape guards
             shape_ok = (
                 isinstance(inner_mu.term, DI) and inner_mu.term.name == node.di.name and
-                isinstance(inner_mu.context, Laog) and
-                isinstance(ctx_mt.term, DI) and ctx_mt.term.name == node.di.name #and
-                #ctx_mt.di.name == inner_mu.id.name
+                isinstance(ctx_mt.term, DI) and ctx_mt.term.name == node.di.name
             )
             logger.debug("Basic Support Shape ok? %s", shape_ok)
             if shape_ok:
@@ -605,20 +601,11 @@ class ArgumentTermReducer(ProofTermVisitor):
             # μ̃‑β applies only if the term is not a bare Goal
             if isinstance(n.context, Mutilde) and not isinstance(n.term, Goal):
                 return True
-            # support-laog redex:
-            # μ′ alt . < μ aff . < DI(alt) || Laog >  ∥  μ′ aff . < DI(alt) || Supporter > >
-            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
-                im, cm = n.term, n.context
-                if (isinstance(im.term, DI) and im.term.name == n.di.name and
-                    isinstance(im.context, Laog) and
-                    isinstance(cm.term, DI) and cm.term.name == n.di.name):
-                    return True
             # support-goal redex:
             # μ alt . < μ aff . < Goal || ID(alt) >  ∥  μ′ aff . < Supporter || ID(alt) > >
             if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
                 im, cm = n.term, n.context
-                if (isinstance(im.term, Goal) and
-                    isinstance(im.context, ID) and im.context.name == n.id.name and
+                if (isinstance(im.context, ID) and im.context.name == n.id.name and
                     isinstance(cm.context, ID) and cm.context.name == n.id.name):
                     return True
         if isinstance(n, Mutilde):
@@ -631,6 +618,13 @@ class ArgumentTermReducer(ProofTermVisitor):
             # μ̃‑β applies only if the term is not a bare Goal
             if isinstance(n.context, Mutilde) and not isinstance(n.term, Goal):
                 return True
+            # support-laog redex (generalized):
+            # μ′ alt . < μ aff . < DI(alt) || C >  ∥  μ′ aff . < DI(alt) || Supporter > >
+            if isinstance(n.term, Mu) and isinstance(n.context, Mutilde):
+                im, cm = n.term, n.context
+                if (isinstance(im.term, DI) and im.term.name == n.di.name and
+                    isinstance(cm.term, DI) and cm.term.name == n.di.name):
+                    return True
         # recurse quickly
         for child in getattr(n, 'term', None), getattr(n, 'context', None):
             if child and self._has_next_redex(child):
@@ -659,3 +653,51 @@ class EtaReducer:
             return deepcopy(root.context)
         # no η-redex at root
         return root
+
+class ThetaExpander(ProofTermVisitor):
+    """
+    Theta-expansion: uniformly expand every subterm with prop == target_prop.
+
+    Modes:
+      - mode='term'    → for Term-positions:  t:A  ↦  μ alt:A . < μ aff:A . < t || alt > ∥ AltC_t >
+      - mode='context' → for Context-positions: c:A ↦  μ' alt:A . < AltT_t ∥ μ' aff:A . < alt || c > >
+      - mode='both'    → apply both (rarely needed)
+    """
+    def __init__(self, target_prop: str, mode: str = "term", *, verbose: bool = False):
+        self.target_prop = target_prop
+        self.mode = mode  # 'term' | 'context' | 'both'
+        self.verbose = verbose
+        self._i = 0
+
+    def _fresh_label(self, kind: str) -> str:
+        self._i += 1
+        return f"Alt{kind}.{self._i}"
+
+    def visit(self, node):
+        if node is None:
+            return None
+        # Term-side expansion
+        if (self.mode in ("term", "both")
+            and isinstance(node, Term)
+            and getattr(node, "prop", None) == self.target_prop):
+            A = self.target_prop
+            t = deepcopy(node)
+            inner = Mu(ID("aff", A), A, t, ID("alt", A))
+            altc = Laog(self._fresh_label("C"), A)
+            return Mu(ID("alt", A), A, inner, altc)
+        # Context-side expansion
+        if (self.mode in ("context", "both")
+            and isinstance(node, Context)
+            and getattr(node, "prop", None) == self.target_prop):
+            A = self.target_prop
+            c = deepcopy(node)
+            altt = Goal(self._fresh_label("T"), A)
+            inner = Mutilde(DI("aff", A), A, DI("alt", A), c)
+            return Mutilde(DI("alt", A), A, altt, inner)
+        # descend
+        new = deepcopy(node)
+        if hasattr(new, "term") and new.term is not None:
+            new.term = self.visit(new.term)
+        if hasattr(new, "context") and new.context is not None:
+            new.context = self.visit(new.context)
+        return new

@@ -331,7 +331,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         target = prover.get_argument(target_name)
                         if supporter and target:
                             try:
-                                result = supporter.basic_support(target, name=new_name, on=on_prop)
+                                result = supporter.support(target, name=new_name, on=on_prop)
                                 prover.register_argument(result)
                                 logger.info("Constructed support '%s' (target '%s' by '%s'%s).",
                                             result.name, target.name, supporter.name,

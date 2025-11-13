@@ -4,7 +4,7 @@ from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
-from core.comp.reduce import ArgumentTermReducer, EtaReducer
+from core.comp.reduce import ArgumentTermReducer, EtaReducer, ThetaExpander
 from core.dc.graft import graft_uniform, graft_single
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
@@ -543,32 +543,85 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def get_conclusion(self) -> str:
         return self.conclusion
 
-    def support(self, other_argument: "Argument") -> "Argument":
-        #Akin to chain but instead of filling in an assumption, provide an alternative proof for the assumption. Could be generalized to provide an alternative proof for any intermediate derivation of an argument.
+    def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
+        # Ensure both arguments are executed
         if not self.executed:
             self.execute()
         if not other_argument.executed:
             other_argument.execute()
-                # Find if other_argument has an assumption that matches self.conclusion
 
-        matching_assumption = self.match_conclusion_assumptions(self.conclusion, other_argument.assumptions)
-        issue = other_argument.assumptions[matching_assumption]["prop"]
-        logger.debug("Issue: %s", issue)
-        # The adapter
+        issue = on or self.conclusion
 
-        adaptercontext = Mutilde(DI("aff2", issue), issue, Goal("2", issue), ID("alt1", issue))
-        adapterterm = Mu(ID("aff1", issue), issue, Goal("1"), ID("alt1",issue))
-        adapterbody = Mu(ID("alt1", issue), issue, adapterterm, adaptercontext)
-        alternative_proof_adapter = Argument(self.prover, f'supports_on_{other_argument.assumptions[matching_assumption]["prop"]}', other_argument.assumptions[matching_assumption]["prop"])
-        logger.debug("Building adapter body")
-        alternative_proof_adapter.body = adapterbody
+        # Orientation: expand terms for normal arguments; contexts for counterarguments
+        #target_kind = "context" if getattr(other_argument, "is_anti", False) else "term"
+        target_kind = "term" if isinstance(self.body, Mu) else "context" if isinstance(self.body, Mutilde) else "unknown"
+        if target_kind == "unknown":
+            raise TypeError("Support: supporter must start with Mu or Mutilde binder")
 
-                                             #[f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt1.', f'next.', f'axiom support.', f'cut ({other_argument.assumptions[matching_assumption]["prop"]}) alt2.', f'next.', f'axiom support.'])
-        alternative_proof_adapter.execute()
-        adapted_argument =  alternative_proof_adapter.chain(other_argument)
-        logger.debug("Adapter argument constructed: %s", adapted_argument.proof_term)
-        final_argument = self.chain(adapted_argument)
+        # Theta-expand the supported argument uniformly on proposition 'issue'
+        expanded_body = copy.deepcopy(other_argument.body)
+        expanded_body = PropEnrichmentVisitor(
+            assumptions=other_argument.assumptions,
+            axiom_props=self.prover.declarations
+        ).visit(expanded_body)
+        expanded_body = ThetaExpander(issue, mode=target_kind, verbose=False).visit(expanded_body)
+
+        # Wrap expanded target as expanded Argument and execute to reuse chain()
+        expanded_arg = Argument(self.prover, f"theta_{other_argument.name}_on_{issue}", other_argument.conclusion)
+        expanded_arg.body = expanded_body
+        #expanded_arg.assumptions = other_argument.assumptions
+        #expanded_arg.is_anti = getattr(other_argument, "is_anti", False)
+        #expanded_arg.executed = True  # prevent a real execute() in chain
+        expanded_arg.execute()
+
+        # Resolve supported issue (exact match)
+        supported_key = None
+        logger.debug("Expanded Assumptions '%s'", expanded_arg.assumptions)
+        for key, info in expanded_arg.assumptions.items():
+            if info["prop"].strip() == issue:
+                supported_key = key
+                break
+        if supported_key is None:
+            raise ValueError(f"support: target assumption '{issue}' not found in other argument (exact match required)")
+        issue = expanded_arg.assumptions[supported_key]["prop"]
+
+        # Adapter (step 2): μ' aff . < supporter || some >
+        #supporter_is_mu = isinstance(self.body, Mu)
+        if target_kind == "term":
+            adapter1_body = Mutilde(
+                DI("aff", issue), issue,
+                Goal("s", issue),
+                Laog("some", issue)
+            )
+        elif target_kind == "context":
+            adapter1_body = Mu(
+                ID("aff", issue), issue,
+                Goal("some", issue),
+                Laog("s", issue)  
+            )
+        else:
+            raise TypeError("Support: supporter must start with Mu or Mutilde binder")
+        # supporter_placeholder = Goal("s", issue) if target_kind == "term" else Laog("s", issue)
+        # # 'some' must be captured by the 'alt' binder introduced by theta-expansion
+        # some_node = Laog("some", issue) if target_kind == "term" else Goal("some", issue)
+
+        # adapter1_body = Mutilde(
+        #     DI("aff", issue), issue,
+        #     supporter_placeholder, some_node
+        #)
+        adapter1_name = f"adapter_support_{self.name}_{other_argument.name}"
+        adapter1_arg = Argument(self.prover, adapter1_name, issue)
+        adapter1_arg.body = adapter1_body
+        adapter1_arg.execute()
+
+        # Chain supporter into adapter (only the supporter placeholder is replaced)
+        adapted1 = self.chain(adapter1_arg)
+        # Optional η on root to drop extraneous μ′ wrapper
+        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
+
+        # Finally graft the adapted supporter into the theta-expanded target
+        final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
 
     def normalize(self, enrich: bool = True) -> ProofTerm:
