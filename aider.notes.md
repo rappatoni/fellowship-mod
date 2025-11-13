@@ -393,3 +393,27 @@ Reference files verified in this snapshot
 +   - Update any hard-coded paths (conftest.load_monolith(), docs, CI).
 + - Ensure pytest.ini (pythonpath=.) continues to resolve imports from the new locations.
 + - Run the full test suite; fix any import path regressions.
++
++ Update summary (2025-11-13)
++ - Alternative arguments (support) construction:
++   - Implemented support() using theta-expansion and two-step adapter.
++   - Orientation now determined by the supporter’s root binder (Mu → term, Mutilde → context); no longer uses is_anti.
++   - Theta-expansion no-op case handled by executing the expanded target first to obtain assumptions for matching.
++   - CLI “support” wired to Argument.support.
++   - New test script tests/alternative_arguments.fspy constructs the debate correctly.
++ - Reduction:
++   - Current reducer still yields an incorrect result for the constructed debate.
++   - Plan: add an alternative-arguments reduction rule recognizing the theta-expanded support redex (both Mu and Mutilde orientations).
++ - Roadmap:
++   1) Add the new reduction rule for alternative arguments.
++   2) Drop pureness/uniqueness assumptions (allow multiple/more general support sites).
++   3) Implement rebut (operation + reduction rules) next.
++
++ Next session focus (2025-11-13)
++ - Implement alternative-arguments reduction rule in core/comp/reduce.py:
++   - Recognize θ-expanded shapes (generalized t/C, not only Goal/Laog):
++     - μ alt . < μ aff . < t || ID(alt) > ∥ μ′ aff . < Supporter || ID(alt) > >
++     - μ′ alt . < μ aff . < DI(alt) || C > ∥ μ′ aff . < DI(alt) || Supporter > >
++   - Keep/discard using acceptance coloring of the attacker subtree; ensure _has_next_redex recognizes these redexes.
++ - Remove pureness/uniqueness assumptions in support: allow multiple matching subterms; plan user-facing controls later if needed.
++ - Begin rebut implementation (operation and reduction rules).
