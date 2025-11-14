@@ -8,19 +8,22 @@ class Grammar():
 
             proof_term: term | context | mu | mutilde | lamda | cons | goal
 
-            term: di | lamda | mu | goal
+            term: di | lamda | sonc |  mu | goal
 
-            context: id | cons | mutilde | laog
+            context: id | cons | adaml | mutilde | laog
 
             mu: "μ" id ":" prop "." "<" term "||" context ">"
             mutilde: "μ'" di ":" prop "." "<" term "||" context ">"
             lamda: "λ" hyp "." term
+            admal: "λ" pyh "." context
             cons: term "*" context
+            sonc: context "*" term
             goal: "?" number
             laog: "?" number
 
             prop: /[^.<>()]+/
             hyp: di ":" prop
+            pyh : id ":" prop
             id: /[a-zA-Z_][a-zA-Z0-9_]*/
             di: /[a-zA-Z_][a-zA-Z0-9_]*/
             number: NUMBER ("." NUMBER)*

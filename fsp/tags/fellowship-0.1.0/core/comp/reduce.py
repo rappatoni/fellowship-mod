@@ -214,26 +214,39 @@ class ArgumentTermReducer(ProofTermVisitor):
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.term):
-                    if not _is_red(ctx_mt.term):
-                        # Case A: keep Supporter
+                    left      = inner_mu.term         # left-hand argument (some_arg)
+                    supporter = ctx_mt.term
+                    left_is_default = isinstance(left, Goal)
+
+                    # support-keep: supporter undefeated AND (left is default OR left defeated)
+                    if not _is_red(supporter) and (left_is_default or _is_red(left)):
                         dbg_before = self._pres_str(node)
-                        node.term    = deepcopy(ctx_mt.term)     # Supporter
-                        node.context = deepcopy(ctx_mt.context)  # ID(alt)
+                        node.term    = deepcopy(supporter)           # keep Supporter
+                        node.context = deepcopy(ctx_mt.context)      # ID(alt)
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mu support-keep: before=\n%s", dbg_before)
                         logger.debug("reduce.Mu support-keep: after=\n%s",  dbg_after)
                         self._snapshot("support-keep")
                         return self.visit_Mu(node)
-                    else:
-                        # Case B: discard Supporter (defeated)
+
+                    # support-discard: supporter defeated AND (left is default OR left undefeated)
+                    if _is_red(supporter) and (left_is_default or not _is_red(left)):
                         dbg_before = self._pres_str(node)
-                        node.term    = deepcopy(inner_mu.term)     # Goal
-                        node.context = deepcopy(inner_mu.context)  # ID(alt)
+                        node.term    = deepcopy(left)                 # keep left (Goal or undefeated arg)
+                        node.context = deepcopy(inner_mu.context)     # ID(alt)
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mu support-discard: before=\n%s", dbg_before)
                         logger.debug("reduce.Mu support-discard: after=\n%s",  dbg_after)
                         self._snapshot("support-discard")
                         return self.visit_Mu(node)
+
+                    # ambiguous: do not reduce (both undefeated or both defeated with non-default left)
+                    if self.verbose:
+                        logger.debug(
+                            "reduce.Mu support guarded: no action (left=%sdefault, left_red=%s, supporter_red=%s)",
+                            "" if left_is_default else "non-",
+                            _is_red(left), _is_red(supporter)
+                        )
                 else:
                     # simplify supporter term and re-check
                     before = self._pres_str(ctx_mt.term)
@@ -249,24 +262,23 @@ class ArgumentTermReducer(ProofTermVisitor):
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
-            if not (_is_affine(inner_mu.id.name, inner_mu) and
-                    _is_affine(ctx_mt.di.name, ctx_mt)):
+            if not (_is_affine(inner_mu.id.name, inner_mu) and _is_affine(ctx_mt.di.name, ctx_mt)):
                 if self.verbose: logger.debug("Guard A failed")
                 return False
-            # both protect goals with equal prop (we ignore number for now)
-            if not isinstance(inner_mu.term, Goal) and (isinstance(ctx_mt.context, Goal) or isinstance(ctx_mt.context.context.term, Goal)):
-                if self.verbose: logger.debug("Guard B failed")
-                return False
+            # ensure ctx_mt.context has the expected shape before dereferencing
             if not isinstance(ctx_mt.context, Mutilde):
-                if self.verbose: logger.debug("Guard C failed")
+                if self.verbose: logger.debug("Guard B failed (ctx.context is not Mutilde)")
                 return False
-            if not node.id.name == inner_mu.context.name:
-                if self.verbose: logger.debug("Guard D failed")
+            # both protect goals with equal prop (ignore number)
+            left_goal_ok  = isinstance(inner_mu.term, Goal)
+            right_goal_ok = isinstance(ctx_mt.context.term, Goal)
+            if not (left_goal_ok and right_goal_ok):
+                if self.verbose: logger.debug("Guard C failed (goal-protection) left=%s right=%s", left_goal_ok, right_goal_ok)
                 return False
-            #if isinstance(inner_mu.term, Goal) and isinstance(ctx_mt.context.context.term, Goal):
-                #What is the point of this guard again?
-             #   print(f"termprop {inner_mu.term.prop} vs Contextprop {ctx_mt.term.prop}")
-              #  return inner_mu.term.prop == ctx_mt.context.context.term.prop
+            # outer μ alt binder must match inner_mu.context ID(alt)
+            if not (isinstance(inner_mu.context, ID) and node.id.name == inner_mu.context.name):
+                if self.verbose: logger.debug("Guard D failed (alt mismatch)")
+                return False
             if self.verbose: logger.debug("termprop %s vs contextprop %s", inner_mu.term.prop, ctx_mt.term.prop)
             return inner_mu.term.prop == ctx_mt.term.prop
 
