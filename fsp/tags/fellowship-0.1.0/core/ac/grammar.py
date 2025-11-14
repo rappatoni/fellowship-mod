@@ -10,7 +10,7 @@ class Grammar():
 
             term: di | lamda | sonc |  mu | goal
 
-            context: id | cons | adaml | mutilde | laog
+            context: id | cons | admal | mutilde | laog
 
             mu: "μ" id ":" prop "." "<" term "||" context ">"
             mutilde: "μ'" di ":" prop "." "<" term "||" context ">"
