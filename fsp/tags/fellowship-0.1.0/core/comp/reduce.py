@@ -680,10 +680,11 @@ class ThetaExpander(ProofTermVisitor):
         self.mode = mode  # 'term' | 'context' | 'both'
         self.verbose = verbose
         self._i = 0
+        self.changed = False
 
     def _fresh_label(self, kind: str) -> str:
         self._i += 1
-        return f"Alt{kind}.{self._i}"
+        return f"Alt{kind}{self._i}"
 
     def visit(self, node):
         if node is None:
@@ -696,6 +697,7 @@ class ThetaExpander(ProofTermVisitor):
             t = deepcopy(node)
             inner = Mu(ID("aff", A), A, t, ID("alt", A))
             altc = Laog(self._fresh_label("C"), A)
+            self.changed = True
             return Mu(ID("alt", A), A, inner, altc)
         # Context-side expansion
         if (self.mode in ("context", "both")
@@ -705,6 +707,7 @@ class ThetaExpander(ProofTermVisitor):
             c = deepcopy(node)
             altt = Goal(self._fresh_label("T"), A)
             inner = Mutilde(DI("aff", A), A, DI("alt", A), c)
+            self.changed = True
             return Mutilde(DI("alt", A), A, altt, inner)
         # descend
         new = deepcopy(node)

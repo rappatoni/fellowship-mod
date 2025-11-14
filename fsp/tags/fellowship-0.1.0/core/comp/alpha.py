@@ -1,7 +1,7 @@
 from typing import Set, Dict
 from copy import deepcopy
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Goal, Laog, ID, DI
 
 
 def _collect_binder_names(node: ProofTerm, names=None):
@@ -14,6 +14,8 @@ def _collect_binder_names(node: ProofTerm, names=None):
         names.add(node.di.name)
     elif isinstance(node, Lamda):
         names.add(node.di.di.name)  # di holds a Hyp → DI → name
+    elif isinstance(node, Admal):
+        names.add(node.id.id.name)
     # recurse
     for child in (getattr(node, 'term', None), getattr(node, 'context', None)):
         if child is not None:
@@ -52,6 +54,12 @@ class _AlphaRename(ProofTermVisitor):
         if node.di.di.name in self.mapping:
             node.di.di.name = self.mapping[node.di.di.name]
         return super().visit_Lamda(node)
+
+    def visit_Admal(self, node: Admal):
+        # rename context lambda binder if mapped, then recurse into context
+        if node.id.id.name in self.mapping:
+            node.id.id.name = self.mapping[node.id.id.name]
+        return super().visit_Admal(node)
 
     # leaves – replace occurrences
     def visit_ID(self, node: ID):
@@ -118,6 +126,18 @@ class FreshenBinderNames(ProofTermVisitor):
             node.term = ren.visit(node.term)
         self.seen.add(new); self.taken.add(new)
         node.term = self.visit(node.term)
+        return node
+
+    def visit_Admal(self, node: Admal):
+        old = node.id.id.name
+        new = old
+        if old in self.seen or old in self.taken:
+            new = _fresh(old, self.seen | self.taken)
+            ren = _AlphaRename({old: new})
+            node.id.id.name = new
+            node.context = ren.visit(node.context)
+        self.seen.add(new); self.taken.add(new)
+        node.context = self.visit(node.context)
         return node
 
     # Other nodes: default traversal

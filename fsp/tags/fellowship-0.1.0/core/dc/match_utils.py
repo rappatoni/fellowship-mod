@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Hyp
 
 logger = logging.getLogger('fsp.parser')
 
@@ -71,6 +71,30 @@ def match_trees(nodeA: "ProofTerm", nodeB: "ProofTerm", mapping: Dict[str, str])
             return False
         return True
 
+    elif isinstance(nodeA, Admal):
+        # Match context lambda: binder ID name/prop, then context subtree
+        idB = nodeB.id.id.name
+        idA = nodeA.id.id.name
+        if idB in mapping:
+            if mapping[idB] != idA:
+                return False
+        else:
+            mapping = mapping.copy()
+            mapping[idB] = idA
+        if nodeB.id.prop != nodeA.id.prop:
+            return False
+        if not match_trees(nodeA.context, nodeB.context, mapping):
+            return False
+        return True
+
+    elif isinstance(nodeA, Sonc):
+        # Match reversed composition: context then term
+        if not match_trees(nodeA.context, nodeB.context, mapping):
+            return False
+        if not match_trees(nodeA.term, nodeB.term, mapping):
+            return False
+        return True
+
     elif isinstance(nodeA, Goal):
         # Goal numbers don't matter.
         # if nodeA.number != nodeB.number:
@@ -107,6 +131,11 @@ def get_child_nodes(node: "ProofTerm") -> List["ProofTerm"]:
     elif isinstance(node, Cons):
         child_nodes.append(node.term)
         child_nodes.append(node.context)
+    elif isinstance(node, Admal):
+        child_nodes.append(node.context)
+    elif isinstance(node, Sonc):
+        child_nodes.append(node.context)
+        child_nodes.append(node.term)
     # For ID, DI, and Goal, there are no child nodes
     return child_nodes
 

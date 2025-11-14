@@ -1,7 +1,7 @@
 from copy import deepcopy
 import collections
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
 from pres.gen import ProofTermGenerationVisitor
 
 # Normalize logical symbols to the prover's ASCII syntax
@@ -150,9 +150,26 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             raise Exception(f"Missing hypothesis name for Lamda node {self._node_pres(node)}")
         return node
 
+    def visit_Admal(self, node: Admal):
+        # Mirror Lamda: emit named elim for context lambda
+        node = super().visit_Admal(node)
+        name = getattr(getattr(node, "id", None), "id", None)
+        name = getattr(name, "name", None)
+        if name:
+            self.instructions.appendleft(f'elim {name}.')
+        else:
+            raise Exception(f"Missing variable name for Admal node {self._node_pres(node)}")
+        return node
+
     def visit_Cons(self, node: Cons):
         node = super().visit_Cons(node)
         self.instructions.appendleft(f'elim.')
+        return node
+
+    def visit_Sonc(self, node: Sonc):
+        # Mirror Cons: emit plain elim for context*term
+        node = super().visit_Sonc(node)
+        self.instructions.appendleft('elim.')
         return node
 
     def visit_Goal(self, node: Goal):

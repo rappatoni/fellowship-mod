@@ -72,6 +72,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.enrich_props()
                 generator = InstructionsGenerationVisitor()
                 self.instructions = generator.return_instructions(self.body)
+                logger.debug("Generated instructions for argument '%s': %s", self.name, self.instructions)
         # Decide whether to start a theorem or an antitheorem.
         # We cannot reliably infer “anti” from available data at this point:
         # - Recording mode has no AST yet: during scripts/interactive recording we only
@@ -399,6 +400,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
     def basic_support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         """
+        DEPRECATED: use support instead
         Basic Support:
           - If supporting a Goal in other_argument:
               μ alt.< μ aff.<?1||alt> ∥ μ' aff.< supporter || alt > >
@@ -543,39 +545,61 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def get_conclusion(self) -> str:
         return self.conclusion
 
+    def _theta_expand(self, body: ProofTerm, issue: str, mode: str, *, assumptions: dict, declarations: dict):
+        """
+        Deep-copy, enrich, theta-expand on `issue` in the given `mode` ('term'|'context'|'both'),
+        then regenerate presentation. Returns (expanded_body, changed_flag).
+        """
+        eb = copy.deepcopy(body)
+        eb = PropEnrichmentVisitor(assumptions=assumptions, axiom_props=declarations).visit(eb)
+        te = ThetaExpander(issue, mode=mode, verbose=False)
+        eb = te.visit(eb)
+        # regenerate presentation to reflect any structural changes
+        eb = ProofTermGenerationVisitor().visit(eb)
+        if not te.changed:
+            logger.warning("Theta-expansion produced no changes for issue '%s' (mode=%s)", issue, mode)
+        return eb, te.changed
+
     def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         # Ensure both arguments are executed
         if not self.executed:
+            logger.debug("Executing supporter argument '%s'", self.name)
             self.execute()
         if not other_argument.executed:
+            logger.debug("Executing supported argument '%s'", other_argument.name)
             other_argument.execute()
 
         issue = on or self.conclusion
+        logger.debug("Support issue: %s", issue)
 
         # Orientation: expand terms for normal arguments; contexts for counterarguments
         #target_kind = "context" if getattr(other_argument, "is_anti", False) else "term"
         target_kind = "term" if isinstance(self.body, Mu) else "context" if isinstance(self.body, Mutilde) else "unknown"
         if target_kind == "unknown":
             raise TypeError("Support: supporter must start with Mu or Mutilde binder")
+        logger.debug("Target kind for support: %s", target_kind)
 
-        # Theta-expand the supported argument uniformly on proposition 'issue'
-        expanded_body = copy.deepcopy(other_argument.body)
-        expanded_body = PropEnrichmentVisitor(
+        logger.debug("Theta-expanding supported argument '%s' on issue '%s' (mode=%s)", other_argument.name, issue, target_kind)
+        expanded_body, te_changed = other_argument._theta_expand(
+            other_argument.body,
+            issue,
+            target_kind,
             assumptions=other_argument.assumptions,
-            axiom_props=self.prover.declarations
-        ).visit(expanded_body)
-        expanded_body = ThetaExpander(issue, mode=target_kind, verbose=False).visit(expanded_body)
+            #TODO: it is odd that the prover declarations are an attribute of the supporter argument.
+            declarations=self.prover.declarations
+        )
+        logger.debug("Theta-expander changed=%s; theta-expanded body: %s", te_changed, expanded_body.pres)
 
         # Wrap expanded target as expanded Argument and execute to reuse chain()
-        expanded_arg = Argument(self.prover, f"theta_{other_argument.name}_on_{issue}", other_argument.conclusion)
+        logger.debug("Creating expanded argument for supported argument '%s'", other_argument.name)
+        expanded_arg = Argument(self.prover, f"theta_expand_{other_argument.name}_on_{issue}", other_argument.conclusion)
         expanded_arg.body = expanded_body
-        #expanded_arg.assumptions = other_argument.assumptions
-        #expanded_arg.is_anti = getattr(other_argument, "is_anti", False)
-        #expanded_arg.executed = True  # prevent a real execute() in chain
+        logger.debug("Executing expanded argument")
         expanded_arg.execute()
 
         # Resolve supported issue (exact match)
+        logger.debug("Finding supported assumption in expanded argument")
         supported_key = None
         logger.debug("Expanded Assumptions '%s'", expanded_arg.assumptions)
         for key, info in expanded_arg.assumptions.items():
@@ -585,16 +609,19 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if supported_key is None:
             raise ValueError(f"support: target assumption '{issue}' not found in other argument (exact match required)")
         issue = expanded_arg.assumptions[supported_key]["prop"]
+        logger.debug("Supported issue resolved to: %s (key=%s)", issue, supported_key)
 
         # Adapter (step 2): μ' aff . < supporter || some >
         #supporter_is_mu = isinstance(self.body, Mu)
         if target_kind == "term":
+            logger.debug("Building adapter body for supporting a term")
             adapter1_body = Mutilde(
                 DI("aff", issue), issue,
                 Goal("s", issue),
                 Laog("some", issue)
             )
         elif target_kind == "context":
+            logger.debug("Building adapter body for supporting a context")
             adapter1_body = Mu(
                 ID("aff", issue), issue,
                 Goal("some", issue),
@@ -602,17 +629,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             )
         else:
             raise TypeError("Support: supporter must start with Mu or Mutilde binder")
-        # supporter_placeholder = Goal("s", issue) if target_kind == "term" else Laog("s", issue)
-        # # 'some' must be captured by the 'alt' binder introduced by theta-expansion
-        # some_node = Laog("some", issue) if target_kind == "term" else Goal("some", issue)
 
-        # adapter1_body = Mutilde(
-        #     DI("aff", issue), issue,
-        #     supporter_placeholder, some_node
-        #)
         adapter1_name = f"adapter_support_{self.name}_{other_argument.name}"
         adapter1_arg = Argument(self.prover, adapter1_name, issue)
         adapter1_arg.body = adapter1_body
+        logger.debug("Executing adapter argument")
         adapter1_arg.execute()
 
         # Chain supporter into adapter (only the supporter placeholder is replaced)
