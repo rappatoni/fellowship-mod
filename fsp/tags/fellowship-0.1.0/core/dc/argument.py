@@ -13,6 +13,7 @@ from pres.nl import (
     natural_language_dialectical_rendering,
     natural_language_argumentative_rendering,
 )
+from wrap.prover import ProverError
 
 logger = logging.getLogger(__name__)
 
@@ -96,18 +97,30 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             start_cmd = f'theorem {self.name} : ({self.conclusion}).'
         output = self.prover.send_command(start_cmd)
         # Execute each instruction
-        for instr in self.instructions:
+        last_output = None
+        instr_list = list(self.instructions)
+        total = len(instr_list)
+        for i, instr in enumerate(instr_list):
             if instr.startswith('tactic '):
                 # Handle custom tactic invocation within argument execution
                 parts = instr.split()
                 tactic_name = parts[1]
                 tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
                 output = self.prover.execute_tactic(tactic_name, *tactic_args)
-                #output += output_instr
+                last_output = output
             else:
-                output = self.prover.send_command(instr.strip() + '.')
-                logger.trace("Prover output: %s", output)
-        # Capture the assumptions (open goals)
+                try:
+                    output = self.prover.send_command(instr.strip() + '.')
+                    last_output = output
+                    logger.trace("Prover output: %s", output)
+                except ProverError as e:
+                    norm = instr.strip().lower()
+                    if i == total - 1 and norm == "next":
+                        logger.warning("Ignoring ProverError on final 'next': %s", e)
+                        break
+                    raise
+        # Capture the assumptions (open goals) using the last successful state
+        output = last_output
         self._parse_proof_state(output)
         # Parse proof term
         grammar = Grammar()
