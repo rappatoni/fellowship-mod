@@ -51,8 +51,8 @@ class ProofTermVisitor:
         return node
 
     def visit_Sonc(self, node: Sonc):
-        node.context = self.visit(node.context)
         node.term = self.visit(node.term)
+        node.context = self.visit(node.context)
         return node
 
     def visit_Goal(self, node: Goal):

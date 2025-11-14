@@ -111,8 +111,8 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         # bind context variable (ID) with its declared prop
         self.bound_vars[node.id.id.name] = node.id.prop
         node = super().visit_Admal(node)
-        if node.prop is None and getattr(node.context, "prop", None):
-            node.prop = node.context.prop
+        if node.prop is None and node.id.prop and node.context.prop:
+            node.prop = f"{node.id.prop}-{node.context.prop}"
         return node
 
     def visit_Cons(self, node: Cons):
@@ -124,8 +124,8 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_Sonc(self, node: Sonc):
         node = super().visit_Sonc(node)
-        if node.prop is None and getattr(node.term, "prop", None):
-            node.prop = node.term.prop
+        if node.prop is None and node.term.prop and node.context.prop:
+            node.prop = f"{node.term.prop}-{node.context.prop}"
         return node
 
     def visit_Mu(self, node: Mu):
