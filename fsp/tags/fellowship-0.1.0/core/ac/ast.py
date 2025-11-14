@@ -58,6 +58,27 @@ class Lamda(Term):
 #     def __init__(self, id_):
 #         self.id = id_
 
+class Pyh(ProofTerm):
+    def __init__(self, id: "ID", prop: str):
+        self.id = id
+        self.prop = prop
+        self.pres = None
+        self.flag = None
+        if not isinstance(id, ID):
+            raise TypeError(f"Pyh expects ID in binder position, got {type(id).__name__}")
+
+class Admal(Context):
+    def __init__(self, hyp: "Pyh", context: "Context"):
+        self.id = hyp
+        self.context = context
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(hyp, Pyh):
+            raise TypeError(f"Admal expects Pyh binder, got {type(hyp).__name__}")
+        if not isinstance(context, Context):
+            raise TypeError(f"Admal.context expects a Context node, got {type(context).__name__}")
+
 class Cons(Context):
     def __init__(self, term: "Term", context: "Context"):
         self.term = term
@@ -70,6 +91,18 @@ class Cons(Context):
         if not isinstance(context, Context):
             raise TypeError(f"Cons.context expects a Context node, got {type(context).__name__}")
         # self.prop = term.prop + "->"+context.prop if term.prop and context.prop else None
+
+class Sonc(Term):
+    def __init__(self, context: "Context", term: "Term"):
+        self.context = context
+        self.term = term
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(context, Context):
+            raise TypeError(f"Sonc.context expects a Context node, got {type(context).__name__}")
+        if not isinstance(term, Term):
+            raise TypeError(f"Sonc.term expects a Term node, got {type(term).__name__}")
 
 class Goal(Term):
     def __init__(self, number, prop = None):

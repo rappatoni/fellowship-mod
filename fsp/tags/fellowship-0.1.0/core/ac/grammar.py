@@ -1,5 +1,5 @@
 from lark import Lark, Transformer
-from core.ac.ast import Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp
+from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Hyp, Pyh
 
 class Grammar():
     def __init__(self):
@@ -68,6 +68,21 @@ class ProofTermTransformer(Transformer):
     # def hyp(self, items):
     #     id_ = items[0]
     #     return Hyp(id_)
+
+    def admal(self, items) -> "Admal":
+        pyh = items[0]
+        context = items[1]
+        return Admal(pyh, context)
+
+    def sonc(self, items) -> "Sonc":
+        context = items[0]
+        term = items[1]
+        return Sonc(context, term)
+
+    def pyh(self, token) -> "Pyh":
+        id_ = token[0]
+        prop = str(token[1])
+        return Pyh(id_, prop)
 
     def cons(self, items) -> "Cons":
         term = items[0]

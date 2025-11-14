@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 import logging, warnings
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
 
 logger = logging.getLogger(__name__)
 
@@ -107,11 +107,25 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             node.prop = f"{node.di.prop}->{node.term.prop}"
         return node
 
+    def visit_Admal(self, node: Admal):
+        # bind context variable (ID) with its declared prop
+        self.bound_vars[node.id.id.name] = node.id.prop
+        node = super().visit_Admal(node)
+        if node.prop is None and getattr(node.context, "prop", None):
+            node.prop = node.context.prop
+        return node
+
     def visit_Cons(self, node: Cons):
         node = super().visit_Cons(node)
         # Similarly, if node.term.prop and node.context.prop => node.prop = ...
         if node.prop is None and node.term.prop and node.context.prop:
             node.prop = f"{node.term.prop}->{node.context.prop}"
+        return node
+
+    def visit_Sonc(self, node: Sonc):
+        node = super().visit_Sonc(node)
+        if node.prop is None and getattr(node.term, "prop", None):
+            node.prop = node.term.prop
         return node
 
     def visit_Mu(self, node: Mu):
