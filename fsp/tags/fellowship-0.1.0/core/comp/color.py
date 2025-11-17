@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Optional
 from pres.gen import ProofTermGenerationVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc
 
 class AcceptanceColoringVisitor:
     ANSI = {
@@ -45,6 +45,8 @@ class AcceptanceColoringVisitor:
             return node.name == name
         # stop under shadowing binders that re-bind the same name
         if isinstance(node, Lamda) and node.di.di.name == name:
+            return False
+        if isinstance(node, Admal) and node.id.id.name == name:
             return False
         if isinstance(node, Mu) and node.id.name == name:
             return False
@@ -95,6 +97,25 @@ class AcceptanceColoringVisitor:
         if isinstance(n, Cons) and self._unattacked(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
+        if isinstance(n, Admal) and isinstance(n.context, Laog):
+            self._memo_unattacked[mid] = True
+            return True
+
+        if isinstance(n, Sonc) and isinstance(n.term, Goal) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+        if isinstance(n, Sonc) and self._unattacked(n.term) and isinstance(n.context, Laog):
+            self._memo_unattacked[mid] = True
+            return True
+
+        if isinstance(n, Admal) and self._unattacked(n.context):
+            self._memo_unattacked[mid] = True
+            return True
+
+        if isinstance(n, Sonc) and self._unattacked(n.context) and self._unattacked(n.term):
+            self._memo_unattacked[mid] = True
+            return True
+
         if isinstance(n, Mu) and self._unattacked(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
@@ -199,6 +220,36 @@ class AcceptanceColoringVisitor:
                 f"Acceptance coloring incomplete for Mutilde node {self._node_pres(n)}: "
                 f"term_color={c_t}, context_color={c_c}"
             )
+        if isinstance(n, Admal):
+            c = self.classify(n.context)
+            self._memo_color[mid] = c
+            return c
+
+        if isinstance(n, Sonc):
+            # mirror Cons but with (context*term) orientation
+            if isinstance(n.term, Goal):
+                c2 = self.classify(n.context)
+                self._memo_color[mid] = c2
+                return c2
+            if isinstance(n.context, Laog):
+                c1 = self.classify(n.term)
+                self._memo_color[mid] = c1
+                return c1
+            c1, c2 = self.classify(n.term), self.classify(n.context)
+            if c1 == "green" and c2 == "green":
+                self._memo_color[mid] = "green"; return "green"
+            if (c1 == "red" and c2 in {"green", "yellow"}) or (c2 == "red" and c1 in {"green", "yellow"}):
+                self._memo_color[mid] = "red"; return "red"
+            if (c1 == "yellow" and c2 == "green") or (c1 == "green" and c2 == "yellow"):
+                self._memo_color[mid] = "yellow"; return "yellow"
+            if c1 == "red" and c2 == "red":
+                self._memo_color[mid] = "red"; return "red"
+            if c1 == "yellow" and c2 == "yellow":
+                self._memo_color[mid] = "yellow"; return "yellow"
+            raise ValueError(
+                f"Acceptance coloring incomplete for Sonc node {self._node_pres(n)}: "
+                f"term_color={c1}, context_color={c2}"
+            )
         raise ValueError(
             f"Acceptance coloring incomplete for leaf {type(n).__name__} {self._node_pres(n)}"
         )
@@ -212,8 +263,12 @@ class AcceptanceColoringVisitor:
             return self.visit_Mutilde(node)
         if isinstance(node, Lamda):
             return self.visit_Lamda(node)
+        if isinstance(node, Admal):
+            return self.visit_Admal(node)
         if isinstance(node, Cons):
             return self.visit_Cons(node)
+        if isinstance(node, Sonc):
+            return self.visit_Sonc(node)
         if isinstance(node, Goal):
             return self.visit_Goal(node)
         if isinstance(node, Laog):
@@ -275,6 +330,19 @@ class AcceptanceColoringVisitor:
         )
         return s
 
+    def visit_Admal(self, node: Admal):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        inner = self.visit(node.context)
+        if isinstance(node.context, Laog):
+            inner = f"{openP}{inner}{reset}"
+        s = (
+            f"{openP}λ{node.id.id.name}:{node.id.prop}."
+            f"{reset}{inner}"
+            f"{openP}{self.ANSI['reset']}"
+        )
+        return s
+
     def visit_Cons(self, node: Cons):
         color = self.classify(node)
         openP, reset = self._ansi(color)
@@ -284,6 +352,18 @@ class AcceptanceColoringVisitor:
             left = f"{openP}{left}{reset}"
         if isinstance(node.context, Laog):
             right = f"{openP}{right}{reset}"
+        s = f"{left}{openP}*{self.ANSI['reset']}{right}"
+        return s
+
+    def visit_Sonc(self, node: Sonc):
+        color = self.classify(node)
+        openP, reset = self._ansi(color)
+        left  = self.visit(node.context)
+        right = self.visit(node.term)
+        if isinstance(node.term, Goal):
+            right = f"{openP}{right}{reset}"
+        if isinstance(node.context, Laog):
+            left = f"{openP}{left}{reset}"
         s = f"{left}{openP}*{self.ANSI['reset']}{right}"
         return s
 

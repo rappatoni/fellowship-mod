@@ -81,4 +81,29 @@ undercut u3 arg4 u2
 reduce u3
 color u3
 tree u3 nl
+#
+# Now we test an undercut on a laog assumption
+#
+declare BadNegotiations : bool.
+deny r5: (LowballOffer - BadNegotiations).
+start counterargument arg5 LowballOffer
+cut (LowballOffer - BadNegotiations) th.
+elim.
+next.
+axiom th.
+moxia r5.
+end argument
+#
+# Undercutter
+#
+declare NoCoffee : bool.
+declare r6 : (NoCoffee -> BadNegotiations).
+start argument arg6 BadNegotiations
+cut (NoCoffee -> BadNegotiations) th.
+axiom r6.
+elim.
+next.
+axiom.
+end argument
 
+undercut u4 arg6 arg5
