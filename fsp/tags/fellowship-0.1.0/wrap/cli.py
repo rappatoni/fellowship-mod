@@ -448,6 +448,90 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 raise ProverError(f"{script_path}:{lineno}: Attack failed: missing arguments")
                             if stop_on_error:
                                 break
+                    elif command.startswith('rebut '):
+                        # Format: rebut NEW_NAME attacker target [on <PROP...>]
+                        parts = command.split()
+                        if len(parts) < 4:
+                            logger.error("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
+                            continue
+                        new_name = parts[1]
+                        attacker_name = parts[2]
+                        target_name = parts[3]
+                        # Optional: parse 'on <prop...>'
+                        on_prop = None
+                        if len(parts) > 4:
+                            try:
+                                on_idx = parts.index('on', 4)
+                                on_prop = " ".join(parts[on_idx+1:]).strip()
+                            except ValueError:
+                                on_prop = None
+                        attacker = prover.get_argument(attacker_name)
+                        target = prover.get_argument(target_name)
+                        if attacker and target:
+                            try:
+                                result = attacker.rebut(target, name=new_name, on=on_prop)
+                                prover.register_argument(result)
+                                logger.info("Constructed rebut '%s' (target '%s' by '%s'%s).",
+                                            result.name, target.name, attacker.name,
+                                            f" on {on_prop}" if on_prop else "")
+                            except ProverError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error during rebut: %s", e)
+                                if stop_on_error:
+                                    break
+                            except MachinePayloadError as e:
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Prover error (no machine payload) during rebut: %s", e)
+                                if stop_on_error:
+                                    break
+                            except ValueError as e:
+                                # e.g., when target contains an open Goal/Laog (undercut-only case)
+                                if strict:
+                                    if isolate:
+                                        try:
+                                            prover.close()
+                                        except Exception:
+                                            pass
+                                    else:
+                                        prover.echo_notes = prev_echo
+                                    logger.info("Finished script %s", script_path)
+                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                                logger.error("Rebut precondition failed: %s", e)
+                                if stop_on_error:
+                                    break
+                        else:
+                            logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
+                                         attacker_name, target_name)
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: Rebut failed: missing arguments")
+                            if stop_on_error:
+                                break
                     elif command.startswith('chain '):
                         # Handle chaining of arguments
                         # Format: chain arg1 arg2

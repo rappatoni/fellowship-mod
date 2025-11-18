@@ -724,6 +724,25 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Delegate to θ-based attack
         return self.attack(other_argument, name=name, on=issue)
 
+    def rebut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        """
+        Rebut is the complement of undercut:
+        - Raises if the attacked issue occurs as an open Goal/Laog in the target.
+        - Otherwise delegates to θ-based attack().
+        """
+        # Ensure both arguments are executed (assumptions available)
+        if not self.executed:
+            self.execute()
+        if not other_argument.executed:
+            other_argument.execute()
+        issue = on or self.conclusion
+        # If the target contains an open Goal/Laog with this proposition, it's an undercut case → reject
+        has_open = any(info["prop"].strip() == issue for info in other_argument.assumptions.values())
+        if has_open:
+            raise ValueError(f"rebut: target contains an open Goal/Laog with proposition '{issue}'")
+        # Delegate to θ-based attack
+        return self.attack(other_argument, name=name, on=issue)
+
     def normalize(self, enrich: bool = True) -> ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
         if not self.executed:
