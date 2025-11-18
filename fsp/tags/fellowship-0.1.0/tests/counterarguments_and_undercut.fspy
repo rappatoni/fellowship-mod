@@ -105,5 +105,8 @@ elim.
 next.
 axiom.
 end argument
-
+# Constructing undercut
 undercut u4 arg6 arg5
+# Reduce, color
+reduce u4
+color u4

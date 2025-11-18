@@ -271,7 +271,8 @@ class ArgumentTermReducer(ProofTermVisitor):
                 return False
             # both protect goals with equal prop (ignore number)
             left_goal_ok  = isinstance(inner_mu.term, Goal)
-            right_goal_ok = isinstance(ctx_mt.context.term, Goal)
+            logger.debug("Context is goal? '%s'", ctx_mt.term)
+            right_goal_ok = isinstance(ctx_mt.term, Goal)
             if not (left_goal_ok and right_goal_ok):
                 if self.verbose: logger.debug("Guard C failed (goal-protection) left=%s right=%s", left_goal_ok, right_goal_ok)
                 return False
@@ -483,8 +484,8 @@ class ArgumentTermReducer(ProofTermVisitor):
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
             # both binders affine in their own commands
-            if not (_is_red(inner_mu) and
-                    _is_red(ctx_mt)):
+            if not (_is_affine(inner_mu.id.name, inner_mu) and
+                    _is_affine(ctx_mt.di.name, ctx_mt)):
                 if self.verbose: logger.debug("Guard Atilde failed")
                 return False
             # both protect goals with equal prop (we ignore number for now)
@@ -673,11 +674,10 @@ class ThetaExpander(ProofTermVisitor):
     Modes:
       - mode='term'    → for Term-positions:  t:A  ↦  μ alt:A . < μ aff:A . < t || alt > ∥ AltC_t >
       - mode='context' → for Context-positions: c:A ↦  μ' alt:A . < AltT_t ∥ μ' aff:A . < alt || c > >
-      - mode='both'    → apply both (rarely needed)
     """
     def __init__(self, target_prop: str, mode: str = "term", *, verbose: bool = False):
         self.target_prop = target_prop
-        self.mode = mode  # 'term' | 'context' | 'both'
+        self.mode = mode  # 'term' | 'context'
         self.verbose = verbose
         self._i = 0
         self.changed = False
@@ -690,9 +690,12 @@ class ThetaExpander(ProofTermVisitor):
         if node is None:
             return None
         # Term-side expansion
-        if (self.mode in ("term", "both")
+        logger.debug("Is instance '%s' of Term? %s", node, isinstance(node, Term))
+        logger.debug("Node prop: %s vs target_prop: %s", getattr(node, "prop", None), self.target_prop)
+        if (self.mode in ("term")
             and isinstance(node, Term)
             and getattr(node, "prop", None) == self.target_prop):
+            logger.debug("Visiting node for theta-expansion (%s mode): %s", self.mode, getattr(node, "pres", repr(node)))
             A = self.target_prop
             t = deepcopy(node)
             inner = Mu(ID("aff", A), A, t, ID("alt", A))
@@ -700,9 +703,12 @@ class ThetaExpander(ProofTermVisitor):
             self.changed = True
             return Mu(ID("alt", A), A, inner, altc)
         # Context-side expansion
-        if (self.mode in ("context", "both")
+        logger.debug("Is instance '%s' of Context? %s", node, isinstance(node, Context))
+        logger.debug("Node prop: %s vs target_prop: %s", getattr(node, "prop", None), self.target_prop)
+        if (self.mode in ("context")
             and isinstance(node, Context)
             and getattr(node, "prop", None) == self.target_prop):
+            logger.debug("Visiting node for theta-expansion (%s mode): %s", self.mode, getattr(node, "pres", repr(node)))
             A = self.target_prop
             c = deepcopy(node)
             altt = Goal(self._fresh_label("T"), A)

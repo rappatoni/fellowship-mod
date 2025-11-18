@@ -370,46 +370,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return combined_argument
 
     def focussed_undercut(self, other_argument: "Argument", *, name: Optional[str], on: Optional[str] = None) -> "Argument":
-        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
-        # Ensure both arguments are executed
-        if not self.executed:
-            self.execute()
-        if not other_argument.executed:
-            other_argument.execute()
-        # Resolve attacked issue: default to the dual of our conclusion
-        issue = on or self.conclusion
-
-        #Find the assumption that is to be attacked. The uniiform graft method is used, so it does not matter which assumption is chosen if there are multiple ones with the same prop.
-        attacked_assumption = None
-        for key, info in other_argument.assumptions.items():
-            if info["prop"].strip() == issue:
-                logger.debug("Found attacked assumption key=%s", key)
-                attacked_assumption = key
-                break
-        if attacked_assumption is None:
-            raise ValueError(
-                f"focussed_undercut: target assumption '{issue}' not found in other argument (exact match required)"
-            )
-        issue = other_argument.assumptions[attacked_assumption]["prop"]
-        logger.debug("Attacked issue: %s", issue)
-        if not name:
-            raise ValueError("focussed_undercut requires a result name: call focussed_undercut(..., name='...')")
-        # BUG: variable names may clash; consider adding a fresh‑name helper.
-        adaptercontext = Mutilde(DI("aff", issue), issue, Goal("2", issue), Laog("3", issue))
-        adapterterm    = Mu(ID("aff", issue), issue, Goal("1", issue), ID("alt", issue))
-        adapterbody    = Mu(ID("alt", issue), issue, adapterterm, adaptercontext)
-        adapter_arg = Argument(self.prover, f'adapter_{self.name}_{other_argument.name}', issue)
-        logger.debug("Building adapter body")
-        adapter_arg.body = adapterbody
-        adapter_arg.execute()
-        logger.debug("Adapter argument: '%s'", adapter_arg.proof_term)
-        #print("Adapter_arg proof term",adapter_arg.proof_term)
-        #print("Other arg proof term", other_argument.proof_term)
-        #adapted_argument = adapter_arg.chain(other_argument)
-        adapted_attacker = self.chain(adapter_arg)
-        logger.debug("Adapted attacker constructed: %s", adapted_attacker.proof_term)
-        final_argument = adapted_attacker.chain(other_argument, name=name)
-        return final_argument
+        """Back-compat alias for θ-based attack (undercut is the special case of rebut on Goal/Laog)."""
+        return self.attack(other_argument, name=name, on=on)
 
     def basic_support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         """
@@ -567,8 +529,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         eb = PropEnrichmentVisitor(assumptions=assumptions, axiom_props=declarations).visit(eb)
         te = ThetaExpander(issue, mode=mode, verbose=False)
         eb = te.visit(eb)
+        # ensure all newly introduced binders are globally fresh within the term
+        from core.comp.alpha import FreshenBinderNames
+        eb = FreshenBinderNames().visit(eb)
         # regenerate presentation to reflect any structural changes
         eb = ProofTermGenerationVisitor().visit(eb)
+        logger.debug("Theta-expansion freshened binder names to avoid collisions.")
         if not te.changed:
             logger.warning("Theta-expansion produced no changes for issue '%s' (mode=%s)", issue, mode)
         return eb, te.changed
@@ -655,6 +621,90 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
 
         # Finally graft the adapted supporter into the theta-expanded target
+        final_argument = adapted1.chain(expanded_arg, name=name)
+        return final_argument
+
+    def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        """
+        θ-based attacker (generalizes undercut and rebut):
+          - Orientation by attacker root binder:
+              Mu       → attack terms (mode='term')
+              Mutilde  → attack contexts (mode='context')
+          - Theta-expand the attacked argument uniformly on `issue`.
+          - Build a one-step adapter to embed the attacker at the right kind.
+          - Chain attacker → adapter (η at root) → θ-expanded target.
+        Undercut is the special case where the attacked subterm is a Goal/Laog.
+        """
+        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
+        # Ensure both arguments are executed
+        if not self.executed:
+            logger.debug("Executing attacker argument '%s'", self.name)
+            self.execute()
+        if not other_argument.executed:
+            logger.debug("Executing attacked argument '%s'", other_argument.name)
+            other_argument.execute()
+        # Identify attacked issue
+        issue = on or self.conclusion
+        logger.debug("Attack issue: %s", issue)
+        # Resolve orientation by attacker’s root binder
+        target_kind = "context" if isinstance(self.body, Mu) else "term" if isinstance(self.body, Mutilde) else "unknown"
+        if target_kind == "unknown":
+            raise TypeError("attack: attacker must start with Mu or Mutilde binder")
+        logger.debug("Target kind for attack: %s", target_kind)
+        # Theta-expand the attacked argument
+        logger.debug("Theta-expanding attacked argument '%s' on issue '%s' (mode=%s)", other_argument.name, issue, target_kind)
+        expanded_body, te_changed = other_argument._theta_expand(
+            other_argument.body,
+            issue,
+            target_kind,
+            assumptions=other_argument.assumptions,
+            declarations=self.prover.declarations
+        )
+        if not te_changed:
+            raise ValueError(f"attack: theta-expansion produced no changes for issue '{issue}' (mode={target_kind})")
+        logger.debug("Theta-expander changed=%s; theta-expanded body: %s", te_changed, expanded_body.pres)
+        # Wrap expanded target and execute it to reuse chain()
+        expanded_arg = Argument(self.prover, f"theta_expand_{other_argument.name}_on_{issue}", other_argument.conclusion)
+        expanded_arg.body = expanded_body
+        logger.debug("Executing expanded attacked argument")
+        expanded_arg.execute()
+        # Find attacked issue (exact match) in expanded argument
+        attacked_key = None
+        for key, info in expanded_arg.assumptions.items():
+            if info["prop"].strip() == issue:
+                attacked_key = key
+                break
+        if attacked_key is None:
+            raise ValueError(f"attack: target assumption '{issue}' not found in attacked argument (exact match required)")
+        issue = expanded_arg.assumptions[attacked_key]["prop"]
+        logger.debug("Attacked issue resolved to: %s (key=%s)", issue, attacked_key)
+        # Construct the adapter:
+        #  - term mode:    μ′ aff . < Goal('s') || Laog('some') >  (attacker replaces Goal('s'))
+        #  - context mode: μ  aff . < Goal('some') || Laog('s') >  (attacker replaces Laog('s'))
+        if target_kind == "term":
+            logger.debug("Building adapter body for attacking a term")
+            adapter1_body = Mutilde(
+                DI("aff", issue), issue,
+                Goal("s", issue),       # replaced by attacker (Term)
+                Laog("some", issue)     # captured by θ’s alt
+            )
+        else:
+            logger.debug("Building adapter body for attacking a context")
+            adapter1_body = Mu(
+                ID("aff", issue), issue,
+                Goal("some", issue),    # captured by θ’s alt
+                Laog("s", issue)        # replaced by attacker (Context)
+            )
+        adapter1_name = f"adapter_attack_{self.name}_{other_argument.name}"
+        adapter1_arg = Argument(self.prover, adapter1_name, issue)
+        adapter1_arg.body = adapter1_body
+        logger.debug("Executing adapter argument for attack")
+        adapter1_arg.execute()
+        # Chain attacker into adapter (replace only the designated placeholder)
+        adapted1 = self.chain(adapter1_arg)
+        # Optional one-step η at root to drop an extraneous μ′ wrapper
+        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
+        # Finally chain adapted attacker into the theta-expanded target
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
 

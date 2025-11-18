@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any, Tuple
 from copy import deepcopy
 import logging
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
 from core.comp.alpha import _collect_binder_names, _fresh, _AlphaRename
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,19 @@ class _GraftVisitor(ProofTermVisitor):
             if hasattr(node, 'context'):
                 new.context = self.visit(node.context)
             self._pop_di()
+            return new
+
+        if isinstance(node, Admal):          # ID-like binder (captures Laog) on context side
+            self._push_id(node.id.id.name, node.id.prop)
+            new = deepcopy(node)
+            new.context = self.visit(node.context)
+            self._pop_id()
+            return new
+
+        if isinstance(node, Sonc):
+            new = deepcopy(node)
+            new.context = self.visit(node.context)
+            new.term    = self.visit(node.term)
             return new
 
         if isinstance(node, Cons):
