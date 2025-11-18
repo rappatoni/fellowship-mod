@@ -369,9 +369,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         
         return combined_argument
 
-    def focussed_undercut(self, other_argument: "Argument", *, name: Optional[str], on: Optional[str] = None) -> "Argument":
-        """Back-compat alias for θ-based attack (undercut is the special case of rebut on Goal/Laog)."""
-        return self.attack(other_argument, name=name, on=on)
 
     def basic_support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         """
@@ -707,6 +704,25 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Finally chain adapted attacker into the theta-expanded target
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
+
+    def undercut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        """
+        Undercut is the goal/laog-only specialization of attack():
+        - Ensures the attacked issue occurs as an open Goal/Laog in the target (by assumptions).
+        - Delegates to attack() if the check passes.
+        """
+        # Ensure both arguments are executed (assumptions available)
+        if not self.executed:
+            self.execute()
+        if not other_argument.executed:
+            other_argument.execute()
+        issue = on or self.conclusion
+        # Check the attacked argument has an open Goal/Laog with this proposition
+        has_open = any(info["prop"].strip() == issue for info in other_argument.assumptions.values())
+        if not has_open:
+            raise ValueError(f"undercut: target does not contain an open Goal/Laog with proposition '{issue}'")
+        # Delegate to θ-based attack
+        return self.attack(other_argument, name=name, on=issue)
 
     def normalize(self, enrich: bool = True) -> ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
