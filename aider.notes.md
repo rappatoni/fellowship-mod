@@ -13,7 +13,7 @@
   - core/
     - ac/: ast.py (ProofTerm; Mu/Mutilde/Lamda/Cons/Goal/Laog/ID/DI/Hyp), grammar.py (Lark, Transformer)
     - comp/: visitor.py (ProofTermVisitor), enrich.py (PropEnrichmentVisitor), reduce.py (ArgumentTermReducer), alpha.py (alpha renaming, FreshenBinderNames), neg_rewrite.py (NegIntroRewriter)
-    - dc/: argument.py (Argument; undercut/support/rebut), graft.py (graft_single, graft_uniform)
+    - dc/: argument.py (Argument: execute/normalize/chain + support/attack/undercut/rebut), graft.py (graft_single, graft_uniform)
   - pres/: gen.py (.pres generator), nl.py (natural language), color.py (AcceptanceColoringVisitor), tree.py (AcceptanceTreeRenderer)
   - wrap/: wrapper + CLI planned split into wrap/prover.py and wrap/cli.py
   - mod/: store.py for persistence of declarations and arguments
@@ -52,13 +52,19 @@
     into the command ?k/!k; set changed flag, warnings if not found.
 
 + Grafting and argument ops
-  - core/dc/graft.py (currently placeholder): move verbatim grafting logic:
+  - core/dc/graft.py: grafting logic in place:
     - _GraftVisitor capturing substitution: along path collects binder stacks:
       - μ (ID) binders capture Laog by ID name; μ̃/λ (DI) binders capture Goal by DI name
     - graft_single(body_B, number, body_A): replace a single open goal/laog by body_A (type-check replacement: body_A root must match target kind/prop; perform _alpha_rename_if_needed before grafting)
     - graft_uniform(body_B, body_A): replace all open goals/laogs matching the scion’s conclusion; same alpha-rename before grafting
     - _alpha_rename_if_needed(scion, root): rename scion binders that collide with root binders using _collect_binder_names/_fresh/_AlphaRename
-  - core/dc/argument.py (currently placeholder): move the real Argument class from wrapper:
+  - Admal/Sonc are supported across visitors: coloring, alpha-renamers, and graft traversal descend through these nodes.
+  - core/dc/argument.py: real Argument class with:
+    - execute()/normalize()/render()/chain()
+    - support() implemented via θ-expansion (two-step adapter) and chaining
+    - attack() implemented via θ-expansion; generalizes undercut and rebut
+    - undercut()/rebut() delegate to attack() with precondition checks (Goal/Laog vs non-Goal/Laog)
+    - θ-expansion freshens binders (FreshenBinderNames) to avoid alt/aff clashes
     - fields: name, body, conclusion, executed flags, normal_body/representation, assumptions/decls
     - operations: execute(), normalize() (run enrichment, reduce, freshening, generate pres + NL), chain(), undercut(), support(), rebut()
     - undercut semantics:
@@ -96,7 +102,13 @@
   - Edges from child→parent; rankdir=BT; arrowhead vee; color orangered
 
 + CLI/Wrapper
-  - Commands: reduce, render, render-nf, color, tree [nl style|pt], undercut NEW attacker target
+  - Commands (script + interactive):
+    - reduce ARG
+    - render ARG | render-nf ARG | color ARG | tree ARG [nl style|pt]
+    - support NEW supporter target [on PROP]
+    - attack  NEW attacker  target [on PROP]
+    - rebut   NEW attacker  target [on PROP]
+    - undercut NEW attacker target
   - undercut requires explicit new name; exact-match only
   - Prover I/O: machine mode, prints proof-term ASCII; wrapper parses and uses AST visitors for operations
   - Logging: standard levels; can enable DEBUG to see full normalization steps
@@ -293,6 +305,7 @@ Guardrails
   - Replacement root kind and prop must match the Goal/Laog it replaces (Mu for Goal, Mutilde for Laog).
 - Keep core/__init__.py and core/dc/__init__.py minimal to avoid cycles.
 - Keep parser.py as a facade until all callers are switched.
+- After θ-expansion, always run FreshenBinderNames to avoid alt/aff collisions before instruction generation or grafting.
 
 Incremental next steps (safe, reversible)
 1) Finish wrapper split (wire to wrap/prover.py)
