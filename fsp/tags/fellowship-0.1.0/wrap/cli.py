@@ -112,7 +112,10 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - TODO: undercut, support, rebut.
+          - Debate ops: undercut NEW attacker target
+                        support NEW supporter target [on PROP]
+                        attack  NEW attacker  target [on PROP]
+                        rebut   NEW attacker  target [on PROP]
           - Lines starting with '#' are user-facing comments and are printed to stdout.
           - Lines starting with '%' are invisible comments and are ignored.
     """
@@ -653,6 +656,130 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 else:
                     print(f"Argument '{name}' not found.")
                     logger.warning("Argument '%s' not found for normalization (interactive)", name)
+
+            elif command.startswith('undercut '):
+                # Format: undercut NEW_NAME attacker target
+                parts = command.split()
+                if len(parts) != 4:
+                    print("Invalid undercut command. Use: undercut NEW_NAME attacker target")
+                    logger.error("Invalid undercut command. Use: undercut NEW_NAME attacker target")
+                    continue
+                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
+                attacker = prover.get_argument(attacker_name)
+                target = prover.get_argument(target_name)
+                if attacker and target:
+                    try:
+                        result = attacker.undercut(target, name=new_name)
+                        prover.register_argument(result)
+                        print(f"Constructed undercut '{result.name}' (target '{target.name}' by '{attacker.name}').")
+                        logger.info("Constructed undercut '%s' (target '%s' by '%s').",
+                                    result.name, target.name, attacker.name)
+                    except Exception as e:
+                        print(f"Prover error during undercut: {e}")
+                        logger.error("Prover error during undercut: %s", e)
+                else:
+                    print(f"Undercut failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
+                    logger.error("Undercut failed: one or both arguments not found ('%s', '%s').",
+                                 attacker_name, target_name)
+
+            elif command.startswith('support '):
+                # Format: support NEW_NAME supporter target [on PROP...]
+                parts = command.split()
+                if len(parts) < 4:
+                    print("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
+                    logger.error("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
+                    continue
+                new_name, supporter_name, target_name = parts[1], parts[2], parts[3]
+                on_prop = None
+                if len(parts) > 4:
+                    try:
+                        on_idx = parts.index('on', 4)
+                        on_prop = " ".join(parts[on_idx+1:]).strip()
+                    except ValueError:
+                        on_prop = None
+                supporter = prover.get_argument(supporter_name)
+                target = prover.get_argument(target_name)
+                if supporter and target:
+                    try:
+                        result = supporter.support(target, name=new_name, on=on_prop)
+                        prover.register_argument(result)
+                        suffix = f" on {on_prop}" if on_prop else ""
+                        print(f"Constructed support '{result.name}' (target '{target.name}' by '{supporter.name}'{suffix}).")
+                        logger.info("Constructed support '%s' (target '%s' by '%s'%s).",
+                                    result.name, target.name, supporter.name, suffix)
+                    except Exception as e:
+                        print(f"Prover error during support: {e}")
+                        logger.error("Prover error during support: %s", e)
+                else:
+                    print(f"Support failed: one or both arguments not found ('{supporter_name}', '{target_name}').")
+                    logger.error("Support failed: one or both arguments not found ('%s', '%s').",
+                                 supporter_name, target_name)
+
+            elif command.startswith('attack '):
+                # Format: attack NEW_NAME attacker target [on PROP...]
+                parts = command.split()
+                if len(parts) < 4:
+                    print("Invalid attack command. Use: attack NEW_NAME attacker target [on PROP]")
+                    logger.error("Invalid attack command. Use: attack NEW_NAME attacker target [on PROP]")
+                    continue
+                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
+                on_prop = None
+                if len(parts) > 4:
+                    try:
+                        on_idx = parts.index('on', 4)
+                        on_prop = " ".join(parts[on_idx+1:]).strip()
+                    except ValueError:
+                        on_prop = None
+                attacker = prover.get_argument(attacker_name)
+                target = prover.get_argument(target_name)
+                if attacker and target:
+                    try:
+                        result = attacker.attack(target, name=new_name, on=on_prop)
+                        prover.register_argument(result)
+                        suffix = f" on {on_prop}" if on_prop else ""
+                        print(f"Constructed attack '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}).")
+                        logger.info("Constructed attack '%s' (target '%s' by '%s'%s).",
+                                    result.name, target.name, attacker.name, suffix)
+                    except Exception as e:
+                        print(f"Prover error during attack: {e}")
+                        logger.error("Prover error during attack: %s", e)
+                else:
+                    print(f"Attack failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
+                    logger.error("Attack failed: one or both arguments not found ('%s', '%s').",
+                                 attacker_name, target_name)
+
+            elif command.startswith('rebut '):
+                # Format: rebut NEW_NAME attacker target [on PROP...]
+                parts = command.split()
+                if len(parts) < 4:
+                    print("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
+                    logger.error("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
+                    continue
+                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
+                on_prop = None
+                if len(parts) > 4:
+                    try:
+                        on_idx = parts.index('on', 4)
+                        on_prop = " ".join(parts[on_idx+1:]).strip()
+                    except ValueError:
+                        on_prop = None
+                attacker = prover.get_argument(attacker_name)
+                target = prover.get_argument(target_name)
+                if attacker and target:
+                    try:
+                        result = attacker.rebut(target, name=new_name, on=on_prop)
+                        prover.register_argument(result)
+                        suffix = f" on {on_prop}" if on_prop else ""
+                        print(f"Constructed rebut '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}).")
+                        logger.info("Constructed rebut '%s' (target '%s' by '%s'%s).",
+                                    result.name, target.name, attacker.name, suffix)
+                    except Exception as e:
+                        print(f"Rebut failed: {e}")
+                        logger.error("Rebut failed: %s", e)
+                else:
+                    print(f"Rebut failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
+                    logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
+                                 attacker_name, target_name)
 
             elif command.startswith("start counterargument ") or command.startswith("start antitheorem "):
                 if recording:
