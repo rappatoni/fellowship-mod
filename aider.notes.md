@@ -9,6 +9,19 @@
   - Robust undercut operation (explicit result naming), followed by support and rebut operations.
   - Refactor Python into modular packages: core (ac/dc/comp), pres, wrap, mod; keep tests working.
 
++ Update summary (2025-11-20)
++ - Debate model and assumptions (current phase)
++   - Model:
++     - A: the space of arguments (λ̄μ̃μ terms with open goals/laogs).
++     - I = P ∪ d: a set of issues consisting of propositions P (typing term expressions) and antipropositions d (typing context terms).
++     - O: a set of debate operators, i.e., functions f: A × A × I → A.
++     - Debate operation: application of a debate operator to two arguments on an issue, written f(a1, a2, i).
++     - Debate: a sequence o1, …, on such that on+1 = f(on, a, i) for some debate operator f ∈ O.
++   - Assumptions used for current reduction rules:
++     - Purity: For every oi, oj in a debate D, oi = f(a, b, i) iff oj = f(c, d, j); i.e., only one debate operator is used throughout the debate (there exists a fixed f used at every step).
++     - Uniqueness: For all oi, oj in a debate D with oi = f(a, b, i) and oj = g(c, d, j), we have i ≠ j; i.e., each issue is operated on at most once.
++   - Note: We will first implement reduction rules under these assumptions and relax them later.
+
 + Directory layout (under fsp/tags/fellowship-0.1.0)
   - core/
     - ac/: ast.py (ProofTerm; Mu/Mutilde/Lamda/Cons/Goal/Laog/ID/DI/Hyp), grammar.py (Lark, Transformer)
