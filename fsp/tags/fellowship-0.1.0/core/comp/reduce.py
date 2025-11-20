@@ -90,7 +90,9 @@ class ArgumentTermReducer(ProofTermVisitor):
        - TODO: eta
     """
 
-    def __init__(self, *, verbose: bool = True, assumptions=None, axiom_props=None):
+    def __init__(self, *, verbose: bool = True, assumptions=None, axiom_props=None,
+                 evaluation_strategy: str = "call-by-name",
+                 simplify_alternative_arguments: bool = True):
         super().__init__()
         self.verbose      = verbose
         self.assumptions  = assumptions  or {}
@@ -104,6 +106,8 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._w_term: int = int(os.getenv("FSP_REDUCE_TERM_WIDTH", "72"))
         self._w_rule: int = 16
         self._w_comment: int = 24
+        self.evaluation_strategy = evaluation_strategy
+        self.simplify_alternative_arguments = simplify_alternative_arguments
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
         """Return the normal form; log a table of (no, term, rule, comments)."""
@@ -258,6 +262,16 @@ class ArgumentTermReducer(ProofTermVisitor):
                     if before != after:
                         return self.visit_Mu(node)
                     # if no progress, fall through to other rules
+            else:
+                if self.verbose:
+                    logger.debug(
+                        "support-mu shape failed: outer_alt=%s; inner_mu.context=%s(%s); ctx_mt.context=%s(%s)",
+                        getattr(node.id, 'name', '?'),
+                        type(inner_mu.context).__name__,
+                        getattr(inner_mu.context, 'name', None),
+                        type(ctx_mt.context).__name__,
+                        getattr(ctx_mt.context, 'name', None),
+                    )
 
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):
@@ -480,6 +494,16 @@ class ArgumentTermReducer(ProofTermVisitor):
                     if before != after:
                         return self.visit_Mutilde(node)
                     # if no progress, fall through to other rules
+            else:
+                if self.verbose:
+                    logger.debug(
+                        "support-mutilde shape failed: outer_alt=%s; inner_mu.term=%s(%s); ctx_mt.term=%s(%s)",
+                        getattr(node.di, 'name', '?'),
+                        type(inner_mu.term).__name__,
+                        getattr(inner_mu.term, 'name', None),
+                        type(ctx_mt.term).__name__,
+                        getattr(ctx_mt.term, 'name', None),
+                    )
 
         # affine helper --------------------------------------------------
         def _guards(inner_mu: Mu, ctx_mt: Mutilde):

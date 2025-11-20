@@ -95,9 +95,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         else:
             logger.info("Starting theorem '%s' for issue '%s'", self.name, self.conclusion)
             start_cmd = f'theorem {self.name} : ({self.conclusion}).'
-        output = self.prover.send_command(start_cmd)
+        start_payload = self.prover.send_command(start_cmd)
+        output = start_payload
         # Execute each instruction
-        last_output = None
+        last_output = start_payload
         instr_list = list(self.instructions)
         total = len(instr_list)
         for i, instr in enumerate(instr_list):
@@ -120,6 +121,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                         break
                     raise
         # Capture the assumptions (open goals) using the last successful state
+        if last_output is None:
+            last_output = start_payload
         output = last_output
         self._parse_proof_state(output)
         # Parse proof term
