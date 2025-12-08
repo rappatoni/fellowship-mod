@@ -6,22 +6,26 @@ This repo contains an experimental wrapper for the [Fellowship prover](https://g
 
 Prerequisites
 - OCaml toolchain (to build the Fellowship prover)
-- Python 3.10+ and pytest
+- Python 3.11.x and make
 
 Build the prover
-- cd fsp/tags/fellowship-0.1.0
-- make
+- make -C wrap/fellowship
+- The native binary is placed at wrap/fellowship/fsp.
 
 Run the Python wrapper CLI
-- From the same directory (fsp/tags/fellowship-0.1.0):
-  - Show help: python -m wrap.cli --help
-  - Run a .fspy script: python -m wrap.cli --script tests/counterarguments_and_undercut.fspy
-  - Strict mode (treat parse/machine issues as errors): python -m wrap.cli --script tests/normalize_render.fspy --strict
+- From the repo root:
+  - .venv/bin/acdc --help
+  - .venv/bin/acdc --script tests/normalize_render.fspy
+  - Strict mode (treat parse/machine issues as errors): .venv/bin/acdc --script tests/normalize_render.fspy --strict
+- Or via Makefile:
+  - make cli ARGS="--help"
+  - make cli ARGS="--script tests/normalize_render.fspy"
 
 Run tests
-- cd fsp/tags/fellowship-0.1.0
-- pytest
-- Legacy runner (developer utility): python tests.py [test_name] within fsp/tags/fellowship-0.1.0.
+- make test
+- Manual alternative:
+  - source .venv/bin/activate
+  - pytest -q tests
 
 Features
 - Argument lifecycle: execute an argument against the prover, normalize its proof term, and render it.
@@ -33,41 +37,14 @@ Features
   - Acceptance trees (proof-term labels or NL labels)
 
 Repository layout
-- fsp/
-  - tags/
-    - fellowship-0.1.0/  ← main working tag (build and run here)
-      - core/
-        - ac/
-          - ast.py — AST for proof terms (Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Hyp)
-          - grammar.py — Lark grammar + transformer producing the AST
-          - instructions.py — lowers AST to Fellowship commands (ASCII-normalized)
-        - comp/
-          - visitor.py — base visitor
-          - enrich.py — PropEnrichmentVisitor (annotate nodes with propositions/flags)
-          - reduce.py — ArgumentTermReducer (λ/μ/μ′ rules; affine cases; normalization log)
-          - alpha.py — α-renaming and binder freshening
-          - neg_rewrite.py — negation-introduction pattern rewriter
-        - dc/
-          - argument.py — Argument class (execute, normalize, chain, undercut; stubs for support/rebut)
-          - graft.py — graft_single/graft_uniform with capture-aware substitution and α-freshening
-          - match_utils.py — tree matching utilities (match_trees, get_child_nodes, is_subargument)
-      - pres/
-        - gen.py — proof-term string generation (.pres)
-        - nl.py — natural-language renderings (argumentation/dialectical/intuitionistic)
-        - color.py — acceptance coloring (green/yellow/red)
-        - tree.py — acceptance tree renderer (proof-term or NL labels)
-      - wrap/
-        - cli.py — CLI entry point (python -m wrap.cli)
-        - prover.py — Fellowship process integration, machine I/O, logging
-      - mod/
-        - store.py — global persistence for arguments
-      - tests/ — pytest suite and .fspy scripts used by CLI/tests
-      - conftest.py — pytest configuration/helpers
-      - tests.py — legacy ad-hoc test harness (developer utility)
-      - sexp_parser.py — S-expression parser for machine payloads
-      - fsp (binary), core.ml, print.ml, help.ml, lexer.ml, … — OCaml prover sources
-  - branches/, trunk/ — upstream variants/historical code; not used by the Python wrapper directly
-- README.md — this file (wrapper and native prover usage)
+- core/ — Python core (ac/dc/comp)
+- pres/ — presentations (gen/nl/color/tree)
+- wrap/ — Python wrapper (cli/prover) and native OCaml under wrap/fellowship/
+- mod/ — global store
+- tests/ — pytest suite and .fspy scripts
+- pyproject.toml — packaging; exposes “acdc” console script
+- Makefile — venv/dev tooling
+- README.md — this file
 
 CLI quick reference
 - Commands operate over the scenario created by your .fspy script (declarations, arguments, operations):
@@ -80,13 +57,21 @@ CLI quick reference
 
 Examples
 - Normalize and render a scenario:
-  - python -m wrap.cli --script tests/normalize_render.fspy
+  - .venv/bin/acdc --script tests/normalize_render.fspy
 - Show acceptance coloring:
-  - python -m wrap.cli --script tests/counterarguments_and_undercut.fspy color
+  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy color
 - Draw an acceptance tree with natural language labels:
-  - python -m wrap.cli --script tests/counterarguments_and_undercut.fspy tree nl
+  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy tree nl
 - Perform an explicit undercut in a script:
-  - python -m wrap.cli --script tests/counterarguments_and_undercut.fspy undercut U1 A "thesis:A"
+  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy undercut U1 A "thesis:A"
+
+Notas de uso (sin más cambios de código)
+- Instalar para desarrollo y crear el comando local:
+  - make reset-venv
+  - make -C wrap/fellowship
+  - .venv/bin/acdc --help
+  - Opcional: make binlink; ./acdc --help
+- Instalación global (opcional, sin venv local): pipx install . → acdc disponible sin activar venv.
 
 # Readme for the Fellowship Prover
 
@@ -94,7 +79,7 @@ These are the sources for the Fellowship prover written by Florent Kirchner and 
 The prover is an implementation of the $\bar{\lambda}\mu\tilde{\mu}$-calculus [due to Pierre-Louis Curien and Hugo Herbelin](http://pauillac.inria.fr/~herbelin/publis/icfp-CuHer00-duality+errata.pdf).
 The system and the theory behind it is described extensively in Florent Kirchner's [PhD-thesis](https://pastel.hal.science/pastel-00003192v1/document).
 
-Note: Build and run the native prover from fsp/tags/fellowship-0.1.0 (./fsp). The Python wrapper/CLI lives alongside it and is invoked as python -m wrap.cli from the same directory.
+Note: Build and run the native prover under wrap/fellowship (./fsp). The Python wrapper/CLI is exposed via the acdc console script.
 
 ## Setup
 
