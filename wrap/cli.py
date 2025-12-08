@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os, sys
 from pathlib import Path
+import shutil
 import argparse
 import logging
 from typing import Any, Optional
@@ -927,10 +928,38 @@ def interactive_mode(prover: ProverWrapper) -> None:
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
 
+def resolve_fsp_path() -> Path:
+    """
+    Find the Fellowship binary ('fsp') via, in order:
+      1) env ACDC_FSP or FSP_PATH
+      2) package path: wrap/fellowship/fsp (next to this file when installed/editable)
+      3) repo path:   CWD/wrap/fellowship/fsp (running from source tree)
+      4) PATH lookup: an 'fsp' executable in PATH
+    """
+    env_path = os.getenv("ACDC_FSP") or os.getenv("FSP_PATH")
+    if env_path:
+        p = Path(env_path).expanduser()
+        if p.is_file() and os.access(p, os.X_OK):
+            return p
+    pkg = Path(__file__).resolve().parent / "fellowship" / "fsp"
+    if pkg.is_file() and os.access(pkg, os.X_OK):
+        return pkg
+    repo = Path.cwd() / "wrap" / "fellowship" / "fsp"
+    if repo.is_file() and os.access(repo, os.X_OK):
+        return repo
+    exe = shutil.which("fsp")
+    if exe:
+        return Path(exe)
+    raise FileNotFoundError(
+        "Fellowship binary 'fsp' not found.\n"
+        "Build it (make -C wrap/fellowship) or set ACDC_FSP=/absolute/path/to/fsp.\n"
+        "Searched: ACDC_FSP/FSP_PATH, package path, repo path, and PATH."
+    )
+
 def setup_prover() -> ProverWrapper:
     env = os.environ.copy()
     env.setdefault("FSP_MACHINE", "1")
-    fsp_path = Path(__file__).resolve().parent / "fellowship" / "fsp"
+    fsp_path = resolve_fsp_path()
     prover = ProverWrapper(str(fsp_path), env=env)
     prover.register_custom_tactic('pop', pop)
     # Switch to classical logic

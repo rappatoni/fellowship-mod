@@ -12,6 +12,26 @@ Build the prover
 - make -C wrap/fellowship
 - The native binary is placed at wrap/fellowship/fsp.
 
+Binary location
+- By default the CLI looks for wrap/fellowship/fsp relative to the code.
+- You can override the path by setting an environment variable:
+  - export ACDC_FSP=/absolute/path/to/fsp
+- If you install via pipx (pipx install .), you must either:
+  - build the binary in your source checkout and set ACDC_FSP to that path, or
+  - have an fsp on your PATH.
+
+Persisting ACDC_FSP (macOS/Linux)
+- For zsh (macOS default):
+  - echo 'export ACDC_FSP="/absolute/path/to/your/checkout/wrap/fellowship/fsp"' >> ~/.zshrc
+  - source ~/.zshrc
+- For bash:
+  - echo 'export ACDC_FSP="/absolute/path/to/your/checkout/wrap/fellowship/fsp"' >> ~/.bashrc
+  - source ~/.bashrc
+- Verify:
+  - test -x "$ACDC_FSP" && echo "OK: $ACDC_FSP"
+- If the binary was downloaded/copied and macOS quarantines it:
+  - xattr -d com.apple.quarantine "$ACDC_FSP"
+
 Run the Python wrapper CLI
 - From the repo root:
   - .venv/bin/acdc --help
@@ -20,6 +40,9 @@ Run the Python wrapper CLI
 - Or via Makefile:
   - make cli ARGS="--help"
   - make cli ARGS="--script tests/normalize_render.fspy"
+- Tip (pipx): if acdc was installed globally via pipx, set ACDC_FSP to the binary path before running:
+  - export ACDC_FSP=/absolute/path/to/your/checkout/wrap/fellowship/fsp
+  - acdc --script tests/normalize_render.fspy
 
 Run tests
 - make test
@@ -65,13 +88,16 @@ Examples
 - Perform an explicit undercut in a script:
   - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy undercut U1 A "thesis:A"
 
-Notas de uso (sin más cambios de código)
-- Instalar para desarrollo y crear el comando local:
+Developer usage quick reference
+- Local dev install and command:
   - make reset-venv
   - make -C wrap/fellowship
   - .venv/bin/acdc --help
-  - Opcional: make binlink; ./acdc --help
-- Instalación global (opcional, sin venv local): pipx install . → acdc disponible sin activar venv.
+  - Optional: make binlink; ./acdc --help
+- Global install (optional, no local venv):
+  - pipx install .
+  - acdc --help
+  - If acdc can’t find the native binary, set ACDC_FSP=/absolute/path/to/your/checkout/wrap/fellowship/fsp (see “Persisting ACDC_FSP” above).
 
 # Readme for the Fellowship Prover
 
