@@ -1,0 +1,54 @@
+# Testing basic support debate operation and reduction.
+
+lk.
+
+declare A,B,C,D:bool.
+declare r1: (A -> B).
+declare r2: (C -> A).
+#
+# Supported Argument
+#
+start argument arg1 B
+cut (A -> B) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+#
+# Supporter
+#
+start argument sup1 A
+cut (C -> A) th.
+axiom r2.
+elim.
+next.
+axiom.
+end argument
+#
+# Construct support, reduce, color.
+support first sup1 arg1
+reduce first
+color first
+#
+# Now we test a defeated supporter
+#
+declare r3: (D -> ~C).
+start counterargument counter C
+cut (~C) x.
+cut (D -> ~C) th.
+axiom r3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+end argument
+#
+# Applying undercut to debate "first"
+#
+undercut second counter first
+#
+# Reduce, color
+reduce second
+color second
