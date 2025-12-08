@@ -1,0 +1,11 @@
+K 10
+svn:ignore
+V 53
+main.bbl
+main.blg
+main.aux
+main.log
+main.dvi
+main.ps
+
+END
