@@ -1,0 +1,11 @@
+lk.
+declare A,B:bool.
+declare axA: (A).
+declare axAB: (A->B).
+start argument argA A
+tactic pop A B
+end argument
+start argument argB B
+cut (A) H.
+end argument
+chain argA argB
