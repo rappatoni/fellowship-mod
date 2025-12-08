@@ -22,3 +22,4 @@ __pycache__/
 # Built Fellowship binary (we rebuild locally under wrap/fellowship/)
 # wrap/fellowship/fsp
 *.d
+*.di
