@@ -20,4 +20,5 @@ __pycache__/
 ._bcdi/
 ._d/
 # Built Fellowship binary (we rebuild locally under wrap/fellowship/)
-wrap/fellowship/fsp
+# wrap/fellowship/fsp
+*.d
