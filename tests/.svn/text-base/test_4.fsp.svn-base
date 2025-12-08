@@ -1,0 +1,30 @@
+lj.
+
+declare A,B : bool.
+theorem t1 : (A -> ~A -> B).
+ elim a; elim na.
+ elim in na b.
+ axiom.
+qed.
+
+declare C,D : bool.
+theorem t2 : (A\/B -> (A -> C)/\(B -> C) -> D -> C/\(D \/ A)).
+ elim ab; elim H; elim d.
+ elim in ab th.
+
+ elim in H a ac bc (C).
+ elim in ac c; axiom.
+ elim in th c.
+ axiom.
+ elim left; axiom.
+
+ elim in H a ac bc (C).
+ elim in bc c; axiom.
+ elim in th c.
+ axiom.
+ elim left; axiom.
+qed.
+
+checkout coq.
+checkout proof term coq.
+export natural language.

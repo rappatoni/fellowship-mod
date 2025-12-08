@@ -1,0 +1,84 @@
+# Testing the alternative arguments debate operation and reduction.
+
+lk.
+
+declare A,B,C,D:bool.
+declare r1: (A -> B).
+declare r2: (C -> A).
+declare r3: (D -> A).
+#
+# Supported Argument
+#
+start argument arg1 B
+cut (A -> B) th.
+axiom r1.
+elim.
+cut (C -> A) bla.
+axiom r2.
+elim.
+next.
+axiom.
+end argument
+#
+# Supporter
+#
+start argument sup1 A
+cut (D -> A) th.
+axiom r3.
+elim.
+next.
+axiom.
+end argument
+#
+# Construct support, reduce, color.
+support first sup1 arg1
+reduce first
+color first
+#
+#Next we try alternative counterarguments:
+#
+deny r4: (B - A).
+deny r5: (A - C).
+deny r6: (A - D).
+#
+# Supported Counterargument
+#
+start counterargument c1 B
+cut (B - A) th.
+elim.
+cut (A - C) bla.
+elim.
+next.
+axiom bla.
+moxia r5
+axiom th.
+moxia r4.
+end argument
+#
+# Supporter
+#
+start counterargument csup1 A
+cut (A - D) th.
+elim
+next.
+axiom th.
+moxia r6.
+end argument
+#
+# Construct support, reduce, color.
+support second csup1 c1
+reduce second
+color second
+#
+#Testing admal
+declare r7: (A - D).
+start argument admaltest A
+cut (A-D) th.
+axiom r7.
+elim alpha.
+axiom th.
+end argument
+#
+#Supporting arg1
+#
+support third admaltest arg1

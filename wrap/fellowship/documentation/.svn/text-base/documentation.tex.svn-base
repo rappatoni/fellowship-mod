@@ -1,0 +1,671 @@
+% // The Fellowship Proof Assistant
+% // Copyright Florent Kirchner, Claudio Sacerdoti Coen
+% // This file is distributed under the terms of the CeCILL license version 2.
+
+\documentclass[psamsfonts]{amsart}
+
+\usepackage{bussproofs}
+
+%% Macros
+\def\G{\Gamma}
+\def\D{\Delta}
+\def\th{\vdash}
+\def\imp{\Rightarrow}
+\def\inr{\mathrm{inj}_r\:}
+\def\inl{\mathrm{inj}_l\:}
+\def\proj#1#2#3{\mathrm{proj}[#1,#2,#3]}
+
+\def\right#1{$\mathrm{#1}_\mathcal{R}$}
+\def\left#1{$\mathrm{#1}_\mathcal{L}$}
+
+\def\fsp{\textsf{Fellowship}}
+\def\lbmm{\bar{\lambda}\mu\tilde{\mu}}
+
+%% Title 
+\title[Fellowship]{Fellowship: Who needs a manual anyway?}
+\author[F. Kirchner]{Florent Kirchner}
+%\author{}   add yourself if you dare!
+\address{LIX, \'Ecole Polytechnique, 91128 Palaiseau, France}
+
+
+\begin{document}
+
+\begin{abstract}
+For any assistance regarding \fsp's proof language, the \texttt{help} command
+of the toplevel is your best friend.  However, a detailed insight of the
+logical structure of the prover might prove helpful. This note intends to
+provide the curious users with a fine breakdown of the prover's
+implementation.
+\end{abstract}
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Inference rules --\textsl{a.k.a. typing rules, a.k.a. tactics}}
+
+\subsection{Classical logic sequent calculus.}
+
+Figure~\ref{LK} gives the inference rules for classical logic sequent
+calculus.
+
+\begin{figure}[htbp]
+\fbox{
+\begin{minipage}{\textwidth}
+
+% AXIOM
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{axiom}}
+\UnaryInfC{$ \G ; *:A \th \D, x:A,\D' $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{axiom}}
+\UnaryInfC{$\G,x:A,\G' \th *:A ; \D $}
+\DisplayProof
+\end{center}
+
+% TRUE - FALSE
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{false}}
+\UnaryInfC{$ \G ; *:\textsl{false} \th \D $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{true}}
+\UnaryInfC{$\G \th *:\textsl{true} ; \D $}
+\DisplayProof
+\end{center}
+
+% CUT
+\begin{center}
+\AxiomC{$x:A , \G \th *:B ; \D$}
+\AxiomC{$x:A , \G ; *:B \th \D$}
+\LeftLabel{\left{cut}}
+\BinaryInfC{$\G ; *:A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; x:A, \D$}
+\AxiomC{$\G ; *:B \th x:A, \D$}
+\LeftLabel{\right{cut}}
+\BinaryInfC{$\G \th *:A ; \D$}
+\DisplayProof
+\end{center}
+
+% IMPLY
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{imply}}
+\BinaryInfC{$\G ; *:A\imp B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G, x:A \th *:B; \D$}
+\LeftLabel{\right{imply}}
+\UnaryInfC{$\G \th *:A\imp B ; \D$}
+\DisplayProof
+\end{center}
+
+% MINUS
+%\begin{center}
+%\AxiomC{$\G; *:A \th x:B, \D$}
+%\LeftLabel{\left{minus}}
+%\UnaryInfC{$\G ; *:A - B \th \D$}
+%\DisplayProof
+%\quad
+%\AxiomC{$\G ; *:B \th \D$}
+%\AxiomC{$\G \th *:A; \D$}
+%\LeftLabel{\right{minus}}
+%\BinaryInfC{$\G \th *: A - B ; \D$}
+%\DisplayProof
+%\end{center}
+
+% CONJ (and - wedge)
+\begin{center}
+\AxiomC{$\G, x:A, y:B \th *:C ; \D$}
+\AxiomC{$\G, x:A, y:B ; *:C \th \D$}
+\LeftLabel{\left{conj}}
+\BinaryInfC{$\G ; *:A\wedge B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:A ; \D$}
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{conj}}
+\BinaryInfC{$\G \th *:A\wedge B ; \D$}
+\DisplayProof
+\end{center}
+
+% DISJ (or - vee)
+\begin{center}
+\AxiomC{$\G ; *:A \th \D$}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{disj}}
+\BinaryInfC{$\G ; *:A\vee B \th \D$}
+\DisplayProof
+\end{center}
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\LeftLabel{\right{disj_1}}
+\UnaryInfC{$\G \th *:A\vee B ; \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{disj_2}}
+\UnaryInfC{$\G \th *:A\vee B ; \D$}
+\DisplayProof
+\end{center}
+
+% NEG
+\begin{center}
+\AxiomC{$\G \th *:A ; \D$}
+\LeftLabel{\left{neg}}
+\UnaryInfC{$\G ; *:\neg A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; *:A \th \D$}
+\LeftLabel{\right{neg}}
+\UnaryInfC{$\G \th *:\neg A ; \D$}
+\DisplayProof
+\end{center}
+
+% FORALL
+\begin{center}
+\AxiomC{$\G ; *:B[x\leftarrow t] \th \D$}
+\LeftLabel{\left{forall}}
+\UnaryInfC{$\G ; *:\forall (x:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B ; \D$}
+\LeftLabel{\right{forall}}
+\UnaryInfC{$\G \th *:\forall (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+% EXISTS
+\begin{center}
+\AxiomC{$\G ; *:B \th \D$}
+\LeftLabel{\left{exists}}
+\UnaryInfC{$\G ; *:\exists (x:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:B[x\leftarrow t] ; \D$}
+\LeftLabel{\right{exists}}
+\UnaryInfC{$\G \th *:\exists (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+\end{minipage}
+}
+\caption{Classical logic sequent calculus.}
+\label{LK}
+\end{figure}
+
+The usual contraction and weakening rules are implemented:
+% CONTRACTION
+\begin{center}
+\AxiomC{$\G \th *:C; x:C, \D$}
+\LeftLabel{\right{contr}}
+\UnaryInfC{$\G \th *:C; \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; *:C \th \D$}
+\LeftLabel{\left{contr}}
+\UnaryInfC{$\G, x:C ; *:C \th \D$}
+\DisplayProof
+\end{center}
+% WEAKENING
+\begin{center}
+\AxiomC{$\G \th *:C; \D$}
+\LeftLabel{\right{weak_1}}
+\UnaryInfC{$\G, x:A \th *:C; \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th *:C; \D$}
+\LeftLabel{\right{weak_2}}
+\UnaryInfC{$\G \th *: C ; x:A, \D$}
+\DisplayProof
+\end{center}
+Of course, the left (trivial) counterparts of the weakening rules are also
+valid.
+
+In the case of substractive logic, the elimination rules for the $-$
+connective are added:
+% MINUS
+\begin{center}
+\AxiomC{$\G; *:A \th x:B, \D$}
+\LeftLabel{\left{minus}}
+\UnaryInfC{$\G ; *:A - B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; *:B \th \D$}
+\AxiomC{$\G \th *:A; \D$}
+\LeftLabel{\right{minus}}
+\BinaryInfC{$\G \th *: A - B ; \D$}
+\DisplayProof
+\end{center}
+
+Finally in the case of minimal logic, the \left{neg} and \right{neg} rules are
+discarded, as well as the \left{false} rule. $\neg A$ is considered as
+syntactic sugar for $A \imp \textsl{false}$, and is eliminated using the rules
+for implication.
+
+\subsection{Syntax of proof terms}
+
+$\lbmm$-terms~\cite{Lbmm:CurienHerbelin00} are used as proof terms. The syntax
+of the $\lbmm$-calculus defines commands $c$, terms $v$ and contexts $e$ as
+follows:
+\begin{eqnarray*}
+c &::=& \langle v|e \rangle \\
+v &::=& x\ \|\ \top\ \|\ \lambda x.v\ \|\ e\cdot v\ 
+    \|\ (v,v')\ \|\ \inr v\ \|\ \inl v\ \|\ \mu\alpha.c \\
+e &::=& \alpha\ \|\ \bot\ \|\ v\cdot e\ \|\ \alpha\lambda'.e\ 
+    \|\ \proj{x}{x'}{c}\ \|\ [e,e']\ \|\ \tilde{\mu}x.c
+\end{eqnarray*}
+
+\subsection{Typing rules}
+
+Figure~\ref{TR} describes the type inference rules: these are simply the
+deduction rules of Figure~\ref{LK}, annotated by terms.
+
+\begin{figure}[htbp]
+\fbox{
+\begin{minipage}{\textwidth}
+
+% AXIOM
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{axiom}}
+\UnaryInfC{$ \G ; \alpha:A \th \D, \alpha:A,\D' $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{axiom}}
+\UnaryInfC{$\G,x:A,\G' \th x:A ; \D $}
+\DisplayProof
+\end{center}
+
+% TRUE - FALSE
+\begin{center}
+\AxiomC{}
+\LeftLabel{\left{false}}
+\UnaryInfC{$ \G ; \bot:\textsl{false} \th \D $}
+\DisplayProof
+\quad
+\AxiomC{}
+\LeftLabel{\right{true}}
+\UnaryInfC{$\G \th \top:\textsl{true} ; \D $}
+\DisplayProof
+\end{center}
+
+% CUT
+\begin{center}
+\AxiomC{$x:A , \G \th v:B ; \D$}
+\AxiomC{$x:A , \G ; e:B \th \D$}
+\LeftLabel{\left{cut}}
+\BinaryInfC{$\G ; \tilde{\mu}x.\langle v|e\rangle:A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th v:B ; \alpha:A, \D$}
+\AxiomC{$\G ; e:B \th \alpha:A, \D$}
+\LeftLabel{\right{cut}}
+\BinaryInfC{$\G \th \mu\alpha.\langle v|e\rangle:A ; \D$}
+\DisplayProof
+\end{center}
+
+% IMPLY
+\begin{center}
+\AxiomC{$\G \th v:A ; \D$}
+\AxiomC{$\G ; e:B \th \D$}
+\LeftLabel{\left{imply}}
+\BinaryInfC{$\G ; v\cdot e:A\imp B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G, x:A \th v:B; \D$}
+\LeftLabel{\right{imply}}
+\UnaryInfC{$\G \th \lambda x.v:A\imp B ; \D$}
+\DisplayProof
+\end{center}
+
+% MINUS
+\begin{center}
+\AxiomC{$\G; e:A \th \alpha:B, \D$}
+\LeftLabel{\left{minus}}
+\UnaryInfC{$\G ; \alpha\lambda'e:A - B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; e:B \th \D$}
+\AxiomC{$\G \th v:A; \D$}
+\LeftLabel{\right{minus}}
+\BinaryInfC{$\G \th e\cdot v: A - B ; \D$}
+\DisplayProof
+\end{center}
+
+% CONJ (and - wedge)
+\begin{center}
+\AxiomC{$\G, x:A, y:B \th v:C ; \D$}
+\AxiomC{$\G, x:A, y:B ; e:C \th \D$}
+\LeftLabel{\left{conj}}
+\BinaryInfC{$\G ; \proj{x}{y}{\langle v|e\rangle}:A\wedge B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th v:A ; \D$}
+\AxiomC{$\G \th v':B ; \D$}
+\LeftLabel{\right{conj}}
+\BinaryInfC{$\G \th (v,v'):A\wedge B ; \D$}
+\DisplayProof
+\end{center}
+
+% DISJ (or - vee)
+\begin{center}
+\AxiomC{$\G ; e:A \th \D$}
+\AxiomC{$\G ; e':B \th \D$}
+\LeftLabel{\left{disj}}
+\BinaryInfC{$\G ; [e,e']:A\vee B \th \D$}
+\DisplayProof
+\end{center}
+\begin{center}
+\AxiomC{$\G \th v:A ; \D$}
+\LeftLabel{\right{disj_1}}
+\UnaryInfC{$\G \th \inl v:A\vee B ; \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th v:B ; \D$}
+\LeftLabel{\right{disj_2}}
+\UnaryInfC{$\G \th \inr v:A\vee B ; \D$}
+\DisplayProof
+\end{center}
+
+% NEG
+\begin{center}
+\AxiomC{$\G \th v:A ; \D$}
+\LeftLabel{\left{neg}}
+\UnaryInfC{$\G ; \tilde{\mu}x.\langle x|v\cdot\bot\rangle:\neg A \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G ; e:A \th \D$}
+\LeftLabel{\right{neg}}
+\UnaryInfC{$\G \th \mu \alpha.\langle \lambda y.\mu z \langle y|e\rangle|\alpha\rangle:\neg A ; \D$}
+\DisplayProof
+\end{center}
+
+% FORALL
+\begin{center}
+\AxiomC{$\G ; e:B[x\leftarrow t] \th \D$}
+\LeftLabel{\left{forall}}
+\UnaryInfC{$\G ; t\cdot e:\forall (x:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th v:B ; \D$}
+\LeftLabel{\right{forall}}
+\UnaryInfC{$\G \th \lambda x.v:\forall (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+% EXISTS
+\begin{center}
+\AxiomC{$\G ; e:B \th \D$}
+\LeftLabel{\left{exists}}
+\UnaryInfC{$\G ; \proj{\alpha}{\beta}{\langle \beta|e\rangle}:\exists (\alpha:A) B \th \D$}
+\DisplayProof
+\quad
+\AxiomC{$\G \th v:B[x\leftarrow t] ; \D$}
+\LeftLabel{\right{exists}}
+\UnaryInfC{$\G \th (t,v):\exists (x:A) B ; \D$}
+\DisplayProof
+\end{center}
+
+\end{minipage}
+}
+\caption{Typing rules for $\lbmm$}
+\label{TR}
+\end{figure}
+
+The equivalent of the contraction and weakening rules are trivially derived.
+The interested user can refer to~\cite{Lbmm:Wadler03}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Example: 2 is even!}
+
+\begin{verbatim}
+% ./fsp -ascii
+
+    > Welcome! This is FSP version 0.0.1.
+      To get help type "help" followed by a dot.
+      Current logic: intuitionistic sequent calculus.
+		      
+		      
+fsp < minimal. lj.
+
+    > Current logic: minimal intuitionistic sequent calculus.
+          
+
+fsp < declare N: type.
+
+    > N defined.
+          
+
+fsp < declare O: N.
+
+    > O defined.
+	  
+
+fsp < declare S: N -> N.
+
+    > S defined.
+	  
+
+fsp < declare Even: N -> bool.
+
+    > Even defined.
+	  
+
+fsp < declare Odd: N -> bool.
+
+    > Odd defined.
+
+
+fsp < declare EO: (Even [O]).
+
+    > EO defined.
+
+
+fsp < declare OS: (forall n:N, Even [n] -> Odd [S n]).
+
+    > OS defined.
+          
+	  
+fsp < declare ES: (forall n:N, Odd [n] -> Even [S n]).
+
+    > ES defined.
+          
+	  
+fsp < theorem even_2: (Even [S (S O)]).
+
+    > Proof term: 
+      ;:thesis:Even (S (S O)).<?1||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+	.... (1) <======
+      done
+				          
+      1 goal yet to prove!
+     
+          
+       |-----  1
+      *:Even (S (S O))
+									       
+									       
+fsp < focus ES th.
+
+    > Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||?1.2>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+        ...(1.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:forall n:N,Odd n->Even (S n)
+       |-----  1.2
+      th:Even (S (S O))
+      
+
+fsp < elim [S O].
+
+    > Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||S O*?1.2.1>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+        ...(1.2.1) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:Odd (S O)->Even (S (S O))
+       |-----  1.2.1
+      th:Even (S (S O))
+      
+
+fsp < elim.
+
+    > 2 subgoals generated. 
+      
+      Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||S O*?1.2.1.1*?1.2.1.2>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+          and .... (1.2.1.1) <======
+        ...(1.2.1.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+       |-----  1.2.1.1
+      *:Odd (S O)
+      
+
+fsp < focus OS th; elim [O].
+
+    > Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||S O*;:th:Odd (S O).<OS||O*?1.2.1.1.2.1>*?1.2.1.2>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+          and we need to prove Odd (S O)
+            by OS
+          ...(1.2.1.1.2.1) <======
+        ...(1.2.1.2)
+      done
+      
+      2 goals yet to prove!
+      
+      
+      *:Even O->Odd (S O)
+       |-----  1.2.1.1.2.1
+      th:Odd (S O)
+      
+
+fsp < elim; [focus EO th; axiom | axiom].
+
+    > Closed a branch. 
+      
+      Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||S O*;:th:Odd (S O).<OS||O*;:th:Even O.<EO||th>*th>*?1.2.1.2>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+          and we need to prove Odd (S O)
+            by OS
+            and we need to prove Even O
+              by EO
+            done
+          done
+        ...(1.2.1.2) <======
+      done
+      
+      1 goal yet to prove!
+      
+      
+      *:Even (S (S O))
+       |-----  1.2.1.2
+      th:Even (S (S O))
+      
+
+fsp < axiom.
+
+    > Closed the last branch: 
+      Proof completed!
+      
+      Proof term: 
+      ;:thesis:Even (S (S O)).<;:th:Even (S (S O)).<ES||S O*;:th:Odd (S O).<OS||O*;:th:Even O.<EO||th>*th>*th>||thesis>
+      Natural language:
+      we need to prove Even (S (S O))
+        we need to prove Even (S (S O))
+          by ES
+          and we need to prove Odd (S O)
+            by OS
+            and we need to prove Even O
+              by EO
+            done
+          done
+        done
+      done
+      
+      
+fsp < qed.
+
+    > even_2 defined.
+      
+
+fsp < checkout proof term coq.
+
+    > Firing up Coq for confirmation.
+      
+
+fsp < checkout proof term coq.
+
+    > Firing up Coq for confirmation.
+      
+
+fsp < export natural language.
+
+    > File script.nl written. Enjoy the reading.
+      
+
+fsp < quit.
+
+    > Out.
+
+\end{verbatim}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\nocite{Lbmm:UrbainBierman99}
+
+\bibliographystyle{amsplain} 
+\bibliography{bib}
+
+\end{document}
+% That's all folks !
+
+
+\AxiomC{$$}
+\AxiomC{$$}
+\LeftLabel{}
+\BinaryInfC{$$}
+\DisplayProof
+

@@ -1,0 +1,5 @@
+declare A : bool.
+deny mA : (A).
+antitheorem notA2 : (A).
+moxia.
+qed.

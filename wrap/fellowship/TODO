@@ -1,0 +1,91 @@
+Known bugs:
+*-5. there should be a way to add -coq, -isabelle, -pvs, -coqproofterm,
+     -natural-language, etc. to fsp -c so that the theorem prover is invoked
+     once and for all when the file is closed, without having to add
+     checkout * for each theorem prover (even when the theorem prover is not
+     available!). In particular the checkout * and export * commands should
+     be interdicted in compilation mode (they can still be useful in interactive
+     mode). And moreover, when in compilation mode, they should not be
+     interactive! (no opened window to click on, etc.)
+ -4. in the help commands the unicode characters are not used when explaining
+     the generated proof terms
+*-2. use an args_analyzer to localize errors and give better error messages
+  0. lk_to_lj_plus_em does not produce well typed terms when applied to
+     Lambda' (but later on it produces well typed lambda terms)
+  1. translation of not and False to PVS and Coq for minimal logic.
+     Notice: instead of Classical.classic in minimal logic one should
+     have the weak excluded middle (see Hugo's paper): \forall A B, A \/ A -> B
+  2. translation of - for minimal logic (???)
+  3. syntactic error messages could be more informative ???
+ 
+Wish list:
+ 0.5 reduce the number of keywords in the lexer
+  1. just one name for the continuation when in non-subtractive LJ
+     (what to do with subtraction ???)
+  2. the proof terms generated for the elimination of negation are not minimal
+    (for different reasons). Add a flag to make them minimal (when the user is
+    not interested in natural language)?
+ 
+Possible user's wishes:
+  1. an high level tactic to simulate additive elimination for conjunction
+  2. an high level tactic to simulate multiplicative elimination for
+     disjunction in LK
+  3. a. exchange tactic? (does not make sense in general for dependent types)
+  4. primitive additive conjunction and multiplicative disjunction + a flag
+     to bind the notations /\ and \/ to one of them.
+  5. a (very) high level tactic to simulate ND apply (vs. metavariables?)
+  6. a tactic "focus n" and/or "focus name". It is fundamental for a GUI and
+     it is very easy to implement.
+  7. An "open file.fsp" command. 
+  8. "checkout *" is an interactive command, not compiled. Use a flag for
+     compile-time checkout.
+ 
+To be understood:
+  1. in non minimal logic not is a primitive connective; in minimal logic
+     it is derived. Pros: closer to classical LK/LJ; one tactic less
+     Cons: the proof script changes if you use the option "-min". So far
+     every script accepted by "-lj" was also accepted by "-lk" (nice
+     property). Note: it could be a bit improved (at lest the right rule)
+     by automatically adding a cut and an axiom so that the stoup goes
+     to the left hand side (it is now on false instead of P when eliminating
+     ~P)
+  2. additive conjunction? (does it have sense for sigma types?)
+     multiplicative disjunction? (no sense in LJ)
+  3. Do the proof scripts for external provers need to be adjusted when
+     tacticals are used? Might they introduce 'steps' in the proof too big for
+     tauto to solve? Validity of the naive "cut" approach?
+  4. state.goals and state.pt contain redundant, possibly (if bug) conflicting
+     information. Feature or Bug? Should we keep only the pt --or assimilated?
+     Should the pt be built only at the end of the proof?
+ 
+* LaTeX/XHTML Documentation:
+  1. document the logical system(s)
+     In particular weakening (primitive) and contraction (not primitive)
+     are missing
+  2. document the tactics and commands language
+     It would be nice to generate them from the help.ml file (or generate
+     both files from the same sources)
+ 
+Future work (???) for CSC:
+  1. understand and fix natural language rendering of proof terms
+  2. an analyser of proof terms (to understand the logic from the proof
+     term). Cool. For instance: "is this proof really in LJ even if I made
+     it in LK? is it minimal? etc."
+  2. a parser for proof terms (???)
+  3. a type-checker for proof terms (???)
+  4. a cbv and a cbn reduction machine for proof terms (???)
+ 
+Future work (????):
+  1. should the distinction between \Pi and \forall be introduced?
+     (ask Alexandre Miguel about his opinion)
+  2. enhance the manual to include proof terms
+  3. a brand new gui / integration with an existing gui
+     (I am already tired of cut & pasting :-)
+  4. start working on the Real library
+     -> emulate HO in FO: eg type SR = Sets of R ; function In = SR -> bool
+     -> introduce some 2nd order? eg A = {x | 0 < x < x^2 }
+     -> benchmark checkout coq vs. checkout proof term coq
+  5. somehow Coq manages to guess the correct instantiations when a right
+     forall + left forall (using the introduced constant) takes place ; however
+     PVS does not (due to wierd skolem names?). Work it out. And check whether
+     firstorder has an acceptable counterpart in PVS...

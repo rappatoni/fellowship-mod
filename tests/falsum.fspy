@@ -1,0 +1,13 @@
+lk.
+declare A : bool.
+declare r1 : (A -> false).
+start argument contradiction false
+cut (A -> false) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+
+start argument contradiction2 false
+end argument

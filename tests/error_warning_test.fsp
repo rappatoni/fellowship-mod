@@ -1,0 +1,6 @@
+lk.
+declare A,B:bool.
+declare axA: (A).
+declare axAB: (A->B).
+theorem test : (A).
+elim.

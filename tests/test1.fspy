@@ -1,0 +1,34 @@
+lk.
+
+declare EfficientMetro, StrikeMetro, UseMetro: bool.
+declare r1: (EfficientMetro -> UseMetro).
+declare r2: (StrikeMetro -> ~EfficientMetro).
+declare a1: (EfficientMetro).
+declare a2: (StrikeMetro).
+
+declare ax : (~EfficientMetro).
+
+theorem arg1: (UseMetro).
+cut (EfficientMetro -> UseMetro) th.
+axiom r1.
+elim.
+axiom a1.
+axiom.
+qed.
+
+theorem arg2: (~EfficientMetro).
+cut (StrikeMetro -> ~EfficientMetro) th.
+axiom r2.
+elim.
+axiom a2.
+axiom.
+qed.
+
+theorem inconsistency: (false).
+cut (EfficientMetro) th.
+axiom a1.
+cut (~EfficientMetro) th2.
+axiom arg2.
+elim.
+axiom.
+qed.
