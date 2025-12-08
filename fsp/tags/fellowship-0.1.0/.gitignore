@@ -1,6 +1,5 @@
 /*
 !*/
-documentation/
 auto/
 __pycache__/
 !.gitignore
@@ -11,6 +10,14 @@ __pycache__/
 !*.ml
 !*.mli
 !*.mly
+!*.mll
+!CHANGES
+!Makefile
+!TODO
+!COPYING
+!OCamlMakefile
+!INSTALL
+!README
 # OCaml build artifacts (keep sources tracked)
 *.cmi
 *.cmo
