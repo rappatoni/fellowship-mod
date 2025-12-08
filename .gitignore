@@ -2,4 +2,4 @@
 fsp/*
 !fsp/tags
 fsp/tags/*
-!fsp/tags/fellowhip-0.1.0
+!fsp/tags/fellowhip-0.1.0/*
