@@ -1,8 +1,0 @@
-define a:sort.
-define f:a->bool.
-goal forall x:a, f(x)->f(x).
-right forall.
-right imply y.
-axiom.
-checkout pvs.
-quit.

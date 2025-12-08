@@ -1,6 +1,0 @@
-(* Minimal test for deny (declaration) + moxia (tactic) *)
-declare A : bool.
-deny mA : (A).
-antitheorem notA : (A).
-moxia mA.
-qed.

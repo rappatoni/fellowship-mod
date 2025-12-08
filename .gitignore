@@ -1,5 +1,1 @@
 .aider*
-fsp/*
-!fsp/tags
-fsp/tags/*
-!fsp/tags/fellowship-0.1.0

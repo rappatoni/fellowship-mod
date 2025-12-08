@@ -1,40 +1,0 @@
-8
-
-dir
-254
-svn+ssh://sacerdot@hikitech.dynalias.com/home/flo/svn/code/ocaml/fsp/tags
-
-
-
-
-2005-05-27T13:31:23.370752Z
-252
-flo
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-04060765-aee8-0310-9bcb-e450e80dd529
-
-multisorted-fsp
-dir
-
-fellowship-0.1.0
-dir
-
-singlesorted-fsp
-dir
-
-propositional-fsp
-dir
-

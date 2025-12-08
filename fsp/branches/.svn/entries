@@ -1,34 +1,0 @@
-8
-
-dir
-254
-svn+ssh://sacerdot@hikitech.dynalias.com/home/flo/svn/code/ocaml/fsp/branches
-
-
-
-
-2005-05-12T21:01:12.013347Z
-226
-flo
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-04060765-aee8-0310-9bcb-e450e80dd529
-
-parser-rw
-dir
-
-ljq-fsp
-dir
-

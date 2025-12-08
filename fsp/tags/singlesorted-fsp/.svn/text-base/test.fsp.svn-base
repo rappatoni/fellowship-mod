@@ -1,6 +1,0 @@
-defp a:0, b:1.
-goal a->a.
-right imply x.
-axiom.
-checkout pvs.
-quit.

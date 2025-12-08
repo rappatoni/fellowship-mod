@@ -1,6 +1,0 @@
-Regression testin now saves the stdout and stderr of fsp to name.out instead
-of throwing them out to /dev/null.
---This line, and those below, will be ignored--
-
-_M   trunk/tests
-M    trunk/Makefile
