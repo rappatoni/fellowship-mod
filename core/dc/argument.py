@@ -1,4 +1,4 @@
-import logging, copy
+import logging, copy, os
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
@@ -755,7 +755,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # 1. deep‑copy then reduce
         red_ast = copy.deepcopy(self.body)
-        red_ast = ArgumentTermReducer().reduce(red_ast)
+        eval_disc = os.getenv("FSP_EVAL_DISCIPLINE", "legacy")
+        onus_fb   = os.getenv("FSP_ONUS_FALLBACK", "none")
+        onus_st   = os.getenv("FSP_ONUS_STANCE", "skeptical")
+        red_ast = ArgumentTermReducer(
+            evaluation_discipline=eval_disc,
+            onus_fallback=onus_fb,
+            onus_stance=onus_st
+        ).reduce(red_ast)
 
         # 2. optionally enrich props/types
         if enrich:

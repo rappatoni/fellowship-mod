@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 from typing import Optional, Any
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.color import AcceptanceColoringVisitor
@@ -92,7 +92,10 @@ class ArgumentTermReducer(ProofTermVisitor):
 
     def __init__(self, *, verbose: bool = True, assumptions=None, axiom_props=None,
                  evaluation_strategy: str = "call-by-name",
-                 simplify_alternative_arguments: bool = True):
+                 simplify_alternative_arguments: bool = True,
+                 evaluation_discipline: str = "legacy",          # legacy | onus-parallel | onus (future)
+                 onus_fallback: str = "none",                    # none | cbn | cbv
+                 onus_stance: str = "skeptical"):                # skeptical | credulous
         super().__init__()
         self.verbose      = verbose
         self.assumptions  = assumptions  or {}
@@ -108,6 +111,9 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._w_comment: int = 24
         self.evaluation_strategy = evaluation_strategy
         self.simplify_alternative_arguments = simplify_alternative_arguments
+        self.evaluation_discipline = evaluation_discipline
+        self.onus_fallback = onus_fallback
+        self.onus_stance = onus_stance
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
         """Return the normal form; log a table of (no, term, rule, comments)."""
@@ -166,10 +172,186 @@ class ArgumentTermReducer(ProofTermVisitor):
         c = ProofTermGenerationVisitor().visit(c)
         return getattr(c, "pres", repr(c))
 
+    # ─── Call‑by‑Onus: classification and application of a single step ──────
+    def _is_tprime(self, n: Optional[ProofTerm]) -> bool:
+        if n is None:
+            return False
+        try:
+            return not self._has_next_redex(n)
+        except Exception:
+            return False
+
+    def _is_exception_node(self, n: ProofTerm) -> bool:
+        # e ::= μ_.<t' || t> | μ'_.<t || t'>; binder affine; t' is not itself an exception
+        if isinstance(n, Mu) and _is_affine(n.id.name, n):
+            tprime = n.term
+            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde))
+        if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
+            tprime = n.context
+            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde))
+        return False
+
+    def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
+        # ap ::= μ_.<t'||α> | μ'_.<t'||α>; returns (is_ap, is_default, is_defeated)
+        if isinstance(n, Mu) and _is_affine(n.id.name, n) and isinstance(n.context, ID):
+            tprime = n.term
+            is_def = isinstance(tprime, Goal)
+            is_defeated = self._is_exception_node(tprime)
+            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
+        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.term, DI):
+            tprime = n.context
+            is_def = isinstance(tprime, Laog)
+            is_defeated = self._is_exception_node(tprime)
+            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
+        return (False, False, False)
+
+    def _is_ar_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
+        # ar ::= μ'_.<x||t'> | μ_.<x||t'>; returns (is_ar, is_default, is_defeated)
+        if isinstance(n, Mu) and _is_affine(n.id.name, n) and isinstance(n.term, ID):
+            tprime = n.context
+            is_def = isinstance(tprime, Laog)
+            is_defeated = self._is_exception_node(tprime)
+            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
+        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.term, DI):
+            tprime = n.context
+            is_def = isinstance(tprime, Laog)
+            is_defeated = self._is_exception_node(tprime)
+            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
+        return (False, False, False)
+
+    def _decide_onus(self, node: ProofTerm) -> tuple[str, str]:
+        """
+        Return (action, reason) with action ∈ {left-shift, right-shift, cbn, cbv, fallback}
+        """
+        if not isinstance(node, (Mu, Mutilde)):
+            return ("fallback", "not a binder")
+        left, right = node.term, node.context
+        # Shifts
+        if isinstance(right, Mutilde) and self._has_next_redex(getattr(right, "context", None)):
+            return ("right-shift", "right-shift: ⟨ t || μ'_. c ⟩ reducible")
+        if isinstance(left, Mu) and self._has_next_redex(getattr(left, "term", None)):
+            return ("left-shift", "left-shift: ⟨ μ_. c || t ⟩ reducible")
+        # Classifications
+        L_ap, L_d, L_dap = self._is_ap_node(left)
+        R_ap, R_d, R_dap = self._is_ap_node(right)
+        L_ar, _,  L_dar = self._is_ar_node(left)
+        R_ar, _,  R_dar = self._is_ar_node(right)
+        L_e = self._is_exception_node(left)  if isinstance(left, (Mu, Mutilde)) else False
+        R_e = self._is_exception_node(right) if isinstance(right, (Mu, Mutilde)) else False
+        L_is_m = isinstance(left, (Mu, Mutilde))
+        R_is_m = isinstance(right, (Mu, Mutilde))
+        L_is_nm = not L_is_m
+        R_is_nm = not R_is_m
+        L_is_lam_cons = isinstance(left, Lamda) and isinstance(right, Cons)
+        L_is_sonc_adm = isinstance(left, Sonc) and isinstance(right, Admal)
+        credulous = (self.onus_stance.lower() == "credulous")
+        # CBV
+        if L_is_sonc_adm:                 return ("cbv", "⟨ sonc || admal ⟩")
+        if L_is_nm and R_is_m:            return ("cbv", "⟨ !m || m ⟩")
+        if L_ap and (R_e and not credulous): return ("cbv", "⟨ ap || e ⟩")
+        if L_ar and R_e:                  return ("cbv", "⟨ ar || e ⟩")
+        if L_d and (R_ap or R_ar or True): return ("cbv", "⟨ d || ap/ar/o ⟩")
+        if R_e and not (L_ap or L_ar):    return ("cbv", "⟨ o || e ⟩")
+        if L_ap and R_dap:                return ("cbv", "⟨ ap || dap ⟩")
+        if L_ar and R_dar:                return ("cbv", "⟨ ar || dar ⟩")
+        # CBN
+        if L_e and R_ap:                  return ("cbn", "⟨ e || ap ⟩")
+        if credulous and L_e and R_ar:    return ("cbv", "credulous: ⟨ e || ar ⟩→cbv")
+        if (not credulous) and L_e and R_ar: return ("cbn", "⟨ e || ar ⟩")
+        if L_is_m and R_is_nm:            return ("cbn", "⟨ m || !m ⟩")
+        if L_is_lam_cons:                 return ("cbn", "⟨ lamda || cons ⟩")
+        if L_ap and R_d:                  return ("cbn", "⟨ ap || d ⟩")
+        if (not (L_ap or L_ar)) and R_d:  return ("cbn", "⟨ o || d ⟩")
+        if L_ar and R_d:                  return ("cbn", "⟨ ar || d ⟩")
+        if L_ap and R_dap:                return ("cbn", "⟨ ap || dap ⟩")
+        # Fallback
+        return ("fallback", "no onus situation matched")
+
+    def _onus_apply_once(self, n: ProofTerm, onus_kind: str) -> ProofTerm:
+        """Apply a single local step according to onus on a copy of node n."""
+        node = deepcopy(n)
+        if onus_kind == "left-shift" or onus_kind == "right-shift":
+            return node  # shifts only decide where to reduce; they do not rewrite here
+        # CBN: prefer the λ‑rule; otherwise μ‑β
+        if onus_kind == "cbn":
+            if isinstance(node, (Mu, Mutilde)) and isinstance(node.term, Lamda) and isinstance(node.context, Cons) and not isinstance(node.context.term, Goal):
+                lam: Lamda = node.term
+                cons: Cons = node.context
+                v = cons.term
+                E = cons.context
+                new_context = Mutilde(
+                    di_=lam.di.di,
+                    prop=lam.di.prop,
+                    term=deepcopy(lam.term),
+                    context=deepcopy(E)
+                )
+                node.term = deepcopy(v)
+                node.context = new_context
+                return node
+            # μ‑β if applicable in both cases
+            if isinstance(node, Mu) and isinstance(node.term, Mu) and not isinstance(node.context, Laog):
+                inner = node.term
+                x = inner.id.name
+                E = node.context
+                node.term    = _subst(inner.term,    x, deepcopy(E))
+                node.context = _subst(inner.context, x, deepcopy(E))
+                return node
+            if isinstance(node, Mutilde) and isinstance(node.term, Mu) and not isinstance(node.context, Laog):
+                inner = node.term
+                x = inner.id.name
+                E = node.context
+                node.term    = _subst(inner.term,    x, deepcopy(E))
+                node.context = _subst(inner.context, x, deepcopy(E))
+                return node
+            return node
+        # CBV: μ̃‑β if applicable
+        if onus_kind == "cbv":
+            if isinstance(node, Mu) and isinstance(node.context, Mutilde) and not isinstance(node.term, Goal):
+                inner = node.context
+                alpha = inner.di.name
+                v = node.term
+                node.term    = _subst(inner.term,    alpha, deepcopy(v))
+                node.context = _subst(inner.context, alpha, deepcopy(v))
+                return node
+            if isinstance(node, Mutilde) and isinstance(node.context, Mutilde) and not isinstance(node.term, Goal):
+                inner = node.context
+                alpha = inner.di.name
+                v = node.term
+                node.term    = _subst(inner.term,    alpha, deepcopy(v))
+                node.context = _subst(inner.context, alpha, deepcopy(v))
+                return node
+            return node
+        # Fallback: honor onus_fallback
+        fb = self.onus_fallback.lower()
+        if fb == "cbn":
+            return self._onus_apply_once(node, "cbn")
+        if fb == "cbv":
+            return self._onus_apply_once(node, "cbv")
+        return node
+
+    def _maybe_warn_onus_divergence(self, onus_info, before_node: ProofTerm, after_node: ProofTerm, rule_tag: str, where_kind: str):
+        """Compara candidato onus vs resultado legacy y advierte si divergen."""
+        if self.evaluation_discipline not in ("onus-parallel", "onus") or onus_info is None:
+            return
+        kind, reason, cand = onus_info
+        before_pres = self._pres_str(before_node)
+        after_pres  = self._pres_str(after_node)
+        cand_pres   = self._pres_str(cand)
+        if after_pres != before_pres and after_pres != cand_pres:
+            logger.warning("call-by-onus divergence at %s (%s): onus=%s (%s)\n  onus-candidate: %s\n  legacy-result: %s",
+                           where_kind, rule_tag, kind, reason, cand_pres, after_pres)
+
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
         # inner positions.
         
+        # Onus parallel: prepare single-step candidate at this node
+        orig_before = deepcopy(node)
+        onus_info = None
+        if self.evaluation_discipline in ("onus-parallel", "onus"):
+            okind, oreason = self._decide_onus(node)
+            ocand = self._onus_apply_once(orig_before, okind)
+            onus_info = (okind, oreason, ocand)
 
         # λ‑rule ---------------------------------------------------------
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
@@ -192,6 +374,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 node.term    = deepcopy(v)
                 node.context = new_context
                 dbg_after = self._pres_str(node)
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "lambda", "Mu")
                 logger.debug("reduce.Mu lambda: before=\n%s", dbg_before)
                 logger.debug("reduce.Mu lambda: after=\n%s", dbg_after)
                 self._snapshot("lambda")
@@ -227,6 +410,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(supporter)           # keep Supporter
                         node.context = deepcopy(ctx_mt.context)      # ID(alt)
+                        self._maybe_warn_onus_divergence(onus_info, orig_before, node, "support-keep", "Mu")
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mu support-keep: before=\n%s", dbg_before)
                         logger.debug("reduce.Mu support-keep: after=\n%s",  dbg_after)
@@ -238,6 +422,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(left)                 # keep left (Goal or undefeated arg)
                         node.context = deepcopy(inner_mu.context)     # ID(alt)
+                        self._maybe_warn_onus_divergence(onus_info, orig_before, node, "support-discard", "Mu")
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mu support-discard: before=\n%s", dbg_before)
                         logger.debug("reduce.Mu support-discard: after=\n%s",  dbg_after)
@@ -315,6 +500,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # should be ID α
                     dbg_after = self._pres_str(node)
+                    self._maybe_warn_onus_divergence(onus_info, orig_before, node, "alt-defence-mu", "Mu")
                     logger.debug("reduce.Mu alt-defence: before=\n%s", dbg_before)
                     logger.debug("reduce.Mu alt-defence: after=\n%s", dbg_after)
                     self._snapshot("alt-defence-mu")
@@ -331,6 +517,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # t*
                     dbg_after = self._pres_str(node)
+                    self._maybe_warn_onus_divergence(onus_info, orig_before, node, "alt-defeat-mu", "Mu")
                     logger.debug("reduce.Mu alt-defeat: before=\n%s", dbg_before)
                     logger.debug("reduce.Mu alt-defeat: after=\n%s", dbg_after)
                     self._snapshot("alt-defeat-mu")
@@ -379,6 +566,10 @@ class ArgumentTermReducer(ProofTermVisitor):
                 node.term    = new_term
                 node.context = new_context
                 dbg_after = self._pres_str(node)
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "mutilde-beta", "Mutilde")
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "mu-beta", "Mutilde")
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "mutilde-beta", "Mu")
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "mu-beta", "Mu")
                 logger.debug("reduce.Mu mu-beta: before=\n%s", dbg_before)
                 logger.debug("reduce.Mu mu-beta: after=\n%s", dbg_after)
                 self._snapshot("mu-beta")
@@ -415,6 +606,12 @@ class ArgumentTermReducer(ProofTermVisitor):
         # First, normalise the sub‑components so that the rule also fires in
         # inner positions.
         # node = super().visit_Mutilde(node)
+        orig_before = deepcopy(node)
+        onus_info = None
+        if self.evaluation_discipline in ("onus-parallel", "onus"):
+            okind, oreason = self._decide_onus(node)
+            ocand = self._onus_apply_once(orig_before, okind)
+            onus_info = (okind, oreason, ocand)
 
         # λ‑rule ---------------------------------------------------------
         if isinstance(node.term, Lamda) and isinstance(node.context, Cons):
@@ -438,6 +635,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 node.term    = deepcopy(v)
                 node.context = new_context
                 dbg_after = self._pres_str(node)
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "lambda", "Mutilde")
                 logger.debug("reduce.Mutilde lambda: before=\n%s", dbg_before)
                 logger.debug("reduce.Mutilde lambda: after=\n%s", dbg_after)
                 self._snapshot("lambda")
@@ -468,6 +666,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # DI(alt)
                         node.context = deepcopy(ctx_mt.context)  # Supporter
+                        self._maybe_warn_onus_divergence(onus_info, orig_before, node, "support-keep", "Mutilde")
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mutilde support-keep: before=\n%s", dbg_before)
                         logger.debug("reduce.Mutilde support-keep: after=\n%s",  dbg_after)
@@ -478,6 +677,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(inner_mu.term)      # DI(alt)
                         node.context = deepcopy(inner_mu.context)   # Laog
+                        self._maybe_warn_onus_divergence(onus_info, orig_before, node, "support-discard", "Mutilde")
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mutilde support-discard: before=\n%s", dbg_before)
                         logger.debug("reduce.Mutilde support-discard: after=\n%s",  dbg_after)
@@ -540,6 +740,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     node.term    = deepcopy(ctx_mt.term)
                     node.context = deepcopy(ctx_mt.context)  # should be ID α
                     dbg_after = self._pres_str(node)
+                    self._maybe_warn_onus_divergence(onus_info, orig_before, node, "alt-defence-mutilde", "Mutilde")
                     logger.debug("reduce.Mutilde alt-defence: before=\n%s", dbg_before)
                     logger.debug("reduce.Mutilde alt-defence: after=\n%s", dbg_after)
                     self._snapshot("alt-defence-mutilde")
@@ -556,6 +757,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                     node.term    = deepcopy(inner_mu.term)
                     node.context = deepcopy(inner_mu.context)  # t*
                     dbg_after = self._pres_str(node)
+                    self._maybe_warn_onus_divergence(onus_info, orig_before, node, "alt-defeat-mutilde", "Mutilde")
                     logger.debug("reduce.Mutilde alt-defeat: before=\n%s", dbg_before)
                     logger.debug("reduce.Mutilde alt-defeat: after=\n%s", dbg_after)
                     self._snapshot("alt-defeat-mutilde")
