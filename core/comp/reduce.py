@@ -306,6 +306,20 @@ class ArgumentTermReducer(ProofTermVisitor):
             return node
         # CBV: μ̃‑β if applicable
         if onus_kind == "cbv":
+            # Admal step: ⟨ E*v || admal α.β ⟩ → ⟨ μ α.< v || β > || E ⟩
+            if isinstance(node, (Mu, Mutilde)) and isinstance(node.term, Sonc) and isinstance(node.context, Admal):
+                sonc: Sonc = node.term
+                adm:  Admal = node.context
+                E = deepcopy(sonc.context)
+                v = deepcopy(sonc.term)
+                alpha_obj = getattr(adm, "id", None)
+                alpha_id  = getattr(alpha_obj, "id", alpha_obj)
+                alpha_prop = getattr(alpha_obj, "prop", getattr(alpha_id, "prop", None))
+                beta_ctx = deepcopy(getattr(adm, "context", None))
+                if alpha_id is not None and alpha_prop is not None and beta_ctx is not None:
+                    node.term = Mu(alpha_id, alpha_prop, v, beta_ctx)
+                    node.context = E
+                return node
             if isinstance(node, Mu) and isinstance(node.context, Mutilde) and not isinstance(node.term, Goal):
                 inner = node.context
                 alpha = inner.di.name
@@ -330,7 +344,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         return node
 
     def _maybe_warn_onus_divergence(self, onus_info, before_node: ProofTerm, after_node: ProofTerm, rule_tag: str, where_kind: str):
-        """Compara candidato onus vs resultado legacy y advierte si divergen."""
+        """Compare onus candidate vs legacy result and warn if they diverge."""
         if self.evaluation_discipline not in ("onus-parallel", "onus") or onus_info is None:
             return
         kind, reason, cand = onus_info
@@ -381,6 +395,29 @@ class ArgumentTermReducer(ProofTermVisitor):
                 self.visit_Mu(node)
                 
                 return node
+
+        # admal rule: ⟨ E*v || admal α.β ⟩ → ⟨ μ α.< v || β > || E ⟩
+        if isinstance(node.term, Sonc) and isinstance(node.context, Admal):
+            sonc: Sonc = node.term
+            adm:  Admal = node.context
+            E = deepcopy(sonc.context)
+            v = deepcopy(sonc.term)
+            # Extract binder (α) and body (β) from Admal
+            alpha_obj = getattr(adm, "id", None)  # may be ID or a Hyp with .id/.prop
+            alpha_id  = getattr(alpha_obj, "id", alpha_obj)
+            alpha_prop = getattr(alpha_obj, "prop", getattr(alpha_id, "prop", None))
+            beta_ctx = deepcopy(getattr(adm, "context", None))
+            if alpha_id is not None and alpha_prop is not None and beta_ctx is not None:
+                dbg_before = self._pres_str(node)
+                inner = Mu(alpha_id, alpha_prop, v, beta_ctx)
+                node.term = inner
+                node.context = E
+                dbg_after = self._pres_str(node)
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "admal", "Mu")
+                logger.debug("reduce.Mu admal: before=\n%s", dbg_before)
+                logger.debug("reduce.Mu admal: after=\n%s",  dbg_after)
+                self._snapshot("admal")
+                return self.visit_Mu(node)
 
         # basic support (Goal side):
         #   μ alt . < μ aff . < Goal || ID(alt) >  ∥  μ′ aff . < Supporter || ID(alt) > >
@@ -642,6 +679,28 @@ class ArgumentTermReducer(ProofTermVisitor):
                 self.visit_Mutilde(node)
                 return node
 
+        # admal rule: ⟨ E*v || admal α.β ⟩ → ⟨ μ α.< v || β > || E ⟩
+        if isinstance(node.term, Sonc) and isinstance(node.context, Admal):
+            sonc: Sonc = node.term
+            adm:  Admal = node.context
+            E = deepcopy(sonc.context)
+            v = deepcopy(sonc.term)
+            alpha_obj = getattr(adm, "id", None)  # may be ID or a Hyp with .id/.prop
+            alpha_id  = getattr(alpha_obj, "id", alpha_obj)
+            alpha_prop = getattr(alpha_obj, "prop", getattr(alpha_id, "prop", None))
+            beta_ctx = deepcopy(getattr(adm, "context", None))
+            if alpha_id is not None and alpha_prop is not None and beta_ctx is not None:
+                dbg_before = self._pres_str(node)
+                inner = Mu(alpha_id, alpha_prop, v, beta_ctx)
+                node.term = inner
+                node.context = E
+                dbg_after = self._pres_str(node)
+                self._maybe_warn_onus_divergence(onus_info, orig_before, node, "admal", "Mutilde")
+                logger.debug("reduce.Mutilde admal: before=\n%s", dbg_before)
+                logger.debug("reduce.Mutilde admal: after=\n%s",  dbg_after)
+                self._snapshot("admal")
+                return self.visit_Mutilde(node)
+
         # basic support (Laog side):
         #   μ' alt . < μ aff . < DI(alt) || Laog >  ∥  μ' aff . < DI(alt) || Supporter > >
         # Cases (when Supporter is fully simplified):
@@ -847,6 +906,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if (isinstance(im.context, ID) and im.context.name == n.id.name and
                     isinstance(cm.context, ID) and cm.context.name == n.id.name):
                     return True
+            # admal redex: ⟨ E*v || admal α.β ⟩
+            if isinstance(n.term, Sonc) and isinstance(n.context, Admal):
+                return True
         if isinstance(n, Mutilde):
             # λ‑redex applies only if argument v is not a bare Goal
             if isinstance(n.term, Lamda) and isinstance(n.context, Cons) and not isinstance(n.context.term, Goal):
@@ -864,6 +926,9 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if (isinstance(im.term, DI) and im.term.name == n.di.name and
                     isinstance(cm.term, DI) and cm.term.name == n.di.name):
                     return True
+            # admal redex: ⟨ E*v || admal α.β ⟩
+            if isinstance(n.term, Sonc) and isinstance(n.context, Admal):
+                return True
         # recurse quickly
         for child in getattr(n, 'term', None), getattr(n, 'context', None):
             if child and self._has_next_redex(child):
