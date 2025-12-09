@@ -22,7 +22,7 @@
 +     - Uniqueness: For all oi, oj in a debate D with oi = f(a, b, i) and oj = g(c, d, j), we have i ≠ j; i.e., each issue is operated on at most once.
 +   - Note: We will first implement reduction rules under these assumptions and relax them later.
 
-+ Directory layout (under fsp/tags/fellowship-0.1.0)
++ Directory layout (top-level repo root)
   - core/
     - ac/: ast.py (ProofTerm; Mu/Mutilde/Lamda/Cons/Goal/Laog/ID/DI/Hyp), grammar.py (Lark, Transformer)
     - comp/: visitor.py (ProofTermVisitor), enrich.py (PropEnrichmentVisitor), reduce.py (ArgumentTermReducer), alpha.py (alpha renaming, FreshenBinderNames), neg_rewrite.py (NegIntroRewriter)
@@ -126,6 +126,18 @@
   - Prover I/O: machine mode, prints proof-term ASCII; wrapper parses and uses AST visitors for operations
   - Logging: standard levels; can enable DEBUG to see full normalization steps
 
++ Packaging and entrypoint (current)
++  - pyproject.toml defines console script: acdc = "wrap.cli:main"
++  - Makefile:
++    - make reset-venv; make install → creates .venv and installs package editable (-e .)
++    - .venv/bin/acdc or make cli ARGS="…" to run without activating venv
++    - optional: make binlink → ./acdc
++  - Global install (optional): pipx install . → acdc globally available
++    - If running outside the repo, set ACDC_FSP to the native binary (wrap/fellowship/fsp) or ensure fsp is on PATH
++  - Binary resolution order (wrap/cli.py):
++    - --fsp flag (if provided) → ACDC_FSP or FSP_PATH env → packaged path → repo path → PATH
++    - Logs the selected path; errors if none is executable.
+
 + Tests
   - counterarguments_and_undercut.fspy (updated for “undercut NAME attacker target”, multiple undercuts)
   - test1.fspy, normalize_render.fspy, tactics.fspy still used
@@ -191,7 +203,9 @@ Date: 2025-11-04
 +   - Tests moved under tests/ and passing.
 +   - sexp_parser.py moved to wrap/; wrap/prover.py imports from .sexp_parser; wrap/__init__.py re‑exports SexpParser.
 +   - Fellowship OCaml sources moved under wrap/fellowship/ and rebuilt; generated/build artifacts removed from the tag root (lexer.ml, parser.ml/mli, *.cmi/*.cmo, fsp at old location, ._bcdi/._d, editor backups).
-+   - Wrapper now runs the relocated binary at wrap/fellowship/fsp (wrap/cli.py setup_prover updated to use Path(__file__).parent/"fellowship"/"fsp"; no “finder” shim).
++   - Wrapper resolves the Fellowship binary via resolve_fsp_path in wrap/cli.py:
++     - order: ACDC_FSP/FSP_PATH env → packaged path (wrap/fellowship/fsp) → repo path (wrap/fellowship/fsp) → PATH “fsp”
++     - setup_prover() uses this resolver; logs the chosen path.
 +   - Grafting/reduction logging upgraded to use pres.gen presentations with before/after DEBUG snapshots; explicit INFO no‑op logs added for graft_single/graft_uniform.
 +   - ProverWrapper: arguments are proxied via mod.store; declarations remain per‑session; machine payload parsing wired to wrap/sexp_parser.
 +   - Coq script.v identified as export helper (not used by runtime/machine mode); left out of the OCaml build move.

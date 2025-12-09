@@ -461,6 +461,41 @@ The following items are completed, fixed, or obsolete/merged.
 
 ### Completed/Fixed
 
+- Generic TODO
+  - ID: T-0034
+  - Location: pyproject.toml; Makefile
+  - Summary: Package project and expose “acdc” console script; add dev Makefile.
+  - Why: Provide a single entrypoint without activating venv; standardize tooling.
+  - Suggested approach: pyproject with [project.scripts] acdc=wrap.cli:main; Makefile targets install/cli/test/lint/format/typecheck.
+  - Status: Done
+  - Added: 2025-12-09
+
+- Bug report
+  - ID: B-0015
+  - Location: wrap/cli.py: setup_prover/resolve_fsp_path
+  - Symptom: pipx-installed acdc failed to find wrap/fellowship/fsp inside site-packages.
+  - Fix: Implement resolve_fsp_path with precedence: --fsp → ACDC_FSP/FSP_PATH → packaged path → repo path → PATH.
+  - Status: Fixed
+  - Added: 2025-12-09
+
+- Generic TODO
+  - ID: T-0035
+  - Location: README.md
+  - Summary: Document binary location, ACDC_FSP persistence, and pipx usage.
+  - Why: Users need a stable way to run acdc outside the repo; clarify env var and PATH fallback.
+  - Suggested approach: Add “Binary location” and “Persisting ACDC_FSP” sections; include examples and macOS quarantine tip.
+  - Status: Done
+  - Added: 2025-12-09
+
+- Generic TODO
+  - ID: T-0036
+  - Location: wrap/cli.py; README.md
+  - Summary: Add --fsp flag to override binary path per invocation and document it.
+  - Why: Convenient one-off override without touching environment.
+  - Suggested approach: argparse --fsp; pass through to setup_prover; log final path; add example to README.
+  - Status: Done
+  - Added: 2025-12-09
+
 - Bug report
   - ID: B-0001
   - Location: fsp/tags/fellowship-0.1.0/wrap/prover.py:_kv_list_to_dict
