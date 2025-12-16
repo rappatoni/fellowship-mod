@@ -456,6 +456,139 @@
   - Status: Open
   - Added: 2025-11-20
 
++ - Generic TODO
++   - ID: T-0037
++   - Location: core/comp/reduce.py (ArgumentTermReducer), tests/
++   - Summary: Finalize call-by-onus parallel mode (tests + correctness audit)
++   - Why: We must trust the new strategy; legacy vs onus must converge before switching defaults.
++   - Suggested approach:
++     - Add focused unit/e2e tests for every onus situation (Right/Left shift, CBN, CBV, Fallback; skeptical/credulous variants).
++     - Run legacy and onus-parallel; assert no WARNING divergences for curated baselines; add targeted cases where legacy currently differs and fix classifier rules.
++     - Log-only for now; legacy remains the actual reducer.
++   - Dependencies: None
++   - Status: Planned
++   - Added: 2025-12-10
+
+```
+Formal semantics: call-by-onus (verbatim spec)
+
+#### 1.) For any given redex mu alpha.<t||t'>/mu'x.<t||t'>, reduce first the subterm which has the *onus*.    
+#### 2.) Else (i.e. if the onus is on none or two or more subterms) fall back on one of three strategies (default: don't simplify): call-by-name (reduce to t[mu'x.t'/alpha]) call-by-value (reduce to t'[mu alpha.t/x]) or don't simplify.    
+####   
+#### Next we define *onus*. For this purpose we distinguish the following grammatical subcategories (we denote arbitrary closed terms by t and write t' for a fully simplified term t; free variables are denoted by x and alpha, respectively; as usually, "_" stands for an affine binder variable):     
+####   
+#### Alternative proofs ap ::= mu _.<t'||alpha> | mu'_.<t'||alpha> where alpha is a free variable in ap and t' is not an exception e. Defaults where t' is a Goal are denoted by d. Defeated alternative proofs where t' is an exception are denoted by dap.  
+####     
+#### Alternative refutations ar ::= mu'_.<x||t'> | mu_.<x||t'> where x is a free variable in ar and t' is not an exception e. Defaults where t' is a Laog are denoted by d. Defeated alternative refutations where t' is an exception e are denoted by dar  
+####     
+#### Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception or a goal/laog.    
+####     
+#### All other mu/mu'-terms are denoted by m. Other terms including other mu/mu'-terms are denoted by o. Other non-mu/mu' terms by !m    
+####     
+#### Next we distinguish the following evaluation situations:    
+####     
+#### Right-shift ::= <t||mu'_.c> | where c can still step.    
+####     
+#### Left-shift ::= <mu_.c||t>  where c can still step    
+####     
+#### Call-by-value ::= <ap||e> | <e||mu'_.<e||t>> | <o||e> | <d||ap> | <d||o> | <d||ar> | <ar||e> | <!m||m> | <sonc||admal> | <dap||ap> | <dar||ar>  
+####     
+#### Call-by-name ::= <e||ap> | <mu_.<t||e>||e> | <e||o> | <ap||d> | <o||d> | <ar||d> | <e||ar> | <m||!m> | <lamda||cons> | <ap||dap> | <ar||dar>  
+####     
+#### Fallback ::= <m||m> | <ap||ap> | <ar||ar>    
+####     
+#### Some of these should never occur by construction and should raise a warning:    
+####     
+#### - <d||o>, <o||d>: generic other terms should never be contraposed to defaults by our argument construction rules.    
+#### - <ap||d>, <d||ar>: our convention is that in support operations, the default should be in the head position and supporters in the tail.    
+#### - <ap||ar>, <ar||ap> should never occur    
+####     
+#### Evaluation proceeds as follows:    
+####     
+#### Right-shift ---> continue by reducing c    
+#### Left-shift ---> continue by reducing c    
+#### Call-by-name ---> apply mu/lamda reduction rule    
+#### Call-by-value ---> apply mu'/admal reduction rule    
+#### Fallback ---> no side, has the onus, apply fallback strategy: call-by-name (reduce to t[mu'x.t'/alpha]) call-by-value (reduce to t'[mu alpha.t/x]) or don't simplify (default: don't simplify)    
+####     
+#### Finally, there is another parameter:    
+####     
+#### Skeptical/Credulous: in skeptical mode apply the system as is; in credulous mode, move <ap||e> to call-by-name and <e||ar> to call-by-value.  
+####   
+```
++
++ - Bug report
++   - ID: B-0016
++   - Location: core/comp/reduce.py:_is_ap_node
++   - Symptom: Mutilde branch misclassifies ap; checks node.term is DI and uses node.context as t′.
++   - Why this is a bug: ap for μ′ has shape ⟨ t′ || α ⟩; α is in context (DI), t′ is the term.
++   - Suggested fix: For Mutilde ap, require isinstance(n.context, DI) and set tprime = n.term.
++   - Risk: Low
++   - Status: Open
++   - Added: 2025-12-10
++
++ - Bug report
++   - ID: B-0017
++   - Location: core/comp/reduce.py:_decide_onus
++   - Symptom: Case ⟨ ap || dap ⟩ is marked CBV and also listed under CBN (duplicate and wrong).
++   - Why this is a bug: Spec says CBV includes ⟨ dap || ap ⟩; CBN includes ⟨ ap || dap ⟩.
++   - Suggested fix: Remove CBV branch for (L_ap and R_dap); keep only CBN; deduplicate the check.
++   - Risk: Low
++   - Status: Open
++   - Added: 2025-12-10
++
++ - Bug report
++   - ID: B-0018
++   - Location: core/comp/reduce.py:_decide_onus (shift detection)
++   - Symptom: Right-/Left-shift only inspect one child of c (term or context), not both.
++   - Why this is a bug: Definition requires “c can still step” (either side).
++   - Suggested fix: For right-shift, check right.term and right.context; for left-shift, check left.term and left.context with _has_next_redex.
++   - Risk: Low
++   - Status: Open
++   - Added: 2025-12-10
++
++ - Bug report
++   - ID: B-0019
++   - Location: core/comp/reduce.py:visit_Mu (mu-beta divergence tagging)
++   - Symptom: _maybe_warn_onus_divergence invoked with mismatched where_kind/tag (uses "Mutilde" for Mu) and duplicates.
++   - Why this is a bug: Noise and misleading WARNINGs; should tag once with ("mu-beta", "Mu").
++   - Suggested fix: Call once with where_kind="Mu" and rule_tag="mu-beta"; remove stray duplicate calls.
++   - Risk: Low
++   - Status: Open
++   - Added: 2025-12-10
++
++ - Generic TODO
++   - ID: T-0038
++   - Location: tests (new .fspy), core/comp/reduce.py
++   - Summary: Add regression tests for Admal rule (⟨ E*v || admal α.β ⟩ → ⟨ μ α.<v||β> || E ⟩)
++   - Why: Recently added rule; ensure both Mu and Mutilde cases fire; cover onus-parallel CBV candidate.
++   - Suggested approach: Minimal arguments producing Sonc*Admal shape; assert normalized pres and absence of divergence WARNINGs.
++   - Dependencies: None
++   - Status: Planned
++   - Added: 2025-12-10
++
++ - Generic TODO
++   - ID: T-0039
++   - Location: README.md; wrap/cli.py (docs/usage)
++   - Summary: Document onus-parallel usage and tuning
++   - Why: Make it easy to enable/inspect divergence.
++   - Suggested approach: Add a “Call-by-onus (parallel)” section with env flags:
++     - FSP_EVAL_DISCIPLINE=onus-parallel, FSP_ONUS_FALLBACK, FSP_ONUS_STANCE
++     - Show CLI examples; mention WARNING-level divergence logs.
++   - Dependencies: None
++   - Status: Planned
++   - Added: 2025-12-10
++
++ - Generic TODO
++   - ID: T-0040
++   - Location: core/comp/reduce.py; core/dc/argument.py
++   - Summary: Phase 3 switch: implement evaluation_discipline="onus" (onus leads)
++   - Why: Retire legacy once aligned; keep opt-back to legacy temporarily.
++   - Suggested approach: Make onus decision select actual rewrite; remove legacy special-casing after a deprecation window; default discipline → "onus".
++   - Dependencies: T-0037 (alignment)
++   - Status: Planned
++   - Added: 2025-12-10
++
 ## Archived
 The following items are completed, fixed, or obsolete/merged.
 

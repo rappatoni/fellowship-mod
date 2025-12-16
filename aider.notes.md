@@ -457,3 +457,17 @@ Reference files verified in this snapshot
 +   - Keep/discard using acceptance coloring of the attacker subtree; ensure _has_next_redex recognizes these redexes.
 + - Remove pureness/uniqueness assumptions in support: allow multiple matching subterms; plan user-facing controls later if needed.
 + - Begin rebut implementation (operation and reduction rules).
++
++ Next session focus (2025-12-10)
++ - Call-by-onus parallel consolidation
++   - Fix classifier bugs:
++     • _is_ap_node Mutilde branch (B-0016).
++     • ⟨ ap || dap ⟩ misclassified as CBV and duplicated (B-0017).
++     • Shift detection inspects both children of c (B-0018).
++   - Clean divergence tagging in visit_Mu mu-beta (B-0019).
++   - Add test coverage per onus situation (Right/Left shift, CBN/CBV/Fallback; skeptical vs credulous) and for Admal redex (T-0038).
++   - Run with FSP_EVAL_DISCIPLINE=onus-parallel; triage WARNINGs and iterate until clean.
++ - Documentation
++   - Update README with onus-parallel usage and env flags (T-0039).
++ - Road to Phase 3
++   - After convergence, implement evaluation_discipline="onus" and plan default switch (T-0040).

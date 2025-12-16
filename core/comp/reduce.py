@@ -93,7 +93,7 @@ class ArgumentTermReducer(ProofTermVisitor):
     def __init__(self, *, verbose: bool = True, assumptions=None, axiom_props=None,
                  evaluation_strategy: str = "call-by-name",
                  simplify_alternative_arguments: bool = True,
-                 evaluation_discipline: str = "legacy",          # legacy | onus-parallel | onus (future)
+                 evaluation_discipline: str = "onus-parallel",          # legacy | onus-parallel | onus (future)
                  onus_fallback: str = "none",                    # none | cbn | cbv
                  onus_stance: str = "skeptical"):                # skeptical | credulous
         super().__init__()
@@ -182,13 +182,13 @@ class ArgumentTermReducer(ProofTermVisitor):
             return False
 
     def _is_exception_node(self, n: ProofTerm) -> bool:
-        # e ::= μ_.<t' || t> | μ'_.<t || t'>; binder affine; t' is not itself an exception
+        # e ::= μ_.<t' || t> | μ'_.<t || t'>; binder affine; t' is not itself an exception or a Goal/Laog
         if isinstance(n, Mu) and _is_affine(n.id.name, n):
             tprime = n.term
-            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde))
+            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde, Goal, Laog))
         if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
             tprime = n.context
-            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde))
+            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde, Goal, Laog))
         return False
 
     def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
@@ -345,15 +345,19 @@ class ArgumentTermReducer(ProofTermVisitor):
 
     def _maybe_warn_onus_divergence(self, onus_info, before_node: ProofTerm, after_node: ProofTerm, rule_tag: str, where_kind: str):
         """Compare onus candidate vs legacy result and warn if they diverge."""
+        logger.debug("maybe warn onus called")
         if self.evaluation_discipline not in ("onus-parallel", "onus") or onus_info is None:
+            logger.debug("Not in onus-parallel mode")
             return
         kind, reason, cand = onus_info
         before_pres = self._pres_str(before_node)
         after_pres  = self._pres_str(after_node)
         cand_pres   = self._pres_str(cand)
         if after_pres != before_pres and after_pres != cand_pres:
-            logger.warning("call-by-onus divergence at %s (%s): onus=%s (%s)\n  onus-candidate: %s\n  legacy-result: %s",
-                           where_kind, rule_tag, kind, reason, cand_pres, after_pres)
+            logger.warning("call-by-onus divergence at %s (%s) on term: \n %s \n onus=%s (%s)\n  onus-candidate: %s\n  legacy-result: \n %s",
+                           where_kind, rule_tag, before_pres, kind, reason, cand_pres, after_pres)
+        else:
+            logger.debug("No onus divergence")
 
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in

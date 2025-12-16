@@ -30,7 +30,7 @@ Alternative proofs ap ::= mu _.<t'||alpha> | mu'_.<t'||alpha> where alpha is a f
 
 Alternative refutations ar ::= mu'_.<x||t'> | mu_.<x||t'> where x is a free variable in ar. Defaults where t' is a Laog are denoted by d.
 
-Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception.
+Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception **or a goal/laog**.
 
 All other mu/mu'-terms are denoted by m. Other terms including other mu/mu'-terms are denoted by o. Other non-mu/mu' terms by !m
 
@@ -50,7 +50,7 @@ Fallback ::= <m||m> | <ap||ap> | <ar||ar>
 
 Some of these should never occur by construction and should raise a warning:
 
-- <d||o>, <o||d>: generic other terms should never be contraposed to defaults by our argument construction rules.
+- <d||o>, <o||d>: ~~generic other terms should never be contraposed to defaults by our argument construction rules.~~ This is in fact fine and arises from unreduced exceptions (which are just of shape o).
 - <ap||d>, <d||ar>: our convention is that in support operations, the default should be in the head position and supporters in the tail.
 - <ap||ar>, <ar||ap> should never occur
 
