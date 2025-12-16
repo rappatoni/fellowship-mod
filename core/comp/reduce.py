@@ -185,10 +185,14 @@ class ArgumentTermReducer(ProofTermVisitor):
         # e ::= μ_.<t' || t> | μ'_.<t || t'>; binder affine; t' is not itself an exception or a Goal/Laog
         if isinstance(n, Mu) and _is_affine(n.id.name, n):
             tprime = n.term
-            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde, Goal, Laog))
+            return (self._is_tprime(tprime)
+                    and not self._is_exception_node(tprime)
+                    and not isinstance(tprime, (Goal, Laog)))
         if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
             tprime = n.context
-            return self._is_tprime(tprime) and not isinstance(tprime, (Mu, Mutilde, Goal, Laog))
+            return (self._is_tprime(tprime)
+                    and not self._is_exception_node(tprime)
+                    and not isinstance(tprime, (Goal, Laog)))
         return False
 
     def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
