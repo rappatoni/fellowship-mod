@@ -37,6 +37,7 @@ Run the Python wrapper CLI
   - .venv/bin/acdc --help
   - .venv/bin/acdc --script tests/normalize_render.fspy
   - Strict mode (treat parse/machine issues as errors): .venv/bin/acdc --script tests/normalize_render.fspy --strict
+  - Parallel call-by-onus reduction (experimental): FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/normalize_render.fspy render-nf
 - Or via Makefile:
   - make cli ARGS="--help"
   - make cli ARGS="--script tests/normalize_render.fspy"
@@ -77,6 +78,20 @@ CLI quick reference
   - color: normalize and print a colored proof term (green/yellow/red)
   - tree [nl|pt]: render an acceptance tree (nl = natural language labels; pt = proof-term labels)
   - undercut NEW ATTACKER TARGET: creates a debate named NEW consisting of the arguments ATTACKER and TARGET. The attacked assumption(s) is computed automatically.
+
+Parallel call-by-onus reduction (experimental)
+- The reducer supports a parallel call-by-onus evaluation discipline.
+- Enable it by setting the environment variable FSP_EVAL_DISCIPLINE=onus-parallel for the acdc process.
+- This affects normalization-driven commands: reduce, render-nf, color, tree.
+- Examples:
+  - macOS/Linux (bash/zsh):
+    - FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/normalize_render.fspy render-nf
+    - FSP_EVAL_DISCIPLINE=onus-parallel acdc --script tests/counterarguments_and_undercut.fspy color
+  - Windows PowerShell:
+    - $env:FSP_EVAL_DISCIPLINE="onus-parallel"; acdc --script tests/normalize_render.fspy render-nf
+- Notes:
+  - If not set, the default discipline is used (no onus-parallel).
+  - Experimental: you may see warnings for rare shapes while this mode is under active development.
 
 Examples
 - Normalize and render a scenario:

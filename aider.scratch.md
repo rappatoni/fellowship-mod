@@ -38,7 +38,7 @@ Next we distinguish the following evaluation situations:
 
 Right-shift ::= <t||mu'_.c> | where c can still step.
 
-Left-shift ::= <mu_.c||t>  where c can still step
+Left-shift ::= <mu_.c||t> where c can still step
 
 Call-by-value ::= <ap||e> | <e||mu'_.<e||t>> | <o||e> | <d||ap> | <d||o> | <d||ar> | <ar||e> | <!m||m> | <sonc||admal>
 
@@ -110,3 +110,29 @@ All this would be much easier if we had *one* node for A (graph instead of tree)
 The fundamentall problem is: abstractly, we have a graph structure but concrete debates have tree structure (sequence of rule applications and argument operations). If we constrain argument and debate construction too much (e.g. requiring the grafting of t on u in the above example), we make it impossible to model actual concrete debates. So ideally, one would implicitly construct the abstract structure (service) while faithfully matching the temporal structure of the current debate.
 
 Hence: make computation of closure an optional service.
+
+
+16/12/2025
+
+Here we have an onus divergence bug:
+
+```call-by-onus divergence at Mu (alt-defence-mu) on term: 
+ μalt2:StrikeMetro.<μaff3:StrikeMetro.<1.2.1.2.2.2.1.2.1.1.1:StrikeMetro||alt2:StrikeMetro>||μ'aff4:StrikeMetro.<1.2.1.2.2.2.1.2.1.2.1:StrikeMetro||μ'thesis22:StrikeMetro.<r3:DealMetro->~StrikeMetro||μalt3:DealMetro.<1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro||μ'thesis23:DealMetro.<r4:LowballOffer->~DealMetro||1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.2.2.1.2.1:LowballOffer*μ'H14:¬DealMetro.<H14:¬DealMetro||thesis23:DealMetro*_F_>>>*μ'H12:¬StrikeMetro.<H12:¬StrikeMetro||thesis22:StrikeMetro*_F_>>>> 
+ onus=cbv (⟨ ap || e ⟩)
+  onus-candidate: μalt2:StrikeMetro.<1.2.1.2.2.2.1.2.1.2.1:StrikeMetro||μ'thesis22:StrikeMetro.<r3:DealMetro->~StrikeMetro||μalt3:DealMetro.<1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro||μ'thesis23:DealMetro.<r4:LowballOffer->~DealMetro||1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.2.2.1.2.1:LowballOffer*μ'H14:¬DealMetro.<H14:¬DealMetro||thesis23:DealMetro*_F_>>>*μ'H12:¬StrikeMetro.<H12:¬StrikeMetro||thesis22:StrikeMetro*_F_>>>
+  legacy-result: 
+ μalt2:StrikeMetro.<1.2.1.2.2.2.1.2.1.1.1:StrikeMetro||alt2:StrikeMetro>```
+
+```μaff3:StrikeMetro.<1.2.1.2.2.2.1.2.1.1.1:StrikeMetro||alt2:StrikeMetro> is an alternative proof which is attacked by the term μ'aff4:StrikeMetro.<1.2.1.2.2.2.1.2.1.2.1:StrikeMetro||μ'thesis22:StrikeMetro.<r3:DealMetro->~StrikeMetro||μalt3:DealMetro.<1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro||μ'thesis23:DealMetro.<r4:LowballOffer->~DealMetro||1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.2.2.1.2.1:LowballOffer*μ'H14:¬DealMetro.<H14:¬DealMetro||thesis23:DealMetro*_F_>>>*μ'H12:¬StrikeMetro.<H12:¬StrikeMetro||thesis22:StrikeMetro*_F_>>>```
+
+This is term is matched with the exception pattern e. This pattern requires that t' be fully simplified and not an exception or goal/laog. Here t' is the term 
+
+```μ'thesis22:StrikeMetro.<r3:DealMetro->~StrikeMetro||μalt3:DealMetro.<1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro||μ'thesis23:DealMetro.<r4:LowballOffer->~DealMetro||1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.2.2.1.2.1:LowballOffer*μ'H14:¬DealMetro.<H14:¬DealMetro||thesis23:DealMetro*_F_>>>*μ'H12:¬StrikeMetro.<H12:¬StrikeMetro||thesis22:StrikeMetro*_F_>>```
+
+However, the AcceptanceColoringVisitor correctly colors this term red. Intuitively, the reason is that ```μalt3:DealMetro.<1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro||μ'thesis23:DealMetro.<r4:LowballOffer->~DealMetro||1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.2.2.1.2.1:LowballOffer*μ'H14:¬DealMetro.<H14:¬DealMetro||thesis23:DealMetro*_F_>>>``` 
+is red in that it represents a defeat of the assumption 1.2.1.2.2.2.1.2.1.2.2.2.1.2.1.2.1:DealMetro. But since r3 is an axiom, this cannot be further simplified, preventing the exception from bubbling up. So we have to adjust the exception pattern to match the semantics of the red coloring.
+
+We do this by introducing a new grammar atom for axioms/moxias. For the parser, axioms/moxias are just IDs/DIs that are not bound. We denote them by ax/mox respectively.
+Then we adjust the grammatical categories as follows:
+
+Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> | mu x. <t*e||a> | mu x. <e*t||a> | mu x. <lamda y.e||a> | mu' alpha. <a||t*e> | mu' alpha. <a||e*t> | mu alpha. <a||lamda alpha.e> where t' is not itself an exception **or a goal/laog**.

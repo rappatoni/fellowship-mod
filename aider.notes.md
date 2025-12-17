@@ -471,3 +471,49 @@ Reference files verified in this snapshot
 +   - Update README with onus-parallel usage and env flags (T-0039).
 + - Road to Phase 3
 +   - After convergence, implement evaluation_discipline="onus" and plan default switch (T-0040).
+
+Formal semantics: call-by-onus (verbatim spec)
+
+#### 1.) For any given redex mu alpha.<t||t'>/mu'x.<t||t'>, reduce first the subterm which has the *onus*.    
+#### 2.) Else (i.e. if the onus is on none or two or more subterms) fall back on one of three strategies (default: don't simplify): call-by-name (reduce to t[mu'x.t'/alpha]) call-by-value (reduce to t'[mu alpha.t/x]) or don't simplify.    
+####   
+#### Next we define *onus*. For this purpose we distinguish the following grammatical subcategories (we denote arbitrary closed terms by t and write t' for a fully simplified term t; free variables are denoted by x and alpha, respectively; as usually, "_" stands for an affine binder variable):     
+####   
+#### Alternative proofs ap ::= mu _.<t'||alpha> | mu'_.<t'||alpha> where alpha is a free variable in ap and t' is not an exception e. Defaults where t' is a Goal are denoted by d. Defeated alternative proofs where t' is an exception are denoted by dap.  
+####     
+#### Alternative refutations ar ::= mu'_.<x||t'> | mu_.<x||t'> where x is a free variable in ar and t' is not an exception e. Defaults where t' is a Laog are denoted by d. Defeated alternative refutations where t' is an exception e are denoted by dar  
+####     
+#### Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception or a goal/laog.    
+####     
+#### All other mu/mu'-terms are denoted by m. Other terms including other mu/mu'-terms are denoted by o. Other non-mu/mu' terms by !m    
+####     
+#### Next we distinguish the following evaluation situations:    
+####     
+#### Right-shift ::= <t||mu'_.c> | where c can still step.    
+####     
+#### Left-shift ::= <mu_.c||t>  where c can still step    
+####     
+#### Call-by-value ::= <ap||e> | <e||mu'_.<e||t>> | <o||e> | <d||ap> | <d||o> | <d||ar> | <ar||e> | <!m||m> | <sonc||admal> | <dap||ap> | <dar||ar>  
+####     
+#### Call-by-name ::= <e||ap> | <mu_.<t||e>||e> | <e||o> | <ap||d> | <o||d> | <ar||d> | <e||ar> | <m||!m> | <lamda||cons> | <ap||dap> | <ar||dar>  
+####     
+#### Fallback ::= <m||m> | <ap||ap> | <ar||ar>    
+####     
+#### Some of these should never occur by construction and should raise a warning:    
+####     
+#### - <d||o>, <o||d>: generic other terms should never be contraposed to defaults by our argument construction rules.    
+#### - <ap||d>, <d||ar>: our convention is that in support operations, the default should be in the head position and supporters in the tail.    
+#### - <ap||ar>, <ar||ap> should never occur    
+####     
+#### Evaluation proceeds as follows:    
+####     
+#### Right-shift ---> continue by reducing c    
+#### Left-shift ---> continue by reducing c    
+#### Call-by-name ---> apply mu/lamda reduction rule    
+#### Call-by-value ---> apply mu'/admal reduction rule    
+#### Fallback ---> no side, has the onus, apply fallback strategy: call-by-name (reduce to t[mu'x.t'/alpha]) call-by-value (reduce to t'[mu alpha.t/x]) or don't simplify (default: don't simplify)    
+####     
+#### Finally, there is another parameter:    
+####     
+#### Skeptical/Credulous: in skeptical mode apply the system as is; in credulous mode, move <ap||e> to call-by-name and <e||ar> to call-by-value.  
+####
