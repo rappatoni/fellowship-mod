@@ -521,3 +521,60 @@ Formal semantics: call-by-onus (verbatim spec)
 ####     
 #### Skeptical/Credulous: in skeptical mode apply the system as is; in credulous mode, move <ap||e> to call-by-name and <e||ar> to call-by-value.  
 ####
+
++ Update summary (2025-12-17)
++ - Documentation
++   - README: added usage notes for parallel call-by-onus reduction. Shows enabling via FSP_EVAL_DISCIPLINE=onus-parallel and provides Linux/macOS/PowerShell examples.
++ - Semantics/spec
++   - Exceptions extended to include “axiom/moxia-blocked” cases:
++     - e ::= mu_.<t'||t> | mu'_.<t||t'> | mu x.<t*e||ax> | mu x.<e*t||ax> | mu x.<lamda y.e||ax> | mu' α.<mox||t*e> | mu' α.<mox||e*t> | mu' α.<mox||lamda α.e>
++     - Classic cases still require affine (“_”); axiom-blocked variants do not require affineness.
++ - Reducer changes (core/comp/reduce.py)
++   - Exception recognition updated to match the extended spec and AcceptanceColoringVisitor:
++     - Added _is_axiom_leaf that relies solely on self.axiom_props (no free-ID/DI fallback).
++     - Refactored _is_exception_node:
++       - Classic affine exceptions remain guarded by _is_affine and require t' fully simplified and not an exception or Goal/Laog.
++       - Axiom‑blocked variants are checked independently (no affineness requirement) and fire when the opposite side is an axiom/moxia; inner e recognized under t*e/e*t or λ y.e shapes.
++   - Onus-parallel divergence logging left in place to surface mismatches while we converge on the classifier.
++ - Outstanding issue
++   - Axiom detection is still not working in practice (no axioms identified yet).
++   - Suspected causes to investigate next:
++     - axiom_props may not be threaded into ArgumentTermReducer at construction sites.
++     - Enrichment vs reducer expectations might be misaligned.
++     - Shape checks in the axiom-blocked branches (Cons vs Sonc; Lamda vs Admal) need verification against actual ASTs encountered.
++   - Next steps:
++     - Ensure axiom_props is passed to the reducer from Argument.normalize()/CLI wiring.
++     - Add DEBUG logs in _is_axiom_leaf (names at leaves and the current axiom_props keys).
++     - Validate the shapes used in blocked-by-axiom detection across Mu/Mutilde and align Cons/Sonc and Lamda/Admal as needed.
++ - Process
++   - No Makefile or other code unrelated to this task was intentionally changed.
++
++ Update summary (2025-12-17 – PM)
++ - Axioms threading:
++   - Argument.normalize now passes assumptions and axiom_props=self.prover.declarations into ArgumentTermReducer.
++   - PropEnrichmentVisitor already used the same map. _is_axiom_leaf debug logs confirm the dict is present, but there are no matches in practice.
++ - Call-by-onus:
++   - Added the notion of “defeated exception” (def) and the priority tie-breaker: μ_.<t||e> = μ'_.<e||t> > e > o > ap = ar > d > def.
++   - Implemented _is_defeated_exception_node and the tie-break in _decide_onus.
++ - Current status:
++   - Detection of “axiom-blocked exceptions” still does not trigger; the issue persists even though axiom_props reaches the reducer.
++
++ Diagnosis (hypotheses to verify)
++ - The ID/DI leaves seen at candidate positions are not actual declared axioms (e.g., they are 'alt', 'aff', 'thesisN'); axiom-blocked patterns expect declared leaves (e.g., 'r1', 'm1').
++ - Declaration keys look correct, but there may be normalization mismatches (quotes/Unicode). We should compare n.name vs exact keys found in declarations.
++ - The prover may not insert named axioms in those positions at all (only introduced via tactics); if so, the axiom-blocked patterns will not occur and classification should rely on another signal (e.g., acceptance coloring).
++
++ Action plan (tomorrow)
++ 1) Additional instrumentation:
++    - In reduce._is_axiom_leaf: log once per reducer the sorted keys of self.axiom_props; in _is_exception_node (axiom-blocked branches), log every encountered ID/DI with its .name.
++    - In Argument.normalize: on the first snapshot include in the comment the len(decls) and a small sample of keys.
++ 2) Minimal reproducible examples:
++    - Build a minimal term with a free ID leaf 'r1' (and DI 'm1') in an axiom-blocked position and verify the axiom-blocked exception classification fires.
++    - Add unit tests for each axiom-blocked pattern (Mu and Mutilde variants).
++ 3) Semantic decision if axiom leaves never appear:
++    - If the prover never leaves axiom leaves there, generalize “axiom-blocked exception” to an observable criterion (e.g., acceptance/redness of the opposite subtree) and relax the dependency on _is_axiom_leaf.
++ 4) Housekeeping:
++    - Consider proxying ProverWrapper.declarations to mod.store.declarations for global visibility (optional; should not change behavior).
++    - Verify default/defeated flags in _is_ap_node/_is_ar_node and add precedence tests for dap/dar.
++ 5) Onus-parallel convergence:
++    - Run the suite with FSP_EVAL_DISCIPLINE=onus-parallel and collect WARNINGs from _maybe_warn_onus_divergence for triage.

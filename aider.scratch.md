@@ -30,7 +30,7 @@ Alternative proofs ap ::= mu _.<t'||alpha> | mu'_.<t'||alpha> where alpha is a f
 
 Alternative refutations ar ::= mu'_.<x||t'> | mu_.<x||t'> where x is a free variable in ar. Defaults where t' is a Laog are denoted by d.
 
-Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception **or a goal/laog**.
+Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception. A defeated exception where t'*is* an exception is denoted by def
 
 All other mu/mu'-terms are denoted by m. Other terms including other mu/mu'-terms are denoted by o. Other non-mu/mu' terms by !m
 
@@ -40,13 +40,13 @@ Right-shift ::= <t||mu'_.c> | where c can still step.
 
 Left-shift ::= <mu_.c||t> where c can still step
 
-Call-by-value ::= <ap||e> | <e||mu'_.<e||t>> | <o||e> | <d||ap> | <d||o> | <d||ar> | <ar||e> | <!m||m> | <sonc||admal>
+Call-by-value ::= <ap||e> | <e||mu'_.<e||t>> | <o||e> | <d||ap> | <d||o> | <d||ar> | <ar||e> | <!m||m> | <sonc||admal> (add def cases)
 
 Call-by-name ::= <e||ap> | <mu_.<t||e>||e> | <e||o> | <ap||d> | <o||d> | <ar||d> | <e||ar> | <m||!m> | <lamda||cons>
 
 Fallback ::= <m||m> | <ap||ap> | <ar||ar>
 
-(This can be simplified by assigning evaluation priorities: mu_.<t||e> = mu'_.<e||t> > e > o >(?) ap = ar > d )
+(This can be simplified by assigning evaluation priorities: mu_.<t||e> = mu'_.<e||t> > e > o >(?) ap = ar > d > def)
 
 Some of these should never occur by construction and should raise a warning:
 

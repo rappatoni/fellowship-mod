@@ -194,6 +194,8 @@ class ArgumentTermReducer(ProofTermVisitor):
         """
         logger.debug("Checking for axiom.")
         if isinstance(n, (ID, DI)):
+            logger.debug("Axiom props: %s", self.axiom_props)
+            logger.debug("ID/DI name: %s", n.name)
             return n.name in self.axiom_props
         return False
 
@@ -210,18 +212,22 @@ class ArgumentTermReducer(ProofTermVisitor):
             tprime = n.term
             logger.debug("t': %s (note that this can be stale)", tprime.pres)
             logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
+            #logger.debug("is t' a goal/laog? - %s", isinstance(tprime, (Goal, Laog)))
             if (self._is_tprime(tprime)
                 and not self._is_exception_node(tprime)
-                and not isinstance(tprime, (Goal, Laog))):
+                and not isinstance(n.context, ID)):
+                #and not isinstance(tprime, (Goal, Laog))):
                 logger.debug("Normal exception encountered: %s", n.pres)
                 return True
         if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
             tprime = n.context
             logger.debug("t': %s", tprime.pres)
             logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
+            #logger.debug("is t' a goal/laog? - %s", isinstance(tprime, (Goal, Laog)))
             if (self._is_tprime(tprime)
                 and not self._is_exception_node(tprime)
-                and not isinstance(tprime, (Goal, Laog))):
+                #and not isinstance(tprime, (Goal, Laog))):
+                and not isinstance(n.term, DI)):
                 logger.debug("Normal exception encountered: %s", n.pres)
                 return True
 
@@ -242,11 +248,33 @@ class ArgumentTermReducer(ProofTermVisitor):
             logger.debug("Axiom (DI) encountered on left of Mutilde: %s", getattr(n.term, "name", "?"))
             # μ' α.<mox||t*e> or μ' α.<mox||e*t>
             if isinstance(tprime, Cons):
+                logger.debug("Term: %s (can be stale)", tprime.term.pres)
+                logger.debug("Term is exception? %s", self._is_exception_node(tprime.term))
+                logger.debug("Context: %s (can be stale)", tprime.context.pres)
+                logger.debug("Context is exception? %s", self._is_exception_node(tprime.context))
                 return self._is_exception_node(tprime.term) or self._is_exception_node(tprime.context)
             # μ' α.<mox||λ α.e>
             if isinstance(tprime, Admal):
                 return self._is_exception_node(tprime.term)
             return False
+        return False
+
+    def _is_defeated_exception_node(self, n: ProofTerm) -> bool:
+        """
+        True iff n is an exception whose t' part is itself an exception.
+        Classic affine shape only:
+          - Mu:      μ_.<t' || t>  where t' is an exception
+          - Mutilde: μ'_.<t || t'> where t' is an exception
+        """
+        try:
+            if isinstance(n, Mu) and _is_affine(n.id.name, n):
+                tprime = n.term
+                return self._is_exception_node(tprime)
+            if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
+                tprime = n.context
+                return self._is_exception_node(tprime)
+        except Exception:
+            pass
         return False
 
     def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
@@ -322,7 +350,36 @@ class ArgumentTermReducer(ProofTermVisitor):
         if (not (L_ap or L_ar)) and R_d:  return ("cbn", "⟨ o || d ⟩")
         if L_ar and R_d:                  return ("cbn", "⟨ ar || d ⟩")
         if L_ap and R_dap:                return ("cbn", "⟨ ap || dap ⟩")
-        # Fallback
+        # Fallback (priority tie-breaker)
+        # recuperar el flag “default” también para ar
+        _, L_d_ar, _ = self._is_ar_node(left)
+        _, R_d_ar, _ = self._is_ar_node(right)
+        # Prioridad: e > o > ap=ar > d > def
+        L_default = (L_d or L_d_ar)
+        R_default = (R_d or R_d_ar)
+        L_def = self._is_defeated_exception_node(left) if isinstance(left, (Mu, Mutilde)) else False
+        R_def = self._is_defeated_exception_node(right) if isinstance(right, (Mu, Mutilde)) else False
+
+        def prio(is_e: bool, is_ap_or_ar: bool, is_default: bool, is_def: bool) -> int:
+            if is_e:
+                return 1               # e
+            if is_ap_or_ar:
+                return 3               # ap/ar
+            if is_default:
+                return 4               # d
+            if is_def:
+                return 5               # def (derrotada)
+            return 2                   # o (other)
+
+        L_pr = prio(L_e, (L_ap or L_ar), L_default, L_def)
+        R_pr = prio(R_e, (R_ap or R_ar), R_default, R_def)
+
+        if L_pr != R_pr:
+            if L_pr < R_pr:
+                return ("cbn", f"onus priority: left({L_pr}) over right({R_pr})")
+            else:
+                return ("cbv", f"onus priority: right({R_pr}) over left({L_pr})")
+
         return ("fallback", "no onus situation matched")
 
     def _onus_apply_once(self, n: ProofTerm, onus_kind: str) -> ProofTerm:

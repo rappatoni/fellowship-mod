@@ -761,7 +761,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         red_ast = ArgumentTermReducer(
             evaluation_discipline=eval_disc,
             onus_fallback=onus_fb,
-            onus_stance=onus_st
+            onus_stance=onus_st,
+            assumptions=self.assumptions,                  # opcional pero recomendable (para snapshot)
+            axiom_props=self.prover.declarations           # clave para que _is_axiom_leaf funcione
         ).reduce(red_ast)
 
         # 2. optionally enrich props/types
