@@ -7,6 +7,7 @@ from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.color import AcceptanceColoringVisitor
+from core.comp.alpha import _collect_binder_names
 
 logger = logging.getLogger(__name__)
 
@@ -114,11 +115,17 @@ class ArgumentTermReducer(ProofTermVisitor):
         self.evaluation_discipline = evaluation_discipline
         self.onus_fallback = onus_fallback
         self.onus_stance = onus_stance
+        self._binder_names: set[str] = set()
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
         """Return the normal form; log a table of (no, term, rule, comments)."""
         #logger.info("Starting argument term reduction.")
         self._root = root
+        # cache all binder names to detect free IDs/DIs (axioms/moxias)
+        try:
+            self._binder_names = set(_collect_binder_names(root))
+        except Exception:
+            self._binder_names = set()
         # header + input row
         self._snapshot(rule="input", comment=None)
         out = self.visit(root)
@@ -181,18 +188,65 @@ class ArgumentTermReducer(ProofTermVisitor):
         except Exception:
             return False
 
+    def _is_axiom_leaf(self, n: ProofTerm) -> bool:
+        """
+        True iff n is an ID/DI declared as an axiom/moxia (based on self.axiom_props).
+        """
+        logger.debug("Checking for axiom.")
+        if isinstance(n, (ID, DI)):
+            return n.name in self.axiom_props
+        return False
+
     def _is_exception_node(self, n: ProofTerm) -> bool:
-        # e ::= μ_.<t' || t> | μ'_.<t || t'>; binder affine; t' is not itself an exception or a Goal/Laog
+        # Exceptions:
+        #   classic (affine): μ_.<t' || t> | μ'_.<t || t'> with t' not an exception and not Goal/Laog
+        #   axiom‑blocked (no affine requirement):
+        #     μ x.<t*e||ax> | μ x.<e*t||ax> | μ x.<λ y.e||ax>
+        #     μ' α.<mox||t*e> | μ' α.<msox||e*t> | μ' α.<mox||λ α.e>
+        # where ax/mox are declared axioms (self.axiom_props).
+
+        # 1) Classic affine cases
         if isinstance(n, Mu) and _is_affine(n.id.name, n):
             tprime = n.term
-            return (self._is_tprime(tprime)
-                    and not self._is_exception_node(tprime)
-                    and not isinstance(tprime, (Goal, Laog)))
+            logger.debug("t': %s (note that this can be stale)", tprime.pres)
+            logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
+            if (self._is_tprime(tprime)
+                and not self._is_exception_node(tprime)
+                and not isinstance(tprime, (Goal, Laog))):
+                logger.debug("Normal exception encountered: %s", n.pres)
+                return True
         if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
             tprime = n.context
-            return (self._is_tprime(tprime)
-                    and not self._is_exception_node(tprime)
-                    and not isinstance(tprime, (Goal, Laog)))
+            logger.debug("t': %s", tprime.pres)
+            logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
+            if (self._is_tprime(tprime)
+                and not self._is_exception_node(tprime)
+                and not isinstance(tprime, (Goal, Laog))):
+                logger.debug("Normal exception encountered: %s", n.pres)
+                return True
+
+        # 2) Axiom‑blocked variants (no affineness required)
+        if isinstance(n, Mu) and self._is_axiom_leaf(n.context):
+            tprime = n.term
+            logger.debug("Axiom (ID) encountered on right of Mu: %s", getattr(n.context, "name", "?"))
+            # μ x.<t*e||ax> or μ x.<e*t||ax>
+            if isinstance(tprime, Sonc):
+                return self._is_exception_node(tprime.term) or self._is_exception_node(tprime.context)
+            # μ x.<λ y.e||ax>
+            if isinstance(tprime, Lamda):
+                return self._is_exception_node(tprime.term)
+            return False
+        logger.debug("axiom leaf? %s", isinstance(n, Mutilde) and self._is_axiom_leaf(n.term))
+        if isinstance(n, Mutilde) and self._is_axiom_leaf(n.term):
+            tprime = n.context
+            logger.debug("Axiom (DI) encountered on left of Mutilde: %s", getattr(n.term, "name", "?"))
+            # μ' α.<mox||t*e> or μ' α.<mox||e*t>
+            if isinstance(tprime, Cons):
+                return self._is_exception_node(tprime.term) or self._is_exception_node(tprime.context)
+            # μ' α.<mox||λ α.e>
+            if isinstance(tprime, Admal):
+                return self._is_exception_node(tprime.term)
+            return False
         return False
 
     def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:

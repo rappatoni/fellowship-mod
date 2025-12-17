@@ -136,3 +136,5 @@ We do this by introducing a new grammar atom for axioms/moxias. For the parser, 
 Then we adjust the grammatical categories as follows:
 
 Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> | mu x. <t*e||a> | mu x. <e*t||a> | mu x. <lamda y.e||a> | mu' alpha. <a||t*e> | mu' alpha. <a||e*t> | mu alpha. <a||lamda alpha.e> where t' is not itself an exception **or a goal/laog**.
+
+In other words, an exception can also be a term that has an exception as a subterm which is prevented from bubbling up by an axiom. Please update your notes on exceptions and implement the change in reduce.py

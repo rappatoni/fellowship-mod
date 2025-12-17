@@ -483,7 +483,11 @@ Formal semantics: call-by-onus (verbatim spec)
 ####     
 #### Alternative refutations ar ::= mu'_.<x||t'> | mu_.<x||t'> where x is a free variable in ar and t' is not an exception e. Defaults where t' is a Laog are denoted by d. Defeated alternative refutations where t' is an exception e are denoted by dar  
 ####     
-#### Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> where t' is not itself an exception or a goal/laog.    
+#### Note on axioms/moxias:
+#### - ax denotes a free ID leaf (unbound by any μ/λ in the term); mox denotes a free DI leaf. In the parser/AST, these are IDs/DIs that are not bound by any enclosing binder.
+####
+#### Exceptions e ::= mu_.<t'||t> | mu'_.<t||t'> | mu x.<t*e||ax> | mu x.<e*t||ax> | mu x.<lamda y.e||ax> | mu' α.<mox||t*e> | mu' α.<mox||e*t> | mu' α.<mox||lamda α.e>
+#### where t' is not itself an exception or a goal/laog.
 ####     
 #### All other mu/mu'-terms are denoted by m. Other terms including other mu/mu'-terms are denoted by o. Other non-mu/mu' terms by !m    
 ####     
