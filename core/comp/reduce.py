@@ -266,15 +266,19 @@ class ArgumentTermReducer(ProofTermVisitor):
           - Mu:      μ_.<t' || t>  where t' is an exception
           - Mutilde: μ'_.<t || t'> where t' is an exception
         """
+        logger.debug("Is %s (can be stale) a defeated exception?", n.pres)
         try:
             if isinstance(n, Mu) and _is_affine(n.id.name, n):
                 tprime = n.term
+                logger.debug("Checking if t' (%s) (can be stale) is an exception: %s", tprime.pres, self._is_exception_node(tprime))
                 return self._is_exception_node(tprime)
             if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
                 tprime = n.context
+                logger.debug("Checking if t' (%s) (can be stale) is an exception: %s", tprime.pres, self._is_exception_node(tprime))
                 return self._is_exception_node(tprime)
         except Exception:
             pass
+        logger.debug("%s (can be stale) is not a defeated exception.", n.pres)
         return False
 
     def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
@@ -305,6 +309,62 @@ class ArgumentTermReducer(ProofTermVisitor):
             return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
         return (False, False, False)
 
+    # ADD: priority-based classifier (lower number = higher priority)
+    def _classify_for_onus(self, child: ProofTerm) -> tuple[str, int, dict]:
+        """
+        Classify a child node for onus priority.
+        Returns (kind, priority, flags).
+
+        Priority (lower number = higher priority):
+          1: e                 (exception)
+          2: m                 (other μ/μ′)
+          3: admal/lamda
+          4: sonc/cons
+          5: o                 (other terms; not above)
+          6: ap/ar
+          7: d                 (defaults)
+          8: dap/dar           (defeated alternatives)
+          9: def               (defeated exceptions)
+        """
+        # ap/ar shape flags
+        is_ap, is_d_ap, is_dap = self._is_ap_node(child)   # (is_ap, is_default, is_defeated)
+        is_ar, is_d_ar, is_dar = self._is_ar_node(child)   # (is_ar, is_default, is_defeated)
+
+        # defeated exception?
+        is_def_exc = self._is_defeated_exception_node(child) if isinstance(child, (Mu, Mutilde)) else False
+        # exception?
+        is_exc = self._is_exception_node(child) if isinstance(child, (Mu, Mutilde)) else False
+
+        # Decide kind/priority
+        if is_exc:
+            return ("e", 1, {"ap": False, "ar": False, "d": False})
+        if is_def_exc:
+            return ("def", 9, {"ap": False, "ar": False, "d": False})
+
+        if isinstance(child, (Mu, Mutilde)):
+            return ("m", 2, {"ap": False, "ar": False, "d": False})
+        if isinstance(child, (Admal, Lamda)):
+            return ("admal/lamda", 3, {"ap": False, "ar": False, "d": False})
+        if isinstance(child, (Sonc, Cons)):
+            return ("sonc/cons", 4, {"ap": False, "ar": False, "d": False})
+
+        if is_ap:
+            if is_dap:
+                return ("dap", 8, {"ap": True, "ar": False, "d": False})
+            if is_d_ap:
+                return ("d", 7, {"ap": True, "ar": False, "d": True})
+            return ("ap", 6, {"ap": True, "ar": False, "d": False})
+
+        if is_ar:
+            if is_dar:
+                return ("dar", 8, {"ap": False, "ar": True, "d": False})
+            if is_d_ar:
+                return ("d", 7, {"ap": False, "ar": True, "d": True})
+            return ("ar", 6, {"ap": False, "ar": True, "d": False})
+
+        # Other terms outrank alternatives/defaults (can reduce to exceptions)
+        return ("o", 5, {"ap": False, "ar": False, "d": False})
+
     def _decide_onus(self, node: ProofTerm) -> tuple[str, str]:
         """
         Return (action, reason) with action ∈ {left-shift, right-shift, cbn, cbv, fallback}
@@ -317,70 +377,26 @@ class ArgumentTermReducer(ProofTermVisitor):
             return ("right-shift", "right-shift: ⟨ t || μ'_. c ⟩ reducible")
         if isinstance(left, Mu) and self._has_next_redex(getattr(left, "term", None)):
             return ("left-shift", "left-shift: ⟨ μ_. c || t ⟩ reducible")
-        # Classifications
-        L_ap, L_d, L_dap = self._is_ap_node(left)
-        R_ap, R_d, R_dap = self._is_ap_node(right)
-        L_ar, _,  L_dar = self._is_ar_node(left)
-        R_ar, _,  R_dar = self._is_ar_node(right)
-        L_e = self._is_exception_node(left)  if isinstance(left, (Mu, Mutilde)) else False
-        R_e = self._is_exception_node(right) if isinstance(right, (Mu, Mutilde)) else False
-        L_is_m = isinstance(left, (Mu, Mutilde))
-        R_is_m = isinstance(right, (Mu, Mutilde))
-        L_is_nm = not L_is_m
-        R_is_nm = not R_is_m
-        L_is_lam_cons = isinstance(left, Lamda) and isinstance(right, Cons)
-        L_is_sonc_adm = isinstance(left, Sonc) and isinstance(right, Admal)
-        credulous = (self.onus_stance.lower() == "credulous")
-        # CBV
-        if L_is_sonc_adm:                 return ("cbv", "⟨ sonc || admal ⟩")
-        if L_is_nm and R_is_m:            return ("cbv", "⟨ !m || m ⟩")
-        if L_ap and (R_e and not credulous): return ("cbv", "⟨ ap || e ⟩")
-        if L_ar and R_e:                  return ("cbv", "⟨ ar || e ⟩")
-        if L_d and (R_ap or R_ar or True): return ("cbv", "⟨ d || ap/ar/o ⟩")
-        if R_e and not (L_ap or L_ar):    return ("cbv", "⟨ o || e ⟩")
-        if L_ap and R_dap:                return ("cbv", "⟨ ap || dap ⟩")
-        if L_ar and R_dar:                return ("cbv", "⟨ ar || dar ⟩")
-        # CBN
-        if L_e and R_ap:                  return ("cbn", "⟨ e || ap ⟩")
-        if credulous and L_e and R_ar:    return ("cbv", "credulous: ⟨ e || ar ⟩→cbv")
-        if (not credulous) and L_e and R_ar: return ("cbn", "⟨ e || ar ⟩")
-        if L_is_m and R_is_nm:            return ("cbn", "⟨ m || !m ⟩")
-        if L_is_lam_cons:                 return ("cbn", "⟨ lamda || cons ⟩")
-        if L_ap and R_d:                  return ("cbn", "⟨ ap || d ⟩")
-        if (not (L_ap or L_ar)) and R_d:  return ("cbn", "⟨ o || d ⟩")
-        if L_ar and R_d:                  return ("cbn", "⟨ ar || d ⟩")
-        if L_ap and R_dap:                return ("cbn", "⟨ ap || dap ⟩")
-        # Fallback (priority tie-breaker)
-        # recuperar el flag “default” también para ar
-        _, L_d_ar, _ = self._is_ar_node(left)
-        _, R_d_ar, _ = self._is_ar_node(right)
-        # Prioridad: e > o > ap=ar > d > def
-        L_default = (L_d or L_d_ar)
-        R_default = (R_d or R_d_ar)
-        L_def = self._is_defeated_exception_node(left) if isinstance(left, (Mu, Mutilde)) else False
-        R_def = self._is_defeated_exception_node(right) if isinstance(right, (Mu, Mutilde)) else False
+        # PRIORITY-ONLY onus decision
+        L_kind, L_pr, L_flags = self._classify_for_onus(left)
+        R_kind, R_pr, R_flags = self._classify_for_onus(right)
 
-        def prio(is_e: bool, is_ap_or_ar: bool, is_default: bool, is_def: bool) -> int:
-            if is_e:
-                return 1               # e
-            if is_ap_or_ar:
-                return 3               # ap/ar
-            if is_default:
-                return 4               # d
-            if is_def:
-                return 5               # def (derrotada)
-            return 2                   # o (other)
+        # Warn on pairings that should not occur (but proceed)
+        if L_flags.get("ap") and R_flags.get("d"):
+            logger.warning("Onus: pairing ⟨ ap || d ⟩ encountered (default should be head; supporters in tail). Proceeding.")
+        if L_flags.get("d") and R_flags.get("ar"):
+            logger.warning("Onus: pairing ⟨ d || ar ⟩ encountered (default should be head; supporters in tail). Proceeding.")
+        if (L_flags.get("ap") and R_flags.get("ar")) or (L_flags.get("ar") and R_flags.get("ap")):
+            logger.warning("Onus: pairing ⟨ ap || ar ⟩ encountered (should never occur). Proceeding.")
 
-        L_pr = prio(L_e, (L_ap or L_ar), L_default, L_def)
-        R_pr = prio(R_e, (R_ap or R_ar), R_default, R_def)
+        # Lower number means higher priority
+        if L_pr < R_pr:
+            return ("cbn", f"priority: left({L_kind}:{L_pr}) over right({R_kind}:{R_pr})")
+        if R_pr < L_pr:
+            return ("cbv", f"priority: right({R_kind}:{R_pr}) over left({L_kind}:{L_pr})")
 
-        if L_pr != R_pr:
-            if L_pr < R_pr:
-                return ("cbn", f"onus priority: left({L_pr}) over right({R_pr})")
-            else:
-                return ("cbv", f"onus priority: right({R_pr}) over left({L_pr})")
-
-        return ("fallback", "no onus situation matched")
+        # Tie → no local rewrite decision at this node
+        return ("fallback", f"priority tie: left({L_kind}:{L_pr}) == right({R_kind}:{R_pr})")
 
     def _onus_apply_once(self, n: ProofTerm, onus_kind: str) -> ProofTerm:
         """Apply a single local step according to onus on a copy of node n."""
