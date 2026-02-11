@@ -96,7 +96,8 @@ class ArgumentTermReducer(ProofTermVisitor):
                  simplify_alternative_arguments: bool = True,
                  evaluation_discipline: str = "onus-parallel",          # legacy | onus-parallel | onus (future)
                  onus_fallback: str = "none",                    # none | cbn | cbv
-                 onus_stance: str = "skeptical"):                # skeptical | credulous
+                 onus_stance: str = "skeptical",                # skeptical | credulous
+                 exception_priority: str = "first"):
         super().__init__()
         self.verbose      = verbose
         self.assumptions  = assumptions  or {}
@@ -115,6 +116,7 @@ class ArgumentTermReducer(ProofTermVisitor):
         self.evaluation_discipline = evaluation_discipline
         self.onus_fallback = onus_fallback
         self.onus_stance = onus_stance
+        self.exception_priority = exception_priority
         self._binder_names: set[str] = set()
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
@@ -178,6 +180,15 @@ class ArgumentTermReducer(ProofTermVisitor):
         c = deepcopy(n)
         c = ProofTermGenerationVisitor().visit(c)
         return getattr(c, "pres", repr(c))
+
+    # ADD: structural subtree equality via presentation
+    def _same_subtree(self, a: Optional[ProofTerm], b: Optional[ProofTerm]) -> bool:
+        if a is None or b is None:
+            return False
+        try:
+            return self._pres_str(a) == self._pres_str(b)
+        except Exception:
+            return False
 
     # ─── Call‑by‑Onus: classification and application of a single step ──────
     def _is_tprime(self, n: Optional[ProofTerm]) -> bool:
@@ -288,9 +299,9 @@ class ArgumentTermReducer(ProofTermVisitor):
             is_def = isinstance(tprime, Goal)
             is_defeated = self._is_exception_node(tprime)
             return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
-        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.term, DI):
-            tprime = n.context
-            is_def = isinstance(tprime, Laog)
+        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.context, ID):
+            tprime = n.term
+            is_def = isinstance(tprime, Goal)
             is_defeated = self._is_exception_node(tprime)
             return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
         return (False, False, False)
@@ -315,16 +326,13 @@ class ArgumentTermReducer(ProofTermVisitor):
         Classify a child node for onus priority.
         Returns (kind, priority, flags).
 
-        Priority (lower number = higher priority):
-          1: e                 (exception)
-          2: m                 (other μ/μ′)
-          3: admal/lamda
-          4: sonc/cons
-          5: o                 (other terms; not above)
-          6: ap/ar
-          7: d                 (defaults)
-          8: dap/dar           (defeated alternatives)
-          9: def               (defeated exceptions)
+        Priority (lower number = higher priority) depends on stance:
+
+          skeptical (default):
+            e > m > admal = lamda > sonc = cons > o > ap = ar > d > dar = dap > def
+
+          credulous:
+            ap = ar > e > m > admal = lamda > sonc = cons > o > d > dar = dap > def
         """
         # ap/ar shape flags
         is_ap, is_d_ap, is_dap = self._is_ap_node(child)   # (is_ap, is_default, is_defeated)
@@ -335,35 +343,49 @@ class ArgumentTermReducer(ProofTermVisitor):
         # exception?
         is_exc = self._is_exception_node(child) if isinstance(child, (Mu, Mutilde)) else False
 
-        # Decide kind/priority
+        # Decide category
+        flags = {"ap": False, "ar": False, "d": False}
         if is_exc:
-            return ("e", 1, {"ap": False, "ar": False, "d": False})
-        if is_def_exc:
-            return ("def", 9, {"ap": False, "ar": False, "d": False})
-
-        if isinstance(child, (Mu, Mutilde)):
-            return ("m", 2, {"ap": False, "ar": False, "d": False})
-        if isinstance(child, (Admal, Lamda)):
-            return ("admal/lamda", 3, {"ap": False, "ar": False, "d": False})
-        if isinstance(child, (Sonc, Cons)):
-            return ("sonc/cons", 4, {"ap": False, "ar": False, "d": False})
-
-        if is_ap:
+            cat = "e"
+        elif is_def_exc:
+            cat = "def"
+        elif isinstance(child, (Mu, Mutilde)):
+            cat = "m"
+        elif isinstance(child, (Admal, Lamda)):
+            cat = "ad"
+        elif isinstance(child, (Sonc, Cons)):
+            cat = "sc"
+        elif is_ap:
+            flags["ap"] = True
             if is_dap:
-                return ("dap", 8, {"ap": True, "ar": False, "d": False})
-            if is_d_ap:
-                return ("d", 7, {"ap": True, "ar": False, "d": True})
-            return ("ap", 6, {"ap": True, "ar": False, "d": False})
-
-        if is_ar:
+                cat = "dap"
+            elif is_d_ap:
+                flags["d"] = True
+                cat = "d"
+            else:
+                cat = "ap"
+        elif is_ar:
+            flags["ar"] = True
             if is_dar:
-                return ("dar", 8, {"ap": False, "ar": True, "d": False})
-            if is_d_ar:
-                return ("d", 7, {"ap": False, "ar": True, "d": True})
-            return ("ar", 6, {"ap": False, "ar": True, "d": False})
+                cat = "dar"
+            elif is_d_ar:
+                flags["d"] = True
+                cat = "d"
+            else:
+                cat = "ar"
+        else:
+            cat = "o"
 
-        # Other terms outrank alternatives/defaults (can reduce to exceptions)
-        return ("o", 5, {"ap": False, "ar": False, "d": False})
+        # Stance-dependent priority
+        stance = (self.onus_stance or "skeptical").lower()
+        skeptical_map = {
+            "e": 1, "m": 2, "ad": 3, "sc": 4, "o": 5, "ap": 6, "ar": 6, "d": 7, "dap": 8, "dar": 8, "def": 9
+        }
+        credulous_map = {
+            "ap": 1, "ar": 1, "e": 2, "m": 3, "ad": 4, "sc": 5, "o": 6, "d": 7, "dap": 8, "dar": 8, "def": 9
+        }
+        pr = (credulous_map if stance.startswith("cred") else skeptical_map)[cat]
+        return (cat, pr, flags)
 
     def _decide_onus(self, node: ProofTerm) -> tuple[str, str]:
         """
@@ -394,6 +416,33 @@ class ArgumentTermReducer(ProofTermVisitor):
             return ("cbn", f"priority: left({L_kind}:{L_pr}) over right({R_kind}:{R_pr})")
         if R_pr < L_pr:
             return ("cbv", f"priority: right({R_kind}:{R_pr}) over left({L_kind}:{L_pr})")
+
+        # Exception-pair tie-breaking (⟨ e || e ⟩): prefer first/last bubbling exception
+        if L_kind == "e" and R_kind == "e":
+            prefer_last = (self.exception_priority or "first").lower().startswith("last")
+            # Case A: ⟨ f || μ'_.< f || t > ⟩
+            if isinstance(right, Mutilde) and self._same_subtree(left, getattr(right, "term", None)):
+                if prefer_last:
+                    return ("cbv", "exceptions: prefer last (right μ'_.<f||t>) over first (left f)")
+                else:
+                    return ("cbn", "exceptions: prefer first (left f) over last (right μ'_.<f||t>)")
+            # Case B (dual): ⟨ μ_.< t || g > || g ⟩
+            if isinstance(left, Mu) and self._same_subtree(getattr(left, "context", None), right):
+                if prefer_last:
+                    return ("cbn", "exceptions: prefer last (left μ_.<t||g>) over first (right g)")
+                else:
+                    return ("cbv", "exceptions: prefer first (right g) over last (left μ_.<t||g>)")
+            # Multiple undercut: distinct exception encountered inside; fall back
+            if isinstance(right, Mutilde) and (
+                self._is_exception_node(getattr(right, "term", None)) or
+                self._is_exception_node(getattr(right, "context", None))
+            ):
+                return ("fallback", "exceptions: multiple undercut; fallback")
+            if isinstance(left, Mu) and (
+                self._is_exception_node(getattr(left, "term", None)) or
+                self._is_exception_node(getattr(left, "context", None))
+            ):
+                return ("fallback", "exceptions: multiple undercut; fallback")
 
         # Tie → no local rewrite decision at this node
         return ("fallback", f"priority tie: left({L_kind}:{L_pr}) == right({R_kind}:{R_pr})")
