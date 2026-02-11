@@ -40,3 +40,8 @@ build/
 *.egg-info/
 acdc
 *#*
+.cecli*
+
+# aider artifacts
+.aider*
+aider.*
