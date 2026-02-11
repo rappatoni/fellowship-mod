@@ -407,10 +407,11 @@ let help_tacticals =
  "unexpected number of goals or if any tactic taci fails."
 
 let help_types =
- "BNF Syntax: s,s' ::= x | type | bool | s -> s' | (s) \n" ^
+ "BNF Syntax: s,s' ::= x | type | bool | s -> s' | [s] \n" ^
  "Two predefined types exist: \"bool\" which is the type of propositions, and " ^
  "\"type\" which is the type of user-defined types. New types can be declared " ^
- "(try \"help declare\") and built using the \"->\" operator."
+ "(try \"help declare\") and built using the \"->\" operator. " ^
+ "Use square brackets to override precedence in function sorts (e.g., [B -> B] -> B)."
 
 let help_terms =
  "BNF Syntax: term ::= [t] \n" ^

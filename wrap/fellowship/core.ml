@@ -113,8 +113,13 @@ let rec pretty_sort = function
   | SSet -> "type"
   | SProp -> "bool"
   | SSym name -> name
-  | SArr (sort,sort') -> 
-      sprintf "%s%s%s" (pretty_sort sort) (symbol ()).arrow (pretty_sort sort')
+  | SArr (s1,s2) ->
+      let lhs =
+        match s1 with
+        | SArr _ -> "(" ^ pretty_sort s1 ^ ")"
+        | _      -> pretty_sort s1
+      in
+      sprintf "%s%s%s" lhs (symbol ()).arrow (pretty_sort s2)
 
 (*Sort equality*)
 let rec eq_sort sort sort' = match sort with

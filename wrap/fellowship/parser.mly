@@ -141,6 +141,7 @@ s_expr:
 | PROP                                     { SProp }
 | IDENT                                    { SSym $1 }
 | s_expr ARROW s_expr                      { SArr ($1,$3) }
+| LBRA s_expr RBRA                         { $2 }
 ;
 
 t_expr:
