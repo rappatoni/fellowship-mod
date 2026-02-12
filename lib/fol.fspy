@@ -1,0 +1,13 @@
+# A formalization of first order logic Isabelle style.
+minimal. lk.
+declare form : type.
+declare termf : type.
+declare botf : form.
+declare andf, orf, implf : form -> form -> form.
+
+declare forallf, existsf : [termf -> form] -> form.
+declare truef : form -> bool.
+declare andfi: (forall p:form, forall q:form, truef [p] -> truef [andf (p)(q)] ).
+#other rules ommitted for now, let's get to the interesting stuff: quantifier rules.
+declare forallfi : (forall f:termf -> form, forall x:termf, truef[f(x)] -> truef[forallf(f)]).
+#TODO: second forallf axiom, existsf axioms. 
