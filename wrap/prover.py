@@ -10,6 +10,13 @@ logger = logging.getLogger('fsp.wrapper')
 class ProverError(Exception):
     pass
 
+class ProverNeedsMoreInput(ProverError):
+    """The prover has not returned to the prompt yet (e.g. waiting for a trailing '.').
+
+    This is not a desync; the caller should keep feeding input lines until a prompt appears.
+    """
+    pass
+
 class MachinePayloadError(ProverError):
     pass
 
@@ -34,6 +41,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.prover.expect('fsp <')
         self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
         self.last_state: Any = None
+        self.last_output_text: str = ""
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
         self.declarations: Dict[str, str] = {}
@@ -49,7 +57,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return atom[1:-1]
         return atom
 
-    def send_command(self, command: str, silent: int = 1) -> Dict[str, Any]:
+    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
         """Send a command to Fellowship
 
         command -- The command string
@@ -63,16 +71,52 @@ TODO: Mechanism to declare a scenario of default assumptions.
         try:
             self.prover.sendline(command)
             self.prover.expect('fsp <')
-        except (PexpectEOF, PexpectTIMEOUT) as e:
-            logger.error("pexpect error on command %r: %s", command, e)
-            raise ProverError(f"Prover I/O error: {e}") from e
+        except PexpectTIMEOUT as e:
+            if allow_incomplete:
+                # The prover may be waiting for a continuation line / trailing '.'
+                # and thus has not printed the prompt yet.
+                out = getattr(self.prover, "before", "")
+                self.last_output_text = out
+                state: Dict[str, Any] = {"_need_more_input": True}
+                if include_ui:
+                    state["_ui"] = out.strip()
+                return state
+            logger.error("pexpect timeout on command %r: %s", command, e)
+            raise ProverError(f"Prover I/O timeout (possible incomplete command): {e}") from e
+        except PexpectEOF as e:
+            logger.error("pexpect EOF on command %r: %s", command, e)
+            raise ProverError(f"Prover I/O EOF: {e}") from e
 
         output = self.prover.before
         logger.log(5, "<< %s", output)
+        self.last_output_text = output
         state = self._extract_machine_block(output)
         if state is None:
-            logger.error("Machine block missing in prover output for command %r", command)
-            raise MachinePayloadError("Machine block missing in prover output.")
+            if allow_incomplete:
+                # Some commands are dot-terminated. Fellowship may return to the prompt
+                # before emitting a machine block, waiting for further input (e.g. a lone '.')
+                # to complete the command.
+                state = {"_need_more_input": True}
+                if include_ui:
+                    state["_ui"] = output.strip()
+            else:
+                logger.error("Machine block missing in prover output for command %r", command)
+                raise MachinePayloadError("Machine block missing in prover output.")
+
+        # If there's no machine block, only allow continuing when we can prove it's a no-op
+        # (currently: plaintext parse error detected) OR when the caller explicitly allows
+        # dot-terminated / multi-line commands.
+        if (not MACHINE_BLOCK_RE.search(output)) and not (state.get('_no_machine_block_ok') or allow_incomplete):
+            logger.error("No machine block and no safe no-op indicator for command %r", command)
+            raise MachinePayloadError("Machine block missing in prover output (possible desync).")
+
+        if include_ui:
+            # Keep prover UI text for interactive mode.
+            state['_ui'] = output.strip()
+            # Also surface extracted plaintext parse errors explicitly so the CLI can show
+            # a crisp error even if Fellowship's surrounding UI text is noisy.
+            if state.get('_no_machine_block_ok') and state.get('errors'):
+                state['_plain_errors'] = list(state.get('errors') or [])
         # warnings/errors from machine payload
         for w in state.get('warnings', []):
             warnings.warn(w)
@@ -148,13 +192,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
         else:
             state = {}
 
-        # Merge plaintext parse errors regardless of machine block presence
+        # Merge plaintext parse errors regardless of machine block presence.
+        # Important: if we have ONLY plaintext parse errors and no machine block,
+        # this is a safe no-op (Fellowship rejects the command before changing state).
         errs = self._extract_plain_errors(output)
         if errs:
-            existing = state.get('errors', []) if state is not None else []
-            if state is None:
-                state = {}
-            state['errors'] = existing + errs
+            state['errors'] = (state.get('errors', []) if state is not None else []) + errs
+            state.setdefault('_no_machine_block_ok', not matches)
 
         # If truly nothing present, signal None
         if not state:

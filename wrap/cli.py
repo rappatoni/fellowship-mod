@@ -601,6 +601,23 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
     logger.info("Finished script %s", script_path)
 
 
+def _print_ui(state: Any) -> None:
+    if not isinstance(state, dict):
+        return
+
+    ui = state.get('_ui')
+    if isinstance(ui, str) and ui.strip():
+        # Print Fellowship's user-facing output.
+        print(ui.strip())
+
+    perrs = state.get('_plain_errors')
+    if isinstance(perrs, list) and perrs:
+        # Make sure parse/syntax errors are clearly visible to the user.
+        for e in perrs:
+            if isinstance(e, str) and e.strip():
+                print(e.strip())
+
+
 def interactive_mode(prover: ProverWrapper) -> None:
     """Enables command line interaction with the wrapper.
         
@@ -621,8 +638,9 @@ def interactive_mode(prover: ProverWrapper) -> None:
     current_argument = None
     try:
         while True:
-            try: 
-                command = input('Enter command (or "exit" to quit): ').strip()
+            try:
+                prompt = 'Enter command (or "exit" to quit): ' if not recording else 'Enter command (recording): '
+                command = input(prompt).strip()
             except EOFError:
                 print("\nEOFError: No input detected. Exiting interactive mode.")
                 break
@@ -777,6 +795,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     except Exception as e:
                         print(f"Rebut failed: {e}")
                         logger.error("Rebut failed: %s", e)
+
+            # -----------------------------------------------------------------
+            # Fellowship commands outside wrapper-specific commands
+            # -----------------------------------------------------------------
                 else:
                     print(f"Rebut failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
                     logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
@@ -801,8 +823,18 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 recording = True
                 print(f"Started recording counterargument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording counterargument '%s' with conclusion '%s'.", name, conclusion)
-                output = prover.send_command(f'antitheorem {name} : ({conclusion}).')
-                # print(output)
+                try:
+                    output = prover.send_command(f'antitheorem {name} : ({conclusion}).', include_ui=True)
+                    _print_ui(output)
+                except ProverError as e:
+                    print(f"acdc: ignored command due to prover error: {e}")
+                    logger.error("Prover error starting counterargument: %s", e)
+                    recording = False
+                    current_argument = None
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error starting counterargument: %s", e)
+                    break
                 continue
             elif command.startswith('start argument '):
                 # Parse the start argument command
@@ -823,13 +855,34 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 recording = True
                 print(f"Started recording argument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
-                output = prover.send_command(f'theorem {name} : ({conclusion}).')
-                # print(output)
+                try:
+                    output = prover.send_command(f'theorem {name} : ({conclusion}).', include_ui=True)
+                    _print_ui(output)
+                except ProverError as e:
+                    print(f"acdc: ignored command due to prover error: {e}")
+                    logger.error("Prover error starting argument: %s", e)
+                    recording = False
+                    current_argument = None
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error starting argument: %s", e)
+                    break
             elif command == 'end argument':
                 if not recording:
                     print("Not currently recording an argument.")
                     continue
-                prover.send_command('discard theorem.')
+                try:
+                    out = prover.send_command('discard theorem.', include_ui=True)
+                    _print_ui(out)
+                except ProverError as e:
+                    print(f"acdc: prover error discarding theorem: {e}")
+                    logger.error("Prover error discarding theorem: %s", e)
+                    # wrapper command failed; continue REPL, still recording
+                    continue
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error discarding theorem: %s", e)
+                    break
                 # Create and execute the argument
                 arg = Argument(
                     prover,
@@ -859,9 +912,24 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         current_argument['instructions'].append(command)
                     else:
                         # Execute the command and record it
-                        output = prover.send_command(command)
-                        # print(output)
-                        current_argument['instructions'].append(command)
+                        try:
+                            output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                            _print_ui(output)
+                            while isinstance(output, dict) and output.get('_need_more_input'):
+                                more = input('... ').strip()
+                                output = prover.send_command(more, include_ui=True, allow_incomplete=True)
+                                _print_ui(output)
+                            if isinstance(output, dict) and output.get('_need_more_input'):
+                                continue
+                            current_argument['instructions'].append(command)
+                        except ProverError as e:
+                            print(f"acdc: ignored command due to prover error: {e}")
+                            logger.error("Prover error during recording: %s", e)
+                            # do not record failing instruction
+                        except MachinePayloadError as e:
+                            print(f"acdc: fatal prover communication error: {e}")
+                            logger.error("Fatal prover communication error during recording: %s", e)
+                            break
             else:
                 # Normal command execution
                 if command.startswith('argument '):
@@ -918,7 +986,22 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         logger.error("One or both arguments not found in interactive mode")
                 else:
                     # Execute the command normally
-                    output = prover.send_command(command)
+                    try:
+                        output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                        _print_ui(output)
+                        while isinstance(output, dict) and output.get('_need_more_input'):
+                            more = input('... ').strip()
+                            output = prover.send_command(more, include_ui=True, allow_incomplete=True)
+                            _print_ui(output)
+                    except MachinePayloadError as e:
+                        # Potential prover/wrapper desync: exit interactive mode.
+                        print(f"acdc: fatal prover communication error: {e}")
+                        logger.error("Fatal prover communication error: %s", e)
+                        break
+                    except ProverError as e:
+                        print(f"acdc: ignored command due to prover error: {e}")
+                        logger.error("Prover error: %s", e)
+                        continue
                     # print(output)
     finally:
         prover.close()
