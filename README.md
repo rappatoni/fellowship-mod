@@ -102,11 +102,11 @@ Wrapper commands (interactive)
 - `undercut NEW_NAME ATTACKER TARGET`
   - Construct an undercut argument.
 - `support NEW_NAME SUPPORTER TARGET [on PROP...]`
-  - Construct a support argument (if implemented by the underlying argument API).
+  - Construct a support argument.
 - `attack NEW_NAME ATTACKER TARGET [on PROP...]`
-  - Construct an attack argument (if implemented by the underlying argument API).
+  - Construct an attack argument.
 - `rebut NEW_NAME ATTACKER TARGET [on PROP...]`
-  - Construct a rebut argument (if implemented by the underlying argument API).
+  - Construct a rebut argument.
 - Exit: `exit` / `quit`
 
 Script mode
