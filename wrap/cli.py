@@ -966,7 +966,7 @@ def setup_prover() -> ProverWrapper:
     #prover.send_command('lk.')
     # Declare some booleans to work with.
     #prover.send_command('declare A,B,C,D:bool.')
-    logger.info("Prover decls %r", prover.declarations)
+    #logger.info("Prover decls %r", prover.declarations)
     return prover
 
 

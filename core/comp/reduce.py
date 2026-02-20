@@ -211,63 +211,106 @@ class ArgumentTermReducer(ProofTermVisitor):
         return False
 
     def _is_exception_node(self, n: ProofTerm) -> bool:
-        # Exceptions:
-        #   classic (affine): μ_.<t' || t> | μ'_.<t || t'> with t' not an exception and not Goal/Laog
-        #   axiom‑blocked (no affine requirement):
-        #     μ x.<t*e||ax> | μ x.<e*t||ax> | μ x.<λ y.e||ax>
-        #     μ' α.<mox||t*e> | μ' α.<msox||e*t> | μ' α.<mox||λ α.e>
-        # where ax/mox are declared axioms (self.axiom_props).
+        # Exceptions e ::= 
+        #   μ_.<t' || t> | μ'_.<t || t'>
+        # | μ x.<t*e||mox> | μ x.<e*t||mox> | μ x.<λ y.e||mox>
+        # | μ' α.<ax||t*e> | μ' α.<ax||e*t> | μ' α.<ax||λ α.e>
+        # where:
+        #   - t' is not itself an exception AND not Goal/Laog
+        #   - t is not a free variable (caught exceptions are excluded)
+        #   - ax/mox are declared axioms (self.axiom_props)
+
+        if n is None:
+            return False
+
+        # Alternative proofs/refutations are “caught exceptions”; don't classify as exceptions.
+        # IMPORTANT: don't use _is_ap_node/_is_ar_node here, because they consult _is_exception_node
+        # to detect defeated alternatives, which would cause us to mask real exceptions.
+        if isinstance(n, (Mu, Mutilde)):
+            is_ap_shape = (
+                isinstance(n, Mu)
+                and _is_affine(n.id.name, n)
+                and isinstance(n.context, ID)
+            ) or (
+                isinstance(n, Mutilde)
+                and _is_affine(n.di.name, n)
+                and isinstance(n.context, ID)
+            )
+            is_ar_shape = (
+                isinstance(n, Mu)
+                and _is_affine(n.id.name, n)
+                and isinstance(n.term, ID)
+            ) or (
+                isinstance(n, Mutilde)
+                and _is_affine(n.di.name, n)
+                and isinstance(n.term, DI)
+            )
+            if is_ap_shape or is_ar_shape:
+                return False
+
+        def _is_free_var(v: ProofTerm) -> bool:
+            if not isinstance(v, (ID, DI)):
+                return False
+            # Axiom/moxia leaves are not treated as free variables here.
+            if self._is_axiom_leaf(v):
+                return False
+            return v.name not in self._binder_names
 
         # 1) Classic affine cases
         if isinstance(n, Mu) and _is_affine(n.id.name, n):
             tprime = n.term
-            logger.debug("t': %s (note that this can be stale)", tprime.pres)
-            logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
-            #logger.debug("is t' a goal/laog? - %s", isinstance(tprime, (Goal, Laog)))
+            t = n.context
             if (self._is_tprime(tprime)
+                and not isinstance(tprime, (Goal, Laog))
                 and not self._is_exception_node(tprime)
-                and not isinstance(n.context, ID)):
-                #and not isinstance(tprime, (Goal, Laog))):
+                and not _is_free_var(t)):
                 logger.debug("Normal exception encountered: %s", n.pres)
                 return True
+
         if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
             tprime = n.context
-            logger.debug("t': %s", tprime.pres)
-            logger.debug("is t' an exception? - %s", self._is_exception_node(tprime))
-            #logger.debug("is t' a goal/laog? - %s", isinstance(tprime, (Goal, Laog)))
+            t = n.term
             if (self._is_tprime(tprime)
+                and not isinstance(tprime, (Goal, Laog))
                 and not self._is_exception_node(tprime)
-                #and not isinstance(tprime, (Goal, Laog))):
-                and not isinstance(n.term, DI)):
+                and not _is_free_var(t)):
                 logger.debug("Normal exception encountered: %s", n.pres)
                 return True
 
         # 2) Axiom‑blocked variants (no affineness required)
+        # Require the non-exception side t to NOT be a free variable (otherwise it's a caught exception).
         if isinstance(n, Mu) and self._is_axiom_leaf(n.context):
             tprime = n.term
-            logger.debug("Axiom (ID) encountered on right of Mu: %s", getattr(n.context, "name", "?"))
             # μ x.<t*e||ax> or μ x.<e*t||ax>
             if isinstance(tprime, Sonc):
-                return self._is_exception_node(tprime.term) or self._is_exception_node(tprime.context)
+                left_is_exc = self._is_exception_node(tprime.term)
+                right_is_exc = self._is_exception_node(tprime.context)
+                if left_is_exc and not _is_free_var(tprime.context):
+                    return True
+                if right_is_exc and not _is_free_var(tprime.term):
+                    return True
+                return False
             # μ x.<λ y.e||ax>
             if isinstance(tprime, Lamda):
                 return self._is_exception_node(tprime.term)
             return False
-        logger.debug("axiom leaf? %s", isinstance(n, Mutilde) and self._is_axiom_leaf(n.term))
+
         if isinstance(n, Mutilde) and self._is_axiom_leaf(n.term):
             tprime = n.context
-            logger.debug("Axiom (DI) encountered on left of Mutilde: %s", getattr(n.term, "name", "?"))
-            # μ' α.<mox||t*e> or μ' α.<mox||e*t>
+            # μ' α.<ax||t*e> or μ' α.<ax||e*t>
             if isinstance(tprime, Cons):
-                logger.debug("Term: %s (can be stale)", tprime.term.pres)
-                logger.debug("Term is exception? %s", self._is_exception_node(tprime.term))
-                logger.debug("Context: %s (can be stale)", tprime.context.pres)
-                logger.debug("Context is exception? %s", self._is_exception_node(tprime.context))
-                return self._is_exception_node(tprime.term) or self._is_exception_node(tprime.context)
-            # μ' α.<mox||λ α.e>
+                left_is_exc = self._is_exception_node(tprime.term)
+                right_is_exc = self._is_exception_node(tprime.context)
+                if left_is_exc and not _is_free_var(tprime.context):
+                    return True
+                if right_is_exc and not _is_free_var(tprime.term):
+                    return True
+                return False
+            # μ' α.<ax||λ α.e>
             if isinstance(tprime, Admal):
                 return self._is_exception_node(tprime.term)
             return False
+
         return False
 
     def _is_defeated_exception_node(self, n: ProofTerm) -> bool:
@@ -349,12 +392,7 @@ class ArgumentTermReducer(ProofTermVisitor):
             cat = "e"
         elif is_def_exc:
             cat = "def"
-        elif isinstance(child, (Mu, Mutilde)):
-            cat = "m"
-        elif isinstance(child, (Admal, Lamda)):
-            cat = "ad"
-        elif isinstance(child, (Sonc, Cons)):
-            cat = "sc"
+        # IMPORTANT: classify structured ap/ar (which are Mu/Mutilde nodes) before the generic "m" bucket.
         elif is_ap:
             flags["ap"] = True
             if is_dap:
@@ -373,6 +411,12 @@ class ArgumentTermReducer(ProofTermVisitor):
                 cat = "d"
             else:
                 cat = "ar"
+        elif isinstance(child, (Mu, Mutilde)):
+            cat = "m"
+        elif isinstance(child, (Admal, Lamda)):
+            cat = "ad"
+        elif isinstance(child, (Sonc, Cons)):
+            cat = "sc"
         else:
             cat = "o"
 

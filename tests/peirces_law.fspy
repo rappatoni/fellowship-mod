@@ -1,0 +1,59 @@
+# This test mimics a prover-skeptic dialogue for Peirce's Law
+
+
+# Prover: I will prove ((P -> Q)->P)->P.
+# Add ((P -> Q)->P)->P to the set of defaults. Shift onus to Skeptic.
+start argument p1 ((P -> Q)->P)->P
+end argument
+
+# Skeptic: I can either try to refute ((P -> Q)->P)->P or challenge you to prove P given (P -> Q)->P. I choose to challenge you.
+# ((P -> Q)->P)->P is removed from the set of defaults, P is added, f:(P -> Q)->P is added to the set of offers, onus is shifted to Prover.
+start argument s1 ((P -> Q)->P)
+elim f.
+end argument
+
+support s1 p1 d1
+
+# Prover: You have not refuted any of my claims hence my only option is to proceed proving alpha:P as the onus is on me. I will make use of a Lemma: (P -> Q)->P to prove alpha.
+# Add (P -> Q)->P and P -> Q to the defaults, remove P from the set of defaults.
+start argument p2 P
+cut ((P -> Q)->P) alpha
+next.
+elim.
+next.
+axiom.
+end argument
+
+support p2 d1 d2
+
+# Skeptic: I can either deny the lemma (P -> Q)->P or deny that the goal can be proved from it. In either case, I can either refute it myself or challenge you to prove it. In the first case, if I choose refutation, I have to prove (P -> Q) and refute P; in the second case if I choose refutation I have to refute (P->Q). if I instead challenge you, you either have to prove (P -> Q)->P or (P -> Q) depending on the branch I choose. I choose to challenge you to prove P->Q by offering you P and challenging you to prove Q
+
+# P is added to offers, P->Q is removed from the defaults, onus shifts to Prover to prove Q.
+start argument s2 P->Q
+elim.
+end argument
+
+support s2 d2 d3
+
+# Prover: I will prove Q by contradiction. You have granted me P. But you also deny P. Contradition, hence Q.
+start argument p3 Q
+cut (P) beta.
+end argument
+
+support p3 d3 final
+
+# Skeptic is out of moves.
+
+# Alternative Branches.
+
+# A: Skeptic chooses to refute ((P -> Q)->P)->P.
+start counterargument sa1 ((P -> Q)->P)->P
+end counterargument
+
+attack sa1 p1 da1
+
+# Prover can refute (P -> Q)->P) or prove P or challenge Skeptic. Prover can choose to challenge skeptic to prove (P -> Q)->P) and refute P. Prover can offer P. If Prover chooses right, she is out of moves. If she chooses left, Prover offers P. Then the best skeptic can do is use a default to prove Q. But then Prover attacks on not(P) and skeptic is out of moves.
+
+# Prover has a winning strategy: can always force Skeptic to lose. (Copy all alternatives from notes).
+
+# Do the same for Dual Peirce's Law to show how Skeptic can enforce LNC.

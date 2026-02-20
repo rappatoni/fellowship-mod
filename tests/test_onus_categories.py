@@ -1,4 +1,4 @@
-from core.ac.ast import Goal, Laog, ID, DI, Mu, Mutilde
+from core.ac.ast import Goal, Laog, ID, DI, Mu, Mutilde, Cons
 from core.comp.reduce import ArgumentTermReducer
 
 
@@ -49,37 +49,42 @@ def test_onus_decide_ap_vs_dap_is_cbn_and_dap_vs_ap_is_cbv():
             context=ID("alpha", "A"),
         )
 
-    # Helper: dap (defeated ap): t' is an exception node.
-    # Use a typ-correct classic exception shape: μ_.<t' || t> where t' is t-prime and context is not ID.
-    # Here: t' = Goal, context = Laog (not ID) satisfies _is_exception_node for Mu.
-    def mk_dap_defeated():
-        return Mu(
+    # Helper: defeated alternative proof (dap) for the RHS context:
+    #   μ'_:A.< μ_.<2:A || μ'_:A.<2:A || μ'beta:A.<4:B->A|| 3:B * beta> > || alpha >
+    # i.e. an ap-shape whose t' is a (narrow) exception.
+    def mk_dap_ctx():
+        # μ'beta:A.<4:B->A|| 3:B * beta>
+        inner_mox = Mutilde(
+            di_=DI("beta", "A"),
+            prop="A",
+            term=Goal("4", "B->A"),
+            context=Cons(Goal("3", "B"), ID("beta", "A")),
+        )
+        # μ_:A.<2:A || μ'beta:A.<4:B->A|| 3:B * beta> >
+        inner_exc = Mu(
             id_=ID("_", "A"),
             prop="A",
-            term=Mu(
-                id_=ID("_", "A"),
-                prop="A",
-                term=Goal("1", "A"),
-                context=Laog("L", "A"),
-            ),
+            term=Goal("2", "A"),
+            context=inner_mox,
+        )
+        # μ'_:A.< inner_exc || alpha >
+        return Mutilde(
+            di_=DI("_", "A"),
+            prop="A",
+            term=inner_exc,
             context=ID("alpha", "A"),
         )
 
     ap = mk_ap_default()
-    dap = mk_dap_defeated()
+    dap_ctx = mk_dap_ctx()
 
     # Build command nodes where left is a Term and right is a Context.
     # Put ap/dap on the term side; use an arbitrary context binder to host the other side.
 
-    # ⟨ ap || dap ⟩ (encode right dap as a context-shaped node: μ'_.<t'||alpha>)
-    dap_ctx = Mutilde(
-        di_=DI("_", "A"),
-        prop="A",
-        term=dap.term,  # the defeated t' subtree
-        context=ID("alpha", "A"),
-    )
+    # ⟨ ap || dap ⟩
     node1 = Mu(id_=ID("gamma", "A"), prop="A", term=ap, context=dap_ctx)
-    assert r._classify_for_onus(ap)[0] == "ap"
+    assert r._classify_for_onus(ap)[0] == "d"
+    assert r._classify_for_onus(dap_ctx)[0] == "dap"
     action1, _reason1 = r._decide_onus(node1)
 
     # ⟨ dap || ap ⟩
