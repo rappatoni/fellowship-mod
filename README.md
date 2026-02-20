@@ -71,13 +71,52 @@ Repository layout
 - README.md — this file
 
 CLI quick reference
-- Commands operate over the scenario created by your .fspy script (declarations, arguments, operations):
-  - reduce: perform reduction steps on the current proof term
-  - render: render the current proof term (no normalization)
-  - render-nf: normalize and then render the proof term
-  - color: normalize and print a colored proof term (green/yellow/red)
-  - tree [nl|pt]: render an acceptance tree (nl = natural language labels; pt = proof-term labels)
-  - undercut NEW ATTACKER TARGET: creates a debate named NEW consisting of the arguments ATTACKER and TARGET. The attacked assumption(s) is computed automatically.
+
+Interactive mode
+- Start: `.venv/bin/acdc --interactive`
+- In interactive mode you can enter:
+  - **Any Fellowship command** (see `help.` inside `fsp`).
+  - **Wrapper commands** listed below.
+- Fellowship is **dot-terminated** for many commands (e.g. `declare ...`): if a command needs more input, `acdc` will switch to a continuation prompt `... ` until the command is completed (typically by entering a single `.` on its own line).
+- Syntax/prover errors are **non-fatal** in interactive mode: the wrapper prints Fellowship’s message and waits for the next input.
+
+Wrapper commands (interactive)
+- `start argument NAME CONCLUSION`
+  - Begins recording a theorem proof. You can then enter Fellowship proof commands line-by-line.
+- `start counterargument NAME CONCLUSION` (alias: `start antitheorem NAME CONCLUSION`)
+  - Begins recording an antitheorem proof.
+- `end argument`
+  - Finishes recording and stores the argument under `NAME`.
+- `reduce ARG`
+  - Reduce/normalize a stored argument.
+- `normalize ARG`
+  - Normalize a stored argument (silent; caches normal form).
+- `render ARG` / `render-nf ARG`
+  - Render unreduced / normal-form proof term.
+- `color ARG`
+  - Print a colored (acceptance) rendering.
+- `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
+  - Render an acceptance tree.
+- `chain ARG1 ARG2`
+  - Graft/chain two stored arguments (ARG1 rootstock, ARG2 scion).
+- `undercut NEW_NAME ATTACKER TARGET`
+  - Construct an undercut argument.
+- `support NEW_NAME SUPPORTER TARGET [on PROP...]`
+  - Construct a support argument (if implemented by the underlying argument API).
+- `attack NEW_NAME ATTACKER TARGET [on PROP...]`
+  - Construct an attack argument (if implemented by the underlying argument API).
+- `rebut NEW_NAME ATTACKER TARGET [on PROP...]`
+  - Construct a rebut argument (if implemented by the underlying argument API).
+- Exit: `exit` / `quit`
+
+Script mode
+- Commands operate over the scenario created by your `.fspy` script (declarations, arguments, operations). Typical usage:
+  - `reduce`: perform reduction steps on the current proof term
+  - `render`: render the current proof term (no normalization)
+  - `render-nf`: normalize and then render the proof term
+  - `color`: normalize and print a colored proof term (green/yellow/red)
+  - `tree [nl|pt]`: render an acceptance tree (nl = natural language labels; pt = proof-term labels)
+  - `undercut NEW ATTACKER TARGET`: creates a debate named NEW consisting of the arguments ATTACKER and TARGET. The attacked assumption(s) is computed automatically.
 
 Parallel call-by-onus reduction (experimental)
 - The reducer supports a parallel call-by-onus evaluation discipline.
