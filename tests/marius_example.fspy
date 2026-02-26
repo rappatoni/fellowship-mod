@@ -1,0 +1,46 @@
+lk.
+
+declare A,A_h,B,C,D:bool.
+
+declare f : (B -> A).
+declare f_h : (A_h -> A).
+deny alpha : (A_h-C).
+deny beta : (A_h-D).
+
+start argument arg1 A
+cut (A) alt. 
+cut (A) aff.
+cut (B -> A) h.
+axiom f.
+elim.
+next.
+axiom.
+axiom alt. 
+cut (A) aff.
+cut (A_h -> A) h.
+axiom f_h.
+elim.
+cut (A_h) att.
+cut (A_h) aff1.
+next.
+axiom att.
+cut (A_h) aff2.
+next.
+cut (A_h) alt_h.
+cut (A_h) aff3.
+axiom alt_h.
+cut (A_h - C) att1.
+elim.
+next.
+axiom att1.
+moxia alpha.
+cut (A_h) aff4.
+axiom alt_h.
+cut (A_h - D) att2.
+elim.
+next.
+axiom att2.
+moxia beta.
+axiom h.
+axiom.
+end argument
