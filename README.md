@@ -118,9 +118,13 @@ Script mode
   - `tree [nl|pt]`: render an acceptance tree (nl = natural language labels; pt = proof-term labels)
   - `undercut NEW ATTACKER TARGET`: creates a debate named NEW consisting of the arguments ATTACKER and TARGET. The attacked assumption(s) is computed automatically.
 
-Parallel call-by-onus reduction (experimental)
-- The reducer supports a parallel call-by-onus evaluation discipline.
-- Enable it by setting the environment variable FSP_EVAL_DISCIPLINE=onus-parallel for the acdc process.
+Call-by-onus reduction (experimental)
+- The reducer supports a call-by-onus evaluation discipline.
+- Select it via `FSP_EVAL_DISCIPLINE`:
+  - `legacy` (default): legacy reducer rule order (no onus discipline)
+  - `onus-parallel`: compute an onus candidate in parallel to legacy and warn on divergence
+  - `onus`: call-by-onus only (no parallel/legacy comparison)
+- Enable it by setting the environment variable, e.g. `FSP_EVAL_DISCIPLINE=onus-parallel` for the acdc process.
 - This affects normalization-driven commands: reduce, render-nf, color, tree.
 - Examples:
   - macOS/Linux (bash/zsh):

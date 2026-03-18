@@ -45,3 +45,6 @@ acdc
 # aider artifacts
 .aider*
 aider.*
+
+# local latex/image artifacts
+ltximg/

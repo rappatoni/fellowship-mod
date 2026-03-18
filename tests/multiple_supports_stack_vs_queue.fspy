@@ -1,0 +1,36 @@
+% Regression test: multiple supports should stack (LIFO), not queue (FIFO)
+%
+% Build:
+%  - base: argument about A with an open goal A
+%  - s1, s2: supporters proving A
+%  - then: support base with s1, then support the result with s2
+% Expectation: the resulting proof-term contains s2 as the outermost supporter wrapper around s1.
+lk.
+% Declare A and a constant witness a:A so `axiom.` can close goals of type A
+% (see Fellowship documentation example: declare EO: (Even [O]). then `axiom.`)
+declare A:bool.
+% declare a proposition as an axiom; needs parentheses per Fellowship syntax
+declare axA:(A).
+declare axB:(A).
+
+
+% base: A proved by axiom (we want a well-typed closed term to support)
+start argument base A
+end argument
+
+% supporter 1: prove A by using declared constant a:A
+start argument s1 A
+axiom axA.
+end argument
+
+% supporter 2: prove A by using declared constant a:A
+start argument s2 A
+axiom axB.
+end argument
+
+% Apply supports sequentially
+support base_s1 s1 base
+support base_s1_s2 s2 base_s1
+
+% Normalize and render proof-term (cached in python objects)
+normalize base_s1_s2

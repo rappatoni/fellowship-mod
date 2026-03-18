@@ -570,8 +570,8 @@ class ArgumentTermReducer(ProofTermVisitor):
     def _maybe_warn_onus_divergence(self, onus_info, before_node: ProofTerm, after_node: ProofTerm, rule_tag: str, where_kind: str):
         """Compare onus candidate vs legacy result and warn if they diverge."""
         logger.debug("maybe warn onus called")
-        if self.evaluation_discipline not in ("onus-parallel", "onus") or onus_info is None:
-            logger.debug("Not in onus-parallel mode")
+        # Divergence warnings are only meaningful in "onus-parallel" mode.
+        if self.evaluation_discipline != "onus-parallel" or onus_info is None:
             return
         kind, reason, cand = onus_info
         before_pres = self._pres_str(before_node)

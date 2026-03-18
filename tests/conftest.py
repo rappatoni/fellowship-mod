@@ -35,7 +35,8 @@ DEFAULT_SCRIPTS = [
     "tactics.fspy",
     "test1.fspy",
     "counterarguments_and_undercut.fspy",
-    "multiple_undercuts.fspy"
+    "multiple_undercuts.fspy",
+    "multiple_supports_stack_vs_queue.fspy",
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]

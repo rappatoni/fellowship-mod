@@ -756,6 +756,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # 1. deep‑copy then reduce
         red_ast = copy.deepcopy(self.body)
         eval_disc = os.getenv("FSP_EVAL_DISCIPLINE", "legacy")
+        # Backwards/ergonomic aliases
+        if eval_disc == "onus_parallel":
+            eval_disc = "onus-parallel"
+        if eval_disc in ("onus_only", "onus-only"):
+            eval_disc = "onus"
         onus_fb   = os.getenv("FSP_ONUS_FALLBACK", "none")
         onus_st   = os.getenv("FSP_ONUS_STANCE", "skeptical")
         red_ast = ArgumentTermReducer(
