@@ -1,5 +1,5 @@
 import re
-from core.ac.ast import Mu, Mutilde, Lamda, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, ID, DI
 
 def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
     lines = []
@@ -78,6 +78,11 @@ class _NLVisitor(ProofTermVisitor):
             self._vanilla_visit(node.term)
             self._emit("*")
             self._vanilla_visit(node.context)
+            return
+        if isinstance(node, Admal):
+            # Preserve concrete syntax: context . pyh λ
+            self._vanilla_visit(node.context)
+            self._emit(f".{node.id.prop}:{node.id.id.name}λ")
             return
         if isinstance(node, Sonc):
             self._vanilla_visit(node.context)

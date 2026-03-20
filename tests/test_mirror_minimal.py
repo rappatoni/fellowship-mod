@@ -10,9 +10,19 @@ def test_mirror_renderer_minimal_renders_mutilde_and_admal(prover):
     arg = prover.get_argument("m")
     assert arg is not None and arg.executed
 
-    from pres.mirror import render_mirror_linear
+    from pres.mirror import render_mirror_linear, render_mirror_tree
 
-    s = render_mirror_linear(arg.body)
+    before = render_mirror_linear(arg.body)
+    tree = render_mirror_tree(arg.body)
+    after = render_mirror_linear(arg.body)
+
+    # mirror renderers must not mutate the AST (esp. node.pres)
+    assert before == after
+
+    s = before
+
+    # mirror-tree output should be multiline / whitespaceful
+    assert "\n" in tree or "  " in tree
 
     # 1) μ' must not appear in mirror rendering.
     assert "μ'" not in s
