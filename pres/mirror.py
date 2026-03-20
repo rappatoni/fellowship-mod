@@ -29,12 +29,18 @@ def render_mirror_linear(node: ProofTerm) -> str:
     """Render proof term with mirrored context syntax and mirrored angle brackets (<->>)."""
     if isinstance(node, Mu):
         # mirror all angles: <...> becomes >...<
-        return f"μ{node.id.name}:{node.prop}.>{render_mirror_linear(node.term)}||{render_mirror_linear(node.context)}<"
+        # Binder ID prints like a pyh when typed: PROP:NAME
+        binder = f"{node.prop}:{node.id.name}" if node.prop is not None else node.id.name
+        return f"μ{binder}.>{render_mirror_linear(node.term)}||{render_mirror_linear(node.context)}<"
 
     if isinstance(node, Mutilde):
-        # mirror all angles for μ'
-        # NOTE: context-level mirroring of mutilde structure is handled by the mirrored brackets here.
-        return f"μ'{node.di.name}:{node.prop}.>{render_mirror_linear(node.term)}||{render_mirror_linear(node.context)}<"
+        # Context-mirrored syntax:
+        #   mutilde: ">" term "||" context "<" "." pyh "μ"
+        # and μ' becomes μ (read right-to-left).
+        return (
+            f">{render_mirror_linear(node.term)}||{render_mirror_linear(node.context)}"
+            f"<.{node.di.name}:{node.prop}μ"
+        )
 
     if isinstance(node, Lamda):
         return f"λ{node.di.di.name}:{node.di.prop}.{render_mirror_linear(node.term)}"
@@ -43,7 +49,8 @@ def render_mirror_linear(node: ProofTerm) -> str:
     if isinstance(node, Admal):
         # Original syntax: λ pyh . context
         # Mirrored syntax: context . pyh λ
-        return f"{render_mirror_linear(node.context)}.{node.id.id.name}:{node.id.prop}λ"
+        # pyh prints as PROP:NAME
+        return f"{render_mirror_linear(node.context)}.{node.id.prop}:{node.id.id.name}λ"
 
     if isinstance(node, Cons):
         return f"{render_mirror_linear(node.term)}*{render_mirror_linear(node.context)}"

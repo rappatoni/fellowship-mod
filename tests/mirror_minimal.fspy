@@ -1,0 +1,26 @@
+lk.
+
+
+declare A:bool.
+
+# Minimal script to exercise:
+# - Admal (context lambda binder): λx:A. <context>
+# - Mutilde (μ' context binder)
+#
+# Notes: to use an axiom leaf, declare it as a named axiom: declare ax : (A).
+
+declare axA : (A).
+
+start argument m A
+cut (A) h.
+# Use the axiom to close the goal under h.
+axiom axA.
+cut (A-A) stash.
+elim.
+axiom.
+axiom.
+elim alpha. 
+axiom h.
+end argument
+
+render m mirror
