@@ -224,9 +224,17 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     elif command.startswith("reduce "):
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("render-nf "):
-                        render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
+                        # Usage: render-nf ARG [style]
+                        parts = command.split()
+                        name = parts[1] if len(parts) >= 2 else ""
+                        style = parts[2] if len(parts) >= 3 else None
+                        render_argument_cmd(prover, name, True, style=style)
                     elif command.startswith("render "):
-                        render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+                        # Usage: render ARG [style]
+                        parts = command.split()
+                        name = parts[1] if len(parts) >= 2 else ""
+                        style = parts[2] if len(parts) >= 3 else None
+                        render_argument_cmd(prover, name, False, style=style)
                     elif command.startswith("color "):
                         color_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("tree "):
@@ -651,9 +659,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif command.startswith("reduce "):
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("render-nf "):
-                    render_argument_cmd(prover, command.split(maxsplit=1)[1], True)
+                    parts = command.split()
+                    name = parts[1] if len(parts) >= 2 else ""
+                    style = parts[2] if len(parts) >= 3 else None
+                    render_argument_cmd(prover, name, True, style=style)
             elif command.startswith("render "):
-                    render_argument_cmd(prover, command.split(maxsplit=1)[1], False)
+                    parts = command.split()
+                    name = parts[1] if len(parts) >= 2 else ""
+                    style = parts[2] if len(parts) >= 3 else None
+                    render_argument_cmd(prover, name, False, style=style)
             elif command.startswith("color "):
                 color_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("tree "):
@@ -1062,18 +1076,59 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
     arg.reduce()
 
-def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False) -> None:
-    """ CLI for Argument Rendering. The normalized proof term can be selected."""
+def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None) -> None:
+    """CLI for Argument Rendering.
+
+    style can be one of: argumentation|dialectical|intuitionistic|vanilla.
+    If omitted, uses the argument's configured rendering.
+    """
     arg = prover.get_argument(name)
     if not arg:
         logger.error(f"Argument '{name}' not found.")
         return
+
     logger.info("")  # spacer before NL rendering
     if normalized:
         logger.info(f"Rendering argument {arg.name} in normal form:")
     else:
         logger.info(f"Rendering argument {arg.name}:")
-    logger.info(arg.render(normalized=normalized))
+
+    if style is None:
+        logger.info(arg.render(normalized=normalized))
+        logger.info("")
+        return
+
+    style = style.strip().lower()
+    from pres.nl import (
+        pretty_natural,
+        natural_language_argumentative_rendering,
+        natural_language_dialectical_rendering,
+        natural_language_rendering,
+        vanilla_rendering,
+    )
+    sem_map = {
+        "argumentation": natural_language_argumentative_rendering,
+        "dialectical": natural_language_dialectical_rendering,
+        "intuitionistic": natural_language_rendering,
+        "vanilla": vanilla_rendering,
+    }
+    sem = sem_map.get(style)
+    if sem is None:
+        logger.error("Invalid render style '%s' (expected: %s)", style, ", ".join(sem_map.keys()))
+        logger.info("")
+        return
+
+    # Ensure we have the right AST available
+    if normalized:
+        if arg.normal_body is None:
+            arg.normalize()
+        pt = arg.normal_body
+    else:
+        if not arg.executed:
+            arg.execute()
+        pt = arg.body
+
+    logger.info(pretty_natural(pt, sem))
     logger.info("")  # spacer after NL rendering
 
 def color_argument_cmd(prover: ProverWrapper, name: str) -> None:

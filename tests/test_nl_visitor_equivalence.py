@@ -30,6 +30,8 @@ def test_nl_simple_mu_cons_goal_di_id_matches_expected():
     )
 
 
+from pres.nl import vanilla_rendering
+
 def test_nl_support_shape_does_not_crash():
     # This exercises the special-case 'support' branch in argumentative semantics.
     pt = Mu(
@@ -44,7 +46,25 @@ def test_nl_support_shape_does_not_crash():
     assert pretty_natural(pt, natural_language_dialectical_rendering)
 
 
-def test_nl_sonc_preserves_legacy_unhandled_message():
+def test_nl_sonc_is_handled_in_argumentative_rendering():
     pt = Sonc(ID("k", "A"), DI("x", "A"))
     out = pretty_natural(pt, natural_language_argumentative_rendering)
-    assert out == "Unhandled term type: <class 'core.ac.ast.Sonc'>"
+    # Sonc is now traversed (like Cons), so we should see both children.
+    assert "and" in out
+    assert "done" in out
+
+
+def test_vanilla_rendering_basic():
+    pt = Mu(
+        ID("x", "A"),
+        "A",
+        DI("f", "B->A"),
+        Cons(Goal("1", "B"), ID("x", "A")),
+    )
+    out = pretty_natural(pt, vanilla_rendering)
+    # vanilla should preserve full syntax (only whitespace differs)
+    assert "μx:A.<" in out
+    assert "||" in out
+    assert "*" in out
+    assert "f:B->A" in out
+    assert "1:B" in out
