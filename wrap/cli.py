@@ -1111,9 +1111,10 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         "dialectical": natural_language_dialectical_rendering,
         "intuitionistic": natural_language_rendering,
         "vanilla": vanilla_rendering,
+        "mirror": None,  # handled specially below
     }
     sem = sem_map.get(style)
-    if sem is None:
+    if sem is None and style != "mirror":
         logger.error("Invalid render style '%s' (expected: %s)", style, ", ".join(sem_map.keys()))
         logger.info("")
         return
@@ -1127,6 +1128,12 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         if not arg.executed:
             arg.execute()
         pt = arg.body
+
+    if style == "mirror":
+        from pres.mirror import render_mirror_linear
+        logger.info(render_mirror_linear(pt))
+        logger.info("")
+        return
 
     logger.info(pretty_natural(pt, sem))
     logger.info("")  # spacer after NL rendering

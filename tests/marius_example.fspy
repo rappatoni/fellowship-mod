@@ -44,5 +44,6 @@ moxia beta.
 axiom h.
 axiom.
 end argument
+render arg1 mirror
 render arg1 vanilla
 render arg1
