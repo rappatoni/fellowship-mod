@@ -148,22 +148,28 @@ def _trim_left_common(lines: list[str]) -> list[str]:
 def _compose_center(left: _SBox, mid: str, right: _SBox, *, gap: int = 1) -> _SBox:
     """Compose left and right around a center marker string.
 
+    This enforces a *shared* center column across all composed lines by padding the left
+    side to the maximum left width.
+
     The returned box uses its anchor at the start of `mid`.
     """
     h = max(left.height, right.height)
     left = _pad_height(left, h).normalized()
     right = _pad_height(right, h).normalized()
 
-    # Ensure we have at least `gap` spaces between (left, mid, right).
-    # We model the center as: left + spaces + mid + spaces + right.
+    # Shared null-column: use the maximum visible left width across lines.
+    left_w = max((len(ln.rstrip()) for ln in left.lines), default=0)
+
     spacer = " " * gap
     lines: list[str] = []
     for i in range(h):
-        ln = left.lines[i].rstrip() + spacer + mid + spacer + right.lines[i].lstrip()
+        l = left.lines[i].rstrip()
+        l = l + (" " * (left_w - len(l)))
+        r = right.lines[i].lstrip()
+        ln = l + spacer + mid + spacer + r
         lines.append(ln.rstrip())
 
-    # anchor is after left + gap
-    anchor = max((len(left.lines[i].rstrip()) for i in range(h)), default=0) + gap
+    anchor = left_w + gap
     return _SBox(lines, anchor)
 
 
@@ -172,28 +178,73 @@ def _leaf_box(node: ProofTerm) -> _SBox:
     return _SBox([s], anchor=0)
 
 
+def _ctx_box(ctx: Context) -> _SBox:
+    """Render a Context for mirror-tree, including suffix tokens on their own lines."""
+    if isinstance(ctx, Mutilde):
+        # left part (context) rendered, then the trailing <.pyhμ suffix on its own line
+        base = _ctx_box(ctx.context)
+        suffix = f"<.{ctx.di.name}:{ctx.prop}μ"
+        return _SBox(base.lines + [suffix], anchor=0)
+
+    if isinstance(ctx, Admal):
+        base = _ctx_box(ctx.context)
+        # Admal stores pyh as Hyp-like, printed PROP:NAME in linear mirror; in context tree
+        # we want the mirrored reading direction NAME:PROP.
+        pyh = f"{ctx.id.id.name}:{ctx.id.prop}" if ctx.id.prop is not None else ctx.id.id.name
+        return _SBox(base.lines + [f".{pyh}λ"], anchor=0)
+
+    # Everything else: single-line using the context-linear renderer.
+    return _SBox([render_mirror_context_linear(ctx)], anchor=0)
+
+
+def _mutilde_row(left: str, right: str) -> str:
+    """One opposition row: only mirrored angles exist, so we use '< >' as the center marker."""
+    return f"| {left} < > {right} |"
+
 def _tree_box(node: ProofTerm) -> _SBox:
     # Atomic-ish nodes: single line.
     if isinstance(node, (Goal, Laog, ID, DI, Cons, Sonc, Lamda, Admal)):
         return _leaf_box(node)
 
     if isinstance(node, Mutilde):
-        # Same-line opposition: left=context, right=term, mid="< >" (mirrored angle marker).
-        left = _tree_box(node.context)
-        right = _tree_box(node.term)
-        # Use a visible separator reminiscent of the earlier sketch.
-        return _compose_center(left, "< >", right, gap=1)
+        # Same-line opposition: left=context (incl. suffixes), right=term.
+        leftb = _ctx_box(node.context)
+        rightb = _tree_box(node.term)
+
+        # First line is the actual opposition row (with bars).
+        left0 = leftb.lines[0] if leftb.lines else ""
+        right0 = rightb.lines[0] if rightb.lines else ""
+        row = _mutilde_row(left0, right0)
+
+        # Remaining lines: show the μ~ binder suffix of *this* node (always), then any
+        # context continuation lines, then any remaining right-side lines.
+        suffix = f"<.{node.di.name}:{node.prop}μ"
+        tail_left = [suffix] + leftb.lines[1:]
+        tail_right = rightb.lines[1:]
+        tail_h = max(len(tail_left), len(tail_right))
+        lines = [row]
+        for i in range(tail_h):
+            l = tail_left[i] if i < len(tail_left) else ""
+            r = tail_right[i] if i < len(tail_right) else ""
+            if l.strip() and r.strip():
+                lines.append(f"  {l}   {r}")
+            elif l.strip():
+                lines.append(f"  {l}")
+            elif r.strip():
+                lines.append(f"  {r}")
+        return _SBox(lines, anchor=0)
 
     if isinstance(node, Mu):
         binder = f"{node.prop}:{node.id.name}" if node.prop is not None else node.id.name
         head = _SBox([f"μ{binder}."], anchor=0)
 
-        # Mirror μ body delimiters: > term || ctx < ; but tree places ctx left, term right.
+        # In mirror-tree, we avoid introducing an extra center marker for μ.
+        # The symmetric opposition is displayed by the μ~ nodes ("< >"), so μ only
+        # contributes a header and positions its context (left) opposite its term (right).
         left = _tree_box(node.context)
         right = _tree_box(node.term)
-        body = _compose_center(left, "> <", right, gap=1)
+        body = _compose_center(left, "", right, gap=1)
 
-        # Stack head above body, keeping anchor aligned at 0.
         lines = head.lines + body.lines
         return _SBox(lines, anchor=0)
 

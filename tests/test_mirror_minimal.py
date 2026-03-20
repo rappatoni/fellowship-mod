@@ -24,6 +24,15 @@ def test_mirror_renderer_minimal_renders_mutilde_and_admal(prover):
     # mirror-tree output should be multiline / whitespaceful
     assert "\n" in tree or "  " in tree
 
+    # mirror-tree should not introduce the old Mu-center marker
+    assert "> <" not in tree
+    # but it should still contain the μ~ opposition marker
+    assert "< >" in tree
+    # and it should show the μ~ binder suffix on its own line
+    assert "<.stash:Aμ" in tree
+    # and the opposition row should be bar-delimited
+    assert "|" in tree
+
     # 1) μ' must not appear in mirror rendering.
     assert "μ'" not in s
 
