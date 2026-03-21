@@ -26,10 +26,10 @@ from core.ac.ast import (
 
 
 def render_mirror_context_linear(node: Context) -> str:
-    """Render a Context, mirroring syntax and reading direction.
+    """Render a Context, mirroring syntax.
 
-    In context position, typed variable occurrences (pyh-like) are read right-to-left,
-    so they render as NAME:PROP (not PROP:NAME).
+    IMPORTANT: In the original grammar, pyh := id:prop and is printed as PROP:NAME.
+    In mirror-tree we keep pyhs as PROP:NAME on the context side.
     """
     if isinstance(node, Mutilde):
         return (
@@ -38,7 +38,7 @@ def render_mirror_context_linear(node: Context) -> str:
         )
 
     if isinstance(node, Admal):
-        pyh = f"{node.id.id.name}:{node.id.prop}" if node.id.prop is not None else node.id.id.name
+        pyh = f"{node.id.prop}:{node.id.id.name}" if node.id.prop is not None else node.id.id.name
         return f"{render_mirror_context_linear(node.context)}.{pyh}λ"
 
     if isinstance(node, Cons):
@@ -51,7 +51,8 @@ def render_mirror_context_linear(node: Context) -> str:
         return f"{node.number}:{node.prop}" if node.prop is not None else f"?{node.number}"
 
     if isinstance(node, ID):
-        return f"{node.name}:{node.prop}" if node.prop is not None else node.name
+        # In context position, an ID leaf stands for a pyh-like variable: PROP:NAME
+        return f"{node.prop}:{node.name}" if node.prop is not None else node.name
 
     # Fallback: use term renderer.
     return render_mirror_linear(node)
@@ -178,77 +179,122 @@ def _leaf_box(node: ProofTerm) -> _SBox:
     return _SBox([s], anchor=0)
 
 
+def _fmt_pyh(prop: str | None, name: str) -> str:
+    # pyh := prop:id  => PROP:NAME
+    return f"{prop}:{name}" if prop is not None else name
+
+
+def _fmt_hyp(name: str, prop: str | None) -> str:
+    # hyp := di:prop (term-side), allow NAME:PROP
+    return f"{name}:{prop}" if prop is not None else name
+
+
+def _cmd_row(left: str, right: str) -> str:
+    # Command row representation: | left < > right |
+    return f"| {left} < > {right} |"
+
+
 def _ctx_box(ctx: Context) -> _SBox:
-    """Render a Context for mirror-tree, including suffix tokens on their own lines."""
+    """Render a Context for mirror-tree.
+
+    Context nodes may include binders (μ~) and pyh suffixes (Admal) which must appear
+    as their own lines, *above* the command row they bind in the underlying calculus.
+    """
     if isinstance(ctx, Mutilde):
-        # left part (context) rendered, then the trailing <.pyhμ suffix on its own line
-        base = _ctx_box(ctx.context)
-        suffix = f"<.{ctx.di.name}:{ctx.prop}μ"
-        return _SBox(base.lines + [suffix], anchor=0)
+        # Binder line for μ~ is shown first: .PROP:NAMEμ
+        binder = f".{_fmt_pyh(ctx.prop, ctx.di.name)}μ"
+
+        # μ~ binds a command whose *context* is ctx.context and whose *term* is ctx.term
+        ctxb = _ctx_box(ctx.context)
+        termb = _term_box(ctx.term)
+        term0 = termb.lines[0] if termb.lines else ""
+        ctx0 = ctxb.lines[0] if ctxb.lines else ""
+
+        # Command row is always: | context < > term |
+        row = _cmd_row(ctx0, term0)
+
+        # Append tails from both sides.
+        tail_ctx = ctxb.lines[1:]
+        tail_term = termb.lines[1:]
+        tail_h = max(len(tail_ctx), len(tail_term))
+        tail: list[str] = []
+        for i in range(tail_h):
+            l = tail_ctx[i] if i < len(tail_ctx) else ""
+            r = tail_term[i] if i < len(tail_term) else ""
+            if l.strip() and r.strip():
+                tail.append(f"  {l}   {r}")
+            elif l.strip():
+                tail.append(f"  {l}")
+            elif r.strip():
+                tail.append(f"  {r}")
+
+        return _SBox([binder, row] + tail, anchor=0)
 
     if isinstance(ctx, Admal):
+        # Mirrored syntax: context . pyh λ
+        # For mirror-tree (step 2), treat Admal as the context-side analogue of Lamda:
+        # emit the binder suffix line first, then a newline, then the underlying context.
         base = _ctx_box(ctx.context)
-        # Admal stores pyh as Hyp-like, printed PROP:NAME in linear mirror; in context tree
-        # we want the mirrored reading direction NAME:PROP.
-        pyh = f"{ctx.id.id.name}:{ctx.id.prop}" if ctx.id.prop is not None else ctx.id.id.name
-        return _SBox(base.lines + [f".{pyh}λ"], anchor=0)
+        pyh = _fmt_pyh(ctx.id.prop, ctx.id.id.name)
+        return _SBox([f".{pyh}λ"] + base.lines, anchor=0)
 
-    # Everything else: single-line using the context-linear renderer.
     return _SBox([render_mirror_context_linear(ctx)], anchor=0)
 
 
-def _mutilde_row(left: str, right: str) -> str:
-    """One opposition row: only mirrored angles exist, so we use '< >' as the center marker."""
-    return f"| {left} < > {right} |"
+
+def _term_box(t: Term) -> _SBox:
+    """Render a Term for mirror-tree."""
+    if isinstance(t, Mu):
+        binder = f"μ{_fmt_pyh(t.prop, t.id.name)}."
+
+        ctxb = _ctx_box(t.context)
+        termb = _term_box(t.term)
+
+        ctx0 = ctxb.lines[0] if ctxb.lines else ""
+        term0 = termb.lines[0] if termb.lines else ""
+        row = _cmd_row(ctx0, term0)
+
+        # Append tails (remaining lines from either side) below the command row.
+        tail_ctx = ctxb.lines[1:]
+        tail_term = termb.lines[1:]
+        tail_h = max(len(tail_ctx), len(tail_term))
+        tail: list[str] = []
+        for i in range(tail_h):
+            l = tail_ctx[i] if i < len(tail_ctx) else ""
+            r = tail_term[i] if i < len(tail_term) else ""
+            if l.strip() and r.strip():
+                tail.append(f"  {l}   {r}")
+            elif l.strip():
+                tail.append(f"  {l}")
+            elif r.strip():
+                tail.append(f"  {r}")
+
+        return _SBox([binder, row] + tail, anchor=0)
+
+    # Default: single-line via linear mirror.
+    return _SBox([render_mirror_linear(t)], anchor=0)
 
 def _tree_box(node: ProofTerm) -> _SBox:
-    # Atomic-ish nodes: single line.
-    if isinstance(node, (Goal, Laog, ID, DI, Cons, Sonc, Lamda, Admal)):
-        return _leaf_box(node)
+    """Entry point for mirror-tree rendering.
+
+    Mirror-tree is a binder+command view:
+    - μ (Mu) is a Term binder over a command.
+    - μ~ (Mutilde) is a Context binder over a command.
+    """
+    if isinstance(node, Mu):
+        return _term_box(node)
 
     if isinstance(node, Mutilde):
-        # Same-line opposition: left=context (incl. suffixes), right=term.
-        leftb = _ctx_box(node.context)
-        rightb = _tree_box(node.term)
+        return _ctx_box(node)
 
-        # First line is the actual opposition row (with bars).
-        left0 = leftb.lines[0] if leftb.lines else ""
-        right0 = rightb.lines[0] if rightb.lines else ""
-        row = _mutilde_row(left0, right0)
+    if isinstance(node, Term):
+        return _term_box(node)
 
-        # Remaining lines: show the μ~ binder suffix of *this* node (always), then any
-        # context continuation lines, then any remaining right-side lines.
-        suffix = f"<.{node.di.name}:{node.prop}μ"
-        tail_left = [suffix] + leftb.lines[1:]
-        tail_right = rightb.lines[1:]
-        tail_h = max(len(tail_left), len(tail_right))
-        lines = [row]
-        for i in range(tail_h):
-            l = tail_left[i] if i < len(tail_left) else ""
-            r = tail_right[i] if i < len(tail_right) else ""
-            if l.strip() and r.strip():
-                lines.append(f"  {l}   {r}")
-            elif l.strip():
-                lines.append(f"  {l}")
-            elif r.strip():
-                lines.append(f"  {r}")
-        return _SBox(lines, anchor=0)
+    if isinstance(node, Context):
+        return _ctx_box(node)
 
-    if isinstance(node, Mu):
-        binder = f"{node.prop}:{node.id.name}" if node.prop is not None else node.id.name
-        head = _SBox([f"μ{binder}."], anchor=0)
-
-        # In mirror-tree, we avoid introducing an extra center marker for μ.
-        # The symmetric opposition is displayed by the μ~ nodes ("< >"), so μ only
-        # contributes a header and positions its context (left) opposite its term (right).
-        left = _tree_box(node.context)
-        right = _tree_box(node.term)
-        body = _compose_center(left, "", right, gap=1)
-
-        lines = head.lines + body.lines
-        return _SBox(lines, anchor=0)
-
-    raise TypeError(f"Unhandled node type for mirror-tree render: {type(node)}")
+    # Fallback: single-line.
+    return _leaf_box(node)
 
 
 def render_mirror_tree(node: ProofTerm) -> str:

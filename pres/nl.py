@@ -19,9 +19,9 @@ class Rendering_Semantics:
         self.ID = ID
         self.DI = DI
 
-natural_language_rendering = Rendering_Semantics('   ', "we need to prove ", f"we proved ", f"assume ", f"and", f"? ", f"done ", f"by ")
-natural_language_dialectical_rendering = Rendering_Semantics('   ', "Assume a refutation of ", f"Assume a proof of  ", f"assume ", f"and", f"? ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], [f"We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"by default ", f"done ", f"by ")
+natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f"done ", f"by ")
+natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f"but then we have a contradiction, done ", f"by ")
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"by default ", f"done ", f"by ")
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.

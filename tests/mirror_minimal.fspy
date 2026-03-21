@@ -25,3 +25,13 @@ end argument
 render m vanilla
 render m mirror
 render m mirror-tree
+
+start argument b A
+cut (A->A) h.
+elim x.
+axiom x.
+elim.
+axiom axA.
+axiom h.
+end argument
+render b intuitionistic

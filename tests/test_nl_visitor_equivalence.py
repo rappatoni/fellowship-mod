@@ -17,11 +17,9 @@ def test_nl_simple_mu_cons_goal_di_id_matches_expected():
     )
 
     out = pretty_natural(pt, natural_language_rendering)
-    # NOTE: natural_language_rendering.Mu is a string, but the renderer indexes it as semantic.Mu[0].
-    # So legacy behavior prefixes only the first character ('w') rather than the full phrase.
     assert out == "\n".join(
         [
-            "wA(x)",
+            "we need to prove A(x)",
             "   by f",
             "   and",
             "   ? 1",
