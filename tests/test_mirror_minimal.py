@@ -34,6 +34,24 @@ def test_mirror_renderer_minimal_renders_mutilde_and_admal(prover):
     # and command rows should be bar-delimited
     assert "|" in tree
 
+    # Anchor alignment invariant: for the outermost μ-binder line, the '.' column
+    # must match the '<' column of the immediately following command row.
+    lines = tree.splitlines()
+    binder_idx = next(i for i, ln in enumerate(lines) if "μA:thesis." in ln)
+    assert binder_idx + 1 < len(lines)
+    binder_ln = lines[binder_idx]
+    cmd_ln = lines[binder_idx + 1]
+    assert "." in binder_ln and "<" in cmd_ln
+    assert binder_ln.index(".") == cmd_ln.index("<")
+
+    # Same invariant for the μ~ binder .A:stashμ and its following command row.
+    stash_idx = next(i for i, ln in enumerate(lines) if ".A:stashμ" in ln)
+    assert stash_idx + 1 < len(lines)
+    stash_ln = lines[stash_idx]
+    stash_cmd_ln = lines[stash_idx + 1]
+    assert "." in stash_ln and "<" in stash_cmd_ln
+    assert stash_ln.index(".") == stash_cmd_ln.index("<")
+
     # 1) μ' must not appear in mirror rendering.
     assert "μ'" not in s
 

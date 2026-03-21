@@ -113,7 +113,11 @@ def render_mirror_linear(node: ProofTerm) -> str:
 # and non-overlap over perfect aesthetics.
 
 class _SBox:
-    """A text box with a designated anchor column (0..width)."""
+    """A text box with a designated anchor column.
+
+    For mirror-tree, `anchor` is the column where the '<' of the command marker '< >'
+    should be placed/aligned.
+    """
 
     def __init__(self, lines: list[str], anchor: int):
         self.lines = lines
@@ -174,6 +178,83 @@ def _compose_center(left: _SBox, mid: str, right: _SBox, *, gap: int = 1) -> _SB
     return _SBox(lines, anchor)
 
 
+def _shift_lines(lines: list[str], n: int) -> list[str]:
+    if n <= 0:
+        return lines
+    return [(" " * n) + ln if ln else ln for ln in lines]
+
+
+def _shift_box(box: _SBox, n: int) -> _SBox:
+    if n <= 0:
+        return box
+    return _SBox(_shift_lines(box.lines, n), anchor=box.anchor + n)
+
+
+def _align_box_anchor(box: _SBox, target_anchor: int) -> _SBox:
+    """Shift box so that box.anchor == target_anchor (only shifts right)."""
+    return _shift_box(box, max(0, target_anchor - box.anchor))
+
+def _compose_tail(ctx_lines: list[str], term_lines: list[str], anchor_col: int) -> list[str]:
+    """Compose continuation lines under a *fixed* anchor column.
+
+    Key property: must NOT introduce additional global shifts; it must keep the anchor
+    stable across nesting.
+
+    Strategy:
+    - Left part (context-ish) is right-aligned to end at anchor_col-1.
+    - Right part (term-ish) starts at anchor_col+3 (roughly after '< >').
+    """
+    h = max(len(ctx_lines), len(term_lines))
+    out: list[str] = []
+    for i in range(h):
+        l = (ctx_lines[i] if i < len(ctx_lines) else "").rstrip()
+        r = (term_lines[i] if i < len(term_lines) else "").lstrip()
+        if not l and not r:
+            out.append("")
+            continue
+
+        # Left side: place so that it ends at anchor_col-1.
+        if l:
+            left_start = max(0, (anchor_col - 1) - len(l) + 1)
+            left_part = (" " * left_start) + l
+        else:
+            left_part = ""
+
+        # Ensure we have at least anchor_col spaces before the right side starts.
+        min_len = anchor_col + 3  # skip over where '< >' would visually live
+        if len(left_part) < min_len:
+            left_part = left_part + (" " * (min_len - len(left_part)))
+
+        line = (left_part + r).rstrip()
+        out.append(line)
+
+    return out
+
+def _compose_command_row(ctx0: str, term0: str, anchor_col: int) -> tuple[str, int, int]:
+    """Return (row, shift, anchor_out) where row contains '<' at anchor_out.
+
+    We build: "| {ctx0} < > {term0} |" and shift the whole row right if ctx0 is too wide.
+    """
+    left_prefix = f"| {ctx0} "
+    shift = max(0, len(left_prefix) - anchor_col)
+    pad = max(0, anchor_col + shift - len(left_prefix))
+    row = left_prefix + (" " * pad) + f"< > {term0} |"
+    anchor_out = anchor_col + shift
+    return row, shift, anchor_out
+
+
+def _align_binder_and_row(binder: str, row: str, *, dot_col: int, lt_col: int) -> tuple[str, str]:
+    """Pad binder so that its '.' sits above row's '<'."""
+    if dot_col < 0 or lt_col < 0:
+        return binder, row
+    if dot_col == lt_col:
+        return binder, row
+    if dot_col < lt_col:
+        return (" " * (lt_col - dot_col)) + binder, row
+    # dot_col > lt_col: shift row right
+    return binder, (" " * (dot_col - lt_col)) + row
+
+
 def _leaf_box(node: ProofTerm) -> _SBox:
     s = render_mirror_linear(node)
     return _SBox([s], anchor=0)
@@ -190,7 +271,7 @@ def _fmt_hyp(name: str, prop: str | None) -> str:
 
 
 def _cmd_row(left: str, right: str) -> str:
-    # Command row representation: | left < > right |
+    # Legacy/simple command row (no anchor alignment)
     return f"| {left} < > {right} |"
 
 
@@ -210,25 +291,29 @@ def _ctx_box(ctx: Context) -> _SBox:
         term0 = termb.lines[0] if termb.lines else ""
         ctx0 = ctxb.lines[0] if ctxb.lines else ""
 
-        # Command row is always: | context < > term |
-        row = _cmd_row(ctx0, term0)
+        # Desired global anchor is the '.' column of this binder.
+        dot_col = binder.find(".")
 
-        # Append tails from both sides.
-        tail_ctx = ctxb.lines[1:]
-        tail_term = termb.lines[1:]
-        tail_h = max(len(tail_ctx), len(tail_term))
-        tail: list[str] = []
-        for i in range(tail_h):
-            l = tail_ctx[i] if i < len(tail_ctx) else ""
-            r = tail_term[i] if i < len(tail_term) else ""
-            if l.strip() and r.strip():
-                tail.append(f"  {l}   {r}")
-            elif l.strip():
-                tail.append(f"  {l}")
-            elif r.strip():
-                tail.append(f"  {r}")
+        # First, align children to this anchor.
+        ctxb = _align_box_anchor(ctxb, dot_col)
+        termb = _align_box_anchor(termb, dot_col)
+        ctx0 = ctxb.lines[0] if ctxb.lines else ""
+        term0 = termb.lines[0] if termb.lines else ""
 
-        return _SBox([binder, row] + tail, anchor=0)
+        row, shift, anchor_out = _compose_command_row(ctx0, term0, dot_col)
+        if shift:
+            binder = (" " * shift) + binder
+            ctxb = _shift_box(ctxb, shift)
+            termb = _shift_box(termb, shift)
+
+        dot_col = dot_col + shift
+
+        # Append tails from both sides, aligned to our resulting anchor.
+        ctxb = _align_box_anchor(ctxb, anchor_out)
+        termb = _align_box_anchor(termb, anchor_out)
+
+        tail = _compose_tail(ctxb.lines[1:], termb.lines[1:], anchor_out)
+        return _SBox([binder, row] + tail, anchor=anchor_out)
 
     if isinstance(ctx, Admal):
         # Mirrored syntax: context . pyh λ
@@ -236,7 +321,7 @@ def _ctx_box(ctx: Context) -> _SBox:
         # emit the binder suffix line first, then a newline, then the underlying context.
         base = _ctx_box(ctx.context)
         pyh = _fmt_pyh(ctx.id.prop, ctx.id.id.name)
-        return _SBox([f".{pyh}λ"] + base.lines, anchor=0)
+        return _SBox([f".{pyh}λ"] + base.lines, anchor=base.anchor)
 
     return _SBox([render_mirror_context_linear(ctx)], anchor=0)
 
@@ -252,24 +337,31 @@ def _term_box(t: Term) -> _SBox:
 
         ctx0 = ctxb.lines[0] if ctxb.lines else ""
         term0 = termb.lines[0] if termb.lines else ""
-        row = _cmd_row(ctx0, term0)
 
-        # Append tails (remaining lines from either side) below the command row.
-        tail_ctx = ctxb.lines[1:]
-        tail_term = termb.lines[1:]
-        tail_h = max(len(tail_ctx), len(tail_term))
-        tail: list[str] = []
-        for i in range(tail_h):
-            l = tail_ctx[i] if i < len(tail_ctx) else ""
-            r = tail_term[i] if i < len(tail_term) else ""
-            if l.strip() and r.strip():
-                tail.append(f"  {l}   {r}")
-            elif l.strip():
-                tail.append(f"  {l}")
-            elif r.strip():
-                tail.append(f"  {r}")
+        # Desired global anchor is the '.' column of this binder.
+        dot_col = binder.rfind(".")
 
-        return _SBox([binder, row] + tail, anchor=0)
+        # First, align children to this anchor.
+        ctxb = _align_box_anchor(ctxb, dot_col)
+        termb = _align_box_anchor(termb, dot_col)
+        ctx0 = ctxb.lines[0] if ctxb.lines else ""
+        term0 = termb.lines[0] if termb.lines else ""
+
+        row, shift, anchor_out = _compose_command_row(ctx0, term0, dot_col)
+        if shift:
+            binder = (" " * shift) + binder
+            ctxb = _shift_box(ctxb, shift)
+            termb = _shift_box(termb, shift)
+            dot_col = dot_col + shift
+        else:
+            dot_col = dot_col
+
+        # Append tails (remaining lines from either side) below the command row, aligned to our anchor.
+        ctxb = _align_box_anchor(ctxb, anchor_out)
+        termb = _align_box_anchor(termb, anchor_out)
+
+        tail = _compose_tail(ctxb.lines[1:], termb.lines[1:], anchor_out)
+        return _SBox([binder, row] + tail, anchor=anchor_out)
 
     # Default: single-line via linear mirror.
     return _SBox([render_mirror_linear(t)], anchor=0)
