@@ -114,6 +114,41 @@ class ProofTermTransformer(Transformer):
     def prop(self, items):
         return str(items[0])
 
+    def implies_prop(self, items):
+        left = str(items[0])
+        right = str(items[1])
+        if isinstance(items[0], str) and items[0].startswith("(") and items[0].endswith(")"):
+            left = items[0]
+        return f"{left}->{right}"
+
+    def minus_prop(self, items):
+        left = str(items[0])
+        right = str(items[1])
+        if isinstance(items[0], str) and items[0].startswith("(") and items[0].endswith(")"):
+            left = items[0]
+        if isinstance(items[1], str) and items[1].startswith("(") and items[1].endswith(")"):
+            right = items[1]
+        return f"{left}-{right}"
+
+    def neg_prop(self, items):
+        inner = str(items[0])
+        return f"~{inner}"
+
+    def true_prop(self, items):
+        return "true"
+
+    def false_prop(self, items):
+        return "false"
+
+    def grouped_prop(self, items):
+        return f"({items[0]})"
+
+    def name(self, items):
+        return str(items[0])
+
+    def atom_name(self, items):
+        return str(items[0])
+
     def id(self, token) -> "ID":
         name = str(token[0])
         # if re.fullmatch(re.compile('.*tt.*'),name):
