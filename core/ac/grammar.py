@@ -21,7 +21,18 @@ class Grammar():
             goal: "?" number
             laog: "?" number
 
-            prop: /[^.<>()]+/
+            ?prop: implication
+            ?implication: minus
+                        | minus "->" implication        -> implies_prop
+            ?minus: unary
+                  | minus "-" unary                  -> minus_prop
+            ?unary: "~" unary                        -> neg_prop
+                  | "true"                           -> true_prop
+                  | "false"                          -> false_prop
+                  | atom
+                  | "(" prop ")"                    -> grouped_prop
+            atom: name                               -> atom_name
+            name: /[^\[\].<>*~:,\-\s()]+/
             hyp: di ":" prop
             pyh : id ":" prop
             id: /[a-zA-Z_][a-zA-Z0-9_]*/
