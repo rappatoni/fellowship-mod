@@ -23,6 +23,20 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         self.bound_vars = bound_vars if bound_vars else {}
         self.verbose = verbose
  
+    def _needs_parens_for_imp_left(self, prop: str) -> bool:
+        return bool(prop) and ("->" in prop or "-" in prop)
+
+    def _needs_parens_for_minus_side(self, prop: str) -> bool:
+        return bool(prop) and ("->" in prop or "-" in prop)
+
+    def _mk_imp(self, left: str, right: str) -> str:
+        left_s = f"({left})" if self._needs_parens_for_imp_left(left) else left
+        return f"{left_s}->{right}"
+
+    def _mk_minus(self, left: str, right: str) -> str:
+        left_s = f"({left})" if self._needs_parens_for_minus_side(left) else left
+        right_s = f"({right})" if self._needs_parens_for_minus_side(right) else right
+        return f"{left_s}-{right_s}"
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
         goal_num = node.number.strip()
@@ -104,7 +118,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         # Optionally compute node.prop from node.di.prop + "->" + node.term.prop
         # if node.di.prop and node.term.prop exist.
         if node.prop is None and node.di.prop and node.term.prop:
-            node.prop = f"{node.di.prop}->{node.term.prop}"
+            node.prop = self._mk_imp(node.di.prop, node.term.prop)
         return node
 
     def visit_Admal(self, node: Admal):
@@ -112,20 +126,20 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         self.bound_vars[node.id.id.name] = node.id.prop
         node = super().visit_Admal(node)
         if node.prop is None and node.id.prop and node.context.prop:
-            node.prop = f"{node.id.prop}-{node.context.prop}"
+            node.prop = self._mk_minus(node.id.prop, node.context.prop)
         return node
 
     def visit_Cons(self, node: Cons):
         node = super().visit_Cons(node)
         # Similarly, if node.term.prop and node.context.prop => node.prop = ...
         if node.prop is None and node.term.prop and node.context.prop:
-            node.prop = f"{node.term.prop}->{node.context.prop}"
+            node.prop = self._mk_imp(node.term.prop, node.context.prop)
         return node
 
     def visit_Sonc(self, node: Sonc):
         node = super().visit_Sonc(node)
         if node.prop is None and node.term.prop and node.context.prop:
-            node.prop = f"{node.term.prop}-{node.context.prop}"
+            node.prop = self._mk_minus(node.term.prop, node.context.prop)
         return node
 
     def visit_Mu(self, node: Mu):
