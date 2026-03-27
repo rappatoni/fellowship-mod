@@ -130,6 +130,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         parsed = grammar.parser.parse(self.proof_term)
         transformer = ProofTermTransformer()
         self.body = transformer.transform(parsed)
+        if (
+            isinstance(self.body, (Mu, Mutilde))
+            and getattr(self.body, "prop", None)
+            and getattr(getattr(self.body, "id", None), "name", None) == "thesis"
+        ):
+            self.conclusion = self.body.prop
         #Generate natural language representation
         if self.rendering == "argumentation":
             self.representation = pretty_natural(self.body, natural_language_argumentative_rendering)
@@ -572,7 +578,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # Wrap expanded target as expanded Argument and execute to reuse chain()
         logger.debug("Creating expanded argument for supported argument '%s'", other_argument.name)
-        expanded_arg = Argument(self.prover, f"theta_expand_{other_argument.name}_on_{issue}", other_argument.conclusion)
+        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded argument")
         expanded_arg.execute()
@@ -664,7 +671,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             raise ValueError(f"attack: theta-expansion produced no changes for issue '{issue}' (mode={target_kind})")
         logger.debug("Theta-expander changed=%s; theta-expanded body: %s", te_changed, expanded_body.pres)
         # Wrap expanded target and execute it to reuse chain()
-        expanded_arg = Argument(self.prover, f"theta_expand_{other_argument.name}_on_{issue}", other_argument.conclusion)
+        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded attacked argument")
         expanded_arg.execute()
