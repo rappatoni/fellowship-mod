@@ -91,6 +91,7 @@ type tactic_error =
   | ContractionNotAllowed
   | Arg_count
   | Instr_misuse
+  | Affine_in_context_bug
 
 class tactic_msg ?loc error =
 object (self)
@@ -135,22 +136,34 @@ object (self)
 	  "Not the right number of tactics."
       | Instr_misuse ->
 	  "Tut tut tut. Finish the proof before issuing instructions!"
+      | Affine_in_context_bug ->
+          "Internal bug: affine binder '_' leaked into the usable context."
 end
 
+let affine_name = "_"
+let is_affine_name x = x = affine_name
+let visible_binding_exists x bindings =
+  List.exists (function x',_,w -> x' = x && w) bindings
+let ensure_affine_absent_from_context x (h,c,context) =
+  if is_affine_name x
+     && (visible_binding_exists x h || visible_binding_exists x c || Coll.mem x context)
+  then Some (new tactic_msg Affine_in_context_bug)
+  else None
 
 (* * TACTICS * *)
 
 (*Check if a variable name is already used in the hypothesis or the environment
   or the conclusion*)
 let check_variable var_list (h,c,context) =
+  let plain_names = List.filter (fun x -> not (is_affine_name x)) var_list in
   let conflicts = 
     (*CSC: we ignore conflicts with weakened variables. Moreover, we cannot   *)
     (*CSC: override a name in the context. Is this what we always want to do? *)
     List.filter (fun x -> (List.exists (function x',_,w -> x'=x && w) h) 
 		    || (List.exists (function x',_,w -> x'=x && w) c) 
 		    || (Coll.mem x context)
-                    || List.length (List.filter (fun x' -> x'=x) var_list) <> 1
-                ) var_list
+                    || List.length (List.filter (fun x' -> x'=x) plain_names) <> 1
+                ) plain_names
   in match conflicts with
     | [] -> None
     | names -> Some (Name_clash names)
@@ -222,6 +235,9 @@ let axiom args (id,g,context,thms,pt) =
   (match args with
     | [Ident x] -> 
       begin
+        match ensure_affine_absent_from_context x (g.hyp,g.ccl,context) with
+        | Some bug -> RException bug
+        | None ->
 	try
 	  let target =
 	    match fst g.active with
@@ -292,15 +308,19 @@ let cut args (id,g,context,thms,pt) =
   match args with
      [(Formula p) ; Ident x] ->
       begin
+       match ensure_affine_absent_from_context x (g.hyp,g.ccl,context) with
+       | Some bug -> RException bug
+       | None ->
        match check_variable [x] (g.hyp,g.ccl,context), fst g.active with 
        | Some m, _ -> RException (new tactic_msg m)
        | None, RightHandSide -> 
            (match prop_infer p context with
             | Inl SProp ->
-	       let c' = if !lj then [] else (x,(snd g.active),true)::g.ccl in
+	       let c' = if !lj then [] else if is_affine_name x then g.ccl else (x,(snd g.active),true)::g.ccl in
+	         let left_ccl = if is_affine_name x then g.ccl else (x,(snd g.active),true)::g.ccl in
 	         RSuccess(
 	          [(id1, {g with ccl=c';active=(RightHandSide,p)});
-	           (id2, {g with ccl=(x,(snd g.active),true)::g.ccl;active=(LeftHandSide,p)})] ,
+	           (id2, {g with ccl=left_ccl;active=(LeftHandSide,p)})] ,
 	          instantiate_pt_t3rm id
 	           (Mu (x, (snd g.active), Play (TermMeta id1, ContextMeta id2))) pt)
             | Inl x -> RException (new type_msg (Prop_kind (p,x)))
@@ -309,10 +329,11 @@ let cut args (id,g,context,thms,pt) =
            (match prop_infer p context with 
             | Inl SProp ->
 	       let c' = if !lj then [] else g.ccl in
+	         let hyp' = if is_affine_name x then g.hyp else (x,(snd g.active),true)::g.hyp in
 	         RSuccess(
-	          [(id1,{g with hyp=(x,(snd g.active),true)::g.hyp;ccl=c'; 
+	          [(id1,{g with hyp=hyp';ccl=c'; 
 	           active=(RightHandSide,p)}) ;
-	           (id2,{g with hyp=(x,(snd g.active),true)::g.hyp; 
+	           (id2,{g with hyp=hyp'; 
 	           active=(LeftHandSide,p)})] ,
 	          instantiate_pt_context id
 	           (MuTilde (x, (snd g.active), Play (TermMeta id1, ContextMeta id2))) pt)
@@ -331,8 +352,9 @@ let rec elim args (id,g,context,thms,pt) =
 	    (match check_variable [x] (g.hyp,g.ccl,context) with 
 	      | Some m -> RException (new tactic_msg m)
 	      | None -> let id1 = new_meta id 1 in
+		  let hyp' = if is_affine_name x then g.hyp else (x,a,true)::g.hyp in
 		  RSuccess(
-		  [id1,{g with hyp=(x,a,true)::g.hyp;active=(RightHandSide,b)}],
+		  [id1,{g with hyp=hyp';active=(RightHandSide,b)}],
 		  instantiate_pt_t3rm id (Lambda (x,a,TermMeta id1)) pt) )
         | _ -> RException (new tactic_msg (Need_args "an identifier")) )
   (* Left Impl *)
@@ -364,8 +386,9 @@ let rec elim args (id,g,context,thms,pt) =
 	      | None ->
 		  let id1 = new_meta id 1 in
 		  let c' = if !lj then [] else g.ccl in
+		    let ccl' = if is_affine_name x then c' else (x,b,true)::c' in
 		    RSuccess(
-		    [id1,{g with ccl=(x,b,true)::c';active=(LeftHandSide,a)}] ,
+		    [id1,{g with ccl=ccl';active=(LeftHandSide,a)}] ,
 		    instantiate_pt_context id (Lambda' (x,b,ContextMeta id1)) pt) )
         | _ -> RException (new tactic_msg (Need_args "an identifier")) )
   (* Right Conj *)
@@ -739,4 +762,3 @@ let jack_tactical tactical cairn =
      (trace := (T_tac (get_state nc, pretty_tactical tactical))::!trace ; 
       history := (nc,!trace)::!history) ;
     nc
-

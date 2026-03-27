@@ -68,7 +68,7 @@
 let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let sep = ['_']
-let ident = letter (letter | digit | sep)*
+let ident = letter (letter | digit | sep)* | "_"
 let integer = ['0'-'9']+
 let space = [' ' '\t']
 
@@ -94,4 +94,3 @@ rule nexttoken = parse
   | eof     { EOF }
   | _       { raise (Lexing_error (lexeme lexbuf)) }
  
-
