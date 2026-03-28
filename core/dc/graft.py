@@ -21,9 +21,13 @@ def _present(pt) -> str:
 # ---------------------------------------------------------------------------
 
 def _alpha_rename_if_needed(scion: ProofTerm, root: ProofTerm) -> ProofTerm:
-    """Return scion with all conflicting binders α-renamed fresh w.r.t. root."""
-    root_names = _collect_binder_names(root)
-    scion_names = _collect_binder_names(scion)
+    """Return scion with all conflicting binders α-renamed fresh w.r.t. root.
+
+    Affine binder '_' is exempt: it may repeat freely and must never become a
+    capturable/default-referencable name via freshening.
+    """
+    root_names = {name for name in _collect_binder_names(root) if name != "_"}
+    scion_names = {name for name in _collect_binder_names(scion) if name != "_"}
     mapping: Dict[str, str] = {}
     for nm in scion_names:
         if nm in root_names:
@@ -102,8 +106,24 @@ class _GraftVisitor(ProofTermVisitor):
         if node is None:
             return None
         if isinstance(node, Goal):
+            if node.prop == self.target_prop:
+                logger.debug(
+                    "_GraftVisitor.visit Goal match-candidate number=%s prop=%s stacks(di=%s,id=%s)",
+                    getattr(node, "number", None),
+                    getattr(node, "prop", None),
+                    self.di_stack,
+                    self.id_stack,
+                )
             return self._maybe_graft(node, is_goal=True)
         if isinstance(node, Laog):
+            if node.prop == self.target_prop:
+                logger.debug(
+                    "_GraftVisitor.visit Laog match-candidate number=%s prop=%s stacks(di=%s,id=%s)",
+                    getattr(node, "number", None),
+                    getattr(node, "prop", None),
+                    self.di_stack,
+                    self.id_stack,
+                )
             return self._maybe_graft(node, is_goal=False)
 
         if isinstance(node, Mu):               # ID‑binder (captures Laog)
@@ -150,26 +170,50 @@ class _GraftVisitor(ProofTermVisitor):
     def _make_maps(self):
         # Innermost binder should capture: iterate in push order so later (deeper)
         # binders override earlier ones for the same prop.
+        # Affine binder '_' must never capture defaults during grafting because it
+        # is intentionally non-referencable.
         goal_map = {}
         for name, prop in self.di_stack:
-            goal_map[prop] = name  # prop → DI name (for Goals)
+            if name != "_":
+                goal_map[prop] = name  # prop → DI name (for Goals)
         laog_map = {}
         for name, prop in self.id_stack:
-            laog_map[prop] = name  # prop → ID name (for Laogs)
+            if name != "_":
+                laog_map[prop] = name  # prop → ID name (for Laogs)
         return goal_map, laog_map
 
     def _maybe_graft(self, node, *, is_goal: bool):
+        if node.prop == self.target_prop:
+            logger.debug(
+                "_GraftVisitor._maybe_graft node=%s number=%s prop=%s is_goal=%s target_is_goal=%s target_number=%s",
+                type(node).__name__,
+                getattr(node, "number", None),
+                getattr(node, "prop", None),
+                is_goal,
+                self.target_is_goal,
+                self.target_number,
+            )
         # wrong kind? -> leave untouched
         if is_goal != self.target_is_goal:
+            if node.prop == self.target_prop:
+                logger.debug("_GraftVisitor._maybe_graft reject: wrong kind")
             return deepcopy(node)
         # proposition must match
         if node.prop != self.target_prop:
             return deepcopy(node)
         # single‑site mode: number must line up
         if self.target_number is not None and node.number.strip() != self.target_number:
+            logger.debug("_GraftVisitor._maybe_graft reject: wrong number")
             return deepcopy(node)
 
         goal_map, laog_map = self._make_maps()
+        logger.debug(
+            "_GraftVisitor._maybe_graft APPLY number=%s prop=%s goal_map=%s laog_map=%s",
+            getattr(node, "number", None),
+            getattr(node, "prop", None),
+            goal_map,
+            laog_map,
+        )
         subst   = _CapturingSubst(goal_map=goal_map, laog_map=laog_map)
         grafted = subst.visit(deepcopy(self.replacement_proto))
         return grafted

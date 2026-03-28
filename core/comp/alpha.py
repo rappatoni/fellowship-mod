@@ -91,7 +91,7 @@ class FreshenBinderNames(ProofTermVisitor):
         # possibly rename binder id and bound occurrences in scope
         old = node.id.name
         new = old
-        if old in self.seen or old in self.taken:
+        if old != "_" and (old in self.seen or old in self.taken):
             new = _fresh(old, self.seen | self.taken)
             ren = _AlphaRename({old: new})
             node.id.name = new
@@ -105,7 +105,7 @@ class FreshenBinderNames(ProofTermVisitor):
     def visit_Mutilde(self, node: Mutilde):
         old = node.di.name
         new = old
-        if old in self.seen or old in self.taken:
+        if old != "_" and (old in self.seen or old in self.taken):
             new = _fresh(old, self.seen | self.taken)
             ren = _AlphaRename({old: new})
             node.di.name = new
@@ -119,7 +119,7 @@ class FreshenBinderNames(ProofTermVisitor):
     def visit_Lamda(self, node: Lamda):
         old = node.di.di.name
         new = old
-        if old in self.seen or old in self.taken:
+        if old != "_" and (old in self.seen or old in self.taken):
             new = _fresh(old, self.seen | self.taken)
             ren = _AlphaRename({old: new})
             node.di.di.name = new
@@ -131,7 +131,7 @@ class FreshenBinderNames(ProofTermVisitor):
     def visit_Admal(self, node: Admal):
         old = node.id.id.name
         new = old
-        if old in self.seen or old in self.taken:
+        if old != "_" and (old in self.seen or old in self.taken):
             new = _fresh(old, self.seen | self.taken)
             ren = _AlphaRename({old: new})
             node.id.id.name = new
