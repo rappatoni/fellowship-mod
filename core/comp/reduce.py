@@ -1188,11 +1188,12 @@ class EtaReducer:
 
 class ThetaExpander(ProofTermVisitor):
     """
-    Theta-expansion: uniformly expand every subterm with prop == target_prop.
+    Default-eta exposure: selectively expose grafting targets for one proposition
+    on one polarity side, but stop before introducing a redundant default redex.
 
     Modes:
-      - mode='term'    → for Term-positions:  t:A  ↦  μ alt:A . < μ aff:A . < t || alt > ∥ AltC_t >
-      - mode='context' → for Context-positions: c:A ↦  μ' alt:A . < AltT_t ∥ μ' aff:A . < alt || c > >
+      - mode='term'    → expose term-side targets of proposition A
+      - mode='context' → expose context-side targets of proposition A
     """
     def __init__(self, target_prop: str, mode: str = "term", *, verbose: bool = False):
         self.target_prop = target_prop
@@ -1200,44 +1201,149 @@ class ThetaExpander(ProofTermVisitor):
         self.verbose = verbose
         self._i = 0
         self.changed = False
+        self.found_target = False
 
     def _fresh_label(self, kind: str) -> str:
         self._i += 1
         return f"Alt{kind}{self._i}"
 
+    def _is_target_term(self, node) -> bool:
+        if not (
+            self.mode == "term"
+            and isinstance(node, Term)
+            and getattr(node, "prop", None) == self.target_prop
+        ):
+            return False
+        if isinstance(node, Mu) and "thesis" in getattr(getattr(node, "id", None), "name", ""):
+            return False
+        return True
+
+    def _is_target_context(self, node) -> bool:
+        if not (
+            self.mode == "context"
+            and isinstance(node, Context)
+            and getattr(node, "prop", None) == self.target_prop
+        ):
+            return False
+        if isinstance(node, Mutilde) and "thesis" in getattr(getattr(node, "di", None), "name", ""):
+            return False
+        return True
+
+    def _is_exposed_term_target(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mu)
+            and node.prop == A
+            and isinstance(node.id, ID)
+            and node.id.name == "alt"
+            and isinstance(node.term, Mu)
+            and node.term.prop == A
+            and isinstance(node.term.id, ID)
+            and node.term.id.name == "_"
+            and isinstance(node.term.context, ID)
+            and node.term.context.name == "alt"
+            and isinstance(node.context, Laog)
+            and node.context.prop == A
+        )
+
+    def _is_exposed_context_target(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mutilde)
+            and node.prop == A
+            and isinstance(node.di, DI)
+            and node.di.name == "alt"
+            and isinstance(node.term, Goal)
+            and node.term.prop == A
+            and isinstance(node.context, Mutilde)
+            and node.context.prop == A
+            and isinstance(node.context.di, DI)
+            and node.context.di.name == "_"
+            and isinstance(node.context.term, DI)
+            and node.context.term.name == "alt"
+        )
+
+    def _would_create_default_redex_term(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mu)
+            and node.prop == A
+            and isinstance(node.term, Mu)
+            and node.term.prop == A
+            and isinstance(node.context, Laog)
+            and node.context.prop == A
+        )
+
+    def _would_create_default_redex_context(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mutilde)
+            and node.prop == A
+            and isinstance(node.term, Goal)
+            and node.term.prop == A
+            and isinstance(node.context, Mutilde)
+            and node.context.prop == A
+        )
+
+    def _expand_term(self, node):
+        A = self.target_prop
+        t = deepcopy(node)
+        inner = Mu(ID("_", A), A, t, ID("alt", A))
+        altc = Laog(self._fresh_label("C"), A)
+        self.changed = True
+        return Mu(ID("alt", A), A, inner, altc)
+
+    def _expand_context(self, node):
+        A = self.target_prop
+        c = deepcopy(node)
+        altt = Goal(self._fresh_label("T"), A)
+        inner = Mutilde(DI("_", A), A, DI("alt", A), c)
+        self.changed = True
+        return Mutilde(DI("alt", A), A, altt, inner)
+
     def visit(self, node):
         if node is None:
             return None
-        # Term-side expansion
-        logger.debug("Is instance '%s' of Term? %s", node, isinstance(node, Term))
-        logger.debug("Node prop: %s vs target_prop: %s", getattr(node, "prop", None), self.target_prop)
-        if (self.mode in ("term")
-            and isinstance(node, Term)
-            and getattr(node, "prop", None) == self.target_prop):
-            logger.debug("Visiting node for theta-expansion (%s mode): %s", self.mode, getattr(node, "pres", repr(node)))
-            A = self.target_prop
-            t = deepcopy(node)
-            inner = Mu(ID("_", A), A, t, ID("alt", A))
-            altc = Laog(self._fresh_label("C"), A)
-            self.changed = True
-            return Mu(ID("alt", A), A, inner, altc)
-        # Context-side expansion
-        logger.debug("Is instance '%s' of Context? %s", node, isinstance(node, Context))
-        logger.debug("Node prop: %s vs target_prop: %s", getattr(node, "prop", None), self.target_prop)
-        if (self.mode in ("context")
-            and isinstance(node, Context)
-            and getattr(node, "prop", None) == self.target_prop):
-            logger.debug("Visiting node for theta-expansion (%s mode): %s", self.mode, getattr(node, "pres", repr(node)))
-            A = self.target_prop
-            c = deepcopy(node)
-            altt = Goal(self._fresh_label("T"), A)
-            inner = Mutilde(DI("_", A), A, DI("alt", A), c)
-            self.changed = True
-            return Mutilde(DI("alt", A), A, altt, inner)
-        # descend
+
+        if self._is_target_term(node):
+            self.found_target = True
+            if self._is_exposed_term_target(node):
+                return deepcopy(node)
+
+            new = deepcopy(node)
+            if hasattr(new, 'term') and new.term is not None:
+                new.term = self.visit(new.term)
+            if hasattr(new, 'context') and new.context is not None:
+                new.context = self.visit(new.context)
+
+            if self._is_exposed_term_target(new):
+                return new
+            if not self._would_create_default_redex_term(new):
+                logger.debug("Exposing term-side default-eta target: %s", getattr(new, "pres", repr(new)))
+                return self._expand_term(new)
+            return new
+
+        if self._is_target_context(node):
+            self.found_target = True
+            if self._is_exposed_context_target(node):
+                return deepcopy(node)
+
+            new = deepcopy(node)
+            if hasattr(new, 'term') and new.term is not None:
+                new.term = self.visit(new.term)
+            if hasattr(new, 'context') and new.context is not None:
+                new.context = self.visit(new.context)
+
+            if self._is_exposed_context_target(new):
+                return new
+            if not self._would_create_default_redex_context(new):
+                logger.debug("Exposing context-side default-eta target: %s", getattr(new, "pres", repr(new)))
+                return self._expand_context(new)
+            return new
+
         new = deepcopy(node)
-        if hasattr(new, "term") and new.term is not None:
+        if hasattr(new, 'term') and new.term is not None:
             new.term = self.visit(new.term)
-        if hasattr(new, "context") and new.context is not None:
+        if hasattr(new, 'context') and new.context is not None:
             new.context = self.visit(new.context)
         return new
