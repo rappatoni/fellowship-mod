@@ -377,147 +377,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         combined_argument.execute()
         
         return combined_argument
-
-
-    def basic_support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
-        """
-        DEPRECATED: use support instead
-        Basic Support:
-          - If supporting a Goal in other_argument:
-              μ alt.< μ aff.<?1||alt> ∥ μ' aff.< supporter || alt > >
-          - If supporting a Laog in other_argument:
-              μ' alt.< μ aff.< alt || ?1 > ∥ μ' aff.< alt || supporter > >
-        
-        Steps:
-          - execute both arguments if needed
-          - resolve supported issue (by `on` or match self.conclusion)
-          - find matching assumption in `other_argument`
-          - build and execute adapter argument with the above pattern
-          - adapted_supporter = self.chain(adapter)
-          - result = adapted_supporter.chain(other_argument, name=name)
-        """
-        from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
-        # Ensure both arguments are executed
-        if not self.executed:
-            self.execute()
-        if not other_argument.executed:
-            other_argument.execute()
-
-        # Resolve supported issue (proposition string)
-        issue = on or self.conclusion
-        logger.debug("Requested support issue: %s", issue)
-
-        # Find the supported assumption in other_argument (exact match)
-        supported_key = None
-        for key, info in other_argument.assumptions.items():
-            if info["prop"].strip() == issue:
-                supported_key = key
-                break
-        if supported_key is None:
-            raise ValueError(
-                f"basic_support: target assumption '{issue}' not found in other argument (exact match required)"
-            )
-        # Use canonical prop string from the assumptions dict
-        issue = other_argument.assumptions[supported_key]["prop"]
-        logger.debug("Supporting issue resolved to: %s (key=%s)", issue, supported_key)
-
-        # Determine which side we are supporting in the target: Goal vs Laog
-        target_is_laog = bool(getattr(other_argument, "is_anti", False))
-
-        # Enforce supporter kind matches the supported side under pureness:
-        # - supporting a Goal requires a Mu supporter
-        # - supporting a Laog requires a Mutilde supporter
-        if not target_is_laog and not isinstance(self.body, Mu):
-            raise TypeError("basic_support: supporting a Goal requires a Mu supporter")
-        if target_is_laog and not isinstance(self.body, Mutilde):
-            raise TypeError("basic_support: supporting a Laog requires a Mutilde supporter")
-
-        # Two-step construction to avoid substituting both ?1 and supporter:
-        # Step 1: build adapter1 = μ' aff.< supporter || some >
-        #         with 'some' of the kind captured by the next step's 'alt' binder.
-        if not target_is_laog:
-            # supporting a Goal → next 'alt' is Mu (captures Laogs) → some must be Laog
-            supporter_placeholder = Goal("s", issue)   # only this should be replaced now
-            some_node = Laog("some", issue)            # preserved; captured in step 2
-
-            adapter1_body = Mutilde(
-                DI("aff", issue), issue,
-                supporter_placeholder,
-                some_node
-            )
-        else:
-            # supporting a Laog → next 'alt' is Mutilde (captures Goals) → some must be Goal
-            supporter_placeholder = Laog("s", issue)   # only this should be replaced now
-            some_node = Goal("some", issue)            # preserved; captured in step 2
-            adapter1_body = Mutilde(
-                DI("aff", issue), issue,
-                supporter_placeholder,
-                some_node
-            )
-
-        # adapter1_body = Mutilde(
-        #     DI("aff", issue), issue,
-        #     supporter_placeholder,
-        #     some_node
-        # )
-        adapter1_name = f"adapter_support_step1_{self.name}_{other_argument.name}"
-        adapter1_arg = Argument(self.prover, adapter1_name, issue)
-        logger.debug("Building adapter1 (basic support step1) on issue '%s'", issue)
-        adapter1_arg.body = adapter1_body
-        adapter1_arg.execute()
-        logger.debug("Adapter1 executed: %s", adapter1_arg.proof_term)
-
-        # Graft supporter into adapter1 (only the supporter placeholder is replaced)
-        adapted1 = self.chain(adapter1_arg)
-        logger.debug("After step1: adapted1 constructed: %s", adapted1.proof_term)
-        # One-step η-reduction at root to drop the extraneous μ′ binder from step1
-        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
-
-        # Step 2: build adapter2 with outer 'alt' binder and a single 'second' hole
-        if not target_is_laog:
-            # Support a Goal:
-            #   μ alt.< μ aff.<?1||alt> ∥ second >
-            adapter2_term = Mu(
-                ID("aff", issue), issue,
-                Goal("1", issue),
-                ID("alt", issue)
-            )
-            second_hole = Laog("second", issue)  # will be replaced by adapted1; its inner 'some' becomes ID(alt)
-            adapter2_body = Mu(
-                ID("alt", issue), issue,
-                adapter2_term,
-                second_hole
-            )
-        else:
-            # Support a Laog:
-            #   μ' alt.< μ aff.< alt || ?1 > ∥ second >
-            adapter2_term = Mu(
-                ID("aff", issue), issue,
-                ID("alt", issue),
-                Laog("1", issue)
-            )
-            second_hole = Laog("second", issue)  # will be replaced by adapted1; its inner 'some' becomes DI(alt)
-            adapter2_body = Mutilde(
-                DI("alt", issue), issue,
-                adapter2_term,
-                second_hole
-            )
-
-        adapter2_name = f"adapter_support_step2_{self.name}_{other_argument.name}"
-        adapter2_arg = Argument(self.prover, adapter2_name, issue)
-        logger.debug("Building adapter2 (basic support step2) on issue '%s'", issue)
-        adapter2_arg.body = adapter2_body
-        adapter2_arg.execute()
-        logger.debug("Adapter2 executed: %s", adapter2_arg.proof_term)
-
-        # Insert adapted1 into adapter2 (uniform graft replaces the single Laog('second'))
-        adapted2 = adapted1.chain(adapter2_arg)
-        logger.debug("After step2: adapted2 constructed: %s", adapted2.proof_term)
-
-        # Finally graft the fully adapted supporter into the supported argument
-        final_argument = adapted2.chain(other_argument, name=name)
-        return final_argument
-    
+  
     def get_assumptions(self) -> list[str]:
         if not self.executed:
             self.execute()
@@ -597,19 +457,19 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         issue = expanded_arg.assumptions[supported_key]["prop"]
         logger.debug("Supported issue resolved to: %s (key=%s)", issue, supported_key)
 
-        # Adapter (step 2): μ' aff . < supporter || some >
+        # Adapter (step 2): μ' _ . < supporter || some >
         #supporter_is_mu = isinstance(self.body, Mu)
         if target_kind == "term":
             logger.debug("Building adapter body for supporting a term")
             adapter1_body = Mutilde(
-                DI("aff", issue), issue,
+                DI("_", issue), issue,
                 Goal("s", issue),
                 Laog("some", issue)
             )
         elif target_kind == "context":
             logger.debug("Building adapter body for supporting a context")
             adapter1_body = Mu(
-                ID("aff", issue), issue,
+                ID("_", issue), issue,
                 Goal("some", issue),
                 Laog("s", issue)  
             )
@@ -621,11 +481,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapter1_arg.body = adapter1_body
         logger.debug("Executing adapter argument")
         adapter1_arg.execute()
-
+        
+        # η on root to drop extraneous μ′ wrapper
+        adapter1_arg.body = EtaReducer(verbose=False).reduce(adapter1_arg.body)
         # Chain supporter into adapter (only the supporter placeholder is replaced)
         adapted1 = self.chain(adapter1_arg)
-        # Optional η on root to drop extraneous μ′ wrapper
-        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
+
 
         # Finally graft the adapted supporter into the theta-expanded target
         final_argument = adapted1.chain(expanded_arg, name=name)
@@ -687,19 +548,19 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         issue = expanded_arg.assumptions[attacked_key]["prop"]
         logger.debug("Attacked issue resolved to: %s (key=%s)", issue, attacked_key)
         # Construct the adapter:
-        #  - term mode:    μ′ aff . < Goal('s') || Laog('some') >  (attacker replaces Goal('s'))
-        #  - context mode: μ  aff . < Goal('some') || Laog('s') >  (attacker replaces Laog('s'))
+        #  - term mode:    μ′ _ . < Goal('s') || Laog('some') >  (attacker replaces Goal('s'))
+        #  - context mode: μ  _ . < Goal('some') || Laog('s') >  (attacker replaces Laog('s'))
         if target_kind == "term":
             logger.debug("Building adapter body for attacking a term")
             adapter1_body = Mutilde(
-                DI("aff", issue), issue,
+                DI("_", issue), issue,
                 Goal("s", issue),       # replaced by attacker (Term)
                 Laog("some", issue)     # captured by θ’s alt
             )
         else:
             logger.debug("Building adapter body for attacking a context")
             adapter1_body = Mu(
-                ID("aff", issue), issue,
+                ID("_", issue), issue,
                 Goal("some", issue),    # captured by θ’s alt
                 Laog("s", issue)        # replaced by attacker (Context)
             )
@@ -708,10 +569,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapter1_arg.body = adapter1_body
         logger.debug("Executing adapter argument for attack")
         adapter1_arg.execute()
+        # one-step η at root to drop an extraneous μ′ wrapper
+        adapter1_arg.body = EtaReducer(verbose=False).reduce(adapter1_arg.body)
         # Chain attacker into adapter (replace only the designated placeholder)
         adapted1 = self.chain(adapter1_arg)
-        # Optional one-step η at root to drop an extraneous μ′ wrapper
-        adapted1.body = EtaReducer(verbose=False).reduce(adapted1.body)
         # Finally chain adapted attacker into the theta-expanded target
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument

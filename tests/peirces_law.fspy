@@ -1,59 +1,233 @@
 # This test mimics a prover-skeptic dialogue for Peirce's Law
+lk.
+declare P,Q : bool.
 
-
-# Prover: I will prove ((P -> Q)->P)->P.
-# Add ((P -> Q)->P)->P to the set of defaults. Shift onus to Skeptic.
 start argument p1 ((P -> Q)->P)->P
 end argument
 
-# Skeptic: I can either try to refute ((P -> Q)->P)->P or challenge you to prove P given (P -> Q)->P. I choose to challenge you.
-# ((P -> Q)->P)->P is removed from the set of defaults, P is added, f:(P -> Q)->P is added to the set of offers, onus is shifted to Prover.
-start argument s1 ((P -> Q)->P)
+start argument s1 ((P -> Q)->P)->P
 elim f.
 end argument
 
-support s1 p1 d1
+support d1 s1 p1
 
-# Prover: You have not refuted any of my claims hence my only option is to proceed proving alpha:P as the onus is on me. I will make use of a Lemma: (P -> Q)->P to prove alpha.
-# Add (P -> Q)->P and P -> Q to the defaults, remove P from the set of defaults.
 start argument p2 P
-cut ((P -> Q)->P) alpha
-next.
-elim.
-next.
-axiom.
+cut ((P -> Q)->P) alpha.
+elim g.
 end argument
 
-support p2 d1 d2
+support d2 p2 d1
 
-# Skeptic: I can either deny the lemma (P -> Q)->P or deny that the goal can be proved from it. In either case, I can either refute it myself or challenge you to prove it. In the first case, if I choose refutation, I have to prove (P -> Q) and refute P; in the second case if I choose refutation I have to refute (P->Q). if I instead challenge you, you either have to prove (P -> Q)->P or (P -> Q) depending on the branch I choose. I choose to challenge you to prove P->Q by offering you P and challenging you to prove Q
+render d2 vanilla
 
-# P is added to offers, P->Q is removed from the defaults, onus shifts to Prover to prove Q.
-start argument s2 P->Q
-elim.
+start argument s2 P
 end argument
 
-support s2 d2 d3
+support d3 s2 d2
 
-# Prover: I will prove Q by contradiction. You have granted me P. But you also deny P. Contradition, hence Q.
-start argument p3 Q
-cut (P) beta.
-end argument
+render d3 vanilla
 
-support p3 d3 final
+# start counterargument p3 P
+# end argument
 
-# Skeptic is out of moves.
+# undercut d4 p3 d3
 
-# Alternative Branches.
 
-# A: Skeptic chooses to refute ((P -> Q)->P)->P.
-start counterargument sa1 ((P -> Q)->P)->P
-end counterargument
+# Intended term (simplified): mu thesis.<lamda f.mu alpha.<lamda g:P->Q.mu_.<[:P]||alpha>||[(P->Q)->P:]>||thesis>. Reduces to: mu thesis.<lamda f.mu alpha.<[:P]||alpha>||thesis> (in other words, if you assume P, you can trivially prove Peirce's law. In the corresponding dialogue, skeptic asserts P, so prover wins the debate. Prover can continue the proof by proving P, yielding the original term for Peirce's law.)
+render d4 vanilla
+normalize d4
+render-nf d4 vanilla
 
-attack sa1 p1 da1
 
-# Prover can refute (P -> Q)->P) or prove P or challenge Skeptic. Prover can choose to challenge skeptic to prove (P -> Q)->P) and refute P. Prover can offer P. If Prover chooses right, she is out of moves. If she chooses left, Prover offers P. Then the best skeptic can do is use a default to prove Q. But then Prover attacks on not(P) and skeptic is out of moves.
+# # Rules of the game
 
-# Prover has a winning strategy: can always force Skeptic to lose. (Copy all alternatives from notes).
+# # Game States: Turns T are defined as tuples {o,n,s,c,d} where o is the onus, n is the number of the turn, s is the active player, c are the active claims and d are the active defaults. The transition function f:T x M-> T maps combinations of turns and moves to turns.
+# # Onus o: the onus initially rests with the player who has the first move. The player who has the onus can add new subformulas of the their current claims as defaults. The player who does not have the onus can challenge defaults in return for offering (adding to their own claims) other (subformula) defaults. They cannot challenge defaults which they themselves hold as a claim.
+# # Number n: Counts the turns.
+# # Side s: the player whose turn it is.
+# # Claims c: pair (pc, sc) for prover claims and skeptic claims. Each list contains pairs of subformulae of the debate thesis and a valence (succeeds/fails). In the initial state, the claims list of the beginning player is a singleton containing the thesis of the debate (succeeds), the opposing player's list is empty.
+# # Defaults d: pair (pd, sd) of prover and skeptic defaults. Each list contains subformulae of the debate thesis. In the initial state, these are singleton containing \top for the beginning player and \bot fails for the opposing player.
 
-# Do the same for Dual Peirce's Law to show how Skeptic can enforce LNC.
+# Prover Turns P, Skeptic Turns S, transition functions ps: P -> S, sp: S -> P
+# # prover turns p \in P ans skeptic turns s  are defined as tuples {o, n, c, d}
+
+
+# # Player who has the onus can add new defaults (subformulas; this should be complete due to subformula property of arguments) but can be challenged on them.
+
+# # Initial:
+# # Onus: Prover
+# # Turn: Prover
+# # Claims: ((P -> Q)->P)->P
+# # Defaults: \top
+
+# # Prover: I will prove ((P -> Q)->P)->P.
+# # Add ((P -> Q)->P)->P to the set of defaults. Shift onus to Skeptic.
+# start argument p1 ((P->Q)->P)->P
+# end argument
+
+# # Onus: Onus
+# # Turn: Skeptic
+# # Claims:  ((P -> Q)->P)->P fails.
+# # Defaults: \bot fails
+
+# # Skeptic: I can either try to refute ((P -> Q)->P)->P or challenge you to prove P given (P -> Q)->P. I choose to challenge you.
+# # ((P -> Q)->P)->P is removed from the set of defaults, not P and (P -> Q)->P are added, onus is shifted to Prover.
+# start argument s1 ((P->Q)->P)->P
+# elim f.
+# end argument
+
+# support d1 s1 p1
+
+# # Onus: Prover
+# # Turn: Prover
+# # Claims: P
+# # Defaults: (P -> Q)->P
+
+# # Prover: I will refute your claim alpha that P fails by a proof of P. I will make use of a Lemma: (P -> Q)->P. I prove the Lemma by default. Then I will have proved P unless P->Q fails. So I challenge you to show that P->Q fails.
+# start argument p2 P
+# cut ((P->Q)->P) alpha
+# next.
+# elim.
+# next.
+# axiom.
+# end argument
+
+# support d2 p2 d1
+
+# # Turn: Skeptic
+# # Onus: Prover
+# # Claims: (P->Q)->P, P->Q fails
+# # Defaults: 
+
+# # Skeptic: I claim P->Q fails. I have to either take on the onus and refute (P->Q) or challenge you to prove (P -> Q).  I choose to challenge you to prove P->Q by offering you P and challenging you to prove Q
+# # 
+# start argument s2 P->Q
+# elim x.
+# end argument
+
+# support d3 s2 d2
+
+# # Turn Prover
+# # Onus: Prover
+# # Claims: P, Q
+# # Defaults: P
+
+# # Prover: I have to prove Q or I have to prove P. I will not prove Q but prove P instead. You have granted me P. Done.
+# start argument p3 Q
+# cut (P) beta.
+# end argument
+
+# support final p3 d3
+
+# # Onus: Skeptic
+# # Turn: Skeptic
+# # Claims: \top fails
+# # Defaults: Q fails
+
+# # Skeptic is out of moves.
+# render final vanilla
+# normalize final
+# render-nf final vanilla
+
+# # Alternative Branches.
+
+# # A: Skeptic chooses to refute ((P -> Q)->P)->P. Note: onus can only be shifted, if the opposite argument does not already exist. I.e. Prover cannot immediately take the onus back.
+# start counterargument sa1 ((P->Q)->P)->P
+# end counterargument
+
+# attack sa1 p1 da1
+
+# # Onus: Skeptic
+# # Turn: Prover
+# # Claims: not ((P -> Q)->P)->P fails.
+# # Defaults: not \top fails
+
+
+# # Prover can refute (P -> Q)->P) or prove P or challenge Skeptic. Prover can choose to challenge skeptic to prove (P -> Q)->P) and refute P.
+
+# # Prover: You have to prove ((P->Q)->P) and refute P
+# start argument cs1 ((P->Q)->P)->P
+# elim.
+# end argument
+
+# # Onus: Skeptic
+# # Turn: Skeptic
+# # Claims:  ((P->Q)->P), not P
+# # Defaults: not \bot
+
+# # If Skeptic chooses right, prover can offer nothing, skeptic is out of moves, prover wins. If she chooses left, Prover can offer (P->Q) and challenge Skeptic to prove P. Then the best skeptic can do is use a default to prove Q. But then Prover attacks on not(P) and skeptic is out of moves.
+
+# # Skeptic: I will prove ((P->Q)->P). By default.
+
+# start argument cs2 (P->Q)->P
+# end argument
+
+# # Onus: Skeptic
+# # Turn: Prover
+# # Claims:  ((P->Q)->P) fails
+# # Defaults: not \top fails
+
+# # Prover: Ok. I offer you (P->Q). Prove P.
+
+# start argument cs3 (P->Q)->P
+# elim f.
+# end argument
+
+# # Onus: Skeptic
+# # Turn: Skeptic
+# # Claims:  P
+# # Defaults: P->Q
+
+# # Skeptic: (Skeptic can either introduce a default P but then be challenged and will be out of moves or use P->Q to prove by contradiction). I prove Q by contradiction on P->Q. By default P->Q. I will have proven P unless not P->Q fails. I challenge you to refute not P->Q.
+
+# start argument cs4 P
+# cut (P->Q) alpha
+# next.
+# end argument
+
+# # Onus: Skeptic
+# # Turn: Prover
+# # Claims:  P->Q, not P->Q fails
+# # Defaults: P fails
+
+
+# # Prover: (Prover could also prove P->Q using the default that P fails. Then sceptic will be out of moves becaus she has no way to prove P). You have to prove P and not Q.
+
+# # Onus: Skeptic
+# # Turn: Skeptic
+# # Claims:  P, not Q
+# # Defaults: P->Q
+
+# # Skeptic: (Cannot use P->Q to prove P, because cycle => will run out of moves on that branch. Can try to use P->Q to prove not Q by contradiction. But this will also lead to a cycle. When does a cycle occur? If previous game state is repeated, e.g. prover adds claims P, not Q (already present) and defaults do not change (P->Q).)
+
+
+# # Prover has a winning strategy: can always force Skeptic to lose. (Copy all alternatives from notes).
+
+# # Do the same for Dual Peirce's Law to show how Skeptic can enforce LNC.
+
+# # What if Skeptic denies Peirce's Law?
+
+# # Initial:
+# # Onus: Skeptic
+# # Turn: Skeptic
+# # Claims: not ((P -> Q)->P)->P
+# # Defaults: not \bot
+
+# start counterargument c1 ((P->Q)->P)->P
+# end argument
+
+# # Onus: Skeptic
+# # Turn: Prover
+# # Claims:  not ((P -> Q)->P)->P fails.
+# # Defaults: not \top fails
+
+# # Prover: I can prove (P->Q)->P)->P(then attack and we are back to the first game) or challenge you to refute it. You have to prove ((P->Q)->P) and refute P
+# start argument cs1 ((P->Q)->P)->P
+# elim.
+# end argument
+
+# # Onus: Skeptic
+# # Claims:  ((P->Q)->P), not P
+# # Defaults: not \bot
+
+# # If Skeptic chooses right, prover can offer nothing, skeptic is out of moves, prover wins. If she chooses left, Prover can offer (P->Q) and challenge Skeptic to prove P. Skeptic can only attempt a proof of contradiction on P->Q. Then prover can challenge on not P->Q. Then Skeptic has to prove P and not Q. Either way prover offers nothing and Skeptic is out of moves.

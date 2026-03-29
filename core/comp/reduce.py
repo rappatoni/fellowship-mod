@@ -1217,7 +1217,7 @@ class ThetaExpander(ProofTermVisitor):
             logger.debug("Visiting node for theta-expansion (%s mode): %s", self.mode, getattr(node, "pres", repr(node)))
             A = self.target_prop
             t = deepcopy(node)
-            inner = Mu(ID("aff", A), A, t, ID("alt", A))
+            inner = Mu(ID("_", A), A, t, ID("alt", A))
             altc = Laog(self._fresh_label("C"), A)
             self.changed = True
             return Mu(ID("alt", A), A, inner, altc)
@@ -1231,7 +1231,7 @@ class ThetaExpander(ProofTermVisitor):
             A = self.target_prop
             c = deepcopy(node)
             altt = Goal(self._fresh_label("T"), A)
-            inner = Mutilde(DI("aff", A), A, DI("alt", A), c)
+            inner = Mutilde(DI("_", A), A, DI("alt", A), c)
             self.changed = True
             return Mutilde(DI("alt", A), A, altt, inner)
         # descend
