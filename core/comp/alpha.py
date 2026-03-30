@@ -75,70 +75,80 @@ class _AlphaRename(ProofTermVisitor):
 
 class FreshenBinderNames(ProofTermVisitor):
     """
-    Capture-avoiding global freshener:
-      - Traverses the proof term, keeping a set of already-seen binder names.
-      - When encountering a binder whose name collides with an already-seen name,
-        generate a fresh name and rename the binder together with all its bound
-        occurrences within its scope (term/context).
-      - Leaves non-binder leaves untouched.
+    Capture-avoiding binder freshener with local active-scope freshness:
+      - Traverses the proof term while tracking only names that are currently active
+        in the enclosing binder stack, plus any externally reserved `taken` names.
+      - A binder is freshened only when reusing its name would clash with one of
+        those currently active / reserved names.
+      - This models Fellowship's local visible-context freshness more closely than
+        a global "every binder name in the whole AST must be unique" policy.
+      - Affine binder '_' is exempt and is never freshened.
     """
     def __init__(self, taken: set[str] | None = None):
         super().__init__()
-        self.seen: set[str] = set()
         self.taken: set[str] = set(taken or ())
 
-    def visit_Mu(self, node: Mu):
-        # possibly rename binder id and bound occurrences in scope
-        old = node.id.name
+    def _visit_binder(self, node, *, get_name, set_name, recurse_term: bool, recurse_context: bool):
+        old = get_name(node)
         new = old
-        if old != "_" and (old in self.seen or old in self.taken):
-            new = _fresh(old, self.seen | self.taken)
+        scope_taken = set(self.taken)
+        if old != "_" and old in scope_taken:
+            new = _fresh(old, scope_taken)
             ren = _AlphaRename({old: new})
-            node.id.name = new
-            node.term = ren.visit(node.term)
-            node.context = ren.visit(node.context)
-        self.seen.add(new); self.taken.add(new)
-        node.term = self.visit(node.term)
-        node.context = self.visit(node.context)
+            set_name(node, new)
+            if recurse_term and getattr(node, "term", None) is not None:
+                node.term = ren.visit(node.term)
+            if recurse_context and getattr(node, "context", None) is not None:
+                node.context = ren.visit(node.context)
+        prev_taken = self.taken
+        next_taken = set(prev_taken)
+        if new != "_":
+            next_taken.add(new)
+        self.taken = next_taken
+        try:
+            if recurse_term and getattr(node, "term", None) is not None:
+                node.term = self.visit(node.term)
+            if recurse_context and getattr(node, "context", None) is not None:
+                node.context = self.visit(node.context)
+        finally:
+            self.taken = prev_taken
         return node
+
+    def visit_Mu(self, node: Mu):
+        return self._visit_binder(
+            node,
+            get_name=lambda n: n.id.name,
+            set_name=lambda n, value: setattr(n.id, "name", value),
+            recurse_term=True,
+            recurse_context=True,
+        )
 
     def visit_Mutilde(self, node: Mutilde):
-        old = node.di.name
-        new = old
-        if old != "_" and (old in self.seen or old in self.taken):
-            new = _fresh(old, self.seen | self.taken)
-            ren = _AlphaRename({old: new})
-            node.di.name = new
-            node.term = ren.visit(node.term)
-            node.context = ren.visit(node.context)
-        self.seen.add(new); self.taken.add(new)
-        node.term = self.visit(node.term)
-        node.context = self.visit(node.context)
-        return node
+        return self._visit_binder(
+            node,
+            get_name=lambda n: n.di.name,
+            set_name=lambda n, value: setattr(n.di, "name", value),
+            recurse_term=True,
+            recurse_context=True,
+        )
 
     def visit_Lamda(self, node: Lamda):
-        old = node.di.di.name
-        new = old
-        if old != "_" and (old in self.seen or old in self.taken):
-            new = _fresh(old, self.seen | self.taken)
-            ren = _AlphaRename({old: new})
-            node.di.di.name = new
-            node.term = ren.visit(node.term)
-        self.seen.add(new); self.taken.add(new)
-        node.term = self.visit(node.term)
-        return node
+        return self._visit_binder(
+            node,
+            get_name=lambda n: n.di.di.name,
+            set_name=lambda n, value: setattr(n.di.di, "name", value),
+            recurse_term=True,
+            recurse_context=False,
+        )
 
     def visit_Admal(self, node: Admal):
-        old = node.id.id.name
-        new = old
-        if old != "_" and (old in self.seen or old in self.taken):
-            new = _fresh(old, self.seen | self.taken)
-            ren = _AlphaRename({old: new})
-            node.id.id.name = new
-            node.context = ren.visit(node.context)
-        self.seen.add(new); self.taken.add(new)
-        node.context = self.visit(node.context)
-        return node
+        return self._visit_binder(
+            node,
+            get_name=lambda n: n.id.id.name,
+            set_name=lambda n, value: setattr(n.id.id, "name", value),
+            recurse_term=False,
+            recurse_context=True,
+        )
 
     # Other nodes: default traversal
     def visit_Cons(self, node: Cons):
