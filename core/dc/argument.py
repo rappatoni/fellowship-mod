@@ -58,7 +58,51 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - We need to persist and replay the choice across sessions (render/normalize/
         #   chain), and transient machine state is not available beforehand.
         self.is_anti = is_anti
-        
+
+    @staticmethod
+    def _rename_outer_binder(node: ProofTerm, new_name: str) -> ProofTerm:
+        if not isinstance(node, (Mu, Mutilde)) or not new_name:
+            return node
+        old_name = getattr(getattr(node, "id", None), "name", None)
+        if isinstance(node, Mutilde):
+            old_name = getattr(getattr(node, "di", None), "name", None)
+        if not old_name or old_name == new_name:
+            return node
+        from core.comp.alpha import _AlphaRename
+        renamer = _AlphaRename({old_name: new_name})
+        if isinstance(node, Mu):
+            node.id.name = new_name
+        else:
+            node.di.name = new_name
+        if getattr(node, "term", None) is not None:
+            node.term = renamer.visit(node.term)
+        if getattr(node, "context", None) is not None:
+            node.context = renamer.visit(node.context)
+        return node
+
+    def _refresh_from_body(self) -> None:
+        self.proof_term = None
+        self.enriched_proof_term = None
+        self.representation = None
+        if self.body is None:
+            return
+        if self.enrich == "PROPS":
+            self.enrich_props()
+            self.generate_proof_term()
+
+    def _eta_reduce_body(self) -> None:
+        if self.body is None:
+            return
+        self.body = EtaReducer(verbose=False).reduce(self.body)
+        self._refresh_from_body()
+
+    def _synthetic_root_name(self) -> str | None:
+        if isinstance(self.body, Mu):
+            return getattr(getattr(self.body, "id", None), "name", None)
+        if isinstance(self.body, Mutilde):
+            return getattr(getattr(self.body, "di", None), "name", None)
+        return None
+
     def execute(self) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
         """
@@ -68,10 +112,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             return
         if self.instructions == None:
             if self.body == None:
-                raise Exception("Argument instructions and body missing.")       
+                raise Exception("Argument instructions and body missing.")
             else:
                 self.enrich_props()
-                generator = InstructionsGenerationVisitor()
+                generator = InstructionsGenerationVisitor(root_name=self._synthetic_root_name())
                 self.instructions = generator.return_instructions(self.body)
                 logger.debug("Generated instructions for argument '%s': %s", self.name, self.instructions)
         # Decide whether to start a theorem or an antitheorem.
@@ -130,12 +174,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         parsed = grammar.parser.parse(self.proof_term)
         transformer = ProofTermTransformer()
         self.body = transformer.transform(parsed)
-        if (
-            isinstance(self.body, (Mu, Mutilde))
-            and getattr(self.body, "prop", None)
-            and getattr(getattr(self.body, "id", None), "name", None) == "thesis"
-        ):
+        if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
             self.conclusion = self.body.prop
+            self._rename_outer_binder(self.body, self.name)
         #Generate natural language representation
         if self.rendering == "argumentation":
             self.representation = pretty_natural(self.body, natural_language_argumentative_rendering)
@@ -149,12 +190,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("")  # spacer before proof term artifact
         logger.info("Argument term: '%s'.", self.proof_term)
         logger.info("")  # spacer after proof term artifact
-        if self.enrich == "PROPS":    
+        if self.enrich == "PROPS":
             self.enrich_props()
             self.generate_proof_term()
         self.executed = True
 
-    
     @staticmethod
     def _normalize_pt_to_unicode(pt_ascii: str) -> str:
         """Map Fellowship's ASCII fallbacks to the Unicode tokens your
@@ -175,7 +215,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         s = s.replace("~", "¬")
         s = s.replace("false", "⊥")
         return s
-    
+
     @staticmethod
     def _unquote(atom: Any) -> Any:
         """Strip surrounding double quotes from atoms like '"A"'."""
@@ -194,19 +234,17 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.proof_term = self._normalize_pt_to_unicode(proof_state.get('proof-term').strip('"'))
         res = {}
         goals = proof_state.get('goals')
-    
 
         # Normalize: 'goals' may be a single `(goal ...)` list or a list of them.
         def _as_goal_list(gval):
             if isinstance(gval, list) and gval and gval[0] == 'goal':
                 return [gval]
-            if isinstance(gval, list):            
+            if isinstance(gval, list):
                 #return [g for g in gval if isinstance(g, dict)]
                 return gval
             return []
 
         goal_entries = _as_goal_list(goals)
-
 
         for g in goal_entries:
         #for g in goals:
@@ -375,7 +413,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.debug("Instructions '%s'", combined_instructions)
         # Execute the combined argument
         combined_argument.execute()
-        
+
         return combined_argument
   
     def get_assumptions(self) -> list[str]:
@@ -476,8 +514,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapter1_arg.body = adapter1_body
         logger.debug("Executing adapter argument")
         adapter1_arg.execute()
-        adapter1_arg.body = EtaReducer(verbose=False).reduce(adapter1_arg.body)
+        adapter1_arg._eta_reduce_body()
         adapted1 = self.chain(adapter1_arg)
+        adapted1._eta_reduce_body()
 
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
@@ -550,9 +589,67 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapter1_arg.body = adapter1_body
         logger.debug("Executing adapter argument for attack")
         adapter1_arg.execute()
+        adapter1_arg._eta_reduce_body()
+        adapted1 = self.chain(adapter1_arg)
+        adapted1._eta_reduce_body()
+        final_argument = adapted1.chain(expanded_arg, name=name)
+        return final_argument
+        logger.debug("Executing expanded attacked argument")
+        expanded_arg.execute()
+        attacked_key = None
+        for key, info in expanded_arg.assumptions.items():
+            if info["prop"].strip() == issue:
+                attacked_key = key
+                break
+        if attacked_key is None:
+            raise ValueError(f"attack: target assumption '{issue}' not found in attacked argument (exact match required)")
+        issue = expanded_arg.assumptions[attacked_key]["prop"]
+        logger.debug("Attacked issue resolved to: %s (key=%s)", issue, attacked_key)
+        if target_kind == "term":
+            logger.debug("Building adapter body for attacking a term")
+            adapter1_body = Mutilde(
+                DI("_", issue), issue,
+                Goal("s", issue),
+                Laog("some", issue)
+            )
+        else:
+            logger.debug("Building adapter body for attacking a context")
+            adapter1_body = Mu(
+                ID("_", issue), issue,
+                Goal("some", issue),
+                Laog("s", issue)
+            )
+        adapter1_name = f"adapter_attack_{self.name}_{other_argument.name}"
+        adapter1_arg = Argument(self.prover, adapter1_name, issue)
+        adapter1_arg.body = adapter1_body
+        adapter1_arg.provenance = {
+            "kind": "attack-adapter",
+            "name": adapter1_name,
+            "conclusion": issue,
+            "issue": issue,
+        }
+        logger.debug("Executing adapter argument for attack")
+        adapter1_arg.execute()
         adapter1_arg.body = EtaReducer(verbose=False).reduce(adapter1_arg.body)
+        adapter1_arg.proof_term = None
+        adapter1_arg.enriched_proof_term = None
+        adapter1_arg.representation = None
+        if adapter1_arg.enrich == "PROPS":
+            adapter1_arg.enrich_props()
+            adapter1_arg.generate_proof_term()
         adapted1 = self.chain(adapter1_arg)
         final_argument = adapted1.chain(expanded_arg, name=name)
+        final_argument.provenance = {
+            "kind": "attack",
+            "name": final_argument.name,
+            "conclusion": final_argument.conclusion,
+            "issue": issue,
+            "scion": copy.deepcopy(getattr(self, "provenance", {"name": self.name})),
+            "rootstock": copy.deepcopy(getattr(other_argument, "provenance", {"name": other_argument.name})),
+            "expanded_rootstock": copy.deepcopy(getattr(expanded_arg, "provenance", {"name": expanded_arg.name})),
+            "adapter": copy.deepcopy(getattr(adapter1_arg, "provenance", {"name": adapter1_arg.name})),
+            "adapted_scion": copy.deepcopy(getattr(adapted1, "provenance", {"name": adapted1.name})),
+        }
         return final_argument
 
     def undercut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":

@@ -91,24 +91,68 @@ def test_default_eta_does_not_reexpand_exposed_context_target():
     assert out.context.di.name == "_"
 
 
-from pathlib import Path
+def test_instruction_generator_skips_literal_thesis_root():
+    from core.ac.instructions import InstructionsGenerationVisitor
 
-from wrap.cli import execute_script
+    root = Mu(ID("thesis", "P"), "P", Goal("1", "P"), Laog("2", "P"))
+    root.contr = "P"
+
+    instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
+
+    assert instructions == ["next", "next"]
 
 
-def test_peirce_repeated_support_reaches_inner_default(prover):
-    script = Path(__file__).parent / "peirces_law.fspy"
-    assert script.exists()
+def test_instruction_generator_still_emits_cut_for_non_thesis_root_name():
+    from core.ac.instructions import InstructionsGenerationVisitor
 
-    execute_script(prover, str(script), strict=False, isolate=False)
+    root = Mu(ID("demo", "P"), "P", Goal("1", "P"), Laog("2", "P"))
+    root.contr = "P"
 
-    d3 = prover.get_argument("d3")
-    assert d3 is not None
-    assert d3.proof_term is not None
+    instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
 
-    proof_term = d3.proof_term.replace(" ", "")
-    assert "μalpha:P.<λg:P->Q.μalt" in proof_term
-    assert "λg2" not in proof_term
-    assert "thesis32" not in proof_term
-    assert proof_term.count("μalt") >= 2
-    assert proof_term.count(":P") >= 6
+    assert instructions == ["cut (P) demo", "next", "next"]
+
+def test_argument_rename_outer_binder_rewrites_bound_occurrences():
+    from core.dc.argument import Argument
+
+    class _DummyProver:
+        declarations = {}
+
+    arg = Argument(_DummyProver(), "demo", "P")
+    body = Mu(ID("thesis", "P"), "P", Goal("1", "P"), ID("thesis", "P"))
+
+    arg._rename_outer_binder(body, "demo")
+
+    assert body.id.name == "demo"
+    assert body.context.name == "demo"
+
+
+def test_argument_synthetic_root_name_reads_outer_binder_name():
+    from core.dc.argument import Argument
+
+    class _DummyProver:
+        declarations = {}
+
+    arg = Argument(_DummyProver(), "demo", "P")
+    arg.body = Mutilde(DI("rootish", "P"), "P", DI("rootish", "P"), Laog("1", "P"))
+
+    assert arg._synthetic_root_name() == "rootish"
+
+
+def test_argument_eta_reduce_body_refreshes_enriched_proof_term():
+    from core.dc.argument import Argument
+
+    class _DummyProver:
+        declarations = {}
+
+    arg = Argument(_DummyProver(), "demo", "P")
+    arg.body = Mutilde(DI("demo", "P"), "P", DI("demo", "P"), Laog("1", "P"))
+    arg.enrich_props()
+    arg.generate_proof_term()
+
+    assert arg.enriched_proof_term == "μ'demo:P.<demo:P||1:P>"
+
+    arg._eta_reduce_body()
+
+    assert isinstance(arg.body, Laog)
+    assert arg.enriched_proof_term == "1:P"

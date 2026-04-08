@@ -37,9 +37,13 @@ def is_negation_prop(p: str) -> bool:
     return False
 
 class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely functional later
-    def __init__(self):
+    def __init__(self, *, root_name: str | None = None):
         self.instructions = collections.deque('')
         self._neg_bound_names = set()  # names bound by λ in ¬-elim scaffolds
+        self.root_name = root_name
+
+    def _is_synthetic_root_name(self, name: str | None) -> bool:
+        return bool(name) and name == "thesis"
 
     def _collect_neg_bound_names(self, node: ProofTerm):
         # Detect λ H:A . μ _:⊥ . < H || … > scaffolds and record H
@@ -54,7 +58,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                     self._neg_bound_names.add(name)
         # Recurse into children
         if isinstance(node, Mu) or isinstance(node, Mutilde) or isinstance(node, Cons):
-            for child in (getattr(node, "term", None), getattr(node, "context", None)):
+            for child in (getattr(node, 'term', None), getattr(node, 'context', None)):
                 if child is not None:
                     self._collect_neg_bound_names(child)
         elif isinstance(node, Lamda):
@@ -87,7 +91,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_Mu(self, node: Mu):
         # Exact neg-elim scaffold on the right:
         # μ H1:¬A . < λ H2:A . μ H3:⊥ . < H2 || X > || H1 >
-        if node.id.name != 'thesis' and isinstance(getattr(node, "term", None), Lamda):
+        if not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda):
             lam = node.term
             h2_name = getattr(getattr(lam, "di", None), "di", None)
             h2_name = getattr(h2_name, "name", None)
@@ -103,7 +107,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                     return node
         # Default traversal and instruction
         node = super().visit_Mu(node)
-        if node.id.name == 'thesis':
+        if self._is_synthetic_root_name(node.id.name):
             return node
         if is_falsum_prop(getattr(node, "prop", "")):
             return node
@@ -118,7 +122,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Left of ||: DI named H1; Right of ||: Cons with falsum on term side and adapter on context side.
         left = getattr(node, "term", None)       # H1 is on the left side of ||
         right = getattr(node, "context", None)   # adapter*_F_ sits on the right side of ||
-        if node.di.name != 'thesis' and isinstance(left, DI) and getattr(left, "name", None) == getattr(node.di, "name", None):
+        if not self._is_synthetic_root_name(node.di.name) and isinstance(left, DI) and getattr(left, "name", None) == getattr(node.di, "name", None):
             if isinstance(right, Cons):
                 falsum_term = getattr(right, "term", None)      # ⊥ / _F_ must be on term side
                 if getattr(falsum_term, "flag", None) == "Falsum" or is_falsum_prop(getattr(falsum_term, "prop", "")):
@@ -130,7 +134,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                         return node
         # Default traversal and instruction
         node = super().visit_Mutilde(node)
-        if node.di.name == 'thesis':
+        if self._is_synthetic_root_name(node.di.name):
             return node
         if node.contr:
             self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
@@ -185,7 +189,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
         if node.name:
-            if node.name == "thesis":
+            if self._is_synthetic_root_name(node.name):
                 return node
             if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
                 return node
@@ -200,9 +204,8 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
         if node.name:
-            if node.name == "thesis":
+            if self._is_synthetic_root_name(node.name):
                 return node
-        if node.name:
             if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
                 return node
             if node.flag == "Falsum":
