@@ -1,0 +1,15 @@
+# Regression: grafting should still work when the scion was declared with a whitespace formatting variant of the conclusion.
+lk.
+declare A,B,C:bool.
+declare axRoot:(A->B->C).
+declare axScion:(A->B->C).
+
+start argument root A->B->C
+axiom axRoot.
+end argument
+
+start argument scion A -> B->C
+axiom axScion.
+end argument
+
+chain scion root
