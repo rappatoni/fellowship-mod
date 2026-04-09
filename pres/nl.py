@@ -1,5 +1,5 @@
 import re
-from core.ac.ast import Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, ID, DI
 
 def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
     lines = []
@@ -39,38 +39,79 @@ class _NLVisitor(ProofTermVisitor):
         self._cur.append(s)
 
     def _newline(self) -> None:
-        # Flush current line.
-        self.lines.append(self.semantic.indentation * self.indent + "".join(self._cur))
-        self._cur = []
+        # Flush current line only when something has been emitted.
+        if self._cur:
+            self.lines.append(self.semantic.indentation * self.indent + "".join(self._cur))
+            self._cur = []
+
+    def _emit_line(self, s: str, indent: int | None = None) -> None:
+        level = self.indent if indent is None else indent
+        self.lines.append(self.semantic.indentation * level + s)
 
     def _vanilla_visit(self, node) -> None:
         # Syntax-preserving pretty-printer: emit the term exactly once, only whitespace differs.
         if isinstance(node, Mu):
+            opening_indent = self.indent
+            child_indent = opening_indent + 1
             self._emit(f"μ{node.id.name}:{node.prop}.<")
-            self.indent += 1
             self._newline()
-            self._vanilla_visit(node.term)
-            self._emit("||")
-            self._newline()
-            self._vanilla_visit(node.context)
-            self.indent -= 1
-            self._emit(">")
+
+            term_lines: list[str] = []
+            term_visitor = _NLVisitor(self.semantic, term_lines, indent=child_indent)
+            term_visitor._vanilla_visit(node.term)
+            if term_visitor._cur:
+                term_visitor._newline()
+
+            context_lines: list[str] = []
+            context_visitor = _NLVisitor(self.semantic, context_lines, indent=child_indent)
+            context_visitor._vanilla_visit(node.context)
+            if context_visitor._cur:
+                context_visitor._newline()
+
+            if term_lines:
+                self.lines.extend(term_lines[:-1])
+                last_term = term_lines[-1]
+                self.lines.append(f"{last_term}||")
+            else:
+                self._emit_line("||", indent=child_indent)
+            self.lines.extend(context_lines)
+            self._emit_line(">", indent=opening_indent)
+            self._cur = []
+            self.indent = opening_indent
             return
         if isinstance(node, Mutilde):
+            opening_indent = self.indent
+            child_indent = opening_indent + 1
             self._emit(f"μ'{node.di.name}:{node.prop}.<")
-            self.indent += 1
             self._newline()
-            self._vanilla_visit(node.term)
-            self._emit("||")
-            self._newline()
-            self._vanilla_visit(node.context)
-            self.indent -= 1
-            self._emit(">")
+
+            term_lines: list[str] = []
+            term_visitor = _NLVisitor(self.semantic, term_lines, indent=child_indent)
+            term_visitor._vanilla_visit(node.term)
+            if term_visitor._cur:
+                term_visitor._newline()
+
+            context_lines: list[str] = []
+            context_visitor = _NLVisitor(self.semantic, context_lines, indent=child_indent)
+            context_visitor._vanilla_visit(node.context)
+            if context_visitor._cur:
+                context_visitor._newline()
+
+            if term_lines:
+                self.lines.extend(term_lines[:-1])
+                last_term = term_lines[-1]
+                self.lines.append(f"{last_term}||")
+            else:
+                self._emit_line("||", indent=child_indent)
+            self.lines.extend(context_lines)
+            self._emit_line(">", indent=opening_indent)
+            self._cur = []
+            self.indent = opening_indent
             return
         if isinstance(node, Lamda):
             self._emit(f"λ{node.di.di.name}:{node.di.prop}.")
-            self.indent += 1
             self._newline()
+            self.indent += 1
             self._vanilla_visit(node.term)
             self.indent -= 1
             return
