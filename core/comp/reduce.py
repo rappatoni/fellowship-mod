@@ -1314,9 +1314,10 @@ class ThetaExpander(ProofTermVisitor):
             and node.prop == A
             and isinstance(node.id, ID)
             and node.id.name == "_"
+            and isinstance(node.term, Term)
+            and getattr(node.term, "prop", None) == A
             and isinstance(node.context, ID)
             and node.context.prop == A
-            and node.context.name.startswith("alt")
         )
 
     def _matches_exposed_context_command(self, node) -> bool:
@@ -1328,56 +1329,81 @@ class ThetaExpander(ProofTermVisitor):
             and node.di.name == "_"
             and isinstance(node.term, DI)
             and node.term.prop == A
-            and node.term.name.startswith("alt")
+            and isinstance(node.context, Context)
+            and getattr(node.context, "prop", None) == A
+        )
+
+    def _is_bureaucratic_mu(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mu)
+            and expr.prop == A
+            and isinstance(expr.term, Term)
+            and getattr(expr.term, "prop", None) == A
+            and isinstance(expr.context, Context)
+            and getattr(expr.context, "prop", None) == A
+        )
+
+    def _is_bureaucratic_mutilde(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mutilde)
+            and expr.prop == A
+            and isinstance(expr.term, Term)
+            and getattr(expr.term, "prop", None) == A
+            and isinstance(expr.context, Context)
+            and getattr(expr.context, "prop", None) == A
+        )
+
+    def _matches_term_default_redex_core(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mu)
+            and expr.prop == A
+            and isinstance(expr.id, ID)
+            and isinstance(expr.term, Mu)
+            and expr.term.prop == A
+            and isinstance(expr.term.id, ID)
+            and expr.term.id.name == "_"
+            and isinstance(expr.term.term, Term)
+            and getattr(expr.term.term, "prop", None) == A
+            and isinstance(expr.term.context, ID)
+            and expr.term.context.prop == A
+            and expr.term.context.name == expr.id.name
+            and isinstance(expr.context, Laog)
+            and expr.context.prop == A
+        )
+
+    def _matches_context_default_redex_core(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mutilde)
+            and expr.prop == A
+            and isinstance(expr.di, DI)
+            and isinstance(expr.term, Goal)
+            and expr.term.prop == A
+            and isinstance(expr.context, Mutilde)
+            and expr.context.prop == A
+            and isinstance(expr.context.di, DI)
+            and expr.context.di.name == "_"
+            and isinstance(expr.context.term, DI)
+            and expr.context.term.prop == A
+            and expr.context.term.name == expr.di.name
+            and isinstance(expr.context.context, Context)
+            and getattr(expr.context.context, "prop", None) == A
         )
 
     def _matches_bureaucratic_term_redex_mu(self, expr) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(expr, Mu)
-            and expr.prop == A
-            and isinstance(expr.term, Mu)
-            and expr.term.prop == A
-            and self._matches_exposed_term_command(expr.term)
-            and isinstance(expr.context, Laog)
-            and expr.context.prop == A
-        )
+        return self._is_bureaucratic_mu(expr) and self._matches_term_default_redex_core(expr.term)
 
     def _matches_bureaucratic_context_redex_mutilde(self, expr) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(expr, Mutilde)
-            and expr.prop == A
-            and isinstance(expr.term, Goal)
-            and expr.term.prop == A
-            and isinstance(expr.context, Mutilde)
-            and expr.context.prop == A
-            and self._matches_exposed_context_command(expr.context)
-        )
+        return self._is_bureaucratic_mutilde(expr) and self._matches_context_default_redex_core(expr.context)
 
     def _matches_bureaucratic_term_redex_mutilde(self, expr) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(expr, Mutilde)
-            and expr.prop == A
-            and isinstance(expr.term, Mu)
-            and expr.term.prop == A
-            and self._matches_exposed_term_command(expr.term)
-            and isinstance(expr.context, Laog)
-            and expr.context.prop == A
-        )
+        return self._is_bureaucratic_mutilde(expr) and self._matches_term_default_redex_core(expr.term)
 
     def _matches_bureaucratic_context_redex_mu(self, expr) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(expr, Mu)
-            and expr.prop == A
-            and isinstance(expr.term, Goal)
-            and expr.term.prop == A
-            and isinstance(expr.context, Mutilde)
-            and expr.context.prop == A
-            and self._matches_exposed_context_command(expr.context)
-        )
+        return self._is_bureaucratic_mu(expr) and self._matches_context_default_redex_core(expr.context)
 
     def _matches_any_bureaucratic_default_redex(self, expr) -> bool:
         return (
@@ -1399,36 +1425,41 @@ class ThetaExpander(ProofTermVisitor):
             return replaced
         raise ValueError(f"parent has no child slot '{slot}'")
 
-    def _would_introduce_bureaucratic_default_redex(self, node, parent, slot: str | None = None) -> bool:
-        if parent is None:
+    def _introduced_bureaucratic_redex_in_expansion(self, original, expanded) -> bool:
+        if self.mode == "term":
+            if not isinstance(expanded, Mu):
+                return False
+            if isinstance(original, Goal):
+                return False
+            return self._matches_any_bureaucratic_default_redex(expanded)
+        if not isinstance(expanded, Mutilde):
             return False
+        if isinstance(original, Laog):
+            return False
+        return self._matches_any_bureaucratic_default_redex(expanded)
 
-        expanded = self._expand_candidate(node)
+    def _introduced_bureaucratic_redex_in_parent(self, original, parent, slot: str | None, expanded) -> bool:
+        if parent is None or slot not in {"term", "context"}:
+            return False
         enclosing = self._replace_child_in_parent(parent, slot, expanded)
+        return self._matches_any_bureaucratic_default_redex(enclosing)
 
-        minimal = None
-        if self.mode == "term" and slot == "term" and isinstance(parent, Mu):
-            relevant_name = None
-            if parent.id.name == "_" and isinstance(parent.context, ID) and getattr(parent.context, "name", "").startswith("alt"):
-                relevant_name = parent.context.name
-            elif parent.id.name.startswith("alt") and isinstance(parent.context, Mutilde):
-                relevant_name = parent.id.name
-            elif isinstance(parent.context, ID) and parent.context.name == parent.id.name and not parent.id.name.startswith("alt"):
-                relevant_name = parent.id.name
-            if relevant_name is not None:
-                minimal = Mu(ID(relevant_name, parent.prop), parent.prop, deepcopy(expanded.term), Laog(self._fresh_label("C"), parent.prop))
-
-        blocked = self._matches_any_bureaucratic_default_redex(minimal) if minimal is not None else self._matches_any_bureaucratic_default_redex(enclosing)
+    def _would_introduce_bureaucratic_default_redex(self, node, parent, slot: str | None = None) -> bool:
+        expanded = self._expand_candidate(node)
+        blocked_in_expansion = self._introduced_bureaucratic_redex_in_expansion(node, expanded)
+        blocked_in_parent = self._introduced_bureaucratic_redex_in_parent(node, parent, slot, expanded)
+        blocked = blocked_in_expansion or blocked_in_parent
         if self.verbose:
             logger.debug(
-                "ThetaExpander candidate %s under parent %s at slot %s blocked=%s",
+                "ThetaExpander candidate %s under parent %s at slot %s blocked_in_expansion=%s blocked_in_parent=%s blocked=%s",
                 getattr(node, "pres", repr(node)),
                 getattr(parent, "pres", repr(parent)) if parent is not None else "<root>",
                 slot,
+                blocked_in_expansion,
+                blocked_in_parent,
                 blocked,
             )
         return blocked
-
     def _visit_children(self, node):
         new = deepcopy(node)
         if hasattr(new, 'term') and new.term is not None:

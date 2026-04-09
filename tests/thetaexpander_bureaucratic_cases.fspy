@@ -19,6 +19,17 @@ end argument
 
 support support_case supporter support_shell
 
+start argument term_under_mutilde P
+cut (P) beta.
+end argument
+
+start counterargument context_under_mu P
+cut (P) alpha.
+end argument
+
+attack term_under_mutilde_case support_shell term_under_mutilde
+support context_under_mu_case supporter context_under_mu
+
 start argument eta_long_parent P
 cut ((P->Q)->P) alpha.
 elim g.
@@ -35,6 +46,8 @@ render atomic_term vanilla
 render atomic_context vanilla
 render affine_parent vanilla
 render support_case vanilla
+render term_under_mutilde_case vanilla
+render context_under_mu_case vanilla
 render eta_long_parent vanilla
 render lambda_whole_case vanilla
 render lambda_leaf_case vanilla
