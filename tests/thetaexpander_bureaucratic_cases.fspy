@@ -1,0 +1,40 @@
+lk.
+declare P,Q:bool.
+
+start argument atomic_term P
+end argument
+
+start counterargument atomic_context P
+end argument
+
+start argument affine_parent P
+cut (P) _.
+end argument
+
+start argument support_shell P
+end argument
+
+start argument supporter P
+end argument
+
+support support_case supporter support_shell
+
+start argument eta_long_parent P
+cut ((P->Q)->P) alpha.
+elim g.
+end argument
+
+start argument lambda_parent ((P->Q)->P)->P
+elim f.
+end argument
+
+support lambda_whole_case eta_long_parent lambda_parent
+support lambda_leaf_case atomic_term lambda_whole_case
+
+render atomic_term vanilla
+render atomic_context vanilla
+render affine_parent vanilla
+render support_case vanilla
+render eta_long_parent vanilla
+render lambda_whole_case vanilla
+render lambda_leaf_case vanilla

@@ -1189,7 +1189,8 @@ class EtaReducer:
 class ThetaExpander(ProofTermVisitor):
     """
     Default-eta exposure: selectively expose grafting targets for one proposition
-    on one polarity side, but stop before introducing a redundant default redex.
+    on one polarity side, but stop before introducing one of the four
+    bureaucratic default redexes.
 
     Modes:
       - mode='term'    → expose term-side targets of proposition A
@@ -1229,6 +1230,9 @@ class ThetaExpander(ProofTermVisitor):
             return False
         return True
 
+    def _is_target(self, node) -> bool:
+        return self._is_target_term(node) or self._is_target_context(node)
+
     def _is_exposed_term_target(self, node) -> bool:
         A = self.target_prop
         return (
@@ -1263,27 +1267,10 @@ class ThetaExpander(ProofTermVisitor):
             and node.context.term.name == "alt"
         )
 
-    def _would_create_default_redex_term(self, node) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(node, Mu)
-            and node.prop == A
-            and isinstance(node.term, Mu)
-            and node.term.prop == A
-            and isinstance(node.context, Laog)
-            and node.context.prop == A
-        )
-
-    def _would_create_default_redex_context(self, node) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(node, Mutilde)
-            and node.prop == A
-            and isinstance(node.term, Goal)
-            and node.term.prop == A
-            and isinstance(node.context, Mutilde)
-            and node.context.prop == A
-        )
+    def _is_exposed_target(self, node) -> bool:
+        if self.mode == "term":
+            return self._is_exposed_term_target(node)
+        return self._is_exposed_context_target(node)
 
     def _expand_term(self, node):
         A = self.target_prop
@@ -1301,49 +1288,172 @@ class ThetaExpander(ProofTermVisitor):
         self.changed = True
         return Mutilde(DI("alt", A), A, altt, inner)
 
-    def visit(self, node):
+    def _expand_candidate(self, node):
+        if self.mode == "term":
+            return self._expand_term(node)
+        return self._expand_context(node)
+
+    def _is_default_term_leaf(self, node) -> bool:
+        return isinstance(node, Goal) and getattr(node, "prop", None) == self.target_prop
+
+    def _is_default_context_leaf(self, node) -> bool:
+        return isinstance(node, Laog) and getattr(node, "prop", None) == self.target_prop
+
+    def _same_subtree(self, a: Optional[ProofTerm], b: Optional[ProofTerm]) -> bool:
+        if a is None or b is None:
+            return False
+        try:
+            return ProofTermGenerationVisitor().visit(deepcopy(a)).pres == ProofTermGenerationVisitor().visit(deepcopy(b)).pres
+        except Exception:
+            return False
+
+    def _matches_exposed_term_command(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mu)
+            and node.prop == A
+            and isinstance(node.id, ID)
+            and node.id.name == "_"
+            and isinstance(node.context, ID)
+            and node.context.prop == A
+            and node.context.name.startswith("alt")
+        )
+
+    def _matches_exposed_context_command(self, node) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(node, Mutilde)
+            and node.prop == A
+            and isinstance(node.di, DI)
+            and node.di.name == "_"
+            and isinstance(node.term, DI)
+            and node.term.prop == A
+            and node.term.name.startswith("alt")
+        )
+
+    def _matches_bureaucratic_term_redex_mu(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mu)
+            and expr.prop == A
+            and isinstance(expr.term, Mu)
+            and expr.term.prop == A
+            and self._matches_exposed_term_command(expr.term)
+            and isinstance(expr.context, Laog)
+            and expr.context.prop == A
+        )
+
+    def _matches_bureaucratic_context_redex_mutilde(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mutilde)
+            and expr.prop == A
+            and isinstance(expr.term, Goal)
+            and expr.term.prop == A
+            and isinstance(expr.context, Mutilde)
+            and expr.context.prop == A
+            and self._matches_exposed_context_command(expr.context)
+        )
+
+    def _matches_bureaucratic_term_redex_mutilde(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mutilde)
+            and expr.prop == A
+            and isinstance(expr.term, Mu)
+            and expr.term.prop == A
+            and self._matches_exposed_term_command(expr.term)
+            and isinstance(expr.context, Laog)
+            and expr.context.prop == A
+        )
+
+    def _matches_bureaucratic_context_redex_mu(self, expr) -> bool:
+        A = self.target_prop
+        return (
+            isinstance(expr, Mu)
+            and expr.prop == A
+            and isinstance(expr.term, Goal)
+            and expr.term.prop == A
+            and isinstance(expr.context, Mutilde)
+            and expr.context.prop == A
+            and self._matches_exposed_context_command(expr.context)
+        )
+
+    def _matches_any_bureaucratic_default_redex(self, expr) -> bool:
+        return (
+            self._matches_bureaucratic_term_redex_mu(expr)
+            or self._matches_bureaucratic_context_redex_mutilde(expr)
+            or self._matches_bureaucratic_term_redex_mutilde(expr)
+            or self._matches_bureaucratic_context_redex_mu(expr)
+        )
+
+    def _replace_child_in_parent(self, parent, old_child, new_child):
+        if parent is None:
+            return deepcopy(new_child)
+        replaced = deepcopy(parent)
+        if hasattr(parent, "term"):
+            replaced.term = deepcopy(new_child)
+            return replaced
+        if hasattr(parent, "context"):
+            replaced.context = deepcopy(new_child)
+            return replaced
+        raise ValueError("candidate is not an immediate child of parent")
+
+    def _would_introduce_bureaucratic_default_redex(self, node, parent) -> bool:
+        if parent is None:
+            return False
+
+        expanded = self._expand_candidate(node)
+        enclosing = self._replace_child_in_parent(parent, node, expanded)
+
+        if self.mode == "term" and isinstance(parent, Mu):
+            if parent.id.name == "_" and isinstance(parent.context, ID) and getattr(parent.context, "name", "").startswith("alt"):
+                return True
+            if parent.id.name.startswith("alt") and isinstance(parent.context, Mutilde):
+                return True
+            if isinstance(parent.context, ID) and parent.context.name == parent.id.name and not parent.id.name.startswith("alt"):
+                return True
+
+        blocked = self._matches_any_bureaucratic_default_redex(enclosing)
+        if self.verbose:
+            logger.debug(
+                "ThetaExpander candidate %s under parent %s blocked=%s",
+                getattr(node, "pres", repr(node)),
+                getattr(parent, "pres", repr(parent)) if parent is not None else "<root>",
+                blocked,
+            )
+        return blocked
+
+    def _visit_children(self, node):
+        new = deepcopy(node)
+        if hasattr(new, 'term') and new.term is not None:
+            new.term = self.visit(new.term, parent=new)
+        if hasattr(new, 'context') and new.context is not None:
+            new.context = self.visit(new.context, parent=new)
+        return new
+
+    def visit(self, node, parent=None):
         if node is None:
             return None
 
-        if self._is_target_term(node):
+        if self._is_target(node):
             self.found_target = True
-            if self._is_exposed_term_target(node):
+            if self._is_exposed_target(node):
                 return deepcopy(node)
 
-            new = deepcopy(node)
-            if hasattr(new, 'term') and new.term is not None:
-                new.term = self.visit(new.term)
-            if hasattr(new, 'context') and new.context is not None:
-                new.context = self.visit(new.context)
+            new = self._visit_children(node)
 
-            if self._is_exposed_term_target(new):
+            if self._is_exposed_target(new):
                 return new
-            if not self._would_create_default_redex_term(new):
-                logger.debug("Exposing term-side default-eta target: %s", getattr(new, "pres", repr(new)))
-                return self._expand_term(new)
-            return new
-
-        if self._is_target_context(node):
-            self.found_target = True
-            if self._is_exposed_context_target(node):
-                return deepcopy(node)
-
-            new = deepcopy(node)
-            if hasattr(new, 'term') and new.term is not None:
-                new.term = self.visit(new.term)
-            if hasattr(new, 'context') and new.context is not None:
-                new.context = self.visit(new.context)
-
-            if self._is_exposed_context_target(new):
+            if self._would_introduce_bureaucratic_default_redex(new, parent):
                 return new
-            if not self._would_create_default_redex_context(new):
-                logger.debug("Exposing context-side default-eta target: %s", getattr(new, "pres", repr(new)))
-                return self._expand_context(new)
-            return new
+            parent_pres = getattr(parent, "pres", repr(parent)) if parent is not None else "<root>"
+            logger.debug(
+                "Exposing %s-side default-eta target: %s (parent: %s)",
+                self.mode,
+                getattr(new, "pres", repr(new)),
+                parent_pres,
+            )
+            return self._expand_candidate(new)
 
-        new = deepcopy(node)
-        if hasattr(new, 'term') and new.term is not None:
-            new.term = self.visit(new.term)
-        if hasattr(new, 'context') and new.context is not None:
-            new.context = self.visit(new.context)
-        return new
+        return self._visit_children(node)

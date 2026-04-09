@@ -37,7 +37,7 @@ def test_default_eta_does_not_reexpand_exposed_term_target():
     assert out.term.id.name == "_"
 
 
-def test_default_eta_exposes_inner_goal_inside_exposed_term_target():
+def test_default_eta_blocks_inner_goal_inside_exposed_term_target():
     exposed = Mu(
         ID("alt", "P"),
         "P",
@@ -53,7 +53,7 @@ def test_default_eta_exposes_inner_goal_inside_exposed_term_target():
     assert isinstance(out, Mu)
     assert out.id.name == "alt"
     assert isinstance(out.term, Mu)
-    assert isinstance(out.term.term, Mu)
+    assert out.term.id.name == "_"
 
 
 def test_default_eta_exposes_atomic_context_once():
