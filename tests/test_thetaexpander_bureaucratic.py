@@ -77,7 +77,7 @@ def test_bureaucratic_case_1_blocks_under_affine_binder():
 
     expander = _term_expander()
 
-    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent) is True
+    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent, slot="term") is True
 
 
 
@@ -87,7 +87,7 @@ def test_bureaucratic_case_2_blocks_inside_support_structure():
 
     expander = _term_expander()
 
-    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent) is True
+    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent, slot="term") is True
 
 
 
@@ -102,7 +102,7 @@ def test_bureaucratic_case_4_blocks_under_eta_long_expression():
 
     expander = _term_expander()
 
-    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent) is True
+    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent, slot="term") is True
 
 
 
@@ -112,7 +112,7 @@ def test_bureaucratic_case_3_allows_buried_leaf_under_lambda():
 
     expander = _term_expander()
 
-    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent) is False
+    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent, slot="term") is False
 
 
 
@@ -122,4 +122,4 @@ def test_bureaucratic_case_6_allows_complex_expression_under_lambda():
 
     expander = _term_expander()
 
-    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent) is False
+    assert expander._would_introduce_bureaucratic_default_redex(candidate, parent, slot="term") is False

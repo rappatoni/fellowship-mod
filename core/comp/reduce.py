@@ -1387,39 +1387,44 @@ class ThetaExpander(ProofTermVisitor):
             or self._matches_bureaucratic_context_redex_mu(expr)
         )
 
-    def _replace_child_in_parent(self, parent, old_child, new_child):
+    def _replace_child_in_parent(self, parent, slot: str, new_child):
         if parent is None:
             return deepcopy(new_child)
         replaced = deepcopy(parent)
-        if hasattr(parent, "term"):
+        if slot == "term" and hasattr(parent, "term"):
             replaced.term = deepcopy(new_child)
             return replaced
-        if hasattr(parent, "context"):
+        if slot == "context" and hasattr(parent, "context"):
             replaced.context = deepcopy(new_child)
             return replaced
-        raise ValueError("candidate is not an immediate child of parent")
+        raise ValueError(f"parent has no child slot '{slot}'")
 
-    def _would_introduce_bureaucratic_default_redex(self, node, parent) -> bool:
+    def _would_introduce_bureaucratic_default_redex(self, node, parent, slot: str | None = None) -> bool:
         if parent is None:
             return False
 
         expanded = self._expand_candidate(node)
-        enclosing = self._replace_child_in_parent(parent, node, expanded)
+        enclosing = self._replace_child_in_parent(parent, slot, expanded)
 
-        if self.mode == "term" and isinstance(parent, Mu):
+        minimal = None
+        if self.mode == "term" and slot == "term" and isinstance(parent, Mu):
+            relevant_name = None
             if parent.id.name == "_" and isinstance(parent.context, ID) and getattr(parent.context, "name", "").startswith("alt"):
-                return True
-            if parent.id.name.startswith("alt") and isinstance(parent.context, Mutilde):
-                return True
-            if isinstance(parent.context, ID) and parent.context.name == parent.id.name and not parent.id.name.startswith("alt"):
-                return True
+                relevant_name = parent.context.name
+            elif parent.id.name.startswith("alt") and isinstance(parent.context, Mutilde):
+                relevant_name = parent.id.name
+            elif isinstance(parent.context, ID) and parent.context.name == parent.id.name and not parent.id.name.startswith("alt"):
+                relevant_name = parent.id.name
+            if relevant_name is not None:
+                minimal = Mu(ID(relevant_name, parent.prop), parent.prop, deepcopy(expanded.term), Laog(self._fresh_label("C"), parent.prop))
 
-        blocked = self._matches_any_bureaucratic_default_redex(enclosing)
+        blocked = self._matches_any_bureaucratic_default_redex(minimal) if minimal is not None else self._matches_any_bureaucratic_default_redex(enclosing)
         if self.verbose:
             logger.debug(
-                "ThetaExpander candidate %s under parent %s blocked=%s",
+                "ThetaExpander candidate %s under parent %s at slot %s blocked=%s",
                 getattr(node, "pres", repr(node)),
                 getattr(parent, "pres", repr(parent)) if parent is not None else "<root>",
+                slot,
                 blocked,
             )
         return blocked
@@ -1427,12 +1432,12 @@ class ThetaExpander(ProofTermVisitor):
     def _visit_children(self, node):
         new = deepcopy(node)
         if hasattr(new, 'term') and new.term is not None:
-            new.term = self.visit(new.term, parent=new)
+            new.term = self.visit(new.term, parent=new, slot="term")
         if hasattr(new, 'context') and new.context is not None:
-            new.context = self.visit(new.context, parent=new)
+            new.context = self.visit(new.context, parent=new, slot="context")
         return new
 
-    def visit(self, node, parent=None):
+    def visit(self, node, parent=None, slot: str | None = None):
         if node is None:
             return None
 
@@ -1445,14 +1450,15 @@ class ThetaExpander(ProofTermVisitor):
 
             if self._is_exposed_target(new):
                 return new
-            if self._would_introduce_bureaucratic_default_redex(new, parent):
+            if self._would_introduce_bureaucratic_default_redex(new, parent, slot=slot):
                 return new
             parent_pres = getattr(parent, "pres", repr(parent)) if parent is not None else "<root>"
             logger.debug(
-                "Exposing %s-side default-eta target: %s (parent: %s)",
+                "Exposing %s-side default-eta target: %s (parent: %s, slot: %s)",
                 self.mode,
                 getattr(new, "pres", repr(new)),
                 parent_pres,
+                slot,
             )
             return self._expand_candidate(new)
 
