@@ -28,6 +28,7 @@ end argument
 #
 # Construct support, reduce, color.
 support first sup1 arg1
+render first vanilla
 reduce first
 color first
 #
@@ -49,6 +50,7 @@ end argument
 #
 undercut second counter first
 #
-# Reduce, color
+# Render, reduce, color
+render second vanilla
 reduce second
 color second

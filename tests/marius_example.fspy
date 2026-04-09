@@ -7,34 +7,35 @@ declare f_h : (A_h -> A).
 deny alpha : (A_h-C).
 deny beta : (A_h-D).
 
-start argument arg1 A
+# First in one go:
+start argument arg0 A
 cut (A) alt. 
-cut (A) aff.
+cut (A) _.
 cut (B -> A) h.
 axiom f.
 elim.
 next.
 axiom.
 axiom alt. 
-cut (A) aff.
+cut (A) _.
 cut (A_h -> A) h.
 axiom f_h.
 elim.
 cut (A_h) att.
-cut (A_h) aff1.
+cut (A_h) _.
 next.
 axiom att.
-cut (A_h) aff2.
+cut (A_h) _.
 next.
 cut (A_h) alt_h.
-cut (A_h) aff3.
+cut (A_h) _.
 axiom alt_h.
 cut (A_h - C) att1.
 elim.
 next.
 axiom att1.
 moxia alpha.
-cut (A_h) aff4.
+cut (A_h) _.
 axiom alt_h.
 cut (A_h - D) att2.
 elim.
@@ -47,3 +48,43 @@ end argument
 render arg1 mirror
 render arg1 vanilla
 render arg1
+
+#Then via argument operations:
+
+start argument arg1 A
+cut (A_h -> A) h.
+axiom f_h.
+elim.
+next.
+axiom.
+end argument
+
+start argument sup1 A
+cut (B -> A) h.
+axiom f.
+elim.
+next.
+axiom.
+end argument
+
+start counterargument counter1 A_h
+cut (A_h - C) att.
+elim.
+next.
+axiom.
+moxia alpha.
+end argument
+
+start counterargument counter2 A_h
+cut (A_h - D) att.
+elim.
+next.
+axiom.
+moxia beta.
+end argument
+
+support first arg1 sup1
+support second counter1 counter2
+undercut third second first
+
+render third vanilla

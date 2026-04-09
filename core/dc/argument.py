@@ -594,64 +594,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapted1._eta_reduce_body()
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
-        logger.debug("Executing expanded attacked argument")
-        expanded_arg.execute()
-        attacked_key = None
-        for key, info in expanded_arg.assumptions.items():
-            if info["prop"].strip() == issue:
-                attacked_key = key
-                break
-        if attacked_key is None:
-            raise ValueError(f"attack: target assumption '{issue}' not found in attacked argument (exact match required)")
-        issue = expanded_arg.assumptions[attacked_key]["prop"]
-        logger.debug("Attacked issue resolved to: %s (key=%s)", issue, attacked_key)
-        if target_kind == "term":
-            logger.debug("Building adapter body for attacking a term")
-            adapter1_body = Mutilde(
-                DI("_", issue), issue,
-                Goal("s", issue),
-                Laog("some", issue)
-            )
-        else:
-            logger.debug("Building adapter body for attacking a context")
-            adapter1_body = Mu(
-                ID("_", issue), issue,
-                Goal("some", issue),
-                Laog("s", issue)
-            )
-        adapter1_name = f"adapter_attack_{self.name}_{other_argument.name}"
-        adapter1_arg = Argument(self.prover, adapter1_name, issue)
-        adapter1_arg.body = adapter1_body
-        adapter1_arg.provenance = {
-            "kind": "attack-adapter",
-            "name": adapter1_name,
-            "conclusion": issue,
-            "issue": issue,
-        }
-        logger.debug("Executing adapter argument for attack")
-        adapter1_arg.execute()
-        adapter1_arg.body = EtaReducer(verbose=False).reduce(adapter1_arg.body)
-        adapter1_arg.proof_term = None
-        adapter1_arg.enriched_proof_term = None
-        adapter1_arg.representation = None
-        if adapter1_arg.enrich == "PROPS":
-            adapter1_arg.enrich_props()
-            adapter1_arg.generate_proof_term()
-        adapted1 = self.chain(adapter1_arg)
-        final_argument = adapted1.chain(expanded_arg, name=name)
-        final_argument.provenance = {
-            "kind": "attack",
-            "name": final_argument.name,
-            "conclusion": final_argument.conclusion,
-            "issue": issue,
-            "scion": copy.deepcopy(getattr(self, "provenance", {"name": self.name})),
-            "rootstock": copy.deepcopy(getattr(other_argument, "provenance", {"name": other_argument.name})),
-            "expanded_rootstock": copy.deepcopy(getattr(expanded_arg, "provenance", {"name": expanded_arg.name})),
-            "adapter": copy.deepcopy(getattr(adapter1_arg, "provenance", {"name": adapter1_arg.name})),
-            "adapted_scion": copy.deepcopy(getattr(adapted1, "provenance", {"name": adapted1.name})),
-        }
-        return final_argument
-
+    
+        
     def undercut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         """
         Undercut is the goal/laog-only specialization of attack():

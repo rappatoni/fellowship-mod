@@ -24,8 +24,8 @@ start argument s2 P
 end argument
 
 support d3 s2 d2
-
 render d3 vanilla
+normalize d3
 
 # start counterargument p3 P
 # end argument
