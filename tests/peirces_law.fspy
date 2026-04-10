@@ -2,6 +2,26 @@
 lk.
 declare P,Q : bool.
 
+# Peirce's law classical dialogue
+
+# P: ((P->Q)->P)->P!
+# S: (P->Q)->P! P?
+# P:(P->Q)! P?
+# S: P! Q? or 
+# P: P? P! -|
+
+# or:
+
+# P: ((P->Q)->P)->P!
+# S: (P->Q)->P! P?
+# P: (P->Q)! ((P->Q)->P + P->Q = P)
+# S: P! Q?
+# P: P! P? -|
+
+# Correspondingly:
+
+# Option1:
+
 start argument p1 ((P -> Q)->P)->P
 end argument
 
@@ -9,34 +29,88 @@ start argument s1 ((P -> Q)->P)->P
 elim f.
 end argument
 
-support d1 s1 p1
+undergird d1 s1 p1
+
+render d1 vanilla
+normalize d1
 
 start argument p2 P
 cut ((P -> Q)->P) alpha.
 elim g.
 end argument
 
-support d2 p2 d1
+undergird d2 p2 d1
 
 render d2 vanilla
 
 start argument s2 P
+cut (P->Q) beta.
+elim h.
 end argument
 
-support d3 s2 d2
+undergird d3 s2 d2
 render d3 vanilla
-normalize d3
+
+start argument p3 Q
+cut (P) gamma.
+end argument
+
+undergird d4 p3 d3
+render d4 vanilla
+normalize d4
+render-nf d4 vanilla
+
+start counterargument s3 P->Q
+cut ((P->Q)->P) theta.
+next.
+elim.
+end argument
+
+undergird d5 s3 d4
+render d5 vanilla
+normalize d5
+render-nf d5 vanilla
+render-nf d5 dialectical
+
+# start argument p1 ((P -> Q)->P)->P
+# end argument
+
+# start argument s1 ((P -> Q)->P)->P
+# elim f.
+# end argument
+
+# undergird d1 s1 p1
+
+# render d1 vanilla
+# normalize d1
+
+# start argument p2 P
+# cut ((P -> Q)->P) alpha.
+# elim g.
+# end argument
+
+# undergird d2 p2 d1
+
+# render d2 vanilla
+
+# start argument s2 P
+# end argument
+
+# undergird d3 s2 d2
+# render d3 vanilla
+# normalize d3
+# render-nf d3 vanilla
 
 # start counterargument p3 P
 # end argument
 
-# undercut d4 p3 d3
+# undermine d4 p3 d3
 
 
 # Intended term (simplified): mu thesis.<lamda f.mu alpha.<lamda g:P->Q.mu_.<[:P]||alpha>||[(P->Q)->P:]>||thesis>. Reduces to: mu thesis.<lamda f.mu alpha.<[:P]||alpha>||thesis> (in other words, if you assume P, you can trivially prove Peirce's law. In the corresponding dialogue, skeptic asserts P, so prover wins the debate. Prover can continue the proof by proving P, yielding the original term for Peirce's law.)
-render d4 vanilla
-normalize d4
-render-nf d4 vanilla
+#render d4 vanilla
+# normalize d4
+# render-nf d4 vanilla
 
 
 # # Rules of the game
@@ -231,3 +305,5 @@ render-nf d4 vanilla
 # # Defaults: not \bot
 
 # # If Skeptic chooses right, prover can offer nothing, skeptic is out of moves, prover wins. If she chooses left, Prover can offer (P->Q) and challenge Skeptic to prove P. Skeptic can only attempt a proof of contradiction on P->Q. Then prover can challenge on not P->Q. Then Skeptic has to prove P and not Q. Either way prover offers nothing and Skeptic is out of moves.
+
+
