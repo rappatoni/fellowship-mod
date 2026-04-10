@@ -46,6 +46,43 @@ def _is_red(command: ProofTerm) -> bool:
     except Exception:
         return False
 
+
+def _is_bureaucratic_default_term(node: Optional[ProofTerm], prop: Optional[str] = None) -> bool:
+    if node is None:
+        return False
+    A = prop if prop is not None else getattr(node, "prop", None)
+    if A is None:
+        return False
+    if isinstance(node, Goal) and getattr(node, "prop", None) == A:
+        return True
+    if isinstance(node, (Mu, Mutilde)) and getattr(node, "prop", None) == A:
+        term_prop = getattr(getattr(node, "term", None), "prop", None)
+        context_prop = getattr(getattr(node, "context", None), "prop", None)
+        if term_prop == A and context_prop == A:
+            return (
+                _is_bureaucratic_default_term(node.term, A)
+                or _is_bureaucratic_default_context(node.context, A)
+            )
+    return False
+
+
+def _is_bureaucratic_default_context(node: Optional[ProofTerm], prop: Optional[str] = None) -> bool:
+    if node is None:
+        return False
+    A = prop if prop is not None else getattr(node, "prop", None)
+    if A is None:
+        return False
+    if isinstance(node, Laog) and getattr(node, "prop", None) == A:
+        return True
+    if isinstance(node, (Mu, Mutilde)) and getattr(node, "prop", None) == A:
+        term_prop = getattr(getattr(node, "term", None), "prop", None)
+        context_prop = getattr(getattr(node, "context", None), "prop", None)
+        if term_prop == A and context_prop == A:
+            return (
+                _is_bureaucratic_default_term(node.term, A)
+                or _is_bureaucratic_default_context(node.context, A)
+            )
+    return False
 def _subst(node, name: str, replacement):
     """Return a deep‑copied version of node where every free occurrence
     of the variable `name` (an ID/DI whose .name equals `name`) is replaced
@@ -668,7 +705,7 @@ class ArgumentTermReducer(ProofTermVisitor):
                 if not self._has_next_redex(ctx_mt.term):
                     left      = inner_mu.term         # left-hand argument (some_arg)
                     supporter = ctx_mt.term
-                    left_is_default = isinstance(left, Goal)
+                    left_is_default = _is_bureaucratic_default_term(left)
 
                     # support-keep: supporter undefeated AND (left is default OR left defeated)
                     if not _is_red(supporter) and (left_is_default or _is_red(left)):
@@ -948,11 +985,14 @@ class ArgumentTermReducer(ProofTermVisitor):
             if shape_ok:
                 # only apply when supporter fully simplified
                 if not self._has_next_redex(ctx_mt.context):
-                    if not _is_red(ctx_mt.context):
+                    left      = inner_mu.context         # left-hand argument (some_arg)
+                    supporter = ctx_mt.context
+                    left_is_default = _is_bureaucratic_default_context(left)
+                    if not _is_red(supporter) and (left_is_default or _is_red(left)):
                         # Case A: keep Supporter
                         dbg_before = self._pres_str(node)
                         node.term    = deepcopy(ctx_mt.term)     # DI(alt)
-                        node.context = deepcopy(ctx_mt.context)  # Supporter
+                        node.context = deepcopy(supporter)  # Supporter
                         self._maybe_warn_onus_divergence(onus_info, orig_before, node, "support-keep", "Mutilde")
                         dbg_after = self._pres_str(node)
                         logger.debug("reduce.Mutilde support-keep: before=\n%s", dbg_before)
