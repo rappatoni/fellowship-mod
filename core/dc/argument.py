@@ -424,24 +424,38 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def get_conclusion(self) -> str:
         return self.conclusion
 
-    def _theta_expand(self, body: ProofTerm, issue: str, mode: str, *, assumptions: dict, declarations: dict):
+    def _theta_expand(self, body: ProofTerm, issue: str, mode: str, *, assumptions: dict, declarations: dict, expand_defaults: str = "also"):
         """
-        Deep-copy, enrich, selectively expose default-eta graft targets for `issue`
+        Deep-copy, enrich, selectively expose grafting targets for `issue`
         in the given `mode` ('term'|'context'), then regenerate presentation.
+        `expand_defaults` controls whether default targets are expanded:
+          - 'no'   → only non-default targets
+          - 'only' → only default targets
+          - 'also' → both
         Returns (expanded_body, found_target, changed_flag).
         """
         eb = copy.deepcopy(body)
         eb = PropEnrichmentVisitor(assumptions=assumptions, axiom_props=declarations).visit(eb)
-        te = ThetaExpander(issue, mode=mode, verbose=False)
+        te = ThetaExpander(issue, mode=mode, expand_defaults=expand_defaults, verbose=False)
         eb = te.visit(eb)
         from core.comp.alpha import FreshenBinderNames
         eb = FreshenBinderNames().visit(eb)
         eb = ProofTermGenerationVisitor().visit(eb)
         logger.debug("Default-eta exposure freshened binder names to avoid collisions.")
         if not te.found_target:
-            logger.warning("Default-eta exposure found no targets for issue '%s' (mode=%s)", issue, mode)
+            logger.warning(
+                "Default-eta exposure found no targets for issue '%s' (mode=%s, expand_defaults=%s)",
+                issue,
+                mode,
+                expand_defaults,
+            )
         elif not te.changed:
-            logger.debug("Default-eta exposure found targets already in long form for issue '%s' (mode=%s)", issue, mode)
+            logger.debug(
+                "Default-eta exposure found targets already in long form for issue '%s' (mode=%s, expand_defaults=%s)",
+                issue,
+                mode,
+                expand_defaults,
+            )
         return eb, te.found_target, te.changed
 
     def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
@@ -467,7 +481,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             issue,
             target_kind,
             assumptions=other_argument.assumptions,
-            declarations=self.prover.declarations
+            declarations=self.prover.declarations,
         )
         if not found_target:
             raise ValueError(f"support: no target with proposition '{issue}' found for mode={target_kind}")
@@ -521,16 +535,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
 
-    def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+    def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
         """
         θ-based attacker (generalizes undercut and rebut):
           - Orientation by attacker root binder:
               Mu       → attack terms (mode='term')
               Mutilde  → attack contexts (mode='context')
-          - Theta-expand the attacked argument uniformly on `issue`.
+          - Theta-expand the attacked argument on `issue`, filtered by `expand_defaults`.
           - Build a one-step adapter to embed the attacker at the right kind.
           - Chain attacker → adapter (η at root) → θ-expanded target.
-        Undercut is the special case where the attacked subterm is a Goal/Laog.
         """
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
@@ -545,16 +558,29 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if target_kind == "unknown":
             raise TypeError("attack: attacker must start with Mu or Mutilde binder")
         logger.debug("Target kind for attack: %s", target_kind)
-        logger.debug("Theta-expanding attacked argument '%s' on issue '%s' (mode=%s)", other_argument.name, issue, target_kind)
+        logger.debug(
+            "Theta-expanding attacked argument '%s' on issue '%s' (mode=%s, expand_defaults=%s)",
+            other_argument.name,
+            issue,
+            target_kind,
+            expand_defaults,
+        )
         expanded_body, found_target, te_changed = other_argument._theta_expand(
             other_argument.body,
             issue,
             target_kind,
             assumptions=other_argument.assumptions,
-            declarations=self.prover.declarations
+            declarations=self.prover.declarations,
+            expand_defaults=expand_defaults,
         )
         if not found_target:
-            raise ValueError(f"attack: no target with proposition '{issue}' found for mode={target_kind}")
+            raise ValueError(
+                f"attack: no target with proposition '{issue}' found for mode={target_kind} and expand_defaults={expand_defaults}"
+            )
+        if not te_changed:
+            raise ValueError(
+                f"attack: target with proposition '{issue}' for mode={target_kind} and expand_defaults={expand_defaults} is already in exposed form"
+            )
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
         temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
         expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
@@ -594,45 +620,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         adapted1._eta_reduce_body()
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
-    
-        
+
     def undercut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
-        """
-        Undercut is the goal/laog-only specialization of attack():
-        - Ensures the attacked issue occurs as an open Goal/Laog in the target (by assumptions).
-        - Delegates to attack() if the check passes.
-        """
-        # Ensure both arguments are executed (assumptions available)
-        if not self.executed:
-            self.execute()
-        if not other_argument.executed:
-            other_argument.execute()
         issue = on or self.conclusion
-        # Check the attacked argument has an open Goal/Laog with this proposition
-        has_open = any(info["prop"].strip() == issue for info in other_argument.assumptions.values())
-        if not has_open:
-            raise ValueError(f"undercut: target does not contain an open Goal/Laog with proposition '{issue}'")
-        # Delegate to θ-based attack
-        return self.attack(other_argument, name=name, on=issue)
+        return self.attack(other_argument, name=name, on=issue, expand_defaults="only")
 
     def rebut(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
-        """
-        Rebut is the complement of undercut:
-        - Raises if the attacked issue occurs as an open Goal/Laog in the target.
-        - Otherwise delegates to θ-based attack().
-        """
-        # Ensure both arguments are executed (assumptions available)
-        if not self.executed:
-            self.execute()
-        if not other_argument.executed:
-            other_argument.execute()
         issue = on or self.conclusion
-        # If the target contains an open Goal/Laog with this proposition, it's an undercut case → reject
-        has_open = any(info["prop"].strip() == issue for info in other_argument.assumptions.values())
-        if has_open:
-            raise ValueError(f"rebut: target contains an open Goal/Laog with proposition '{issue}'")
-        # Delegate to θ-based attack
-        return self.attack(other_argument, name=name, on=issue)
+        return self.attack(other_argument, name=name, on=issue, expand_defaults="no")
 
     def normalize(self, enrich: bool = True) -> ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""

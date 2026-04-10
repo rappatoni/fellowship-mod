@@ -1196,17 +1196,73 @@ class ThetaExpander(ProofTermVisitor):
       - mode='term'    → expose term-side targets of proposition A
       - mode='context' → expose context-side targets of proposition A
     """
-    def __init__(self, target_prop: str, mode: str = "term", *, verbose: bool = False):
+    def __init__(self, target_prop: str, mode: str = "term", *, expand_defaults: str = "also", verbose: bool = False):
         self.target_prop = target_prop
         self.mode = mode  # 'term' | 'context'
+        self.expand_defaults = expand_defaults  # 'no' | 'only' | 'also'
         self.verbose = verbose
         self._i = 0
         self.changed = False
         self.found_target = False
+        if self.mode not in {"term", "context"}:
+            raise ValueError(f"ThetaExpander: invalid mode '{self.mode}'")
+        if self.expand_defaults not in {"no", "only", "also"}:
+            raise ValueError(f"ThetaExpander: invalid expand_defaults '{self.expand_defaults}'")
 
     def _fresh_label(self, kind: str) -> str:
         self._i += 1
         return f"Alt{kind}{self._i}"
+
+    def _is_default_term_leaf(self, node) -> bool:
+        return isinstance(node, Goal) and getattr(node, "prop", None) == self.target_prop
+
+    def _is_default_context_leaf(self, node) -> bool:
+        return isinstance(node, Laog) and getattr(node, "prop", None) == self.target_prop
+
+    def _is_bureaucratic_default_term(self, node) -> bool:
+        A = self.target_prop
+        if self._is_default_term_leaf(node):
+            return True
+        if isinstance(node, Mu) and getattr(node, "prop", None) == A:
+            term_prop = getattr(getattr(node, "term", None), "prop", None)
+            context_prop = getattr(getattr(node, "context", None), "prop", None)
+            if term_prop == A and context_prop == A:
+                return self._is_bureaucratic_default_term(node.term) or self._is_bureaucratic_default_context(node.context)
+        if isinstance(node, Mutilde) and getattr(node, "prop", None) == A:
+            term_prop = getattr(getattr(node, "term", None), "prop", None)
+            context_prop = getattr(getattr(node, "context", None), "prop", None)
+            if term_prop == A and context_prop == A:
+                return self._is_bureaucratic_default_term(node.term) or self._is_bureaucratic_default_context(node.context)
+        return False
+
+    def _is_bureaucratic_default_context(self, node) -> bool:
+        A = self.target_prop
+        if self._is_default_context_leaf(node):
+            return True
+        if isinstance(node, Mu) and getattr(node, "prop", None) == A:
+            term_prop = getattr(getattr(node, "term", None), "prop", None)
+            context_prop = getattr(getattr(node, "context", None), "prop", None)
+            if term_prop == A and context_prop == A:
+                return self._is_bureaucratic_default_term(node.term) or self._is_bureaucratic_default_context(node.context)
+        if isinstance(node, Mutilde) and getattr(node, "prop", None) == A:
+            term_prop = getattr(getattr(node, "term", None), "prop", None)
+            context_prop = getattr(getattr(node, "context", None), "prop", None)
+            if term_prop == A and context_prop == A:
+                return self._is_bureaucratic_default_term(node.term) or self._is_bureaucratic_default_context(node.context)
+        return False
+
+    def _is_default_target(self, node) -> bool:
+        if self.mode == "term":
+            return self._is_bureaucratic_default_term(node)
+        return self._is_bureaucratic_default_context(node)
+
+    def _allow_target(self, node) -> bool:
+        is_default = self._is_default_target(node)
+        if self.expand_defaults == "only":
+            return is_default
+        if self.expand_defaults == "no":
+            return not is_default
+        return True
 
     def _is_target_term(self, node) -> bool:
         if not (
@@ -1217,7 +1273,7 @@ class ThetaExpander(ProofTermVisitor):
             return False
         if isinstance(node, Mu) and "thesis" in getattr(getattr(node, "id", None), "name", ""):
             return False
-        return True
+        return self._allow_target(node)
 
     def _is_target_context(self, node) -> bool:
         if not (
@@ -1228,7 +1284,7 @@ class ThetaExpander(ProofTermVisitor):
             return False
         if isinstance(node, Mutilde) and "thesis" in getattr(getattr(node, "di", None), "name", ""):
             return False
-        return True
+        return self._allow_target(node)
 
     def _is_target(self, node) -> bool:
         return self._is_target_term(node) or self._is_target_context(node)
@@ -1292,12 +1348,6 @@ class ThetaExpander(ProofTermVisitor):
         if self.mode == "term":
             return self._expand_term(node)
         return self._expand_context(node)
-
-    def _is_default_term_leaf(self, node) -> bool:
-        return isinstance(node, Goal) and getattr(node, "prop", None) == self.target_prop
-
-    def _is_default_context_leaf(self, node) -> bool:
-        return isinstance(node, Laog) and getattr(node, "prop", None) == self.target_prop
 
     def _same_subtree(self, a: Optional[ProofTerm], b: Optional[ProofTerm]) -> bool:
         if a is None or b is None:
@@ -1429,12 +1479,12 @@ class ThetaExpander(ProofTermVisitor):
         if self.mode == "term":
             if not isinstance(expanded, Mu):
                 return False
-            if isinstance(original, Goal):
+            if self._is_bureaucratic_default_term(original):
                 return False
             return self._matches_any_bureaucratic_default_redex(expanded)
         if not isinstance(expanded, Mutilde):
             return False
-        if isinstance(original, Laog):
+        if self._is_bureaucratic_default_context(original):
             return False
         return self._matches_any_bureaucratic_default_redex(expanded)
 
@@ -1460,6 +1510,7 @@ class ThetaExpander(ProofTermVisitor):
                 blocked,
             )
         return blocked
+
     def _visit_children(self, node):
         new = deepcopy(node)
         if hasattr(new, 'term') and new.term is not None:
@@ -1485,11 +1536,12 @@ class ThetaExpander(ProofTermVisitor):
                 return new
             parent_pres = getattr(parent, "pres", repr(parent)) if parent is not None else "<root>"
             logger.debug(
-                "Exposing %s-side default-eta target: %s (parent: %s, slot: %s)",
+                "Exposing %s-side default-eta target: %s (parent: %s, slot: %s, expand_defaults=%s)",
                 self.mode,
                 getattr(new, "pres", repr(new)),
                 parent_pres,
                 slot,
+                self.expand_defaults,
             )
             return self._expand_candidate(new)
 
