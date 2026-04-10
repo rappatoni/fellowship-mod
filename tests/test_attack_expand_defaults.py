@@ -203,61 +203,47 @@ def test_attack_rejects_already_exposed_target_when_theta_expand_noops():
             assert "already in exposed form" in str(e)
 
 
-def test_attack_rejects_default_only_when_expand_defaults_no():
-    from unittest.mock import patch
-
-    class _DummyProver:
-        declarations = {}
-
-    attacker = object.__new__(Argument)
-    attacker.prover = _DummyProver()
-    attacker.name = "attacker"
-    attacker.conclusion = A
-    attacker.executed = True
-    attacker.body = Mu(ID("atk", A), A, Goal("1", A), Laog("atkctx", A))
-    attacker.assumptions = {}
-
-    target = object.__new__(Argument)
-    target.prover = attacker.prover
-    target.name = "target"
-    target.conclusion = A
-    target.executed = True
-    target.body = Goal("1", A)
-    target.assumptions = {"1": {"prop": A, "label": None}}
+def test_support_rejects_nondefault_only_when_expand_defaults_only():
+    supporter = _mk_argument(Mu(ID("sup", A), A, Goal("1", A), Laog("supctx", A)), name="supporter")
+    target = _mk_argument(Goal("1", A), name="target")
 
     with patch.object(Argument, "_theta_expand", return_value=(target.body, False, False)):
         try:
-            attacker.attack(target, expand_defaults="no")
+            supporter.support(target, expand_defaults="only")
             assert False, "expected ValueError"
         except ValueError as e:
-            assert "expand_defaults=no" in str(e)
+            assert "expand_defaults=only" in str(e)
 
 
-def test_attack_rejects_already_exposed_target_when_theta_expand_noops():
-    from unittest.mock import patch
-
-    class _DummyProver:
-        declarations = {}
-
-    attacker = object.__new__(Argument)
-    attacker.prover = _DummyProver()
-    attacker.name = "attacker"
-    attacker.conclusion = A
-    attacker.executed = True
-    attacker.body = Mu(ID("atk", A), A, Goal("1", A), Laog("atkctx", A))
-    attacker.assumptions = {}
-
-    target = object.__new__(Argument)
-    target.prover = attacker.prover
-    target.name = "target"
-    target.conclusion = A
-    target.executed = True
-    target.body = Goal("1", A)
-    target.assumptions = {"1": {"prop": A, "label": None}}
+def test_support_rejects_already_exposed_target_when_theta_expand_noops():
+    supporter = _mk_argument(Mu(ID("sup", A), A, Goal("1", A), Laog("supctx", A)), name="supporter")
+    target = _mk_argument(Goal("1", A), name="target")
 
     with patch.object(Argument, "_theta_expand", return_value=(target.body, True, False)):
         try:
-            attacker.attack(target, expand_defaults="only")
+            supporter.support(target, expand_defaults="no")
             assert False, "expected ValueError"
         except ValueError as e:
             assert "already in exposed form" in str(e)
+
+
+def test_undergird_delegates_to_support_only():
+    supporter = _mk_argument(Mu(ID("sup", A), A, Goal("1", A), Laog("supctx", A)), name="supporter")
+    target = _mk_argument(Goal("1", A), name="target")
+
+    with patch.object(Argument, "support", return_value="ok") as mocked:
+        out = supporter.undergird(target, name="u1", on=A)
+
+    assert out == "ok"
+    mocked.assert_called_once_with(target, name="u1", on=A, expand_defaults="only")
+
+
+def test_reinforce_delegates_to_support_no():
+    supporter = _mk_argument(Mu(ID("sup", A), A, Goal("1", A), Laog("supctx", A)), name="supporter")
+    target = _mk_argument(Goal("1", A), name="target")
+
+    with patch.object(Argument, "support", return_value="ok") as mocked:
+        out = supporter.reinforce(target, name="r1", on=A)
+
+    assert out == "ok"
+    mocked.assert_called_once_with(target, name="r1", on=A, expand_defaults="no")

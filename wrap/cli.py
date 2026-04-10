@@ -113,10 +113,13 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Debate ops: undercut NEW attacker target
-                        support NEW supporter target [on PROP]
-                        attack  NEW attacker  target [on PROP]
-                        rebut   NEW attacker  target [on PROP]
+          - Debate ops: undermine NEW attacker target
+                        undercut  NEW attacker target   (backward compatible alias)
+                        undergird NEW supporter target [on PROP]
+                        reinforce NEW supporter target [on PROP]
+                        support   NEW supporter target [on PROP]
+                        attack    NEW attacker  target [on PROP]
+                        rebut     NEW attacker  target [on PROP]
           - Lines starting with '#' are user-facing comments and are printed to stdout.
           - Lines starting with '%' are invisible comments and are ignored.
     """
@@ -260,11 +263,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         else:
                             logger.warning("Argument '%s' not found for normalization", name)
                             #print(f"Argument '{name}' not found.")
-                    elif command.startswith('undercut '):
-                        # Format: undercut NEW_NAME attacker target
+                    elif command.startswith('undermine ') or command.startswith('undercut '):
+                        # Format: undermine NEW_NAME attacker target
+                        # Legacy alias: undercut NEW_NAME attacker target
                         parts = command.split()
                         if len(parts) != 4:
-                            logger.error("Invalid undercut command. Use: undercut NEW_NAME attacker target")
+                            logger.error("Invalid undermine command. Use: undermine NEW_NAME attacker target")
                             continue
                         new_name = parts[1]
                         attacker_name = parts[2]
@@ -275,7 +279,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             try:
                                 result = attacker.undercut(target, name=new_name)
                                 prover.register_argument(result)
-                                logger.info("Constructed undercut '%s' (target '%s' by '%s').",
+                                logger.info("Constructed undermine '%s' (target '%s' by '%s').",
                                             result.name, target.name, attacker.name)
                             except ProverError as e:
                                 if strict:
@@ -288,7 +292,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         prover.echo_notes = prev_echo
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during undercut: %s", e)
+                                logger.error("Prover error during undermine: %s", e)
                                 if stop_on_error:
                                     break
                             except MachinePayloadError as e:
@@ -302,11 +306,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         prover.echo_notes = prev_echo
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during undercut: %s", e)
+                                logger.error("Prover error (no machine payload) during undermine: %s", e)
                                 if stop_on_error:
                                     break
                         else:
-                            logger.error("Undercut failed: one or both arguments not found ('%s', '%s').",
+                            logger.error("Undermine failed: one or both arguments not found ('%s', '%s').",
                                          attacker_name, target_name)
                             if strict:
                                 if isolate:
@@ -317,15 +321,16 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 else:
                                     prover.echo_notes = prev_echo
                                 logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: Undercut failed: missing arguments")
+                                raise ProverError(f"{script_path}:{lineno}: Undermine failed: missing arguments")
                             if stop_on_error:
                                 break
 
-                    elif command.startswith('support '):
-                        # Format: support NEW_NAME supporter target [on <PROP...>]
+                    elif command.startswith('undergird ') or command.startswith('reinforce ') or command.startswith('support '):
+                        verb = command.split()[0]
+                        # Format: support/undergird/reinforce NEW_NAME supporter target [on <PROP...>]
                         parts = command.split()
                         if len(parts) < 4:
-                            logger.error("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
+                            logger.error("Invalid %s command. Use: %s NEW_NAME supporter target [on PROP]", verb, verb)
                             continue
                         new_name = parts[1]
                         supporter_name = parts[2]
@@ -343,10 +348,15 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         target = prover.get_argument(target_name)
                         if supporter and target:
                             try:
-                                result = supporter.support(target, name=new_name, on=on_prop)
+                                if verb == 'undergird':
+                                    result = supporter.undergird(target, name=new_name, on=on_prop)
+                                elif verb == 'reinforce':
+                                    result = supporter.reinforce(target, name=new_name, on=on_prop)
+                                else:
+                                    result = supporter.support(target, name=new_name, on=on_prop)
                                 prover.register_argument(result)
-                                logger.info("Constructed support '%s' (target '%s' by '%s'%s).",
-                                            result.name, target.name, supporter.name,
+                                logger.info("Constructed %s '%s' (target '%s' by '%s'%s).",
+                                            verb, result.name, target.name, supporter.name,
                                             f" on {on_prop}" if on_prop else "")
                             except ProverError as e:
                                 if strict:
@@ -359,7 +369,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         prover.echo_notes = prev_echo
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during support: %s", e)
+                                logger.error("Prover error during %s: %s", verb, e)
                                 if stop_on_error:
                                     break
                             except MachinePayloadError as e:
@@ -373,12 +383,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         prover.echo_notes = prev_echo
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during support: %s", e)
+                                logger.error("Prover error (no machine payload) during %s: %s", verb, e)
                                 if stop_on_error:
                                     break
                         else:
-                            logger.error("Support failed: one or both arguments not found ('%s', '%s').",
-                                         supporter_name, target_name)
+                            logger.error("%s failed: one or both arguments not found ('%s', '%s').",
+                                         verb.capitalize(), supporter_name, target_name)
                             if strict:
                                 if isolate:
                                     try:
@@ -388,7 +398,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 else:
                                     prover.echo_notes = prev_echo
                                 logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: Support failed: missing arguments")
+                                raise ProverError(f"{script_path}:{lineno}: {verb.capitalize()} failed: missing arguments")
                             if stop_on_error:
                                 break
                     elif command.startswith('attack '):
@@ -637,7 +647,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - TODO: undercut, support, rebut.
+          - Debate ops: undermine, undergird, reinforce, support, attack, rebut.
 
         #TODO: implement human-oriented REPL output.
     """
@@ -690,12 +700,13 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"Argument '{name}' not found.")
                     logger.warning("Argument '%s' not found for normalization (interactive)", name)
 
-            elif command.startswith('undercut '):
-                # Format: undercut NEW_NAME attacker target
+            elif command.startswith('undermine ') or command.startswith('undercut '):
+                # Format: undermine NEW_NAME attacker target
+                # Legacy alias: undercut NEW_NAME attacker target
                 parts = command.split()
                 if len(parts) != 4:
-                    print("Invalid undercut command. Use: undercut NEW_NAME attacker target")
-                    logger.error("Invalid undercut command. Use: undercut NEW_NAME attacker target")
+                    print("Invalid undermine command. Use: undermine NEW_NAME attacker target")
+                    logger.error("Invalid undermine command. Use: undermine NEW_NAME attacker target")
                     continue
                 new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
                 attacker = prover.get_argument(attacker_name)
@@ -704,23 +715,24 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     try:
                         result = attacker.undercut(target, name=new_name)
                         prover.register_argument(result)
-                        print(f"Constructed undercut '{result.name}' (target '{target.name}' by '{attacker.name}').")
-                        logger.info("Constructed undercut '%s' (target '%s' by '%s').",
+                        print(f"Constructed undermine '{result.name}' (target '{target.name}' by '{attacker.name}').")
+                        logger.info("Constructed undermine '%s' (target '%s' by '%s').",
                                     result.name, target.name, attacker.name)
                     except Exception as e:
-                        print(f"Prover error during undercut: {e}")
-                        logger.error("Prover error during undercut: %s", e)
+                        print(f"Prover error during undermine: {e}")
+                        logger.error("Prover error during undermine: %s", e)
                 else:
-                    print(f"Undercut failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
-                    logger.error("Undercut failed: one or both arguments not found ('%s', '%s').",
+                    print(f"Undermine failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
+                    logger.error("Undermine failed: one or both arguments not found ('%s', '%s').",
                                  attacker_name, target_name)
 
-            elif command.startswith('support '):
-                # Format: support NEW_NAME supporter target [on PROP...]
+            elif command.startswith('undergird ') or command.startswith('reinforce ') or command.startswith('support '):
+                # Format: support/undergird/reinforce NEW_NAME supporter target [on PROP...]
                 parts = command.split()
+                verb = parts[0]
                 if len(parts) < 4:
-                    print("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
-                    logger.error("Invalid support command. Use: support NEW_NAME supporter target [on PROP]")
+                    print(f"Invalid {verb} command. Use: {verb} NEW_NAME supporter target [on PROP]")
+                    logger.error("Invalid %s command. Use: %s NEW_NAME supporter target [on PROP]", verb, verb)
                     continue
                 new_name, supporter_name, target_name = parts[1], parts[2], parts[3]
                 on_prop = None
@@ -734,19 +746,24 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 target = prover.get_argument(target_name)
                 if supporter and target:
                     try:
-                        result = supporter.support(target, name=new_name, on=on_prop)
+                        if verb == 'undergird':
+                            result = supporter.undergird(target, name=new_name, on=on_prop)
+                        elif verb == 'reinforce':
+                            result = supporter.reinforce(target, name=new_name, on=on_prop)
+                        else:
+                            result = supporter.support(target, name=new_name, on=on_prop)
                         prover.register_argument(result)
                         suffix = f" on {on_prop}" if on_prop else ""
-                        print(f"Constructed support '{result.name}' (target '{target.name}' by '{supporter.name}'{suffix}).")
-                        logger.info("Constructed support '%s' (target '%s' by '%s'%s).",
-                                    result.name, target.name, supporter.name, suffix)
+                        print(f"Constructed {verb} '{result.name}' (target '{target.name}' by '{supporter.name}'{suffix}).")
+                        logger.info("Constructed %s '%s' (target '%s' by '%s'%s).",
+                                    verb, result.name, target.name, supporter.name, suffix)
                     except Exception as e:
-                        print(f"Prover error during support: {e}")
-                        logger.error("Prover error during support: %s", e)
+                        print(f"Prover error during {verb}: {e}")
+                        logger.error("Prover error during %s: %s", verb, e)
                 else:
-                    print(f"Support failed: one or both arguments not found ('{supporter_name}', '{target_name}').")
-                    logger.error("Support failed: one or both arguments not found ('%s', '%s').",
-                                 supporter_name, target_name)
+                    print(f"{verb.capitalize()} failed: one or both arguments not found ('{supporter_name}', '{target_name}').")
+                    logger.error("%s failed: one or both arguments not found ('%s', '%s').",
+                                 verb.capitalize(), supporter_name, target_name)
 
             elif command.startswith('attack '):
                 # Format: attack NEW_NAME attacker target [on PROP...]

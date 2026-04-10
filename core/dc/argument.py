@@ -458,7 +458,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             )
         return eb, te.found_target, te.changed
 
-    def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+    def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             logger.debug("Executing supporter argument '%s'", self.name)
@@ -475,16 +475,29 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             raise TypeError("Support: supporter must start with Mu or Mutilde binder")
         logger.debug("Target kind for support: %s", target_kind)
 
-        logger.debug("Theta-expanding supported argument '%s' on issue '%s' (mode=%s)", other_argument.name, issue, target_kind)
+        logger.debug(
+            "Theta-expanding supported argument '%s' on issue '%s' (mode=%s, expand_defaults=%s)",
+            other_argument.name,
+            issue,
+            target_kind,
+            expand_defaults,
+        )
         expanded_body, found_target, te_changed = other_argument._theta_expand(
             other_argument.body,
             issue,
             target_kind,
             assumptions=other_argument.assumptions,
             declarations=self.prover.declarations,
+            expand_defaults=expand_defaults,
         )
         if not found_target:
-            raise ValueError(f"support: no target with proposition '{issue}' found for mode={target_kind}")
+            raise ValueError(
+                f"support: no target with proposition '{issue}' found for mode={target_kind} and expand_defaults={expand_defaults}"
+            )
+        if not te_changed:
+            raise ValueError(
+                f"support: target with proposition '{issue}' for mode={target_kind} and expand_defaults={expand_defaults} is already in exposed form"
+            )
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
 
         logger.debug("Creating expanded argument for supported argument '%s'", other_argument.name)
@@ -535,6 +548,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         final_argument = adapted1.chain(expanded_arg, name=name)
         return final_argument
 
+    def undergird(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        issue = on or self.conclusion
+        return self.support(other_argument, name=name, on=issue, expand_defaults="only")
+
+    def reinforce(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
+        issue = on or self.conclusion
+        return self.support(other_argument, name=name, on=issue, expand_defaults="no")
     def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
         """
         θ-based attacker (generalizes undercut and rebut):
