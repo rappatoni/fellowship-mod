@@ -1,180 +1,496 @@
-# Fellowship Prover Mod
+# AIDA - Interactive Debate Assistant
 
-This repo contains an experimental wrapper for the [Fellowship prover](https://github.com/theoremprover-museum/fellowship). The wrapper implements a variant of logical (aka deductive) argumentation for classical logic by way of control operators. An exposition of the motivation and theory behind the system can be found [here](https://www8.cs.fau.de/ext/teaching/wise2024-25/oberseminar/slides-rapp.pdf).
+`AIDA` is an implementation of `AC/DC` (`Argument Calculus/Debate Calculus`), a calculus for the construction, compilation and evaluation of arguments and debates. Its present manifestation is a Python wrapper and experimentation environment around the
+[Fellowship prover](https://github.com/theoremprover-museum/fellowship).
+It provides a workflow for constructing, composing, normalizing, and rendering
+arguments and debates as proof terms over a classical control-operator calculus.
 
-## Usage
+The repository combines:
+- the native Fellowship prover under `wrap/fellowship/`
+- a Python wrapper (`wrap/prover.py`) that talks to Fellowship in machine mode
+- an argument/debate layer (`core/dc/argument.py`)
+- multiple presentation layers (`pres/`) for natural language, mirror views,
+  coloring, and acceptance trees
 
-Prerequisites
-- OCaml toolchain (to build the Fellowship prover)
-- Python 3.11.x and make
+An earlier motivation/theory overview is available
+[here](https://www8.cs.fau.de/ext/teaching/wise2024-25/oberseminar/slides-rapp.pdf).
 
-Build the prover
-- make -C wrap/fellowship
-- The native binary is placed at wrap/fellowship/fsp.
+## What is currently implemented
 
-Binary location
-- By default the CLI looks for wrap/fellowship/fsp relative to the code.
-- You can override the path by setting an environment variable:
-  - export ACDC_FSP=/absolute/path/to/fsp
-- If you install via pipx (pipx install .), you must either:
-  - build the binary in your source checkout and set ACDC_FSP to that path, or
-  - have an fsp on your PATH.
+The current codebase supports:
+- theorem and counterargument / antitheorem workflows
+- raw Fellowship commands and wrapper-level recording commands
+- argument composition by grafting / chaining
+- debate operations:
+  - `attack`
+  - `undercut` / `undermine`
+  - `rebut`
+  - `support`
+  - `undergird`
+  - `reinforce`
+- normalization of argument terms in multiple evaluation disciplines
+- natural-language rendering styles:
+  - `argumentation`
+  - `dialectical`
+  - `intuitionistic`
+  - `vanilla`
+- mirror renderers:
+  - `mirror`
+  - `mirror-tree`
+- acceptance coloring of normalized proof terms
+- acceptance-tree export through Graphviz (with DOT fallback)
+- machine-mode integration with Fellowship, including prover state extraction
 
-Persisting ACDC_FSP (macOS/Linux)
-- For zsh (macOS default):
-  - echo 'export ACDC_FSP="/absolute/path/to/your/checkout/wrap/fellowship/fsp"' >> ~/.zshrc
-  - source ~/.zshrc
-- For bash:
-  - echo 'export ACDC_FSP="/absolute/path/to/your/checkout/wrap/fellowship/fsp"' >> ~/.bashrc
-  - source ~/.bashrc
-- Verify:
-  - test -x "$ACDC_FSP" && echo "OK: $ACDC_FSP"
-- If the binary was downloaded/copied and macOS quarantines it:
-  - xattr -d com.apple.quarantine "$ACDC_FSP"
+## Requirements
 
-Run the Python wrapper CLI
-- From the repo root:
-  - .venv/bin/acdc --help
-  - .venv/bin/acdc --script tests/normalize_render.fspy
-  - Strict mode (treat parse/machine issues as errors): .venv/bin/acdc --script tests/normalize_render.fspy --strict
-  - Parallel call-by-onus reduction (experimental): FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/normalize_render.fspy render-nf
-- Or via Makefile:
-  - make cli ARGS="--help"
-  - make cli ARGS="--script tests/normalize_render.fspy"
-- Tip (pipx): if acdc was installed globally via pipx, set ACDC_FSP to the binary path before running:
-  - export ACDC_FSP=/absolute/path/to/your/checkout/wrap/fellowship/fsp
-  - acdc --script tests/normalize_render.fspy
+- Python 3.11+
+- `make`
+- an OCaml toolchain to build the native Fellowship binary
 
-Run tests
-- make test
-- Manual alternative:
-  - source .venv/bin/activate
-  - pytest -q tests
+## Installation
 
-Features
-- Argument lifecycle: execute an argument against the prover, normalize its proof term, and render it.
-- Debate operations: undercut (counterargument) is supported; support and rebut are planned.
-- Presentations:
-  - Proof-term rendering (ASCII .pres)
-  - Natural language renderings (argumentation/dialectical/intuitionistic styles)
-  - Acceptance coloring (green/yellow/red)
-  - Acceptance trees (proof-term labels or NL labels)
+### Local development install
 
-Repository layout
-- core/ — Python core (ac/dc/comp)
-- pres/ — presentations (gen/nl/color/tree)
-- wrap/ — Python wrapper (cli/prover) and native OCaml under wrap/fellowship/
-- mod/ — global store
-- tests/ — pytest suite and .fspy scripts
-- pyproject.toml — packaging; exposes “acdc” console script
-- Makefile — venv/dev tooling
-- README.md — this file
+From the repository root:
 
-CLI quick reference
+```bash
+make install
+make -C wrap/fellowship
+```
 
-Interactive mode
-- Start: `.venv/bin/acdc --interactive`
-- In interactive mode you can enter:
-  - **Any Fellowship command** (see `help.` inside `fsp`).
-  - **Wrapper commands** listed below.
-- Fellowship is **dot-terminated** for many commands (e.g. `declare ...`): if a command needs more input, `acdc` will switch to a continuation prompt `... ` until the command is completed (typically by entering a single `.` on its own line).
-- Syntax/prover errors are **non-fatal** in interactive mode: the wrapper prints Fellowship’s message and waits for the next input.
+This creates a local virtual environment in `.venv/`, installs the Python
+package in editable mode, and builds the native prover binary at:
 
-Wrapper commands (interactive)
+```text
+wrap/fellowship/fsp
+```
+
+You can then run:
+
+```bash
+.venv/bin/acdc --help
+```
+
+### Optional global install
+
+You can also install the Python package globally with `pipx`:
+
+```bash
+pipx install .
+```
+
+If you do that, make sure `acdc` can still find the native `fsp` binary
+via one of the mechanisms below.
+
+## Locating the Fellowship binary
+
+The wrapper resolves `fsp` in this order:
+1. `ACDC_FSP`
+2. `FSP_PATH`
+3. packaged path: `wrap/fellowship/fsp`
+4. repo-local path from the current working directory
+5. `fsp` found on `PATH`
+
+Example:
+
+```bash
+export ACDC_FSP=/absolute/path/to/wrap/fellowship/fsp
+```
+
+Persist on macOS / Linux:
+
+```bash
+echo 'export ACDC_FSP="/absolute/path/to/your/checkout/wrap/fellowship/fsp"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Verify:
+
+```bash
+test -x "$ACDC_FSP" && echo "OK: $ACDC_FSP"
+```
+
+On macOS, if a copied binary is quarantined:
+
+```bash
+xattr -d com.apple.quarantine "$ACDC_FSP"
+```
+
+## Running the CLI
+
+### Interactive mode
+
+```bash
+.venv/bin/acdc --interactive
+```
+
+### Script mode
+
+```bash
+.venv/bin/acdc --script tests/normalize_render.fspy
+```
+
+### Via the Makefile
+
+```bash
+make cli ARGS="--help"
+make cli ARGS="--script tests/normalize_render.fspy"
+```
+
+## Logging and environment variables
+
+### CLI logging
+
+The CLI supports:
+
+```bash
+acdc --log-level DEBUG --log-file acdc.log --script tests/normalize_render.fspy
+```
+
+You can also set the default log level with:
+
+```bash
+export FSP_LOGLEVEL=DEBUG
+```
+
+### Reduction / normalization controls
+
+Normalization behavior is controlled by environment variables read by
+`core.dc.argument.Argument.normalize()`:
+
+- `FSP_EVAL_DISCIPLINE`
+  - `legacy` (default)
+  - `onus`
+  - `onus-parallel`
+- `FSP_ONUS_FALLBACK`
+- `FSP_ONUS_STANCE`
+
+Example:
+
+```bash
+FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy
+```
+
+## Workflow overview
+
+A typical wrapper workflow is:
+1. declare prover resources
+2. record an argument or counterargument
+3. register it under a name
+4. compose or attack/support named arguments
+5. normalize the result
+6. render it in one or more views
+
+The wrapper stores named arguments internally through `ProverWrapper`, so later
+commands such as `reduce`, `render`, `support`, or `attack` can refer to them by
+name.
+
+## Interactive commands
+
+Interactive mode accepts:
+- ordinary Fellowship commands
+- wrapper commands for recording, normalization, rendering, and debate building
+
+Many Fellowship commands are dot-terminated. If a command is incomplete,
+`acdc` prompts for continuation with `...`.
+
+Syntax/prover errors are non-fatal in the interactive wrapper unless the wrapper
+detects a machine-mode desynchronization.
+
+### Recording commands
+
 - `start argument NAME CONCLUSION`
-  - Begins recording a theorem proof. You can then enter Fellowship proof commands line-by-line.
-- `start counterargument NAME CONCLUSION` (alias: `start antitheorem NAME CONCLUSION`)
-  - Begins recording an antitheorem proof.
+  - begin recording a theorem-backed argument
+- `start counterargument NAME CONCLUSION`
+- `start antitheorem NAME CONCLUSION`
+  - begin recording a counterargument / antitheorem-backed argument
 - `end argument`
-  - Finishes recording and stores the argument under `NAME`.
+  - finish recording, execute the proof against Fellowship, and register it
+
+### Stored-argument commands
+
 - `reduce ARG`
-  - Reduce/normalize a stored argument.
+  - normalize and print the normal form
 - `normalize ARG`
-  - Normalize a stored argument (silent; caches normal form).
-- `render ARG` / `render-nf ARG`
-  - Render unreduced / normal-form proof term.
+  - normalize silently and cache the result
+- `render ARG [STYLE]`
+- `render-nf ARG [STYLE]`
+  - render the original or normalized term
 - `color ARG`
-  - Print a colored (acceptance) rendering.
+  - show acceptance coloring for the normalized term
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
-  - Render an acceptance tree.
+  - render an acceptance tree
 - `chain ARG1 ARG2`
-  - Graft/chain two stored arguments (ARG1 rootstock, ARG2 scion).
-- `undercut NEW_NAME ATTACKER TARGET`
-  - Construct an undercut argument.
-- `support NEW_NAME SUPPORTER TARGET [on PROP...]`
-  - Construct a support argument.
-- `attack NEW_NAME ATTACKER TARGET [on PROP...]`
-  - Construct an attack argument.
-- `rebut NEW_NAME ATTACKER TARGET [on PROP...]`
-  - Construct a rebut argument.
-- Exit: `exit` / `quit`
+  - graft / chain one argument into another
 
-Script mode
-- Commands operate over the scenario created by your `.fspy` script (declarations, arguments, operations). Typical usage:
-  - `reduce`: perform reduction steps on the current proof term
-  - `render`: render the current proof term (no normalization)
-  - `render-nf`: normalize and then render the proof term
-  - `color`: normalize and print a colored proof term (green/yellow/red)
-  - `tree [nl|pt]`: render an acceptance tree (nl = natural language labels; pt = proof-term labels)
-  - `undercut NEW ATTACKER TARGET`: creates a debate named NEW consisting of the arguments ATTACKER and TARGET. The attacked assumption(s) is computed automatically.
+### Debate commands
 
-Call-by-onus reduction (experimental)
-- The reducer supports a call-by-onus evaluation discipline.
-- Select it via `FSP_EVAL_DISCIPLINE`:
-  - `legacy` (default): legacy reducer rule order (no onus discipline)
-  - `onus-parallel`: compute an onus candidate in parallel to legacy and warn on divergence
-  - `onus`: call-by-onus only (no parallel/legacy comparison)
-- Enable it by setting the environment variable, e.g. `FSP_EVAL_DISCIPLINE=onus-parallel` for the acdc process.
-- This affects normalization-driven commands: reduce, render-nf, color, tree.
-- Examples:
-  - macOS/Linux (bash/zsh):
-    - FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/normalize_render.fspy render-nf
-    - FSP_EVAL_DISCIPLINE=onus-parallel acdc --script tests/counterarguments_and_undercut.fspy color
-  - Windows PowerShell:
-    - $env:FSP_EVAL_DISCIPLINE="onus-parallel"; acdc --script tests/normalize_render.fspy render-nf
-- Notes:
-  - If not set, the default discipline is used (no onus-parallel).
-  - Experimental: you may see warnings for rare shapes while this mode is under active development.
+- `undermine NEW ATTACKER TARGET`
+- `undercut NEW ATTACKER TARGET`
+  - backward-compatible aliases for default-target attack
+- `support NEW SUPPORTER TARGET [on PROP]`
+- `undergird NEW SUPPORTER TARGET [on PROP]`
+  - support restricted to default targets
+- `reinforce NEW SUPPORTER TARGET [on PROP]`
+  - support restricted to non-default targets
+- `attack NEW ATTACKER TARGET [on PROP]`
+  - generic attack operation
+- `rebut NEW ATTACKER TARGET [on PROP]`
+  - attack restricted to non-default targets
 
-Examples
-- Normalize and render a scenario:
-  - .venv/bin/acdc --script tests/normalize_render.fspy
-- Show acceptance coloring:
-  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy color
-- Draw an acceptance tree with natural language labels:
-  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy tree nl
-- Perform an explicit undercut in a script:
-  - .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy undercut U1 A "thesis:A"
+## Script files (`.fspy`)
 
-Developer usage quick reference
-- Local dev install and command:
-  - make reset-venv
-  - make -C wrap/fellowship
-  - .venv/bin/acdc --help
-  - Optional: make binlink; ./acdc --help
-- Global install (optional, no local venv):
-  - pipx install .
-  - acdc --help
-  - If acdc can’t find the native binary, set ACDC_FSP=/absolute/path/to/your/checkout/wrap/fellowship/fsp (see “Persisting ACDC_FSP” above).
+Script mode uses the same general command language as the interactive wrapper.
+Representative examples live in `tests/*.fspy`.
 
-# Readme for the Fellowship Prover
+Typical script commands include:
+- Fellowship commands such as `lk.`, `declare ...`, `deny ...`, `qed.`
+- wrapper recording commands such as `start argument ...` / `end argument`
+- normalization / rendering commands
+- debate operations such as `support`, `undercut`, `attack`, `rebut`
 
-These are the sources for the Fellowship prover written by Florent Kirchner and Claudio Sacerdoti Coen. 
-The prover is an implementation of the $\bar{\lambda}\mu\tilde{\mu}$-calculus [due to Pierre-Louis Curien and Hugo Herbelin](http://pauillac.inria.fr/~herbelin/publis/icfp-CuHer00-duality+errata.pdf).
-The system and the theory behind it is described extensively in Florent Kirchner's [PhD-thesis](https://pastel.hal.science/pastel-00003192v1/document).
+Lines starting with:
+- `#` are echoed as user-facing comments
+- `%` are silent comments
 
-Note: Build and run the native prover under wrap/fellowship (./fsp). The Python wrapper/CLI is exposed via the acdc console script.
+## Important prover-side commands and concepts
 
-## Setup
+The repository now relies on several Fellowship features that the old README did
+not document.
 
-Clone the directory to a destination of your choosing.
-Navigate to one of the available versions in the tags subdirectory, e.g. 'fellowship-0.1.0'.
-Use 'make' to build (requires OCaml).
-As of late 2024, the system still works on Linux (tested on WSL) and MacOS
+### `theorem` and `antitheorem`
 
-## Usage
+At the prover level, theorem construction starts with commands like:
 
-Use ./fsp to run the prover. Use 'help.' to get help. For further questions refer to Florent Kirchner's [PhD-thesis](https://pastel.hal.science/pastel-00003192v1/document), especially chapter 7.
-The tests folder contains some examples to run.
+```text
+theorem argA : (A).
+antitheorem notA : (A).
+```
 
+The wrapper-level recording commands:
+- `start argument ...`
+- `start counterargument ...`
+- `start antitheorem ...`
 
+are convenience front-ends for those prover workflows.
+
+### `deny`
+
+`deny` introduces a named refutational resource that can later be used through
+`moxia`.
+
+Examples from the current test scripts:
+
+```text
+deny mA : (A).
+deny r5 : (LowballOffer - BadNegotiations).
+```
+
+### `moxia`
+
+`moxia NAME.` invokes a denied declaration inside a proof / counterproof.
+This is part of the current counterargument workflow.
+
+Minimal example:
+
+```text
+declare A : bool.
+deny mA : (A).
+antitheorem notA : (A).
+moxia mA.
+qed.
+```
+
+See `tests/moxia_antitheorem.fspy`.
+
+### Affine variables
+
+Affine variables and affine uses of binders matter operationally in this codebase.
+They show up both in prover commands and in the semantics of reduction / debate
+encodings.
+
+In particular:
+- some proof scripts use affine cuts explicitly
+- affine behavior is relevant to attacks, defaults, and control-flow-sensitive
+  reductions
+- several tests cover affine and non-affine cases
+
+Examples to inspect:
+- `tests/affine_test.py`
+- `tests/non_affine_test.py`
+- `tests/test_affine_cut.py`
+- `tests/test_affine_elim.py`
+
+## Render styles
+
+`render ARG STYLE` and `render-nf ARG STYLE` currently support:
+
+- `argumentation`
+- `dialectical`
+- `intuitionistic`
+- `vanilla`
+- `mirror`
+- `mirror-tree`
+
+Examples:
+
+```bash
+.venv/bin/acdc --interactive
+```
+
+Then inside the REPL:
+
+```text
+render myarg vanilla
+render myarg mirror
+render-nf myarg dialectical
+render myarg mirror-tree
+```
+
+## Acceptance coloring and trees
+
+### Coloring
+
+```text
+color ARG
+```
+
+This normalizes the argument if needed and prints a colored proof-term view.
+
+### Acceptance trees
+
+```text
+tree ARG
+tree ARG pt
+tree ARG nl
+tree ARG nl dialectical
+```
+
+Tree rendering uses Graphviz when available and otherwise writes a `.dot` file.
+
+## Examples
+
+### Minimal argument / normalize / render example
+
+File: `tests/normalize_render.fspy`
+
+```text
+lk.
+declare A,B:bool.
+declare axA: (A).
+declare axAB: (A->B).
+
+start argument argA B
+cut (A->B) h.
+axiom axAB.
+elim.
+axiom axA.
+axiom.
+end argument
+
+render argA
+reduce argA
+render-nf argA
+```
+
+### Counterargument and undercut example
+
+File: `tests/counterarguments_and_undercut.fspy`
+
+This script demonstrates:
+- `start counterargument ...`
+- `undercut`
+- `reduce`
+- `color`
+- `tree ... nl`
+- `deny` / `moxia`
+
+Run it with:
+
+```bash
+.venv/bin/acdc --script tests/counterarguments_and_undercut.fspy
+```
+
+### Support example
+
+File: `tests/basic_support.fspy`
+
+Demonstrates:
+- `support`
+- `undercut`
+- `render ... vanilla`
+- `color`
+
+### Mirror rendering example
+
+File: `tests/mirror_minimal.fspy`
+
+Demonstrates:
+- `render m vanilla`
+- `render m mirror`
+- `render m mirror-tree`
+
+### Antitheorem / moxia example
+
+File: `tests/moxia_antitheorem.fspy`
+
+```text
+declare A : bool.
+deny mA : (A).
+antitheorem notA : (A).
+moxia mA.
+qed.
+```
+
+## Running tests
+
+```bash
+make test
+```
+
+Manual alternative:
+
+```bash
+source .venv/bin/activate
+pytest -q tests
+```
+
+## Development commands
+
+```bash
+make reset-venv
+make cli ARGS="--help"
+make test
+make lint
+make format
+make typecheck
+make binlink
+```
+
+`make binlink` creates a short local `./acdc` symlink to `.venv/bin/acdc`.
+
+## Repository layout
+
+- `core/` — core ASTs, transformations, reduction, grafting, argument logic
+- `pres/` — presentation layers (proof terms, NL, mirror, coloring, trees)
+- `wrap/` — Python wrapper code and the native Fellowship subtree
+- `wrap/fellowship/` — native prover sources and `fsp` binary build target
+- `tests/` — pytest tests and `.fspy` / `.fsp` examples
+- `pyproject.toml` — package metadata and console-script entry point
+- `Makefile` — development and testing shortcuts
+- `README.md` — this file
+
+## Notes on Fellowship itself
+
+The native prover bundled here is Fellowship, written by Florent Kirchner and
+Claudio Sacerdoti Coen, implementing the
+$\bar{\lambda}\mu\tilde{\mu}$-calculus.
+
+Useful background references:
+- Curien and Herbelin on the calculus:
+  http://pauillac.inria.fr/~herbelin/publis/icfp-CuHer00-duality+errata.pdf
+- Florent Kirchner's thesis:
+  https://pastel.hal.science/pastel-00003192v1/document
+
+For raw prover usage, build and run `wrap/fellowship/fsp` directly and use
+`help.` inside the prover.
