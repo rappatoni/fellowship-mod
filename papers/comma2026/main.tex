@@ -69,7 +69,7 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
        \gralt \mu \alpha:\refu{\sigma}.c
        %\gralt \textcolor{blue}{[x]}
       }
-      {Terms}
+      {\gramtext{Terms}}
 
     \firstcasesubtil{$E$}
       {\alpha
@@ -78,7 +78,7 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
        \gralt c.\pro{\sigma}:x \mu
        %\gralt \textcolor{blue}{[\alpha]}
       }
-      {Environments}
+      {\gramtext{Environments}}
 
      
     \firstcasesubtil{$c$}
@@ -86,7 +86,7 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
        %\gralt \rangle \_ :[\pro{\sigma}]\contr{\sigma}:  E \langle
        %\gralt \rangle v :\contr{\sigma}[\refu{\sigma}]:  \_ \langle
       }
-      {Commands}
+      {\gramtext{Commands}}
   
 
     \firstcasesubtil{\pro{\sigma,\delta}}
@@ -94,21 +94,21 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
        \gralt \pro{\sigma \rightarrow  \delta  }
        \gralt \pro{ \sigma - \delta  }
       }
-      {Proofs}
+      {\gramtext{Proofs}}
 
     \firstcasesubtil{\refu{\sigma},\refu{\delta}}
       {\refu{a}
        \gralt \refu{\sigma\rightarrow \delta}
        \gralt \refu{ \sigma  - \delta}
       }
-      {Refutations}
+      {\gramtext{Refutations}}
 
     \firstcasesubtil{\contr{\sigma}, \contr{\delta}}
       {\contr{a}
        \gralt \contr{\sigma \rightarrow \delta}
        \gralt \contr{\sigma - \delta}
       }
-      {Contradictions}
+      {\gramtext{Contradictions}}
   \end{grammar}
 
 Sequents have the form \emph{Antecedent $\vdash$ Stoup $\dashv$ Succedent}.
@@ -220,7 +220,232 @@ We make use of this fact in the next section.
 \end{oldpart}
 \ednote{MR: Need eta-equivalence here.}
 
-  
+\section{Constructing Arguments: the $ \Alambda$-calculus}
+
+\begin{oldpart}{Largely from old paper. This is now partially outdated. Check if metavariables-approach is still the right way to go. Arguments are default-eta-long terms.}
+The given variant of the $\matilda$-calculus foregrounds its dialectical character as an interplay between proofs and refutations.
+This makes it an interesting setting for the study of formal argumentation.
+But while proofs and refutations hold with necessity, arguments are defeasible.
+Hence we need to relax the notion of proof by enriching it with enthymemes.
+
+\subsection{Arguments}
+
+In defining arguments we follow deductive argumentation \cite{besnard-review-argum} which views arguments as conditional proofs of the form $\Sigma \vdash_{\mathcal{L}} \varphi$ where the \emph{assumptions} $\Sigma$ and the \emph{conclusion} $\varphi$ are formulae of a given base logic ith consequence relation $\vdash_{\mathcal{L}}$.
+In sequent-based variant \cite{TODO},\ednote{TODO: sequent-based argumentation citation.} they then become single conclusion sequents.
+We depart from this approach in two ways:
+Firstly, unlike deductive argumentation, we do not wish to abstract away from the interior structure of the arguments.
+Hence our approach is to define \emph{arguments} as ``open'' terms and \emph{counterarguments} as ``open'' environments.
+Secondly, we want to avoid overloading object-language-level variables whose main functionality is hypothetical reasoning.
+Unlike premises in conditonal proofs, argument assumptions are not merely hypothetical but closer to (defeasible) knowledge items.
+Hence their main route of elimination is not discharge but defeat.
+For this reason we define meta-variables as used in the representation of incomplete in the theorem proving literature \ednote{Cite literature and specific examples here.}
+
+This introduces two distinctions from the standard deductive argumentation approach: firstly, in our setting arguments only depend on the assumptions which they use.
+In particular, irrespective of the antecedent (succedent) it is not possible to attack an argument on an assumption that does not appear free in it.
+Secondly, the same sequent represents many different arguments.
+Instead our way of identifying arguments will function via defining a normal form.
+
+Our approach to defining meta-variables is similar to Kirchner's \cite{TODO}, only that we restrict meta-variables to commands.
+Let $\conj{\mathcal{V}},\cons{\mathcal{E}}$ and $\ind{\bot}$ be countably infinite sets of meta-variables denoted by gray lower-case latin, greek and hebrew letters, respectively (e.g. $\conj{x}$ and $\cons{\alpha}$ and $\aleph$). We extend the grammar as follows:
+
+% \begin{grammar}
+
+%   % \firstcasesubtil{$\conj{v}$}
+%   % {
+%   % }
+%   % {Term Meta-variables}
+%   % \firstcasesubtil{$\cons{E}$}
+%   % {
+%   % }
+%   % {Environment Meta-variables}
+%   \firstcasesubtil{$c$}
+%   {...
+%      \gralt \rangle \conj{v} :\contr{\sigma}:  E \langle
+%      \gralt \rangle v :\contr{\sigma}:  \cons{E} \langle
+%      \gralt \rangle \conj{v} :\contr{\sigma}:  \cons{E} \langle
+%      \gralt \ind{\aleph}
+%   }{}
+% \end{grammar}
+\ednote{This still needs fixes. Need to introduce all the necessary notations and when metavariable (contexts) are omitted from the notation.}
+Metavariables are typed like so:
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \begin{prooftree}\label{axiom:proofs}
+      \metasymaxiom{x}{\sigma}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \begin{prooftree}\label{rule:proimplintro}
+      \metasymmoixa{\alpha}{\sigma}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \begin{prooftree}\label{axiom:proofs}
+      \infer0{V;\bot, \ind{\aleph};\pro{\Sigma}\vdash \ind{\aleph}\dashv \refu{\Delta};E}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+We call the language obtained in this way the $ \Alambda$-calculus (speak ``Argument Calculus'').\ednote{Probably too early here.}
+The restriction of meta-variables to commands does not reduce expressiveness: via $\eta$-equivalence, we can always $\mu$-bind a variable and wrap it in a command expression:\ednote{write down all the $\eta$ rules earlier instead.}
+
+\[ v \leftrightarrow_{\eta} \mu \alpha.\rangle v::\alpha \langle\]
+
+At the same time it will enable us to fine-tune the evaluation of arguments: they will be fully $(\rightarrow)$ and $(-)$ reduced with only $\mu$-redexes remaining.
+Thus it does not matter if we substitute a subargument for an assumption. \ednote{TODO: Arguments are intuitionistic with holes; counterarguments are dual-intuitionistic with holes. Example: Peirce's law: long form with rebut, undercut}
+
+With these ingredients in place we are finally ready to define our notion of argument:
+
+\begin{definition}[Argument]
+  Given a type $t$ an \emph{argument for $t$}  is an intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of meta-variables. An \emph{argument against $t$} (or a counterargument to $t$) is a dual-intuitionistic $\Alambda$ expression of type $\refu{t}$ with an arbitrary number of metavariables. An \emph{argument} is either an argument for or against some type $t'$.
+\end{definition}
+
+\end{oldpart}
+\section{Compiling Debates: The Debate Calculus DC}
+\begin{oldpart}{Largely from old paper. This is partially outdated. Update.}
+  \subsection{Rebut and Cut}
+
+Sequent-based argumentation models argument relations, that is \emph{attacks}, via sequent-elimination rules.
+Note the structural similarity between the (compact) rebuttal sequent elimination rule and the $\matilda$ cut rule:
+
+\begin{center}
+    \begin{minipage}{0.48\linewidth}
+      \centering
+      \begin{prooftree}
+        \hypo{\Sigma_1\vdash \varphi}
+        \hypo{\Sigma_2 \vdash \neg \varphi}
+        \infer2{\Sigma_2 \cancel{\vdash} \neg\varphi}
+      \end{prooftree}
+    \end{minipage}
+    \begin{minipage}{0.48\linewidth}
+      \centering
+      \begin{prooftree}\label{rule: S-ELIM}
+      \symcut{v}{E}{\varphi}
+    \end{prooftree}
+    \end{minipage}
+  \end{center}
+
+In the classical version of the $\matilda$-calculus, the rules
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \begin{prooftree}
+      \hypo{\Sigma \vdash \refu{\varphi}:E \dashv \Delta}
+      \infer1{\Sigma \vdash \text{not }E:\pro{\neg\varphi} \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \begin{prooftree}
+      \hypo{\Sigma \vdash v:\pro{\varphi} \dashv \Delta}
+      \infer1{\Sigma \vdash \refu{\neg\varphi}:v \text{ not} \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+and their inverses are derivable.
+Hence cut and rebut have (semantically) identical application conditions in a classical base logic.
+We seek to eliminate this duplication of structure.
+However, the rebut rule does not introduce a contradiction but instead eliminates it and introduces an eliminated sequent in one go.
+Our task is to encode such sequent elimination using control structures.
+
+\subsection{Encoding Undercut}
+\ednote{TODO: starting with reductive versions. If there is still space, add explorative versions.}
+Before we tackle the rebut pattern, we will first turn out attention to another mode of attack between arguments: the undercut \ednote{TODO: note on terminology disambiguating defeat, undermine, undercut... Problem: undercut is undermine in aspic, undercut is Pollock's undercutting defeater, defeat itself is not an attack mode but an argument status, and so on.}
+
+  \begin{center}
+    \begin{prooftree}
+      \hypo{\Sigma_1\vdash \neg \varphi}
+      \hypo{\Sigma_2, \varphi \vdash \psi}
+      \infer2{\Sigma_2\cancel{\vdash} \psi}
+    \end{prooftree}
+    \end{center}
+
+Unlike rebut, undercut opererates on an assumption of the attacked argument.
+
+\[undercut(t_1[\conj{v}],t_2) = t_1[\conj{v} \leftarrow \mu \_: \rangle \conj{v} :: t_2\langle ]\]
+\ednote{Ednote: Introduce argument notation}
+
+Computationally, undercut throws away any term (environment) that is passed to it (to which it is passed) and instead passes the counterargument $t_2$ to a dedicated error environment (term)  $*$.
+In this way the counterargument ``bubbles up'' akin to an exception in a language like OCaml.\ednote{TODO: How can it be caught? Either on the way up encounters catch (on name; on type would require modification of rewrite rule.), i.e. it becomes $\mu{*}.\rangle * :: t_2\langle$; or rebut (a support for the attacked assumption will instead become a rebut). }
+
+\ednote{TODO: undercut argument is labelled OUT.}
+
+\subsection{Encoding Rebut}
+
+We will do so making use of \emph{affine} and \emph{semi-affine} variables.
+A $\mu$-bound variable is affine if it does not appear in the command in which it is bound.
+It is semi-affine if it only appears on one side of of the command in which it is bound.
+Affine variables are either terms that are thrown away or environments that are never passed to.
+Exploiting this, affine uses of control operators can direct a term (environment) to a different bound variable.
+Semi-affine variables on the other hand are only used in either the call-by-name or call-by-value discipline of execution.
+This makes it possible to redirect a term (environment) to a different bound variable conditional on the evaluation order.
+In particular, here we define a sentinel variable $\star$ which denotes an error term (environment):
+
+% \begin{align*}
+%   rebut_{left}&(t_1,t_2)= \\
+%   &\mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} : * \langle : \contr{\sigma} : \sigma.\rangle\star:\contr{\sigma} t_2:\langle .\pro{\sigma}:\star\mu\langle
+% \end{align*}
+
+%\[rebut_{left}(t_1,t_2)= \mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle : \contr{\sigma} : \rangle\star:\contr{\sigma} : t_2\langle .\pro{\sigma}:\_\mu\langle\]
+\[rebut_{left}(t_1,t_2)= \mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle : \contr{\sigma} : \rangle\star:\contr{\sigma} : t_2\langle .\pro{\sigma}:\_\mu\langle\]
+
+
+The reserved environment variable $*$ indicates that the rest of the term is to be evaluated in call-by-value discipline.
+Then the term is evaluated in one step as follows:
+
+\begin{align}
+  \label{eq:1}
+  &\mu *:\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle & & (\mu<)
+\end{align}
+
+
+Under normal conditions, this will ensure that the defeated environment $t_2$ is never passed to and instead $t_1$ is eventually returned to any outer context that is substituted for $*$.
+But should the burden of proof shift, the term will be reduced as follows:
+
+\begin{align}
+  \label{eq:1}
+  &\mu *:\refu{\sigma}.\rangle\star:\contr{\sigma} : t_2\langle & & (>\mu)
+\end{align}
+
+Now $*$ becomes fully affine and thus the entire outer context gets thrown away if the expression is ever evaluated. Instead the sentinel value $\star$ gets passd to $t_2$.
+The proof can now only be completed if a new proof of $\sigma$ is supplied.
+
+In other words, (left) rebut turns a proof into an \emph{argument} predicated on the default assumption, that the counterargument can be defeated in some way.
+The burden of refutation lies with Spoiler.
+What moves can she make to shift it back to Prover?
+
+
+\ednote{TODO: rebut without outer $\mu$ binder, two free variables? Can be either captured on the right or on the left. Outer affine variable => undec labelling. How can rebut be relabeled? IN side gets undercut. Then? Or rewriting can only happen if left side not labelled OUT.}
+
+
+\subsection{Support}
+
+Table captions should be centred \emph{above} the table, while figure 
+captions should be centred \emph{below} the figure.\footnote{Footnotes
+should be placed \emph{after} punctuation marks (such as full stops).}
+\end{oldpart}
+\subsection{Debate Operations}
+\begin{oldpart}{Initial Brain Dump}
+  With the compilation target in place we have to define how debate operations compile argument terms into debate terms.
+
+\subsubsection{Default-$\eta$-long-form}
+\subsubsection{Grafting}
+variable capture
+\end{oldpart}
+\section{Worked Example: Peirce's Law}
+\subsection{Lorenzen Dialogue for Peirce's Law}
+\subsection{Debate term for Peirce's Law}
+\subsection{Normalizing  the Debate Term}
+\section{Future Work and Conclusion}
 \bibliographystyle{vancouver}
 \bibliography{references}
 \end{document}

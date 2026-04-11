@@ -19,14 +19,15 @@
 % A lightweight non-floating grammar environment. The external
 % formal-grammar package clashes with the IOS template's float/caption setup.
 \newenvironment{grammar}[3][]{%
-  \begin{center}
-  \begin{tabular}{@{}>{$}l<{$}@{\;}c@{\;}>{$}l<{$}@{\quad}l@{}}
+  \[
+  \begin{array}{@{}l@{\;}c@{\;}l@{\quad}l@{}}
 }{%
-  \end{tabular}
-  \end{center}
+  \end{array}
+  \]
 }
 \newcommand{\firstcasesubtil}[3]{#1 & ::= & #2 & \textit{#3}\\}
 \newcommand{\gralt}{\mid}
+\newcommand{\gramtext}[1]{\text{#1}}
 \usepackage{cancel}
 \usepackage{tabularx}
 \usepackage{algorithm}
@@ -34,6 +35,22 @@
 \usepackage[outline]{contour}
 \usepackage{pifont}
 
+\makeatletter
+\newcommand\Pimathsymbol[3][\mathord]{#1{\@Pimathsymbol{#2}{#3}}}
+\def\@Pimathsymbol#1#2{\mathchoice
+  {\@Pim@thsymbol{#1}{#2}\tf@size}
+  {\@Pim@thsymbol{#1}{#2}\tf@size}
+  {\@Pim@thsymbol{#1}{#2}\sf@size}
+  {\@Pim@thsymbol{#1}{#2}\ssf@size}}
+\def\@Pim@thsymbol#1#2#3{\mbox{\fontsize{#3}{#3}\Pisymbol{#1}{#2}}}
+\input{utxmia.fd}
+\DeclareFontShape{U}{txmia}{m}{n}{<->ssub * txmia/m/it}{}
+\DeclareFontShape{U}{txmia}{bx}{n}{<->ssub * txmia/bx/it}{}
+\newcommand{\pilambdaup}{\Pimathsymbol[\mathord]{txmia}{21}}
+\newcommand{\Alambda}{\ensuremath{\tikz[baseline=-.6ex,line width=.1ex]{
+    \node[inner sep=0pt] (L) at (0,0.03) {$\pilambdaup$};
+    \draw (L.south west)++(.12em,.425ex) -- ++(.2em,0);}}}
+\makeatother
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{corollary}[theorem]{Corollary}
@@ -64,6 +81,8 @@
       \infer2{\pro{\Sigma}\vdash \rangle #1:\contr{#3}:#2\langle \dashv \refu{\Delta}}}
 \newcommand{\symaxiom}[2]{%
   \infer0{\pro{\Sigma},#1:\pro{#2}\vdash #1:\pro{#2}\dashv \refu{\Delta}}}
+\newcommand{\metasymaxiom}[2]{%
+  \infer0{V;\pro{\Sigma},\conj{#1}:\pro{#2}\vdash \conj{#1}:\pro{#2}\dashv \refu{\Delta};E}}
 \newcommand{\symproimplintro}[4]{%
   \hypo{\pro{\Sigma},#1:\pro{#2}\vdash #3:\pro{#4}\dashv \refu{\Delta}}
   \infer1{\pro{\Sigma}\vdash \lambda #1:#2.#3:\pro{#2\rightarrow #4}\dashv \refu{\Delta}}}
@@ -73,6 +92,8 @@
   \infer2{\pro{\Sigma}\vdash #1\circ #3:\pro{#4-#2}\dashv \refu{\Delta}}}
 \newcommand{\symmoixa}[2]{%
   \infer0{\Sigma\vdash \refu{#2}:#1 \dashv \refu{#2}:#1,\refu{\Delta}}}
+\newcommand{\metasymmoixa}[2]{%
+  \infer0{V;\Sigma\vdash \refu{#2}:\cons{#1} \dashv \refu{#2}:\cons{#1},\refu{\Delta};E}}
 \newcommand{\symrefudiffintro}[4]{%
   \hypo{\pro{\Sigma}\vdash \refu{#4}:#3 \dashv \refu{#2}:#1,\refu{\Delta}}
   \infer1{\pro{\Sigma}\vdash \refu{#4-#2}:#3.#1\lambda \dashv \refu{\Delta}}}
@@ -86,6 +107,31 @@
 \newcommand{\symprointro}[4]{%
   \hypo{\pro{\Sigma}\vdash #3:\contr{#4}\dashv \refu{\Delta},\refu{#2}:#1}
   \infer1{\pro{\Sigma}\vdash \mu #1.#3:\pro{#2}\dashv \refu{\Delta}}}
+
+\newcommand{\envsubpremone}{%
+  \hypo{V;\pro{\Sigma}\vdash t[\refu{\sigma}:\alpha] \dashv \refu{\Delta};E}%
+}
+\newcommand{\envsubpremtwo}{%
+  \hypo{V';\pro{\Sigma}\vdash \refu{\sigma}:E \dashv \refu{\Delta};E'}%
+}
+\NewDocumentCommand{\envsub}{O{\envsubpremone} O{\envsubpremtwo} O{V''} O{\pro{\Sigma}} O{t} O{E} O{\alpha} O{\refu{\Delta}} O{E''}}{%
+  \begin{prooftree}
+      #1
+      #2
+      \infer2{#3;#4\vdash #5[#6/#7] \dashv #8;#9}
+    \end{prooftree}}
+\newcommand{\termsubpremone}{%
+  \hypo{V;\pro{\Sigma}\vdash [X:\pro{\sigma}]t \dashv \refu{\Delta};E}%
+}
+\newcommand{\termsubpremtwo}{%
+  \hypo{V';\pro{\Sigma}'\vdash v:\pro{\sigma} \dashv \refu{\Delta}';E'}%
+}
+\NewDocumentCommand{\termsub}{O{\termsubpremone} O{\termsubpremtwo} O{V''} O{\pro{\Sigma}} O{E} O{\alpha} O{t} O{\refu{\Delta}} O{E''}}{%
+  \begin{prooftree}
+      #1
+      #2
+      \infer2{#3;#4\vdash [#5/#6]#7 \dashv #8;#9}
+    \end{prooftree}}
 
 \newcommand{\itemR}[2]{%
   \item\leavevmode
