@@ -48,3 +48,13 @@ aider.*
 
 # local latex/image artifacts
 ltximg/
+
+# paper build artifacts
+papers/comma2026/main.aux
+papers/comma2026/main.bbl
+papers/comma2026/main.blg
+papers/comma2026/main.log
+papers/comma2026/main.out
+papers/comma2026/main.pdf
+papers/comma2026/main.synctex.gz
+papers/comma2026/.cecli/
