@@ -27,7 +27,7 @@
 }
 \newcommand{\firstcasesubtil}[3]{#1 & ::= & #2 & \textit{#3}\\}
 \newcommand{\gralt}{\mid}
-\newcommand{\gramtext}[1]{\text{#1}}
+\newcommand{\gramtext}[1]{#1}
 \usepackage{cancel}
 \usepackage{tabularx}
 \usepackage{algorithm}
@@ -68,65 +68,62 @@
 \newcommand{\rightattack}{%
   \tikz[baseline=-0.5ex,scale=0.2]{\draw [thick, arrows={-to[scale=0.5]}] (0,0.25) -- (1.3,0.25) -- (0.7,0.75) -- (1.8,0.75);}%
 }
-\newcommand{\pro}[1]{\textcolor{black}{\contour{white}{$#1$}}}
-\newcommand{\refu}[1]{\textcolor{white}{\contour{black}{$#1$}}}
-\newcommand{\contr}[1]{\textcolor{black}{\contour{black}{$#1$}}}
 \newcommand{\taut}[1]{\textcolor{white}{\contour{white}{$#1$}}}
 \newcommand{\cons}[1]{\textcolor{gray}{\contour{white}{$#1$}}}
 \newcommand{\conj}[1]{\textcolor{gray}{\contour{white}{$#1$}}}
 \newcommand{\ind}[1]{\textcolor{gray}{\contour{gray}{$#1$}}}
 
-\newcommand{\symcut}[3]{ \hypo{\pro{\Sigma}\vdash #1:\pro{#3}\dashv \refu{\Delta}}
-      \hypo{\pro{\Sigma}\vdash \refu{#3}:#2 \dashv \refu{\Delta}}
-      \infer2{\pro{\Sigma}\vdash \rangle #1:\contr{#3}:#2\langle \dashv \refu{\Delta}}}
+\newcommand{\symcut}[3]{ \hypo{\Sigma\vdash #1:#3\dashv \Delta}
+      \hypo{\Sigma\vdash #3:#2 \dashv \Delta}
+      \infer2{\Sigma\vdash \rangle #1:#3:#2\langle \dashv \Delta}}
 \newcommand{\symaxiom}[2]{%
-  \infer0{\pro{\Sigma},#1:\pro{#2}\vdash #1:\pro{#2}\dashv \refu{\Delta}}}
+  \infer0{\Sigma,#1:#2\vdash #1:#2\dashv \Delta}}
 \newcommand{\metasymaxiom}[2]{%
-  \infer0{V;\pro{\Sigma},\conj{#1}:\pro{#2}\vdash \conj{#1}:\pro{#2}\dashv \refu{\Delta};E}}
+  \infer0{V;\Sigma,\conj{#1}:#2\vdash \conj{#1}:#2\dashv \Delta;E}}
 \newcommand{\symproimplintro}[4]{%
-  \hypo{\pro{\Sigma},#1:\pro{#2}\vdash #3:\pro{#4}\dashv \refu{\Delta}}
-  \infer1{\pro{\Sigma}\vdash \lambda #1:#2.#3:\pro{#2\rightarrow #4}\dashv \refu{\Delta}}}
+  \hypo{\Sigma,#1:#2\vdash #3:#4\dashv \Delta}
+  \infer1{\Sigma\vdash \lambda #1:#2.#3:#2\rightarrow #4\dashv \Delta}}
 \newcommand{\symprodiffintro}[4]{%
-  \hypo{\pro{\Sigma}\vdash #1:\refu{#2}\dashv \refu{\Delta}}
-  \hypo{\pro{\Sigma}\vdash #3:\pro{#4}\dashv \refu{\Delta}}
-  \infer2{\pro{\Sigma}\vdash #1\circ #3:\pro{#4-#2}\dashv \refu{\Delta}}}
+  \hypo{\Sigma\vdash #1:#2\dashv \Delta}
+  \hypo{\Sigma\vdash #3:#4\dashv \Delta}
+  \infer2{\Sigma\vdash #1\circ #3:#4-#2\dashv \Delta}}
 \newcommand{\symmoixa}[2]{%
-  \infer0{\Sigma\vdash \refu{#2}:#1 \dashv \refu{#2}:#1,\refu{\Delta}}}
+  \infer0{\Sigma\vdash #2:#1 \dashv #2:#1,\Delta}}
 \newcommand{\metasymmoixa}[2]{%
-  \infer0{V;\Sigma\vdash \refu{#2}:\cons{#1} \dashv \refu{#2}:\cons{#1},\refu{\Delta};E}}
+  \infer0{V;\Sigma\vdash #2:\cons{#1} \dashv #2:\cons{#1},\Delta;E}}
 \newcommand{\symrefudiffintro}[4]{%
-  \hypo{\pro{\Sigma}\vdash \refu{#4}:#3 \dashv \refu{#2}:#1,\refu{\Delta}}
-  \infer1{\pro{\Sigma}\vdash \refu{#4-#2}:#3.#1\lambda \dashv \refu{\Delta}}}
+  \hypo{\Sigma\vdash #4:#3 \dashv #2:#1,\Delta}
+  \infer1{\Sigma\vdash #4-#2:#3.#1\lambda \dashv \Delta}}
 \newcommand{\symrefuimplintro}[4]{%
-  \hypo{\pro{\Sigma}\vdash #1:\pro{#2}\dashv \refu{\Delta}}
-  \hypo{\pro{\Sigma}\vdash \refu{#4}:#3 \dashv \refu{\Delta}}
-  \infer2{\pro{\Sigma}\vdash \refu{\sigma\rightarrow\delta}:#1\circ #3:\dashv \refu{\Delta}}}
+  \hypo{\Sigma\vdash #1:#2\dashv \Delta}
+  \hypo{\Sigma\vdash #4:#3 \dashv \Delta}
+  \infer2{\Sigma\vdash \sigma\rightarrow\delta:#1\circ #3:\dashv \Delta}}
 \newcommand{\symrefuintro}[4]{%
-  \hypo{\pro{\Sigma},#1:\pro{#2}\vdash #3:\contr{#4}\dashv \refu{\Delta}}
-  \infer1{\pro{\Sigma}\vdash \refu{#2}:#3.#1\mu\dashv \refu{\Delta}}}
+  \hypo{\Sigma,#1:#2\vdash #3:#4\dashv \Delta}
+  \infer1{\Sigma\vdash #2:#3.#1\mu\dashv \Delta}}
 \newcommand{\symprointro}[4]{%
-  \hypo{\pro{\Sigma}\vdash #3:\contr{#4}\dashv \refu{\Delta},\refu{#2}:#1}
-  \infer1{\pro{\Sigma}\vdash \mu #1.#3:\pro{#2}\dashv \refu{\Delta}}}
+  \hypo{\Sigma\vdash #3:#4\dashv \Delta,#2:#1}
+  \infer1{\Sigma\vdash \mu #1.#3:#2\dashv \Delta}}
 
 \newcommand{\envsubpremone}{%
-  \hypo{V;\pro{\Sigma}\vdash t[\refu{\sigma}:\alpha] \dashv \refu{\Delta};E}%
+  \hypo{V;\Sigma\vdash t[\sigma:\alpha] \dashv \Delta;E}%
 }
 \newcommand{\envsubpremtwo}{%
-  \hypo{V';\pro{\Sigma}\vdash \refu{\sigma}:E \dashv \refu{\Delta};E'}%
+  \hypo{V';\Sigma\vdash \sigma:E \dashv \Delta;E'}%
 }
-\NewDocumentCommand{\envsub}{O{\envsubpremone} O{\envsubpremtwo} O{V''} O{\pro{\Sigma}} O{t} O{E} O{\alpha} O{\refu{\Delta}} O{E''}}{%
+\NewDocumentCommand{\envsub}{O{\envsubpremone} O{\envsubpremtwo} O{V''} O{\Sigma} O{t} O{E} O{\alpha} O{\Delta} O{E''}}{%
   \begin{prooftree}
       #1
       #2
       \infer2{#3;#4\vdash #5[#6/#7] \dashv #8;#9}
     \end{prooftree}}
 \newcommand{\termsubpremone}{%
-  \hypo{V;\pro{\Sigma}\vdash [X:\pro{\sigma}]t \dashv \refu{\Delta};E}%
+  \hypo{V;\Sigma\vdash [X:\sigma]t \dashv \Delta;E}%
 }
 \newcommand{\termsubpremtwo}{%
-  \hypo{V';\pro{\Sigma}'\vdash v:\pro{\sigma} \dashv \refu{\Delta}';E'}%
+  \hypo{V';\Sigma'\vdash v:\sigma \dashv \Delta';E'}%
 }
-\NewDocumentCommand{\termsub}{O{\termsubpremone} O{\termsubpremtwo} O{V''} O{\pro{\Sigma}} O{E} O{\alpha} O{t} O{\refu{\Delta}} O{E''}}{%
+\NewDocumentCommand{\termsub}{O{\termsubpremone} O{\termsubpremtwo} O{V''} O{\Sigma} O{E} O{\alpha} O{t} O{\Delta} O{E''}}{%
   \begin{prooftree}
       #1
       #2

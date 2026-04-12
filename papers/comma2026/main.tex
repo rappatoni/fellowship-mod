@@ -163,49 +163,49 @@ Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term va
   \begin{grammar}[Grammar of the $\matilda$-calculus][][gram:terms]
     \firstcasesubtil{$v$}
       {x
-       \gralt \lambda x:\pro{\sigma}.v
+       \gralt \lambda x:\sigma.v
        \gralt E \circ v\
-       \gralt \mu \alpha:\refu{\sigma}.c
+       \gralt \mu \alpha:\sigma.c
        %\gralt \textcolor{blue}{[x]}
       }
       {\gramtext{Terms}}
 
     \firstcasesubtil{$E$}
       {\alpha
-       \gralt E.\refu{\sigma}:\alpha\lambda
+       \gralt E.\sigma:\alpha\lambda
        \gralt v \circ E
-       \gralt c.\pro{\sigma}:x \mu
+       \gralt c.\sigma:x \mu
        %\gralt \textcolor{blue}{[\alpha]}
       }
       {\gramtext{Environments}}
 
      
     \firstcasesubtil{$c$}
-      {\rangle v :\contr{\sigma}:  E \langle
-       %\gralt \rangle \_ :[\pro{\sigma}]\contr{\sigma}:  E \langle
-       %\gralt \rangle v :\contr{\sigma}[\refu{\sigma}]:  \_ \langle
+      {\rangle v :\sigma:  E \langle
+       %\gralt \rangle \_ :[\sigma]\sigma:  E \langle
+       %\gralt \rangle v :\sigma[\sigma]:  \_ \langle
       }
       {\gramtext{Commands}}
   
 
-    \firstcasesubtil{\pro{\sigma,\delta}}
-      {\pro{ a  }
-       \gralt \pro{\sigma \rightarrow  \delta  }
-       \gralt \pro{ \sigma - \delta  }
+    \firstcasesubtil{$\sigma,\delta$}
+      {a
+       \gralt \sigma \rightarrow  \delta
+       \gralt  \sigma - \delta
       }
       {\gramtext{Propositions}}
 
-    % \firstcasesubtil{\refu{\sigma},\refu{\delta}}
-    %   {\refu{a}
-    %    \gralt \refu{\sigma\rightarrow \delta}
-    %    \gralt \refu{ \sigma  - \delta}
+    % \firstcasesubtil{$\sigma,\delta$}
+    %   {a
+    %    \gralt \sigma\rightarrow \delta
+    %    \gralt  \sigma  - \delta
     %   }
     %   {\gramtext{Refutations}}
 
-    % \firstcasesubtil{\contr{\sigma}, \contr{\delta}}
-    %   {\contr{a}
-    %    \gralt \contr{\sigma \rightarrow \delta}
-    %    \gralt \contr{\sigma - \delta}
+    % \firstcasesubtil{$\sigma, \delta$}
+    %   {a
+    %    \gralt \sigma \rightarrow \delta
+    %    \gralt \sigma - \delta
     %   }
     %   {\gramtext{Contradictions}}
   \end{grammar}
@@ -316,8 +316,8 @@ If $(\mu<)$-reductions are applied before $(>\mu)$-reductions one gets call-by-v
 Additionally, we have the following$\eta$-equivalence rules for $\mu$ binders:
 
 \begin{align*}
-  (\mu.-\eta&) & v &\alignarrow   &mu. \alpha\rangle v :  : \alpha \langle \\
-    (.\mu-\eta&) & E &\alignarrow   &\rangle x :  : E \langle.x:\mu 
+  (\mu.-\eta&) & v &\alignarrow & \mu \alpha.\rangle v :: \alpha \langle \\
+  (.\mu-\eta&) & E &\alignarrow & \rangle x :: E \langle .x\mu
 \end{align*}
 
 \section{Constructing Arguments: the $ \Alambda$-calculus}
@@ -360,9 +360,9 @@ Let $\conj{\mathcal{V}},\cons{\mathcal{E}}$ and $\ind{\bot}$ be countably infini
 %   % {Environment Meta-variables}
 %   \firstcasesubtil{$c$}
 %   {...
-%      \gralt \rangle \conj{v} :\contr{\sigma}:  E \langle
-%      \gralt \rangle v :\contr{\sigma}:  \cons{E} \langle
-%      \gralt \rangle \conj{v} :\contr{\sigma}:  \cons{E} \langle
+%      \gralt \rangle \conj{v} :\sigma:  E \langle
+%      \gralt \rangle v :\sigma:  \cons{E} \langle
+%      \gralt \rangle \conj{v} :\sigma:  \cons{E} \langle
 %      \gralt \ind{\aleph}
 %   }{}
 % \end{grammar}
@@ -388,7 +388,7 @@ Metavariables are typed like so:
   \begin{minipage}{0.48\linewidth}
     \centering
     \begin{prooftree}\label{axiom:proofs}
-      \infer0{V;\bot, \ind{\aleph};\pro{\Sigma}\vdash \ind{\aleph}\dashv \refu{\Delta};E}
+      \infer0{V;\bot, \ind{\aleph};\Sigma\vdash \ind{\aleph}\dashv \Delta;E}
     \end{prooftree}
   \end{minipage}
 \end{center}
@@ -404,7 +404,7 @@ Thus it does not matter if we substitute a subargument for an assumption. \ednot
 With these ingredients in place we are finally ready to define our notion of argument:
 
 \begin{definition}[Argument]
-  Given a type $t$ an \emph{argument for $t$}  is an intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of meta-variables. An \emph{argument against $t$} (or a counterargument to $t$) is a dual-intuitionistic $\Alambda$ expression of type $\refu{t}$ with an arbitrary number of metavariables. An \emph{argument} is either an argument for or against some type $t'$.
+  Given a type $t$ an \emph{argument for $t$}  is an intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of meta-variables. An \emph{argument against $t$} (or a counterargument to $t$) is a dual-intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of metavariables. An \emph{argument} is either an argument for or against some type $t'$.
 \end{definition}
 
 \end{oldpart}
@@ -439,15 +439,15 @@ In the classical version of the $\matilda$-calculus, the rules
   \begin{minipage}{0.48\linewidth}
     \centering
     \begin{prooftree}
-      \hypo{\Sigma \vdash \refu{\varphi}:E \dashv \Delta}
-      \infer1{\Sigma \vdash \text{not }E:\pro{\neg\varphi} \dashv \Delta}
+      \hypo{\Sigma \vdash \varphi:E \dashv \Delta}
+      \infer1{\Sigma \vdash \text{not }E:\neg\varphi \dashv \Delta}
     \end{prooftree}
   \end{minipage}
   \begin{minipage}{0.48\linewidth}
     \centering
     \begin{prooftree}
-      \hypo{\Sigma \vdash v:\pro{\varphi} \dashv \Delta}
-      \infer1{\Sigma \vdash \refu{\neg\varphi}:v \text{ not} \dashv \Delta}
+      \hypo{\Sigma \vdash v:\varphi \dashv \Delta}
+      \infer1{\Sigma \vdash \neg\varphi:v \text{ not} \dashv \Delta}
     \end{prooftree}
   \end{minipage}
 \end{center}
@@ -492,29 +492,19 @@ This makes it possible to redirect a term (environment) to a different bound var
 In particular, here we define a sentinel variable $\star$ which denotes an error term (environment):
 
 % \begin{align*}
-%   rebut_{left}&(t_1,t_2)= \\
-%   &\mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} : * \langle : \contr{\sigma} : \sigma.\rangle\star:\contr{\sigma} t_2:\langle .\pro{\sigma}:\star\mu\langle
+%   rebut_{left}&(t_1,t_2)= \
+%   &\mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma : * \langle : \sigma : \sigma.\rangle\star:\sigma t_2:\langle .\sigma:\star\mu\langle
 % \end{align*}
 
-%\[rebut_{left}(t_1,t_2)= \mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle : \contr{\sigma} : \rangle\star:\contr{\sigma} : t_2\langle .\pro{\sigma}:\_\mu\langle\]
-\[rebut_{left}(t_1,t_2)= \mu *:\refu{\sigma}.\rangle \mu \_ :\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle : \contr{\sigma} : \rangle\star:\contr{\sigma} : t_2\langle .\pro{\sigma}:\_\mu\langle\]
-
+%\[rebut_{left}(t_1,t_2)= \mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma :* \langle : \sigma : \rangle\star:\sigma : t_2\langle .\sigma:\_\mu\langle\]
+\[rebut_{left}(t_1,t_2)= \mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma :* \langle : \sigma : \rangle\star:\sigma : t_2\langle .\sigma:\_\mu\langle\]
 
 The reserved environment variable $*$ indicates that the rest of the term is to be evaluated in call-by-value discipline.
 Then the term is evaluated in one step as follows:
 
 \begin{align}
   \label{eq:1}
-  &\mu *:\refu{\sigma}.\rangle t_1: \contr{\sigma} :* \langle & & (\mu<)
-\end{align}
-
-
-Under normal conditions, this will ensure that the defeated environment $t_2$ is never passed to and instead $t_1$ is eventually returned to any outer context that is substituted for $*$.
-But should the burden of proof shift, the term will be reduced as follows:
-
-\begin{align}
-  \label{eq:1}
-  &\mu *:\refu{\sigma}.\rangle\star:\contr{\sigma} : t_2\langle & & (>\mu)
+  &\mu *:\sigma.\rangle t_1: \sigma :* \langle & & (\mu<)
 \end{align}
 
 Now $*$ becomes fully affine and thus the entire outer context gets thrown away if the expression is ever evaluated. Instead the sentinel value $\star$ gets passd to $t_2$.
