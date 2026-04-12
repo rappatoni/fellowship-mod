@@ -18,7 +18,7 @@
 
 % A lightweight non-floating grammar environment. The external
 % formal-grammar package clashes with the IOS template's float/caption setup.
-\newenvironment{grammar}[3][]{%
+\newenvironment{grammar}[1][]{%
   \[
   \begin{array}{@{}l@{\;}c@{\;}l@{\quad}l@{}}
 }{%
@@ -152,6 +152,6 @@
 \newcommand{\aipartlabels}[2]{\def\aibeglabel{#1}\def\aiendlabel{#2}}
 \newcommand{\aipartmargins}[2]{\def\aibegmargin{#1}\def\aiendmargin{#2}}
 \newenvironment{aipart}[1]%
-{\ed@part{#1}{AI contribution}\aibeglabel\aibegmargin\ifshowednotes\color[rgb]{0.80,0.25,0.25}\fi}
+{\ed@part{}{AI contribution}\aibeglabel\aibegmargin\ifshowednotes\footnotemark\footnotetext{#1}\color[rgb]{0.80,0.25,0.25}\fi}
 {\ended@part\aiendmargin}
 \makeatother

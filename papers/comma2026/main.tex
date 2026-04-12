@@ -25,18 +25,51 @@ argumentation\sep proof terms\sep classical logic\sep debate\sep grafting
 
 \section{Introduction}
 \begin{oldpart}{Initial brain dump}
-  Argumentation Frameworks (ASPIC+,ABA,Carneades,Deductive Argumentation (Sequent-based Argumentation))and their implementations extend a given object logic \ednote{MR@agent: is this actually true? It is advertised e.g. for ASPIC+ are real implementations actually parametric in object logics?} with non-monotonic and argumentation features including argument construction and acceptability evaluation. However, they do not usually provide the necessary scaffolding to mechanize a logic out of the box.
-  Logical Frameworks such as LF, COC and Higher-Order Logic and their implementations such as MMT, ROCQ, Lean, and Isabelle/HOL use variants of the propositions-as-types paradigm to obtain such scaffolding and provide additional services such as module systems and extensive libraries. In particular, Logical Frameworks represent proofs as first-class proof objects that can be operated on via generic tools, e.g. interactive assisted proof construction (hammers, etc.), normalization, etc. \ednote{MR: list some more services/operations}. But they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \ednote{MR@agent: please find references, e.g. work by Alexander Steen and Chris Benzmüller}, they do not enjoy the same degree of tool support.
-  Hence currently - to the best of our knowledge - no system for the construction, compilation of and computation with argument and debate *objects* exists \ednote{MR@agent: do you agree? Please research this.}. Yet such a system would provide significant benefits - arguably greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, subargument extraction, debate normalization, debate updating (adding or removing arguments), debate filtering, etc.
-  
-
-\begin{aipart}[AI contribution example]
-This is a short example paragraph wrapped in the \texttt{aipart} environment so you can inspect how agent-written text is rendered in the current IOS template. It should appear in a light red color and stand out from both the ordinary paper text and the \texttt{oldpart} block above.
+  Argumentation Frameworks (ASPIC+,ABA,Carneades,Deductive Argumentation (Sequent-based Argumentation))and their implementations extend a given object logic \ednote{MR@agent: is this actually true? It is advertised e.g. for ASPIC+ are real implementations actually parametric in object logics? A: only in a qualified sense; I would phrase this more carefully. @MR: Suggested rewording placed in an aipart below.} with non-monotonic and argumentation features including argument construction and acceptability evaluation. However, they do not usually provide the necessary scaffolding to mechanize a logic out of the box.
+\begin{aipart}{Suggested rewording for the previous sentence; makes the claim more cautious by speaking of logic-based formalisms rather than uniformly logic-parametric implementations.}
+Argumentation frameworks such as ASPIC+, ABA, Carneades, and deductive or sequent-based approaches are typically presented as \emph{logic-based} formalisms: they presuppose an underlying object language and consequence relation, and enrich that basis with argument-theoretic notions such as argument construction, attack, defeat, and acceptability. Their implementations, however, are usually not fully logic-parametric workbenches in the style of general logical frameworks.
 \end{aipart}
+Logical Frameworks such as LF, COC and Higher-Order Logic and their implementations such as MMT, ROCQ, Lean, and Isabelle/HOL use variants of the propositions-as-types paradigm to obtain such scaffolding and provide additional services such as module systems and extensive libraries. In particular, Logical Frameworks represent proofs as first-class proof objects that can be operated on via generic tools, e.g. interactive assisted proof construction (hammers, etc.), normalization, etc. \ednote{MR: list some more services/operations}. But they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \ednote{MR references, e.g. work by Alexander Steen and Chris Benzmüller.
+ }, they do not enjoy the same degree of tool support.
+  Hence currently - to the best of our knowledge - no system for the construction, compilation of and computation with argument and debate *objects* exists \ednote{MR@GPTEL: do you agree? Please research this.}. Yet such a system would provide significant benefits - arguably greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, subargument extraction, debate normalization, debate updating (adding or removing arguments), debate filtering, etc.
+
+\begin{aipart}{gptel}
+Short answer: partly agree, with nuance.
+
+What exists today (as of 2024)
+- Abstract AF solvers and toolkits (compute extensions/labellings, credulous/skeptical reasoning, etc.):
+  - ASPARTIX (ASP-based), ConArg (CP-based), ArgSemSAT/pyglaf/CoQuiAAS (SAT/MaxSAT-based), dynPARTIX, ICCMA solvers in general.
+  - Libraries with “argument objects”: TweetyProject (Java) has rich APIs for Dung-style AFs, ranking semantics, probabilistic/weighted variants, some structured formalisms.
+- Structured argumentation and rule-based engines:
+  - DeLP (defeasible logic programming; dialectical trees), Gorgias/Gorgias-B (argumentation in Prolog with preferences), Carneades (argument schemes, burdens/standards of proof), ABA/ABA+ Prolog-based tools and prototypes.
+- Argument mapping/debate platforms:
+  - AIF/AIFdb/OVA, Argdown, Rationale/Kialo/D-BAS, IBM Project Debater (not open); these focus more on capture/visualization than formal computation.
+
+What these do not provide
+- A general, meta-level, LF-like framework that treats arguments/debates as first-class typed objects with:
+  - a uniform core calculus and propositions-as-types-style foundations,
+  - a tactic/automation layer (hammer-like), normalization of argument objects, module/functor systems, reusable libraries with parametric components,
+  - verified compilation/translations between formalisms (e.g., ASPIC+ → AF → ranking/weighted variants),
+  - robust incremental/dynamic reasoning services (with certificates) and ecosystem-wide interoperability.
+- Deep/shallow embeddings in Coq/Isabelle/HOL/MMT exist (e.g., work by Benzmüller, Steen, others) but either struggle with non-monotonicity for shallow embeddings or lose the breadth of domain-specific automation/tooling when deeply embedded.
+
+Conclusion
+- If “system for the construction, compilation of and computation with argument and debate objects” means a general-purpose, foundations-backed framework with the breadth and generic tooling of Coq/Isabelle/MMT, then the claim is defensible: there is no mature, widely adopted system at that level. 
+- If interpreted broadly as “software that builds and computes with argument objects,” then several systems exist (Tweety, DeLP, Gorgias, Carneades, ICCMA solvers), though they are siloed, task-specific, and lack the generic services and meta-level uniformity you have in proof assistants.
+
+Suggested refinement of the sentence
+- “To the best of our knowledge, there is currently no mature, general-purpose framework that treats arguments and debates as first-class objects with LF/Coq/Isabelle-like foundations and generic services; existing tools are specialized solvers, libraries, or platforms with limited interoperability and weaker meta-level support.”
+
+Extra “services/operations” you can list for proof objects (by analogy for arguments/debates)
+- For proofs: tactic languages and automation (Sledgehammer/SMT, e-matching), search/indexing across large libraries, module/functor systems and parametric theories, rewriting/normalization and conversion checking, proof-term compression and certificates, program extraction/code generation, dependency analysis and refactoring, notations and elaboration, verified translations/compilers between logics.
+- For arguments/debates (target services): interactive assisted construction (solver-backed “hammers” suggesting attackers/defenders), computation under many semantics (extensions, labellings, rankings), justification/derivation trees and subargument extraction, normalization/canonical labellings, dynamic updates with incremental recomputation and change explanations, debate filtering/slicing by claim/topic/audience, enforcement and revision, provenance and preferences management, verified translations between structured and abstract formalisms, certificate production/checking for acceptability results, visualization and search across argument libraries, import/export via standard formats (e.g., ICCMA, AIF, Argdown).
+\end{aipart}
+
+  
 \end{oldpart}
 \section{Arguments and Debates in the Propositions-as-Types Paradigm}
 \begin{oldpart}{Initial Brain Dump}
-  Famously one can understand the proofs of intuitionistic logic for a given proposition as programs typed by a corresponding type (most canonically for propositional logic and the simply-typed lambda calculus) \ednote{MR@agent: please canonical citation here}. However, Argument and Debate objects require beyond pure type theory handling of
+  Famously one can understand the proofs of intuitionistic logic for a given proposition as programs typed by a corresponding type (most canonically for propositional logic and the simply-typed lambda calculus) \ednote{MR@agent: please canonical citation here. A: canonical options would be Curry--Feys / Howard for the correspondence, and Church or simply a standard STLC reference for the simply-typed lambda calculus presentation.} However, Argument and Debate objects require beyond pure type theory handling of
   \begin{enumerate}
   \item Conflicting Terms: arguments may attack each other instead of merely supporting each other.
   \item Control Flow Manipulation: a debate often encompasses multiple argument for or against the same proposition and whether an argument is defeated, accepted (or reinstated) determines if it can still play a role in the rest of the debate.
@@ -45,21 +78,87 @@ This is a short example paragraph wrapped in the \texttt{aipart} environment so 
  
 \end{oldpart}
 \section{The $\matilda$ Calculus - Dialectical Variant}
-\begin{oldpart}{Mostly taken from old draft}
-  \cite{TODO} \ednote{MR: canonical citations: Felleisen, Parigot, Wadler, Herbelin and Autexier} extend the proposition-as-types correspondence to classical logic. Felleisen showed that control operators such as call-cc can be typed by Peirce's law; Parigot's $\lambda\mu$-calculus provides the Curry-Howard-Correspondent to classical natural deduction; Wadler, Herbelin and Autexier invented symmetric systems, in the latter case the \matilda calculus which is to the classical sequent calculus LK as $\lambda\mu$-calculus is to classical natural deduction.
-  The latter system can be transposed into a dialectical natural deduction system \cite{TODO}\ednote{MR@agent: cite here Herbelin's habilitation, Lovas and Crary paper, Bob Harper book chapter on classical type theory} of \emph{proofs and refutations}, providing us with the second one of our requirements.
-  
+  \cite{TODO} \ednote{MR@GPTEl: Please find me the following canonical citations, obtain the bibtex from reliable literature databases and paste them below} Felleisen, Parigot, Wadler, Herbelin and Autexier extend the proposition-as-types correspondence to classical logic. Felleisen showed that \emph{control operators} such as call-cc can be typed by Peirce's law; Parigot's $\lambda\mu$-calculus provides the Curry-Howard-Correspondent to classical natural deduction; Wadler, Herbelin and Autexier invented symmetric systems, in the latter case the \matilda calculus which is to the classical sequent calculus LK as $\lambda\mu$-calculus is to classical natural deduction.
 
+% \begin{aipart}{gptel}
+% Before pasting BibTeX: the canonical reference that types control operators (e.g., call/cc) via classical logic/Peirce’s law is Griffin (POPL 1990). I include that in addition to Felleisen’s seminal work on control operators. Also, for the “matilda”/-tilde calculus corresponding to LK, the standard citation is Curien  Herbelin’s (The Duality of Computation). If you intended a different work by Autexier, please clarify.
+
+% @inproceedings{Felleisen1988-Prompt,
+%   author    = {Matthias Felleisen},
+%   title     = {The Theory and Practice of First-Class Prompts},
+%   booktitle = {Proceedings of the 15th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL'88)},
+%   year      = {1988},
+%   pages     = {180--190},
+%   publisher = {ACM}
+% }
+
+% @inproceedings{Griffin1990-FormulaeAsTypesOfControl,
+%   author    = {Timothy G. Griffin},
+%   title     = {A Formulae-as-Types Notion of Control},
+%   booktitle = {Proceedings of the 17th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL'90)},
+%   year      = {1990},
+%   pages     = {47--58},
+%   publisher = {ACM},
+%   doi       = {10.1145/96709.96714}
+% }
+
+% @inproceedings{Parigot1992-LambdaMu,
+%   author    = {Michel Parigot},
+%   title     = {{\textlambda}{\textmu}-calculus: An Algorithmic Interpretation of Classical Natural Deduction},
+%   booktitle = {Proceedings of the 7th Annual IEEE Symposium on Logic in Computer Science (LICS'92)},
+%   year      = {1992},
+%   pages     = {134--143},
+%   publisher = {IEEE Computer Society}
+% }
+
+% @inproceedings{CurienHerbelin2000-DualityOfComputation,
+%   author    = {Pierre{-}Louis Curien and Hugo Herbelin},
+%   title     = {The Duality of Computation},
+%   booktitle = {Proceedings of the 5th ACM SIGPLAN International Conference on Functional Programming (ICFP'00)},
+%   year      = {2000},
+%   pages     = {233--243},
+%   publisher = {ACM}
+% }
+
+% @inproceedings{Wadler2003-CBVIsDualToCBN,
+%   author    = {Philip Wadler},
+%   title     = {Call-by-Value Is Dual to Call-by-Name},
+%   booktitle = {Proceedings of the 8th ACM SIGPLAN International Conference on Functional Programming (ICFP'03)},
+%   year      = {2003},
+%   pages     = {189--201},
+%   publisher = {ACM}
+% }
+
+% If you want the journal versions as well (e.g., the Duality of Computation in TCS, or Wadler’s expanded Dual Calculus paper), I can add those. Also, please confirm the intended Autexier citation.
+% \end{aipart}
+
+
+  The latter system can be transposed into a dialectical natural deduction system \cite{TODO}\ednote{MR@gptel: cite here Herbelin's habilitation, Lovas and Crary paper, Bob Harper book chapter on classical type theory. Pull the bibtex from reliable literature databases and paste them below.} of \emph{proofs and refutations}, providing us with the second one of our requirements.
+
+\begin{aipart}{gptel}
+I can add the BibTeX, but I need exact identifiers (titles/venues/years/DOIs) or permission to look them up. Could you confirm:
+
+- Herbelin’s habilitation: exact title/year (e.g., “A computational account of classical proofs”?), and where it’s hosted (HAL/Inria/Thèses.fr)?
+- Lovas and Crary: which paper (full title/venue/year)?
+- Bob Harper: do you mean the “Classical Logic” chapter in PFPL (2nd ed., Cambridge UP, 2016), or another chapter specifically titled “Classical Type Theory”?
+
+If you prefer, enable web access and I’ll fetch the authoritative BibTeX from publishers (Cambridge/ACM/DOI/HAL/arXiv) and paste it.
+\end{aipart}
+
+  
 We recap the $\matilda$ Calculus and give a dialectical variant of its syntax.
 Expressions are divided into terms, environments and commands.
 Terms are read left-to-right while environments are read right-to-left.
-Commands are read either left-to-right or right-to-left depending on how they are bound.\ednote{Check back later.}
+Commands are read either left-to-right or right-to-left depending on how they are bound.
 The terminology on the expression level gestures at an interpretation of $\matilda$-expressions as program terms and continuation contexts.
 Terms are expressions with outer holes that wait to be passed to a context.
 Contexts are expressions with inner holes that await a term to be passed to them.
 Commands assign terms to contexts.
-The $\mu$ binder when binding to the right represents a call-with-current-continuation (or one of the current continuations in the classical case).
-Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current-expression (or one of the current expressions in the intuitionistic case).
+The $\mu$ binder when binding to the right represents a call-with-current-continuation.
+Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current-expression.
+Several fragments of the syntax are of interest:
+\emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set. We use $\star$ for this unique continuation variable whenever we want to work in the intuitionistic fragment.
+Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term variable domain to a singleton. We use $\cdot$ to denote this unique term variable whenever we are wokring in the cointuitionistic fragment.
 
   \begin{grammar}[Grammar of the $\matilda$-calculus][][gram:terms]
     \firstcasesubtil{$v$}
@@ -94,43 +193,50 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
        \gralt \pro{\sigma \rightarrow  \delta  }
        \gralt \pro{ \sigma - \delta  }
       }
-      {\gramtext{Proofs}}
+      {\gramtext{Propositions}}
 
-    \firstcasesubtil{\refu{\sigma},\refu{\delta}}
-      {\refu{a}
-       \gralt \refu{\sigma\rightarrow \delta}
-       \gralt \refu{ \sigma  - \delta}
-      }
-      {\gramtext{Refutations}}
+    % \firstcasesubtil{\refu{\sigma},\refu{\delta}}
+    %   {\refu{a}
+    %    \gralt \refu{\sigma\rightarrow \delta}
+    %    \gralt \refu{ \sigma  - \delta}
+    %   }
+    %   {\gramtext{Refutations}}
 
-    \firstcasesubtil{\contr{\sigma}, \contr{\delta}}
-      {\contr{a}
-       \gralt \contr{\sigma \rightarrow \delta}
-       \gralt \contr{\sigma - \delta}
-      }
-      {\gramtext{Contradictions}}
+    % \firstcasesubtil{\contr{\sigma}, \contr{\delta}}
+    %   {\contr{a}
+    %    \gralt \contr{\sigma \rightarrow \delta}
+    %    \gralt \contr{\sigma - \delta}
+    %   }
+    %   {\gramtext{Contradictions}}
   \end{grammar}
 
 Sequents have the form \emph{Antecedent $\vdash$ Stoup $\dashv$ Succedent}.
 Antecedent and Succedent are conjunctive contexts of terms and environments respectively while the stoup contains exactly one active formula - a term, context or command - at any given time.
 They are read in the same direction as their elements.
-One the type-level, we give a dialectical interpretation following \cite{lovas-struc-normal} and \cite{TODO} \ednote{Cite Harper book}.
+On the type-level, we give a dialectical interpretation following \cite{herbelin habilitation} \cite{lovas-struc-normal} and \cite{TODO} \ednote{Cite Harper book}.
+There are three judgments:
+\begin{enumerate}
+\item $\Sigma\vdash v:\sigma \dashv \Delta$ judges $v$ to be a \emph{proof} for $\sigma$
+\item $\Sigma\vdash \sigma:E \dashv \Delta$ judges $E$ to be a \emph{refutation} of $\sigma$
+\item $\Sigma\vdash \langle v:\sigma:E\rangle \dashv \Delta$ judges $v$ and $E$ to form a \emph{contradiction} at $\sigma$
+\end{enumerate}
+
+The proof and refutation types of a given proposition are called \emph{contraries}.
+
 In \cite{herbelin-2000} commands are typed by a sequent with an empty stoup mirroring the usual cut rule.
-This can be read as a contradiction.
-Its typing rule is as follows:
+However, we want to keep track of the issue of the contradiction and hence use the following typing rule:
 
 \begin{center}
   \begin{minipage}{0.48\linewidth}
-    \begin{prooftree}\label{rule: S-ELIM}
+    \begin{prooftree}
+      \label{rule:S-ELIM}
       \symcut{v}{E}{\sigma}
     \end{prooftree}
   \end{minipage}
 \end{center}
 
-Instead of cutting the \emph{issue} of the contradiction we want to keep track of it and introduce a type of \emph{pointed contradictions} (bold-face greek letters).
-A contradiction arises when a proof meets a refutation.
-Correspondingly, terms are typed as proofs (denoted by greek letters) and environments as refutations (denoted by greek-letter shaped holes).
-Proofs have the following typing rules (the $\vdash$-symbol is a meta-variable ranging over the pointed contradictions):
+Instead of cutting the issue, the meeting of a contrary proof and refutation yields a contradiction.
+Proofs have the following typing rules (the $\bot$-symbol is a meta-variable ranging over contradictions):
 
 \begin{center}
   \begin{minipage}{0.48\linewidth}
@@ -156,7 +262,8 @@ Proofs have the following typing rules (the $\vdash$-symbol is a meta-variable r
   \end{minipage}
   \begin{minipage}{0.48\linewidth}
     \centering
-    \begin{prooftree}\label{rule: R-ELIM}
+    \begin{prooftree}
+      \label{rule:R-ELIM}
       \symprointro{\alpha}{\delta}{c}{\bot}
     \end{prooftree}
   \end{minipage}
@@ -173,7 +280,8 @@ These are mirrored by the typing rules for refutations:
   \end{minipage}
   \begin{minipage}{0.48\linewidth}
     \centering
-    \begin{prooftree}\label{rule: refudiffintro}
+    \begin{prooftree}
+      \label{rule:refudiffintro}
       \symrefudiffintro{\alpha}{\sigma}{F}{\delta}
     \end{prooftree}
   \end{minipage}
@@ -182,7 +290,8 @@ These are mirrored by the typing rules for refutations:
 \begin{center}
   \begin{minipage}{0.48\linewidth}
     \centering
-    \begin{prooftree}\label{rule: S-ELIM}
+    \begin{prooftree}
+      \label{rule:S-ELIM}
       \symrefuimplintro{v}{\sigma}{E}{\delta}
     \end{prooftree}
   \end{minipage}
@@ -194,14 +303,6 @@ These are mirrored by the typing rules for refutations:
   \end{minipage}
 \end{center}
 
-The interplay of proofs and refutations can be viewed through the lens of game semantics as a dialogue between two opposing agents: \emph{Prover} and \emph{Spoiler}.
-Prover (Spoiler) can construct proofs (refutations) directly from axioms using the respective connectives introduction rules.
-Alternatively they can reason by contradiction: the right-binding (left-binding) $\mu$ binder denotes a challenge to derive a contradiction given an offered refutation (proof).\ednote{TODO: As far as I am aware the \emph{exact} Lorentzen game for the $\matilda$-calculus has not been worked out/published yet, which is surprising since it should not be so difficult. Perhaps a footnote here.}
-Restricting the use of proof by contradiction yields different fragments of the system:
-In the intuitionistic fragment, proofs by contradiction may not be nested (achieved in the usual way by restricting succedents to at most a single formula);
-In the dual-intuitionistic fragment, refutations by contradiction may not be nested (antecedents are restricted to at most a single formula)
-In the minimal (dual-minimal) fragment, additionally no tautological refutations (proof) may be used (succedent/antecedent additionally have to hold at least one formula).
-
 Finally, the calculus' expressions can be reduced as follows:
 
 \begin{align*}
@@ -212,13 +313,12 @@ Finally, the calculus' expressions can be reduced as follows:
 \end{align*}
 
 If $(\mu<)$-reductions are applied before $(>\mu)$-reductions one gets call-by-value evaluation, otherwise call-by-name evaluation.
-Dialectically speaking, the order of evaluation corresponds to the \emph{burden of argument}.
-Call-by-value (Call-by-name) evaluation corresponds to burden of proof (refutation): a concrete refutation (proof) gets substituted in and Prover (Spoiler) better had the goods!
-On the other hand the substituted refutation's (proof's) evaluation is delayed or may even never occur.
-Explicit order of evaluation manipulation can thus model if a proof (refutation) gets to hold \emph{by default}.
-We make use of this fact in the next section.
-\end{oldpart}
-\ednote{MR: Need eta-equivalence here.}
+Additionally, we have the following$\eta$-equivalence rules for $\mu$ binders:
+
+\begin{align*}
+  (\mu.-\eta&) & v &\alignarrow   &mu. \alpha\rangle v :  : \alpha \langle \\
+    (.\mu-\eta&) & E &\alignarrow   &\rangle x :  : E \langle.x:\mu 
+\end{align*}
 
 \section{Constructing Arguments: the $ \Alambda$-calculus}
 
@@ -326,7 +426,8 @@ Note the structural similarity between the (compact) rebuttal sequent eliminatio
     \end{minipage}
     \begin{minipage}{0.48\linewidth}
       \centering
-      \begin{prooftree}\label{rule: S-ELIM}
+      \begin{prooftree}
+        \label{rule:S-ELIM}
       \symcut{v}{E}{\varphi}
     \end{prooftree}
     \end{minipage}
