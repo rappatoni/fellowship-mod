@@ -15,20 +15,19 @@
 \usepackage{tikz}
 \usepackage{ebproof}
 \usepackage{stmaryrd}
-
-% A lightweight non-floating grammar environment. The external
-% formal-grammar package clashes with the IOS template's float/caption setup.
-\newenvironment{grammar}[1][]{%
-  \[
-  \begin{array}{@{}l@{\;}c@{\;}l@{\quad}l@{}}
-}{%
-  \end{array}
-  \]
-}
-\newcommand{\firstcasesubtil}[3]{#1 & ::= & #2 & \textit{#3}\\}
-\newcommand{\gralt}{\mid}
-\newcommand{\gramtext}[1]{#1}
 \usepackage{cancel}
+
+% Use formal-grammar again, with a small IOS compatibility patch for
+% captioned custom floats under IOS-Book-Article.
+\usepackage{formal-grammar}
+\makeatletter
+\let\@makecaption\@makefigurecaption
+\makeatother
+\ExplSyntaxOn
+\RenewDocumentCommand{\firstcasesubtil}{m m m}{#1 & \(::=\) & \(#2\) & {\itshape \color{gray!90!black} #3}\\}
+\ExplSyntaxOff
+\renewcommand{\gralt}{\quad |\quad }
+\newcommand{\gramtext}[1]{#1}
 \usepackage{tabularx}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}

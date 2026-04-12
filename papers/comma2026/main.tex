@@ -160,54 +160,14 @@ Several fragments of the syntax are of interest:
 \emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set. We use $\star$ for this unique continuation variable whenever we want to work in the intuitionistic fragment.
 Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term variable domain to a singleton. We use $\cdot$ to denote this unique term variable whenever we are wokring in the cointuitionistic fragment.
 
-  \begin{grammar}[Grammar of the $\matilda$-calculus][][gram:terms]
-    \firstcasesubtil{$v$}
-      {x
-       \gralt \lambda x:\sigma.v
-       \gralt E \circ v\
-       \gralt \mu \alpha:\sigma.c
-       %\gralt \textcolor{blue}{[x]}
-      }
-      {\gramtext{Terms}}
+  \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
+    \firstcasesubtil{$v$}{x \gralt \lambda x:\sigma.v \gralt E \circ v \gralt \mu \alpha:\sigma.c}{Terms}
 
-    \firstcasesubtil{$E$}
-      {\alpha
-       \gralt E.\sigma:\alpha\lambda
-       \gralt v \circ E
-       \gralt c.\sigma:x \mu
-       %\gralt \textcolor{blue}{[\alpha]}
-      }
-      {\gramtext{Environments}}
+    \firstcasesubtil{$E$}{\alpha \gralt E.\sigma:\alpha\lambda \gralt v \circ E \gralt c.\sigma:x \mu}{Environments}
 
-     
-    \firstcasesubtil{$c$}
-      {\rangle v :\sigma:  E \langle
-       %\gralt \rangle \_ :[\sigma]\sigma:  E \langle
-       %\gralt \rangle v :\sigma[\sigma]:  \_ \langle
-      }
-      {\gramtext{Commands}}
-  
+    \firstcasesubtil{$c$}{\rangle v :\sigma: E \langle}{Commands}
 
-    \firstcasesubtil{$\sigma,\delta$}
-      {a
-       \gralt \sigma \rightarrow  \delta
-       \gralt  \sigma - \delta
-      }
-      {\gramtext{Propositions}}
-
-    % \firstcasesubtil{$\sigma,\delta$}
-    %   {a
-    %    \gralt \sigma\rightarrow \delta
-    %    \gralt  \sigma  - \delta
-    %   }
-    %   {\gramtext{Refutations}}
-
-    % \firstcasesubtil{$\sigma, \delta$}
-    %   {a
-    %    \gralt \sigma \rightarrow \delta
-    %    \gralt \sigma - \delta
-    %   }
-    %   {\gramtext{Contradictions}}
+    \firstcasesubtil{$\sigma,\delta$}{a \gralt \sigma \rightarrow \delta \gralt \sigma - \delta}{Propositions}
   \end{grammar}
 
 Sequents have the form \emph{Antecedent $\vdash$ Stoup $\dashv$ Succedent}.
