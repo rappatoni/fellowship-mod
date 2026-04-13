@@ -67,7 +67,7 @@ Extra “services/operations” you can list for proof objects (by analogy for a
 
   
 \end{oldpart}
-\section{Arguments and Debates in the Propositions-as-Types Paradigm}
+\section{Arguments and Debates in the Propositions-as-Types Paradigm}\label{sec:argum-debat-prop}
 \begin{oldpart}{Initial Brain Dump}
   Famously one can understand the proofs of intuitionistic logic for a given proposition as programs typed by a corresponding type (most canonically for propositional logic and the simply-typed lambda calculus) \ednote{MR@agent: please canonical citation here. A: canonical options would be Curry--Feys / Howard for the correspondence, and Church or simply a standard STLC reference for the simply-typed lambda calculus presentation.} However, Argument and Debate objects require beyond pure type theory handling of
   \begin{enumerate}
@@ -78,74 +78,10 @@ Extra “services/operations” you can list for proof objects (by analogy for a
  
 \end{oldpart}
 \section{The $\matilda$ Calculus - Dialectical Variant}
-  \cite{TODO} \ednote{MR@GPTEl: Please find me the following canonical citations, obtain the bibtex from reliable literature databases and paste them below} Felleisen, Parigot, Wadler, Herbelin and Autexier extend the proposition-as-types correspondence to classical logic. Felleisen showed that \emph{control operators} such as call-cc can be typed by Peirce's law; Parigot's $\lambda\mu$-calculus provides the Curry-Howard-Correspondent to classical natural deduction; Wadler, Herbelin and Autexier invented symmetric systems, in the latter case the \matilda calculus which is to the classical sequent calculus LK as $\lambda\mu$-calculus is to classical natural deduction.
+  \cite{Griffin1990-FormulaeAsTypesOfControl, Parigot1992-LambdaMu, Wadler2003-CBVIsDualToCBN} and \cite{CurienHerbelin2000-DualityOfComputation} extend the proposition-as-types correspondence to classical logic. Griffin showed that \emph{control operators} such as call-cc can be typed by Peirce's law; Parigot's $\lambda\mu$-calculus provides the Curry-Howard-Correspondent to classical natural deduction; \cite{Wadler2003-CBVIsDualToCBN}, \cite{CurienHerbelin2000-DualityOfComputation} invented symmetric systems, in the latter case the \matilda calculus which is to the classical sequent calculus LK as $\lambda\mu$-calculus is to classical natural deduction.
 
-% \begin{aipart}{gptel}
-% Before pasting BibTeX: the canonical reference that types control operators (e.g., call/cc) via classical logic/Peirce’s law is Griffin (POPL 1990). I include that in addition to Felleisen’s seminal work on control operators. Also, for the “matilda”/-tilde calculus corresponding to LK, the standard citation is Curien  Herbelin’s (The Duality of Computation). If you intended a different work by Autexier, please clarify.
+  The latter system can be transposed into a dialectical natural deduction system \cite{Herbelin2005CestMaintenant}, \cite{LovasCrary2006StructuralNormalization} \cite{Harper2016PFPL} of \emph{proofs and refutations}, providing us with the second one of our requirements.
 
-% @inproceedings{Felleisen1988-Prompt,
-%   author    = {Matthias Felleisen},
-%   title     = {The Theory and Practice of First-Class Prompts},
-%   booktitle = {Proceedings of the 15th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL'88)},
-%   year      = {1988},
-%   pages     = {180--190},
-%   publisher = {ACM}
-% }
-
-% @inproceedings{Griffin1990-FormulaeAsTypesOfControl,
-%   author    = {Timothy G. Griffin},
-%   title     = {A Formulae-as-Types Notion of Control},
-%   booktitle = {Proceedings of the 17th ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL'90)},
-%   year      = {1990},
-%   pages     = {47--58},
-%   publisher = {ACM},
-%   doi       = {10.1145/96709.96714}
-% }
-
-% @inproceedings{Parigot1992-LambdaMu,
-%   author    = {Michel Parigot},
-%   title     = {{\textlambda}{\textmu}-calculus: An Algorithmic Interpretation of Classical Natural Deduction},
-%   booktitle = {Proceedings of the 7th Annual IEEE Symposium on Logic in Computer Science (LICS'92)},
-%   year      = {1992},
-%   pages     = {134--143},
-%   publisher = {IEEE Computer Society}
-% }
-
-% @inproceedings{CurienHerbelin2000-DualityOfComputation,
-%   author    = {Pierre{-}Louis Curien and Hugo Herbelin},
-%   title     = {The Duality of Computation},
-%   booktitle = {Proceedings of the 5th ACM SIGPLAN International Conference on Functional Programming (ICFP'00)},
-%   year      = {2000},
-%   pages     = {233--243},
-%   publisher = {ACM}
-% }
-
-% @inproceedings{Wadler2003-CBVIsDualToCBN,
-%   author    = {Philip Wadler},
-%   title     = {Call-by-Value Is Dual to Call-by-Name},
-%   booktitle = {Proceedings of the 8th ACM SIGPLAN International Conference on Functional Programming (ICFP'03)},
-%   year      = {2003},
-%   pages     = {189--201},
-%   publisher = {ACM}
-% }
-
-% If you want the journal versions as well (e.g., the Duality of Computation in TCS, or Wadler’s expanded Dual Calculus paper), I can add those. Also, please confirm the intended Autexier citation.
-% \end{aipart}
-
-
-  The latter system can be transposed into a dialectical natural deduction system \cite{TODO}\ednote{MR@gptel: cite here Herbelin's habilitation, Lovas and Crary paper, Bob Harper book chapter on classical type theory. Pull the bibtex from reliable literature databases and paste them below.} of \emph{proofs and refutations}, providing us with the second one of our requirements.
-
-\begin{aipart}{gptel}
-I can add the BibTeX, but I need exact identifiers (titles/venues/years/DOIs) or permission to look them up. Could you confirm:
-
-- Herbelin’s habilitation: exact title/year (e.g., “A computational account of classical proofs”?), and where it’s hosted (HAL/Inria/Thèses.fr)?
-- Lovas and Crary: which paper (full title/venue/year)?
-- Bob Harper: do you mean the “Classical Logic” chapter in PFPL (2nd ed., Cambridge UP, 2016), or another chapter specifically titled “Classical Type Theory”?
-
-If you prefer, enable web access and I’ll fetch the authoritative BibTeX from publishers (Cambridge/ACM/DOI/HAL/arXiv) and paste it.
-\end{aipart}
-
-  
 We recap the $\matilda$ Calculus and give a dialectical variant of its syntax.
 Expressions are divided into terms, environments and commands.
 Terms are read left-to-right while environments are read right-to-left.
@@ -156,9 +92,12 @@ Contexts are expressions with inner holes that await a term to be passed to them
 Commands assign terms to contexts.
 The $\mu$ binder when binding to the right represents a call-with-current-continuation.
 Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current-expression.
-Several fragments of the syntax are of interest:
+We say that a $\mu$-bound variable is \emph{affine}  if it does not appear free in the command in which it is bound (likewise we call a binder binding an affine variable an \emph{affine binder}).
+If we want to explicitly indicate that a binder is affine we write $\mu\_.c$ and $c.\_\mu$, respectively.
+Two fragments of the syntax are of interest:
 \emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set. We use $\star$ for this unique continuation variable whenever we want to work in the intuitionistic fragment.
 Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term variable domain to a singleton. We use $\cdot$ to denote this unique term variable whenever we are wokring in the cointuitionistic fragment.
+
 
   \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
     \firstcasesubtil{$v$}{x \gralt \lambda x:\sigma.v \gralt E \circ v \gralt \mu \alpha:\sigma.c}{Terms}
@@ -173,7 +112,8 @@ Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term va
 Sequents have the form \emph{Antecedent $\vdash$ Stoup $\dashv$ Succedent}.
 Antecedent and Succedent are conjunctive contexts of terms and environments respectively while the stoup contains exactly one active formula - a term, context or command - at any given time.
 They are read in the same direction as their elements.
-On the type-level, we give a dialectical interpretation following \cite{herbelin habilitation} \cite{lovas-struc-normal} and \cite{TODO} \ednote{Cite Harper book}.
+On the type-level, we give a dialectical interpretation based on \cite{Herbelin2005CestMaintenant}, \cite{LovasCrary2006StructuralNormalization} and \cite{Harper2016PFPL}.
+
 There are three judgments:
 \begin{enumerate}
 \item $\Sigma\vdash v:\sigma \dashv \Delta$ judges $v$ to be a \emph{proof} for $\sigma$
@@ -183,7 +123,7 @@ There are three judgments:
 
 The proof and refutation types of a given proposition are called \emph{contraries}.
 
-In \cite{herbelin-2000} commands are typed by a sequent with an empty stoup mirroring the usual cut rule.
+In \cite{CurienHerbelin2000-DualityOfComputation} commands are typed by a sequent with an empty stoup mirroring the usual cut rule.
 However, we want to keep track of the issue of the contradiction and hence use the following typing rule:
 
 \begin{center}
@@ -273,14 +213,92 @@ Finally, the calculus' expressions can be reduced as follows:
 \end{align*}
 
 If $(\mu<)$-reductions are applied before $(>\mu)$-reductions one gets call-by-value evaluation, otherwise call-by-name evaluation.
-Additionally, we have the following$\eta$-equivalence rules for $\mu$ binders:
+Additionally, we have the following $\eta$-equivalence rules for $\mu$ binders:
 
 \begin{align*}
-  (\mu.-\eta&) & v &\alignarrow & \mu \alpha.\rangle v :: \alpha \langle \\
-  (.\mu-\eta&) & E &\alignarrow & \rangle x :: E \langle .x\mu
+  (\mu.-\eta&) & v &\alignleftrightarrow & \mu \alpha.\rangle v :: \alpha \langle \\
+  (.\mu-\eta&) & E &\alignleftrightarrow & \rangle x :: E \langle .x\mu
 \end{align*}
 
+\ednote{MR: This section is mostly feature-complete (full type system still missing) but probably needs some padding like motivation, examples, intuitions, etc. }
+
 \section{Constructing Arguments: the $ \Alambda$-calculus}
+
+The \matilda calculus provides us with two of the three requirements we identified in \cref{sec:argum-debat-prop}: conflicting proof terms and control operators. The third feature - defeasibility - requires an extension of the language.
+
+\subsection{Obligations and Delegations}
+
+The notion of enthymemes traces back to Aristotle's rhetoric and is usually associated with two distinct kinds of ampliative inference steps (though the correct interpretation is disputed, see \cite{sep-aristotle-rhetoric}):
+
+\begin{enumerate}
+\item Deductive Arguments with missing premises (type-I-enthymemes);
+\item Deductive Arguments with defeasible assumptions or inference steps (type-II-enthymemes).
+\end{enumerate}
+
+To deal with both kinds of enthymemes we extend the grammar of \matilda terms and environments by \emph{obligations} and \emph{delegations}:
+
+\begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
+    \firstcasesubtil{v}{\dots \gralt [:\sigma] \gralt \underline{[:\sigma]} }{Term obligations and delegations}
+    \firstcasesubtil{E}{\dots \gralt [\sigma:]\gralt \underline{[\sigma:]}}{Environment obligations and delegations}
+\end{grammar}
+
+\begin{notation}\label[notation]{not:enthymeme-nominals}
+   We overload notation and use $[:\sigma]$ for the typing judgment $[:\sigma]:\sigma$ and $[\sigma:]$ for the typing judgment $\sigma:[\sigma:]$. In cases where typing information is irrelevant we write $[.:]$ for term side obligations and $[:.]$ for environment side obligations. We use these notations for delegations as well, with the obvious substitutions.
+ \end{notation}
+
+
+Obligations are typed as follows:
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:termenth}
+      \infer0{\Sigma\vdash [:\sigma] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+
+\begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:contextenth}
+      \infer0{\Sigma\vdash [\sigma:] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+Note that obligations are trivializing: one can find an argument for any proposition so long as one retains the obligations to prove one's assumptions.
+On the other hand, delegations do not have introduction rules: what delegations are permitted in a given situation world knowledge. Examples of such knowledge are general burden-of-proof delegations such as negation-by-failure, or the assertion of looping proof obligations in coinductive inference as well as concrete default knowledge such as ``birds can usually fly''.\ednote{MR: work out these examples. E.g. coinductive inference is an axiom scheme like  forall x.P(x):- exists }
+Thus reasoning with delegations depends on the presense of a \emph{scenario}, i.e. some set of concrete delegation facts of the forms
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:termenth}
+      \infer0{\Sigma\vdash [:A] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+
+\begin{minipage}{0.48\linewidth}
+   \begin{prooftree}
+      \label{rule:contextenth}
+      \infer0{\Sigma\vdash [A:] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+for some concrete propositions A.
+If one wants to keep an object language level distinction between the proofs of a proposition, its (trivial) type 1 enthymemes and its (non-monotonic) type 2 enthyemems one can do so by simply introducing a dedicated judgment for each case.
+However, for present purposes we don't need this separation.
+Obligations and delegations are (incomplete) proof bureaucracy and as such don't come with reduction rules.
+However, we have the following $\eta$ equivalence rules:
+
+\begin{align*}
+  ([.:]-\eta&) & v &\alignleftrightarrow & \mu \alpha.\rangle \mu \_.\rangle v::\alpha\langle :: [.:] \langle \\
+  ([:.]-\eta&) & E &\alignleftrightarrow & \rangle [:.] :: \rangle x:: E\langle .\_\mu\langle .x\mu
+\end{align*}
+
+
+We call the language obtained in this way the \emph{Argument Caclculus} (short name: \AC).\ednote{Probably too early here.}
+
 
 \begin{oldpart}{Largely from old paper. This is now partially outdated. Check if metavariables-approach is still the right way to go. Arguments are default-eta-long terms.}
 The given variant of the $\matilda$-calculus foregrounds its dialectical character as an interplay between proofs and refutations.
@@ -290,76 +308,54 @@ Hence we need to relax the notion of proof by enriching it with enthymemes.
 
 \subsection{Arguments}
 
-In defining arguments we follow deductive argumentation \cite{besnard-review-argum} which views arguments as conditional proofs of the form $\Sigma \vdash_{\mathcal{L}} \varphi$ where the \emph{assumptions} $\Sigma$ and the \emph{conclusion} $\varphi$ are formulae of a given base logic ith consequence relation $\vdash_{\mathcal{L}}$.
-In sequent-based variant \cite{TODO},\ednote{TODO: sequent-based argumentation citation.} they then become single conclusion sequents.
-We depart from this approach in two ways:
+Our definition of arguments is inspired by deductive argumentation \cite{besnard-review-argum} which views arguments as conditional proofs of the form $\Sigma \vdash_{\mathcal{L}} \varphi$ where the \emph{assumptions} $\Sigma$ and the \emph{conclusion} $\varphi$ are formulae of a given base logic ith consequence relation $\vdash_{\mathcal{L}}$.
+`In sequent-based variant \cite{TODO},\ednote{TODO: sequent-based argumentation citation.} they then become single conclusion sequents.
+However, we depart from this approach in two ways:
 Firstly, unlike deductive argumentation, we do not wish to abstract away from the interior structure of the arguments.
 Hence our approach is to define \emph{arguments} as ``open'' terms and \emph{counterarguments} as ``open'' environments.
 Secondly, we want to avoid overloading object-language-level variables whose main functionality is hypothetical reasoning.
 Unlike premises in conditonal proofs, argument assumptions are not merely hypothetical but closer to (defeasible) knowledge items.
 Hence their main route of elimination is not discharge but defeat.
-For this reason we define meta-variables as used in the representation of incomplete in the theorem proving literature \ednote{Cite literature and specific examples here.}
 
 This introduces two distinctions from the standard deductive argumentation approach: firstly, in our setting arguments only depend on the assumptions which they use.
 In particular, irrespective of the antecedent (succedent) it is not possible to attack an argument on an assumption that does not appear free in it.
 Secondly, the same sequent represents many different arguments.
 Instead our way of identifying arguments will function via defining a normal form.
+The basic idea is that an argument is an \AC term where every subargument exposes a corresponding obligation which can be the target of debate operations such as attack or support.
+This exposure is \emph{bureaucratic} in nature in that it itself has no logical content.
+\ednote{MR@agent: please fill in the following grammar environment with the definition of bureaucratic terms and environments from your notes.}
+\begin{definition}[Bureaucratic Expressions]
+  An \AC expression is \emph{bureaucratic} if it belongs to the following subgrammar:
+  
+  \begin{grammar}[Bureaucratic Expressions][][gram:bureau]
+    \firstcasesubtil{$b$}{[:\sigma]}{}
+       \otherform{[\sigma:]}{}
+       \otherform{\mu \alpha:\sigma.\rangle b :\sigma: t \langle}{}
+       \otherform{\mu \alpha:\sigma.\rangle t :\sigma: b \langle}{}
+       \otherform{\mu' x:\sigma.\rangle b :\sigma: t \langle}{}
+       \otherform{\mu' x:\sigma.\rangle t :\sigma: b \langle}{}
+  \end{grammar}
+\end{definition}
+\begin{definition}[Bureaucratic Default Redexes]
+  A \emph{bureaucratic default redex} is one of the following expressions:
+  \[
+    \mu \alpha:\sigma.\rangle \mu \beta:\sigma.\rangle \mu \_:\sigma.\rangle t :\sigma: \beta \langle :\sigma: [\sigma:] \langle :\sigma: t' \langle
+  \]
+  \[
+    \mu' y:\sigma.\rangle t' :\sigma: \mu' x:\sigma.\rangle [:\sigma] :\sigma: \mu' \_:\sigma.\rangle x :\sigma: t \langle \langle \langle
+  \]
+  \[
+    \mu' x:\sigma.\rangle \mu \beta:\sigma.\rangle \mu \_:\sigma.\rangle t :\sigma: \beta \langle :\sigma: [\sigma:] \langle :\sigma: t' \langle
+  \]
+  \[
+    \mu \alpha:\sigma.\rangle t' :\sigma: \mu' x:\sigma.\rangle [:\sigma] :\sigma: \mu' \_:\sigma.\rangle x :\sigma: t \langle \langle \langle
+  \]
+  In each case, the bound command is a default redex; hence the whole surrounding $\mu$- or $\mu'$-expression is also a redex, and moreover bureaucratic.
+\end{definition}
 
-Our approach to defining meta-variables is similar to Kirchner's \cite{TODO}, only that we restrict meta-variables to commands.
-Let $\conj{\mathcal{V}},\cons{\mathcal{E}}$ and $\ind{\bot}$ be countably infinite sets of meta-variables denoted by gray lower-case latin, greek and hebrew letters, respectively (e.g. $\conj{x}$ and $\cons{\alpha}$ and $\aleph$). We extend the grammar as follows:
-
-% \begin{grammar}
-
-%   % \firstcasesubtil{$\conj{v}$}
-%   % {
-%   % }
-%   % {Term Meta-variables}
-%   % \firstcasesubtil{$\cons{E}$}
-%   % {
-%   % }
-%   % {Environment Meta-variables}
-%   \firstcasesubtil{$c$}
-%   {...
-%      \gralt \rangle \conj{v} :\sigma:  E \langle
-%      \gralt \rangle v :\sigma:  \cons{E} \langle
-%      \gralt \rangle \conj{v} :\sigma:  \cons{E} \langle
-%      \gralt \ind{\aleph}
-%   }{}
-% \end{grammar}
-\ednote{This still needs fixes. Need to introduce all the necessary notations and when metavariable (contexts) are omitted from the notation.}
-Metavariables are typed like so:
-
-\begin{center}
-  \begin{minipage}{0.48\linewidth}
-    \centering
-    \begin{prooftree}\label{axiom:proofs}
-      \metasymaxiom{x}{\sigma}
-    \end{prooftree}
-  \end{minipage}
-  \begin{minipage}{0.48\linewidth}
-    \centering
-    \begin{prooftree}\label{rule:proimplintro}
-      \metasymmoixa{\alpha}{\sigma}
-    \end{prooftree}
-  \end{minipage}
-\end{center}
-
-\begin{center}
-  \begin{minipage}{0.48\linewidth}
-    \centering
-    \begin{prooftree}\label{axiom:proofs}
-      \infer0{V;\bot, \ind{\aleph};\Sigma\vdash \ind{\aleph}\dashv \Delta;E}
-    \end{prooftree}
-  \end{minipage}
-\end{center}
-
-We call the language obtained in this way the $ \Alambda$-calculus (speak ``Argument Calculus'').\ednote{Probably too early here.}
-The restriction of meta-variables to commands does not reduce expressiveness: via $\eta$-equivalence, we can always $\mu$-bind a variable and wrap it in a command expression:\ednote{write down all the $\eta$ rules earlier instead.}
-
-\[ v \leftrightarrow_{\eta} \mu \alpha.\rangle v::\alpha \langle\]
-
-At the same time it will enable us to fine-tune the evaluation of arguments: they will be fully $(\rightarrow)$ and $(-)$ reduced with only $\mu$-redexes remaining.
-Thus it does not matter if we substitute a subargument for an assumption. \ednote{TODO: Arguments are intuitionistic with holes; counterarguments are dual-intuitionistic with holes. Example: Peirce's law: long form with rebut, undercut}
+\begin{definition}[obligation-$\eta$ long form]
+  An expression is in \emph{obligation-$\eta$ long form} (equivalently: \emph{default-$\eta$ long form}) iff default-$\eta$-expanding it would introduce a bureaucratic default redex.
+\end{definition}
 
 With these ingredients in place we are finally ready to define our notion of argument:
 

@@ -16,6 +16,7 @@
 \usepackage{ebproof}
 \usepackage{stmaryrd}
 \usepackage{cancel}
+\usepackage{cleveref}
 
 % Use formal-grammar again, with a small IOS compatibility patch for
 % captioned custom floats under IOS-Book-Article.
@@ -33,6 +34,7 @@
 \usepackage[noend]{algpseudocode}
 \usepackage[outline]{contour}
 \usepackage{pifont}
+\usepackage{xspace}
 
 \makeatletter
 \newcommand\Pimathsymbol[3][\mathord]{#1{\@Pimathsymbol{#2}{#3}}}
@@ -49,6 +51,9 @@
 \newcommand{\Alambda}{\ensuremath{\tikz[baseline=-.6ex,line width=.1ex]{
     \node[inner sep=0pt] (L) at (0,0.03) {$\pilambdaup$};
     \draw (L.south west)++(.12em,.425ex) -- ++(.2em,0);}}}
+\newcommand{\AC}{\ensuremath{\tikz[baseline=-.6ex,line width=.1ex]{
+    \node[inner sep=0pt] (L) at (0,0.03) {$\pilambdaup$};
+    \draw (L.south west)++(.12em,.425ex) -- ++(.2em,0);}C}}
 \makeatother
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}[theorem]{Lemma}
@@ -58,9 +63,11 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \newtheorem{example}[theorem]{Example}
+\newtheorem{notation}[]{Notation}
 
-\newcommand{\matilda}{\ensuremath{\bar{\lambda}\mu\tilde{\mu}}}
+\newcommand{\matilda}{\ensuremath{\bar{\lambda}\mu\tilde{\mu}}\xspace}
 \newcommand{\alignarrow}{\mathrel{\mkern30mu\rightarrow\mkern30mu}}
+\newcommand{\alignleftrightarrow}{\mathrel{\mkern30mu\leftrightarrow\mkern30mu}}
 \newcommand{\leftattack}{%
   \tikz[baseline=-0.5ex,scale=0.2]{\draw [thick, arrows={-to[scale=0.5]}] (1.8,0.75) -- (0.7,0.75) -- (1.3,0.25) -- (0,0.25);}%
 }
