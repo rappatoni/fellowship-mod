@@ -1,6 +1,6 @@
 \documentclass{IOS-Book-Article}
 
-% Shared preamble lives in preamble.tex.
+% % Shared preamble lives in preamble.tex.
 \input{preamble}
 
 \begin{document}
@@ -31,7 +31,7 @@ Argumentation frameworks such as ASPIC+, ABA, Carneades, and deductive or sequen
 \end{aipart}
 Logical Frameworks such as LF, COC and Higher-Order Logic and their implementations such as MMT, ROCQ, Lean, and Isabelle/HOL use variants of the propositions-as-types paradigm to obtain such scaffolding and provide additional services such as module systems and extensive libraries. In particular, Logical Frameworks represent proofs as first-class proof objects that can be operated on via generic tools, e.g. interactive assisted proof construction (hammers, etc.), normalization, etc. \ednote{MR: list some more services/operations}. But they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \ednote{MR references, e.g. work by Alexander Steen and Chris Benzmüller.
  }, they do not enjoy the same degree of tool support.
-  Hence currently - to the best of our knowledge - no system for the construction, compilation of and computation with argument and debate *objects* exists \ednote{MR@GPTEL: do you agree? Please research this.}. Yet such a system would provide significant benefits - arguably greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, subargument extraction, debate normalization, debate updating (adding or removing arguments), debate filtering, etc.
+  Hence currently - to the best of our knowledge - no system for the construction of, compilation of and computation with reified argument and debate \emph{objects} exists \ednote{MR@GPTEL: do you agree? Please research this.}. Yet such a system would provide significant benefits - arguably greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, subargument extraction, debate normalization, debate updating (adding or removing arguments), debate filtering, etc.
 
 \begin{aipart}{gptel}
 Short answer: partly agree, with nuance.
@@ -64,6 +64,7 @@ Extra “services/operations” you can list for proof objects (by analogy for a
 - For proofs: tactic languages and automation (Sledgehammer/SMT, e-matching), search/indexing across large libraries, module/functor systems and parametric theories, rewriting/normalization and conversion checking, proof-term compression and certificates, program extraction/code generation, dependency analysis and refactoring, notations and elaboration, verified translations/compilers between logics.
 - For arguments/debates (target services): interactive assisted construction (solver-backed “hammers” suggesting attackers/defenders), computation under many semantics (extensions, labellings, rankings), justification/derivation trees and subargument extraction, normalization/canonical labellings, dynamic updates with incremental recomputation and change explanations, debate filtering/slicing by claim/topic/audience, enforcement and revision, provenance and preferences management, verified translations between structured and abstract formalisms, certificate production/checking for acceptability results, visualization and search across argument libraries, import/export via standard formats (e.g., ICCMA, AIF, Argdown).
 \end{aipart}
+\ednote{MR@MK: The red stuff is AI-generated which will not end up in the paper. The AI is too cautious here. I have looked at the existing systems again and none of them provides any capability beyond propositional and first order logic as base logics plus a solver and some visualization stuff. The claims of parametric base logics are entirely on paper. None of them have libraries of arguments. You cannot construct arguments interactively, you specify the rules and the solver builds all the arguments at execution time. This is unsuitable for anything undecidable. Neither can you do anything with the resulting arguments/debates afterwards, they are mostly ephemeral artifacts. I will also mention logic programming languages here, where the situation is similar: you might get a more or less passable explanation but it is an execution time reasoner artifact, not a computational object you can do anything with.}
 
   
 \end{oldpart}
@@ -100,9 +101,9 @@ Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term va
 
 
   \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
-    \firstcasesubtil{$v$}{x \gralt \lambda x:\sigma.v \gralt E \circ v \gralt \mu \alpha:\sigma.c}{Terms}
+    \firstcasesubtil{$v$}{x \gralt \lambda x:\sigma.v \gralt E \circ v \gralt \mu \sigma:\alpha.c}{Terms}
 
-    \firstcasesubtil{$E$}{\alpha \gralt E.\sigma:\alpha\lambda \gralt v \circ E \gralt c.\sigma:x \mu}{Environments}
+    \firstcasesubtil{$E$}{\alpha \gralt E.\sigma:\alpha\lambda \gralt v \circ E \gralt c.x:\sigma \mu}{Environments}
 
     \firstcasesubtil{$c$}{\rangle v :\sigma: E \langle}{Commands}
 
@@ -226,7 +227,7 @@ Additionally, we have the following $\eta$-equivalence rules for $\mu$ binders:
 
 The \matilda calculus provides us with two of the three requirements we identified in \cref{sec:argum-debat-prop}: conflicting proof terms and control operators. The third feature - defeasibility - requires an extension of the language.
 
-\subsection{Obligations and Delegations}
+\subsection{Unwitnessed Premises: Obligations and Presumptions}
 
 The notion of enthymemes traces back to Aristotle's rhetoric and is usually associated with two distinct kinds of ampliative inference steps (though the correct interpretation is disputed, see \cite{sep-aristotle-rhetoric}):
 
@@ -235,15 +236,17 @@ The notion of enthymemes traces back to Aristotle's rhetoric and is usually asso
 \item Deductive Arguments with defeasible assumptions or inference steps (type-II-enthymemes).
 \end{enumerate}
 
-To deal with both kinds of enthymemes we extend the grammar of \matilda terms and environments by \emph{obligations} and \emph{delegations}:
+From a constructivist perspective both types of enthymemes contain subarguments that fail to furnish witnesses.
+In this view the difference between the two consists merely in the burden-of-proof: type I enthymemes commit the proponent of the argument to present a witness if questioned; type II enthymemes instead commit any challenger to present a refuting witness.
+To deal with both kinds of enthymemes we extend the grammar of \matilda terms and environments by two types of \emph{unwitnessed premises}: \emph{obligations} and \emph{presumptions}:
 
 \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
-    \firstcasesubtil{v}{\dots \gralt [:\sigma] \gralt \underline{[:\sigma]} }{Term obligations and delegations}
-    \firstcasesubtil{E}{\dots \gralt [\sigma:]\gralt \underline{[\sigma:]}}{Environment obligations and delegations}
+    \firstcasesubtil{v}{\dots \gralt [:\sigma] \gralt \underline{[:\sigma]} }{Term obligations and presumptions}
+    \firstcasesubtil{E}{\dots \gralt [\sigma:]\gralt \underline{[\sigma:]}}{Environment obligations and presumptions}
 \end{grammar}
 
 \begin{notation}\label[notation]{not:enthymeme-nominals}
-   We overload notation and use $[:\sigma]$ for the typing judgment $[:\sigma]:\sigma$ and $[\sigma:]$ for the typing judgment $\sigma:[\sigma:]$. In cases where typing information is irrelevant we write $[.:]$ for term side obligations and $[:.]$ for environment side obligations. We use these notations for delegations as well, with the obvious substitutions.
+   We overload notation and use $[:\sigma]$ for the typing judgment $[:\sigma]:\sigma$ and $[\sigma:]$ for the typing judgment $\sigma:[\sigma:]$. In cases where typing information is irrelevant we write $[.:]$ for term side obligations and $[:.]$ for environment side obligations. We use these notations for presumptions as well, with the obvious substitutions.
  \end{notation}
 
 
@@ -266,8 +269,8 @@ Obligations are typed as follows:
 \end{center}
 
 Note that obligations are trivializing: one can find an argument for any proposition so long as one retains the obligations to prove one's assumptions.
-On the other hand, delegations do not have introduction rules: what delegations are permitted in a given situation world knowledge. Examples of such knowledge are general burden-of-proof delegations such as negation-by-failure, or the assertion of looping proof obligations in coinductive inference as well as concrete default knowledge such as ``birds can usually fly''.\ednote{MR: work out these examples. E.g. coinductive inference is an axiom scheme like  forall x.P(x):- exists }
-Thus reasoning with delegations depends on the presense of a \emph{scenario}, i.e. some set of concrete delegation facts of the forms
+On the other hand, presumptions do not have introduction rules: what presumptions are permitted in a given situation world knowledge. Examples of such knowledge are general burden-of-proof delegations such as negation-by-failure, or the assertion of looping proof obligations in coinductive inference as well as concrete default knowledge such as ``birds can usually fly''.\ednote{MR: work out these examples. E.g. coinductive inference is an axiom scheme like  forall x.P(x):- exists }
+Thus reasoning with presumptions depends on the presense of a \emph{scenario}, i.e. some set of concrete presumption facts of the forms
 
 \begin{center}
   \begin{minipage}{0.48\linewidth}
@@ -288,7 +291,7 @@ Thus reasoning with delegations depends on the presense of a \emph{scenario}, i.
 for some concrete propositions A.
 If one wants to keep an object language level distinction between the proofs of a proposition, its (trivial) type 1 enthymemes and its (non-monotonic) type 2 enthyemems one can do so by simply introducing a dedicated judgment for each case.
 However, for present purposes we don't need this separation.
-Obligations and delegations are (incomplete) proof bureaucracy and as such don't come with reduction rules.
+Obligations and presumptions are (incomplete) proof bureaucracy and as such don't come with reduction rules.
 However, we have the following $\eta$ equivalence rules:
 
 \begin{align*}
@@ -300,11 +303,7 @@ However, we have the following $\eta$ equivalence rules:
 We call the language obtained in this way the \emph{Argument Caclculus} (short name: \AC).\ednote{Probably too early here.}
 
 
-\begin{oldpart}{Largely from old paper. This is now partially outdated. Check if metavariables-approach is still the right way to go. Arguments are default-eta-long terms.}
-The given variant of the $\matilda$-calculus foregrounds its dialectical character as an interplay between proofs and refutations.
-This makes it an interesting setting for the study of formal argumentation.
-But while proofs and refutations hold with necessity, arguments are defeasible.
-Hence we need to relax the notion of proof by enriching it with enthymemes.
+\begin{oldpart}{Largely from old paper. This is now partially outdated.}
 
 \subsection{Arguments}
 
@@ -323,46 +322,54 @@ Secondly, the same sequent represents many different arguments.
 Instead our way of identifying arguments will function via defining a normal form.
 The basic idea is that an argument is an \AC term where every subargument exposes a corresponding obligation which can be the target of debate operations such as attack or support.
 This exposure is \emph{bureaucratic} in nature in that it itself has no logical content.
-\ednote{MR@agent: please fill in the following grammar environment with the definition of bureaucratic terms and environments from your notes.}
+
 \begin{definition}[Bureaucratic Expressions]
-  An \AC expression is \emph{bureaucratic} if it belongs to the following subgrammar:
+  An \AC expression is a \emph{bureaucratic obligation} if it belongs to the following subgrammar:
   
-  \begin{grammar}[Bureaucratic Expressions][][gram:bureau]
+  \begin{grammar}[Bureaucratic Obligation Expressions][][gram:bureau]
     \firstcasesubtil{$b$}{[:\sigma]}{}
        \otherform{[\sigma:]}{}
-       \otherform{\mu \alpha:\sigma.\rangle b :\sigma: t \langle}{}
-       \otherform{\mu \alpha:\sigma.\rangle t :\sigma: b \langle}{}
-       \otherform{\mu' x:\sigma.\rangle b :\sigma: t \langle}{}
-       \otherform{\mu' x:\sigma.\rangle t :\sigma: b \langle}{}
+       \otherform{\mu \sigma:\alpha.\rangle b :\sigma: E \langle}{}
+       \otherform{\mu \sigma:\alpha.\rangle v :\sigma: b \langle}{}
+       \otherform{\rangle b :\sigma: E \langle.x : \sigma \mu}{}
+       \otherform{\rangle v :\sigma: b \langle. x : \sigma \mu}{}
   \end{grammar}
 \end{definition}
-\begin{definition}[Bureaucratic Default Redexes]
-  A \emph{bureaucratic default redex} is one of the following expressions:
+
+Bureaucratic obligation expressions make no logical progress but instead manage the control flow around obligations.
+
+\begin{example}[Bureaucratic Obligation]
+  Consider the expression $\mu \alpha:A \rightarrow B.\rangle \mu\_.\rangle \lambda x. [:B] :: \alpha \langle :A\rightarrow B: [A \rightarrow B:]\langle$. Via one application of $\mu <$ it reducesto $\mu \alpha:A.\rangle \lambda x.[:B]:: \alpha \langle$ which is $\eta$-equivalent to $\lambda x.[:B]$. At the same time it exposes an obligation $[:A \rightarrow B]$ which could be filled in - for example - by a continuation that rerouts execution to use some alternative proof: $\rangle v' :A\rightarrow B: \alpha\langle.\_\mu$. In other words, we can think of an arbitrary proof term as a sceleton of obligations, fleshed out by an arbitrary number of proofs (refutations) for each sub-obligation.
+\end{example}
+
+\begin{definition}[Bureaucratic Obligation Redexes]
+  Let $v,E$ be terms of the shapes  $\mu \alpha.\rangle \mu \_.\rangle v::\alpha\langle :: [.:] \langle$ and $ \rangle [:.] :: \rangle x:: E\langle .\_\mu\langle .x\mu$, respectively. A  \emph{bureaucratic obligation redex} is one of the following expressions:
   \[
-    \mu \alpha:\sigma.\rangle \mu \beta:\sigma.\rangle \mu \_:\sigma.\rangle t :\sigma: \beta \langle :\sigma: [\sigma:] \langle :\sigma: t' \langle
+    \mu \sigma:\alpha.\rangle  v :\sigma: E' \langle
   \]
   \[
-    \mu' y:\sigma.\rangle t' :\sigma: \mu' x:\sigma.\rangle [:\sigma] :\sigma: \mu' \_:\sigma.\rangle x :\sigma: t \langle \langle \langle
+    \rangle v' :\sigma: E \langle.x : \sigma \mu
   \]
   \[
-    \mu' x:\sigma.\rangle \mu \beta:\sigma.\rangle \mu \_:\sigma.\rangle t :\sigma: \beta \langle :\sigma: [\sigma:] \langle :\sigma: t' \langle
+    \rangle v :\sigma: [\sigma:] \langle :\sigma: E' \langle.x: \sigma \mu
   \]
   \[
-    \mu \alpha:\sigma.\rangle t' :\sigma: \mu' x:\sigma.\rangle [:\sigma] :\sigma: \mu' \_:\sigma.\rangle x :\sigma: t \langle \langle \langle
+    \mu \sigma:\alpha.\rangle v' :\sigma: E \langle
   \]
   In each case, the bound command is a default redex; hence the whole surrounding $\mu$- or $\mu'$-expression is also a redex, and moreover bureaucratic.
 \end{definition}
 
 \begin{definition}[obligation-$\eta$ long form]
-  An expression is in \emph{obligation-$\eta$ long form} (equivalently: \emph{default-$\eta$ long form}) iff default-$\eta$-expanding it would introduce a bureaucratic default redex.
+  An expression is in \emph{obligation-$\eta$ long form} iff obligation-$\eta$-expanding any of its subterms would introduce a bureaucratic obligation redex.
 \end{definition}
 
 With these ingredients in place we are finally ready to define our notion of argument:
 
 \begin{definition}[Argument]
-  Given a type $t$ an \emph{argument for $t$}  is an intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of meta-variables. An \emph{argument against $t$} (or a counterargument to $t$) is a dual-intuitionistic $\Alambda$ expression of type $t$ with an arbitrary number of metavariables. An \emph{argument} is either an argument for or against some type $t'$.
+  Given a proposition $\sigma$ the \emph{arguments for $\sigma$} are the intuitionistic, obligation-$\eta$-long $\AC$-expressions $v:\sigma$. The \emph{arguments against $\sigma$} (or counterarguments to $\sigma$) are the dual-intuitionistic obligation-$\eta$-long $AC$ expressions $\sigma:E$. An \emph{argument} is either an argument for or against some type $t'$.
 \end{definition}
 
+\ednote{MR: motivate restrictions to intuitionistic/dual-instuitionistic fragments: control flow, non-interaction with debate operations.}
 \end{oldpart}
 \section{Compiling Debates: The Debate Calculus DC}
 \begin{oldpart}{Largely from old paper. This is partially outdated. Update.}
@@ -483,16 +490,20 @@ should be placed \emph{after} punctuation marks (such as full stops).}
 \subsection{Debate Operations}
 \begin{oldpart}{Initial Brain Dump}
   With the compilation target in place we have to define how debate operations compile argument terms into debate terms.
-
-\subsubsection{Default-$\eta$-long-form}
+  
 \subsubsection{Grafting}
-variable capture
+  The basic operation underlying debate operations consists in grafting the attacking/supporting argument onto an obligation of the attacked/supported argument. In this process presumptions can get captured by the rootstock argument (no self-refutation: a presumption of not P is not allowed in a debate that concludes P.)
 \end{oldpart}
 \section{Worked Example: Peirce's Law}
+This section showcases interactive argument construction and normalization using Peirce's Law as an example. An AIDA script is linked (this can be demoed at the conference). Conveniently, this also establishes that debates are complete wrt classical logic by obtaining a non-enthymemic proof of Peirce's law.
 \subsection{Lorenzen Dialogue for Peirce's Law}
+Presents the canonical Lorenzen game for classical sequent calculus.
 \subsection{Debate term for Peirce's Law}
+Constructs a debate term by mirroring the moves in the Lorenzen game.
 \subsection{Normalizing  the Debate Term}
+Shows how the resulting debate term normalizes to the canonical term for Peirce's law (using the standard \matilda reduction system; the \emph{evaluation order} is given by an oracle, a fully general evaluation strategy for debate terms is left to future work ) 
 \section{Future Work and Conclusion}
+Future work: fully general reduction system, first-order extension for use of AC/DC as an Isabelle-style logical framework, representing logic programming traces (e.g. scasp) traces/justification trees as AC/DC debate objects and providing services such as normalization, adding of (counter-)arguments, filtering, libraries, ...
 \bibliographystyle{vancouver}
 \bibliography{references}
 \end{document}
