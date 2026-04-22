@@ -27,45 +27,9 @@ argumentation\sep proof terms\sep classical logic\sep debate\sep grafting
 \section{Introduction}
 \begin{oldpart}{Initial brain dump}
   Argumentation Frameworks (ASPIC+, ABA, Carneades, Deductive Argumentation (Sequent-based Argumentation)) and their implementations extend a given object logic \ednote{MR@agent: is this actually true? It is advertised e.g. for ASPIC+ are real implementations actually parametric in object logics? A: only in a qualified sense; I would phrase this more carefully. @MR: Suggested rewording placed in an aipart below.} with non-monotonic and argumentation features including argument construction and acceptability evaluation. However, they do not usually provide the necessary scaffolding to mechanize a logic out of the box.
-\begin{aipart}{Suggested rewording for the previous sentence; makes the claim more cautious by speaking of logic-based formalisms rather than uniformly logic-parametric implementations.}
-Argumentation frameworks such as ASPIC+, ABA, Carneades, and deductive or sequent-based approaches are typically presented as \emph{logic-based} formalisms: they presuppose an underlying object language and consequence relation, and enrich that basis with argument-theoretic notions such as argument construction, attack, defeat, and acceptability. Their implementations, however, are usually not fully logic-parametric workbenches in the style of general logical frameworks.
-\end{aipart}
 Logical Frameworks such as LF, COC and Higher-Order Logic and their implementations such as MMT, ROCQ, Lean, and Isabelle/HOL use variants of the propositions-as-types paradigm to obtain such scaffolding and provide additional services such as module systems and extensive libraries. In particular, Logical Frameworks represent proofs as first-class proof objects that can be operated on via generic tools, e.g. interactive assisted proof construction (hammers, etc.), normalization, etc. \ednote{MR: list some more services/operations}. But they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \ednote{MR references, e.g. work by Alexander Steen and Chris Benzmüller.
  }, they do not enjoy the same degree of tool support.
   Hence currently - to the best of our knowledge - no system for the construction of, compilation of and computation with reified argument and debate \emph{objects} exists \ednote{MR@GPTEL: do you agree? Please research this.}. Yet such a system would provide significant benefits - arguably greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, subargument extraction, debate normalization, debate updating (adding or removing arguments), debate filtering, etc.
-
-\begin{aipart}{gptel}
-Short answer: partly agree, with nuance.
-
-What exists today (as of 2024)
-- Abstract AF solvers and toolkits (compute extensions/labellings, credulous/skeptical reasoning, etc.):
-  - ASPARTIX (ASP-based), ConArg (CP-based), ArgSemSAT/pyglaf/CoQuiAAS (SAT/MaxSAT-based), dynPARTIX, ICCMA solvers in general.
-  - Libraries with “argument objects”: TweetyProject (Java) has rich APIs for Dung-style AFs, ranking semantics, probabilistic/weighted variants, some structured formalisms.
-- Structured argumentation and rule-based engines:
-  - DeLP (defeasible logic programming; dialectical trees), Gorgias/Gorgias-B (argumentation in Prolog with preferences), Carneades (argument schemes, burdens/standards of proof), ABA/ABA+ Prolog-based tools and prototypes.
-- Argument mapping/debate platforms:
-  - AIF/AIFdb/OVA, Argdown, Rationale/Kialo/D-BAS, IBM Project Debater (not open); these focus more on capture/visualization than formal computation.
-
-What these do not provide
-- A general, meta-level, LF-like framework that treats arguments/debates as first-class typed objects with:
-  - a uniform core calculus and propositions-as-types-style foundations,
-  - a tactic/automation layer (hammer-like), normalization of argument objects, module/functor systems, reusable libraries with parametric components,
-  - verified compilation/translations between formalisms (e.g., ASPIC+ → AF → ranking/weighted variants),
-  - robust incremental/dynamic reasoning services (with certificates) and ecosystem-wide interoperability.
-- Deep/shallow embeddings in Coq/Isabelle/HOL/MMT exist (e.g., work by Benzmüller, Steen, others) but either struggle with non-monotonicity for shallow embeddings or lose the breadth of domain-specific automation/tooling when deeply embedded.
-
-Conclusion
-- If “system for the construction, compilation of and computation with argument and debate objects” means a general-purpose, foundations-backed framework with the breadth and generic tooling of Coq/Isabelle/MMT, then the claim is defensible: there is no mature, widely adopted system at that level. 
-- If interpreted broadly as “software that builds and computes with argument objects,” then several systems exist (Tweety, DeLP, Gorgias, Carneades, ICCMA solvers), though they are siloed, task-specific, and lack the generic services and meta-level uniformity you have in proof assistants.
-
-Suggested refinement of the sentence
-- “To the best of our knowledge, there is currently no mature, general-purpose framework that treats arguments and debates as first-class objects with LF/Coq/Isabelle-like foundations and generic services; existing tools are specialized solvers, libraries, or platforms with limited interoperability and weaker meta-level support.”
-
-Extra “services/operations” you can list for proof objects (by analogy for arguments/debates)
-- For proofs: tactic languages and automation (Sledgehammer/SMT, e-matching), search/indexing across large libraries, module/functor systems and parametric theories, rewriting/normalization and conversion checking, proof-term compression and certificates, program extraction/code generation, dependency analysis and refactoring, notations and elaboration, verified translations/compilers between logics.
-- For arguments/debates (target services): interactive assisted construction (solver-backed “hammers” suggesting attackers/defenders), computation under many semantics (extensions, labellings, rankings), justification/derivation trees and subargument extraction, normalization/canonical labellings, dynamic updates with incremental recomputation and change explanations, debate filtering/slicing by claim/topic/audience, enforcement and revision, provenance and preferences management, verified translations between structured and abstract formalisms, certificate production/checking for acceptability results, visualization and search across argument libraries, import/export via standard formats (e.g., ICCMA, AIF, Argdown).
-\end{aipart}
-\ednote{MR@MK: The red stuff is AI-generated which will not end up in the paper. The AI is too cautious here. I have looked at the existing systems again and none of them provides any capability beyond propositional and first order logic as base logics plus a solver and some visualization stuff. The claims of parametric base logics are entirely on paper. None of them have libraries of arguments. You cannot construct arguments interactively, you specify the rules and the solver builds all the arguments at execution time. This is unsuitable for anything undecidable. Neither can you do anything with the resulting arguments/debates afterwards, they are mostly ephemeral artifacts. I will also mention logic programming languages here, where the situation is similar: you might get a more or less passable explanation but it is an execution time reasoner artifact, not a computational object you can do anything with.}
 
   
 \end{oldpart}
@@ -84,7 +48,7 @@ Extra “services/operations” you can list for proof objects (by analogy for a
   \item \textbf{Compilation}: arguments make use of implicit assumptions or defeasible defaults instead of being fully rigorous. Hence to assess the status of a given argument it is necessary to have a \emph{debate} that compiles all of the arguments and counterarguments to a given issue in the context into a final proof term.
   \end{enumerate}
 
-  \begin{example}[Running Example: A Prover-Skeptic-Dialogue]
+  \begin{example}[Running Example: A Prover-Skeptic-Dialogue]\label{ex:prover-skeptic}
     Consider two logicians arguing about the truth of Peirce's law:
 
     P: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
@@ -138,8 +102,8 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
 We say that a $\mu$-bound variable is \emph{affine}  if it does not appear free in the command in which it is bound (likewise we call a binder binding an affine variable an \emph{affine binder}).
 If we want to explicitly indicate that a binder is affine we write $\mu\_.c$ and $c.\_\mu$, respectively.
 Two fragments of the syntax are of interest:
-\emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set. We use $\star$ for this unique continuation variable whenever we want to work in the intuitionistic fragment.
-Conversely, \emph{Cointuitionistic Logic} is obtained by restricting the term variable domain to a singleton. We use $\cdot$ to denote this unique term variable whenever we are wokring in the cointuitionistic fragment.
+\emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set. We use $\star$ for this unique continuation variable whenever we want to work in the intuitionistic fragment (denoted \matilda$_{LJ}$).
+Conversely, \emph{Dual-intuitionistic Logic} is obtained by restricting the term variable domain to a singleton. We use $\cdot$ to denote this unique term variable whenever we are wokring in the dual-intuitionistic fragment (denoted \matilda$_{JL}$).
 
 
   \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
@@ -164,6 +128,10 @@ There are three judgments:
 \item $\Sigma\vdash \langle v:\sigma:E\rangle \dashv \Delta$ judges $v$ and $E$ to form a \emph{contradiction} at $\sigma$
 \end{enumerate}
 
+Terms are typed by proofs, contexts by refutations and commands by contradictions.
+Computationally, proofs type terms that produce a witness for their proposition regardless of input.
+Refutations type contexts that halt computation upon being passed a proof witness for their proposition, allowing for arbitrary returns.
+Contradictions type commands that can return arbitrary outputs from arbitrary inputs.
 The proof and refutation types of a given proposition are called \emph{contraries}.
 
 In \cite{CurienHerbelin2000-DualityOfComputation} commands are typed by a sequent with an empty stoup mirroring the usual cut rule.
@@ -283,7 +251,33 @@ Additionally, we have the following $\eta$-equivalence rules for $\mu$ binders:
   (.\mu-\eta&) & E &\alignleftrightarrow & \rangle x :: E \langle .x\mu
 \end{align*}
 
-\ednote{MR: This section is mostly feature-complete (full type system still missing) but probably needs some padding like motivation, examples, intuitions, etc. }
+\section{Arguments in the \matilda-calculus}
+We generalize the approach taken by \cite{ambler} to define arguments in the \matilda-setting.
+
+\begin{definition}[Arguments]
+  We call any \matilda$_{LJ}$-term $t:\sigma$ an \emph{argument for} $\sigma$. A \matilda$_{JL}$ term $\sigma:t$ is called an \emph{argument against} $\sigma$ or \emph{counterargument to} $\sigma$. An \emph{argument} is either an argument for or against some proposition $\sigma$. Arguments are not required to be closed expressions: the free variables in an argument $t$ are called the \emph{assumptions} of t.
+\end{definition}
+
+Two design choices require justification: firstly, why are (counter-)arguments restricted to the (dual-)intuitionistic fragment? Secondly, why use free variables as an argument's assumptions?
+The motivation for the (dual-)intuitionistic restriction is twofold: from a logical perspective the divide between constructive intuitionistic proofs and non-constructive classical proofs - i.e. demonstrations, that the given proposition cannot be refuted - map congenially to a corresponding dialectical distinction between concrete arguments for (against) a given proposition and debates about a proposition where the proponent (opponent) has a winning strategy.
+Computationally speaking, the move to the classical calculus introduces precisely the non-linearity (e.g. traps or topic changes) that distinguishes single-agent, sequential reasoning from multi-agent, adversarial reasoning.
+Regarding assumptions, there are three broad approaches in the literature: assumptions as meta-level default-assumptions or inference rules \cite{ABA}; assumptions as object logic axioms \cite{LBA}; and assumptions as proof calculus context variables \cite{sequent-based-argumentation}.
+While we certainly regard a dedicated treatment of assumptions as desirable, we stay close to the latter approach - if only for its simplicity.
+However, requiring that the assumptions of an argument appear in it (and not just in the proof context) has the advantage that attacks can only be made on assumptions that are actually used by the attacked argument.
+
+\begin{example}{Prover-Skeptic-Dialogue: Arguments}
+  The argument from \cref{ex:prover-skeptic} can be formalized as follows:
+
+  \begin{align}
+    \label{eq:2}
+    P1: & \mu ((P\rightarrow Q)\rightarrow P)\rightarrow P: \alpha.\rangle x :: \alpha\langle \\
+    S1: & \lambda f:((P\rightarrow Q)\rightarrow P).x \\
+    P2: & \mu P:\alpha.\rangle \lambda g.x :((P\rightarrow Q)\rightarrow P): \beta \langle \\
+    S2: & \mu P: \alpha.\rangle \lambda h.x :P\rightarrow Q: \beta \langle \\
+    P3: & \mu Q:\alpha.\rangle x :P: \beta \langle\\
+    S3: & \rangle y :(P\rightarrow Q)\rightarrow P: z * \alpha \langle.x:P\rightarrow Q \mu
+  \end{align}
+\end{example}\ednote{MR: add here the second debate where skeptic assumes the onus.}
 
 \section{Control Flow: Affine Binders, Throw,  Keep and Catch}\label{sec:control-flow:-affine}
 
@@ -359,63 +353,8 @@ Using the concepts developed in \cref{sec:control-flow:-affine}, alternative pro
 From an argumentative perspective, one can think of these patterns as \emph{support} between arguments.\ednote{MR@gptel: please research the literature on the different notions of support here and compare to our notion of support.}
 
 
-\begin{aipart}{gptel}
-Here is a compact map of “support” in the argumentation literature and how it compares to your throw–keep–catch notion of support as “alternative proofs.”
-
-Key families of support
-- Dung AFs (Dung 1995): only attack; “support” is not primitive but can be simulated via meta-arguments or defenses.
-- Bipolar Argumentation Frameworks (BAFs) (Cayrol \& Lagasquie-Schiex 2005, 2013):
-  - Evidential support: A being accepted raises the plausibility of B (often aggregated with other supports). It is typically additive/gradual.
-  - Deductive (sufficient) support: a set S positively entails B; acceptance of all in S should promote acceptance of B (AND-support).
-  - Necessary support: B depends on A; attacking A disables B (prerequisite/causal dependency).
-  - Propagation effects: supported-attack/defense along mixed paths.
-- Abstract Dialectical Frameworks (ADFs) (Brewka \& Woltran 2010): general acceptance conditions; support/attack are subsumed as positive/negative influences; can express both AND- and OR-support (and mixed) per-node.
-- Structured argumentation (e.g., ASPIC+; Prakken 2010; Pollock 1995; Toulmin 1958; Walton et al. 2008):
-  - Subargument (premise) support: arguments support their superarguments by supplying premises (AND-like).
-  - Warrant/backing: supports the inference rule linking premises to conclusion (Toulmin “backing”); attacked by undercutters (Pollock).
-  - Rebutting vs undermining vs undercutting: rebut attacks conclusion; undermining attacks a premise; undercutting attacks the inferential link.
-
-Where your notion fits
-- Your throw–keep–catch “alternative proofs” pattern is disjunctive support (OR-support): acceptance of any of t1, t2 suffices for the thesis. This most closely matches:
-  - Disjunctive/dialectical redundancy (“multiple independent reasons”).
-  - Rhetorical “buttressing” moves in dialogue (strengthening by adding further reasons).
-  - In BAF/ADF terms: a positive influence that is sufficient on its own; if you allow several such alternatives, the node’s acceptance condition is a disjunction over available proofs.
-- Your “buttress” vs “undergird”:
-  - Buttress: supply an alternative derivation of the same conclusion or support premises of an existing derivation. This is OR-support at the conclusion level (and, if targeted at premises, premise-level support as in structured frameworks).
-  - Undergird: support to the warrant/inference rule. This corresponds to Toulmin “backing” and is the positive dual of Pollock’s undercutters. It is rarely modeled in abstract AFs but natural in structured frameworks or ADFs with explicit rule nodes.
-- Your “rebut” and “undermine” align with standard distinctions: rebutting attacks conclusions; undermining attacks premises; undercutting (if you model it) attacks inference links. Your “undergird” is the positive counterpart of undercutting; your “buttress” is the positive counterpart of undermining or of offering parallel conclusions.
-
-Implications for semantics/design
-- If you want to capture more than OR-support:
-  - AND-/collective support (deductive support): require multiple subproofs jointly (e.g., acceptance condition as a conjunction). In your calculus, this would be a pattern that commits to all of t1,…,tn before “catch” continues.
-  - Necessary support: make certain assumptions/resources explicit; attacking them blocks the main proof (dependencies in the control flow).
-  - Evidential/aggregative support: attach weights/grades to proofs and define a combination operator (links to gradual semantics in BAFs and probabilistic/weighted ADFs).
-- Propagation: In BAFs, support composes with attack (supported attack). In your setting, composition corresponds to how alternative proofs plug into larger derivations; make explicit whether adding an alternative proof for B also strengthens any attack B performs downstream.
-- Meta-level support: To model undergird/undercut, treat warrants/rules as first-class nodes that can be supported/attacked; your throw–keep–catch can then operate on these meta-nodes.
-
-Concise mapping to your terminology
-- Buttress = disjunctive, conclusion- or premise-level support; matches OR-support; rhetorical “buttressing.”
-- Undergird = support of inference link/warrant; matches Toulmin backing; dual of undercutting.
-- Rebut = conclusion attack.
-- Undermine = premise attack.
-
-Selected references to cite
-- Dung (1995) On the acceptability of arguments…
-- Cayrol \& Lagasquie-Schiex (2005, 2013) Bipolar argumentation; Gradual valuations…
-- Brewka \& Woltran (2010) Abstract dialectical frameworks.
-- Boella, Gabbay, van der Torre, Villata (2010) Support in abstract argumentation.
-- Polberg (2016) Deductive and necessary support in abstract argumentation.
-- Amgoud \& Ben-Naim (2013–2018) Weighted/gradual semantics for bipolar frameworks.
-- Prakken (2010) An abstract framework for argumentation with structured arguments.
-- Pollock (1995) Cognitive Carpentry (rebutting vs undercutting defeaters).
-- Toulmin (1958) The Uses of Argument.
-- Walton, Reed, Macagno (2008) Argumentation Schemes.
-
-Bottom line: your throw–keep–catch support is best read as disjunctive/alternative-derivation support (buttressing). To connect with broader uses of “support,” consider adding patterns (or node-level acceptance conditions) for AND-/necessary-/evidential support, and make warrants explicit to capture undergirding vs undercutting.
-\end{aipart}
-
 \begin{definition}[Support]
-  An argument $t_1$ \emph{supports} an argument $t_2$ iff $t_2\succ t_1$ or $t_1 \prec t_2$. We say that $t_1$ \emph{undergirds} $t_2$ iff $t_2$ is a variable. Else $t_1$ \emph{buttresses} $t_2$
+  An argument $t_1$ \emph{supports} an argument $t_2$ iff $t_2\succ t_1$ or $t_1 \prec t_2$. We say that $t_1$ \emph{undergirds} $t_2$ iff $t_2$ is a variable. Else $t_1$ \emph{buttresses} $t_2$.
 \end{definition}
 \ednote{MR: consider the special case where $t_1$ supports a $\mu$-\emph{bound} variable. In that case $t_1$ is also an attacker of the parent argument. Does grafting currently handle this?}
 \ednote{MR: examples and reduction behaviour: example that shows that either argument can be retrieved non-deterministically; support for a free variable; support with a defeated supporter/supported argument, support with a strict and a defeasible argument.}
@@ -463,277 +402,7 @@ Note the structural similarity between the (compact) rebuttal sequent eliminatio
   \ednote{MR: Introduce a convention, that wlog only the term-side of things is studied, unless there is an explicit need to study the context side.}
 \ednote{Examples: Strict vs Defeasible Argument, Defeasible Argument vs Defeated Argument, defeasible vs caught argumnent, each with normalization. Rebut, Undermine.}
 \ednote{Examples demonstrating the combination of attack and support to encode individually necessary and jointly sufficient conditions or individually sufficient and jointly necessary (at least one needs to hold) conditions. }
-\section{Constructing Arguments: the $ \Alambda$-calculus}
 
-The \matilda calculus provides us with two of the three requirements we identified in \cref{sec:argum-debat-prop}: conflicting proof terms and control operators. The third feature - defeasibility - requires an extension of the language.
-
-\subsection{Unwitnessed Premises: Obligations and Presumptions}
-
-The notion of enthymemes traces back to Aristotle's rhetoric and is usually associated with two distinct kinds of ampliative inference steps (though the correct interpretation is disputed, see \cite{sep-aristotle-rhetoric}):
-
-\begin{enumerate}
-\item Deductive Arguments with missing premises (type-I-enthymemes);
-\item Deductive Arguments with defeasible assumptions or inference steps (type-II-enthymemes).
-\end{enumerate}
-
-From a constructivist perspective both types of enthymemes contain subarguments that fail to furnish witnesses.
-In this view the difference between the two consists merely in the burden-of-proof: type I enthymemes commit the proponent of the argument to present a witness if questioned; type II enthymemes instead commit any challenger to present a refuting witness.
-To deal with both kinds of enthymemes we extend the grammar of \matilda terms and environments by two types of \emph{unwitnessed premises}: \emph{obligations} and \emph{presumptions}:
-
-\begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
-    \firstcasesubtil{v}{\dots \gralt [:\sigma] \gralt \underline{[:\sigma]} }{Term obligations and presumptions}
-    \firstcasesubtil{E}{\dots \gralt [\sigma:]\gralt \underline{[\sigma:]}}{Environment obligations and presumptions}
-\end{grammar}
-
-\begin{notation}\label[notation]{not:enthymeme-nominals}
-   We overload notation and use $[:\sigma]$ for the typing judgment $[:\sigma]:\sigma$ and $[\sigma:]$ for the typing judgment $\sigma:[\sigma:]$. In cases where typing information is irrelevant we write $[.:]$ for term side obligations and $[:.]$ for environment side obligations. We use these notations for presumptions as well, with the obvious substitutions.
- \end{notation}
-
-
-Obligations are typed as follows:
-
-\begin{center}
-  \begin{minipage}{0.48\linewidth}
-    \begin{prooftree}
-      \label{rule:termenth}
-      \infer0{\Sigma\vdash [:\sigma] \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-
-\begin{minipage}{0.48\linewidth}
-    \begin{prooftree}
-      \label{rule:contextenth}
-      \infer0{\Sigma\vdash [\sigma:] \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-\end{center}
-
-Note that obligations are trivializing: one can find an argument for any proposition so long as one retains the obligations to prove one's assumptions.
-On the other hand, presumptions do not have introduction rules: what presumptions are permitted in a given situation world knowledge. Examples of such knowledge are general burden-of-proof delegations such as negation-by-failure, or the assertion of looping proof obligations in coinductive inference as well as concrete default knowledge such as ``birds can usually fly''.\ednote{MR: work out these examples. E.g. coinductive inference is an axiom scheme like  forall x.P(x):- exists }
-Thus reasoning with presumptions depends on the presense of a \emph{scenario}, i.e. some set of concrete presumption facts of the forms
-
-\begin{center}
-  \begin{minipage}{0.48\linewidth}
-    \begin{prooftree}
-      \label{rule:termenth}
-      \infer0{\Sigma\vdash [:A] \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-
-\begin{minipage}{0.48\linewidth}
-   \begin{prooftree}
-      \label{rule:contextenth}
-      \infer0{\Sigma\vdash [A:] \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-\end{center}
-
-for some concrete propositions A.
-If one wants to keep an object language level distinction between the proofs of a proposition, its (trivial) type 1 enthymemes and its (non-monotonic) type 2 enthyemems one can do so by simply introducing a dedicated judgment for each case.
-However, for present purposes we don't need this separation.
-Obligations and presumptions are (incomplete) proof bureaucracy and as such don't come with reduction rules.
-However, we have the following $\eta$ equivalence rules:
-
-\begin{align*}
-  ([.:]-\eta&) & v &\alignleftrightarrow & \mu \alpha.\rangle \mu \_.\rangle v::\alpha\langle :: [.:] \langle \\
-  ([:.]-\eta&) & E &\alignleftrightarrow & \rangle [:.] :: \rangle x:: E\langle .\_\mu\langle .x\mu
-\end{align*}
-
-
-We call the language obtained in this way the \emph{Argument Calculus} (short name: \AC).\ednote{Probably too early here.}
-
-
-\begin{oldpart}{Largely from old paper. This is now partially outdated.}
-
-\subsection{Arguments}
-
-Our definition of arguments is inspired by deductive argumentation \cite{besnard-review-argum} which views arguments as conditional proofs of the form $\Sigma \vdash_{\mathcal{L}} \varphi$ where the \emph{assumptions} $\Sigma$ and the \emph{conclusion} $\varphi$ are formulae of a given base logic ith consequence relation $\vdash_{\mathcal{L}}$.
-`In sequent-based variant \cite{TODO},\ednote{TODO: sequent-based argumentation citation.} they then become single conclusion sequents.
-However, we depart from this approach in two ways:
-Firstly, unlike deductive argumentation, we do not wish to abstract away from the interior structure of the arguments.
-Hence our approach is to define \emph{arguments} as ``open'' terms and \emph{counterarguments} as ``open'' environments.
-Secondly, we want to avoid overloading object-language-level variables whose main functionality is hypothetical reasoning.
-Unlike premises in conditonal proofs, argument assumptions are not merely hypothetical but closer to (defeasible) knowledge items.
-Hence their main route of elimination is not discharge but defeat.
-
-This introduces two distinctions from the standard deductive argumentation approach: firstly, in our setting arguments only depend on the assumptions which they use.
-In particular, irrespective of the antecedent (succedent) it is not possible to attack an argument on an assumption that does not appear free in it.
-Secondly, the same sequent represents many different arguments.
-Instead our way of identifying arguments will function via defining a normal form.
-The basic idea is that an argument is an \AC term where every subargument exposes a corresponding obligation which can be the target of debate operations such as attack or support.
-This exposure is \emph{bureaucratic} in nature in that it itself has no logical content.
-
-\begin{definition}[Bureaucratic Expressions]
-  An \AC expression is a \emph{bureaucratic obligation} if it belongs to the following subgrammar:
-  
-  \begin{grammar}[Bureaucratic Obligation Expressions][][gram:bureau]
-    \firstcasesubtil{$b$}{[:\sigma]}{}
-       \otherform{[\sigma:]}{}
-       \otherform{\mu \sigma:\alpha.\rangle b :\sigma: E \langle}{}
-       \otherform{\mu \sigma:\alpha.\rangle v :\sigma: b \langle}{}
-       \otherform{\rangle b :\sigma: E \langle.x : \sigma \mu}{}
-       \otherform{\rangle v :\sigma: b \langle. x : \sigma \mu}{}
-  \end{grammar}
-\end{definition}
-
-Bureaucratic obligation expressions make no logical progress but instead manage the control flow around obligations.
-
-\begin{example}[Bureaucratic Obligation]
-  Consider the expression $\mu \alpha:A \rightarrow B.\rangle \mu\_.\rangle \lambda x. [:B] :: \alpha \langle :A\rightarrow B: [A \rightarrow B:]\langle$. Via one application of $\mu <$ it reducesto $\mu \alpha:A.\rangle \lambda x.[:B]:: \alpha \langle$ which is $\eta$-equivalent to $\lambda x.[:B]$. At the same time it exposes an obligation $[:A \rightarrow B]$ which could be filled in - for example - by a continuation that rerouts execution to use some alternative proof: $\rangle v' :A\rightarrow B: \alpha\langle.\_\mu$. In other words, we can think of an arbitrary proof term as a sceleton of obligations, fleshed out by an arbitrary number of proofs (refutations) for each sub-obligation.
-\end{example}
-
-\begin{definition}[Bureaucratic Obligation Redexes]
-  Let $v,E$ be terms of the shapes  $\mu \alpha.\rangle \mu \_.\rangle v::\alpha\langle :: [.:] \langle$ and $ \rangle [:.] :: \rangle x:: E\langle .\_\mu\langle .x\mu$, respectively. A  \emph{bureaucratic obligation redex} is one of the following expressions:
-  \[
-    \mu \sigma:\alpha.\rangle  v :\sigma: E' \langle
-  \]
-  \[
-    \rangle v' :\sigma: E \langle.x : \sigma \mu
-  \]
-  \[
-    \rangle v :\sigma: [\sigma:] \langle :\sigma: E' \langle.x: \sigma \mu
-  \]
-  \[
-    \mu \sigma:\alpha.\rangle v' :\sigma: E \langle
-  \]
-  In each case, the bound command is a default redex; hence the whole surrounding $\mu$- or $\mu'$-expression is also a redex, and moreover bureaucratic.
-\end{definition}
-
-\begin{definition}[obligation-$\eta$ long form]
-  An expression is in \emph{obligation-$\eta$ long form} iff obligation-$\eta$-expanding any of its subterms would introduce a bureaucratic obligation redex.
-\end{definition}
-
-With these ingredients in place we are finally ready to define our notion of argument:
-
-\begin{definition}[Argument]
-  Given a proposition $\sigma$ the \emph{arguments for $\sigma$} are the intuitionistic, obligation-$\eta$-long $\AC$-expressions $v:\sigma$. The \emph{arguments against $\sigma$} (or counterarguments to $\sigma$) are the dual-intuitionistic obligation-$\eta$-long $AC$ expressions $\sigma:E$. An \emph{argument} is either an argument for or against some type $t'$.
-\end{definition}
-
-\ednote{MR: motivate restrictions to intuitionistic/dual-instuitionistic fragments: control flow, non-interaction with debate operations.}
-\end{oldpart}
-\section{Compiling Debates: The Debate Calculus DC}
-\begin{oldpart}{Largely from old paper. This is partially outdated. Update.}
-  \subsection{Rebut and Cut}
-
-Sequent-based argumentation models argument relations, that is \emph{attacks}, via sequent-elimination rules.
-Note the structural similarity between the (compact) rebuttal sequent elimination rule and the $\matilda$ cut rule:
-
-\begin{center}
-    \begin{minipage}{0.48\linewidth}
-      \centering
-      \begin{prooftree}
-        \hypo{\Sigma_1\vdash \varphi}
-        \hypo{\Sigma_2 \vdash \neg \varphi}
-        \infer2{\Sigma_2 \cancel{\vdash} \neg\varphi}
-      \end{prooftree}
-    \end{minipage}
-    \begin{minipage}{0.48\linewidth}
-      \centering
-      \begin{prooftree}
-        \label{rule:S-ELIM}
-      \symcut{v}{E}{\varphi}
-    \end{prooftree}
-    \end{minipage}
-  \end{center}
-
-In the classical version of the $\matilda$-calculus, the rules
-
-\begin{center}
-  \begin{minipage}{0.48\linewidth}
-    \centering
-    \begin{prooftree}
-      \hypo{\Sigma \vdash \varphi:E \dashv \Delta}
-      \infer1{\Sigma \vdash \text{not }E:\neg\varphi \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-  \begin{minipage}{0.48\linewidth}
-    \centering
-    \begin{prooftree}
-      \hypo{\Sigma \vdash v:\varphi \dashv \Delta}
-      \infer1{\Sigma \vdash \neg\varphi:v \text{ not} \dashv \Delta}
-    \end{prooftree}
-  \end{minipage}
-\end{center}
-
-and their inverses are derivable.
-Hence cut and rebut have (semantically) identical application conditions in a classical base logic.
-We seek to eliminate this duplication of structure.
-However, the rebut rule does not introduce a contradiction but instead eliminates it and introduces an eliminated sequent in one go.
-Our task is to encode such sequent elimination using control structures.
-
-\subsection{Encoding Undercut}
-\ednote{TODO: starting with reductive versions. If there is still space, add explorative versions.}
-Before we tackle the rebut pattern, we will first turn out attention to another mode of attack between arguments: the undercut \ednote{TODO: note on terminology disambiguating defeat, undermine, undercut... Problem: undercut is undermine in aspic, undercut is Pollock's undercutting defeater, defeat itself is not an attack mode but an argument status, and so on.}
-
-  \begin{center}
-    \begin{prooftree}
-      \hypo{\Sigma_1\vdash \neg \varphi}
-      \hypo{\Sigma_2, \varphi \vdash \psi}
-      \infer2{\Sigma_2\cancel{\vdash} \psi}
-    \end{prooftree}
-    \end{center}
-
-Unlike rebut, undercut opererates on an assumption of the attacked argument.
-
-\[undercut(t_1[\conj{v}],t_2) = t_1[\conj{v} \leftarrow \mu \_: \rangle \conj{v} :: t_2\langle ]\]
-\ednote{Ednote: Introduce argument notation}
-
-Computationally, undercut throws away any term (environment) that is passed to it (to which it is passed) and instead passes the counterargument $t_2$ to a dedicated error environment (term)  $*$.
-In this way the counterargument ``bubbles up'' akin to an exception in a language like OCaml.\ednote{TODO: How can it be caught? Either on the way up encounters catch (on name; on type would require modification of rewrite rule.), i.e. it becomes $\mu{*}.\rangle * :: t_2\langle$; or rebut (a support for the attacked assumption will instead become a rebut). }
-
-\ednote{TODO: undercut argument is labelled OUT.}
-
-\subsection{Encoding Rebut}
-
-We will do so making use of \emph{affine} and \emph{semi-affine} variables.
-A $\mu$-bound variable is affine if it does not appear in the command in which it is bound.
-It is semi-affine if it only appears on one side of of the command in which it is bound.
-Affine variables are either terms that are thrown away or environments that are never passed to.
-Exploiting this, affine uses of control operators can direct a term (environment) to a different bound variable.
-Semi-affine variables on the other hand are only used in either the call-by-name or call-by-value discipline of execution.
-This makes it possible to redirect a term (environment) to a different bound variable conditional on the evaluation order.
-In particular, here we define a sentinel variable $\star$ which denotes an error term (environment):
-
-% \begin{align*}
-%   rebut_{left}&(t_1,t_2)= \
-%   &\mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma : * \langle : \sigma : \sigma.\rangle\star:\sigma t_2:\langle .\sigma:\star\mu\langle
-% \end{align*}
-
-%\[rebut_{left}(t_1,t_2)= \mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma :* \langle : \sigma : \rangle\star:\sigma : t_2\langle .\sigma:\_\mu\langle\]
-\[rebut_{left}(t_1,t_2)= \mu *:\sigma.\rangle \mu \_ :\sigma.\rangle t_1: \sigma :* \langle : \sigma : \rangle\star:\sigma : t_2\langle .\sigma:\_\mu\langle\]
-
-The reserved environment variable $*$ indicates that the rest of the term is to be evaluated in call-by-value discipline.
-Then the term is evaluated in one step as follows:
-
-\begin{align}
-  \label{eq:1}
-  &\mu *:\sigma.\rangle t_1: \sigma :* \langle & & (\mu<)
-\end{align}
-
-Now $*$ becomes fully affine and thus the entire outer context gets thrown away if the expression is ever evaluated. Instead the sentinel value $\star$ gets passd to $t_2$.
-The proof can now only be completed if a new proof of $\sigma$ is supplied.
-
-In other words, (left) rebut turns a proof into an \emph{argument} predicated on the default assumption, that the counterargument can be defeated in some way.
-The burden of refutation lies with Spoiler.
-What moves can she make to shift it back to Prover?
-
-
-\ednote{TODO: rebut without outer $\mu$ binder, two free variables? Can be either captured on the right or on the left. Outer affine variable => undec labelling. How can rebut be relabeled? IN side gets undercut. Then? Or rewriting can only happen if left side not labelled OUT.}
-
-
-\subsection{Support}
-
-Table captions should be centred \emph{above} the table, while figure 
-captions should be centred \emph{below} the figure.\footnote{Footnotes
-should be placed \emph{after} punctuation marks (such as full stops).}
-\end{oldpart}
-\subsection{Debate Operations}
-\begin{oldpart}{Initial Brain Dump}
-  With the compilation target in place we have to define how debate operations compile argument terms into debate terms.
-  
-\subsubsection{Grafting}
-  The basic operation underlying debate operations consists in grafting the attacking/supporting argument onto an obligation of the attacked/supported argument. In this process presumptions can get captured by the rootstock argument (no self-refutation: a presumption of not P is not allowed in a debate that concludes P.)
-\end{oldpart}
 \section{Worked Example: Peirce's Law}
 This section showcases interactive argument construction and normalization using Peirce's Law as an example. An AIDA script is linked (this can be demoed at the conference). Conveniently, this also establishes that debates are complete wrt classical logic by obtaining a non-enthymemic proof of Peirce's law.
 \subsection{Lorenzen Dialogue for Peirce's Law}
