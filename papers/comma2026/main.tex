@@ -51,25 +51,38 @@ Logical Frameworks such as LF, COC and Higher-Order Logic and their implementati
   \begin{example}[Running Example: A Prover-Skeptic-Dialogue]\label{ex:prover-skeptic}
     Consider two logicians arguing about the truth of Peirce's law:
 
-    P: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    S: I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
-    P: I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
-    S: Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
-    P: Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
-    S: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
-    P: Ha! Got you again: now you proved $P$ which you deny. Contradiction!
-    S: Allright, I am out of options, you win.
+    % P1: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
+    % S1: I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
+    % P2: I could take your word and prove $P$ by asserting $P \rightarrow Q$. But I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
+    % S2: Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
+    % P3: Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
+    % S3: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
+    % P: Ha! Got you again: now you proved $P$ which you deny. Contradiction!
+    % S: Allright, I am out of options, you win.\ednote{MR@gptel: put this in a description environment}
 
-    P: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    S: I don't believe you and I will prove you wrong. I deny $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    P: Ok, knock yourself out. Will you prove $(P\rightarrow Q)\rightarrow P$? And refute $P$?
-    S: Yes, I assert $(P\rightarrow Q)\rightarrow P$!
-    P: I don't believe you. Assume $(P\rightarrow Q)$! Can you prove $P$?
-    S: I don't believe \emph{you}! Assume $P$, can you really show $Q$?
-    P: Ha! I trapped you. You have granted me $P$ but you need to refute $P$. Contradiction, hence $Q$.
-    S: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
-    P: Ha! Got you again: now you proved $P$ which you have to refute. Contradiction!
-    S: Allright, I am out of options, you win.
+\begin{aipart}{gptel}
+\begin{description}[leftmargin=3em,style=sameline]
+\item[P1:] I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
+\item[S1:] I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
+\item[P2:] I could take your word and prove $P$ by asserting $P \rightarrow Q$. But I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
+\item[S2:] Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
+\item[P3:] Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
+\item[S3:] Alright, I retract my offer of $P$. Instead I will take your offer $P\rightarrow Q$ and prove $P$. I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
+\item[P:] Ha! Got you again: now you proved $P$ which you deny. Contradiction!
+\item[S:] Allright, I am out of options, you win.
+\end{description}
+\end{aipart}
+
+    % P: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
+    % S: I don't believe you and I will prove you wrong. I deny $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
+    % P: Ok, knock yourself out. Will you prove $(P\rightarrow Q)\rightarrow P$? And refute $P$?
+    % S: Yes, I assert $(P\rightarrow Q)\rightarrow P$!
+    % P: I don't believe you. Assume $(P\rightarrow Q)$! Can you prove $P$?
+    % S: I don't believe \emph{you}! Assume $P$, can you really show $Q$?
+    % P: Ha! I trapped you. You have granted me $P$ but you need to refute $P$. Contradiction, hence $Q$.
+    % S: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
+    % P: Ha! Got you again: now you proved $P$ which you have to refute. Contradiction!
+    % S: Allright, I am out of options, you win.
 
     
   \end{example}\ednote{MR: Perhaps it makes more sense to build the example incrementally.}
@@ -229,7 +242,7 @@ These are mirrored by the typing rules for refutations:
       \infer1{\Gamma \vdash \lambda x: \sigma. \lambda f : \sigma \rightarrow \delta. \mu\alpha:\delta.\rangle f :: x \circ \alpha \langle: \sigma \rightarrow (\sigma\rightarrow \delta) \rightarrow \delta \dashv \Delta}
     \end{prooftree}
   \end{center}
-  Note that this is a minimal term which shows that the minimal and intuitionistic calculus fragments are logically saturated.
+  Note that this is a minimal term which shows that the standard ND-calculi for minimal and intuitionistic calculus can be recovered.
   %The canonical proof for Peirce's law in classical $\matilda$-calculus is given by the term $\mu\alpha:((P\rightarrow Q)\rightarrow P)\rightarrow P.\rangle\langle$
 \end{example}
 
@@ -265,20 +278,21 @@ Regarding assumptions, there are three broad approaches in the literature: assum
 While we certainly regard a dedicated treatment of assumptions as desirable, we stay close to the latter approach - if only for its simplicity.
 However, requiring that the assumptions of an argument appear in it (and not just in the proof context) has the advantage that attacks can only be made on assumptions that are actually used by the attacked argument.
 
-\begin{example}{Prover-Skeptic-Dialogue: Arguments}
+\begin{example}[Prover-Skeptic-Dialogue: Arguments]
   The argument from \cref{ex:prover-skeptic} can be formalized as follows:
 
   \begin{align}
     \label{eq:2}
-    P1: & \mu ((P\rightarrow Q)\rightarrow P)\rightarrow P: \alpha.\rangle x :: \alpha\langle \\
-    S1: & \lambda f:((P\rightarrow Q)\rightarrow P).x \\
-    P2: & \mu P:\alpha.\rangle \lambda g.x :((P\rightarrow Q)\rightarrow P): \beta \langle \\
-    S2: & \mu P: \alpha.\rangle \lambda h.x :P\rightarrow Q: \beta \langle \\
-    P3: & \mu Q:\alpha.\rangle x :P: \beta \langle\\
-    S3: & \rangle y :(P\rightarrow Q)\rightarrow P: z * \alpha \langle.x:P\rightarrow Q \mu
+    P1: & x \vdash \mu ((P\rightarrow Q)\rightarrow P)\rightarrow P: \alpha.\rangle x :: \alpha \langle \dashv  \\
+    S1: & x,y \vdash \mu ((P\rightarrow Q)\rightarrow P)\rightarrow P: \beta. \rangle \lambda f:((P\rightarrow Q)\rightarrow P).y :: \beta \langle \dashv \\
+    P2: & x,y,z \vdash \mu P:\gamma.\rangle \lambda g.z :((P\rightarrow Q)\rightarrow P): \delta \langle \dashv \delta\\
+    S2: & x,y,z,u \vdash \mu P: \epsilon.\rangle \lambda h.u :P\rightarrow Q: \zeta \langle \dashv \delta,\zeta\\
+    P3: & x,y,z,t \vdash \mu Q:\theta.\rangle h :P: \gamma \langle \dashv \delta, \zeta\\
+    S3: & x,y,z,t \vdash \rangle g :(P\rightarrow Q)\rightarrow P: u * \iota \langle.u:P\rightarrow Q \mu \dashv \delta,\zeta, \iota \\
+    P4: & \vdash \rangle w :: \gamma \langle. w:P \mu \dashv
+    %D:  &  catch(:\alpha)\rangle throw(P1, :\alpha) :((P\rightarrow Q)\rightarrow P)\rightarrow P: keep ( catch(:\beta)\rangle throw(S1, :\beta):: keep(catch(:\gamma)\rangle throw(P2,:\gamma):: keep( catch(:\theta)\langle throw (S2, :\theta):: keep([] , :\delta) \rangle, :\gamma)\langle,:\beta)\langle, :\alpha)\langle
   \end{align}
-\end{example}\ednote{MR: add here the second debate where skeptic assumes the onus.}
-
+\end{example} 
 \section{Control Flow: Affine Binders, Throw,  Keep and Catch}\label{sec:control-flow:-affine}
 
 The reduction system brings to the fore how control flow is modelled in the $\matilda$-calculus.
@@ -326,10 +340,6 @@ Keep terms allow the modelling of total failure or abortion of a computation, as
 \end{example}
 \ednote{MR: explain the term abort continuation. Refutation = abort continuation, terminates without returning. Proof = returns without input. You can return a vacuous (affine) witness for any type given the abort state (returns an error message).}
 
-\section{Modelling Arguments in the \matilda-calculus}
-
-\ednote{MR: Arguments are open intuitionistic terms; counterarguments are open dual-intuitionistic terms. Examples.}
-
 \section{Modelling Argument Relations  in the dialectical \matilda-calculus}
 
 In this section we will put the the throw, keep and catch patterns we developed in \cref{sec:control-flow:-affine} to work to model the argumentative relations of attack (rebut and undermine) and support (buttress and undergird).
@@ -345,9 +355,12 @@ Attack can then be encoded by giving two alternative arguments for the thesis: t
 Using the concepts developed in \cref{sec:control-flow:-affine}, alternative proofs (refutations) can be viewed as the following \emph{throw-keep-catch patterns}:
 
 \begin{grammar}[Throw-Keep-Catch Patterns][][gram:throwkeepcatch]
-  \firstcasesubtil{$t_2\succ t_1$}{catch(:\alpha).\rangle throw(t_1,:\alpha) :: keep(t_2, :\alpha)  \langle}{}
-  \firstcasesubtil{$t_2 \prec t_1$}{\rangle (x:,t_1)keep:: (x:,t_2)throw\langle.(x:)catch}{}
+  \firstcasesubtil{$t_1\prec_\phi t_2$}{catch(:\alpha).\rangle throw(t_1,:\alpha) :\phi: keep(t_2, :\alpha)  \langle}{}
+  \otherform{\rangle (x:,t_1)keep :\phi: (x:,t_2)throw\langle.(x:)catch}{}
 \end{grammar}
+\ednote{MR@agent: make beautiful mathmode typesetting for the catch, throw and keep operators. Make macros for them, taking arguments.}
+
+We define $\prec$ to be right-associative.
 
 
 From an argumentative perspective, one can think of these patterns as \emph{support} between arguments.\ednote{MR@gptel: please research the literature on the different notions of support here and compare to our notion of support.}
@@ -359,31 +372,8 @@ From an argumentative perspective, one can think of these patterns as \emph{supp
 \ednote{MR: consider the special case where $t_1$ supports a $\mu$-\emph{bound} variable. In that case $t_1$ is also an attacker of the parent argument. Does grafting currently handle this?}
 \ednote{MR: examples and reduction behaviour: example that shows that either argument can be retrieved non-deterministically; support for a free variable; support with a defeated supporter/supported argument, support with a strict and a defeasible argument.}
 \subsection{Attack}
-Attack in structured argumentation is usually modelled via a notion of contrariness defined on top of the base logic.
+Attack in structured argumentation is usually modelled via a notion of contrariness defined on top of the base logic.\cite{aba, sequent_based_arg}
 We instead define contrariness bottom-up by treating proofs and refutations as contrary to each other.\footnote{Note that in the classical calculus contrariness defined in this way becomes classical negation. But this need not be so: in the minimal and intuitionistic fragment, the equivalence between the two notions does not hold.}
-
-For example, Sequent-based argumentation models attacks via sequent-elimination rules that extend the given base calculus.
-Note the structural similarity between the (compact) rebuttal sequent elimination rule and the $\matilda$ cut rule:
-
-\begin{center}
-    \begin{minipage}{0.48\linewidth}
-      \centering
-      \begin{prooftree}
-        \hypo{\Sigma_1\vdash \varphi}
-        \hypo{\Sigma_2 \vdash \neg \varphi}
-        \infer2{\Sigma_2 \cancel{\vdash} \neg\varphi}
-      \end{prooftree}
-    \end{minipage}
-    \begin{minipage}{0.48\linewidth}
-      \centering
-      \begin{prooftree}
-        \label{rule:S-ELIM}
-      \symcut{v}{E}{\varphi}
-    \end{prooftree}
-    \end{minipage}
-  \end{center}
-
-  Instead of introducing eliminated sequents on the type or judgment level, we model attack and defeated arguments using the following throw-keep-patterns:
 
   \begin{definition}[Attack]
     Let $t_1,t_2$ be intuitonistic $\matilda$ expressions. An \emph{attack} between $_1$ and $t_2$ is defined as one of the following patterns:
