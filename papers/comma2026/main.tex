@@ -15,7 +15,7 @@
 \address[A]{FAU Erlangen-Nuremberg}
 
 \begin{abstract}
-  We present a representation of arguments and debates as expressions of the \matilda-calculus furnishing argument and debate objects with computational content: successful arguments return normally, defeated ones return an exception. Arguments and counterarguments are constructed in the linear, intuitionistic fragment of the calculus. Debates combine them into classical expressions. We show how such a representation handles conflicting terms, control flow manipulation, argument relations combining arguments to debates. The encoding makes use of throw, catch and keep constructions that mirror exception handling to capture attack and support between arguments. The resulting \ACDC sublanguage allows a debate for Peirce's law via a term that normalizes to a \matilda proof and is hence complete with respect to the original calculus.
+  We present a representation of arguments and debates as expressions of the \matilda-calculus, yielding first-class argument and debate objects with computational content: successful arguments return normally, defeated ones throw an exception. Arguments and counterarguments are constructed in the linear, intuitionistic fragment of the calculus. They can then be composed into debate expressions with non-linear control flow. We show how such a representation handles conflicting terms, control-flow manipulation as well as attack and support between arguments. The encoding makes use of throw, catch and keep constructions that mirror exception handling. Support patterns can be evaluated by discarding redundant alternatives. Attack patterns behave as conditional aborts that throw an exception if the attacked argument is defeated. The resulting \ACDC sublanguage is classical which is shown via a debate term reducing to a proof of Peirce's law.
 \end{abstract}
 
 \begin{keyword}
@@ -25,79 +25,55 @@ argumentation\sep proof terms\sep classical logic\sep debate
 \end{frontmatter}
 
 \section{Introduction}\label{sec:introduction}
-\begin{oldpart}{Initial brain dump}
-  Argumentation Frameworks (ASPIC+ \cite{Prakken2010StructuredArguments} \cite{ModgilPrakken2014ASPICPlus}, ABA \cite{BondarenkoDungKowalskiToni1997DefaultReasoning}, Carneades \cite{GordonPrakkenWalton2007Carneades}, Deductive Argumentation \cite{BesnardHunter2001DeductiveArguments}, Sequent-based Argumentation \cite{ArieliStrasser2015SequentBasedLogicalArgumentation}) and their implementations extend a given object logic with non-monotonic and argumentation features including argument construction and acceptability evaluation. However, they do not usually provide the necessary scaffolding to mechanize a logic out of the box.
-Logical Frameworks such as LF \cite{HarperHonsellPlotkin1993LF}, COC \cite{CoquandHuet1988CoC} and Higher-Order Logic \cite{Church1940SimpleTypes} and their implementations such as MMT \cite{KohlhaseRabe2013ScalableModuleSystem}, ROCQ \cite{BertotCasteran2004CoqArt}, Lean \cite{MouraKongAvigadDoornRaumer2015Lean}, and Isabelle/HOL \cite{NipkowPaulsonWenzel2002IsabelleHOL} use variants of the propositions-as-types paradigm to obtain such scaffolding and provide additional services such as module systems and extensive libraries. In particular, Logical Frameworks represent proofs as first-class proof objects that can be operated on via generic tools (e.g. interactive assisted proof construction and rewriting), used in other proofs or managed in libraries for scalable decelopment. \ednote{MR: list some more services/operations}. But they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \cite{FuenmayorBenzmueller2020ClimateEngineering} they do not enjoy the same degree of tool support.
- Hence currently - to the best of our knowledge - no system for the construction of, compilation of and computation with \emph{first class} argument and debate objects exists. Yet such a system would provide significant benefits - arguably even greater than for proof objects - by providing generic tools support for services such as interactive argument and debate construction, libraries, subargument extraction, debate normalization, debate updating (adding or removing arguments) or debate filtering.
- The outline of the paper is as follows: in \cref{sec:argum-debat-prop} we recap the state of the art and provide motivation for our approach. In \cref{sec:class-type-theory} we introduce classical type theory in the form of a dialectical variant of the \matilda-calculus, showcasing it as a language of terms and context with control flow operators on the computational level and of proofs and refutations on the logical level. We likewise introduce constructs for throwing, keeping and catching of subexpressions. \cref{sec:modell-argum-relat} introduces arguments as open \matilda-terms and the support and attack constructs to compose debates. The full debate language is presented in \cref{sec:debat-matilda-calc} where we also show that it is complete with respect to the original, classical calculus by constructing a term that normalizes to a proof of Peirce's law. Finally we conclude in \cref{sec:future-work-concl} outlining directions for future work.
 
-  
-\end{oldpart}
-\section{Arguments and Debates in the Propositions-as-Types Paradigm}\label{sec:argum-debat-prop}
-\begin{oldpart}{Initial Brain Dump}
+Argumentation Frameworks such as ASPIC+ \cite{Prakken2010StructuredArguments} \cite{ModgilPrakken2014ASPICPlus}, ABA \cite{BondarenkoDungKowalskiToni1997DefaultReasoning}, Carneades \cite{GordonPrakkenWalton2007Carneades}, Deductive Argumentation \cite{BesnardHunter2001DeductiveArguments} or Sequent-based Argumentation \cite{ArieliStrasser2015SequentBasedLogicalArgumentation} and their implementations provide argumentative superstructure for a given object logic and enable non-monotonic inference through the (automated) construction and evaluation of arguments and their relations.
+However, they are less focussed on the arguments themselves as first-class objects enabling generic tool support.
+Logical Frameworks such as LF \cite{HarperHonsellPlotkin1993LF}, COC \cite{CoquandHuet1988CoC} and Higher-Order Logic \cite{Church1940SimpleTypes} and their implementations such as MMT \cite{KohlhaseRabe2013ScalableModuleSystem}, ROCQ \cite{BertotCasteran2004CoqArt}, Lean \cite{MouraKongAvigadDoornRaumer2015Lean}, and Isabelle/HOL \cite{NipkowPaulsonWenzel2002IsabelleHOL} use variants of the propositions-as-types paradigm to enable the mechanization of logics. In particular, a mechanization of a logic's proof theory yields first-class proof objects that can be used to provide further services (e.g. interactive assisted proof construction and rewriting), inherited in other proofs or managed in libraries for scalable development. However, they are not well-suited to shallowly embed non-monotonic formalisms such as argumentation frameworks as their foundations are fundamentally monotonic. While deep embeddings are possible \cite{FuenmayorBenzmueller2020ClimateEngineering} they do not enjoy the same degree of tool support.
+Hence currently - to the best of our knowledge - no system exists that combines the strengths of Argumentation and Logical frameworks.
+%Such as system would bring defeasibility to the Logical Framework world and provide the extensive tool support enabled by the Logical Framework approach to argumentation.
+%Generic services could e.g. include interactive argument and debate construction, subargument extraction as well as debate normalization, updating, filtering and management in libraries.
+In this paper we take a step in this direction by providing an arguments-as-programs view on argumentation through a representation of arguments and debates as expressions of classical type theory.
+
+ The outline of the paper is as follows: in \cref{sec:argum-debat-prop} we motivation our approach while recapping related work in this area. In \cref{sec:class-type-theory} we introduce classical type theory in the form of a dialectical variant of the \matilda-calculus, typing its terms and contexts with control flow operators by proofs and refutations. We likewise introduce constructs for throwing, keeping and catching of subexpressions. \cref{sec:modell-argum-relat} introduces arguments as open \matilda-terms and the support and attack constructs to compose debates. The full debate language is presented in \cref{sec:debat-matilda-calc} where we also show that it is complete with respect to the original, classical calculus. Finally we conclude in \cref{sec:future-work-concl} outlining directions for future work.
+
+ \section{Arguments and Debates in the Propositions-as-Types Paradigm}\label{sec:argum-debat-prop}
+ 
   Famously one can understand the proofs of intuitionistic logic for a given proposition as programs typed by a corresponding type (most canonically for propositional logic and the simply-typed lambda calculus) \ednote{MR@agent: please canonical citation here. A: canonical options would be Curry--Feys / Howard for the correspondence, and Church or simply a standard STLC reference for the simply-typed lambda calculus presentation.}
   It is hence natural to ask if the correspondence can be extended to the arguments for a given proposition. Indeed such an approach was pursued early on in the development of the field of formal argumentation by \cite{KrauseAmblerElvangGoranssonFox1995},\cite{Ambler1996}.
 More recently, \cite{Pandzic2022-PANALO} develops a defeasible justification logic in which argument terms feature as modalities.
   \cite{KrauseAmblerElvangGoranssonFox1995} represent arguments as (open) terms of the minimal simply-typed $\lambda$-calculus.
 
-  However, this initial work failed to gain many followers (\cite{Pandzic2022-PANALO}, where a defeasible justification logic is developed in which argument terms feature in modalities, is an exception), presumably because of the following difficulties:
-  \begin{enumerate}
-  \item \textbf{Conflicting Terms}: arguments may attack each other instead of merely constructively calling on each other.
-  \item \textbf{Control Flow Manipulation}: in concrete debates it matters in which order arguments are made and to which issues they are redirected.
-  \item \textbf{Compilation}: arguments make use of implicit assumptions or defeasible defaults instead of being fully rigorous. Hence to assess the status of a given argument it is necessary to have a \emph{debate} that compiles all of the arguments and counterarguments to a given issue in the context into a final proof term.
-  \end{enumerate}
-
-  \begin{example}[Running Example: A Prover-Skeptic-Dialogue]\label{ex:prover-skeptic}
+  However, this initial work failed to gain many followers (\cite{Pandzic2022-PANALO}, where a defeasible justification logic is developed in which argument terms feature in modalities, is an exception):
+  argumentation poses particular difficulties due to conflicting terms, control flow manipulations and the need to compile debate expressions. We illustrate these challenges by way of an example roughly based on the Lorenzen game for sequent calculus (see chapter 7 of \cite{sorensen_urzyczyn_2006_curry_howard}).
+  % \begin{enumerate}
+  % \item \textbf{Conflicting Terms}: arguments may attack each other instead of merely constructively calling on each other.
+  % \item \textbf{Control Flow Manipulation}: in concrete debates it matters in which order arguments are made and to which issues they are redirected.
+  % \item \textbf{Composition}: arguments make use of implicit assumptions or defeasible defaults instead of being fully rigorous. Hence to assess the status of a given argument it is necessary to have a \emph{debate} that compiles all of the arguments and counterarguments to a given issue in the context into a final expression.
+  % \end{enumerate}
+\begin{example}[Running Example: A Prover-Skeptic-Dialogue]\label{ex:prover-skeptic}
     Consider two logicians arguing about the truth of Peirce's law:
 
-    % P1: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    % S1: I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
-    % P2: I could take your word and prove $P$ by asserting $P \rightarrow Q$. But I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
-    % S2: Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
-    % P3: Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
-    % S3: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
-    % P: Ha! Got you again: now you proved $P$ which you deny. Contradiction!
-    % S: Allright, I am out of options, you win.\ednote{MR@gptel: put this in a description environment}
-
-\begin{aipart}{gptel}
 \begin{description}[leftmargin=3em,style=sameline]
-\item[P1:] I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-\item[S1:] I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
-\item[P2:] I could take your word and prove $P$ by asserting $P \rightarrow Q$. But I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
-\item[S2:] Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
-\item[P3:] Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
-\item[S3:] Alright, I retract my offer of $P$. Instead I will take your offer $P\rightarrow Q$ and prove $P$. I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
-\item[P:] Ha! Got you again: now you proved $P$ which you deny. Contradiction!
-\item[S:] Allright, I am out of options, you win.
+\item[$P_1$:] I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
+\item[$S_1$:] I don't believe you! Assume $(P\rightarrow Q)\rightarrow P$! Can you really prove $P$?
+\item[$P_2$:] I could take your word and prove $P$ by asserting $P \rightarrow Q$. But I don't believe \emph{you}! Assume $P\rightarrow Q$. Can you show $P$?
+\item[$S_2$:] Why should I take your word for $P\rightarrow Q$. Let me grant you $P$! Can you prove $Q$?
+\item[$P_3$:] Ha! I trapped you. You have granted me $P$ and $P$ is exactly what you asked me to prove earlier. So you both affirm and deny $P$. Hence I prove $Q$ by contradiction.
+\item[$S_3$:] Alright, I retract my offer of $P$. Instead I will take your offer $P\rightarrow Q$ and prove $P$. I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
+\item[$P$:] Ha! Got you again: now you proved $P$ which you deny. Contradiction!
+\item[$S$:] Alright, I am out of options, you win.
 \end{description}
-\end{aipart}
+\end{example}
 
-    % P: I assert $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    % S: I don't believe you and I will prove you wrong. I deny $((P\rightarrow Q)\rightarrow P)\rightarrow P$!
-    % P: Ok, knock yourself out. Will you prove $(P\rightarrow Q)\rightarrow P$? And refute $P$?
-    % S: Yes, I assert $(P\rightarrow Q)\rightarrow P$!
-    % P: I don't believe you. Assume $(P\rightarrow Q)$! Can you prove $P$?
-    % S: I don't believe \emph{you}! Assume $P$, can you really show $Q$?
-    % P: Ha! I trapped you. You have granted me $P$ but you need to refute $P$. Contradiction, hence $Q$.
-    % S: Alright, I retract my offer of $P$. Instead I will take your offer  $P\rightarrow Q$ and prove $P$ I do so by asserting $((P\rightarrow Q)\rightarrow P)\rightarrow P$. By $((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $P\rightarrow Q$, $P$.
-    % P: Ha! Got you again: now you proved $P$ which you have to refute. Contradiction!
-    % S: Allright, I am out of options, you win.
-
-    
-  \end{example}\ednote{MR: Perhaps it makes more sense to build the example incrementally.}
-
-  \paragraph{Conflicts:} Prover asserts $((P\rightarrow Q)\rightarrow P)\rightarrow P$ but Skeptic denies this. Following \cite{KrauseAmblerElvangGoranssonFox1995}'s approach, we could represent each argument as a term $p:((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $s:\neg((P\rightarrow Q)\rightarrow P)\rightarrow P$, respectively. But how are we to construct a term $d = ?(p,s):((P\rightarrow Q)\rightarrow P)\rightarrow P$ that suitable combines argument and counterargument into a debate about $((P\rightarrow Q)\rightarrow P)\rightarrow P$?
-  \paragraph{Control Flow:} Throughout our example Prover and Skeptic challenge each other to prove subgoals necessary for the continuation of the debate. However, each side can choose which claim it argues at any given time: in particular, Prover sets a trap for Skeptic and when she walks into it by assuming $P$, changes the topic back to an earlier challenge and points out that Skeptic has contradicted herself. Such topic changes and argumentative maneuvering are par for the course in \emph{concrete} debates. If we wish to represent them we need a way to manipulate the \emph{control flow} of debate terms.
+  \paragraph{Conflicts:} Prover asserts $((P\rightarrow Q)\rightarrow P)\rightarrow P$ but Skeptic denies this. Following \cite{KrauseAmblerElvangGoranssonFox1995}'s approach, we could represent each argument as a term $p:((P\rightarrow Q)\rightarrow P)\rightarrow P$ and $s:\neg((P\rightarrow Q)\rightarrow P)\rightarrow P$, respectively. But how are we to construct a term $d = ?(p,s):((P\rightarrow Q)\rightarrow P)\rightarrow P$ that suitably combines argument and counterargument into a debate about $((P\rightarrow Q)\rightarrow P)\rightarrow P$?
+  \paragraph{Control Flow:} Throughout our example Prover and Skeptic challenge each other to prove subgoals necessary for the continuation of the debate. However, each side can choose which claim it argues at any given time: in this way, Prover sets a trap for Skeptic goading her into assuming $P$. Then she changes the topic back to an earlier challenge and points out that Skeptic has contradicted herself. Such topic changes and argumentative maneuvering are par for the course in \emph{concrete} argumentation, i.e. if one does not abstract them away. If we wish to represent them we need a way to manipulate the \emph{control flow} of debate terms.
   % Suppose now we had a debate term $d:((P\rightarrow Q)\rightarrow P)\rightarrow P$. Either the proposition or the opposition in a debate usually \emph{wins}. Presumably, if the proposition wins, evaluating $d$ should yield a witness for $((P\rightarrow Q)\rightarrow P)\rightarrow P$. But if the opposition wins, $d$ should return a value that indicates the proposition's failure to make its case.
   \paragraph{Compilation:} Prover eventually ends the debate by closing all of Skeptic's possible response avenues (corresponding to a classical proof). In general, however, the use of implicit assumptions or defeasible defaults in arguments means that a given debate can always continue or - conversely - is never incomplete. Hence we should be able to represent the debate between Prover and Skeptic at different times and obtain debate terms $d_1, \dots, d_n$ that are built incrementally from each other. That is, we need compilation operations that allow us to construct debate terms from the arguments and counterarguments currently in the context.
 
-  If the system's terms cannot represent the interaction of arguments in debates in the same way it captures individual arguments, the generic tool support we are hoping for is beyond our reach.
-  Thus we need to adopt a richer type theory that can handle the phenomena of conflict, control flow and compilation and represent both individual arguments and debates in a unified language.
-  In this paper we focus on the former two aspects, leaving (interactive) compilation for future work.
+  % If the system's terms cannot represent the interaction of arguments in debates in the same way it captures individual arguments, the generic tool support we are hoping for is beyond our reach.
+    In this paper we focus on the former two aspects, leaving (interactive) compilation mostly for future work.
+  Handling the phenomena of conflict and control flow requires a richer type theory that can handle and represent both individual arguments and debates in a unified language.
  
-\end{oldpart}
-\ednote{MR: the initial list and the paragraphs describing each item in terms of the running example have too much redundancy and should simply be merged into one.}
-
 \section{Classical Type Theory, Dialectics and Control}\label{sec:class-type-theory}
 
   \cite{Griffin1990-FormulaeAsTypesOfControl, Parigot1992-LambdaMu, Wadler2003-CBVIsDualToCBN} and \cite{CurienHerbelin2000-DualityOfComputation} extend the proposition-as-types correspondence to classical logic. Griffin showed that \emph{control operators} such as call-cc can be typed by Peirce's law; Parigot's $\lambda\mu$-calculus provides the Curry-Howard-Correspondent to classical natural deduction; \cite{Wadler2003-CBVIsDualToCBN}, \cite{CurienHerbelin2000-DualityOfComputation} invented symmetric systems, in the latter case the \matilda calculus which is to the classical sequent calculus LK as $\lambda\mu$-calculus is to classical natural deduction.
@@ -107,8 +83,8 @@ More recently, \cite{Pandzic2022-PANALO} develops a defeasible justification log
 \subsection{The $\matilda$ Calculus - Dialectical Variant}\label{sec:matilda-calc-dial}
 
 We recap the $\matilda$ Calculus and give a dialectical variant of its syntax.
-\paragraph{Expressions} are divided into terms, environments and commands.
-Terms are read left-to-right while environments are read right-to-left.
+\paragraph{Expressions} are divided into terms, contexts and commands.
+Terms are read left-to-right while contexts are read right-to-left.
 Commands are read either left-to-right or right-to-left depending on how they are bound.
 The terminology on the expression level gestures at an interpretation of $\matilda$-expressions as program terms and continuation contexts.
 Terms are expressions with outer holes that wait to be passed to a context.
@@ -120,7 +96,7 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
   \begin{grammar}[Grammar of the $\matilda$-calculus][tbhp][gram:terms]
     \firstcasesubtil{$v$}{x \gralt \lambda x:\sigma.v \gralt E \circ v \gralt \mu \sigma:\alpha.c}{Terms}
 
-    \firstcasesubtil{$E$}{\alpha \gralt E.\sigma:\alpha\lambda \gralt v \circ E \gralt c.x:\sigma \mu}{Environments}
+    \firstcasesubtil{$E$}{\alpha \gralt E.\sigma:\alpha\lambda \gralt v \circ E \gralt c.x:\sigma \mu}{Contexts}
 
     \firstcasesubtil{$c$}{\rangle v :\sigma: E \langle}{Commands}
 
@@ -130,17 +106,17 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
 We say that a $\mu$-bound variable is \emph{affine}  if it does not appear free in the command in which it is bound (likewise we call a binder binding an affine variable an \emph{affine binder}).
 If we want to explicitly indicate that a binder is affine we write $\mu\_.c$ and $c.\_\mu$, respectively.
 Two fragments of the syntax are of interest:
-\emph{Intuitionistic Logic} is obtained by restricting the domain of the environment-variables $\alpha$ to a singleton set.
+\emph{Intuitionistic Logic} is obtained by restricting the domain of the context-variables $\alpha$ to a singleton set.
 Conversely, \emph{Dual-intuitionistic Logic} is obtained by restricting the term variable domain to a singleton.
 The intuitionistic and dual-intuitionistic fragments can alternatively be obtained by restricting expressions to \emph{linear} terms and contexts:
 
 \begin{definition}[Linear Expressions]
-  A variable $x$ is \emph{linearly bound} in an expression $t$ with outer binder $b$ iff $x$ is bound by $b$ in $t$, appears exactly once in $t$ and between $b$ and $x$ there is no binder occurence of the same kind as $b$. A \matilda expression is called \emph{linear} iff all term variables bound in it are bound linearly. It is called \emph{dual-linear} if all context variables bound in it are bound linearly.
+  A variable $x$ is \emph{linearly bound} in an expression $t$ with outer binder $b$ iff $x$ is bound by $b$ in $t$, appears exactly once in $t$ and between $b$ and $x$ there is no binder occurrence of the same kind as $b$. A \matilda expression is called \emph{linear} iff all term variables bound in it are bound linearly. It is called \emph{dual-linear} if all context variables bound in it are bound linearly.
 \end{definition}
 The intuitionistic fragment corresponds to the sublanguage of linear \matilda expressions, the dual-intuitionistic fragment to the sublanguage of dual-linear \matilda expressions.
 
 \paragraph{Judgments and Typing:} Sequents have the form \emph{Antecedent $\vdash$ Stoup $\dashv$ Succedent}.
-Antecedent and Succedent are conjunctive contexts of terms and environments respectively while the stoup contains exactly one active formula - a term, context or command - at any given time.
+Antecedent and Succedent are conjunctive contexts of terms and contexts respectively while the stoup contains exactly one active formula - a term, context or command - at any given time.
 They are read in the same direction as their elements.
 On the type-level, we give a dialectical interpretation based on \cite{Herbelin2005CestMaintenant}, \cite{LovasCrary2006StructuralNormalization} and \cite{Harper2016PFPL}.
 
@@ -276,7 +252,7 @@ Additionally, we have the following $\eta$-equivalence rules for $\mu$ binders:
 
 \subsection{Control Flow: Affine Binders, Throw,  Keep and Catch}\label{sec:control-flow:-affine}
 
-The reduction system brings to the fore how control flow is modelled in the $\matilda$-calculus.
+The reduction system brings to the fore how control flow is modeled in the $\matilda$-calculus.
 Of particular interest to us is the reduction behavior of affine terms. Note that affine $\mu$ binders throw away their contexts (terms) during reduction:
 
 \[\mu \beta.\rangle \mu\_.\rangle v :: E \langle :: F[\beta] \langle \longrightarrow_{\mu <} \mu \beta.\rangle v :: E \langle\]
@@ -297,30 +273,30 @@ We define the following subgrammar of affine expressions :
   Throw and keep terms are abbreviated as $throw(v,:\alpha)$ and $(x:,E)keep$, respectively; throw and keep contexts as $(x:,E)throw$ and $keep(v, :\alpha)$, respectively.
 \end{notation}
 
-In the throw case, the current continuation is trashed and the current term $v$ (context $E$) is thrown to an outer catch continuation (term). The pathological command will continue to bubble up until it gets \emph{caught} by a binder that binds some variable free in the exception command $c$. This mirrors the computational behaviour of exception handling, where $v$ ($E$) is the pathological term (context) to be handled. However, unlike in the usual treatment of exceptions - the exception $v$ is not thrown to any particular catch continuation but can in principle be catchable on (any number of) term or context variables occuring free in it.
+In the throw case, the current context is trashed and the current term $v$ (context $E$) is thrown to an outer catch context (term). The pathological command will continue to bubble up until it gets \emph{caught} by a binder that binds some variable free in the exception command $c$. This mirrors the computational behavior of exception handling, where $v$ ($E$) is the pathological term (context) to be handled. However, unlike in the usual treatment of exceptions - the exception $v$ is not thrown to any particular catch context but can in principle be catchable on (any number of) term or context variables occurring free in it.
 
-Thus any $\mu$-abstracted term (environment) \ednote{Unify term/environment/context/continuation terminology} can catch a thrown term.
+Thus any $\mu$-abstracted term (context).
 
 \begin{notation}[Catch]
-  We write $catch(:\alpha)$ and $(x:)catch$, for term (context) side $\mu$ binders, respectively, if we with to stress their role as a catch statement.
+  We write $catch(:\alpha)$ and $(x:)catch$, for term (context) side $\mu$ binders, respectively, if we wish to stress their role as a catch statement.
 \end{notation}
 
-In the keep case, the current term (continuation) is trashed and an inner term $v$ (continuation $E$) is returned to the current continuation $\alpha$ (term $x$). This behaviour can be thought of as an access-restricted computation that checks the continuation before returning to it and if it does not have access rights to the current value, returns another value instead.
+In the keep case, the current term (context) is trashed and an inner term $v$ (context $E$) is returned to the current context $\alpha$ (term $x$). This behavior can be thought of as an access-restricted computation that checks the context before returning to it and if it does not have access rights to the current value, returns another value instead.
 
-Keep terms allow the modelling of total failure or abortion of a computation, as the following example demonstrates:
+Keep terms allow the modeling of total failure or abortion of a computation, as the following example demonstrates:
 
 \begin{example}[Contradictory Proof terms]\label{ex:control-flow:-affine-1}
-  Assume a atoms $t:A$ and $A:t'$. Consider the following proof term:
+  Assume atoms $t:A$ and $A:t'$. Consider the following proof term:
 
   \[\mu A:\alpha.\rangle t:: \rangle \mu\_.\rangle x:: t' \langle:: \alpha\langle.x:A\mu\langle:A\]
 
-  Given that we have a contradiction, simply returning $t$ to $\alpha$ would hide the pathology. Instead, the contradiction should be brought to the surface. The continuation $ \rangle \mu\_.\rangle x:: t' \langle:: \alpha\langle.x:A\mu$ thus denies $t$ access to the outer continuation $\alpha$ and instead reroutes it to the abort continuation $t'$. The term hence reduces to
-  $$ \mu A:\alpha.\rangle t::t'\langle \text{,}$$ bringing the contradiction to the top and yielding an uncatchable exception that will consume any continuation to which it is passed - in other words \emph{aborting} the computation.
+  Given that we have a contradiction, simply returning $t$ to $\alpha$ would hide the pathology. Instead, the contradiction should be brought to the surface. The context $ \rangle \mu\_.\rangle x:: t' \langle:: \alpha\langle.x:A\mu$ thus denies $t$ access to the outer context $\alpha$ and instead reroutes it to the abort context $t'$. The term hence reduces to
+  $$ \mu A:\alpha.\rangle t::t'\langle \text{,}$$ bringing the contradiction to the top and yielding an uncatchable exception that will consume any context to which it is passed - in other words \emph{aborting} the computation.
   
 \end{example}
 \ednote{MR: explain the term abort continuation. Refutation = abort continuation, terminates without returning. Proof = returns without input. You can return a vacuous (affine) witness for any type given the abort state (returns an error message).}
 
-\section{Modelling Arguments and their Relations in the dialectical \matilda-calculus}\label{sec:modell-argum-relat}
+\section{Modeling Arguments and their Relations in the dialectical \matilda-calculus}\label{sec:modell-argum-relat}
 
 We generalize the approach taken by \cite{KrauseAmblerElvangGoranssonFox1995} to define arguments in the \matilda-setting.
 The basic idea is that a successful argument should correspond to a program that returns normally, while a defeated argument should abort the computation.
@@ -338,10 +314,10 @@ Computationally speaking, the move to the classical calculus introduces precisel
 
 \paragraph{Assumptions: } here are three broad approaches in the literature: assumptions as meta-level default-assumptions or inference rules (e.g. \cite{BondarenkoDungKowalskiToni1997DefaultReasoning}, ); assumptions as object logic axioms (e.g. \cite{BesnardHunter2001DeductiveArguments}) and assumptions as proof calculus context variables (e.g.\cite{ArieliStrasser2015SequentBasedLogicalArgumentation}).
 While we certainly regard a dedicated treatment of assumptions as desirable we leave this to future work and stay close to the latter approach - if only for its simplicity.
-However, we make our notion of arguments as concrete expresions instead of abstract sequents has the advantage that attacks/supports can only target assumptions that are actually used by the targeted argument.
+However, making our notion of arguments concrete expressions instead of abstract sequents has the advantage that attacks/supports can only target assumptions that are actually used by the targeted argument.
 
 \begin{example}[Prover-Skeptic-Dialogue: Arguments]\label{ex:prover-skeptic-arguments}
-  The argument from \cref{ex:prover-skeptic} can be formalized as follows:
+  We formalize the arguments from \cref{ex:prover-skeptic}, using the same free variables across arguments:
 
   \begin{align}
     \label{eq:2}
@@ -349,16 +325,22 @@ However, we make our notion of arguments as concrete expresions instead of abstr
     S1: & x,y \vdash \mu ((P\rightarrow Q)\rightarrow P)\rightarrow P: \beta. \rangle \lambda f:((P\rightarrow Q)\rightarrow P).y :: \beta \langle \dashv \\
     P2: & x,y,z \vdash \mu P:\gamma.\rangle \lambda g.z :((P\rightarrow Q)\rightarrow P): \delta \langle \dashv \delta\\
     S2: & x,y,z,u \vdash \mu P: \epsilon.\rangle \lambda h.u :P\rightarrow Q: \zeta \langle \dashv \delta,\zeta\\
-    P3: & x,y,z,t \vdash \mu Q:\theta.\rangle h :P: \gamma \langle \dashv \delta, \zeta\\
-    S3: & x,y,z,t \vdash \rangle g :(P\rightarrow Q)\rightarrow P: u * \iota \langle.u:P\rightarrow Q \mu \dashv \delta,\zeta, \iota \\
-    P4: & \vdash \rangle w :: \gamma \langle. w:P \mu \dashv
-    %D:  &  catch(:\alpha)\rangle throw(P1, :\alpha) :((P\rightarrow Q)\rightarrow P)\rightarrow P: keep ( catch(:\beta)\rangle throw(S1, :\beta):: keep(catch(:\gamma)\rangle throw(P2,:\gamma):: keep( catch(:\theta)\langle throw (S2, :\theta):: keep([] , :\delta) \rangle, :\gamma)\langle,:\beta)\langle, :\alpha)\langle
+    P3: & x,y,z,u \vdash \mu Q:\theta.\rangle h :P: \gamma \langle \dashv \delta, \zeta\\
+    S3: & x,y,z,u,s \vdash \rangle g :(P\rightarrow Q)\rightarrow P: s \circ \iota \langle.u:P\rightarrow Q \mu \dashv \delta,\zeta, \iota \\
+    P4: & x,y,z,u,s\vdash \rangle w :: \gamma \langle. w:P \mu \dashv  \delta,\zeta, \iota
+    % D:  &  catch(:\alpha)\rangle throw(P1, :\alpha) :((P\rightarrow Q)\rightarrow P)\rightarrow P: keep ( catch(:\beta)\rangle throw(S1, :\beta):: keep(catch(:\gamma)\rangle throw(P2,:\gamma):: keep( catch(:\theta)\langle throw (S2, :\theta):: keep([] , :\delta) \rangle, :\gamma)\langle,:\beta)\langle, :\alpha)\langle
   \end{align}
+  Assertions made by the opponents become free variables, offers bound ones. Generally the onus to prove an assertion rests with the person who claims it, but the onus can be passed to the opposing side by making an offer (i.e. the assertion is the bound term in a $\lambda$-term ($-$ context. For example, in $S_1$, the subterm $\lambda f:((P\rightarrow Q)\rightarrow P).y$ represents the challenge to Prover to derive $P$ given $((P\rightarrow Q)\rightarrow P)$.
+  The $\mu$-binders are used to respond to a challenge, bind it and redirect control-flow to a lemma or contradiction one wants to prove to meet the challenge.
+  In $P_2$ Prover decides to work on the lemma $(P\rightarrow Q)\rightarrow P$. She could take prover's offer $f$ to prove the lemma and then eliminate $\delta$ to proceed to prove $(P\rightarrow Q)$ to derive the challenged proposition $P$ from the lemma. But in this case she instead decides to challenge Skeptic back on his offer, laying a trap.
+  In $S_2$ and Skeptic walks into the trap by offering $h:P$ (even though she could have tried to prove $P$ from $P\rightarrow Q$ ($\zeta$).
+  Prover exploits this in $P_3$ where she uses the offered variable $h$ to meet Skeptic's earlier challenge $\gamma$.
+  Skeptic then backtracks and instead tries to proceed with her only open alternative $\zeta$ from $S_2$, but ultimately to no avail.
 \end{example}
 
-\subsection{Argument Relations in the \matilda-calculus}
+\subsection{Argument Relations}
 
-In this section we will put the the throw, keep and catch patterns we developed in \cref{sec:control-flow:-affine} to work to model the argumentative relations of attack (rebut and undermine) and support (buttress and undergird).
+In this section we will put the throw, keep and catch patterns we developed in \cref{sec:control-flow:-affine} to work to model the argumentative relations of attack (rebut and undermine) and support (buttress and undergird).
 
 \paragraph{Support:} The basic idea is that we can use throw-keep-catch patterns to model alternative arguments for a proposition.
 This approach follows \cite{AutexierSacerdotiCoen2006OMDocLambdaMuMu}, who develop a pattern that allows the encoding of alternative proofs in \matilda-terms:
@@ -376,26 +358,26 @@ From an argumentative perspective, one can think of these patterns as \emph{supp
 
 \begin{definition}[Support]
   Support is defined via the following grammar:
-  \begin{grammar}[Throw-Keep-Catch Patterns][][gram:throwkeepcatch]
-  \firstcasesubtil{$t_1\prec_\phi t_2$}{\catcht{: \alpha}.\rangle \throwt{t_1}{: \alpha} :\phi: \keept{t_2}{: \alpha} \langle}{Term-side pattern}
-  \otherform{\rangle \keepc{x:}{t_1} :\phi: \throwc{x:}{t_2} \langle . \catchc{x:}}{Context-side pattern}
+  \begin{grammar}[Support][][gram:throwkeepcatch]
+  \firstcasesubtil{$t_1\prec_\phi t_2$}{\catcht{: \alpha}.\rangle \throwt{t_1}{: \alpha} :\phi: \keept{t_2}{: \alpha} \langle}{}
+  \otherform{\rangle \keepc{x:}{t_1} :\phi: \throwc{x:}{t_2} \langle . \catchc{x:}}{}
 \end{grammar}
   An argument $t_1$ \emph{supports} an argument $t_2$ iff $t_2\prec t_1$. We say that $t_1$ \emph{undergirds} $t_2$ iff $t_2$ is a variable. Else $t_1$ \emph{buttresses} $t_2$. We define $\prec$ to be right-associative.
 \end{definition}
 
 \begin{example}[Support]
-  Consider the arguments $P_2$ and $S_2$ from \cref{ex:prover-skeptic-arguments}. We have $P_2[y:P]$ and $S_2:P$. Hence $P_2[y prec_P S_2/y]$ is an expression encoding that $P_2$ is supported by $S_2$ on $P$.
+  Consider the arguments $P_2$ and $S_2$ from \cref{ex:prover-skeptic-arguments}. We have $P_2[y:P]$ and $S_2:P$. Hence $P_2[y \prec_P S_2/y]$ is an expression encoding that $P_2$ is supported by $S_2$ on $P$.
 \end{example}
 \ednote{MR: consider the special case where $t_1$ supports a $\mu$-\emph{bound} variable. In that case $t_1$ is also an attacker of the parent argument. Does grafting currently handle this?}
-\ednote{MR: examples and reduction behaviour: example that shows that either argument can be retrieved non-deterministically; support for a free variable; support with a defeated supporter/supported argument, support with a strict and a defeasible argument.}
+\ednote{MR: examples and reduction behavior: example that shows that either argument can be retrieved non-deterministically; support for a free variable; support with a defeated supporter/supported argument, support with a strict and a defeasible argument.}
 
 \paragraph{Attack} can be encoded by giving two alternative arguments for the thesis: the original one and one from contradiction.
-Attack in structured argumentation is often modelled on top of the base logic \cite{BondarenkoDungKowalskiToni1997DefaultReasoning}\cite{ArieliStrasser2015SequentBasedLogicalArgumentation}.
+Attack in structured argumentation is often modeled on top of the base logic \cite{BondarenkoDungKowalskiToni1997DefaultReasoning}\cite{ArieliStrasser2015SequentBasedLogicalArgumentation}.
 We instead define contrariness bottom-up by treating proofs and refutations as contrary to each other.\footnote{Note that in the classical calculus contrariness defined in this way becomes classical negation. But this need not be so: in the minima
   l and intuitionistic fragment, the equivalence between the two notions does not hold.}
 
   \begin{definition}[Attack]
-    Let $t_1,t_2$ be intuitonistic $\matilda$ expressions. An \emph{attack} between $_1$ and $t_2$ is defined as one of the following patterns:
+    Let $t_1,t_2$ be intuitionistic \matilda expressions. An \emph{attack} between $t_1$ and $t_2$ is defined as one of the following patterns:
 
     \begin{grammar}[Attacks][][gram:attacks]
       \firstcasesubtil{$t_1 \leftattack_\phi t_2$}{\catcht{:\alpha}\rangle t_1:\phi: \rangle \keepc{x:}{t_2} :: \throwc{x:}{\alpha}\langle.\catchc{x:} \langle}{}
@@ -409,14 +391,14 @@ We instead define contrariness bottom-up by treating proofs and refutations as c
     We say that $t_2$ attacks $t_1$ on $\phi$ iff $t_1\leftattack_\phi t_2$. In particular, if $t_1$ is an assumption, $t_2$ \emph{undermines} $t_1$. Else $t_2$ \emph{rebuts} $t_1$
   \end{definition}
   \ednote{MR@agent: the leftattack macro typesets the arrow too thick, too high up and a bit too long. Please adjust it.}
-  Similarly to \Cref{ex:control-flow:-affine-1}, in the case of an attack we have to conflicting terms $t_1$ and $t_2$. However, we drop the assumption that $t_1, t_2$ be atoms. Hence $t_1,t_2$ may themselves throw to outer continuations or keep\ednote{MR: Both sides can catch or keep. Catch by proposition brings to the top supporters (including defaults); keep by proposition brings subargument by opposition to the top that proposition has refuted further up (including defaults). But opposition can likewise use keep to pull down arguments using keep. What about catch, throw? Have to decide for one side (probably proponent) to do these things. Paper on constructing arguments, not this one!} values.
+  Similarly to \Cref{ex:control-flow:-affine-1}, in the case of an attack we have two conflicting terms $t_1$ and $t_2$. However, we drop the assumption that $t_1, t_2$ be atoms. Hence $t_1,t_2$ may themselves throw to outer contexts or keep\ednote{MR: Both sides can catch or keep. Catch by proposition brings to the top supporters (including defaults); keep by proposition brings subargument by opposition to the top that proposition has refuted further up (including defaults). But opposition can likewise use keep to pull down arguments using keep. What about catch, throw? Have to decide for one side (probably proponent) to do these things. Paper on constructing arguments, not this one!} values.
 
   \begin{example}[Attack]
-    Consider again the arguments $P_1$ from \cref{ex:prover-skeptic-arguments}. Skeptic might feel confident and decide to assume the onus by attempting to \emph{refuting} Prover's claim instead of challenging Prover to derive it from an assumption. In this case she might put forward an argument $S_1'\langle s:: \chi\rangle.s: ((P\rightarrow Q)\rightarrow P)\rightarrow P \mu$. Then $P_1[x\leftattack_{((P\rightarrow Q)\rightarrow P)\rightarrow P} S_1' /x]$ is an expression that models this attack.
+    Consider again the arguments $P_1$ from \cref{ex:prover-skeptic-arguments}. Skeptic might feel confident and decide to assume the onus by attempting to \emph{refute} Prover's claim instead of challenging Prover to derive it from an assumption. In this case she might put forward an argument $S_1'\langle s:: \chi\rangle.s: ((P\rightarrow Q)\rightarrow P)\rightarrow P \mu$. Then $P_1[x\leftattack_{((P\rightarrow Q)\rightarrow P)\rightarrow P} S_1' /x]$ is an expression that models this attack.
   \end{example}
   
   \ednote{MR: Introduce a convention, that wlog only the term-side of things is studied, unless there is an explicit need to study the context side.}
-\ednote{Examples: Strict vs Defeasible Argument, Defeasible Argument vs Defeated Argument, defeasible vs caught argumnent, each with normalization. Rebut, Undermine.}
+\ednote{Examples: Strict vs Defeasible Argument, Defeasible Argument vs Defeated Argument, defeasible vs caught argument, each with normalization. Rebut, Undermine.}
 \ednote{Examples demonstrating the combination of attack and support to encode individually necessary and jointly sufficient conditions or individually sufficient and jointly necessary (at least one needs to hold) conditions. }
 
 % Finally, we investigate the reduction behavior of attacks.
@@ -444,7 +426,7 @@ We now put the ingredients from the previous sections together to define a subla
 
 \begin{example}[Debate Term for Peirce's Law]
   From the arguments given in the previous examples, we can construct the following debate term:
-  \[(P_1[x \prec S_1 [y \prec (P_2 [z \prec S_2 [u \prec P_3/u]/z]) [\zeta \prec S_3 [\iota / \prec P_4/\iota]/\zeta]/y]]/x)\leftattack S_1'\]
+  \[(P_1[x \prec S_1 [y \prec (P_2 [z \prec S_2 [u \prec P_3/u]/z]) [\zeta \prec S_3 [\iota / \prec P_4/\iota]/\zeta]/y]/x])\leftattack S_1'\]
 \end{example}
 
 \subsection{Evaluating Debates:  Redundancy and Defeat}\label{sec:eval-debat-redund}
@@ -478,20 +460,17 @@ Thus even proofs can be strictly defeated in inconsistent theories. Finally, we 
 
 \begin{example}[Normalizing the Debate for Peirce's Law]
   Consider again the debate
-  \[(P_1[x \prec S_1 [y \prec (P_2 [z \prec S_2 [u \prec P_3/u]/z]) [\zeta \prec S_3 [\iota / \prec P_4/\iota]/\zeta]/y]]/x)\leftattack S_1'.\]  
-  We outline how the term is evaluated omitting non call-by-onus stepts. Initiall, we have to delay evaluation and reduce $S_1$ first. This yields an open term which is hence discarded via $\mu<$. We then have to delay evalation two times until we find $\iota$ to be an open term which is discarded via $\mu <$. Next we evaluate the expression $(P_2 [z \prec S_2 [u \prec P_3/u]/z]) \prec S_3[\zeta \prec P_4/\zeta]]$  While $S_3[\zeta \prec P_4/\zeta]$ is strict, we still have to check if $P_2 [z \prec S_2 [u \prec P_3/u]/z]) $ is strict as well. Indeed it is because $P_3$ is strict, rendering $S_2$ and then $P_2$ strict. Hence $S_3[\zeta \prec P_4/\zeta]$ is discarded and the final term is:
+  \[(P_1[x \prec S_1 [y \prec (P_2 [z \prec S_2 [u \prec P_3/u]/z]) [\zeta \prec S_3 [\iota / \prec P_4/\iota]/\zeta]/y]]/x)\leftattack S_1'.\]
+  We outline how the term is evaluated, omitting non call-by-onus steps. Initially, we have to delay evaluation and reduce $S_1$ first. This yields an open term which is hence discarded via $\mu<$. We then have to delay evaluation two times until we find $\iota$ to be an open term which is discarded via $\mu <$. Next we evaluate the expression $(P_2 [z \prec S_2 [u \prec P_3/u]/z]) \prec S_3[\zeta \prec P_4/\zeta]$. While $S_3[\zeta \prec P_4/\zeta]$ is strict, we still have to check if $P_2 [z \prec S_2 [u \prec P_3/u]/z]$ is strict as well. Indeed it is because $P_3$ is strict, rendering $S_2$ and then $P_2$ strict. Hence $S_3[\zeta \prec P_4/\zeta]$ is discarded and the final term is:
 
-  \[P_1[[S_1[P_2[S_2[P_3/u]/z]/y]/x]\]
+  \[P_1[S_1[P_2[S_2[P_3/u]/z]/y]/x]\]
 
-which in corresponds to the term $\mu \alpha.\rangle \lambda f.\mu \beta. \rangle f :: \lambda x.\rangle x :: \beta \langle\circ\beta\langle:: \alpha\langle$
-
-
+which corresponds to the term $\mu \alpha.\rangle \lambda f.\mu \beta. \rangle f :: \lambda x.\rangle x :: \beta \langle\circ\beta\langle:: \alpha\langle$
 \end{example}
 
-\subsection{Classicality of  \ACDC}
+\subsection{Classicality of \ACDC}
 
-Finally, we would like to know if we can recover the full logical expressivity of \matilda in \ACDC.
-For our purposes, this will be the case if we can obtain a proof for every classical tautology by normalizing an \ACDC debate:
+Finally, we shall recover classical expressivity of the \matilda-calculus by showing how to obtain a proof for every classical tautology by normalizing \ACDC debates.
 
 \begin{definition}[Reduction-closed Fragment]
   The \emph{$\mathcal{S}$-reduction-closed} fragment of \ACDC is the set of \ACDC terms that can be reduced via some reduction strategy $\mathcal{S}$ to a closed \matilda expression.
@@ -501,26 +480,26 @@ For our purposes, this will be the case if we can obtain a proof for every class
   The reduction-closed fragment of \ACDC is sound with respect to classical propositional logic.
 \end{proposition}
 \begin{proof}
-  Immediate from the fact that closed \ACDC terms are a sublanguage of the closed $\matilda$-terms.
+  The $\mathcal{S}$-reduction-closed fragmet is a subset of the closed $\matilda$-terms.
 \end{proof}
 
 \begin{proposition}[Completeness of \ACDC]
   The reduction-closed fragment of \ACDC is complete with respect to classical propositional logic.
 \end{proposition}
 \begin{proof}
-  This follows from the fact that intuitionistic logic + Peirce's law a complete proof system for classical logic and that all intuitionistic terms are atomic \ACDC debates: let $T$ be a propositional tautology. There exists an intuitionistic argument $t_0:T$ with exactly one free variable $x:((\sigma\rightarrow \delta)\rightarrow \sigma) \rightarrow \sigma]$ for some intuitionistic formulae $\sigma, \delta$. We construct a debate $t_1$ for Peirce's law as we did in the previous section. Then $t_2= t_0[x \prec_{((\sigma\rightarrow \delta)\rightarrow \sigma) \rightarrow \sigma} t_1/x]$ is a debate for $T$. As x is not strict in $t_2$, there exists a reduction that reduces $t_2$ via call-by-onus to a term $t_0[t_1]$. As $t_1$ can be reduced to a closed term for Peirce's law, $t_0$ can be reduced to a closed term $t_0*:T$.  
+  This follows from the fact that intuitionistic logic extended with Peirce's law is a complete proof system for classical logic and that all intuitionistic terms are atomic \ACDC debates: let $T$ be a propositional tautology. There exists an intuitionistic argument $t_0:T$ with finitely many free variables $x_1,\dots,x_n$ such that for all $i\leq n$, $x_i:((\sigma_i\rightarrow \delta_i)\rightarrow \sigma_i) \rightarrow \sigma_i$ for some intuitionistic formulae $\sigma_i, \delta_i$. For each such occurence, we construct a debate $t_i$ for Peirce's law as we did in the previous section. Then the term $t^\ast$ obtained by applying the substitutions $[x_i \prec_{((\sigma_i\rightarrow \delta_i)\rightarrow \sigma_i) \rightarrow \sigma_i} t_i/x_i]$ for all $i\leq n$ to $t_0$ is a debate for $T$. As the $t_i$ reduce to closed terms for Peirce's law and the $x_i$ are wrapped in throw-keep-catch-terms after the substitutions, there exists a reduction that throws away all $x_i$ and reduces $t^\ast$ to a closed term $t^\ast_{closed}:T$.  
 \end{proof}
 \ednote{MR@agent: Please let me know (in the chat, not here) if you think this proof is correct.}
 
 \section{Future Work and Conclusion}\label{sec:future-work-concl}
 
-We have introduced a novel approach to represent arguments and debates as \matilda terms furnishing argument and debate objects with computational content such that successful arguments for a given issue return normally whereas defeated arguments return an exception.
+We have introduced a novel approach to represent arguments and debates as \matilda terms, furnishing argument and debate objects with computational content such that successful arguments for a given issue return normally whereas defeated arguments return an exception.
 Arguments are conceived as linear, potentially open \matilda terms and debates compose arguments via the support and attack syntactic patterns.
 In case of support, either the original argument or its supporter is returned, based on whether the supporter is considered redundant.
 As for attacks, a successful attack results in an uncatchable exception that aborts the defeated arguments computation.
 The resulting \ACDC sublanguage is classical as it allows a debate for Peirce's law via a term that normalizes to a \matilda proof.
-In future work we will investigate open debates, i.e. debates that do not normalize to a closed \matilda-term in terms of Dungean argumentation semantics.
-We will also present a fully general reduction strategies for \ACDC terms and extend the syntax of the language to include genuine enthymemes replacing the use of free variables.
+In future work we will investigate open debates, i.e. debates that do not normalize to a closed \matilda-term in terms of Dung-style argumentation semantics.
+We will also present a fully general reduction strategy for \ACDC terms and extend the syntax of the language to include genuine enthymemes replacing the use of free variables.
 This will be the base for interactive construction of arguments and debates. 
 Further research directions include correspondences between \ACDC debate terms and Lorenzen game winning strategies, a first order extension of the language and its use as a logical framework in the style of \emph{Isabelle}.
 
