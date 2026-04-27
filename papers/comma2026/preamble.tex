@@ -1,0 +1,191 @@
+% Shared preamble for the COMMA 2026 paper.
+% This file collects the IOS-compatible parts of the migrated old draft
+% preamble and the paper-specific helper macros currently in use.
+
+% Useful packages carried over from the old draft, keeping only items that are
+% compatible with the IOS Press class and pdflatex-based compilation.
+\usepackage[hide]{ed}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xparse}
+\usepackage{tikz}
+\usepackage{ebproof}
+\usepackage{stmaryrd}
+\usepackage{cancel}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{mathptmx}
+% Use formal-grammar again, with a small IOS compatibility patch for
+% captioned custom floats under IOS-Book-Article.
+\usepackage{formal-grammar}
+\usepackage{float}
+\makeatletter
+\let\@makecaption\@makefigurecaption
+\makeatother
+\ExplSyntaxOn
+\RenewDocumentCommand{\firstcasesubtil}{m m m}{#1 & \(::=\) & \(#2\) & {\itshape \color{gray!90!black} #3}\\}
+\ExplSyntaxOff
+\renewcommand{\gralt}{\quad |\quad }
+\newcommand{\gramtext}[1]{#1}
+\usepackage{tabularx}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[outline]{contour}
+\usepackage{pifont}
+\usepackage{xspace}
+% Textual citation helper: manual author/year text plus the numeric bibliography entry.
+\newcommand{\aycite}[3]{#1 #2~\cite{#3}}
+
+\makeatletter
+\newcommand\Pimathsymbol[3][\mathord]{#1{\@Pimathsymbol{#2}{#3}}}
+\def\@Pimathsymbol#1#2{\mathchoice
+  {\@Pim@thsymbol{#1}{#2}\tf@size}
+  {\@Pim@thsymbol{#1}{#2}\tf@size}
+  {\@Pim@thsymbol{#1}{#2}\sf@size}
+  {\@Pim@thsymbol{#1}{#2}\ssf@size}}
+\def\@Pim@thsymbol#1#2#3{\mbox{\fontsize{#3}{#3}\Pisymbol{#1}{#2}}}
+\input{utxmia.fd}
+\DeclareFontShape{U}{txmia}{m}{n}{<->ssub * txmia/m/it}{}
+\DeclareFontShape{U}{txmia}{bx}{n}{<->ssub * txmia/bx/it}{}
+\newcommand{\pilambdaup}{\Pimathsymbol[\mathord]{txmia}{21}}
+\newcommand{\Alambda}{\ensuremath{\tikz[baseline=-.6ex,line width=.1ex]{
+    \node[inner sep=0pt] (L) at (0,0.03) {$\pilambdaup$};
+    \draw (L.south west)++(.12em,.425ex) -- ++(.2em,0);}}}
+\newcommand{\AC}{\ensuremath{\tikz[baseline=-.6ex,line width=.1ex]{
+    \node[inner sep=0pt] (L) at (0,0.03) {$\pilambdaup$};
+    \draw (L.south west)++(.12em,.425ex) -- ++(.2em,0);}C}\xspace}
+\newcommand{\ACDC}{\ensuremath{AC/DC}\xspace}
+\makeatother
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{fact}[theorem]{Fact}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{notation}{Notation}
+\crefname{example}{example}{examples}
+\Crefname{example}{Example}{Examples}
+\crefname{theorem}{theorem}{theorems}
+\Crefname{theorem}{Theorem}{Theorems}
+\crefname{definition}{definition}{definitions}
+\Crefname{definition}{Definition}{Definitions}
+\crefname{lemma}{lemma}{lemmas}
+\Crefname{lemma}{Lemma}{Lemmas}
+\crefname{corollary}{corollary}{corollaries}
+\Crefname{corollary}{Corollary}{Corollaries}
+\crefname{proposition}{proposition}{propositions}
+\Crefname{proposition}{Proposition}{Propositions}
+\crefname{fact}{fact}{facts}
+\Crefname{fact}{Fact}{Facts}
+\crefname{notation}{notation}{notations}
+\Crefname{notation}{Notation}{Notations}
+\newcommand{\matilda}{\ensuremath{\bar{\lambda}\mu\tilde{\mu}}\xspace}
+\newcommand{\alignarrow}{\mathrel{\mkern30mu\rightarrow\mkern30mu}}
+\newcommand{\alignleftrightarrow}{\mathrel{\mkern30mu\leftrightarrow\mkern30mu}}
+\newcommand{\leftattack}{%
+  \tikz[baseline=-0.2ex,scale=0.18]{\draw [draw=black!75,line width=0.1pt, line cap=round, line join=round, arrows={-to[scale=0.45]}] (1.55,0.62) -- (0.65,0.62) -- (1.05,0.20) -- (0,0.20);}%
+}
+\newcommand{\rightattack}{%
+  \tikz[baseline=-0.5ex,scale=0.2]{\draw [thick, arrows={-to[scale=0.5]}] (0,0.25) -- (1.3,0.25) -- (0.7,0.75) -- (1.8,0.75);}%
+}
+\newcommand{\catcht}[1]{\operatorname{catch}(#1)}
+\newcommand{\catchc}[1]{(#1)\operatorname{catch}}
+\newcommand{\throwt}[2]{\operatorname{throw}(#1,#2)}
+\newcommand{\throwc}[2]{(#1,#2)\operatorname{throw}}
+\newcommand{\stealt}[2]{\operatorname{steal}(#1,#2)}
+\newcommand{\stealc}[2]{(#1,#2)\operatorname{steal}}
+\newcommand{\taut}[1]{\textcolor{white}{\contour{white}{$#1$}}}
+\newcommand{\cons}[1]{\textcolor{gray}{\contour{white}{$#1$}}}
+\newcommand{\conj}[1]{\textcolor{gray}{\contour{white}{$#1$}}}
+\newcommand{\ind}[1]{\textcolor{gray}{\contour{gray}{$#1$}}}
+
+\newcommand{\symcut}[3]{ \hypo{\Sigma\vdash #1:#3\dashv \Delta}
+      \hypo{\Sigma\vdash #3:#2 \dashv \Delta}
+      \infer2{\Sigma\vdash \rangle #1:#3:#2\langle \dashv \Delta}}
+\newcommand{\symaxiom}[2]{%
+  \infer0{\Sigma,#1:#2\vdash #1:#2\dashv \Delta}}
+\newcommand{\metasymaxiom}[2]{%
+  \infer0{V;\Sigma,\conj{#1}:#2\vdash \conj{#1}:#2\dashv \Delta;E}}
+\newcommand{\symproimplintro}[4]{%
+  \hypo{\Sigma,#1:#2\vdash #3:#4\dashv \Delta}
+  \infer1{\Sigma\vdash \lambda #1:#2.#3:#2\rightarrow #4\dashv \Delta}}
+\newcommand{\symprodiffintro}[4]{%
+  \hypo{\Sigma\vdash #1:#2\dashv \Delta}
+  \hypo{\Sigma\vdash #4:#3\dashv \Delta}
+  \infer2{\Sigma\vdash #1\circ #3:#2-#4\dashv \Delta}}
+\newcommand{\symmoixa}[2]{%
+  \infer0{\Sigma\vdash #2:#1 \dashv #2:#1,\Delta}}
+\newcommand{\metasymmoixa}[2]{%
+  \infer0{V;\Sigma\vdash #2:\cons{#1} \dashv #2:\cons{#1},\Delta;E}}
+\newcommand{\symrefudiffintro}[4]{%
+  \hypo{\Sigma\vdash #4:#3 \dashv #2:#1,\Delta}
+  \infer1{\Sigma\vdash #4-#2:#3.#1\lambda \dashv \Delta}}
+\newcommand{\symrefuimplintro}[4]{%
+  \hypo{\Sigma\vdash #1:#2\dashv \Delta}
+  \hypo{\Sigma\vdash #4:#3 \dashv \Delta}
+  \infer2{\Sigma\vdash \sigma\rightarrow\delta:#1\circ #3:\dashv \Delta}}
+\newcommand{\symrefuintro}[4]{%
+  \hypo{\Sigma,#1:#2\vdash #3:#4\dashv \Delta}
+  \infer1{\Sigma\vdash #2:#3.#1\mu\dashv \Delta}}
+\newcommand{\symprointro}[4]{%
+  \hypo{\Sigma\vdash #3:#4\dashv \Delta,#2:#1}
+  \infer1{\Sigma\vdash \mu #1.#3:#2\dashv \Delta}}
+
+\newcommand{\envsubpremone}{%
+  \hypo{V;\Sigma\vdash t[\sigma:\alpha] \dashv \Delta;E}%
+}
+\newcommand{\envsubpremtwo}{%
+  \hypo{V';\Sigma\vdash \sigma:E \dashv \Delta;E'}%
+}
+\NewDocumentCommand{\envsub}{O{\envsubpremone} O{\envsubpremtwo} O{V''} O{\Sigma} O{t} O{E} O{\alpha} O{\Delta} O{E''}}{%
+  \begin{prooftree}
+      #1
+      #2
+      \infer2{#3;#4\vdash #5[#6/#7] \dashv #8;#9}
+    \end{prooftree}}
+\newcommand{\termsubpremone}{%
+  \hypo{V;\Sigma\vdash [X:\sigma]t \dashv \Delta;E}%
+}
+\newcommand{\termsubpremtwo}{%
+  \hypo{V';\Sigma'\vdash v:\sigma \dashv \Delta';E'}%
+}
+\NewDocumentCommand{\termsub}{O{\termsubpremone} O{\termsubpremtwo} O{V''} O{\Sigma} O{E} O{\alpha} O{t} O{\Delta} O{E''}}{%
+  \begin{prooftree}
+      #1
+      #2
+      \infer2{#3;#4\vdash [#5/#6]#7 \dashv #8;#9}
+    \end{prooftree}}
+
+\newcommand{\itemR}[2]{%
+  \item\leavevmode
+  \begin{tabularx}{\linewidth}{@{}Xr@{}}#1 & #2 \\\end{tabularx}%
+}
+\algblockdefx[Prover Claim]{pclaim}{pdone}[1]{\textbf{P:} I claim #1.}{qed}
+\algblockdefx[Skeptic Challenge]{schall}{sdone}[2][$\top$]{\textbf{S:} I challenge you to prove #2 given #1.}{done}
+\algblockdefx[Prover start Lemma]{pslem}{psmel}[1]{\textbf{P:} I will first prove a lemma: #1.}{done}
+\algblockdefx[Skeptic refute Lemma]{srlem}{srmel}[4][$\top$]{\textbf{S:} Even if so, you still need to prove #2 to meet my challenge #3. I challenge you to prove #4 given #1.}{done}
+
+% AI-authored contribution blocks. Use these to wrap agent-written text so it
+% remains visually distinct from MR notes and older draft material.
+\makeatletter
+\newcommand{\aibeglabel}{BegAIP}
+\newcommand{\aiendlabel}{EndAIP}
+\newcommand{\aibegmargin}{BAIP}
+\newcommand{\aiendmargin}{EAIP}
+\newcommand{\aipartlabels}[2]{\def\aibeglabel{#1}\def\aiendlabel{#2}}
+\newcommand{\aipartmargins}[2]{\def\aibegmargin{#1}\def\aiendmargin{#2}}
+\newenvironment{aipart}[1]%
+{\ed@part{}{AI contribution}\aibeglabel\aibegmargin\ifshowednotes\footnotemark\footnotetext{#1}\color[rgb]{0.80,0.25,0.25}\fi}
+{\ended@part\aiendmargin}
+\makeatother
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:
