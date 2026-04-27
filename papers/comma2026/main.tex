@@ -103,7 +103,7 @@ Symmetrically, when binding to the left $\mu$ corresponds to a call-with-current
 We say that a $\mu$-bound variable is \emph{affine}  if it does not appear free in the command in which it is bound (likewise we call a binder binding an affine variable an \emph{affine binder}).
 If we want to explicitly indicate that a binder is affine we write $\mu\_.c$ and $c.\_\mu$, respectively.
 To denote that $t'$ is a subexpression of $t$, we write $t[t']$. For variables we take $t[x], t[\alpha]$ to mean that $x,\alpha$ occur free in $t$. We call such expressions \emph{open expressions}.
-Finally, we write $[t/x]t'$ for the usual capture-avoiding substitution while $t'[t/x]$ denotes non-capture-avoiding substitutions. 
+Finally, we write $t'[x\leftarrow t]$ for the usual capture-avoiding substitution while $t'[t/x]$ denotes non-capture-avoiding, non-recursive graftings. 
 Two fragments of the syntax are of interest:
 \emph{Intuitionistic Logic} is obtained by restricting the domain of the context-variables $\alpha$ to at most a singleton set.
 Conversely, \emph{Dual-intuitionistic Logic} is obtained by restricting the term variable domain to at most a singleton.
@@ -425,7 +425,7 @@ We now put the ingredients from the previous sections together to define a subla
 \begin{definition}[\ACDC Debate Terms]
   Let $v_l,E_l$ range over the linear (dual-linear) \matilda expressions. Then \ACDC\ debate terms are given by the following subgrammar:
   \begin{grammar}[Debates][H]
-    \firstcasesubtil{d}{v_l \gralt E_l \gralt d \prec_\sigma d' \gralt d \leftattack_\sigma d'}{}
+    \firstcasesubtil{d}{v_l \gralt E_l \gralt d \prec_\sigma d' \gralt d \leftattack_\sigma d'\gralt d[d'/x]}{}
   \end{grammar}
 \end{definition}
 
