@@ -1,0 +1,203 @@
+\documentclass{article}
+\input{preamble}
+\title{A Language for Enthymemes}
+\begin{document}
+
+\section{Introduction}
+
+The notion of enthymemes traces back to Aristotle's rhetoric and is usually associated with two distinct kinds of ampliative inference steps (though the correct interpretation is disputed, see \cite{sep-aristotle-rhetoric}):
+
+\begin{enumerate}
+\item Deductive Arguments with missing premises (type-I-enthymemes);
+\item Deductive Arguments with defeasible assumptions or inference steps (type-II-enthymemes).
+\end{enumerate}
+
+From a constructivist perspective both types of enthymemes contain subarguments that fail to furnish witnesses.
+In this view the difference between the two consists merely in the burden-of-proof: type I enthymemes commit the proponent of the argument to present a witness if questioned; type II enthymemes instead commit any challenger to present a refuting witness.
+
+\begin{oldpart}{Initial Braindump}
+  In the previous paper we defined terms and types of the \matilda calculus and used free variables to encode assumptions.
+  Here we introduce meta-variables to properly encode incomplete proofs (arguments), $\eta$-equivalence for arguments and an $\eta$-long normal form that serves as the basis for \emph{grafting} operations.
+  The meta-variables we introduce come in two flavors: obligations assume the onus, requiring successful supporters to be accepted; presumptions delegate the onus and are hence accepted unless they are successfully defeated by a couhterargument.
+
+  \ednote{MR: Restriction: study only forward debates, i.e. typed forward: debate -> argument -> debate |= graft y on x. Types backward: argument -> debate -> debate |= graft y on x is not allowed. This ensures uniqueness of debate construction (if you graft a debate onto a debate, you would have to ensure that the scion arguments of the scion debate are universally grafted onto the rootstock debate, complicating the situation). This is not enough: the scion arguments' subarguments would still have to be grafted onto other open assumptions.}
+
+  \ednote{Subtyping hierarchy: debate >= argument >= intuitionistic_proof}
+  
+\end{oldpart}
+
+\section{Recap of the Term Language}
+
+\begin{oldpart}{Missing}
+  Here Recap of the previous paper
+\end{oldpart}
+
+In particular, we use catch, throw and steal patterns to encode support and attack between arguments:
+
+
+
+  \begin{definition}[Attack]
+    Let $t_1,t_2$ be intuitionistic \matilda expressions. An \emph{attack} between $t_1$ and $t_2$ is defined as one of the patterns in Grammar \ref{gram:attacks}.
+
+    \begin{definition}[Support]
+      Support is defined via the following grammar:
+  
+     \begin{grammar}[Support][][gram:throwkeepcatch]
+       \firstcasesubtil{$t_1\prec_\phi t_2$}{\catcht{: \alpha}.\rangle t_1 :\phi: \langle \throwt{x }{:\alpha} :: \stealt{t_2}{:\alpha}\rangle.\catchc{x:}\langle}{}
+       \otherform{\rangle \catcht{:\alpha}.\rangle \stealc{\alpha}{x:}:: \throwc{t_2}{x:} \langle :\phi: t_2 \langle . \catchc{x:}}{}
+     \end{grammar}
+
+
+    \begin{grammar}[Attacks][][gram:attacks]
+      \firstcasesubtil{$t_1 \leftattack_\phi t_2$}{\catcht{:\alpha}.\rangle t_1:\phi: \rangle \stealc{x:}{t_2} :: \throwc{x:}{\alpha}\langle.\catchc{x:} \langle}{}
+      \otherform{\rangle \catcht{:\alpha}.\rangle \throwt{x}{:\alpha} :\phi: \stealt{t_2}{:\alpha}\langle:\phi: t_1\langle.\catchc{x:}}{}
+    \end{grammar}
+
+    We say that $t_2$ attacks $t_1$ on $\phi$ iff $t_1\leftattack_\phi t_2$. In particular, if $t_1$ is an assumption, $t_2$ \emph{undermines} $t_1$. Else $t_2$ \emph{rebuts} $t_1$
+  \end{definition}
+
+\section{Constructing Arguments: the Argument -calculus}
+
+The \matilda calculus provides us with two of the three requirements we identified in \cref{sec:argum-debat-prop}: conflicting proof terms and control operators. The third feature - defeasibility - requires an extension of the language.
+
+\subsection{Unwitnessed Premises: Obligations and Presumptions}
+
+
+To deal with both kinds of enthymemes we extend the grammar of \matilda terms and environments by two types of \emph{unwitnessed premises}: \emph{obligations} and \emph{presumptions}:
+
+\begin{grammar}[Argument Calculus grammar][tbhp][gram:terms]
+  \firstcasesubtil{v}{\dots \gralt [:\sigma] \gralt \underline{[:\sigma]} }{Term obligations and presumptions}
+  \firstcasesubtil{E}{\dots \gralt [\sigma:]\gralt \underline{[\sigma:]}}{Environment obligations and presumptions}
+\end{grammar}
+
+\begin{notation}\label[notation]{not:enthymeme-nominals}
+  We overload notation and use $[:\sigma]$ for the typing judgment $[:\sigma]:\sigma$ and $[\sigma:]$ for the typing judgment $\sigma:[\sigma:]$. In cases where typing information is irrelevant we write $[.:]$ for term side obligations and $[:.]$ for environment side obligations. We use these notations for presumptions as well, with the obvious substitutions.
+\end{notation}
+
+
+Obligations are typed as follows:
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:termenth}
+      \infer0{\Sigma\vdash [:\sigma] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:contextenth}
+      \infer0{\Sigma\vdash [\sigma:] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+Note that obligations are trivializing: one can find an argument for any proposition so long as one retains the obligations to prove one's assumptions.
+On the other hand, presumptions do not have introduction rules: what presumptions are permitted in a given situation world knowledge. Examples of such knowledge are general burden-of-proof delegations such as negation-by-failure, or the assertion of looping proof obligations in coinductive inference as well as concrete default knowledge such as ``birds can usually fly''.\ednote{MR: work out these examples. E.g. coinductive inference is an axiom scheme like  forall x.P(x):- exists }
+Thus reasoning with presumptions depends on the presense of a \emph{scenario}, i.e. some set of concrete presumption facts of the forms
+
+\begin{center}
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:termenth}
+      \infer0{\Sigma\vdash [:A] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+
+  \begin{minipage}{0.48\linewidth}
+    \begin{prooftree}
+      \label{rule:contextenth}
+      \infer0{\Sigma\vdash [A:] \dashv \Delta}
+    \end{prooftree}
+  \end{minipage}
+\end{center}
+
+for some concrete propositions A.
+If one wants to keep an object language level distinction between the proofs of a proposition, its (trivial) type 1 enthymemes and its (non-monotonic) type 2 enthyemems one can do so by introducing a dedicated judgment for each case or a subtyping hierarchy.
+However, for present purposes we don't need this separation.
+Obligations and presumptions are (incomplete) proof bureaucracy and as such don't come with reduction rules.
+However, we have the following $\eta$ equivalence rules:
+
+\begin{align*}
+  ([.:]-\eta&) & v &\alignleftrightarrow & \mu \alpha.\rangle v  :: \rangle \mu\_.\rangle x :: \alpha \langle::[.:]\langle .x\mu \langle \\
+  ([:.]-\eta&) & E &\alignleftrightarrow & \rangle \mu \alpha.\rangle [:.] :: \rangle \alpha :: E\langle.\_\mu\langle :: E \langle .x\mu
+\end{align*}
+
+
+We call the language obtained in this way the \emph{Argument Calculus} (short name: \AC).\ednote{Probably too early here.}
+
+
+\begin{oldpart}{Largely from old paper. This is now partially outdated.}
+
+  \subsection{Arguments}
+
+  Our definition of arguments is inspired by deductive argumentation \cite{besnard-review-argum} which views arguments as conditional proofs of the form $\Sigma \vdash_{\mathcal{L}} \varphi$ where the \emph{assumptions} $\Sigma$ and the \emph{conclusion} $\varphi$ are formulae of a given base logic ith consequence relation $\vdash_{\mathcal{L}}$.
+  `In sequent-based variant \cite{TODO},\ednote{TODO: sequent-based argumentation citation.} they then become single conclusion sequents.
+  However, we depart from this approach in two ways:
+  Firstly, unlike deductive argumentation, we do not wish to abstract away from the interior structure of the arguments.
+  Hence our approach is to define \emph{arguments} as ``open'' terms and \emph{counterarguments} as ``open'' environments.
+  Secondly, we want to avoid overloading object-language-level variables whose main functionality is hypothetical reasoning.
+  Unlike premises in conditonal proofs, argument assumptions are not merely hypothetical but closer to (defeasible) knowledge items.
+  Hence their main route of elimination is not discharge but defeat.
+
+  This introduces two distinctions from the standard deductive argumentation approach: firstly, in our setting arguments only depend on the assumptions which they use.
+  In particular, irrespective of the antecedent (succedent) it is not possible to attack an argument on an assumption that does not appear free in it.
+  Secondly, the same sequent represents many different arguments.
+  Instead our way of identifying arguments will function via defining a normal form.
+  The basic idea is that an argument is an \AC term where every subargument exposes a corresponding obligation which can be the target of debate operations such as attack or support.
+  This exposure is \emph{bureaucratic} in nature in that it itself has no logical content.
+
+  \begin{definition}[Bureaucratic Expressions]
+    An \AC expression is a \emph{bureaucratic obligation} if it belongs to the following subgrammar:
+    
+    \begin{grammar}[Bureaucratic Obligation Expressions][][gram:bureau]
+      \firstcasesubtil{$b$}{[:\sigma]}{}
+      \otherform{[\sigma:]}{}
+      \otherform{\mu \sigma:\alpha.\rangle b :\sigma: E \langle}{}
+      \otherform{\mu \sigma:\alpha.\rangle v :\sigma: b \langle}{}
+      \otherform{\rangle b :\sigma: E \langle.x : \sigma \mu}{}
+      \otherform{\rangle v :\sigma: b \langle. x : \sigma \mu}{}
+    \end{grammar}
+  \end{definition}
+
+  Bureaucratic obligation expressions make no logical progress but instead manage the control flow around obligations.
+
+  \begin{example}[Bureaucratic Obligation]
+    Consider the expression $\mu \alpha:A \rightarrow B.\rangle \mu\_.\rangle \lambda x. [:B] :: \alpha \langle :A\rightarrow B: [A \rightarrow B:]\langle$. Via one application of $\mu <$ it reducesto $\mu \alpha:A.\rangle \lambda x.[:B]:: \alpha \langle$ which is $\eta$-equivalent to $\lambda x.[:B]$. At the same time it exposes an obligation $[:A \rightarrow B]$ which could be filled in - for example - by a continuation that rerouts execution to use some alternative proof: $\rangle v' :A\rightarrow B: \alpha\langle.\_\mu$. In other words, we can think of an arbitrary proof term as a sceleton of obligations, fleshed out by an arbitrary number of proofs (refutations) for each sub-obligation.
+  \end{example}
+
+  \begin{definition}[Bureaucratic Obligation Redexes]
+    Let $v,E$ be terms of the shapes  $\mu \alpha.\rangle \mu \_.\rangle v::\alpha\langle :: [.:] \langle$ and $ \rangle [:.] :: \rangle x:: E\langle .\_\mu\langle .x\mu$, respectively. A  \emph{bureaucratic obligation redex} is one of the following expressions:
+    \[
+      \mu \sigma:\alpha.\rangle  v :\sigma: E' \langle
+    \]
+    \[
+      \rangle v' :\sigma: E \langle.x : \sigma \mu
+    \]
+    \[
+      \rangle v :\sigma: [\sigma:] \langle :\sigma: E' \langle.x: \sigma \mu
+    \]
+    \[
+      \mu \sigma:\alpha.\rangle v' :\sigma: E \langle
+    \]
+    In each case, the bound command is a default redex; hence the whole surrounding $\mu$- or $\mu'$-expression is also a redex, and moreover bureaucratic.
+  \end{definition}
+
+  \begin{definition}[obligation-$\eta$ long form]
+    An expression is in \emph{obligation-$\eta$ long form} iff obligation-$\eta$-expanding any of its subterms would introduce a bureaucratic obligation redex.
+  \end{definition}
+
+  With these ingredients in place we are finally ready to define our notion of argument:
+
+  \begin{definition}[Argument]
+    Given a proposition $\sigma$ the \emph{arguments for $\sigma$} are the intuitionistic, obligation-$\eta$-long $\AC$-expressions $v:\sigma$. The \emph{arguments against $\sigma$} (or counterarguments to $\sigma$) are the dual-intuitionistic obligation-$\eta$-long $AC$ expressions $\sigma:E$. An \emph{argument} is either an argument for or against some type $t'$.
+  \end{definition}
+
+  \ednote{MR: motivate restrictions to intuitionistic/dual-instuitionistic fragments: control flow, non-interaction with debate operations.}
+\end{oldpart}
+\end{document}
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: t
+%%% End:
