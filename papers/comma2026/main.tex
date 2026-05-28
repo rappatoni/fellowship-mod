@@ -123,14 +123,14 @@ There are three judgments:
 \begin{enumerate}
 \item $\Sigma\vdash v:\sigma \dashv \Delta$ judges $v$ to be a \emph{proof} for $\sigma$
 \item $\Sigma\vdash \sigma:E \dashv \Delta$ judges $E$ to be a \emph{refutation} of $\sigma$
-\item $\Sigma\vdash \langle v:\sigma:E\rangle \dashv \Delta$ judges $v$ and $E$ to form a \emph{contradiction} at $\sigma$
+\item $\Sigma\vdash \rangle v:\sigma:E\langle \dashv \Delta$ judges $v$ and $E$ to form a \emph{contradiction} at $\sigma$
 \end{enumerate}
 
-Terms are typed by proofs, contexts by refutations and commands by contradictions.
-Computationally, proofs type terms that produce a witness for their proposition regardless of input.
-Refutations type contexts that halt computation upon being passed a proof witness for their proposition, allowing for arbitrary returns.
-Contradictions type commands that can return arbitrary outputs from arbitrary inputs.
-The proof and refutation types of a given proposition are called \emph{contraries}.
+Terms correspond to proofs, contexts to refutations and commands to contradictions.
+Computationally, propositions type terms that produce a witness for their truth regardless of input.
+Conversely they type contexts that halt computation upon being passed a proof witness for their proposition, allowing for arbitrary returns.
+It follows that commands can return arbitrary outputs from arbitrary inputs.
+The proofs and refutations of a given proposition are called \emph{contraries}.
 
 Curien and Herbelin \cite{CurienHerbelin2000-DualityOfComputation} type commands by a sequent with an empty stoup mirroring the usual cut rule.
 However, we want to keep track of the issue of the contradiction and hence use the following typing rule:
