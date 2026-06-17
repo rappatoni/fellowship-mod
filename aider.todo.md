@@ -314,7 +314,18 @@
 +   - Risk: Low (localized change; does not affect non-empty cases).
 +   - Status: Open
 +   - Added: 2025-11-18
-+
+
+- Bug report
+  - ID: B-0020
+  - Location: wrap/cli.py:execute_script; core/dc/argument.py:execute
+  - Symptom: In .fspy script mode, certain critical prover/script errors are silently tolerated instead of aborting or raising. Example: when no booleans have been declared, starting a theorem can still "succeed" with proof term '?1'.
+  - Why this is a bug: A script-level theorem that cannot be meaningfully established should not be treated as a successful argument. Silent continuation leaves the wrapper in an invalid or misleading state.
+  - Impact: Batch execution can produce bogus arguments, hide prover failures, and continue subsequent commands as if execution had succeeded.
+  - Reproduction: Run a .fspy script that starts an argument/theorem before declaring required booleans; observe that execution continues and the resulting proof term is '?1' instead of an error/abort.
+  - Suggested fix: Treat unresolved/open proof states returned from script-driven argument execution as fatal in script mode (or at least under strict/stop-on-error semantics); validate start/end theorem state and propagate prover failures instead of registering the argument.
+  - Risk: Medium (tightening error handling may change currently tolerated script behavior).
+  - Status: Open
+  - Added: 2026-03-23
 + - Optional status updates (mark previously planned items as done where applicable):
 +   - Update T-0016 (Recognize support redexes in heuristic) → Status: Done.
 +   - Note: Mutilde-side support guard generalization has been applied in reducer (visit_Mutilde and _has_next_redex).

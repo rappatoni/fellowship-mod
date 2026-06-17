@@ -29,8 +29,9 @@ class Grammar():
             ?unary: "~" unary                        -> neg_prop
                   | "true"                           -> true_prop
                   | "false"                          -> false_prop
-                  | atom
+                  | pred_app
                   | "(" prop ")"                    -> grouped_prop
+            pred_app: name name*                      -> prop_app_chain
             atom: name                               -> atom_name
             name: /[^\[\].<>*~:,\-\s()]+/
             hyp: di ":" prop
@@ -146,7 +147,9 @@ class ProofTermTransformer(Transformer):
     def name(self, items):
         return str(items[0])
 
-    def atom_name(self, items):
+    def prop_app_chain(self, items):
+        return " ".join(str(item) for item in items)
+
         return str(items[0])
 
     def id(self, token) -> "ID":
