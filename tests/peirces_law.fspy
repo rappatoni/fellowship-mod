@@ -7,7 +7,9 @@ declare P,Q : bool.
 # P: ((P->Q)->P)->P!
 # S: (P->Q)->P! P?
 # P:(P->Q)! P?
-# S: P! Q? or 
+# S: P! Q?
+# P: P? P! -|
+# S: (P->Q)->P! ((P->Q)->P + P->Q = P)
 # P: P? P! -|
 
 # or:
@@ -37,6 +39,10 @@ normalize d1
 start argument p2 P
 cut ((P -> Q)->P) alpha.
 elim g.
+next.
+elim.
+next.
+axiom alpha.
 end argument
 
 undergird d2 p2 d1
@@ -64,12 +70,14 @@ start counterargument s3 P->Q
 cut ((P->Q)->P) theta.
 next.
 elim.
+axiom theta.
 end argument
 
 undergird d5 s3 d4
 render d5 vanilla
 normalize d5
 render-nf d5 vanilla
+color d5
 render-nf d5 dialectical
 
 # start argument p1 ((P -> Q)->P)->P
@@ -202,6 +210,7 @@ render-nf d5 dialectical
 # render final vanilla
 # normalize final
 # render-nf final vanilla
+
 
 # # Alternative Branches.
 

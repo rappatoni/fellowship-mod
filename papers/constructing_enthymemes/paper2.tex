@@ -1,7 +1,10 @@
 \documentclass{article}
 \input{preamble}
 \title{A Language for Enthymemes}
+\author{Max Rapp}
 \begin{document}
+
+\maketitle
 
 \section{Introduction}
 
@@ -18,7 +21,7 @@ In this view the difference between the two consists merely in the burden-of-pro
 \begin{oldpart}{Initial Braindump}
   In the previous paper we defined terms and types of the \matilda calculus and used free variables to encode assumptions.
   Here we introduce meta-variables to properly encode incomplete proofs (arguments), $\eta$-equivalence for arguments and an $\eta$-long normal form that serves as the basis for \emph{grafting} operations.
-  The meta-variables we introduce come in two flavors: obligations assume the onus, requiring successful supporters to be accepted; presumptions delegate the onus and are hence accepted unless they are successfully defeated by a couhterargument.
+  The meta-variables we introduce come in two flavors: obligations assume the onus, requiring successful supporters to be accepted; presumptions delegate the onus and are hence accepted unless they are successfully defeated by a counterargument.
 
   \ednote{MR: Restriction: study only forward debates, i.e. typed forward: debate -> argument -> debate |= graft y on x. Types backward: argument -> debate -> debate |= graft y on x is not allowed. This ensures uniqueness of debate construction (if you graft a debate onto a debate, you would have to ensure that the scion arguments of the scion debate are universally grafted onto the rootstock debate, complicating the situation). This is not enough: the scion arguments' subarguments would still have to be grafted onto other open assumptions.}
 
@@ -32,7 +35,7 @@ In this view the difference between the two consists merely in the burden-of-pro
   Here Recap of the previous paper
 \end{oldpart}
 
-In particular, we use catch, throw and steal patterns to encode support and attack between arguments:
+We use catch, throw and steal patterns to encode support and attack between arguments:
 
 
 
@@ -42,10 +45,11 @@ In particular, we use catch, throw and steal patterns to encode support and atta
     \begin{definition}[Support]
       Support is defined via the following grammar:
   
-     \begin{grammar}[Support][][gram:throwkeepcatch]
-       \firstcasesubtil{$t_1\prec_\phi t_2$}{\catcht{: \alpha}.\rangle t_1 :\phi: \langle \throwt{x }{:\alpha} :: \stealt{t_2}{:\alpha}\rangle.\catchc{x:}\langle}{}
+     \begin{grammar}[Support][][gram:support]
+       \firstcasesubtil{$t_1\prec_\phi t_2$}{\catcht{: \alpha}.\rangle t_1 :\phi: \rangle \throwt{x }{:\alpha} :: \stealt{t_2}{:\alpha}\langle.\catchc{x:}\langle}{}
        \otherform{\rangle \catcht{:\alpha}.\rangle \stealc{\alpha}{x:}:: \throwc{t_2}{x:} \langle :\phi: t_2 \langle . \catchc{x:}}{}
      \end{grammar}
+     \end{definition}
 
 
     \begin{grammar}[Attacks][][gram:attacks]
@@ -164,7 +168,7 @@ We call the language obtained in this way the \emph{Argument Calculus} (short na
   Bureaucratic obligation expressions make no logical progress but instead manage the control flow around obligations.
 
   \begin{example}[Bureaucratic Obligation]
-    Consider the expression $\mu \alpha:A \rightarrow B.\rangle \mu\_.\rangle \lambda x. [:B] :: \alpha \langle :A\rightarrow B: [A \rightarrow B:]\langle$. Via one application of $\mu <$ it reducesto $\mu \alpha:A.\rangle \lambda x.[:B]:: \alpha \langle$ which is $\eta$-equivalent to $\lambda x.[:B]$. At the same time it exposes an obligation $[:A \rightarrow B]$ which could be filled in - for example - by a continuation that rerouts execution to use some alternative proof: $\rangle v' :A\rightarrow B: \alpha\langle.\_\mu$. In other words, we can think of an arbitrary proof term as a sceleton of obligations, fleshed out by an arbitrary number of proofs (refutations) for each sub-obligation.
+    Consider the expression $\mu \alpha:A \rightarrow B.\rangle \mu\_.\rangle \lambda x. [:B] :: \alpha \langle :A\rightarrow B: [A \rightarrow B:]\langle$. Via one application of $\mu <$ it reduces to $\mu \alpha:A.\rangle \lambda x.[:B]:: \alpha \langle$ which is $\eta$-equivalent to $\lambda x.[:B]$. At the same time it exposes an obligation $[:A \rightarrow B]$ which could be filled in - for example - by a continuation that rerouts execution to use some alternative proof: $\rangle v' :A\rightarrow B: \alpha\langle.\_\mu$. In other words, we can think of an arbitrary proof term as a sceleton of obligations, fleshed out by an arbitrary number of proofs (refutations) for each sub-obligation.
   \end{example}
 
   \begin{definition}[Bureaucratic Obligation Redexes]
