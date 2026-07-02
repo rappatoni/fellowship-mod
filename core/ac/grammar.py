@@ -6,7 +6,7 @@ class Grammar():
         self.proof_term_grammar = r'''
             ?start: proof_term
 
-            proof_term: term | context | mu | mutilde | lamda | cons | goal
+            proof_term: term | context
 
             term: di | lamda | sonc |  mu | goal
 

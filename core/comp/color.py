@@ -1,7 +1,217 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Optional
 from pres.gen import ProofTermGenerationVisitor
 from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc
+
+
+@dataclass(frozen=True)
+class DebateNodeLabel:
+    status: str
+    inherited_status: Optional[str] = None
+    open_site: Optional[str] = None
+
+
+class DebateTermLabeller:
+    """Label debate terms via a simple two-pass attribute grammar.
+
+    The current implementation separates the bottom-up computation of a node's
+    local acceptance status from the top-down propagation of inherited status.
+    It intentionally stays close to the existing AcceptanceColoringVisitor
+    semantics so downstream renderers can migrate incrementally.
+    """
+
+    VALID_STATUSES = {"green", "red", "yellow"}
+
+    def __init__(self, verbose: bool = False):
+        self.verbose = verbose
+        self._synth: dict[int, str] = {}
+        self._inherited: dict[int, Optional[str]] = {}
+        self._open_site: dict[int, Optional[str]] = {}
+
+    def label(self, node: ProofTerm) -> dict[int, DebateNodeLabel]:
+        self._synth.clear()
+        self._inherited.clear()
+        self._open_site.clear()
+        self._compute_synthesized(node)
+        self._propagate_inherited(node, None)
+        return {
+            nid: DebateNodeLabel(
+                status=status,
+                inherited_status=self._inherited.get(nid),
+                open_site=self._open_site.get(nid),
+            )
+            for nid, status in self._synth.items()
+        }
+
+    def status_of(self, node: ProofTerm) -> str:
+        nid = id(node)
+        if nid not in self._synth:
+            self.label(node)
+        return self._synth[nid]
+
+    def inherited_of(self, node: ProofTerm) -> Optional[str]:
+        nid = id(node)
+        if nid not in self._synth:
+            self.label(node)
+        return self._inherited.get(nid)
+
+    def label_of(self, node: ProofTerm) -> DebateNodeLabel:
+        nid = id(node)
+        if nid not in self._synth:
+            self.label(node)
+        return DebateNodeLabel(
+            status=self._synth[nid],
+            inherited_status=self._inherited.get(nid),
+            open_site=self._open_site.get(nid),
+        )
+
+    def _combine_pair(self, left: str, right: str, node: ProofTerm) -> str:
+        if left == "green" and right == "green":
+            return "green"
+        if (left == "red" and right in {"green", "yellow", "red"}) or (
+            right == "red" and left in {"green", "yellow", "red"}
+        ):
+            return "red"
+        if (left == "yellow" and right == "green") or (left == "green" and right == "yellow"):
+            return "yellow"
+        if left == "yellow" and right == "yellow":
+            return "yellow"
+        raise ValueError(
+            f"DebateTermLabeller incomplete for {type(node).__name__} {self._node_pres(node)}: "
+            f"left={left}, right={right}"
+        )
+
+    def _invert_open(self, other: str) -> str:
+        if other == "red":
+            return "green"
+        if other == "green":
+            return "red"
+        return "yellow"
+
+    def _compute_synthesized(self, node: Optional[ProofTerm]) -> Optional[str]:
+        if node is None:
+            return None
+        nid = id(node)
+        if nid in self._synth:
+            return self._synth[nid]
+
+        if isinstance(node, Goal):
+            status = "yellow"
+            self._open_site[nid] = "term"
+        elif isinstance(node, Laog):
+            status = "yellow"
+            self._open_site[nid] = "context"
+        elif isinstance(node, (ID, DI)):
+            status = "green"
+            self._open_site[nid] = None
+        elif isinstance(node, Lamda):
+            status = self._compute_synthesized(node.term)
+            self._open_site[nid] = self._open_site.get(id(node.term))
+        elif isinstance(node, Admal):
+            status = self._compute_synthesized(node.context)
+            self._open_site[nid] = self._open_site.get(id(node.context))
+        elif isinstance(node, Cons):
+            if isinstance(node.term, Goal):
+                status = self._compute_synthesized(node.context)
+                self._open_site[nid] = "term"
+            elif isinstance(node.context, Laog):
+                status = self._compute_synthesized(node.term)
+                self._open_site[nid] = "context"
+            else:
+                left = self._compute_synthesized(node.term)
+                right = self._compute_synthesized(node.context)
+                status = self._combine_pair(left, right, node)
+                self._open_site[nid] = None
+        elif isinstance(node, Sonc):
+            if isinstance(node.term, Goal):
+                status = self._compute_synthesized(node.context)
+                self._open_site[nid] = "term"
+            elif isinstance(node.context, Laog):
+                status = self._compute_synthesized(node.term)
+                self._open_site[nid] = "context"
+            else:
+                left = self._compute_synthesized(node.term)
+                right = self._compute_synthesized(node.context)
+                status = self._combine_pair(left, right, node)
+                self._open_site[nid] = None
+        elif isinstance(node, Mu):
+            if isinstance(node.term, Goal):
+                other = self._compute_synthesized(node.context)
+                status = self._invert_open(other)
+                self._open_site[nid] = "term"
+            else:
+                left = self._compute_synthesized(node.term)
+                right = self._compute_synthesized(node.context)
+                status = self._combine_pair(left, right, node)
+                self._open_site[nid] = None
+        elif isinstance(node, Mutilde):
+            if isinstance(node.context, Laog):
+                other = self._compute_synthesized(node.term)
+                status = self._invert_open(other)
+                self._open_site[nid] = "context"
+            else:
+                left = self._compute_synthesized(node.term)
+                right = self._compute_synthesized(node.context)
+                status = self._combine_pair(left, right, node)
+                self._open_site[nid] = None
+        else:
+            status = "green"
+            self._open_site[nid] = None
+
+        self._synth[nid] = status
+        return status
+
+    def _propagate_inherited(self, node: Optional[ProofTerm], inherited_status: Optional[str]) -> None:
+        if node is None:
+            return
+        nid = id(node)
+        self._inherited[nid] = inherited_status
+
+        child_term = getattr(node, "term", None)
+        child_context = getattr(node, "context", None)
+
+        if isinstance(node, Lamda):
+            self._propagate_inherited(child_term, self._synth[nid])
+            return
+        if isinstance(node, Admal):
+            self._propagate_inherited(child_context, self._synth[nid])
+            return
+        if isinstance(node, Cons):
+            if child_term is not None:
+                self._propagate_inherited(child_term, self._synth[nid] if isinstance(child_term, Goal) else inherited_status)
+            if child_context is not None:
+                self._propagate_inherited(child_context, self._synth[nid] if isinstance(child_context, Laog) else inherited_status)
+            return
+        if isinstance(node, Sonc):
+            if child_context is not None:
+                self._propagate_inherited(child_context, self._synth[nid] if isinstance(child_context, Laog) else inherited_status)
+            if child_term is not None:
+                self._propagate_inherited(child_term, self._synth[nid] if isinstance(child_term, Goal) else inherited_status)
+            return
+        if isinstance(node, Mu):
+            if child_term is not None:
+                self._propagate_inherited(child_term, self._synth[nid] if isinstance(child_term, Goal) else inherited_status)
+            if child_context is not None:
+                self._propagate_inherited(child_context, inherited_status)
+            return
+        if isinstance(node, Mutilde):
+            if child_term is not None:
+                self._propagate_inherited(child_term, inherited_status)
+            if child_context is not None:
+                self._propagate_inherited(child_context, self._synth[nid] if isinstance(child_context, Laog) else inherited_status)
+            return
+
+        if child_term is not None:
+            self._propagate_inherited(child_term, inherited_status)
+        if child_context is not None:
+            self._propagate_inherited(child_context, inherited_status)
+
+    def _node_pres(self, n: ProofTerm) -> str:
+        c = deepcopy(n)
+        c = ProofTermGenerationVisitor().visit(c)
+        return getattr(c, "pres", repr(c))
+
 
 class AcceptanceColoringVisitor:
     ANSI = {
@@ -386,3 +596,7 @@ class AcceptanceColoringVisitor:
 
 def pretty_colored_proof_term(pt: ProofTerm, verbose: bool = False) -> str:
     return AcceptanceColoringVisitor(verbose=verbose).render(pt)
+
+
+def label_debate_term(pt: ProofTerm, verbose: bool = False) -> dict[int, DebateNodeLabel]:
+    return DebateTermLabeller(verbose=verbose).label(pt)

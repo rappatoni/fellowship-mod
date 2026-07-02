@@ -238,8 +238,10 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         name = parts[1] if len(parts) >= 2 else ""
                         style = parts[2] if len(parts) >= 3 else None
                         render_argument_cmd(prover, name, False, style=style)
+                    elif command.startswith("color-nf "):
+                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
                     elif command.startswith("color "):
-                        color_argument_cmd(prover, command.split(maxsplit=1)[1])
+                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
                     elif command.startswith("tree "):
                         parts = command.split()
                         # Usage:
@@ -678,8 +680,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     name = parts[1] if len(parts) >= 2 else ""
                     style = parts[2] if len(parts) >= 3 else None
                     render_argument_cmd(prover, name, False, style=style)
+            elif command.startswith("color-nf "):
+                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
             elif command.startswith("color "):
-                color_argument_cmd(prover, command.split(maxsplit=1)[1])
+                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
             elif command.startswith("tree "):
                 parts = command.split()
                 if len(parts) == 2:
@@ -1162,22 +1166,35 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     logger.info(pretty_natural(pt, sem))
     logger.info("")  # spacer after NL rendering
 
-def color_argument_cmd(prover: ProverWrapper, name: str) -> None:
-    """CLI for coloring the normalized proof term of an argument."""
+def color_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = True) -> None:
+    """CLI for coloring the proof term of an argument.
+
+    If normalized is True, color the normal form; otherwise color the current
+    executed proof term without normalizing first.
+    """
     arg = prover.get_argument(name)
     if not arg:
         logger.error(f"Argument '{name}' not found.")
         return
-    # Ensure normalized body is available
-    if arg.normal_body is None:
-        arg.normalize()
+
+    if normalized:
+        if arg.normal_body is None:
+            arg.normalize()
+        pt = arg.normal_body
+        label = "normalized"
+    else:
+        if not arg.executed:
+            arg.execute()
+        pt = arg.body
+        label = "unnormalized"
+
     try:
-        colored = pretty_colored_proof_term(arg.normal_body, verbose=False)
+        colored = pretty_colored_proof_term(pt, verbose=False)
     except Exception as e:
         logger.error("Coloring failed for '%s': %s", arg.name, e)
         return
     logger.info("")  # spacer before colored output
-    logger.info("Colored normalized proof term for %s:", arg.name)
+    logger.info("Colored %s proof term for %s:", label, arg.name)
     logger.info(colored)
     logger.info("")  # spacer after colored output
 
