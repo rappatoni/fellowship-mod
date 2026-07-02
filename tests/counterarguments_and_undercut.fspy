@@ -109,4 +109,5 @@ end argument
 undercut u4 arg6 arg5
 # Reduce, color
 reduce u4
+render u4 vanilla
 color u4

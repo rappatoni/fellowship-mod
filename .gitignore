@@ -49,6 +49,7 @@ aider.*
 
 # local latex/image artifacts
 ltximg/
+*.dot
 
 # paper build artifacts
 *.aux

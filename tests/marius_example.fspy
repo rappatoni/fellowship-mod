@@ -88,3 +88,4 @@ support second counter1 counter2
 undercut third second first
 
 render third vanilla
+color third
