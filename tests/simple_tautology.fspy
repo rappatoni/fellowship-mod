@@ -1,0 +1,60 @@
+lk.
+declare A,B:bool.
+
+# P1 : A -> B -> A
+# S1: A! B -> A?
+# P2: B -> A!
+# S2: B! A?
+# P3: A! A? -|
+# S2': B -> A:!
+# P3': B? A:?
+# S3': B!
+# P3': A:?
+# S4': A:!
+# P4': A! A:! -| 
+
+start argument p1 A -> B -> A
+end argument
+
+start argument s1  A -> B -> A
+elim x.
+end argument
+
+undergird d1 s1 p1
+
+start argument p2 B -> A
+cut ( B -> A ) alpha.
+end argument
+
+start argument s2 B -> A
+elim y.
+end argument
+
+start argument p3 A
+cut (A) gamma.
+end argument
+
+start counterargument s2alt B -> A
+end counterargument
+
+start counterargument p3alt B -> A
+elim.
+end counterargument
+
+start argument s4alt B
+cut B gamma.
+next.
+elim.
+end argument
+
+start argument p4alt B
+cut A iota.
+end argument
+
+# Use here x:A
+
+start argument s5alt A
+cut A iota.
+end argument
+
+

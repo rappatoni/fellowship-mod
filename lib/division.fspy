@@ -1,0 +1,23 @@
+# A minimal example of integer-like division as debate-based default computation
+minimal. lk.
+
+declare Int : type.
+declare zero : Int.
+declare add : Int -> Int -> Int.
+declare mul : Int -> Int -> Int.
+declare div : Int -> Int -> Int.
+declare mod : Int -> Int -> Int.
+declare neq : Int -> Int -> bool.
+declare eq : Int -> Int -> bool.
+
+
+declare A : Int.
+declare B : Int.
+
+declare div_ax : (neq A zero) -> (eq B (add (mul (div B A) A) (mod B A))).
+
+start argument eq B
+end argument
+
+
+

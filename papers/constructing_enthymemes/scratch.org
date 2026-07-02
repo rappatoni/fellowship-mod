@@ -1,0 +1,4 @@
+* Scratchpad/Notepad
+
+- Should introduction of enthymemes have a side condition that they not appear in the scope of a binder of the same type? (e.g. $\mu A:\alpha.\rangle v:: [A:]\langle $?
+  - No: It should be possible to attack even a bound variable and hence the $\eta-$ long form must be possible. Such an attack indicates a contradiction and whenever a contradiction is present, an exception should be returned. 
