@@ -36,16 +36,21 @@ let pretty_string s frm =  pp_print_string frm s
 (*For natural language proofs*)
 (* CSC: Very bad imperative code, to avoid one extra constant argument of type
    status for the pretty_natural_* functions. *)
-let set_state, is_current_goal =
+let set_state, is_current_goal, current_goal_marker =
  let dummy_state = {index=0;open_thm=None;goals=[];sign=Coll.empty;thms=Coll.empty;mox=Coll.empty;pt=Term (TermMeta initial_meta)} in
  let state = ref dummy_state in
  (function state' -> state := state'),
- (function metaid -> fst (List.nth !state.goals (!state.index - 1)) = metaid)
+ (function metaid -> fst (List.nth !state.goals (!state.index - 1)) = metaid),
+ (function metaid ->
+   let _, goal = List.find (fun (mid, _) -> mid = metaid) !state.goals in
+   match goal.kind with GoalObligation -> "?" | DelegationObligation -> "!")
 
 let rec pretty_natural_t3rm n frm =
  function
-    TermMeta id -> fprintf frm ".... (%s)%s" 
-      id (if is_current_goal id then " <======" else "")
+    TermMeta id -> fprintf frm ".... (%s%s)%s" 
+      (current_goal_marker id) id (if is_current_goal id then " <======" else "")
+  | DelegationTermMeta id -> fprintf frm ".... (%s%s)%s"
+      (current_goal_marker id) id (if is_current_goal id then " <======" else "")
   | True_constructor -> fprintf frm "by definition of %s" (pretty_prop True)
   | Hyp id -> fprintf frm "by %s" id
   | Lambda (id,p,t) -> 
@@ -89,8 +94,12 @@ and pretty_natural_context n frm =
  function
     ContextMeta id -> 
       (ind (n - 1) frm ;
-       fprintf frm "...(%s)%s" 
-	id (if is_current_goal id then " <======" else "") )
+       fprintf frm "...(%s%s)%s" 
+	(current_goal_marker id) id (if is_current_goal id then " <======" else "") )
+  | DelegationContextMeta id ->
+      (ind (n - 1) frm ;
+       fprintf frm "...(%s%s)%s"
+	(current_goal_marker id) id (if is_current_goal id then " <======" else "") )
   | False_eliminator -> 
       (ind (n - 1) frm ;
        pp_print_string frm "absurd" )
@@ -171,14 +180,15 @@ let pretty_env env frm =
 
 let pretty_goal (id,goal) frm =
  pretty_env goal.env frm ;
+ let goal_id = (match goal.kind with GoalObligation -> "?" | DelegationObligation -> "!") ^ id in
  match goal.active with
   | (RightHandSide,p) -> 
       pretty_hyps goal.hyp frm ;
-      fprintf frm "%s%s@\n" turnstile id ;
+      fprintf frm "%s%s@\n" turnstile goal_id ;
       pretty_ccls (("*",p,true)::goal.ccl) frm
   | (LeftHandSide,p) ->
       pretty_hyps (("*",p,true)::goal.hyp) frm ; 
-      fprintf frm "%s%s@\n" turnstile id ;
+      fprintf frm "%s%s@\n" turnstile goal_id ;
       pretty_ccls goal.ccl frm
 
 let pretty_pt pt frm =
@@ -270,4 +280,3 @@ let echo pp_fsp_fun =
     let payload = Machine.snapshot !Core.cairn in
     Printf.printf ";;BEGIN_ML_DATA;; %s ;;END_ML_DATA;;\n%!" payload;
   end
-

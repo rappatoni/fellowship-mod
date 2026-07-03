@@ -24,7 +24,8 @@ let fresh_name bound =
 
 let rec coq_of_term bound =
  function
-  | TermMeta _ -> assert false
+  | TermMeta _
+  | DelegationTermMeta _ -> assert false
   | True_constructor -> "I"
   | Hyp id -> id
   | Lambda (id,p,t') ->
@@ -50,7 +51,8 @@ let rec coq_of_term bound =
      coq_of_command bound cmd
 and coq_of_context bound t =
  function
-    ContextMeta _ -> assert false
+    ContextMeta _
+  | DelegationContextMeta _ -> assert false
   | False_eliminator -> sprintf "(match %s with end)" t
   | Concl id -> t (* we assume to be intuitionistic *)
   | Cons (t',c) ->
@@ -81,6 +83,93 @@ and coq_of_command bound =
     Play (t',c) -> coq_of_context bound (coq_of_term bound t') c
 
 let coq_of_pt = coq_of_term []
+
+let rec isabelle_of_term is_argument bound =
+ function
+  | TermMeta _
+  | DelegationTermMeta _ -> assert false
+  | True_constructor -> "I"
+  | Hyp id -> if is_argument then id else "from " ^ id
+  | Lambda (id,p,t') ->
+     sprintf "assume %s: %s@.%s" 
+     id (gen_prop_rec Isabelle p)  (isabelle_of_term is_argument (id::bound) t')
+  | LambdaFO (id,p,t') ->
+     sprintf "(fun (%s:%s) => %s)" 
+     id (gen_sort_rec Isabelle p)  (isabelle_of_term is_argument (id::bound) t')
+  | Cons'(c,t') ->
+     let fresh = fresh_name bound in
+      sprintf "(conj %s (fun %s => %s))"
+      (isabelle_of_term is_argument bound t') fresh (isabelle_of_context false [] false (fresh::bound) fresh c)
+  | TermsPair (t',t'') ->
+     sprintf "(conj %s %s)"
+     (isabelle_of_term is_argument bound t') (isabelle_of_term is_argument bound t'')
+  | TermsPairFO ((id,p),t',t'') ->
+     sprintf "(ex_intro (fun %s => %s) %s %s)"
+      id (gen_prop_rec Isabelle p) (gen_term_rec Isabelle t') (isabelle_of_term is_argument bound t'')
+  | Left t' -> sprintf "(or_introl _ %s)" (isabelle_of_term is_argument bound t')
+  | Right t' -> sprintf "(or_intror _ %s)" (isabelle_of_term is_argument bound t')
+  | Mu (id,p,cmd) ->
+     (* we assume to be intuitionistic *)
+     sprintf "(*show*) have %s proof - {@.%s" (gen_prop_rec Isabelle p)
+      (isabelle_of_command bound cmd)
+and isabelle_of_context implicit_assumption atomic_arguments need_ultimately bound t =
+ function
+    ContextMeta _
+  | DelegationContextMeta _ -> assert false
+  | False_eliminator -> sprintf "(match %s with end)" t
+  | Concl id ->
+     let atomic_arguments' =
+      if atomic_arguments = [] then ""
+      else " using " ^ String.concat " " atomic_arguments in
+     (* we assume to be intuitionistic *)
+     if implicit_assumption then
+      sprintf "%s%s show ?thesis%s apply - by ((drule mp)?,assumption)+@.} qed@."
+      t (if need_ultimately then " ultimately" else "") atomic_arguments'
+     else
+      sprintf "%s} thus ?thesis%s apply - apply (rule impI)+ by ((drule mp)?,assumption)+ qed@." t atomic_arguments'
+  | Cons (t',c) ->
+     let is_atomic = match t' with Hyp _ -> true | _ -> false in
+     if is_atomic then
+      isabelle_of_context implicit_assumption
+       (atomic_arguments@[isabelle_of_term true bound t']) need_ultimately
+       bound t c
+     else
+      isabelle_of_context implicit_assumption atomic_arguments true bound
+       (sprintf "%s@.moreover %s" t (isabelle_of_term true bound t')) c
+  | ConsFO (t',c) ->
+     isabelle_of_context implicit_assumption atomic_arguments need_ultimately bound (sprintf "(%s %s)" t (gen_term_rec Isabelle t')) c
+  | Lambda' (id,p,c) ->
+     let fresh = fresh_name bound in
+      sprintf "(match %s with (conj %s %s) => %s end)"
+      t fresh id (isabelle_of_context implicit_assumption atomic_arguments need_ultimately (fresh::bound) fresh c)
+  | DestructTermsPair (id',p',id'',p'',cmd) ->
+     sprintf "(match %s with (conj %s %s) => %s end)"
+     t id' id'' (isabelle_of_command (id'::id''::bound) cmd)
+  | DestructTermsPairFO (id',p',c) ->
+     let fresh = fresh_name bound in
+      sprintf "(match %s with (ex_intro %s %s) => %s end)"
+      t id' fresh (isabelle_of_context implicit_assumption atomic_arguments need_ultimately (id'::fresh::bound) fresh c)
+  | ContextsPair (c,c') ->
+     let fresh = fresh_name bound in
+      sprintf "(match %s with or_introl %s => %s | or_intror %s => %s end)"
+      t fresh (isabelle_of_context implicit_assumption atomic_arguments need_ultimately (fresh::bound) fresh c)
+      fresh (isabelle_of_context implicit_assumption atomic_arguments need_ultimately (fresh::bound) fresh c')
+  | MuTilde (id,p,cmd) ->
+     let atomic_arguments' =
+      if atomic_arguments = [] then ""
+      else " using " ^ String.concat " " atomic_arguments in
+     sprintf "%s%s have %s: %s%s apply - by ((drule mp)?,assumption)+@.%s" 
+      t (if need_ultimately then " ultimately" else "")
+      id (gen_prop_rec Isabelle p) atomic_arguments'
+      (isabelle_of_command (id::bound) cmd)
+and isabelle_of_command bound =
+ function
+    Play (t',c) ->
+     let is_lambda = match t' with Lambda _ -> true | _ -> false in
+     sprintf "%s" (isabelle_of_context (not is_lambda) [] false
+      bound (isabelle_of_term false bound t') c)
+
+let isabelle_of_pt = isabelle_of_term false []
 
 let rec isabelle_of_term is_argument bound =
  function
@@ -177,6 +266,7 @@ let p_or_not_p = "classic"
 let rec linear_term id canoccur =
  function
   | TermMeta _
+  | DelegationTermMeta _
   | True_constructor
   | Hyp _ -> true
   | Lambda (id',p,t) -> if id = id' then true else linear_term id canoccur t
@@ -191,6 +281,7 @@ let rec linear_term id canoccur =
 and linear_context id canoccur =
  function
     ContextMeta _
+  | DelegationContextMeta _
   | False_eliminator -> true
   | Concl id' when id = id' -> canoccur
   | Concl id' -> true
@@ -214,6 +305,7 @@ and linear_command id canoccur =
 let rec lk_to_lj_plus_em_term bound non_linear_conts =
  function
   | TermMeta id -> TermMeta id
+  | DelegationTermMeta id -> DelegationTermMeta id
   | True_constructor -> True_constructor
   | Hyp id -> Hyp id
   | Lambda (id,p,t) ->
@@ -251,6 +343,7 @@ let rec lk_to_lj_plus_em_term bound non_linear_conts =
 and lk_to_lj_plus_em_context bound non_linear_conts =
  function
     ContextMeta id -> ContextMeta id
+  | DelegationContextMeta id -> DelegationContextMeta id
   | False_eliminator -> False_eliminator
   | Concl id ->
      (try let p = List.assoc id non_linear_conts in
@@ -265,14 +358,6 @@ and lk_to_lj_plus_em_context bound non_linear_conts =
   | ConsFO (t,c) ->
      ConsFO (t, lk_to_lj_plus_em_context bound non_linear_conts c)
   | Lambda' (id,p,c) ->
-     (*CSC: adding id to non_linear_conts is something deep that need
-            further understanding. Cfr. test2 *)
-     (*CSC: moreover, there is a bug since adding (id,p) to non_linear_conts
-            make the term ill-typed (because of concl); thus I should do
-            something slightly different somehow. In particular, either
-            I get rid of subtractive logic in this set of functions, or I
-            postpone the non_linear_conts translation for subtractive logic
-            to the translation from lambda-bar-mu-mu tilde to CIC *)
      Lambda'
       (id,p,lk_to_lj_plus_em_context (id::bound) ((id,p)::non_linear_conts) c)
   | DestructTermsPair (id',p',id'',p'',cmd) ->

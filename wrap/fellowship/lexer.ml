@@ -40,6 +40,8 @@
     "in", IN;
     "contraction", CONTRACTION;
     "weaken", WEAKEN;
+    "by", BY;
+    "default", DEFAULT;
     "tacticals", TACTICALS;
     "types", TYPES;
     "terms", TERMS;
@@ -286,4 +288,3 @@ and __ocaml_lex_nexttoken_rec lexbuf __ocaml_lex_state =
       __ocaml_lex_nexttoken_rec lexbuf __ocaml_lex_state
 
 ;;
-

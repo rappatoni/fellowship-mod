@@ -15,8 +15,10 @@
 
 %token <string> IDENT
 %token COQ PVS ISABELLE
+%token <string> IDENT
+%token COQ PVS ISABELLE
 %token LJ LK MIN FULL DECLARE THEOREM NEXT PREV QED CHECKOUT EXPORT PROOF TERM NATURAL LANGUAGE UNDO DISCARD QUIT HELP
-%token AXIOM CUT ELIM IDTAC IN FOCUS CONTRACTION WEAKEN
+%token AXIOM CUT ELIM IDTAC IN FOCUS CONTRACTION WEAKEN BY DEFAULT
 %token TACTICALS TYPES TERMS FORMULAE
 %token PROP SET
 %token NEG ARROW MINUS AND OR FORALL EXISTS TRUE FALSE LEFT RIGHT ALL
@@ -86,6 +88,7 @@ tac:
 | AXIOM                                    { Axiom }
 | CUT                                      { Cut }
 | ELIM                                     { Elim }
+| BY DEFAULT                               { ByDefault }
 /* tacticals */
 | IDTAC                                    { Idtac }
 /* derived tactics */

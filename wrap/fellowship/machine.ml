@@ -41,11 +41,12 @@ let sexp_env (nm, srt) =
 
 let sexp_goal ((meta, g) : Core.metaid * Core.goal) =
   let side = match fst g.active with LeftHandSide -> "lhs" | RightHandSide -> "rhs" in
+  let kind = match g.kind with GoalObligation -> "goal" | DelegationObligation -> "delegation" in
   let hyps = String.concat " " (List.map sexp_hyp g.hyp) in
   let ccls = String.concat " " (List.map sexp_hyp g.ccl) in
   let env  = String.concat " " (List.map sexp_env  g.env)  in
-  Printf.sprintf "(goal (meta %s)(side %s)(active-prop %s)(hyps %s)(ccls %s)(env %s))"
-    (sexp_string meta) side (sexp_prop (snd g.active)) hyps ccls env
+  Printf.sprintf "(goal (meta %s)(kind %s)(side %s)(active-prop %s)(hyps %s)(ccls %s)(env %s))"
+    (sexp_string meta) kind side (sexp_prop (snd g.active)) hyps ccls env
 
 (*--------------------------------------------------------------------*)
 (* 4.  Snapshot builder                                                *)

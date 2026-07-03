@@ -395,6 +395,7 @@ let new_meta id n = id ^ "." ^ string_of_int n
 
 type t3rm =
    TermMeta of metaid
+ | DelegationTermMeta of metaid
  | True_constructor
  | Hyp of string
  | Lambda of string * prop * t3rm
@@ -409,6 +410,7 @@ type t3rm =
  | Mu of string * prop * command
 and context =
    ContextMeta of metaid
+ | DelegationContextMeta of metaid
  | False_eliminator
  | Concl of string
  | Cons of t3rm * context
@@ -431,6 +433,7 @@ type proof_t3rm = context_or_t3rm
 let rec pretty_t3rm =
  function
     TermMeta id -> sprintf "?%s" id
+  | DelegationTermMeta id -> sprintf "!%s" id
   | True_constructor -> "_T_"
   | Hyp id -> id
   | Lambda (id,p,t) -> 
@@ -447,6 +450,7 @@ let rec pretty_t3rm =
 and pretty_context =
  function
     ContextMeta id -> sprintf "?%s" id
+  | DelegationContextMeta id -> sprintf "!%s" id
   | False_eliminator -> "_F_"
   | Concl id -> id
   | Cons (t,c) -> sprintf "%s*%s" (pretty_t3rm t) (pretty_context c)
@@ -470,7 +474,10 @@ let rec instantiate_in_t3rm id t =
  function
     TermMeta id' when id = id' ->
      (match t with Term t -> t | Context _ -> assert false)
+  | DelegationTermMeta id' when id = id' ->
+     (match t with Term t -> t | Context _ -> assert false)
   | TermMeta _
+  | DelegationTermMeta _
   | True_constructor
   | Hyp _ as t' -> t' 
   | Lambda (id',p,t') -> Lambda (id',p,instantiate_in_t3rm id t t')
@@ -492,7 +499,10 @@ and instantiate_in_context id t =
  function
     ContextMeta id' when id = id' ->
      (match t with Term _ -> assert false | Context c -> c)
+  | DelegationContextMeta id' when id = id' ->
+     (match t with Term _ -> assert false | Context c -> c)
   | ContextMeta _
+  | DelegationContextMeta _
   | False_eliminator
   | Concl _ as t' -> t' 
   | Cons (t',c) ->
@@ -544,19 +554,25 @@ type active_formula_position =
    LeftHandSide
  | RightHandSide
 
+type goal_kind =
+   GoalObligation
+ | DelegationObligation
+
 (* A goal is made of
     1. a list of hypothesis (most recent hypothesis first)
     2. a list of conclusions (most recent conclusion first)
     3. an active formula (either on the l.h.s. or on the r.h.s.) 
     4. a list of implicit variables and their types *)
 type goal =
-  { hyp: (string * prop * bool) list;  (* true = visible; false = weakened *)
+  { kind: goal_kind;
+    hyp: (string * prop * bool) list;  (* true = visible; false = weakened *)
     ccl: (string * prop * bool) list;  (* true = visible; false = weakened *)
     active: (active_formula_position * prop); (*make two fields out of
     this one? *)
     env: (string * sort) list }
 
-let new_goal prop = {hyp=[];ccl=[];active=(RightHandSide,prop);env=[]}
+let new_goal prop = {kind=GoalObligation; hyp=[];ccl=[];active=(RightHandSide,prop);env=[]}
+let new_delegation prop = {kind=DelegationObligation; hyp=[];ccl=[];active=(RightHandSide,prop);env=[]}
 
 (*Transform goals and goal lists into propositions*)
 let rec prop_of_csq = function
@@ -686,5 +702,4 @@ type trace_atoms =
 (*The trace*)
 let trace = ref ([] : trace_atoms list) (* newest command first *)
 let history = ref [!cairn,!trace] (* newest status first *)
-
 

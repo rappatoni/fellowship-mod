@@ -45,6 +45,8 @@
     "in", IN;
     "contraction", CONTRACTION;
     "weaken", WEAKEN;
+    "by", BY;
+    "default", DEFAULT;
     "tacticals", TACTICALS;
     "types", TYPES;
     "terms", TERMS;

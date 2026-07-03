@@ -1,6 +1,6 @@
 type token =
   | IDENT of (
-# 16 "parser.mly"
+# 18 "parser.mly"
         string
 # 6 "parser.mli"
 )
@@ -34,6 +34,8 @@ type token =
   | FOCUS
   | CONTRACTION
   | WEAKEN
+  | BY
+  | DEFAULT
   | TACTICALS
   | TYPES
   | TERMS

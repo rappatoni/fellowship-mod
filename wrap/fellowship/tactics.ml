@@ -38,6 +38,7 @@ type tactic =
   | Axiom 
   | Cut 
   | Elim 
+  | ByDefault
   (* tacticals *)
   | Idtac
   (* derived tactics *)
@@ -56,6 +57,7 @@ let pretty_tactic = function
   | Axiom -> "axiom"
   | Cut -> "cut"
   | Elim -> "elim"
+  | ByDefault -> "by default"
   | Idtac -> "idtac"
   | Focus -> "focus"
   | Elim_In -> "elim in"
@@ -621,66 +623,75 @@ let rec elim args (id,g,context,thms,pt) =
 
 exception Toss of message
 
-let id_tac args (id,g,context,thms,pt) =
+let is_delegation_goal g = g.kind = DelegationObligation
+
+let current_term_meta id g =
+  if is_delegation_goal g then DelegationTermMeta id else TermMeta id
+
+let current_context_meta id g =
+  if is_delegation_goal g then DelegationContextMeta id else ContextMeta id
+
+let current_pt_term_meta id g pt = instantiate_pt_t3rm id (current_term_meta id g) pt
+let current_pt_context_meta id g pt = instantiate_pt_context id (current_context_meta id g) pt
+
+let mark_pt_delegation id side pt =
+  match side with
+  | RightHandSide -> current_pt_term_meta id { (new_goal False) with kind = DelegationObligation } pt
+  | LeftHandSide -> current_pt_context_meta id { (new_goal False) with kind = DelegationObligation } pt
+
+let by_default args (id,g,context,thms,pt) =
   match args with
-   | [] -> RSuccess ([id,g],pt)
-   | _ -> RException (new tactic_msg No_args)
+    | [] ->
+        let g' = { g with kind = DelegationObligation } in
+        let pt' = mark_pt_delegation id (fst g.active) pt in
+        RSuccess ([id,g'], pt')
+    | _ -> RException (new tactic_msg No_args)
 
-let then_ t1 t2 (id,g,context,thms,pt) = 
- match apply_tac t1 (id,g,context,thms,pt) with
-    RException msg -> RException msg
-  | RSuccess (lr,pt') ->
-     try
-      let goals, pt =
-       List.fold_left (fun (goals,pt) (id,g) ->
-         match apply_tac t2 (id,g,context,thms,pt) with
-            RException msg -> raise (Toss msg)
-          | RSuccess (goals',pt') -> goals @ goals', pt'
-       ) ([],pt') lr
-      in RSuccess (goals,pt)
-     with
-      Toss msg -> RException msg
+let id_tac args (_id,_g,_context,_thms,pt) =
+  match args with
+  | [] -> RSuccess ([], pt)
+  | _ -> RException (new tactic_msg No_args)
 
-let thens t1 lt (id,g,context,thms,pt) =
- match apply_tac t1 (id,g,context,thms,pt) with
-    RException msg -> RException msg
-  | RSuccess (lr,pt') ->
-     try
-      let goals, pt =
-       List.fold_left2 (fun (goals,pt) tac (id,g) ->
-         match apply_tac tac (id,g,context,thms,pt) with
-            RException msg -> raise (Toss msg)
-          | RSuccess (goals',pt') -> goals @ goals', pt'
-       ) ([],pt') lt lr
-      in RSuccess (goals,pt)
-     with
-        Invalid_argument ("List.fold_left2") ->
-         RException (new tactic_msg Arg_count) 
-      | Toss msg -> RException msg
+let then_ (tac1, _pos1) (tac2, _pos2) details =
+  let (_id,_g,context,thms,_pt) = details in
+  match tac1 details with
+  | RException msg -> RException msg
+  | RSuccess ([], pt1) ->
+      tac2 (let (id,g,_context,_thms,_) = details in (id,g,context,thms,pt1))
+  | RSuccess (goals1, pt1) ->
+      let rec map_goals acc = function
+        | [] -> RSuccess (List.rev acc, pt1)
+        | (id1,g1)::rest ->
+            let context1 = coll_add_list context g1.env in
+            (match tac2 (id1,g1,context1,thms,pt1) with
+             | RException msg -> RException msg
+             | RSuccess (goals2, _pt2) -> map_goals (List.rev_append goals2 acc) rest)
+      in
+      map_goals [] goals1
 
-
-(* * DERIVED TACTICS * *)
-
-let smart_axiom args (id,g,context,thms,pt) =
-  (match args with
-    | [] -> 
-      (let l = match (fst g.active) with 
-      RightHandSide -> g.hyp | LeftHandSide -> g.ccl in
-      try
-       (* smart_axiom does not detect weakened hypotheses/conclusions *)
-       (*CSC: is this what we always want? do you want to give a warning *)
-       (*CSC: to the user? how?                                          *)
-       let decl,_,_ =
-        List.find (function (_,p,w) -> (snd g.active) = p && w) l in
-       axiom [Ident decl] (id,g,context,thms,pt) 
-      with
-       Not_found -> RException (new tactic_msg Not_trivial) )
-    | [Ident _] -> axiom args (id,g,context,thms,pt)
-    | _ -> RException (new tactic_msg (Need_args "at most one identifier")))
+let thens (tac, _pos) tac_list details =
+  let (_id,_g,context,thms,_pt) = details in
+  match tac details with
+  | RException msg -> RException msg
+  | RSuccess (goals, pt1) ->
+      if List.length goals <> List.length tac_list then
+        RException (new tactic_msg Arg_count)
+      else
+        let rec aux acc gs ts =
+          match gs, ts with
+          | [], [] -> RSuccess (List.rev acc, pt1)
+          | (id1,g1)::gs', (taci, _posi)::ts' ->
+              let context1 = coll_add_list context g1.env in
+              (match taci (id1,g1,context1,thms,pt1) with
+               | RException msg -> RException msg
+               | RSuccess (goalsi, _pti) -> aux (List.rev_append goalsi acc) gs' ts')
+          | _ -> RException (new tactic_msg Arg_count)
+        in
+        aux [] goals tac_list
 
 let focus args (id,g,context,thms,pt) =
   match args with 
-    | [Ident ident ; Ident ident'] -> 
+    | [Ident ident ; Ident ident'] ->
        (try
 	let q = search ident g.hyp thms in
 	  match check_variable [ident'] (g.hyp,g.ccl,context) with
@@ -689,7 +700,7 @@ let focus args (id,g,context,thms,pt) =
 	with Not_found ->
 	 try
 	  let _,q,_ = List.find (function (ident',_,w) -> ident=ident' && w) g.ccl in
-	    match check_variable [ident'] (g.hyp,g.ccl,context) with 
+	    match check_variable [ident'] (g.hyp,g.ccl,context) with
 	      | Some m -> RException (new tactic_msg m)
 	      | None -> thens (cut [Formula q; Ident ident'],Lexing.dummy_pos) [id_tac [],Lexing.dummy_pos ; axiom [Ident ident],Lexing.dummy_pos] (id,g,context,thms,pt)
 	 with Not_found -> RException (new tactic_msg (Hyp_ccl_match ident)) )
@@ -715,7 +726,7 @@ let contraction args ((id,g,context,thms,pt) as details) =
 	 [axiom [Ident ident],Lexing.dummy_pos; id_tac [],Lexing.dummy_pos] details
     | _ -> RException (new tactic_msg (Need_args "an identifier"))
 
-let weaken args ((id,g,context,thms,pt) as details) =
+let weaken args (id,g,context,thms,pt) =
   match args with
     | [Ident ident] ->
         let rec aux =
@@ -743,9 +754,10 @@ let weaken args ((id,g,context,thms,pt) as details) =
 
 let jack_tactical tactical cairn = 
   let rec multiplex = function
-    | TPlug (Axiom,args,pos) -> smart_axiom args , pos
+    | TPlug (Axiom,args,pos) -> axiom args , pos
     | TPlug (Cut,args,pos) -> cut args , pos
     | TPlug (Elim,args,pos) -> elim args , pos
+    | TPlug (ByDefault,args,pos) -> by_default args , pos
     | TPlug (Idtac,args,pos) -> id_tac args , pos
     | TPlug (Focus,args,pos) -> focus args , pos
     | TPlug (Elim_In,args,pos) -> elim_in args , pos
