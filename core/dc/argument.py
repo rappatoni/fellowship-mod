@@ -35,6 +35,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.conclusion = conclusion #Conclusion of the argument.
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
+        self.delegations = {} # Dict of Delegations: {deleg_number : {prop : some_str, deleg_index : some_int, label : some_str}
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
         self.body: ProofTerm = None # parsed proof term created from proof_term
@@ -119,19 +120,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.instructions = generator.return_instructions(self.body)
                 logger.debug("Generated instructions for argument '%s': %s", self.name, self.instructions)
         # Decide whether to start a theorem or an antitheorem.
-        # We cannot reliably infer “anti” from available data at this point:
-        # - Recording mode has no AST yet: during scripts/interactive recording we only
-        #   collect strings; when we later construct the Argument (at “end argument”),
-        #   there may still be no body to inspect. Without an explicit flag we would
-        #   always default to theorem.
-        # - Printed anti‑theorem proof‑terms are μ … at the top with current OCaml
-        #   changes, not μ̃; so “detect anti by Mutilde root” is unreliable after parse.
-        # - Tactics are not a signal: you must choose theorem vs antitheorem before any
-        #   tactic runs, and not every counterargument will start with a distinguishing
-        #   instruction.
-        # - Machine state is ephemeral: you only get it after sending the start command,
-        #   and you also need to replay the choice later (possibly in a new session).
-        # Hence we carry user intent via `is_anti`, set by “start counterargument …”.
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
             logger.info("Starting antitheorem '%s' for issue '%s'", self.name, prop)
@@ -172,6 +160,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Parse proof term
         grammar = Grammar()
         parsed = grammar.parser.parse(self.proof_term)
+        print("ARGUMENT", parsed)
         transformer = ProofTermTransformer()
         self.body = transformer.transform(parsed)
         if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
@@ -227,12 +216,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         """
         Build {goal_number: {"prop": some_str, "label": None}} from the
         machine payload dict produced by the wrapper.
+        Mutatis mutandis for delegations.
 
         - goal_number := value of (meta ...)
         - prop        := value of (active-prop ...) (quotes removed)
         """
         self.proof_term = self._normalize_pt_to_unicode(proof_state.get('proof-term').strip('"'))
         res = {}
+        dels = {}
         goals = proof_state.get('goals')
 
         # Normalize: 'goals' may be a single `(goal ...)` list or a list of them.
@@ -255,9 +246,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                     attrs[k] = self._unquote(v)
             meta = self._unquote(attrs.get('meta')) if 'meta' in attrs else None
             prop = self._unquote(attrs.get('active-prop')) if 'active-prop' in attrs else None
-            if meta and prop is not None:
-                res[meta] = {"prop": prop, "label": None}
+            kind = self._unquote(attrs.get('kind')) if 'kind' in attrs else None
+            if kind == "delegation":
+                if meta and prop is not None:
+                    dels[meta] = {"prop": prop, "label": None}
+            else:
+                if meta and prop is not None:
+                    res[meta] = {"prop": prop, "label": None}
         self.assumptions = res
+        self.delegations = dels
 
     # def extract_assumptions(self, output):
     #     #print("Match conclusion to assumption.")
@@ -319,7 +316,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("Enriching argument '%s'.", self.name)
         logger.debug("Declarations: %r", self.prover.declarations)
         visitor = PropEnrichmentVisitor(assumptions=self.assumptions,
-                                        axiom_props=self.prover.declarations)
+                                        axiom_props=self.prover.declarations,
+                                        delegations=self.delegations)
         self.body = visitor.visit(self.body)
         logger.info("Argument '%s' enriched.", self.name)
         return

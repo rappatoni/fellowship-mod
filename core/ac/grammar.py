@@ -1,5 +1,5 @@
 from lark import Lark, Transformer
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Hyp, Pyh
+from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh
 
 class Grammar():
     def __init__(self):
@@ -113,11 +113,11 @@ class ProofTermTransformer(Transformer):
     
     def deleg(self, items) -> "Deleg":
         number = items[0]
-        return Goal(number)
+        return Deleg(number)
 
     def geled(self, items) -> "Geled":
         number = items[0]
-        return Laog(number)
+        return Geled(number)
 
     def number(self, items):
         return '.'.join(items)
