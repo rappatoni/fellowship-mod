@@ -1,0 +1,55 @@
+lk.
+declare A,B,C:bool.
+declare rule : (A->B).
+declare ax : (A).
+deny elur: (A-C).
+deny mox: (C).
+
+# Should succeed:
+theorem delegation_test : (B).
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+axiom ax.
+axiom alpha.
+qed.
+
+#Should succeed:
+antitheorem delegation_test : (A).
+cut (A-C) x.
+elim.
+by default.
+moxia mox.
+axiom x.
+moxia elur.
+qed.
+
+# Should succeed:
+start argument delegation_test B
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+next.
+axiom alpha.
+end argument
+
+#Should succeed:
+start counterargument delegation_counter_test : (A).
+cut (A-C) x.
+elim.
+by default.
+axiom x.
+moxia elur.
+end counterargument
+
+# Should fail:
+theorem delegation_test_2 : (B).
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+next.
+axiom alpha.
+qed.

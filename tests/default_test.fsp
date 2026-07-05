@@ -1,0 +1,34 @@
+lk.
+declare A,B:bool.
+declare rule : (A->B).
+declare ax : (A).
+
+# Should succeed:
+theorem delegation_test : (B).
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+axiom ax.
+axiom alpha.
+qed.
+
+# Should succeed:
+start argument delegation_test B
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+next.
+axiom alpha.
+end argument
+
+# Should fail:
+theorem delegation_test_2 : (B).
+cut (A->B) alpha.
+axiom rule.
+elim.
+by default.
+next.
+axiom alpha.
+qed.
