@@ -1,7 +1,7 @@
 from copy import deepcopy
 import collections
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
 from pres.gen import ProofTermGenerationVisitor
 
 # Normalize logical symbols to the prover's ASCII syntax
@@ -185,6 +185,19 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         node = super().visit_Laog(node)
         self.instructions.appendleft(f'next.')
         return node
+
+    def visit_Deleg(self, node: Deleg):
+        node = super().visit_Deleg(node)
+        self.instructions.appendleft(f'by default.')
+        self.instructions.appendleft(f'next.')
+        return node
+
+    def visit_Geled(self, node: Geled):
+        node = super().visit_Geled(node)
+        self.instructions.appendleft(f'by default.')
+        self.instructions.appendleft(f'next.')
+        return node
+    
 
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)

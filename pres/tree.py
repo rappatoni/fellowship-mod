@@ -7,9 +7,10 @@ from pres.nl import (
     natural_language_dialectical_rendering,
     natural_language_argumentative_rendering,
 )
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI
 
 class AcceptanceTreeRenderer:
+    """Deprecated?"""
     _gv_colors = {"green": "palegreen2", "red": "lightcoral", "yellow": "khaki1"}
 
     def __init__(self, verbose: bool = False, *, label_mode: str = "proof", nl_style: str = "argumentation"):

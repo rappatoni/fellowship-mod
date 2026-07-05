@@ -3,7 +3,7 @@ from typing import Optional
 
 # Import AST nodes and the base visitor from parser to avoid circular deps
 # while parser still owns the AST and base visitor.
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
 from core.comp.visitor import ProofTermVisitor
 
 class ProofTermGenerationVisitor(ProofTermVisitor):
@@ -50,12 +50,22 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
-        node.pres = f'{node.number}:{node.prop}'
+        node.pres = f'?{node.number}:{node.prop}'
         return node
 
     def visit_Laog(self, node: Laog):
         node = super().visit_Laog(node)
-        node.pres = f'{node.number}:{node.prop}'
+        node.pres = f'{node.number}:{node.prop}?'
+        return node
+
+    def visit_Deleg(self, node: Deleg):
+        node = super().visit_Deleg(node)
+        node.pres = f'!{node.number}:{node.prop}'
+        return node
+
+    def visit_Geled(self, node: Geled):
+        node = super().visit_Geled(node)
+        node.pres = f'{node.number}:{node.prop}!'
         return node
 
     def visit_ID(self, node: ID):

@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Hyp
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp
 
 logger = logging.getLogger('fsp.parser')
 
@@ -97,6 +97,24 @@ def match_trees(nodeA: "ProofTerm", nodeB: "ProofTerm", mapping: Dict[str, str])
 
     elif isinstance(nodeA, Goal):
         # Goal numbers don't matter.
+        # if nodeA.number != nodeB.number:
+        #     return False
+        return True
+
+    elif isinstance(nodeA, Laog):
+        # Laog numbers don't matter.
+        # if nodeA.number != nodeB.number:
+        #     return False
+        return True
+
+    elif isinstance(nodeA, Deleg):
+        # Deleg numbers don't matter.
+        # if nodeA.number != nodeB.number:
+        #     return False
+        return True
+
+    elif isinstance(nodeA, Geled):
+        # Geled numbers don't matter.
         # if nodeA.number != nodeB.number:
         #     return False
         return True

@@ -1,4 +1,4 @@
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Deleg, Geled
 
 class ProofTermVisitor:
     def visit(self, node):
@@ -16,6 +16,10 @@ class ProofTermVisitor:
             return self.visit_Goal(node)
         elif isinstance(node, Laog):
             return self.visit_Laog(node)
+        elif isinstance(node, Deleg):
+            return self.visit_Deleg(node)
+        elif isinstance(node, Geled):
+            return self.visit_Geled(node)
         elif isinstance(node, ID):
             return self.visit_ID(node)
         elif isinstance(node, DI):
@@ -59,6 +63,12 @@ class ProofTermVisitor:
         return node
 
     def visit_Laog(self, node: Laog):
+        return node
+
+    def visit_Deleg(self, node: Deleg):
+        return node
+
+    def visit_Geled(self, node: Geled):
         return node
 
     def visit_ID(self, node: ID):

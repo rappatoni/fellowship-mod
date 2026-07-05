@@ -118,6 +118,20 @@ class Laog(Context):
         self.pres = None
         self.flag = None
 
+class Deleg(Term):
+    def __init__(self, number, prop = None):
+        self.number = number
+        self.prop = prop
+        self.pres = None
+        self.flag = None
+
+class Geled(Context):
+    def __init__(self, number, prop = None):
+        self.number = number
+        self.prop = prop
+        self.pres = None
+        self.flag = None
+
 class ID(Context):
     def __init__(self, name, prop = None):
         self.name = name

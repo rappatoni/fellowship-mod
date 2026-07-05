@@ -1,5 +1,5 @@
 import re
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, ID, DI
+from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI
 
 def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
     lines = []
@@ -7,7 +7,7 @@ def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> 
     return '\n'.join(lines)
 
 class Rendering_Semantics:
-    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, ID, DI):
+    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -15,17 +15,20 @@ class Rendering_Semantics:
         #self.Hyp = Hyp
         self.Cons = Cons
         self.Goal = Goal
+        self.Laog = Laog
+        self.Deleg = Deleg
+        self.Geled = Geled
         #self.Done = Done
         self.ID = ID
         self.DI = DI
 
-natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f"done ", f"by ")
-natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"by default ", f"done ", f"by ")
+natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
+natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ")
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
-vanilla_rendering = Rendering_Semantics('   ', "", "", "", "", "", "", "")
+vanilla_rendering = Rendering_Semantics('   ', "", "", "", "", "", "", "", "", "", "")
 
 from core.comp.visitor import ProofTermVisitor
 
@@ -133,11 +136,19 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_Goal(self, node: Goal):
-        self._emit(f"{node.number}:{node.prop}")
+        self._emit(f"?{node.number}:{node.prop}")
         return node
 
     def visit_Laog(self, node: Laog):
-        self._emit(f"{node.number}:{node.prop}")
+        self._emit(f"{node.number}:{node.prop}?")
+        return node
+
+    def visit_Deleg(self, node: Deleg):
+        self._emit(f"!{node.number}:{node.prop}")
+        return node
+
+    def visit_Geled(self, node: Geled):
+        self._emit(f"{node.number}:{node.prop}!")
         return node
 
     def visit_ID(self, node: ID):
@@ -237,6 +248,21 @@ class _NLVisitor(ProofTermVisitor):
     def visit_Goal(self, term: Goal):
         indent_str = self._indent_str()
         self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{term.number}")
+        return term
+    
+    def visit_Laog(self, term: Laog):
+        indent_str = self._indent_str()
+        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{term.number}")
+        return term
+    
+    def visit_Goal(self, term: Deleg):
+        indent_str = self._indent_str()
+        self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{term.number}")
+        return term
+    
+    def visit_Laog(self, term: Geled):
+        indent_str = self._indent_str()
+        self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{term.number}")
         return term
 
     def visit_DI(self, term: DI):

@@ -8,9 +8,9 @@ class Grammar():
 
             proof_term: term | context
 
-            term: di | lamda | sonc |  mu | goal
+            term: di | lamda | sonc |  mu | goal | deleg
 
-            context: id | cons | admal | mutilde | laog
+            context: id | cons | admal | mutilde | laog | geled
 
             mu: "μ" id ":" prop "." "<" term "||" context ">"
             mutilde: "μ'" di ":" prop "." "<" term "||" context ">"
@@ -20,6 +20,8 @@ class Grammar():
             sonc: context "*" term
             goal: "?" number
             laog: "?" number
+            deleg: "!" number
+            geled: "!" number
 
             ?prop: implication
             ?implication: minus
@@ -106,6 +108,14 @@ class ProofTermTransformer(Transformer):
         return Goal(number)
 
     def laog(self, items) -> "Laog":
+        number = items[0]
+        return Laog(number)
+    
+    def deleg(self, items) -> "Deleg":
+        number = items[0]
+        return Goal(number)
+
+    def geled(self, items) -> "Geled":
         number = items[0]
         return Laog(number)
 

@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 import logging, warnings
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,9 @@ class PropEnrichmentVisitor(ProofTermVisitor):
     For each ID or DI named 'r1', we set .prop = axiom_props['r1'], etc.
     Optionally, for Lamda, Cons, Mu, etc., we can set node.prop if we have enough info.
     """
-    def __init__(self, axiom_props=None, assumptions=None, bound_vars=None, verbose: bool = False):
+    def __init__(self, axiom_props=None, assumptions=None, delegations=None, bound_vars=None, verbose: bool = False):
         self.assumptions = assumptions if assumptions else {}
+        self.delegations = delegations if delegations else {}
         self.axiom_props = axiom_props if axiom_props else {}
         self.bound_vars = bound_vars if bound_vars else {}
         self.verbose = verbose
@@ -56,12 +57,54 @@ class PropEnrichmentVisitor(ProofTermVisitor):
     def visit_Laog(self, node: Laog):
         node = super().visit_Laog(node)
         laog_num = node.number.strip()
-        if self.assumptions.get(laog_num):
-            p = self.assumptions[laog_num]["prop"]
-            logger.debug("Enriching Laog with type %s", p)
-            node.prop = p
-        return node
+        if node.prop:
+            return node
+        else:
+            if self.assumptions.get(laog_num):
+                p = self.assumptions[laog_num]["prop"]
+                logger.debug("Enriching Laog with type %s", p)
+                node.prop = p
+            else:
+                if getattr(self, "verbose", False):
+                    warnings.warn(f'Enrichment of node {node} not possible: {laog_num} not a key in {self.assumptions}')
+                else:
+                    logger.debug("Enrichment skipped for Goal %s: key %s not in assumptions", node, laog_num)
+            return node
 
+    def visit_Deleg(self, node: Deleg):
+        node = super().visit_Deleg(node)
+        deleg_num = node.number.strip()
+        if node.prop:
+            return node
+        else:
+            if self.delegations.get(deleg_num):
+                logger.debug("Enriching Deleg with type %s", self.delegations[deleg_num]["prop"])
+                node.prop = self.delegations[deleg_num]["prop"]
+            else:
+                if getattr(self, "verbose", False):
+                    warnings.warn(f'Enrichment of node {node} not possible: {deleg_num} not a key in {self.delegations}')
+                else:
+                    logger.debug("Enrichment skipped for Deleg %s: key %s not in delegations", node, deleg_num)
+            return node
+        
+    def visit_Geled(self, node: Geled):
+        node = super().visit_Geled(node)
+        geled_num = node.number.strip()
+        if node.prop:
+            return node
+        else:
+            if self.delegations.get(geled_num):
+                p = self.delegations[geled_num]["prop"]
+                logger.debug("Enriching Geled with type %s", p)
+                node.prop = p
+            else:
+                if getattr(self, "verbose", False):
+                    warnings.warn(f'Enrichment of node {node} not possible: {geled_num} not a key in {self.delegations}')
+                else:
+                    logger.debug("Enrichment skipped for Geled %s: key %s not in delegations", node, geled_num)
+            return node
+
+        
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:

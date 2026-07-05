@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 
 class NegIntroRewriter(ProofTermVisitor):
     """
+    Deprecated!
+    
     Collapse the pattern
     
         μ thesis:¬A . ⟨ μ H1:¬A . ⟨ λ H2:A . μ H3:⊥ . ⟨ H2 ∥ ?k ⟩ ∥ H1 ⟩ ∥ thesis ⟩

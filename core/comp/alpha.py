@@ -1,7 +1,7 @@
 from typing import Set, Dict
 from copy import deepcopy
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Goal, Laog, Deleg, Geled, ID, DI
 
 
 def _collect_binder_names(node: ProofTerm, names=None):
@@ -158,6 +158,12 @@ class FreshenBinderNames(ProofTermVisitor):
         return node
 
     def visit_Laog(self, node: Laog):
+        return node
+
+    def visit_Deleg(self, node: Deleg):
+        return node
+
+    def visit_Geled(self, node: Geled):
         return node
 
     def visit_ID(self, node: ID):

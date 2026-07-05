@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 from typing import Optional, Any
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc
+from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, Admal, Sonc
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.color import AcceptanceColoringVisitor
