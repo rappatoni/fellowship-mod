@@ -144,11 +144,11 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_Deleg(self, node: Deleg):
-        self._emit(f"!{node.number}:{node.prop}")
+        self._emit(f" !{node.number}:{node.prop}")
         return node
 
     def visit_Geled(self, node: Geled):
-        self._emit(f"{node.number}:{node.prop}!")
+        self._emit(f" {node.number}:{node.prop}!")
         return node
 
     def visit_ID(self, node: ID):
@@ -255,12 +255,12 @@ class _NLVisitor(ProofTermVisitor):
         self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{term.number}")
         return term
     
-    def visit_Goal(self, term: Deleg):
+    def visit_Deleg(self, term: Deleg):
         indent_str = self._indent_str()
         self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{term.number}")
         return term
     
-    def visit_Laog(self, term: Geled):
+    def visit_Geled(self, term: Geled):
         indent_str = self._indent_str()
         self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{term.number}")
         return term

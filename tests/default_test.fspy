@@ -34,6 +34,8 @@ by default.
 next.
 axiom alpha.
 end argument
+render delegation_test vanilla
+render delegation_test argumentation
 
 #Should succeed:
 start counterargument delegation_counter_test : (A).
@@ -43,6 +45,8 @@ by default.
 axiom x.
 moxia elur.
 end counterargument
+render delegation_counter_test vanilla
+
 
 # Should fail:
 theorem delegation_test_2 : (B).
