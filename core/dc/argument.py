@@ -160,7 +160,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Parse proof term
         grammar = Grammar()
         parsed = grammar.parser.parse(self.proof_term)
-        print("ARGUMENT", parsed)
         transformer = ProofTermTransformer()
         self.body = transformer.transform(parsed)
         if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
