@@ -144,11 +144,11 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_Deleg(self, node: Deleg):
-        self._emit(f" !{node.number}:{node.prop}")
+        self._emit(f"!{node.number}:{node.prop}")
         return node
 
     def visit_Geled(self, node: Geled):
-        self._emit(f" {node.number}:{node.prop}!")
+        self._emit(f"{node.number}:{node.prop}!")
         return node
 
     def visit_ID(self, node: ID):
