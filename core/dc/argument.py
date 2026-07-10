@@ -104,8 +104,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             return getattr(getattr(self.body, "di", None), "name", None)
         return None
 
-    def execute(self) -> None:
+    def execute(self, *, declare: bool = False) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
+
+        If *declare* is true, finish the replay with ``qed.`` so Fellowship
+        registers the theorem/antitheorem under this argument's name.  The
+        default keeps the historical wrapper behaviour and discards the open
+        theorem after extracting the proof state.
         """
         logger.info("Executing argument '%s'.", self.name)
         if self.executed:
@@ -172,8 +177,18 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = pretty_natural(self.body, natural_language_dialectical_rendering)
         elif self.rendering == "intuitionistic":
             self.representation = pretty_natural(self.body, natural_language_rendering)
-        # Discard the theorem to prevent closing it (since it may have open goals)
-        self.prover.send_command('discard theorem.')
+        # Close or discard the theorem after extracting the state.
+        if declare:
+            try:
+                self.prover.send_command('qed.')
+            except Exception:
+                try:
+                    self.prover.send_command('discard theorem.')
+                except Exception:
+                    pass
+                raise
+        else:
+            self.prover.send_command('discard theorem.')
         logger.info("Argument '%s' executed.", self.name)
         logger.info("")  # spacer before proof term artifact
         logger.info("Argument term: '%s'.", self.proof_term)

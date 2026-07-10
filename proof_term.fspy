@@ -1,0 +1,5 @@
+lk.
+declare A,B,C:bool.
+declare rule : (A->B).
+declare ax : (A).
+register test strict : B := μ alpha:B.<rule||ax*alpha>

@@ -18,10 +18,12 @@ class Grammar():
             admal: "λ" pyh "." context
             cons: term "*" context
             sonc: context "*" term
-            goal: "?" number
-            laog: "?" number
-            deleg: "!" number
-            geled: "!" number
+            goal: "?" number [":" prop]
+            laog: "?" number [":" prop]
+                | number [":" prop] "?"
+            deleg: "!" number [":" prop]
+            geled: "!" number [":" prop]
+                 | number [":" prop] "!"
 
             ?prop: implication
             ?implication: minus
@@ -35,7 +37,7 @@ class Grammar():
                   | "(" prop ")"                    -> grouped_prop
             pred_app: name name*                      -> prop_app_chain
             atom: name                               -> atom_name
-            name: /[^\[\].<>*~:,\-\s()]+/
+            name: /[^\[\].<>*~:,\-\s()?!|]+/
             hyp: di ":" prop
             pyh : id ":" prop
             id: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -105,19 +107,23 @@ class ProofTermTransformer(Transformer):
 
     def goal(self, items) -> "Goal":
         number = items[0]
-        return Goal(number)
+        prop = str(items[1]) if len(items) > 1 else None
+        return Goal(number, prop)
 
     def laog(self, items) -> "Laog":
         number = items[0]
-        return Laog(number)
+        prop = str(items[1]) if len(items) > 1 else None
+        return Laog(number, prop)
     
     def deleg(self, items) -> "Deleg":
         number = items[0]
-        return Deleg(number)
+        prop = str(items[1]) if len(items) > 1 else None
+        return Deleg(number, prop)
 
     def geled(self, items) -> "Geled":
         number = items[0]
-        return Geled(number)
+        prop = str(items[1]) if len(items) > 1 else None
+        return Geled(number, prop)
 
     def number(self, items):
         return '.'.join(items)

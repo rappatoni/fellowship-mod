@@ -9,6 +9,8 @@ from pres.color import pretty_colored_proof_term
 from pres.tree import render_acceptance_tree_dot
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
+from core.ac.grammar import Grammar, ProofTermTransformer
+from core.ac.ast import Mutilde
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
@@ -120,6 +122,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         support   NEW supporter target [on PROP]
                         attack    NEW attacker  target [on PROP]
                         rebut     NEW attacker  target [on PROP]
+          - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
           - Lines starting with '#' are user-facing comments and are printed to stdout.
           - Lines starting with '%' are invisible comments and are ignored.
     """
@@ -224,6 +227,25 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         output = prover.execute_tactic(tactic_name, *tactic_args)
                         #print(output)
 
+                    elif command.startswith("register "):
+                        try:
+                            register_argument_cmd(prover, command)
+                        except Exception as e:
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                if isinstance(e, MachinePayloadError):
+                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
+                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                            logger.error("Register failed: %s", e)
+                            if stop_on_error:
+                                break
                     elif command.startswith("reduce "):
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("render-nf "):
@@ -650,6 +672,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut.
+          - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
 
         #TODO: implement human-oriented REPL output.
     """
@@ -668,6 +691,17 @@ def interactive_mode(prover: ProverWrapper) -> None:
             #command = command.rstrip('.').strip()
             if command.lower() in ['exit', 'quit']:
                 break
+            elif command.startswith("register "):
+                try:
+                    arg = register_argument_cmd(prover, command)
+                    print(f"Registered argument '{arg.name}' with conclusion '{arg.conclusion}'.")
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error during register: %s", e)
+                    break
+                except Exception as e:
+                    print(f"Register failed: {e}")
+                    logger.error("Register failed: %s", e)
             elif command.startswith("reduce "):
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("render-nf "):
@@ -1045,6 +1079,79 @@ def interactive_mode(prover: ProverWrapper) -> None:
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
+
+def _parse_register_command(command: str) -> tuple[str, str, bool, str]:
+    """Parse `register NAME [strict] : TYPE := PROOF_TERM`.
+
+    The delimiter form is intentional: both proposition strings and proof-term
+    strings may contain spaces, so whitespace-only parsing is ambiguous.
+    """
+    payload = command[len("register"):].strip()
+    if not payload:
+        raise ValueError("Invalid register command. Use: register NAME [strict] : TYPE := PROOF_TERM")
+
+    try:
+        name, rest = payload.split(maxsplit=1)
+    except ValueError as e:
+        raise ValueError("Invalid register command. Use: register NAME [strict] : TYPE := PROOF_TERM") from e
+
+    declare_theorem = False
+    rest = rest.strip()
+    if rest.startswith("strict"):
+        parts = rest.split(maxsplit=1)
+        if parts[0] == "strict":
+            declare_theorem = True
+            rest = parts[1].strip() if len(parts) > 1 else ""
+
+    if not rest.startswith(":"):
+        raise ValueError("Invalid register command. Expected ':' before the proposition type")
+
+    type_and_term = rest[1:].strip()
+    conclusion, sep, proof_term = type_and_term.partition(":=")
+    if sep != ":=":
+        raise ValueError("Invalid register command. Expected ':=' before the proof term")
+
+    conclusion = conclusion.strip()
+    proof_term = proof_term.strip()
+    if not name or not conclusion or not proof_term:
+        raise ValueError("Invalid register command. Use: register NAME [strict] : TYPE := PROOF_TERM")
+
+    return name, conclusion, declare_theorem, proof_term
+
+
+def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
+    """Register an argument/theorem from a proof-term string.
+
+    Command syntax:
+        register NAME [strict] : TYPE := PROOF_TERM
+
+    With `strict`, replay is finalized with `qed.` so Fellowship declares the
+    theorem/antitheorem; otherwise the replayed theorem is discarded after the
+    wrapper extracts and registers the argument state.
+    """
+    name, conclusion, declare_theorem, proof_term = _parse_register_command(command)
+    proof_term = Argument._normalize_pt_to_unicode(proof_term)
+
+    parsed = Grammar().parser.parse(proof_term)
+    body = ProofTermTransformer().transform(parsed)
+
+    arg = Argument(
+        prover,
+        name=name,
+        conclusion=conclusion,
+        is_anti=isinstance(body, Mutilde),
+    )
+    arg.body = body
+    arg.execute(declare=declare_theorem)
+    prover.register_argument(arg)
+
+    logger.info(
+        "Registered argument '%s' with conclusion '%s'%s.",
+        arg.name,
+        arg.conclusion,
+        " and declared it in Fellowship" if declare_theorem else "",
+    )
+    return arg
 
 def resolve_fsp_path() -> Path:
     """
