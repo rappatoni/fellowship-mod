@@ -1,4 +1,5 @@
 from core.ac.grammar import Grammar, ProofTermTransformer
+from core.ac.ast import Deleg, Geled, Mu
 from wrap.cli import _parse_register_command, register_argument_cmd
 
 
@@ -50,6 +51,18 @@ def test_grammar_parses_enriched_open_placeholders():
     assert body.context.prop == "A"
 
 
+def test_grammar_missing_optional_open_placeholder_props_stay_none():
+    body = ProofTermTransformer().transform(
+        Grammar().parser.parse("μthesis:A.<!1||1!>")
+    )
+
+    assert isinstance(body, Mu)
+    assert isinstance(body.term, Deleg)
+    assert body.term.prop is None
+    assert isinstance(body.context, Geled)
+    assert body.context.prop is None
+
+
 
 def test_grammar_parses_enriched_typed_leaves_and_replay_untyped_leaves():
     enriched = ProofTermTransformer().transform(
@@ -91,3 +104,20 @@ def test_register_argument_cmd_strict_replays_and_qeds():
     assert prover.arguments["demo"] is arg
     assert prover.commands[0] == "theorem demo : (A)."
     assert prover.commands[-1] == "qed."
+
+
+def test_register_argument_cmd_preserves_input_body_after_replay():
+    prover = _FakeProver()
+
+    arg = register_argument_cmd(
+        prover,
+        "register demo : A := μalpha:A.<!1:A||1:A!>",
+    )
+
+    assert isinstance(arg.body, Mu)
+    assert arg.body.id.name == "alpha"
+    assert isinstance(arg.body.term, Deleg)
+    assert arg.body.term.prop == "A"
+    assert isinstance(arg.body.context, Geled)
+    assert arg.body.context.prop == "A"
+    assert ":None" not in arg.enriched_proof_term

@@ -55,6 +55,12 @@ class Grammar():
 
 class ProofTermTransformer(Transformer):
 
+    def _optional_prop(self, value):
+        if value is None:
+            return None
+        prop = str(value)
+        return None if prop == "None" else prop
+
     def proof_term(self, items):
         return items[0]
 
@@ -109,22 +115,22 @@ class ProofTermTransformer(Transformer):
 
     def goal(self, items) -> "Goal":
         number = items[0]
-        prop = str(items[1]) if len(items) > 1 else None
+        prop = self._optional_prop(items[1]) if len(items) > 1 else None
         return Goal(number, prop)
 
     def laog(self, items) -> "Laog":
         number = items[0]
-        prop = str(items[1]) if len(items) > 1 else None
+        prop = self._optional_prop(items[1]) if len(items) > 1 else None
         return Laog(number, prop)
     
     def deleg(self, items) -> "Deleg":
         number = items[0]
-        prop = str(items[1]) if len(items) > 1 else None
+        prop = self._optional_prop(items[1]) if len(items) > 1 else None
         return Deleg(number, prop)
 
     def geled(self, items) -> "Geled":
         number = items[0]
-        prop = str(items[1]) if len(items) > 1 else None
+        prop = self._optional_prop(items[1]) if len(items) > 1 else None
         return Geled(number, prop)
 
     def number(self, items):
@@ -172,13 +178,13 @@ class ProofTermTransformer(Transformer):
 
     def typed_id(self, items) -> "ID":
         id_ = items[0]
-        prop = str(items[1])
+        prop = self._optional_prop(items[1])
         id_.prop = prop
         return id_
 
     def typed_di(self, items) -> "DI":
         di = items[0]
-        prop = str(items[1])
+        prop = self._optional_prop(items[1])
         di.prop = prop
         return di
 

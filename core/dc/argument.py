@@ -104,13 +104,17 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             return getattr(getattr(self.body, "di", None), "name", None)
         return None
 
-    def execute(self, *, declare: bool = False) -> None:
+    def execute(self, *, declare: bool = False, preserve_input_body: bool = False) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
 
         If *declare* is true, finish the replay with ``qed.`` so Fellowship
         registers the theorem/antitheorem under this argument's name.  The
         default keeps the historical wrapper behaviour and discards the open
         theorem after extracting the proof state.
+
+        If *preserve_input_body* is true, replay is used as a checker: after
+        successful replay, keep the parsed input AST instead of replacing it
+        with Fellowship's reconstructed proof term.
         """
         logger.info("Executing argument '%s'.", self.name)
         if self.executed:
@@ -124,6 +128,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 generator = InstructionsGenerationVisitor(root_name=self._synthetic_root_name())
                 self.instructions = generator.return_instructions(self.body)
                 logger.debug("Generated instructions for argument '%s': %s", self.name, self.instructions)
+
+        preserved_input_body = copy.deepcopy(self.body) if preserve_input_body and self.body is not None else None
+
         # Decide whether to start a theorem or an antitheorem.
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
@@ -162,14 +169,19 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             last_output = start_payload
         output = last_output
         self._parse_proof_state(output)
-        # Parse proof term
-        grammar = Grammar()
-        parsed = grammar.parser.parse(self.proof_term)
-        transformer = ProofTermTransformer()
-        self.body = transformer.transform(parsed)
-        if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
-            self.conclusion = self.body.prop
-            self._rename_outer_binder(self.body, self.name)
+        if preserved_input_body is not None:
+            self.body = preserved_input_body
+            if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
+                self.conclusion = self.body.prop
+        else:
+            # Parse proof term returned by Fellowship.
+            grammar = Grammar()
+            parsed = grammar.parser.parse(self.proof_term)
+            transformer = ProofTermTransformer()
+            self.body = transformer.transform(parsed)
+            if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
+                self.conclusion = self.body.prop
+                self._rename_outer_binder(self.body, self.name)
         #Generate natural language representation
         if self.rendering == "argumentation":
             self.representation = pretty_natural(self.body, natural_language_argumentative_rendering)

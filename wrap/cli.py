@@ -1145,7 +1145,7 @@ def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
         is_anti=isinstance(body, Mutilde),
     )
     arg.body = body
-    arg.execute(declare=declare_theorem)
+    arg.execute(declare=declare_theorem, preserve_input_body=True)
     prover.register_argument(arg)
 
     logger.info(
