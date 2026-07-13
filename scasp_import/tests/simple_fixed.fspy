@@ -1,0 +1,7 @@
+# import warning: Ignoring sCASP global constraint node 'o_nmr_check'.
+lk.
+declare A,D:bool.
+declare d:(D).
+declare f_D_A:(D -> A).
+register simple : A := μalpha:A.<f_D_A||μbeta:D.<d||beta>*alpha>
+render simple vanilla

@@ -17,4 +17,4 @@ dependencies = [
 acdc = "wrap.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["core*", "pres*", "wrap*", "mod*"]
+include = ["core*", "pres*", "wrap*", "mod*", "scasp_import*"]

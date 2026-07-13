@@ -1,5 +1,7 @@
 from __future__ import annotations
 import os, sys
+import json
+import tempfile
 from pathlib import Path
 import shutil
 import argparse
@@ -11,6 +13,7 @@ from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
+from scasp_import.importer import ScaspImportError, translate_json
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
@@ -1335,6 +1338,44 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
         except Exception as e2:
             logger.error("Failed to write DOT file: %s", e2)
 
+def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) -> None:
+    """Handle `--import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]`."""
+    if len(import_args) not in (3, 4):
+        ap.error("--import expects: SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]")
+
+    source_language, source_json, mode = import_args[:3]
+    target_file_name = import_args[3] if len(import_args) == 4 else None
+
+    if source_language != "scasp":
+        ap.error("Unsupported import source language '%s' (currently only 'scasp')" % source_language)
+    if mode not in ("file", "interactive"):
+        ap.error("Unsupported import mode '%s' (expected 'file' or 'interactive')" % mode)
+
+    json_path = Path(source_json).expanduser()
+    if not json_path.is_file():
+        ap.error(f"source_json file {json_path} does not exist")
+
+    try:
+        data = json.loads(json_path.read_text())
+        result = translate_json(data)
+    except (OSError, json.JSONDecodeError, ScaspImportError) as e:
+        ap.error(f"failed to import {json_path}: {e}")
+
+    script_name = json_path.stem
+    if mode == "file":
+        target_path = Path(target_file_name).expanduser() if target_file_name else json_path.with_suffix(".fspy")
+        result.write_fspy(target_path, name=script_name)
+        logger.info("Imported %s JSON written to %s", source_language, target_path)
+        return
+
+    prover = setup_prover()
+    with tempfile.TemporaryDirectory(prefix="scasp_import_cli_") as tmpdir:
+        script_path = Path(tmpdir) / f"{script_name}.fspy"
+        result.write_fspy(script_path, name=script_name)
+        execute_script(prover, str(script_path), strict=True, stop_on_error=True, isolate=False)
+        interactive_mode(prover)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         prog='fellowship-wrapper',
@@ -1349,10 +1390,16 @@ def main() -> None:
                    help='start an interactive Fellowship REPL')
     g.add_argument('--script', metavar='FILE',
                    help='execute commands in FILE (same grammar as interactive mode)')
+    g.add_argument('--import', dest='import_args', nargs='+', metavar='IMPORT_ARG',
+                   help='import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]; MODE is file or interactive')
     args = ap.parse_args()
 
     # Configure CLI logging (explicit --log-level wins; else env FSP_LOGLEVEL; default INFO)
     configure_logging_cli(args.log_level, args.log_file)
+
+    if args.import_args is not None:
+        _handle_import_command(ap, args.import_args)
+        return
 
     prover = setup_prover()             # ⇐ creates the ProverWrapper, 
                                         #    registers pop, declares A,B,C,D …
