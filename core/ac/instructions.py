@@ -188,14 +188,14 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
 
     def visit_Deleg(self, node: Deleg):
         node = super().visit_Deleg(node)
-        self.instructions.appendleft(f'by default.')
         self.instructions.appendleft(f'next.')
+        self.instructions.appendleft(f'by default.')
         return node
 
     def visit_Geled(self, node: Geled):
         node = super().visit_Geled(node)
-        self.instructions.appendleft(f'by default.')
         self.instructions.appendleft(f'next.')
+        self.instructions.appendleft(f'by default.')
         return node
     
 
