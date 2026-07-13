@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 
 from core.ac.ast import Cons, DI, ID, Mu, Mutilde, Sonc
@@ -32,16 +33,17 @@ def test_translate_fact_generates_replayable_leaf_and_declarations():
     assert result.bools == {"A"}
     assert result.declarations == {"a": "A"}
     assert result.denials == {}
-    assert result.setup_commands() == ["lk.", "declare A:bool.", "declare a:A."]
+    assert result.setup_commands() == ["lk.", "declare A:bool.", "declare a:(A)."]
 
     body = result.body
     assert isinstance(body, Mu)
     assert body.prop == "A"
-    assert body.id.name == "alpha"
+    assert body.id.name == "alpha1"
     assert isinstance(body.term, DI)
     assert body.term.name == "a"
     assert isinstance(body.context, ID)
-    assert body.context.name == "alpha"
+    assert body.context.name == "alpha1"
+
 
 
 def test_translate_single_child_generates_function_declaration_and_cons_context():
@@ -54,13 +56,16 @@ def test_translate_single_child_generates_function_declaration_and_cons_context(
 
     body = result.body
     assert isinstance(body, Mu)
+    assert body.id.name == "alpha2"
     assert isinstance(body.term, DI)
     assert body.term.name == "f_B_A"
     assert isinstance(body.context, Cons)
     assert isinstance(body.context.term, Mu)
     assert body.context.term.prop == "B"
+    assert body.context.term.id.name == "alpha1"
     assert isinstance(body.context.context, ID)
-    assert body.context.context.name == "alpha"
+    assert body.context.context.name == "alpha2"
+
 
 
 def test_translate_multi_child_generates_helper_bool_denials_and_barred_adapters():
@@ -80,6 +85,8 @@ def test_translate_multi_child_generates_helper_bool_denials_and_barred_adapters
 
     body = result.body
     assert isinstance(body, Mu)
+    root_binder = body.id.name
+    assert root_binder.startswith("alpha")
     assert isinstance(body.term, DI)
     assert body.term.name == "f_H_A_A"
     assert isinstance(body.context, Cons)
@@ -96,14 +103,26 @@ def test_translate_multi_child_generates_helper_bool_denials_and_barred_adapters
     assert left_bar.context.name == "h_H_A_B"
 
     rendered = ProofTermGenerationVisitor().visit(body).pres
-    assert rendered.startswith("μalpha:A.<f_H_A_A:H_A -> A||")
+    assert rendered.startswith(f"μ{root_binder}:A.<f_H_A_A:H_A -> A||")
     assert "h_H_A_B:H_A-B" in rendered
     assert "h_H_A_C:H_A-C" in rendered
+
+    replay_rendered = ProofTermGenerationVisitor(verbose=-1).visit(body).pres
+    assert replay_rendered.startswith(f"μ{root_binder}:A.<f_H_A_A||")
+    assert "h_H_A_B:H_A-B" not in replay_rendered
+    assert "h_H_A_C:H_A-C" not in replay_rendered
+    assert re.search(r"μ'?_\d", replay_rendered) is None
+    assert "μ_:" in replay_rendered
+    assert "μ'_:" in replay_rendered
+    assert "!5:H_A" in replay_rendered
+    assert "3:B!" in replay_rendered
+    assert "1:C!" in replay_rendered
+
     assert result.setup_commands() == [
         "lk.",
         "declare A,B,C,H_A:bool.",
-        "declare b:B.",
-        "declare c:C.",
+        "declare b:(B).",
+        "declare c:(C).",
         "declare f_H_A_A:(H_A -> A).",
         "deny h_H_A_B:(H_A-B).",
         "deny h_H_A_C:(H_A-C).",
@@ -168,9 +187,10 @@ def test_result_to_fspy_renders_replayable_register_script():
 
     script = result.to_fspy(name="from_scasp")
 
-    assert script.startswith("lk.\ndeclare A:bool.\ndeclare a:A.\n")
-    assert "register from_scasp : A := μalpha:A.<a:A||alpha:A>" in script
+    assert script.startswith("lk.\ndeclare A:bool.\ndeclare a:(A).\n")
+    assert "register from_scasp : A := μalpha1:A.<a||alpha1>" in script
     assert script.endswith("\n")
+
 
 
 def test_result_write_fspy_writes_script_to_disk(tmp_path):
@@ -181,7 +201,8 @@ def test_result_write_fspy_writes_script_to_disk(tmp_path):
 
     assert written == target
     assert target.is_file()
-    assert "register imported : A := μalpha:A.<a:A||alpha:A>" in target.read_text()
+    assert "register imported : A := μalpha1:A.<a||alpha1>" in target.read_text()
+
 
 
 def test_cli_import_file_mode_writes_fspy_script(tmp_path):
@@ -197,4 +218,5 @@ def test_cli_import_file_mode_writes_fspy_script(tmp_path):
 
     assert target.is_file()
     assert "declare A:bool." in target.read_text()
-    assert "register source : A := μalpha:A.<a:A||alpha:A>" in target.read_text()
+    assert "declare a:(A)." in target.read_text()
+    assert "register source : A := μalpha1:A.<a||alpha1>" in target.read_text()

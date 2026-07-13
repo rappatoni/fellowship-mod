@@ -43,7 +43,7 @@ class ScaspImportResult:
 
     def proof_term_string(self) -> str:
         """Render the translated AC/DC AST as a proof-term string."""
-        rendered = ProofTermGenerationVisitor().visit(deepcopy(self.body))
+        rendered = ProofTermGenerationVisitor(verbose=-1).visit(deepcopy(self.body))
         return rendered.pres
 
     def to_fspy(
@@ -94,10 +94,15 @@ class _TranslationState:
     denials: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
     placeholder_counter: int = 0
+    binder_counter: int = 0
 
     def next_placeholder(self) -> str:
         self.placeholder_counter += 1
         return str(self.placeholder_counter)
+
+    def fresh_binder(self, base: str) -> str:
+        self.binder_counter += 1
+        return f"{base}{self.binder_counter}"
 
     def add_bool(self, prop: str) -> None:
         self.bools.add(prop)
@@ -280,21 +285,23 @@ def translate_tree(tree: dict[str, Any], state: _TranslationState | None = None)
 
     if not translated_children:
         state.declare(_sanitize_name(atom), prop)
+        alpha = state.fresh_binder("alpha")
         term = Mu(
-            ID("alpha", prop),
+            ID(alpha, prop),
             prop,
             DI(_sanitize_name(atom), prop),
-            ID("alpha", prop),
+            ID(alpha, prop),
         )
     elif len(translated_children) == 1:
         child = translated_children[0]
         f_name = _f_name(child.prop, prop)
         state.declare(f_name, _imp_prop(child.prop, prop))
+        alpha = state.fresh_binder("alpha")
         term = Mu(
-            ID("alpha", prop),
+            ID(alpha, prop),
             prop,
             DI(f_name, _imp_prop(child.prop, prop)),
-            Cons(child.term, ID("alpha", prop)),
+            Cons(child.term, ID(alpha, prop)),
         )
     else:
         term = _translate_multi_child(atom, prop, translated_children, state)
@@ -316,28 +323,32 @@ def _translate_multi_child(
     state.declare(f_name, _imp_prop(helper, prop))
 
     list_minus = _foldr1_barred(children, helper, state)
+    alt = state.fresh_binder("alt")
+    anon_left = "_"
+    anon_right = "_"
     alt_mu = Mu(
-        ID("alt", helper),
+        ID(alt, helper),
         helper,
         Mu(
-            ID("_", helper),
+            ID(anon_left, helper),
             helper,
             Deleg(state.next_placeholder(), helper),
-            ID("alt", helper),
+            ID(alt, helper),
         ),
         Mutilde(
-            DI("_", helper),
+            DI(anon_right, helper),
             helper,
             Deleg(state.next_placeholder(), helper),
             list_minus,
         ),
     )
 
+    alpha = state.fresh_binder("alpha")
     return Mu(
-        ID("alpha", prop),
+        ID(alpha, prop),
         prop,
         DI(f_name, _imp_prop(helper, prop)),
-        Cons(alt_mu, ID("alpha", prop)),
+        Cons(alt_mu, ID(alpha, prop)),
     )
 
 
@@ -360,19 +371,22 @@ def _pair_minus(
     helper: str,
     state: _TranslationState,
 ):
+    alt = state.fresh_binder("alt")
+    anon_left = "_"
+    anon_right = "_"
     return Mutilde(
-        DI("alt", helper),
+        DI(alt, helper),
         helper,
         Mu(
-            ID("_", helper),
+            ID(anon_left, helper),
             helper,
-            DI("alt", helper),
+            DI(alt, helper),
             _barred(left_child, helper, state),
         ),
         Mutilde(
-            DI("_", helper),
+            DI(anon_right, helper),
             helper,
-            DI("alt", helper),
+            DI(alt, helper),
             right_context,
         ),
     )
@@ -383,17 +397,21 @@ def _barred(child: _TranslatedTree, helper: str, state: _TranslationState):
     h_prop = _minus_prop(helper, child.prop)
     state.deny(h_name, h_prop)
 
+    att = state.fresh_binder("att")
+    anon_left = "_"
+    anon_right = "_"
+    x = state.fresh_binder("x")
     att_context = Mutilde(
-        DI("att", child.prop),
+        DI(att, child.prop),
         child.prop,
         Mu(
-            ID("_", child.prop),
+            ID(anon_left, child.prop),
             child.prop,
-            DI("att", child.prop),
+            DI(att, child.prop),
             Geled(state.next_placeholder(), child.prop),
         ),
         Mutilde(
-            DI("_", child.prop),
+            DI(anon_right, child.prop),
             child.prop,
             child.term,
             Geled(state.next_placeholder(), child.prop),
@@ -401,9 +419,9 @@ def _barred(child: _TranslatedTree, helper: str, state: _TranslationState):
     )
 
     return Mutilde(
-        DI("x", helper),
+        DI(x, helper),
         helper,
-        Sonc(att_context, DI("x", helper)),
+        Sonc(att_context, DI(x, helper)),
         ID(h_name, h_prop),
     )
 
@@ -459,6 +477,4 @@ def _minus_prop(left: str, right: str) -> str:
 
 
 def _fmt_decl_prop(prop: str) -> str:
-    if "->" in prop or "-" in prop:
-        return f"({prop})"
-    return prop
+    return f"({prop})"

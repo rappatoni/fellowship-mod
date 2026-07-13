@@ -8,9 +8,9 @@ class Grammar():
 
             proof_term: term | context
 
-            term: di | lamda | sonc |  mu | goal | deleg
+            term: typed_di | di | lamda | sonc |  mu | goal | deleg
 
-            context: id | cons | admal | mutilde | laog | geled
+            context: typed_id | id | cons | admal | mutilde | laog | geled
 
             mu: "μ" id ":" prop "." "<" term "||" context ">"
             mutilde: "μ'" di ":" prop "." "<" term "||" context ">"
@@ -38,6 +38,8 @@ class Grammar():
             pred_app: name name*                      -> prop_app_chain
             atom: name                               -> atom_name
             name: /[^\[\].<>*~:,\-\s()?!|]+/
+            typed_id: id ":" prop
+            typed_di: di ":" prop
             hyp: di ":" prop
             pyh : id ":" prop
             id: /[a-zA-Z_][a-zA-Z0-9_]*/
@@ -167,6 +169,18 @@ class ProofTermTransformer(Transformer):
         return " ".join(str(item) for item in items)
 
         return str(items[0])
+
+    def typed_id(self, items) -> "ID":
+        id_ = items[0]
+        prop = str(items[1])
+        id_.prop = prop
+        return id_
+
+    def typed_di(self, items) -> "DI":
+        di = items[0]
+        prop = str(items[1])
+        di.prop = prop
+        return di
 
     def id(self, token) -> "ID":
         name = str(token[0])

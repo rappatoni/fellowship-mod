@@ -50,6 +50,25 @@ def test_grammar_parses_enriched_open_placeholders():
     assert body.context.prop == "A"
 
 
+
+def test_grammar_parses_enriched_typed_leaves_and_replay_untyped_leaves():
+    enriched = ProofTermTransformer().transform(
+        Grammar().parser.parse("μalpha:A.<a:A||alpha:A>")
+    )
+    replay = ProofTermTransformer().transform(
+        Grammar().parser.parse("μalpha:A.<a||alpha>")
+    )
+
+    assert enriched.term.name == "a"
+    assert enriched.term.prop == "A"
+    assert enriched.context.name == "alpha"
+    assert enriched.context.prop == "A"
+    assert replay.term.name == "a"
+    assert replay.term.prop is None
+    assert replay.context.name == "alpha"
+    assert replay.context.prop is None
+
+
 def test_register_argument_cmd_replays_and_discards_by_default():
     prover = _FakeProver()
 
