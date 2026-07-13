@@ -21,6 +21,7 @@ def test_vanilla_render_marius_example_matches_generated_pres(prover):
 
     out = pretty_natural(arg.body, vanilla_rendering)
 
-    # Vanilla: should preserve the full syntax, only whitespace differs.
-    ws_stripped = "".join(out.split())
+    # Vanilla: should preserve the full syntax while adding tree-guide characters.
+    without_guides = out.translate(str.maketrans("", "", "├└─│"))
+    ws_stripped = "".join(without_guides.split())
     assert ws_stripped == pres

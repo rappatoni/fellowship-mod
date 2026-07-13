@@ -1,3 +1,4 @@
+# import warning: Ignoring 1 additional sCASP answers.
 # import warning: Ignoring sCASP global constraint node 'o_nmr_check'.
 lk.
 declare A,B,C,H_A:bool.
@@ -7,6 +8,3 @@ declare f_H_A_A:(H_A -> A).
 deny h_H_A_B:(H_A-B).
 deny h_H_A_C:(H_A-C).
 register simple : A := μalpha9:A.<f_H_A_A||μalt8:H_A.<μ_:H_A.<!5:H_A||alt8>||μ'_:H_A.<!6:H_A||μ'alt5:H_A.<μ_:H_A.<alt5||μ'x7:H_A.<μ'att6:B.<μ_:B.<att6||3:B!>||μ'_:B.<μalpha1:B.<b||alpha1>||4:B!>>*x7||h_H_A_B>>||μ'_:H_A.<alt5||μ'x4:H_A.<μ'att3:C.<μ_:C.<att3||1:C!>||μ'_:C.<μalpha2:C.<c||alpha2>||2:C!>>*x4||h_H_A_C>>>>>*alpha9>
-render simple vanilla
-render-nf simple vanilla
-normalize simple

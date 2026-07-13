@@ -34,11 +34,12 @@ from core.comp.visitor import ProofTermVisitor
 
 
 class _VanillaVisitor(ProofTermVisitor):
-    def __init__(self, semantic: Rendering_Semantics, lines: list[str], indent: int = 0):
+    def __init__(self, semantic: Rendering_Semantics, lines: list[str], indent: int = 0, prefix: str = ""):
         super().__init__()
         self.semantic = semantic
         self.lines = lines
         self.indent = indent
+        self.prefix = prefix or (self.semantic.indentation * indent)
         self._cur: list[str] = []
 
     def _emit(self, s: str) -> None:
@@ -46,12 +47,36 @@ class _VanillaVisitor(ProofTermVisitor):
 
     def _newline(self) -> None:
         if self._cur:
-            self.lines.append(self.semantic.indentation * self.indent + "".join(self._cur))
+            self.lines.append(self.prefix + "".join(self._cur))
             self._cur = []
 
-    def _emit_line(self, s: str, indent: int | None = None) -> None:
-        level = self.indent if indent is None else indent
-        self.lines.append(self.semantic.indentation * level + s)
+    def _emit_line(self, s: str, prefix: str | None = None) -> None:
+        line_prefix = self.prefix if prefix is None else prefix
+        self.lines.append(line_prefix + s)
+
+    @staticmethod
+    def _child_prefix(parent_prefix: str, is_last: bool) -> str:
+        return parent_prefix + ("└─ " if is_last else "├─ ")
+
+    @staticmethod
+    def _continuation_prefix(parent_prefix: str, is_last: bool) -> str:
+        return parent_prefix + ("   " if is_last else "│  ")
+
+    @staticmethod
+    def _with_prefix(lines: list[str], first_prefix: str, rest_prefix: str) -> list[str]:
+        if not lines:
+            return []
+        return [first_prefix + lines[0], *(rest_prefix + line for line in lines[1:])]
+
+    def _render_child(self, node, *, is_last: bool) -> list[str]:
+        child_lines: list[str] = []
+        child_visitor = _VanillaVisitor(self.semantic, child_lines)
+        child_visitor.render(node)
+        return self._with_prefix(
+            child_lines,
+            self._child_prefix(self.prefix, is_last),
+            self._continuation_prefix(self.prefix, is_last),
+        )
 
     def render(self, node) -> None:
         self.visit(node)
@@ -59,63 +84,52 @@ class _VanillaVisitor(ProofTermVisitor):
             self._newline()
 
     def visit_Mu(self, node: Mu):
-        opening_indent = self.indent
-        child_indent = opening_indent + 1
+        opening_prefix = self.prefix
         self._emit(f"μ{node.id.name}:{node.prop}.<")
         self._newline()
 
-        term_lines: list[str] = []
-        term_visitor = _VanillaVisitor(self.semantic, term_lines, indent=child_indent)
-        term_visitor.render(node.term)
-
-        context_lines: list[str] = []
-        context_visitor = _VanillaVisitor(self.semantic, context_lines, indent=child_indent)
-        context_visitor.render(node.context)
+        term_lines = self._render_child(node.term, is_last=False)
+        context_lines = self._render_child(node.context, is_last=True)
 
         if term_lines:
             self.lines.extend(term_lines[:-1])
             last_term = term_lines[-1]
             self.lines.append(f"{last_term}||")
         else:
-            self._emit_line("||", indent=child_indent)
+            self._emit_line("├─ ||", prefix=opening_prefix)
         self.lines.extend(context_lines)
-        self._emit_line(">", indent=opening_indent)
+        self._emit_line(">", prefix=opening_prefix)
         self._cur = []
-        self.indent = opening_indent
         return node
 
     def visit_Mutilde(self, node: Mutilde):
-        opening_indent = self.indent
-        child_indent = opening_indent + 1
+        opening_prefix = self.prefix
         self._emit(f"μ'{node.di.name}:{node.prop}.<")
         self._newline()
 
-        term_lines: list[str] = []
-        term_visitor = _VanillaVisitor(self.semantic, term_lines, indent=child_indent)
-        term_visitor.render(node.term)
-
-        context_lines: list[str] = []
-        context_visitor = _VanillaVisitor(self.semantic, context_lines, indent=child_indent)
-        context_visitor.render(node.context)
+        term_lines = self._render_child(node.term, is_last=False)
+        context_lines = self._render_child(node.context, is_last=True)
 
         if term_lines:
             self.lines.extend(term_lines[:-1])
             last_term = term_lines[-1]
             self.lines.append(f"{last_term}||")
         else:
-            self._emit_line("||", indent=child_indent)
+            self._emit_line("├─ ||", prefix=opening_prefix)
         self.lines.extend(context_lines)
-        self._emit_line(">", indent=opening_indent)
+        self._emit_line(">", prefix=opening_prefix)
         self._cur = []
-        self.indent = opening_indent
         return node
 
     def visit_Lamda(self, node: Lamda):
         self._emit(f"λ{node.di.di.name}:{node.di.prop}.")
         self._newline()
-        self.indent += 1
-        self.visit(node.term)
-        self.indent -= 1
+        old_prefix = self.prefix
+        self.prefix = self._child_prefix(old_prefix, True)
+        try:
+            self.visit(node.term)
+        finally:
+            self.prefix = old_prefix
         return node
 
     def visit_Cons(self, node: Cons):

@@ -60,9 +60,44 @@ def test_vanilla_rendering_basic():
         Cons(Goal("1", "B"), ID("x", "A")),
     )
     out = pretty_natural(pt, vanilla_rendering)
-    # vanilla should preserve full syntax (only whitespace differs)
+    # vanilla should preserve full syntax while adding tree guides
     assert "μx:A.<" in out
+    assert "├─ f:B->A||" in out
+    assert "└─ ?1:B*x:A" in out
     assert "||" in out
     assert "*" in out
     assert "f:B->A" in out
     assert "1:B" in out
+
+
+
+def test_vanilla_rendering_nested_uses_continuation_guides():
+    pt = Mu(
+        ID("x", "A"),
+        "A",
+        Mu(ID("y", "B"), "B", DI("g", "B"), ID("y", "B")),
+        ID("x", "A"),
+    )
+
+    out = pretty_natural(pt, vanilla_rendering)
+
+    assert "├─ μy:B.<" in out
+    assert "│  ├─ g:B||" in out
+    assert "│  └─ y:B" in out
+    assert "└─ x:A" in out
+
+
+
+def test_vanilla_rendering_mutilde_uses_tree_guides():
+    pt = Mutilde(
+        DI("k", "A"),
+        "A",
+        DI("f", "A"),
+        ID("alpha", "A"),
+    )
+
+    out = pretty_natural(pt, vanilla_rendering)
+
+    assert "μ'k:A.<" in out
+    assert "├─ f:A||" in out
+    assert "└─ alpha:A" in out
