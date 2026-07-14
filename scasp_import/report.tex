@@ -30,6 +30,8 @@ Program:
 \end{align*}
 
 \begin{align*}
+  \llbracket 0 \rrbracket^A_+ &= \mu \alpha \langle [:A]|| \alpha \rangle \\
+  \llbracket 0 \rrbracket^A_{-} &= \mu \alpha \langle \underline{[:A]}|| \alpha \rangle \\
   \llbracket x_1,x_2\rrbracket^{ans} &= \mu alt.\langle \mu\_.\langle x_1|| alt \rangle || \tilde\mu\_.\langle x_2|| alt\rangle \rangle\\
   \llbracket x_1+\dots+ x_n\rrbracket &= foldr1 \llbracket x_1,x_2\rrbracket^{ans} x_1+\dots+x_n\\
   \llbracket a\mathbin{\text{:-}}[\,] \rrbracket &= \mu \alpha. \langle a:A||\alpha\rangle \text{   where declare a:A, declare A:bool $\in$ Decls}\\
