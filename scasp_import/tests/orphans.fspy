@@ -1,0 +1,25 @@
+# import warning: Ignoring sCASP global constraint node 'o_nmr_check'.
+lk.
+declare iota:type.
+declare Bob,Patty,Rich:iota.
+declare Child:iota -> bool.
+declare Dead:iota -> bool.
+declare Father:iota -> iota -> bool.
+declare Mother:iota -> iota -> bool.
+declare Orphan:iota -> bool.
+declare Parents_dead:iota -> bool.
+declare H_Orphan_Bob,H_Parents_dead_Bob:bool.
+declare child_bob:(Child[Bob]).
+declare dead_patty:(Dead[Patty]).
+declare dead_rich:(Dead[Rich]).
+declare f_H_Orphan_Bob_Orphan_Bob:(H_Orphan_Bob -> Orphan[Bob]).
+declare f_H_Parents_dead_Bob_Parents_dead_Bob:(H_Parents_dead_Bob -> Parents_dead[Bob]).
+declare father_rich_bob:(Father[Rich][Bob]).
+declare mother_patty_bob:(Mother[Patty][Bob]).
+deny h_H_Orphan_Bob_Child_Bob:(H_Orphan_Bob-Child[Bob]).
+deny h_H_Orphan_Bob_Parents_dead_Bob:(H_Orphan_Bob-Parents_dead[Bob]).
+deny h_H_Parents_dead_Bob_Dead_Patty:(H_Parents_dead_Bob-Dead[Patty]).
+deny h_H_Parents_dead_Bob_Dead_Rich:(H_Parents_dead_Bob-Dead[Rich]).
+deny h_H_Parents_dead_Bob_Father_Rich_Bob:(H_Parents_dead_Bob-Father[Rich][Bob]).
+deny h_H_Parents_dead_Bob_Mother_Patty_Bob:(H_Parents_dead_Bob-Mother[Patty][Bob]).
+register orphans : Orphan[Bob] := μalpha25:Orphan Bob.<f_H_Orphan_Bob_Orphan_Bob||μalt24:H_Orphan_Bob.<μ_:H_Orphan_Bob.<!15:H_Orphan_Bob||alt24>||μ'_:H_Orphan_Bob.<!16:H_Orphan_Bob||μ'alt21:H_Orphan_Bob.<μ_:H_Orphan_Bob.<alt21||μ'x23:H_Orphan_Bob.<μ'att22:Child Bob.<μ_:Child Bob.<att22||13:Child Bob!>||μ'_:Child Bob.<μalpha1:Child Bob.<child_bob||alpha1>||14:Child Bob!>>*x23||h_H_Orphan_Bob_Child_Bob>>||μ'_:H_Orphan_Bob.<alt21||μ'x20:H_Orphan_Bob.<μ'att19:Parents_dead Bob.<μ_:Parents_dead Bob.<att19||11:Parents_dead Bob!>||μ'_:Parents_dead Bob.<μalpha18:Parents_dead Bob.<f_H_Parents_dead_Bob_Parents_dead_Bob||μalt17:H_Parents_dead_Bob.<μ_:H_Parents_dead_Bob.<!9:H_Parents_dead_Bob||alt17>||μ'_:H_Parents_dead_Bob.<!10:H_Parents_dead_Bob||μ'alt14:H_Parents_dead_Bob.<μ_:H_Parents_dead_Bob.<alt14||μ'x16:H_Parents_dead_Bob.<μ'att15:Father Rich Bob.<μ_:Father Rich Bob.<att15||7:Father Rich Bob!>||μ'_:Father Rich Bob.<μalpha2:Father Rich Bob.<father_rich_bob||alpha2>||8:Father Rich Bob!>>*x16||h_H_Parents_dead_Bob_Father_Rich_Bob>>||μ'_:H_Parents_dead_Bob.<alt14||μ'alt11:H_Parents_dead_Bob.<μ_:H_Parents_dead_Bob.<alt11||μ'x13:H_Parents_dead_Bob.<μ'att12:Mother Patty Bob.<μ_:Mother Patty Bob.<att12||5:Mother Patty Bob!>||μ'_:Mother Patty Bob.<μalpha3:Mother Patty Bob.<mother_patty_bob||alpha3>||6:Mother Patty Bob!>>*x13||h_H_Parents_dead_Bob_Mother_Patty_Bob>>||μ'_:H_Parents_dead_Bob.<alt11||μ'alt8:H_Parents_dead_Bob.<μ_:H_Parents_dead_Bob.<alt8||μ'x10:H_Parents_dead_Bob.<μ'att9:Dead Rich.<μ_:Dead Rich.<att9||3:Dead Rich!>||μ'_:Dead Rich.<μalpha4:Dead Rich.<dead_rich||alpha4>||4:Dead Rich!>>*x10||h_H_Parents_dead_Bob_Dead_Rich>>||μ'_:H_Parents_dead_Bob.<alt8||μ'x7:H_Parents_dead_Bob.<μ'att6:Dead Patty.<μ_:Dead Patty.<att6||1:Dead Patty!>||μ'_:Dead Patty.<μalpha5:Dead Patty.<dead_patty||alpha5>||2:Dead Patty!>>*x7||h_H_Parents_dead_Bob_Dead_Patty>>>>>>>>>*alpha18>||12:Parents_dead Bob!>>*x20||h_H_Orphan_Bob_Parents_dead_Bob>>>>>*alpha25>

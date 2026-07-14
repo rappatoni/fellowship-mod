@@ -3,6 +3,8 @@ import re
 import subprocess
 
 from core.ac.ast import Cons, DI, Goal, ID, Mu, Mutilde, Sonc
+from core.ac.instructions import InstructionsGenerationVisitor
+from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
 from scasp_import import importer
 from scasp_import.importer import atom_to_prop, run_scasp_json, translate_json
@@ -25,6 +27,21 @@ def _atom(name, children=None):
         "node": {"type": "atom", "value": name},
         "children": list(children or []),
     }
+
+
+def _compound(functor, args, children=None):
+    return {
+        "node": {"type": "compound", "functor": functor, "args": list(args)},
+        "children": list(children or []),
+    }
+
+
+def _const(name):
+    return {"type": "atom", "value": name}
+
+
+def _var(name):
+    return {"type": "var", "name": name}
 
 
 def test_atom_to_prop_capitalizes_only_first_character():
@@ -231,6 +248,102 @@ def test_translate_json_omits_unsupported_children_with_warning():
     assert result.conclusion == "A"
     assert result.declarations == {"a": "A"}
     assert any("unsupported child" in warning for warning in result.warnings)
+
+
+def test_prop_to_command_renders_predicate_applications_and_connectives():
+    assert prop_to_command("Child Bob") == "Child[Bob]"
+    assert prop_to_command("Father Rich Bob") == "Father[Rich][Bob]"
+    assert prop_to_command("Child Bob -> Orphan Bob") == "Child[Bob] -> Orphan[Bob]"
+    assert prop_to_command("H_Orphan Bob-Child Bob") == "H_Orphan[Bob]-Child[Bob]"
+
+
+def test_translate_orphans_json_imports_structured_predicates():
+    payload = _answer_tree(
+        _compound("orphan", [_const("bob")], [
+            _compound("child", [_const("bob")]),
+            _compound("parents_dead", [_const("bob")], [
+                _compound("father", [_const("rich"), _const("bob")]),
+                _compound("mother", [_const("patty"), _const("bob")]),
+                _compound("dead", [_const("rich")]),
+                _compound("dead", [_const("patty")]),
+            ]),
+        ]),
+        _atom("o_nmr_check"),
+    )
+
+    result = translate_json(payload)
+
+    assert result.conclusion == "Orphan Bob"
+    assert result.constants == {"Bob", "Patty", "Rich"}
+    assert result.predicates == {
+        "Child": 1,
+        "Dead": 1,
+        "Father": 2,
+        "Mother": 2,
+        "Orphan": 1,
+        "Parents_dead": 1,
+    }
+    assert result.declarations["child_bob"] == "Child Bob"
+    assert result.declarations["father_rich_bob"] == "Father Rich Bob"
+    assert result.declarations["mother_patty_bob"] == "Mother Patty Bob"
+    assert result.declarations["dead_rich"] == "Dead Rich"
+    assert result.declarations["dead_patty"] == "Dead Patty"
+    assert any("o_nmr_check" in warning for warning in result.warnings)
+
+    setup = result.setup_commands()
+    assert "declare iota:type." in setup
+    assert "declare Bob,Patty,Rich:iota." in setup
+    assert "declare Father:iota -> iota -> bool." in setup
+    assert "declare child_bob:(Child[Bob])." in setup
+    assert "declare father_rich_bob:(Father[Rich][Bob])." in setup
+
+    rendered = result.proof_term_string()
+    assert "μalpha1:Child Bob.<child_bob||alpha1>" in rendered
+    assert "Child[Bob]" not in rendered
+
+    script = result.to_fspy(name="orphans")
+    assert "register orphans : Orphan[Bob] := μ" in script
+    assert "μalpha1:Child Bob.<child_bob||alpha1>" in script
+
+
+def test_translate_tree_rejects_variable_terms():
+    try:
+        translate_json(_answer_tree(_compound("child", [_var("X")])))
+    except importer.ScaspImportError as exc:
+        assert "non-ground" in str(exc)
+    else:
+        raise AssertionError("Expected ScaspImportError")
+
+
+def test_translate_structured_equality_and_inequality_atoms():
+    result = translate_json(
+        _answer_tree(
+            _compound("=", [_const("bob"), _const("bob")], [
+                _compound("!=", [_const("bob"), _const("mary")])
+            ])
+        )
+    )
+
+    assert result.conclusion == "Eq Bob Bob"
+    assert result.constants == {"Bob", "Mary"}
+    assert result.predicates == {"Eq": 2, "Neq": 2}
+    assert "declare Eq:iota -> iota -> bool." in result.setup_commands()
+    assert "declare Neq:iota -> iota -> bool." in result.setup_commands()
+    assert "register imported : Eq[Bob][Bob] := μ" in result.to_fspy()
+
+
+def test_instruction_generation_renders_predicate_cut_commands_with_brackets():
+    body = Mu(
+        ID("alpha", "Orphan Bob"),
+        "Orphan Bob",
+        DI("f_Child_Bob_Orphan_Bob", "Child Bob -> Orphan Bob"),
+        ID("alpha", "Orphan Bob"),
+    )
+    body.contr = "Child Bob -> Orphan Bob"
+
+    instructions = list(InstructionsGenerationVisitor().return_instructions(body))
+
+    assert any(instr == "cut (Child[Bob] -> Orphan[Bob]) alpha" for instr in instructions)
 
 
 def test_run_scasp_json_accepts_nonzero_exit_when_json_exists(tmp_path, monkeypatch):

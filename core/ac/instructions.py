@@ -2,6 +2,7 @@ from copy import deepcopy
 import collections
 from core.comp.visitor import ProofTermVisitor
 from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
+from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
 
 # Normalize logical symbols to the prover's ASCII syntax
@@ -112,7 +113,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         if is_falsum_prop(getattr(node, "prop", "")):
             return node
         if node.contr:
-            self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.id.name}.")
+            self.instructions.appendleft(f"cut ({prop_to_command(fn(node.contr))}) {node.id.name}.")
             return node
         raise Exception(f"Could not identify cut proposition for Mu node {self._node_pres(node)}")
 
@@ -137,7 +138,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         if self._is_synthetic_root_name(node.di.name):
             return node
         if node.contr:
-            self.instructions.appendleft(f"cut ({fn(node.contr)}) {node.di.name}.")
+            self.instructions.appendleft(f"cut ({prop_to_command(fn(node.contr))}) {node.di.name}.")
             return node
         raise Exception(f"Could not identify cut proposition for Mutilde node {self._node_pres(node)}")
 

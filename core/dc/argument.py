@@ -2,6 +2,7 @@ import logging, copy, os
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
+from core.ac.prop_render import prop_to_command
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.reduce import ArgumentTermReducer, EtaReducer, ThetaExpander
@@ -135,10 +136,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
             logger.info("Starting antitheorem '%s' for issue '%s'", self.name, prop)
-            start_cmd = f'antitheorem {self.name} : ({prop}).'
+            start_cmd = f'antitheorem {self.name} : ({prop_to_command(prop)}).'
         else:
             logger.info("Starting theorem '%s' for issue '%s'", self.name, self.conclusion)
-            start_cmd = f'theorem {self.name} : ({self.conclusion}).'
+            start_cmd = f'theorem {self.name} : ({prop_to_command(self.conclusion)}).'
         start_payload = self.prover.send_command(start_cmd)
         output = start_payload
         # Execute each instruction

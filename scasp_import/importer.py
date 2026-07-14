@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from core.ac.ast import Cons, Deleg, DI, Geled, Goal, ID, Mutilde, Mu, ProofTerm, Sonc, Term
+from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
 
 
@@ -27,12 +28,24 @@ class ScaspImportResult:
     declarations: dict[str, str] = field(default_factory=dict)
     denials: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    constants: set[str] = field(default_factory=set)
+    predicates: dict[str, int] = field(default_factory=dict)
 
     def setup_commands(self, *, include_logic: bool = True) -> list[str]:
         """Render deterministic Fellowship setup commands for replaying ``body``."""
         commands: list[str] = []
         if include_logic:
             commands.append("lk.")
+        if self.constants or self.predicates:
+            commands.append("declare iota:type.")
+        if self.constants:
+            commands.append(f"declare {','.join(sorted(self.constants))}:iota.")
+        for name in sorted(self.predicates):
+            arity = self.predicates[name]
+            if arity <= 0:
+                self.bools.add(name)
+            else:
+                commands.append(f"declare {name}:{' -> '.join(['iota'] * arity + ['bool'])}.")
         if self.bools:
             commands.append(f"declare {','.join(sorted(self.bools))}:bool.")
         for name in sorted(self.declarations):
@@ -60,7 +73,8 @@ class ScaspImportResult:
             lines.extend(f"# import warning: {warning}" for warning in self.warnings)
         lines.extend(self.setup_commands(include_logic=include_logic))
         strict_part = " strict" if strict else ""
-        lines.append(f"register {name}{strict_part} : {self.conclusion} := {self.proof_term_string()}")
+        conclusion = prop_to_command(self.conclusion)
+        lines.append(f"register {name}{strict_part} : {conclusion} := {self.proof_term_string()}")
         return "\n".join(lines) + "\n"
 
     def write_fspy(
@@ -93,6 +107,8 @@ class _TranslationState:
     declarations: dict[str, str] = field(default_factory=dict)
     denials: dict[str, str] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
+    constants: set[str] = field(default_factory=set)
+    predicates: dict[str, int] = field(default_factory=dict)
     placeholder_counter: int = 0
     binder_counter: int = 0
 
@@ -106,6 +122,17 @@ class _TranslationState:
 
     def add_bool(self, prop: str) -> None:
         self.bools.add(prop)
+
+    def add_constant(self, name: str) -> None:
+        self.constants.add(name)
+
+    def declare_predicate(self, name: str, arity: int) -> None:
+        existing = self.predicates.get(name)
+        if existing is not None and existing != arity:
+            raise ScaspImportError(
+                f"Conflicting arities for predicate '{name}': {existing} vs {arity}"
+            )
+        self.predicates[name] = arity
 
     def declare(self, name: str, prop: str) -> None:
         existing = self.declarations.get(name)
@@ -134,10 +161,57 @@ class _TranslatedTree:
     atom: str
 
 
+@dataclass(frozen=True)
+class _ScaspTerm:
+    name: str
+    raw: str
+
+
+@dataclass(frozen=True)
+class _ScaspAtom:
+    symbol: str
+    args: tuple[_ScaspTerm, ...]
+    raw: str
+
+    @property
+    def prop(self) -> str:
+        if not self.args:
+            return self.symbol
+        return " ".join([self.symbol, *(arg.name for arg in self.args)])
+
+    @property
+    def axiom_name(self) -> str:
+        if not self.args:
+            return _sanitize_name(self.raw)
+        pieces = [_sanitize_name(self.raw.lower())]
+        pieces.extend(_sanitize_name(arg.raw.lower()) for arg in self.args)
+        return _sanitize_name("_".join(pieces))
+
+
+_INFIX_PREDICATES = {
+    "=": "Eq",
+    "!=": "Neq",
+    "\\=": "Neq",
+    "<": "Lt",
+    ">": "Gt",
+    "=<": "Leq",
+    "<=": "Leq",
+    ">=": "Geq",
+}
+
+
 def atom_to_prop(atom: str) -> str:
-    """Map an sCASP atom name to a Fellowship proposition name."""
+    """Map an sCASP atom/predicate name to a Fellowship proposition name."""
     if not atom:
         raise ScaspImportError("Cannot translate an empty sCASP atom name")
+    safe = _sanitize_name(atom)
+    return safe[:1].upper() + safe[1:]
+
+
+def atom_to_const(atom: str) -> str:
+    """Map an sCASP constant name to a Fellowship iota constant name."""
+    if not atom:
+        raise ScaspImportError("Cannot translate an empty sCASP constant name")
     safe = _sanitize_name(atom)
     return safe[:1].upper() + safe[1:]
 
@@ -232,6 +306,8 @@ def translate_json(data: dict[str, Any], *, answer_index: int | None = None) -> 
             declarations=state.declarations,
             denials=state.denials,
             warnings=state.warnings,
+            constants=state.constants,
+            predicates=state.predicates,
         )
 
     translated_answers: list[_TranslatedTree] = []
@@ -262,6 +338,8 @@ def translate_json(data: dict[str, Any], *, answer_index: int | None = None) -> 
         declarations=state.declarations,
         denials=state.denials,
         warnings=state.warnings,
+        constants=state.constants,
+        predicates=state.predicates,
     )
 
 
@@ -366,38 +444,38 @@ def translate_tree(tree: dict[str, Any], state: _TranslationState | None = None)
     """
     own_state = state is None
     state = state or _TranslationState()
-    atom = _atom_name_from_tree(tree)
+    atom = _atom_from_tree(tree, state)
     if atom is None:
         raise ScaspImportError(f"Unsupported sCASP tree node: {_describe_tree(tree)}")
-    if atom == "o_nmr_check":
+    if atom.raw == "o_nmr_check":
         raise ScaspImportError("Cannot translate global constraint node 'o_nmr_check' as a proof tree")
 
-    prop = atom_to_prop(atom)
-    state.add_bool(prop)
+    prop = atom.prop
+    _register_atom_signature(atom, state)
 
     children = tree.get("children", [])
     if not isinstance(children, list):
-        state.warn(f"Treating non-list children of atom '{atom}' as empty.")
+        state.warn(f"Treating non-list children of atom '{atom.raw}' as empty.")
         children = []
 
     translated_children: list[_TranslatedTree] = []
     for index, child in enumerate(children):
         if not isinstance(child, dict):
-            state.warn(f"Ignoring non-object child {index} of atom '{atom}'.")
+            state.warn(f"Ignoring non-object child {index} of atom '{atom.raw}'.")
             continue
-        child_atom = _atom_name_from_tree(child)
-        if child_atom is None or child_atom == "o_nmr_check":
-            state.warn(f"Ignoring unsupported child {index} of atom '{atom}': {_describe_tree(child)}.")
+        child_atom = _atom_from_tree(child, state)
+        if child_atom is None or child_atom.raw == "o_nmr_check":
+            state.warn(f"Ignoring unsupported child {index} of atom '{atom.raw}': {_describe_tree(child)}.")
             continue
         translated_children.append(translate_tree(child, state))
 
     if not translated_children:
-        state.declare(_sanitize_name(atom), prop)
+        state.declare(atom.axiom_name, prop)
         alpha = state.fresh_binder("alpha")
         term = Mu(
             ID(alpha, prop),
             prop,
-            DI(_sanitize_name(atom), prop),
+            DI(atom.axiom_name, prop),
             ID(alpha, prop),
         )
     elif len(translated_children) == 1:
@@ -412,11 +490,11 @@ def translate_tree(tree: dict[str, Any], state: _TranslationState | None = None)
             Cons(child.term, ID(alpha, prop)),
         )
     else:
-        term = _translate_multi_child(atom, prop, translated_children, state)
+        term = _translate_multi_child(atom.raw, prop, translated_children, state)
 
     if own_state:
-        return _TranslatedTree(term=term, prop=prop, atom=atom)
-    return _TranslatedTree(term=term, prop=prop, atom=atom)
+        return _TranslatedTree(term=term, prop=prop, atom=atom.raw)
+    return _TranslatedTree(term=term, prop=prop, atom=atom.raw)
 
 
 def _translate_multi_child(
@@ -534,16 +612,97 @@ def _barred(child: _TranslatedTree, helper: str, state: _TranslationState):
     )
 
 
+def _atom_from_tree(tree: dict[str, Any], state: _TranslationState) -> _ScaspAtom | None:
+    node = tree.get("node")
+    if not isinstance(node, dict):
+        return None
+    return _atom_from_json(node, state, allow_plain_atom=True)
+
+
+def _atom_from_json(node: dict[str, Any], state: _TranslationState, *, allow_plain_atom: bool) -> _ScaspAtom | None:
+    node_type = node.get("type")
+    if node_type == "atom":
+        value = node.get("value")
+        if not isinstance(value, str) or not value:
+            return None
+        if value == "o_nmr_check":
+            return _ScaspAtom(symbol=value, args=(), raw=value)
+        if not allow_plain_atom:
+            return None
+        return _ScaspAtom(symbol=atom_to_prop(value), args=(), raw=value)
+    if node_type != "compound":
+        return None
+    functor = node.get("functor")
+    args = node.get("args", [])
+    if not isinstance(functor, str) or not functor or not isinstance(args, list):
+        return None
+    if functor in {"not", "forall", "proved"}:
+        return None
+    if functor in _INFIX_PREDICATES:
+        if len(args) != 2:
+            return None
+        symbol = _INFIX_PREDICATES[functor]
+        raw = symbol.lower()
+    else:
+        symbol = atom_to_prop(functor)
+        raw = functor
+    terms = tuple(_term_from_json(arg, state) for arg in args)
+    return _ScaspAtom(symbol=symbol, args=terms, raw=raw)
+
+
+def _term_from_json(node: Any, state: _TranslationState) -> _ScaspTerm:
+    if isinstance(node, list):
+        raw = "list_" + "_".join(_term_from_json(item, state).raw for item in node)
+        name = atom_to_const(raw)
+        state.add_constant(name)
+        return _ScaspTerm(name=name, raw=raw)
+    if not isinstance(node, dict):
+        raise ScaspImportError(f"Unsupported sCASP term: {node!r}")
+    node_type = node.get("type")
+    if node_type == "var":
+        raise ScaspImportError(f"Cannot translate non-ground sCASP variable term: {node.get('name')!r}")
+    if node_type == "atom":
+        value = node.get("value")
+        if not isinstance(value, str) or not value:
+            raise ScaspImportError(f"Unsupported sCASP atom term: {node!r}")
+        name = atom_to_const(value)
+        state.add_constant(name)
+        return _ScaspTerm(name=name, raw=value)
+    if node_type == "compound":
+        functor = node.get("functor")
+        args = node.get("args", [])
+        if not isinstance(functor, str) or not isinstance(args, list):
+            raise ScaspImportError(f"Unsupported sCASP compound term: {node!r}")
+        raw_parts = [functor, *(_term_from_json(arg, state).raw for arg in args)]
+        raw = "_".join(raw_parts)
+        name = atom_to_const(raw)
+        state.add_constant(name)
+        return _ScaspTerm(name=name, raw=raw)
+    raise ScaspImportError(f"Unsupported sCASP term node: {node!r}")
+
+
+def _register_atom_signature(atom: _ScaspAtom, state: _TranslationState) -> None:
+    if atom.raw == "o_nmr_check":
+        return
+    if atom.args:
+        state.declare_predicate(atom.symbol, len(atom.args))
+    else:
+        state.add_bool(atom.symbol)
+
+
 def _atom_name_from_tree(tree: dict[str, Any]) -> str | None:
     node = tree.get("node")
     if not isinstance(node, dict):
         return None
-    if node.get("type") != "atom":
-        return None
-    value = node.get("value")
-    if not isinstance(value, str) or not value:
-        return None
-    return value
+    if node.get("type") == "atom":
+        value = node.get("value")
+        if isinstance(value, str) and value:
+            return value
+    if node.get("type") == "compound":
+        functor = node.get("functor")
+        if isinstance(functor, str) and functor and functor not in {"not", "forall", "proved"}:
+            return functor
+    return None
 
 
 def _describe_tree(tree: dict[str, Any]) -> str:
@@ -585,4 +744,4 @@ def _minus_prop(left: str, right: str) -> str:
 
 
 def _fmt_decl_prop(prop: str) -> str:
-    return f"({prop})"
+    return f"({prop_to_command(prop)})"

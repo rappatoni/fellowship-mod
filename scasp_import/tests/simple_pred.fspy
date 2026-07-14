@@ -1,0 +1,13 @@
+# import warning: Ignoring sCASP global constraint node 'o_nmr_check'.
+lk.
+declare iota:type.
+declare Clumsy,Tweety,__2:iota.
+declare Bird:iota -> bool.
+declare Bird_list:iota -> bool.
+declare H_Bird_list___2:bool.
+declare bird_clumsy:(Bird[Clumsy]).
+declare bird_tweety:(Bird[Tweety]).
+declare f_H_Bird_list___2_Bird_list___2:(H_Bird_list___2 -> Bird_list[__2]).
+deny h_H_Bird_list___2_Bird_Clumsy:(H_Bird_list___2-Bird[Clumsy]).
+deny h_H_Bird_list___2_Bird_Tweety:(H_Bird_list___2-Bird[Tweety]).
+register simple_pred : Bird_list[__2] := μalpha9:Bird_list __2.<f_H_Bird_list___2_Bird_list___2||μalt8:H_Bird_list___2.<μ_:H_Bird_list___2.<!5:H_Bird_list___2||alt8>||μ'_:H_Bird_list___2.<!6:H_Bird_list___2||μ'alt5:H_Bird_list___2.<μ_:H_Bird_list___2.<alt5||μ'x7:H_Bird_list___2.<μ'att6:Bird Tweety.<μ_:Bird Tweety.<att6||3:Bird Tweety!>||μ'_:Bird Tweety.<μalpha1:Bird Tweety.<bird_tweety||alpha1>||4:Bird Tweety!>>*x7||h_H_Bird_list___2_Bird_Tweety>>||μ'_:H_Bird_list___2.<alt5||μ'x4:H_Bird_list___2.<μ'att3:Bird Clumsy.<μ_:Bird Clumsy.<att3||1:Bird Clumsy!>||μ'_:Bird Clumsy.<μalpha2:Bird Clumsy.<bird_clumsy||alpha2>||2:Bird Clumsy!>>*x4||h_H_Bird_list___2_Bird_Clumsy>>>>>*alpha9>
