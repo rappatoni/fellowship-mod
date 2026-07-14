@@ -64,3 +64,4 @@ ltximg/
 _region_.tex
 .DS_Store
 papers/comma2026/.cecli/
+*.json
