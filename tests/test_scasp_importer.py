@@ -2,7 +2,7 @@ import json
 import re
 import subprocess
 
-from core.ac.ast import Cons, DI, ID, Mu, Mutilde, Sonc
+from core.ac.ast import Cons, DI, Goal, ID, Mu, Mutilde, Sonc
 from pres.gen import ProofTermGenerationVisitor
 from scasp_import import importer
 from scasp_import.importer import atom_to_prop, run_scasp_json, translate_json
@@ -11,6 +11,13 @@ from wrap.cli import _handle_import_command
 
 def _answer_tree(*trees):
     return {"answers": [{"tree": list(trees)}]}
+
+
+def _answers(*answer_trees, query="a"):
+    return {
+        "query": [{"type": "atom", "value": query}],
+        "answers": [{"tree": list(trees)} for trees in answer_trees],
+    }
 
 
 def _atom(name, children=None):
@@ -129,7 +136,7 @@ def test_translate_multi_child_generates_helper_bool_denials_and_barred_adapters
     ]
 
 
-def test_translate_json_warns_for_ignored_answers_global_constraint_and_extra_roots():
+def test_translate_json_combines_multiple_answers_and_warns_for_global_constraint_and_extra_roots():
     result = translate_json(
         {
             "answers": [
@@ -140,15 +147,77 @@ def test_translate_json_warns_for_ignored_answers_global_constraint_and_extra_ro
                         _atom("b"),
                     ]
                 },
-                {"tree": [_atom("c")]},
+                {"tree": [_atom("a", [_atom("c")])]},
             ]
         }
     )
 
     assert result.conclusion == "A"
-    assert any("additional sCASP answers" in warning for warning in result.warnings)
+    assert result.bools == {"A", "C"}
+    assert result.declarations == {"a": "A", "c": "C", "f_C_A": "C -> A"}
     assert any("o_nmr_check" in warning for warning in result.warnings)
     assert any("additional top-level" in warning for warning in result.warnings)
+
+    body = result.body
+    assert isinstance(body, Mu)
+    assert body.prop == "A"
+    assert isinstance(body.term, Mu)
+    assert body.term.prop == "A"
+    assert isinstance(body.context, Mutilde)
+    assert body.context.prop == "A"
+
+
+def test_translate_json_empty_answers_imports_empty_positive_enum_from_query():
+    result = translate_json({"query": [{"type": "atom", "value": "a"}], "answers": []})
+
+    assert result.conclusion == "A"
+    assert result.bools == {"A"}
+    assert result.declarations == {}
+    assert result.denials == {}
+    assert any("no answers" in warning for warning in result.warnings)
+
+    body = result.body
+    assert isinstance(body, Mu)
+    assert body.prop == "A"
+    assert isinstance(body.term, Goal)
+    assert body.term.prop == "A"
+    assert isinstance(body.context, ID)
+    assert result.proof_term_string() == "μalpha1:A.<?1:A||alpha1>"
+
+
+def test_translate_json_empty_answers_requires_single_positive_atom_query():
+    invalid_payloads = [
+        {"answers": []},
+        {"query": [], "answers": []},
+        {"query": [{"type": "atom", "value": "a"}, {"type": "atom", "value": "b"}], "answers": []},
+        {"query": [{"type": "compound", "value": "a"}], "answers": []},
+    ]
+
+    for payload in invalid_payloads:
+        try:
+            translate_json(payload)
+        except importer.ScaspImportError as exc:
+            assert "positive atom query" in str(exc)
+        else:
+            raise AssertionError("Expected ScaspImportError")
+
+
+def test_translate_json_errors_for_only_global_constraint_answer():
+    try:
+        translate_json(_answers([_atom("o_nmr_check")]))
+    except importer.ScaspImportError as exc:
+        assert "only o_nmr_check" in str(exc)
+    else:
+        raise AssertionError("Expected ScaspImportError")
+
+
+def test_translate_json_errors_for_mismatched_answer_conclusions():
+    try:
+        translate_json(_answers([_atom("a")], [_atom("b")]))
+    except importer.ScaspImportError as exc:
+        assert "concludes 'B', expected 'A'" in str(exc)
+    else:
+        raise AssertionError("Expected ScaspImportError")
 
 
 def test_translate_json_omits_unsupported_children_with_warning():

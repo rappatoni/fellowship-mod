@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from core.ac.ast import Cons, Deleg, DI, Geled, ID, Mutilde, Mu, ProofTerm, Sonc, Term
+from core.ac.ast import Cons, Deleg, DI, Geled, Goal, ID, Mutilde, Mu, ProofTerm, Sonc, Term
 from pres.gen import ProofTermGenerationVisitor
 
 
@@ -195,41 +195,122 @@ def run_scasp_json(
 
 
 def import_scasp_file(path: str | Path, *, scasp_bin: str = "scasp") -> ScaspImportResult:
-    """Run sCASP on ``path`` and translate the first positive justification."""
+    """Run sCASP on ``path`` and translate positive justifications."""
     return translate_json(run_scasp_json(path, scasp_bin=scasp_bin))
 
 
-def translate_json(data: dict[str, Any], *, answer_index: int = 0) -> ScaspImportResult:
-    """Translate an sCASP JSON payload to an AC/DC proof-term result."""
+def translate_json(data: dict[str, Any], *, answer_index: int | None = None) -> ScaspImportResult:
+    """Translate an sCASP JSON payload to an AC/DC proof-term result.
+
+    By default all positive answers are translated and combined as an enum of
+    justification trees.  Passing ``answer_index`` preserves the old
+    single-answer selection mode for callers that explicitly need it.
+    """
     state = _TranslationState()
     answers = data.get("answers")
-    if not isinstance(answers, list) or not answers:
-        raise ScaspImportError("sCASP JSON contains no answers")
-    if answer_index < 0 or answer_index >= len(answers):
-        raise ScaspImportError(f"answer_index {answer_index} is out of range")
-    if answer_index != 0:
-        state.warn(f"Ignoring the first {answer_index} sCASP answers before selected answer {answer_index}.")
-    if len(answers) > answer_index + 1:
-        state.warn(f"Ignoring {len(answers) - answer_index - 1} additional sCASP answers.")
+    if not isinstance(answers, list):
+        raise ScaspImportError("sCASP JSON field 'answers' is not a list")
 
-    answer = answers[answer_index]
+    if answer_index is not None:
+        if not answers:
+            raise ScaspImportError("Cannot select answer_index from empty sCASP answers")
+        if answer_index < 0 or answer_index >= len(answers):
+            raise ScaspImportError(f"answer_index {answer_index} is out of range")
+        selected_answers = [(answer_index, answers[answer_index])]
+    else:
+        selected_answers = list(enumerate(answers))
+
+    if not selected_answers:
+        prop = _query_prop(data)
+        state.add_bool(prop)
+        translated = _empty_positive_answer(prop, state)
+        state.warn("sCASP JSON contains no answers; importing empty positive answer enum.")
+        return ScaspImportResult(
+            body=translated.term,
+            conclusion=translated.prop,
+            bools=state.bools,
+            declarations=state.declarations,
+            denials=state.denials,
+            warnings=state.warnings,
+        )
+
+    translated_answers: list[_TranslatedTree] = []
+    conclusion: str | None = None
+    for answer_number, answer in selected_answers:
+        translated = _translate_answer(answer, answer_number, state)
+        if conclusion is None:
+            conclusion = translated.prop
+        elif translated.prop != conclusion:
+            raise ScaspImportError(
+                f"Answer {answer_number} concludes '{translated.prop}', expected '{conclusion}'"
+            )
+        translated_answers.append(translated)
+
+    if not translated_answers:
+        prop = _query_prop(data)
+        state.add_bool(prop)
+        translated = _empty_positive_answer(prop, state)
+        state.warn("No positive answer trees found; importing empty positive answer enum.")
+        translated_answers.append(translated)
+        conclusion = prop
+
+    body = _foldr1_answers(translated_answers, conclusion, state)
+    return ScaspImportResult(
+        body=body,
+        conclusion=conclusion,
+        bools=state.bools,
+        declarations=state.declarations,
+        denials=state.denials,
+        warnings=state.warnings,
+    )
+
+
+def _query_prop(data: dict[str, Any]) -> str:
+    query = data.get("query")
+    if not isinstance(query, list) or len(query) != 1:
+        raise ScaspImportError("Empty sCASP answer enum requires exactly one positive atom query")
+    item = query[0]
+    if not isinstance(item, dict) or item.get("type") != "atom":
+        raise ScaspImportError("Empty sCASP answer enum requires exactly one positive atom query")
+    value = item.get("value")
+    if not isinstance(value, str) or not value:
+        raise ScaspImportError("Empty sCASP answer enum query atom is missing a value")
+    return atom_to_prop(value)
+
+
+def _empty_positive_answer(prop: str, state: _TranslationState) -> _TranslatedTree:
+    alpha = state.fresh_binder("alpha")
+    term = Mu(
+        ID(alpha, prop),
+        prop,
+        Goal(state.next_placeholder(), prop),
+        ID(alpha, prop),
+    )
+    return _TranslatedTree(term=term, prop=prop, atom="0")
+
+
+def _translate_answer(answer: Any, answer_number: int, state: _TranslationState) -> _TranslatedTree:
     if not isinstance(answer, dict):
-        raise ScaspImportError("Selected sCASP answer is not an object")
+        raise ScaspImportError(f"sCASP answer {answer_number} is not an object")
     raw_tree = answer.get("tree")
     if not isinstance(raw_tree, list) or not raw_tree:
-        raise ScaspImportError("Selected sCASP answer contains no justification tree")
+        raise ScaspImportError(f"sCASP answer {answer_number} contains no justification tree")
 
     selected: dict[str, Any] | None = None
+    ignored_o_nmr_only = False
     for index, item in enumerate(raw_tree):
         if not isinstance(item, dict):
-            state.warn(f"Ignoring non-object top-level tree entry at index {index}.")
+            state.warn(f"Ignoring non-object top-level tree entry {index} of answer {answer_number}.")
             continue
         atom = _atom_name_from_tree(item)
         if atom == "o_nmr_check":
+            ignored_o_nmr_only = True
             state.warn("Ignoring sCASP global constraint node 'o_nmr_check'.")
             continue
         if atom is None:
-            state.warn(f"Ignoring unsupported top-level tree entry at index {index}: {_describe_tree(item)}.")
+            state.warn(
+                f"Ignoring unsupported top-level tree entry {index} of answer {answer_number}: {_describe_tree(item)}."
+            )
             continue
         if selected is None:
             selected = item
@@ -237,16 +318,43 @@ def translate_json(data: dict[str, Any], *, answer_index: int = 0) -> ScaspImpor
             state.warn(f"Ignoring additional top-level justification tree for atom '{atom}'.")
 
     if selected is None:
-        raise ScaspImportError("No positive atom justification tree found in selected answer")
+        if ignored_o_nmr_only:
+            raise ScaspImportError(
+                f"sCASP answer {answer_number} contains only o_nmr_check and no positive justification tree"
+            )
+        raise ScaspImportError(f"No positive atom justification tree found in answer {answer_number}")
 
-    translated = translate_tree(selected, state)
-    return ScaspImportResult(
-        body=translated.term,
-        conclusion=translated.prop,
-        bools=state.bools,
-        declarations=state.declarations,
-        denials=state.denials,
-        warnings=state.warnings,
+    return translate_tree(selected, state)
+
+
+def _foldr1_answers(answers: list[_TranslatedTree], prop: str, state: _TranslationState) -> Term:
+    if not answers:
+        raise ScaspImportError("foldr1 over answers requires at least one translated answer")
+    acc = answers[-1].term
+    for answer in reversed(answers[:-1]):
+        acc = _pair_answers(answer.term, acc, prop, state)
+    return acc
+
+
+def _pair_answers(left: Term, right: Term, prop: str, state: _TranslationState) -> Term:
+    alt = state.fresh_binder("alt")
+    anon_left = "_"
+    anon_right = "_"
+    return Mu(
+        ID(alt, prop),
+        prop,
+        Mu(
+            ID(anon_left, prop),
+            prop,
+            left,
+            ID(alt, prop),
+        ),
+        Mutilde(
+            DI(anon_right, prop),
+            prop,
+            right,
+            ID(alt, prop),
+        ),
     )
 
 
