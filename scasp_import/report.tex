@@ -16,8 +16,9 @@
   \mathit{JTree^+} &\mathrel{::=} \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree}) \\
   \mathit{JTree^-} &\mathrel{::=} \mathbf{not}\ \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathbf{not}\ \mathit{HelpLiteral} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree})) \\
   \mathit{JTree} &\mathrel{::=} \mathit{JTree^+} \mid \mathit{JTree^-}\\
-  \mathit{HelpLiteral} &\mathrel{::=} o_\mathit{Number}^\mathit{Atom} \\ 
-  \mathit{Atom}    &\mathrel{::= } a \quad (a \in \mathcal{V}) \\
+  \mathit{HelpLiteral} &\mathrel{::=} o_\mathit{Number}^\mathit{Atom} \\
+  %\mathit{Term}&\mathrel{::=} c \mid \{v : v \neq c_1,\dots, v\neq c_n \} \quad c \in \mathit{constants}, v \in \mathit{variables}\\
+  \mathit{Atom}    &\mathrel{::= } a \mid a([c_1,\dots,c_n]) \mid c_1 = c_2 \quad (a \in \mathcal{V}, c_1,\dots,c_n\in \mathit{constants} \\
   \mathit{Number} &\mathrel{::= i} \quad (i \in \mathbb{N}) \\
   o_i^a &:= o_i^a \mathbin{\text{:-}} [t_1,\dots,t_n] \\
   o^a \mathbin{\text{:-}} [t_1,\dots,t_n] &:= o_i^a \mathbin{\text{:-}} [t_1,\dots,t_n]\smash{\raisebox{0.5\baselineskip + 0.5\jot}{$\hspace{10pt}\text{um Doppelindexierung zu vermeiden}$}}\\
@@ -30,6 +31,9 @@ Program:
 \end{align*}
 
 \begin{align*}
+  \llbracket a[c_1,\dots,c_n]\rrbracket &= A[c_1 \dots c_n] \quad \text{where declare term : type,} \\
+  & \text{declare $c_1:term,\dots, c_n:term $, declare $A : (term \rightarrow \dots \rightarrow term \rightarrow bool)$ $\in$ Decls}\\
+  \llbracket c_1 = c_2\rrbracket &= Eq[c_1,c_2] \quad \text{where declare $c_1$:term, declare $c_2$:term, declare Eq: $(term \rightarrow term \rightarrow  bool)$}\\
   \llbracket 0 \rrbracket^A_+ &= \mu \alpha \langle [:A]|| \alpha \rangle \\
   \llbracket 0 \rrbracket^A_{-} &= \mu \alpha \langle \underline{[:A]}|| \alpha \rangle \\
   \llbracket x_1,x_2\rrbracket^{ans} &= \mu alt.\langle \mu\_.\langle x_1|| alt \rangle || \tilde\mu\_.\langle x_2|| alt\rangle \rangle\\
