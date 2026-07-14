@@ -9,15 +9,19 @@
 \begin{document}
 
 \begin{align*}
+  \mathit{Enum}(X) & \mathrel{::=} 0 \mid X + \mathit{Enum}(X) \\
+  %x_1 + x_2, + \dots + x_n &\mathrel{::=} x_
   \mathit{List}(X) &\mathrel{::=} [\,] \mid [X, \mathit{List}(X)] \\
   [l_1,l_2,\dots, l_n] &\mathrel{:=} [l_1,[l_2, \dots [l_n,[\,]]]]\\[\medskipamount]
-\mathit{JTree} &\mathrel{::=} \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree}) \\
-& \mid\, \mathbf{not}\ \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathbf{not}\ \mathit{HelpLiteral} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree})) \\
-  \mathit{HelpLiteral} &::= o_\mathit{Number}^\mathit{Atom} \\ 
-  \mathit{Atom}    &::= a \quad (a \in \mathcal{V}) \\
-  \mathit{Number} &::= i \quad (i \in \mathbb{N}) \\
+  \mathit{JTree^+} &\mathrel{::=} \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree}) \\
+  \mathit{JTree^-} &\mathrel{::=} \mathbf{not}\ \mathit{Atom} \mathbin{\text{:-}} \mathit{List}(\mathbf{not}\ \mathit{HelpLiteral} \mathbin{\text{:-}} \mathit{List}(\mathit{JTree})) \\
+  \mathit{JTree} &\mathrel{::=} \mathit{JTree^+} \mid \mathit{JTree^-}\\
+  \mathit{HelpLiteral} &\mathrel{::=} o_\mathit{Number}^\mathit{Atom} \\ 
+  \mathit{Atom}    &\mathrel{::= } a \quad (a \in \mathcal{V}) \\
+  \mathit{Number} &\mathrel{::= i} \quad (i \in \mathbb{N}) \\
   o_i^a &:= o_i^a \mathbin{\text{:-}} [t_1,\dots,t_n] \\
-  o^a \mathbin{\text{:-}} [t_1,\dots,t_n] &:= o_i^a \mathbin{\text{:-}} [t_1,\dots,t_n]\smash{\raisebox{0.5\baselineskip + 0.5\jot}{$\hspace{10pt}\text{um Doppelindexierung zu vermeiden}$}}
+  o^a \mathbin{\text{:-}} [t_1,\dots,t_n] &:= o_i^a \mathbin{\text{:-}} [t_1,\dots,t_n]\smash{\raisebox{0.5\baselineskip + 0.5\jot}{$\hspace{10pt}\text{um Doppelindexierung zu vermeiden}$}}\\
+\mathit{Answers} &\mathrel{::=} \mathit{Enum}(\mathit{JTree^+}) \mid \mathit{Enum}(\mathit{JTree^-})
 \end{align*}
 
 Program:
@@ -26,6 +30,8 @@ Program:
 \end{align*}
 
 \begin{align*}
+  \llbracket x_1,x_2\rrbracket^{ans} &= \mu alt.\langle \mu\_.\langle x_1|| alt \rangle || \tilde\mu\_.\langle x_2|| alt\rangle \rangle\\
+  \llbracket x_1+\dots+ x_n\rrbracket &= foldr1 \llbracket x_1,x_2\rrbracket^{ans} x_1+\dots+x_n\\
   \llbracket a\mathbin{\text{:-}}[\,] \rrbracket &= \mu \alpha. \langle a:A||\alpha\rangle \text{   where declare a:A, declare A:bool $\in$ Decls}\\
   \llbracket a\mathbin{\text{:-}}[t] \rrbracket &= \mu \alpha. \langle f_t|| \llbracket t \rrbracket \circ \alpha \rangle \\
   \llbracket a\mathbin{\text{:-}}[t_1,\dots,t_n] \rrbracket &= \mu \alpha:A.\langle f_{H^A} || \mu alt:H^A.\langle \mu\_.\langle \underline{[:H^A]} ||alt\rangle || \tilde\mu\_.\langle\underline{[:H^A]}||\llbracket t_1,\dots,t_n\rrbracket_-^{H^A} \rangle \rangle \circ \alpha \rangle \\
