@@ -1,10 +1,12 @@
 from core.ac.alt_structure import (
     match_alt_structure,
     match_alternative_counterexample_structure,
+    match_application_structure,
     match_defeasible_warrant_structure,
+    match_dual_application_structure,
     match_dual_defeasible_warrant_structure,
 )
-from core.ac.ast import Deleg, DI, Geled, ID, Mu, Mutilde
+from core.ac.ast import Cons, Deleg, DI, Geled, ID, Mu, Mutilde, Sonc
 
 
 def _alt_pair(name="alt", prop="A", left=None, right=None):
@@ -219,3 +221,43 @@ def test_match_dual_defeasible_warrant_structure_treats_geleds_equal_up_to_prop(
     assert warrant is not None
     assert isinstance(warrant.requirement, Geled)
     assert warrant.requirement.number == "1"
+
+
+def test_match_application_structure_extracts_function_and_argument():
+    function = DI("f", "B->A")
+    argument = DI("v", "B")
+    node = Mu(
+        ID("x", "A"),
+        "A",
+        function,
+        Cons(argument, ID("x", "A")),
+    )
+
+    application = match_application_structure(node)
+
+    assert application is not None
+    assert application.binder_name == "x"
+    assert application.prop == "A"
+    assert application.function is function
+    assert application.argument is argument
+    assert application.argument_prop == "B"
+
+
+def test_match_dual_application_structure_extracts_warrant_and_condition():
+    condition = DI("e", "B")
+    warrant = ID("f", "B->A")
+    node = Mutilde(
+        DI("x", "A"),
+        "A",
+        Sonc(ID("x", "A"), condition),
+        warrant,
+    )
+
+    application = match_dual_application_structure(node)
+
+    assert application is not None
+    assert application.binder_name == "x"
+    assert application.prop == "A"
+    assert application.condition is condition
+    assert application.warrant is warrant
+    assert application.condition_prop == "B"

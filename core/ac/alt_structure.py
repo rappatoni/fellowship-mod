@@ -26,6 +26,24 @@ class DefeasibleWarrantStructure:
 
 
 @dataclass(frozen=True)
+class ApplicationStructure:
+    binder_name: str
+    prop: str | None
+    function: Term
+    argument: Term
+    argument_prop: str | None
+
+
+@dataclass(frozen=True)
+class DualApplicationStructure:
+    binder_name: str
+    prop: str | None
+    condition: Context
+    warrant: Context
+    condition_prop: str | None
+
+
+@dataclass(frozen=True)
 class DualDefeasibleWarrantStructure:
     binder_name: str
     prop: str | None
@@ -81,6 +99,60 @@ def match_alternative_counterexample_structure(node: ProofTerm) -> AlternativeCo
         elements = (left_element, right_element)
 
     return AlternativeCounterexampleStructure(binder_name=binder_name, prop=prop, elements=elements)
+
+
+def match_application_structure(node: ProofTerm) -> ApplicationStructure | None:
+    """Recognize application structures.
+
+    The shape is::
+
+        mu SomeVar:A.<f||v:B*SomeVar:A>
+    """
+    if not isinstance(node, Mu):
+        return None
+    if not isinstance(node.id, ID):
+        return None
+    if not isinstance(node.context, Cons):
+        return None
+    if not isinstance(node.context.context, ID):
+        return None
+    if node.context.context.name != node.id.name:
+        return None
+
+    return ApplicationStructure(
+        binder_name=node.id.name,
+        prop=node.prop,
+        function=node.term,
+        argument=node.context.term,
+        argument_prop=node.context.term.prop,
+    )
+
+
+def match_dual_application_structure(node: ProofTerm) -> DualApplicationStructure | None:
+    """Recognize dual application structures.
+
+    The AST-valid dual shape is::
+
+        mu' SomeVar:A.<SomeVar:A*E:B||F>
+    """
+    if not isinstance(node, Mutilde):
+        return None
+    if not isinstance(node.di, DI):
+        return None
+    if not isinstance(node.term, Sonc):
+        return None
+    if not isinstance(node.term.term, DI):
+         return None
+    if node.term.term.name != node.di.name:
+        return None
+
+    return DualApplicationStructure(
+        binder_name=node.di.name,
+        prop=node.prop,
+        condition=node.term.context,
+        warrant=node.context,
+        condition_prop=node.term.context.prop,
+    )
 
 
 def match_defeasible_warrant_structure(node: ProofTerm) -> DefeasibleWarrantStructure | None:

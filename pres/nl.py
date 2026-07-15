@@ -4,7 +4,9 @@ from pres.decorations import render_prop
 from pres.pattern_render import (
     AlternativeCasesRenderer,
     AlternativeCounterexamplesRenderer,
+    ApplicationRenderer,
     DefeasibleWarrantRenderer,
+    DualApplicationRenderer,
     DualDefeasibleWarrantRenderer,
     PatternRenderContext,
     PatternRenderingRegistry,
@@ -41,7 +43,8 @@ class Rendering_Semantics:
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
+pruefschema_rendering = Rendering_Semantics('   ', ["Es ist genügt zu prüfen, dass "], ["Es ist notwendigerweise zu prüfen, ob "], "Angenommen ", "und ", "Prüfung fehlgeschlagen", "Prüfung fehlgeschlagen", "sofern nichts entgegensteht: ",  "sofern nichts anderes bekannt ist, ist zu verneinen: ", "es ist ausgeschlossen, dass: ", "es liegt vor: ",  pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
@@ -330,32 +333,33 @@ class _NLVisitor(ProofTermVisitor):
 
     def visit_Goal(self, term: Goal):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{term.number}")
+        self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{term.prop}")
         return term
     
     def visit_Laog(self, term: Laog):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{term.number}")
+        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{term.prop}")
         return term
     
     def visit_Deleg(self, term: Deleg):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{term.number}")
+        self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{term.prop}")
         return term
     
     def visit_Geled(self, term: Geled):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{term.number}")
+        self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{term.prop}")
         return term
 
     def visit_DI(self, term: DI):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.DI + f"{term.name}")
+        self.lines.append(f"{indent_str}" + self.semantic.DI + f"{term.prop}")
         return term
 
     def visit_ID(self, term: ID):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.ID)
+        # self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.ID)
+        self.lines.append(f"{indent_str}" + self.semantic.ID + f"{term.prop}")
         return term
 
     def visit_Sonc(self, term: Sonc):

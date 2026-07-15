@@ -1263,6 +1263,7 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         natural_language_argumentative_rendering,
         natural_language_dialectical_rendering,
         natural_language_rendering,
+        pruefschema_rendering,
         vanilla_rendering,
     )
     sem_map = {
@@ -1270,6 +1271,7 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         "dialectical": natural_language_dialectical_rendering,
         "intuitionistic": natural_language_rendering,
         "vanilla": vanilla_rendering,
+        "pruefschema": pruefschema_rendering,
         "mirror": None,       # handled specially below
         "mirror-tree": None,  # handled specially below
     }

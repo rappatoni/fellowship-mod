@@ -1,4 +1,4 @@
-from core.ac.ast import DI, ID, Mu, Mutilde
+from core.ac.ast import Cons, DI, ID, Mu, Mutilde, Sonc
 from pres.nl import natural_language_argumentative_rendering, natural_language_rendering, pretty_natural
 
 
@@ -193,5 +193,45 @@ def test_argumentative_rendering_uses_reversed_dual_defeasible_warrant_pattern_b
             "by support",
             "   oder A erfordert dass",
             "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_application_pattern_block():
+    node = Mu(
+        ID("x", "A"),
+        "A",
+        DI("f", "B->A"),
+        Cons(DI("v", "B"), ID("x", "A")),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A ist hinreichend, dass B",
+            "   weil",
+            "      by f",
+            "      by v",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_dual_application_pattern_block():
+    node = Mutilde(
+        DI("x", "A"),
+        "A",
+        Sonc(ID("x", "A"), DI("e", "B")),
+        ID("f", "B->A"),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A ist notwendig dass B",
+            "   weil",
+            "      done ",
+            "      by e",
         ]
     )

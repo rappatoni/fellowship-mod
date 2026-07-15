@@ -4,7 +4,9 @@ from typing import Callable, Mapping, Protocol
 from core.ac.alt_structure import (
     match_alt_structure,
     match_alternative_counterexample_structure,
+    match_application_structure,
     match_defeasible_warrant_structure,
+    match_dual_application_structure,
     match_dual_defeasible_warrant_structure,
 )
 from core.ac.ast import ProofTerm
@@ -53,7 +55,7 @@ class AlternativeCasesRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Hinreichend für @prop ist",
+        header_template: str = "Die Prüfung, ob @prop zerfällt in folgende Fallgruppen:",
         first_case_label: str = "Fallgruppe:",
         next_case_label: str = "oder Fallgruppe:",
     ):
@@ -88,9 +90,9 @@ class AlternativeCounterexamplesRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Für @prop ist notwendigerweise zu prüfen",
-        first_condition_label: str = "Bedingung",
-        next_condition_label: str = "und Bedingung",
+        header_template: str = "Für @prop ist notwendigerweise zu prüfen:",
+        first_condition_label: str = "Prüfpunkt:",
+        next_condition_label: str = "und Prüfpunkt:",
     ):
         self.header_template = header_template
         self.first_condition_label = first_condition_label
@@ -116,13 +118,76 @@ class AlternativeCounterexamplesRenderer:
         return template.replace("@prop", prop).replace("@binder", binder)
 
 
+class ApplicationRenderer:
+    name = "application"
+
+    def __init__(
+        self,
+        *,
+        header_template: str = "Für @prop ist hinreichend, dass @arg_prop",
+        reason_label: str = "weil",
+        separator_label: str = "und"
+    ):
+        self.header_template = header_template
+        self.reason_label = reason_label
+        self.separator_label = separator_label
+
+    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
+        application = match_application_structure(node)
+        if application is None:
+            return None
+
+        prop = context.render_prop(application.prop)
+        arg_prop = context.render_prop(application.argument_prop)
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, arg_prop=arg_prop, binder=application.binder_name)]
+        lines.append(context.indent_str(1) + self._apply_template(self.reason_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
+        lines.extend(context.render_node(application.function, 2))
+        lines.append(context.indent_str(1) + self.separator_label)
+        lines.extend(context.render_node(application.argument, 2))
+        return PatternRenderResult(lines=lines)
+
+    @staticmethod
+    def _apply_template(template: str, *, prop: str, arg_prop: str, binder: str) -> str:
+        return template.replace("@prop", prop).replace("@A", prop).replace("@arg_prop", arg_prop).replace("@B", arg_prop).replace("@binder", binder)
+
+
+class DualApplicationRenderer:
+    name = "dual_application"
+
+    def __init__(
+        self,
+        *,
+        header_template: str = "Für @prop ist notwendig dass @condition_prop",
+        reason_label: str = "weil",
+    ):
+        self.header_template = header_template
+        self.reason_label = reason_label
+
+    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
+        application = match_dual_application_structure(node)
+        if application is None:
+            return None
+
+        prop = context.render_prop(application.prop)
+        condition_prop = context.render_prop(application.condition_prop)
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, condition_prop=condition_prop, binder=application.binder_name)]
+        lines.append(context.indent_str(1) + self._apply_template(self.reason_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
+        lines.extend(context.render_node(application.warrant, 3))
+        lines.extend(context.render_node(application.condition, 2))
+        return PatternRenderResult(lines=lines)
+
+    @staticmethod
+    def _apply_template(template: str, *, prop: str, condition_prop: str, binder: str) -> str:
+        return template.replace("@prop", prop).replace("@A", prop).replace("@condition_prop", condition_prop).replace("@B", condition_prop).replace("@binder", binder)
+
+
 class DefeasibleWarrantRenderer:
     name = "defeasible_warrant"
 
     def __init__(
         self,
         *,
-        header_template: str = "Für @prop spricht wenn",
+        header_template: str = "Für @prop spricht ",
         exception_label: str = "aber",
     ):
         self.header_template = header_template
@@ -151,9 +216,11 @@ class DualDefeasibleWarrantRenderer:
     def __init__(
         self,
         *,
-        requirement_template: str = "oder @prop erfordert dass",
+        header_template: str = "gegen @prop spricht ",
+        requirement_template: str = "aber",
     ):
         self.requirement_template = requirement_template
+        self.header_template = header_template
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         warrant = match_dual_defeasible_warrant_structure(node)
@@ -161,9 +228,11 @@ class DualDefeasibleWarrantRenderer:
             return None
 
         prop = context.render_prop(warrant.prop)
-        lines = context.render_node(warrant.support, 0)
+        # lines = context.render_node(warrant.support, 0)
+        lines=[context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=warrant.binder_name)]
+        lines.extend(context.render_node(warrant.requirement, 2))
         lines.append(context.indent_str(1) + self._apply_template(self.requirement_template, prop=prop, binder=warrant.binder_name))
-        lines.extend(context.render_node(warrant.requirement, 3))
+        lines.extend(context.render_node(warrant.support, 3))
         return PatternRenderResult(lines=lines)
 
     @staticmethod
