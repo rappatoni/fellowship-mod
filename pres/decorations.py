@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Mapping
@@ -47,14 +48,20 @@ def parse_decorate_command(command: str) -> tuple[str, str]:
     The command is intentionally wrapper-only; callers should store the result
     rather than forwarding it to Fellowship.  Templates may be quoted with
     single or double quotes and may contain positional placeholders @arg1,
-    @arg2, ... .
+    @arg2, ... .  Double-quoted templates use JSON string escaping because
+    importer-generated ``.fspy`` files render them with ``json.dumps``.
     """
     match = _DECORATE_RE.match(command.strip())
     if match is None:
         raise DecorationError("Invalid decorate command. Use: decorate NAME : 'template'.")
     name = match.group("name").strip()
     text = match.group("text").strip()
-    if (len(text) >= 2) and ((text[0] == text[-1] == "'") or (text[0] == text[-1] == '"')):
+    if len(text) >= 2 and text[0] == text[-1] == '"':
+        try:
+            text = json.loads(text)
+        except json.JSONDecodeError as e:
+            raise DecorationError(f"Invalid JSON-quoted decoration template: {e}") from e
+    elif len(text) >= 2 and text[0] == text[-1] == "'":
         text = text[1:-1]
     if not name or not text:
         raise DecorationError("Invalid decorate command. Use: decorate NAME : 'template'.")

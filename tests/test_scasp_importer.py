@@ -118,13 +118,21 @@ def test_scasp_display_markup_is_simplified_to_positional_template():
         )
     )
     payload["answers"][0]["tree"][0]["display"] = {
-        "text": "@Y ist eine \\\\sn{Liste} von \\\\sr{Vogel}{Vögeln.}",
+        # This is the runtime string after JSON has unescaped "\\sn" and "\\sr".
+        "text": "@Y ist eine \\sn{Liste} von \\sr{Vogel}{Vögeln.}",
         "type": "pred",
     }
 
     result = translate_json(payload)
 
-    assert result.decorations == {"Bird_list": "@arg1 ist eine Liste von Vögeln."}
+    assert result.decorations == {"Bird_list": "@arg1 ist eine \\sn{Liste} von \\sr{Vogel}{Vögeln.}"}
+
+    decorate_line = next(line for line in result.to_fspy(name="birds").splitlines() if line.startswith("decorate "))
+    assert decorate_line == 'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste} von \\\\sr{Vogel}{Vögeln.}"'
+    assert parse_decorate_command(decorate_line) == (
+        "Bird_list",
+        "@arg1 ist eine \\sn{Liste} von \\sr{Vogel}{Vögeln.}",
+    )
 
 
 def test_execute_script_handles_decorate_wrapper_only(tmp_path):
@@ -142,12 +150,19 @@ def test_execute_script_handles_decorate_wrapper_only(tmp_path):
             return {}
 
     script = tmp_path / "decorations.fspy"
-    script.write_text("decorate Bird : '@arg1 is a bird'.\ndeclare A:bool.\n")
+    script.write_text(
+        "decorate Bird : '@arg1 is a bird'.\n"
+        'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste}"\n'
+        "declare A:bool.\n"
+    )
     prover = FakeProver()
 
     execute_script(prover, str(script), isolate=False)
 
-    assert prover.decorations == {"Bird": "@arg1 is a bird"}
+    assert prover.decorations == {
+        "Bird": "@arg1 is a bird",
+        "Bird_list": "@arg1 ist eine \\sn{Liste}",
+    }
     assert prover.commands == ["declare A:bool."]
 
 

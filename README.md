@@ -248,10 +248,68 @@ Typical script commands include:
 - wrapper recording commands such as `start argument ...` / `end argument`
 - normalization / rendering commands
 - debate operations such as `support`, `undercut`, `attack`, `rebut`
+- wrapper-only decoration commands such as `decorate NAME : 'template'`
 
 Lines starting with:
 - `#` are echoed as user-facing comments
 - `%` are silent comments
+
+### Decorations
+
+`decorate` commands attach wrapper-side natural-language metadata to names used
+by renderers. They are consumed by AIDA's Python wrapper and are **not** sent to
+Fellowship.
+
+```text
+decorate Bird : '@arg1 is a bird'
+decorate Bird_list : "@arg1 ist eine \\sn{Liste}"
+```
+
+Decoration templates may contain positional placeholders:
+- `@arg1`, `@arg2`, ... refer to the arguments of a rendered proposition.
+- For example, with `decorate Bird : '@arg1 is a bird'`, the proposition
+  `Bird Tweety` may render as `Tweety is a bird`.
+
+Both single-quoted and double-quoted strings are supported intentionally:
+
+- **Single-quoted templates** are convenient for hand-written `.fspy` scripts.
+  Their contents are treated literally by the wrapper parser. This means a
+  single backslash can be written directly:
+
+  ```text
+  decorate Bird_list : '@arg1 ist eine \sn{Liste}'
+  ```
+
+  The main caveat is that the current parser does not define an escaping rule
+  for a literal single quote inside a single-quoted template.
+
+- **Double-quoted templates** use JSON string syntax. They are mainly used by
+  generated `.fspy` files because the importer writes them with `json.dumps`,
+  which safely escapes quotes, backslashes, and other special characters.
+
+  In double-quoted templates, these characters must be escaped as in JSON:
+
+  | Intended runtime character | Double-quoted `.fspy` spelling |
+  | --- | --- |
+  | backslash `\` | `\\` |
+  | double quote `"` | `\"` |
+  | newline | `\n` |
+  | tab | `\t` |
+  | carriage return | `\r` |
+
+  Thus the runtime template `@arg1 ist eine \sn{Liste}` is written in a
+  double-quoted `.fspy` line as:
+
+  ```text
+  decorate Bird_list : "@arg1 ist eine \\sn{Liste}"
+  ```
+
+  When the wrapper reads this line, it JSON-decodes the double-quoted string and
+  stores a template containing one actual backslash: `@arg1 ist eine \sn{Liste}`.
+
+The duplication exists to support two use cases: single quotes are easier for
+humans writing scripts by hand, while double quotes provide a robust,
+standardized escaping format for importer-generated scripts.
 
 ## Important prover-side commands and concepts
 

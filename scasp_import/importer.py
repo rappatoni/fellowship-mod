@@ -710,8 +710,10 @@ def _register_display_decoration(tree: dict[str, Any], atom: _ScaspAtom, state: 
 
 def _display_text_to_template(text: str) -> str:
     template = text.strip()
-    template = re.sub(r"\\\\s[nb]\{([^{}]*)\}", r"\1", template)
-    template = re.sub(r"\\\\sr\{([^{}]*)\}\{([^{}]*)\}", r"\2", template)
+    # JSON unescaping leaves sCASP display markup with a single runtime
+    # backslash, e.g. the JSON text "\\sn{Liste}" becomes "\sn{Liste}".
+    # Keep that markup intact; only normalize sCASP variables to positional
+    # wrapper placeholders.
     seen: dict[str, int] = {}
 
     def repl(match: re.Match[str]) -> str:
