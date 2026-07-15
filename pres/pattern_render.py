@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from typing import Callable, Mapping, Protocol
 
-from core.ac.alt_structure import match_alt_structure
-from core.ac.ast import ProofTerm, Term
+from core.ac.alt_structure import (
+    match_alt_structure,
+    match_alternative_counterexample_structure,
+    match_defeasible_warrant_structure,
+    match_dual_defeasible_warrant_structure,
+)
+from core.ac.ast import ProofTerm
 
 
 @dataclass(frozen=True)
@@ -70,6 +75,95 @@ class AlternativeCasesRenderer:
             child_lines = context.render_node(element, 2)
             lines.extend(child_lines)
 
+        return PatternRenderResult(lines=lines)
+
+    @staticmethod
+    def _apply_template(template: str, *, prop: str, binder: str) -> str:
+        return template.replace("@prop", prop).replace("@binder", binder)
+
+
+class AlternativeCounterexamplesRenderer:
+    name = "alternative_counterexamples"
+
+    def __init__(
+        self,
+        *,
+        header_template: str = "Für @prop ist notwendigerweise zu prüfen",
+        first_condition_label: str = "Bedingung",
+        next_condition_label: str = "und Bedingung",
+    ):
+        self.header_template = header_template
+        self.first_condition_label = first_condition_label
+        self.next_condition_label = next_condition_label
+
+    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
+        alt = match_alternative_counterexample_structure(node)
+        if alt is None:
+            return None
+
+        prop = context.render_prop(alt.prop)
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=alt.binder_name)]
+
+        for index, element in enumerate(alt.elements):
+            label = self.first_condition_label if index == 0 else self.next_condition_label
+            lines.append(context.indent_str(1) + self._apply_template(label, prop=prop, binder=alt.binder_name))
+            lines.extend(context.render_node(element, 3))
+
+        return PatternRenderResult(lines=lines)
+
+    @staticmethod
+    def _apply_template(template: str, *, prop: str, binder: str) -> str:
+        return template.replace("@prop", prop).replace("@binder", binder)
+
+
+class DefeasibleWarrantRenderer:
+    name = "defeasible_warrant"
+
+    def __init__(
+        self,
+        *,
+        header_template: str = "Für @prop spricht wenn",
+        exception_label: str = "aber",
+    ):
+        self.header_template = header_template
+        self.exception_label = exception_label
+
+    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
+        warrant = match_defeasible_warrant_structure(node)
+        if warrant is None:
+            return None
+
+        prop = context.render_prop(warrant.prop)
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=warrant.binder_name)]
+        lines.extend(context.render_node(warrant.support, 2))
+        lines.append(context.indent_str(1) + self._apply_template(self.exception_label, prop=prop, binder=warrant.binder_name))
+        lines.extend(context.render_node(warrant.exception, 3))
+        return PatternRenderResult(lines=lines)
+
+    @staticmethod
+    def _apply_template(template: str, *, prop: str, binder: str) -> str:
+        return template.replace("@prop", prop).replace("@binder", binder)
+
+
+class DualDefeasibleWarrantRenderer:
+    name = "dual_defeasible_warrant"
+
+    def __init__(
+        self,
+        *,
+        requirement_template: str = "oder @prop erfordert dass",
+    ):
+        self.requirement_template = requirement_template
+
+    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
+        warrant = match_dual_defeasible_warrant_structure(node)
+        if warrant is None:
+            return None
+
+        prop = context.render_prop(warrant.prop)
+        lines = context.render_node(warrant.support, 0)
+        lines.append(context.indent_str(1) + self._apply_template(self.requirement_template, prop=prop, binder=warrant.binder_name))
+        lines.extend(context.render_node(warrant.requirement, 3))
         return PatternRenderResult(lines=lines)
 
     @staticmethod

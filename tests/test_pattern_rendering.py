@@ -69,3 +69,129 @@ def test_pattern_renderer_resumes_normal_rendering_at_captured_terms():
     assert "      We will argue for B(support)" in out
     assert "         by fact" in out
     assert "      by case2" in out
+
+
+def _counterexample_pair(name="alt", prop="A", left=None, right=None):
+    left = left or ID("cond1", prop)
+    right = right or ID("cond2", prop)
+    return Mutilde(
+        DI(name, prop),
+        prop,
+        Mu(ID("_", prop), prop, DI(name, prop), left),
+        Mutilde(DI("_", prop), prop, DI(name, prop), right),
+    )
+
+
+def test_argumentative_rendering_uses_alternative_counterexample_pattern_block():
+    node = _counterexample_pair("whatever", "A", ID("cond1", "A"), ID("cond2", "A"))
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A ist notwendigerweise zu prüfen",
+            "   Bedingung",
+            "      done ",
+            "   und Bedingung",
+            "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_flattens_left_nested_counterexamples():
+    cond1 = ID("cond1", "A")
+    cond2 = ID("cond2", "A")
+    cond3 = ID("cond3", "A")
+    node = _counterexample_pair("head", "A", _counterexample_pair("tail", "A", cond1, cond2), cond3)
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A ist notwendigerweise zu prüfen",
+            "   Bedingung",
+            "      done ",
+            "   und Bedingung",
+            "      done ",
+            "   und Bedingung",
+            "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_defeasible_warrant_pattern_block():
+    node = Mu(
+        ID("w", "A"),
+        "A",
+        Mu(ID("_", "A"), "A", DI("support", "A"), ID("w", "A")),
+        Mutilde(DI("_", "A"), "A", DI("support", "A"), ID("exception", "A")),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A spricht wenn",
+            "      by support",
+            "   aber",
+            "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_dual_defeasible_warrant_pattern_block():
+    node = Mutilde(
+        DI("w", "A"),
+        "A",
+        Mu(ID("_", "A"), "A", DI("support", "A"), ID("requirement", "A")),
+        Mutilde(DI("_", "A"), "A", DI("w", "A"), ID("requirement", "A")),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "by support",
+            "   oder A erfordert dass",
+            "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_reversed_defeasible_warrant_pattern_block():
+    node = Mu(
+        ID("w", "A"),
+        "A",
+        Mu(ID("_", "A"), "A", DI("support", "A"), ID("exception", "A")),
+        Mutilde(DI("_", "A"), "A", DI("support", "A"), ID("w", "A")),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Für A spricht wenn",
+            "      by support",
+            "   aber",
+            "      done ",
+        ]
+    )
+
+
+def test_argumentative_rendering_uses_reversed_dual_defeasible_warrant_pattern_block():
+    node = Mutilde(
+        DI("w", "A"),
+        "A",
+        Mu(ID("_", "A"), "A", DI("w", "A"), ID("requirement", "A")),
+        Mutilde(DI("_", "A"), "A", DI("support", "A"), ID("requirement", "A")),
+    )
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "by support",
+            "   oder A erfordert dass",
+            "      done ",
+        ]
+    )

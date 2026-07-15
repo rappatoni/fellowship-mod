@@ -1,7 +1,14 @@
 import re
 from typing import Mapping
 from pres.decorations import render_prop
-from pres.pattern_render import AlternativeCasesRenderer, PatternRenderContext, PatternRenderingRegistry
+from pres.pattern_render import (
+    AlternativeCasesRenderer,
+    AlternativeCounterexamplesRenderer,
+    DefeasibleWarrantRenderer,
+    DualDefeasibleWarrantRenderer,
+    PatternRenderContext,
+    PatternRenderingRegistry,
+)
 from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI
 
 def pretty_natural(
@@ -34,7 +41,7 @@ class Rendering_Semantics:
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer()])
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
