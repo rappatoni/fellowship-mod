@@ -1,6 +1,7 @@
 import re
 from typing import Mapping
 from pres.decorations import render_prop
+from pres.pattern_render import AlternativeCasesRenderer, PatternRenderContext, PatternRenderingRegistry
 from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI
 
 def pretty_natural(
@@ -15,7 +16,7 @@ def pretty_natural(
     return '\n'.join(lines)
 
 class Rendering_Semantics:
-    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI):
+    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -29,10 +30,11 @@ class Rendering_Semantics:
         #self.Done = Done
         self.ID = ID
         self.DI = DI
+        self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ")
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer()])
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
@@ -216,6 +218,45 @@ class _NLVisitor(ProofTermVisitor):
             return self.visit(node)
         finally:
             self.indent = old
+
+    def visit(self, node):
+        if self._try_pattern_render(node):
+            return node
+        return super().visit(node)
+
+    def _try_pattern_render(self, node) -> bool:
+        if node is None:
+            return False
+        registry = getattr(self.semantic, "pattern_registry", None)
+        if registry is None or not registry.renderers:
+            return False
+
+        context = PatternRenderContext(
+            indent=self.indent,
+            indentation=self.semantic.indentation,
+            declarations=self.declarations,
+            decorations=self.decorations,
+            render_prop=self._render_prop,
+            render_node=self._render_node_lines,
+        )
+        result = registry.try_render(node, context)
+        if result is None:
+            return False
+
+        self.lines.extend(result.lines)
+        return True
+
+    def _render_node_lines(self, node, indent_delta: int = 0) -> list[str]:
+        child_lines: list[str] = []
+        child_visitor = _NLVisitor(
+            self.semantic,
+            child_lines,
+            indent=self.indent + indent_delta,
+            declarations=self.declarations,
+            decorations=self.decorations,
+        )
+        child_visitor.visit(node)
+        return child_lines
 
     def visit_Mu(self, term: Mu):
         indent_str = self._indent_str()

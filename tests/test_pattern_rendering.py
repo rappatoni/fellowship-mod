@@ -1,0 +1,71 @@
+from core.ac.ast import DI, ID, Mu, Mutilde
+from pres.nl import natural_language_argumentative_rendering, natural_language_rendering, pretty_natural
+
+
+def _alt_pair(name="alt", prop="A", left=None, right=None):
+    left = left or DI("case1", prop)
+    right = right or DI("case2", prop)
+    return Mu(
+        ID(name, prop),
+        prop,
+        Mu(ID("_", prop), prop, left, ID(name, prop)),
+        Mutilde(DI("_", prop), prop, right, ID(name, prop)),
+    )
+
+
+def test_argumentative_rendering_uses_alternative_pattern_block():
+    node = _alt_pair("whatever", "A", DI("case1", "A"), DI("case2", "A"))
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Hinreichend für A ist",
+            "   Fallgruppe:",
+            "      by case1",
+            "   oder Fallgruppe:",
+            "      by case2",
+        ]
+    )
+
+
+def test_argumentative_rendering_flattens_right_nested_alternatives():
+    case1 = DI("case1", "A")
+    case2 = DI("case2", "A")
+    case3 = DI("case3", "A")
+    node = _alt_pair("head", "A", case1, _alt_pair("tail", "A", case2, case3))
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert out == "\n".join(
+        [
+            "Hinreichend für A ist",
+            "   Fallgruppe:",
+            "      by case1",
+            "   oder Fallgruppe:",
+            "      by case2",
+            "   oder Fallgruppe:",
+            "      by case3",
+        ]
+    )
+
+
+def test_non_argumentative_rendering_does_not_use_demo_pattern():
+    node = _alt_pair("whatever", "A", DI("case1", "A"), DI("case2", "A"))
+
+    out = pretty_natural(node, natural_language_rendering)
+
+    assert "Hinreichend für" not in out
+    assert "we need to prove A(whatever)" in out
+
+
+def test_pattern_renderer_resumes_normal_rendering_at_captured_terms():
+    nested_case = Mu(ID("support", "B"), "B", DI("fact", "B"), ID("k", "B"))
+    node = _alt_pair("whatever", "A", nested_case, DI("case2", "A"))
+
+    out = pretty_natural(node, natural_language_argumentative_rendering)
+
+    assert "Hinreichend für A ist" in out
+    assert "      We will argue for B(support)" in out
+    assert "         by fact" in out
+    assert "      by case2" in out
