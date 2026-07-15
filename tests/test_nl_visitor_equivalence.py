@@ -4,7 +4,7 @@ from pres.nl import (
     natural_language_dialectical_rendering,
     natural_language_argumentative_rendering,
 )
-from core.ac.ast import Mu, Mutilde, Lamda, Cons, Sonc, Goal, ID, DI
+from core.ac.ast import Admal, Mu, Mutilde, Lamda, Cons, Sonc, Goal, ID, DI, Hyp, Pyh
 
 
 def test_nl_simple_mu_cons_goal_di_id_matches_expected():
@@ -20,10 +20,10 @@ def test_nl_simple_mu_cons_goal_di_id_matches_expected():
     assert out == "\n".join(
         [
             "we need to prove A(x)",
-            "   by f",
+            "   by B -> A",
             "   and",
-            "   ? 1",
-            "done ",
+            "   ? B",
+            "done x",
         ]
     )
 
@@ -101,3 +101,27 @@ def test_vanilla_rendering_mutilde_uses_tree_guides():
     assert "μ'k:A.<" in out
     assert "├─ f:A||" in out
     assert "└─ alpha:A" in out
+
+
+def test_nl_unbound_id_renders_prop_but_bound_id_renders_name():
+    unbound = ID("free", "A")
+    assert pretty_natural(unbound, natural_language_rendering) == "done A"
+
+    bound = Mu(ID("x", "A"), "A", DI("fact", "A"), ID("x", "A"))
+    out = pretty_natural(bound, natural_language_rendering)
+    assert out.splitlines()[-1] == "done x"
+
+
+def test_nl_unbound_di_renders_prop_but_bound_di_renders_name():
+    unbound = DI("fact", "A")
+    assert pretty_natural(unbound, natural_language_rendering) == "by A"
+
+    bound = Lamda(Hyp(DI("h", "A"), "A"), DI("h", "A"))
+    out = pretty_natural(bound, natural_language_rendering)
+    assert out.splitlines()[-1] == "by h"
+
+
+def test_nl_admal_tracks_bound_id_name():
+    bound = Admal(Pyh(ID("k", "A"), "A"), ID("k", "A"))
+    out = pretty_natural(bound, natural_language_rendering)
+    assert out == "done k"

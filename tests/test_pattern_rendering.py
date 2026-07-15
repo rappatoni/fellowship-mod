@@ -20,11 +20,11 @@ def test_argumentative_rendering_uses_alternative_pattern_block():
 
     assert out == "\n".join(
         [
-            "Hinreichend für A ist",
+            "Die Prüfung, ob A zerfällt in folgende Fallgruppen:",
             "   Fallgruppe:",
-            "      by case1",
+            "      by A",
             "   oder Fallgruppe:",
-            "      by case2",
+            "      by A",
         ]
     )
 
@@ -39,13 +39,13 @@ def test_argumentative_rendering_flattens_right_nested_alternatives():
 
     assert out == "\n".join(
         [
-            "Hinreichend für A ist",
+            "Die Prüfung, ob A zerfällt in folgende Fallgruppen:",
             "   Fallgruppe:",
-            "      by case1",
+            "      by A",
             "   oder Fallgruppe:",
-            "      by case2",
+            "      by A",
             "   oder Fallgruppe:",
-            "      by case3",
+            "      by A",
         ]
     )
 
@@ -55,7 +55,7 @@ def test_non_argumentative_rendering_does_not_use_demo_pattern():
 
     out = pretty_natural(node, natural_language_rendering)
 
-    assert "Hinreichend für" not in out
+    assert "zerfällt in folgende Fallgruppen" not in out
     assert "we need to prove A(whatever)" in out
 
 
@@ -65,10 +65,10 @@ def test_pattern_renderer_resumes_normal_rendering_at_captured_terms():
 
     out = pretty_natural(node, natural_language_argumentative_rendering)
 
-    assert "Hinreichend für A ist" in out
+    assert "Die Prüfung, ob A zerfällt in folgende Fallgruppen:" in out
     assert "      We will argue for B(support)" in out
-    assert "         by fact" in out
-    assert "      by case2" in out
+    assert "         by B" in out
+    assert "      by A" in out
 
 
 def _counterexample_pair(name="alt", prop="A", left=None, right=None):
@@ -89,11 +89,11 @@ def test_argumentative_rendering_uses_alternative_counterexample_pattern_block()
 
     assert out == "\n".join(
         [
-            "Für A ist notwendigerweise zu prüfen",
-            "   Bedingung",
-            "      done ",
-            "   und Bedingung",
-            "      done ",
+            "Für A ist notwendigerweise zu prüfen:",
+            "   Prüfpunkt:",
+            "         done A",
+            "   und Prüfpunkt:",
+            "         done A",
         ]
     )
 
@@ -108,13 +108,13 @@ def test_argumentative_rendering_flattens_left_nested_counterexamples():
 
     assert out == "\n".join(
         [
-            "Für A ist notwendigerweise zu prüfen",
-            "   Bedingung",
-            "      done ",
-            "   und Bedingung",
-            "      done ",
-            "   und Bedingung",
-            "      done ",
+            "Für A ist notwendigerweise zu prüfen:",
+            "   Prüfpunkt:",
+            "         done A",
+            "   und Prüfpunkt:",
+            "         done A",
+            "   und Prüfpunkt:",
+            "         done A",
         ]
     )
 
@@ -131,10 +131,10 @@ def test_argumentative_rendering_uses_defeasible_warrant_pattern_block():
 
     assert out == "\n".join(
         [
-            "Für A spricht wenn",
-            "      by support",
+            "Für A spricht ",
+            "      by A",
             "   aber",
-            "      done ",
+            "         done A",
         ]
     )
 
@@ -151,9 +151,10 @@ def test_argumentative_rendering_uses_dual_defeasible_warrant_pattern_block():
 
     assert out == "\n".join(
         [
-            "by support",
-            "   oder A erfordert dass",
-            "      done ",
+            "gegen A spricht ",
+            "      done A",
+            "   aber",
+            "         by A",
         ]
     )
 
@@ -170,10 +171,10 @@ def test_argumentative_rendering_uses_reversed_defeasible_warrant_pattern_block(
 
     assert out == "\n".join(
         [
-            "Für A spricht wenn",
-            "      by support",
+            "Für A spricht ",
+            "      by A",
             "   aber",
-            "      done ",
+            "         done A",
         ]
     )
 
@@ -190,9 +191,10 @@ def test_argumentative_rendering_uses_reversed_dual_defeasible_warrant_pattern_b
 
     assert out == "\n".join(
         [
-            "by support",
-            "   oder A erfordert dass",
-            "      done ",
+            "gegen A spricht ",
+            "      done A",
+            "   aber",
+            "         by A",
         ]
     )
 
@@ -211,8 +213,9 @@ def test_argumentative_rendering_uses_application_pattern_block():
         [
             "Für A ist hinreichend, dass B",
             "   weil",
-            "      by f",
-            "      by v",
+            "      by B -> A",
+            "   und",
+            "      by B",
         ]
     )
 
@@ -221,7 +224,7 @@ def test_argumentative_rendering_uses_dual_application_pattern_block():
     node = Mutilde(
         DI("x", "A"),
         "A",
-        Sonc(ID("x", "A"), DI("e", "B")),
+        Sonc(ID("e", "B"), DI("x", "A")),
         ID("f", "B->A"),
     )
 
@@ -231,7 +234,7 @@ def test_argumentative_rendering_uses_dual_application_pattern_block():
         [
             "Für A ist notwendig dass B",
             "   weil",
-            "      done ",
-            "      by e",
+            "         done B -> A",
+            "      done B",
         ]
     )

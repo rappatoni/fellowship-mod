@@ -244,12 +244,12 @@ def test_match_application_structure_extracts_function_and_argument():
 
 
 def test_match_dual_application_structure_extracts_warrant_and_condition():
-    condition = DI("e", "B")
+    condition = ID("e", "B")
     warrant = ID("f", "B->A")
     node = Mutilde(
         DI("x", "A"),
         "A",
-        Sonc(ID("x", "A"), condition),
+        Sonc(condition, DI("x", "A")),
         warrant,
     )
 

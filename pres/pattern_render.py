@@ -124,13 +124,15 @@ class ApplicationRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Für @prop ist hinreichend, dass @arg_prop",
+        header_template: str = "Zur Prüfung von @prop (@binder)ist hinreichend, dass @arg_prop",
         reason_label: str = "weil",
-        separator_label: str = "und"
+        separator_label: str = "und",
+        end_label: str = "Prüfung @binder abgeschlossen",
     ):
         self.header_template = header_template
         self.reason_label = reason_label
         self.separator_label = separator_label
+        self.end_label = end_label
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         application = match_application_structure(node)
@@ -144,6 +146,7 @@ class ApplicationRenderer:
         lines.extend(context.render_node(application.function, 2))
         lines.append(context.indent_str(1) + self.separator_label)
         lines.extend(context.render_node(application.argument, 2))
+        lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
         return PatternRenderResult(lines=lines)
 
     @staticmethod
@@ -157,11 +160,13 @@ class DualApplicationRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Für @prop ist notwendig dass @condition_prop",
+        header_template: str = "Zur Prüfungvon  @prop (@binder) ist notwendig dass @condition_prop",
         reason_label: str = "weil",
+        end_label : str = "Prüfung @binder abgeschlossen.",
     ):
         self.header_template = header_template
         self.reason_label = reason_label
+        self.end_label = end_label
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         application = match_dual_application_structure(node)
@@ -174,6 +179,7 @@ class DualApplicationRenderer:
         lines.append(context.indent_str(1) + self._apply_template(self.reason_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
         lines.extend(context.render_node(application.warrant, 3))
         lines.extend(context.render_node(application.condition, 2))
+        lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
         return PatternRenderResult(lines=lines)
 
     @staticmethod

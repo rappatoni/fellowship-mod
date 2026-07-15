@@ -44,7 +44,7 @@ class Rendering_Semantics:
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
 natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
-pruefschema_rendering = Rendering_Semantics('   ', ["Es ist genügt zu prüfen, dass "], ["Es ist notwendigerweise zu prüfen, ob "], "Angenommen ", "und ", "Prüfung fehlgeschlagen", "Prüfung fehlgeschlagen", "sofern nichts entgegensteht: ",  "sofern nichts anderes bekannt ist, ist zu verneinen: ", "es ist ausgeschlossen, dass: ", "es liegt vor: ",  pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
+pruefschema_rendering = Rendering_Semantics('   ', ["Es ist genügt zu prüfen, dass "], ["Es ist notwendigerweise zu prüfen, ob "], "Angenommen ", "und ", "Prüfung fehlgeschlagen", "Prüfung fehlgeschlagen", "sofern nichts entgegensteht: ",  "sofern nichts anderes bekannt ist, ist zu verneinen: ", ["es ist ausgeschlossen, dass: ", "Prüfung abgeschlossen: "], ["es liegt vor: ", "Prüfung fehlgeschlagen: "],  pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
@@ -207,6 +207,8 @@ class _NLVisitor(ProofTermVisitor):
         *,
         declarations: Mapping[str, str] | None = None,
         decorations: Mapping[str, str] | None = None,
+        bound_ids: set[str] | None = None,
+        bound_dis: set[str] | None = None,
     ):
         super().__init__()
         self.semantic = semantic
@@ -214,6 +216,8 @@ class _NLVisitor(ProofTermVisitor):
         self.indent = indent
         self.declarations = declarations or {}
         self.decorations = decorations or {}
+        self.bound_ids = set(bound_ids or ())
+        self.bound_dis = set(bound_dis or ())
 
     def _indent_str(self) -> str:
         return self.semantic.indentation * self.indent
@@ -264,6 +268,8 @@ class _NLVisitor(ProofTermVisitor):
             indent=self.indent + indent_delta,
             declarations=self.declarations,
             decorations=self.decorations,
+            bound_ids=self.bound_ids,
+            bound_dis=self.bound_dis,
         )
         child_visitor.visit(node)
         return child_lines
@@ -292,8 +298,14 @@ class _NLVisitor(ProofTermVisitor):
         #     return term
 
         self.lines.append(f"{indent_str}" + self.semantic.Mu[0] + f"{self._render_prop(term.prop)}" + f"({term.id.name})")
-        self._with_indent(1, term.term)
-        self._with_indent(1, term.context)
+        old_bound_ids = self.bound_ids
+        self.bound_ids = set(old_bound_ids)
+        self.bound_ids.add(term.id.name)
+        try:
+            self._with_indent(1, term.term)
+            self._with_indent(1, term.context)
+        finally:
+            self.bound_ids = old_bound_ids
         return term
 
     def visit_Mutilde(self, term: Mutilde):
@@ -314,14 +326,36 @@ class _NLVisitor(ProofTermVisitor):
         #     return term
 
         self.lines.append(f"{indent_str}" + self.semantic.Mutilde[0] + f"{self._render_prop(term.prop)} " + f"({term.di.name})")
-        self._with_indent(1, term.term)
-        self._with_indent(1, term.context)
+        old_bound_dis = self.bound_dis
+        self.bound_dis = set(old_bound_dis)
+        self.bound_dis.add(term.di.name)
+        try:
+            self._with_indent(1, term.term)
+            self._with_indent(1, term.context)
+        finally:
+            self.bound_dis = old_bound_dis
         return term
 
     def visit_Lamda(self, term: Lamda):
         indent_str = self._indent_str()
         self.lines.append(f"{indent_str}" + self.semantic.Lamda + f"{self._render_prop(term.di.prop)}" + f"({term.di.di.name})")
-        self.visit(term.term)
+        old_bound_dis = self.bound_dis
+        self.bound_dis = set(old_bound_dis)
+        self.bound_dis.add(term.di.di.name)
+        try:
+            self.visit(term.term)
+        finally:
+            self.bound_dis = old_bound_dis
+        return term
+
+    def visit_Admal(self, term: Admal):
+        old_bound_ids = self.bound_ids
+        self.bound_ids = set(old_bound_ids)
+        self.bound_ids.add(term.id.id.name)
+        try:
+            self.visit(term.context)
+        finally:
+            self.bound_ids = old_bound_ids
         return term
 
     def visit_Cons(self, term: Cons):
@@ -353,13 +387,18 @@ class _NLVisitor(ProofTermVisitor):
 
     def visit_DI(self, term: DI):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.DI + f"{term.prop}")
+        if term.name in self.bound_dis:
+            self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.DI[1] + f"{term.name}")
+        else:
+            self.lines.append(f"{indent_str}" + self.semantic.DI[0] + f"{self._render_prop(term.prop)}")
         return term
 
     def visit_ID(self, term: ID):
         indent_str = self._indent_str()
-        # self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.ID)
-        self.lines.append(f"{indent_str}" + self.semantic.ID + f"{term.prop}")
+        if term.name in self.bound_ids:
+            self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.ID[1] + f"{term.name}")
+        else:
+            self.lines.append(f"{indent_str}" + self.semantic.ID[0] + f"{self._render_prop(term.prop)}")
         return term
 
     def visit_Sonc(self, term: Sonc):
