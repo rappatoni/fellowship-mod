@@ -45,6 +45,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
         self.declarations: Dict[str, str] = {}
+        self.decorations: Dict[str, str] = {}
  
 
     @property
@@ -347,6 +348,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
     #         'current_goal': current_goal,
     #     }
     
+    def register_decoration(self, name: str, template: str) -> None:
+        """Register wrapper-side natural-language decoration metadata."""
+        self.decorations[name] = template
+        logger.info("'%s' decorated as '%s'.", name, template)
+
     def register_custom_tactic(self, name: str, function: Callable[..., Any]) -> None:
         """ Register a custom tactic with its associated function """
         self.custom_tactics[name] = function

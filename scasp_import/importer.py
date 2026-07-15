@@ -30,6 +30,7 @@ class ScaspImportResult:
     warnings: list[str] = field(default_factory=list)
     constants: set[str] = field(default_factory=set)
     predicates: dict[str, int] = field(default_factory=dict)
+    decorations: dict[str, str] = field(default_factory=dict)
 
     def setup_commands(self, *, include_logic: bool = True) -> list[str]:
         """Render deterministic Fellowship setup commands for replaying ``body``."""
@@ -72,6 +73,9 @@ class ScaspImportResult:
         if include_warnings:
             lines.extend(f"# import warning: {warning}" for warning in self.warnings)
         lines.extend(self.setup_commands(include_logic=include_logic))
+        for deco_name in sorted(self.decorations):
+            template = json.dumps(self.decorations[deco_name], ensure_ascii=False)
+            lines.append(f"decorate {deco_name} : {template}")
         strict_part = " strict" if strict else ""
         conclusion = prop_to_command(self.conclusion)
         lines.append(f"register {name}{strict_part} : {conclusion} := {self.proof_term_string()}")
@@ -109,6 +113,7 @@ class _TranslationState:
     warnings: list[str] = field(default_factory=list)
     constants: set[str] = field(default_factory=set)
     predicates: dict[str, int] = field(default_factory=dict)
+    decorations: dict[str, str] = field(default_factory=dict)
     placeholder_counter: int = 0
     binder_counter: int = 0
 
@@ -152,6 +157,13 @@ class _TranslationState:
 
     def warn(self, message: str) -> None:
         self.warnings.append(message)
+
+    def decorate(self, name: str, template: str) -> None:
+        existing = self.decorations.get(name)
+        if existing is not None and existing != template:
+            self.warn(f"Conflicting display decorations for '{name}'; keeping the first one.")
+            return
+        self.decorations[name] = template
 
 
 @dataclass(frozen=True)
@@ -308,6 +320,7 @@ def translate_json(data: dict[str, Any], *, answer_index: int | None = None) -> 
             warnings=state.warnings,
             constants=state.constants,
             predicates=state.predicates,
+            decorations=state.decorations,
         )
 
     translated_answers: list[_TranslatedTree] = []
@@ -340,6 +353,7 @@ def translate_json(data: dict[str, Any], *, answer_index: int | None = None) -> 
         warnings=state.warnings,
         constants=state.constants,
         predicates=state.predicates,
+        decorations=state.decorations,
     )
 
 
@@ -452,6 +466,7 @@ def translate_tree(tree: dict[str, Any], state: _TranslationState | None = None)
 
     prop = atom.prop
     _register_atom_signature(atom, state)
+    _register_display_decoration(tree, atom, state)
 
     children = tree.get("children", [])
     if not isinstance(children, list):
@@ -679,6 +694,33 @@ def _term_from_json(node: Any, state: _TranslationState) -> _ScaspTerm:
         state.add_constant(name)
         return _ScaspTerm(name=name, raw=raw)
     raise ScaspImportError(f"Unsupported sCASP term node: {node!r}")
+
+
+def _register_display_decoration(tree: dict[str, Any], atom: _ScaspAtom, state: _TranslationState) -> None:
+    display = tree.get("display")
+    if not isinstance(display, dict):
+        return
+    text = display.get("text")
+    if not isinstance(text, str) or not text.strip():
+        return
+    if atom.raw == "o_nmr_check":
+        return
+    state.decorate(atom.symbol, _display_text_to_template(text))
+
+
+def _display_text_to_template(text: str) -> str:
+    template = text.strip()
+    template = re.sub(r"\\\\s[nb]\{([^{}]*)\}", r"\1", template)
+    template = re.sub(r"\\\\sr\{([^{}]*)\}\{([^{}]*)\}", r"\2", template)
+    seen: dict[str, int] = {}
+
+    def repl(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in seen:
+            seen[name] = len(seen) + 1
+        return f"@arg{seen[name]}"
+
+    return re.sub(r"@([A-Za-z_][A-Za-z0-9_]*)", repl, template)
 
 
 def _register_atom_signature(atom: _ScaspAtom, state: _TranslationState) -> None:

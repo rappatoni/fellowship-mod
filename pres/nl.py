@@ -1,9 +1,17 @@
 import re
+from typing import Mapping
+from pres.decorations import render_prop
 from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI
 
-def pretty_natural(proof_term: "ProofTerm", semantic: "Rendering_Semantics") -> str:
+def pretty_natural(
+    proof_term: "ProofTerm",
+    semantic: "Rendering_Semantics",
+    *,
+    declarations: Mapping[str, str] | None = None,
+    decorations: Mapping[str, str] | None = None,
+) -> str:
     lines = []
-    traverse_proof_term(semantic, proof_term, lines, indent=0)
+    traverse_proof_term(semantic, proof_term, lines, indent=0, declarations=declarations, decorations=decorations)
     return '\n'.join(lines)
 
 class Rendering_Semantics:
@@ -179,14 +187,27 @@ class _VanillaVisitor(ProofTermVisitor):
 
 
 class _NLVisitor(ProofTermVisitor):
-    def __init__(self, semantic: Rendering_Semantics, lines: list[str], indent: int = 0):
+    def __init__(
+        self,
+        semantic: Rendering_Semantics,
+        lines: list[str],
+        indent: int = 0,
+        *,
+        declarations: Mapping[str, str] | None = None,
+        decorations: Mapping[str, str] | None = None,
+    ):
         super().__init__()
         self.semantic = semantic
         self.lines = lines
         self.indent = indent
+        self.declarations = declarations or {}
+        self.decorations = decorations or {}
 
     def _indent_str(self) -> str:
         return self.semantic.indentation * self.indent
+
+    def _render_prop(self, prop: str | None) -> str:
+        return render_prop(prop, self.declarations, self.decorations)
 
     def _with_indent(self, delta: int, node):
         old = self.indent
@@ -219,7 +240,7 @@ class _NLVisitor(ProofTermVisitor):
         #     self._with_indent(1, term.term)
         #     return term
 
-        self.lines.append(f"{indent_str}" + self.semantic.Mu[0] + f"{term.prop}" + f"({term.id.name})")
+        self.lines.append(f"{indent_str}" + self.semantic.Mu[0] + f"{self._render_prop(term.prop)}" + f"({term.id.name})")
         self._with_indent(1, term.term)
         self._with_indent(1, term.context)
         return term
@@ -241,14 +262,14 @@ class _NLVisitor(ProofTermVisitor):
         #     self.visit(term.context)
         #     return term
 
-        self.lines.append(f"{indent_str}" + self.semantic.Mutilde[0] + f"{term.prop} " + f"({term.di.name})")
+        self.lines.append(f"{indent_str}" + self.semantic.Mutilde[0] + f"{self._render_prop(term.prop)} " + f"({term.di.name})")
         self._with_indent(1, term.term)
         self._with_indent(1, term.context)
         return term
 
     def visit_Lamda(self, term: Lamda):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Lamda + f"{term.di.prop}" + f"({term.di.di.name})")
+        self.lines.append(f"{indent_str}" + self.semantic.Lamda + f"{self._render_prop(term.di.prop)}" + f"({term.di.di.name})")
         self.visit(term.term)
         return term
 
@@ -303,8 +324,8 @@ class _NLVisitor(ProofTermVisitor):
 
 
 
-def traverse_proof_term(semantic, term, lines, indent):
+def traverse_proof_term(semantic, term, lines, indent, *, declarations=None, decorations=None):
     if semantic is vanilla_rendering:
         _VanillaVisitor(semantic, lines, indent=indent).render(term)
     else:
-        _NLVisitor(semantic, lines, indent=indent).visit(term)
+        _NLVisitor(semantic, lines, indent=indent, declarations=declarations, decorations=decorations).visit(term)

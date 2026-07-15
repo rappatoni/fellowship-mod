@@ -6,9 +6,12 @@ from core.ac.ast import Cons, DI, Goal, ID, Mu, Mutilde, Sonc
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
+from pres.nl import natural_language_argumentative_rendering, pretty_natural
+from pres.tree import render_acceptance_tree_dot
+from pres.decorations import parse_decorate_command, render_declaration, render_prop
 from scasp_import import importer
 from scasp_import.importer import atom_to_prop, run_scasp_json, translate_json
-from wrap.cli import _handle_import_command
+from wrap.cli import _handle_import_command, execute_script
 
 
 def _answer_tree(*trees):
@@ -44,7 +47,111 @@ def _var(name):
     return {"type": "var", "name": name}
 
 
-def test_atom_to_prop_capitalizes_only_first_character():
+def test_decoration_command_parser_and_compositional_rendering():
+    assert parse_decorate_command("decorate Bird : '@arg1 is a bird'.") == ("Bird", "@arg1 is a bird")
+
+    declarations = {
+        "A": "bool",
+        "B": "bool",
+        "ax": "A -> B",
+        "bird_tweety": "Bird Tweety",
+    }
+    decorations = {
+        "A": "Foo",
+        "B": "Bar",
+        "ax": "If @arg1 then @arg2",
+        "Bird": "@arg1 is a bird",
+    }
+
+    assert render_prop("Bird Tweety", declarations, decorations) == "Tweety is a bird"
+    assert render_declaration("bird_tweety", declarations, decorations) == "Tweety is a bird"
+    assert render_declaration("ax", declarations, decorations) == "If Foo then Bar"
+
+
+def test_natural_language_and_tree_renderers_consume_decorations():
+    body = Mu(ID("alpha", "Bird Tweety"), "Bird Tweety", DI("bird_tweety", "Bird Tweety"), ID("alpha", "Bird Tweety"))
+    declarations = {"bird_tweety": "Bird Tweety"}
+    decorations = {"Bird": "@arg1 is a bird", "Tweety": "Tweety"}
+
+    rendered = pretty_natural(
+        body,
+        natural_language_argumentative_rendering,
+        declarations=declarations,
+        decorations=decorations,
+    )
+    dot = render_acceptance_tree_dot(
+        body,
+        label_mode="nl",
+        declarations=declarations,
+        decorations=decorations,
+    )
+
+    assert "Tweety is a bird" in rendered
+    assert "Bird Tweety" not in rendered
+    assert "Tweety is a bird" in dot
+
+
+def test_scasp_display_metadata_emits_wrapper_decorations():
+    payload = _answer_tree(
+        _compound(
+            "bird",
+            [_const("tweety")],
+            children=[],
+        )
+    )
+    payload["answers"][0]["tree"][0]["display"] = {"text": "@X is a bird", "type": "pred"}
+
+    result = translate_json(payload)
+
+    assert result.decorations == {"Bird": "@arg1 is a bird"}
+    script = result.to_fspy(name="birds")
+    assert 'decorate Bird : "@arg1 is a bird"' in script
+    assert "register birds : Bird[Tweety] := μ" in script
+
+
+def test_scasp_display_markup_is_simplified_to_positional_template():
+    payload = _answer_tree(
+        _compound(
+            "bird_list",
+            [[_const("tweety"), _const("clumsy")]],
+            children=[],
+        )
+    )
+    payload["answers"][0]["tree"][0]["display"] = {
+        "text": "@Y ist eine \\\\sn{Liste} von \\\\sr{Vogel}{Vögeln.}",
+        "type": "pred",
+    }
+
+    result = translate_json(payload)
+
+    assert result.decorations == {"Bird_list": "@arg1 ist eine Liste von Vögeln."}
+
+
+def test_execute_script_handles_decorate_wrapper_only(tmp_path):
+    class FakeProver:
+        def __init__(self):
+            self.echo_notes = False
+            self.decorations = {}
+            self.commands = []
+
+        def register_decoration(self, name, template):
+            self.decorations[name] = template
+
+        def send_command(self, command):
+            self.commands.append(command)
+            return {}
+
+    script = tmp_path / "decorations.fspy"
+    script.write_text("decorate Bird : '@arg1 is a bird'.\ndeclare A:bool.\n")
+    prover = FakeProver()
+
+    execute_script(prover, str(script), isolate=False)
+
+    assert prover.decorations == {"Bird": "@arg1 is a bird"}
+    assert prover.commands == ["declare A:bool."]
+
+
+def test_atom_to_prop_name_mapping():
     assert atom_to_prop("a") == "A"
     assert atom_to_prop("efficientmetro") == "Efficientmetro"
     assert atom_to_prop("efficientMetro") == "EfficientMetro"

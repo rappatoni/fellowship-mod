@@ -184,12 +184,16 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 self.conclusion = self.body.prop
                 self._rename_outer_binder(self.body, self.name)
         #Generate natural language representation
+        render_context = {
+            "declarations": getattr(self.prover, "declarations", {}),
+            "decorations": getattr(self.prover, "decorations", {}),
+        }
         if self.rendering == "argumentation":
-            self.representation = pretty_natural(self.body, natural_language_argumentative_rendering)
+            self.representation = pretty_natural(self.body, natural_language_argumentative_rendering, **render_context)
         elif self.rendering == "dialectical":
-            self.representation = pretty_natural(self.body, natural_language_dialectical_rendering)
+            self.representation = pretty_natural(self.body, natural_language_dialectical_rendering, **render_context)
         elif self.rendering == "intuitionistic":
-            self.representation = pretty_natural(self.body, natural_language_rendering)
+            self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         # Close or discard the theorem after extracting the state.
         if declare:
             try:
@@ -715,7 +719,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             "dialectical":   natural_language_dialectical_rendering,
             "intuitionistic": natural_language_rendering,
         }[self.rendering]
-        self.normal_representation = pretty_natural(red_ast, style)
+        self.normal_representation = pretty_natural(
+            red_ast,
+            style,
+            declarations=getattr(self.prover, "declarations", {}),
+            decorations=getattr(self.prover, "decorations", {}),
+        )
         return self.normal_body
 
     def render(self, normalized: bool = False) -> Optional[str]:

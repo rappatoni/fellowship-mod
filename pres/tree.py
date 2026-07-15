@@ -1,6 +1,7 @@
 from copy import deepcopy
-from typing import Optional
+from typing import Mapping, Optional
 from pres.color import AcceptanceColoringVisitor
+from pres.decorations import render_prop
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
     natural_language_rendering,
@@ -13,11 +14,21 @@ class AcceptanceTreeRenderer:
     """Deprecated?"""
     _gv_colors = {"green": "palegreen2", "red": "lightcoral", "yellow": "khaki1"}
 
-    def __init__(self, verbose: bool = False, *, label_mode: str = "proof", nl_style: str = "argumentation"):
+    def __init__(
+        self,
+        verbose: bool = False,
+        *,
+        label_mode: str = "proof",
+        nl_style: str = "argumentation",
+        declarations: Mapping[str, str] | None = None,
+        decorations: Mapping[str, str] | None = None,
+    ):
         self.color_v = AcceptanceColoringVisitor(verbose=verbose)
         self._idmap: dict[int, str] = {}
         self._seq = 0
         self.label_mode = label_mode  # "proof" or "nl"
+        self.declarations = declarations or {}
+        self.decorations = decorations or {}
         if nl_style == "dialectical":
             self._nl_sem = natural_language_dialectical_rendering
         elif nl_style == "intuitionistic":
@@ -92,18 +103,18 @@ class AcceptanceTreeRenderer:
                 lines.append(f"{sem.indentation * indent}...")
                 return
             if isinstance(node, Mu):
-                lines.append(f"{sem.indentation * indent}{sem.Mu[0]}{node.prop}")
+                lines.append(f"{sem.indentation * indent}{sem.Mu[0]}{render_prop(node.prop, self.declarations, self.decorations)}")
                 rec(node.term, indent + 1)
                 rec(node.context, indent + 1)
                 return
             if isinstance(node, Mutilde):
-                lines.append(f"{sem.indentation * indent}{sem.Mutilde[0]}{node.prop}")
+                lines.append(f"{sem.indentation * indent}{sem.Mutilde[0]}{render_prop(node.prop, self.declarations, self.decorations)}")
                 rec(node.term, indent)
                 lines.append(f"{sem.indentation * indent}{sem.Mutilde[1]}")
                 rec(node.context, indent)
                 return
             if isinstance(node, Lamda):
-                lines.append(f"{sem.indentation * indent}{sem.Lamda}{node.di.prop}({node.di.di.name})")
+                lines.append(f"{sem.indentation * indent}{sem.Lamda}{render_prop(node.di.prop, self.declarations, self.decorations)}({node.di.di.name})")
                 rec(node.term, indent)
                 return
             if isinstance(node, Cons):
@@ -153,5 +164,19 @@ class AcceptanceTreeRenderer:
         lines.append('}')
         return "\n".join(lines)
 
-def render_acceptance_tree_dot(pt: ProofTerm, verbose: bool = False, *, label_mode: str = "proof", nl_style: str = "argumentation") -> str:
-    return AcceptanceTreeRenderer(verbose=verbose, label_mode=label_mode, nl_style=nl_style).to_dot(pt)
+def render_acceptance_tree_dot(
+    pt: ProofTerm,
+    verbose: bool = False,
+    *,
+    label_mode: str = "proof",
+    nl_style: str = "argumentation",
+    declarations: Mapping[str, str] | None = None,
+    decorations: Mapping[str, str] | None = None,
+) -> str:
+    return AcceptanceTreeRenderer(
+        verbose=verbose,
+        label_mode=label_mode,
+        nl_style=nl_style,
+        declarations=declarations,
+        decorations=decorations,
+    ).to_dot(pt)

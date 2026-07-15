@@ -14,6 +14,7 @@ from core.dc.argument import Argument
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from scasp_import.importer import ScaspImportError, translate_json
+from pres.decorations import parse_decorate_command
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
@@ -229,6 +230,25 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
                         output = prover.execute_tactic(tactic_name, *tactic_args)
                         #print(output)
+
+                    elif command.startswith("decorate "):
+                        try:
+                            name, template = parse_decorate_command(command)
+                            prover.register_decoration(name, template)
+                        except Exception as e:
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                            logger.error("Decorate failed: %s", e)
+                            if stop_on_error:
+                                break
 
                     elif command.startswith("register "):
                         try:
@@ -694,6 +714,14 @@ def interactive_mode(prover: ProverWrapper) -> None:
             #command = command.rstrip('.').strip()
             if command.lower() in ['exit', 'quit']:
                 break
+            elif command.startswith("decorate "):
+                try:
+                    name, template = parse_decorate_command(command)
+                    prover.register_decoration(name, template)
+                    print(f"Decorated '{name}'.")
+                except Exception as e:
+                    print(f"Decorate failed: {e}")
+                    logger.error("Decorate failed: %s", e)
             elif command.startswith("register "):
                 try:
                     arg = register_argument_cmd(prover, command)
@@ -1273,7 +1301,14 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         logger.info("")
         return
 
-    logger.info(pretty_natural(pt, sem))
+    logger.info(
+        pretty_natural(
+            pt,
+            sem,
+            declarations=getattr(prover, "declarations", {}),
+            decorations=getattr(prover, "decorations", {}),
+        )
+    )
     logger.info("")  # spacer after NL rendering
 
 def color_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = True) -> None:
@@ -1318,7 +1353,14 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
         arg.normalize()
     try:
         label_mode = "proof" if mode != "nl" else "nl"
-        dot = render_acceptance_tree_dot(arg.normal_body, verbose=False, label_mode=label_mode, nl_style=nl_style)
+        dot = render_acceptance_tree_dot(
+            arg.normal_body,
+            verbose=False,
+            label_mode=label_mode,
+            nl_style=nl_style,
+            declarations=getattr(prover, "declarations", {}),
+            decorations=getattr(prover, "decorations", {}),
+        )
     except Exception as e:
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return
