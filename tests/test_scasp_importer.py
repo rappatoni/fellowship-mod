@@ -66,6 +66,7 @@ def test_decoration_command_parser_and_compositional_rendering():
     assert render_prop("Bird Tweety", declarations, decorations) == "Tweety is a bird"
     assert render_declaration("bird_tweety", declarations, decorations) == "Tweety is a bird"
     assert render_declaration("ax", declarations, decorations) == "If Foo then Bar"
+    assert render_prop("A -> B", declarations, decorations, {"->": "@left impliziert @right"}) == "Foo impliziert Bar"
 
 
 def test_natural_language_and_tree_renderers_consume_decorations():

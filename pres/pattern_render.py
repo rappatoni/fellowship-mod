@@ -69,19 +69,19 @@ class AlternativeCasesRenderer:
             return None
 
         prop = context.render_prop(alt.prop)
-        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=alt.binder_name)]
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=alt.binder_name, index=0)]
 
-        for index, element in enumerate(alt.elements):
-            label = self.first_case_label if index == 0 else self.next_case_label
-            lines.append(context.indent_str(1) + self._apply_template(label, prop=prop, binder=alt.binder_name))
+        for index, element in enumerate(alt.elements, start=1):
+            label = self.first_case_label if index == 1 else self.next_case_label
+            lines.append(context.indent_str(1) + self._apply_template(label, prop=prop, binder=alt.binder_name, index=index))
             child_lines = context.render_node(element, 2)
             lines.extend(child_lines)
 
         return PatternRenderResult(lines=lines)
 
     @staticmethod
-    def _apply_template(template: str, *, prop: str, binder: str) -> str:
-        return template.replace("@prop", prop).replace("@binder", binder)
+    def _apply_template(template: str, *, prop: str, binder: str, index: int) -> str:
+        return template.replace("@prop", prop).replace("@binder", binder).replace("@index", str(index)).replace("@number", str(index))
 
 
 class AlternativeCounterexamplesRenderer:
@@ -93,10 +93,12 @@ class AlternativeCounterexamplesRenderer:
         header_template: str = "Für @prop ist notwendigerweise zu prüfen:",
         first_condition_label: str = "Prüfpunkt:",
         next_condition_label: str = "und Prüfpunkt:",
+        child_indent_delta: int = 2,
     ):
         self.header_template = header_template
         self.first_condition_label = first_condition_label
         self.next_condition_label = next_condition_label
+        self.child_indent_delta = child_indent_delta
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         alt = match_alternative_counterexample_structure(node)
@@ -104,18 +106,18 @@ class AlternativeCounterexamplesRenderer:
             return None
 
         prop = context.render_prop(alt.prop)
-        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=alt.binder_name)]
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=alt.binder_name, index=0)]
 
-        for index, element in enumerate(alt.elements):
-            label = self.first_condition_label if index == 0 else self.next_condition_label
-            lines.append(context.indent_str(1) + self._apply_template(label, prop=prop, binder=alt.binder_name))
-            lines.extend(context.render_node(element, 3))
+        for index, element in enumerate(alt.elements, start=1):
+            label = self.first_condition_label if index == 1 else self.next_condition_label
+            lines.append(context.indent_str(1) + self._apply_template(label, prop=prop, binder=alt.binder_name, index=index))
+            lines.extend(context.render_node(element, self.child_indent_delta))
 
         return PatternRenderResult(lines=lines)
 
     @staticmethod
-    def _apply_template(template: str, *, prop: str, binder: str) -> str:
-        return template.replace("@prop", prop).replace("@binder", binder)
+    def _apply_template(template: str, *, prop: str, binder: str, index: int) -> str:
+        return template.replace("@prop", prop).replace("@binder", binder).replace("@index", str(index)).replace("@number", str(index))
 
 
 class ApplicationRenderer:
@@ -124,10 +126,10 @@ class ApplicationRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Zur Prüfung von @prop (@binder)ist hinreichend, dass @arg_prop",
+        header_template: str = "Zur Prüfung von @prop (@binder) ist hinreichend, dass @arg_prop",
         reason_label: str = "weil",
         separator_label: str = "und",
-        end_label: str = "Prüfung @binder abgeschlossen",
+        end_label: str | None = "Prüfung @binder abgeschlossen",
     ):
         self.header_template = header_template
         self.reason_label = reason_label
@@ -144,9 +146,10 @@ class ApplicationRenderer:
         lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, arg_prop=arg_prop, binder=application.binder_name)]
         lines.append(context.indent_str(1) + self._apply_template(self.reason_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
         lines.extend(context.render_node(application.function, 2))
-        lines.append(context.indent_str(1) + self.separator_label)
+        lines.append(context.indent_str(1) + self._apply_template(self.separator_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
         lines.extend(context.render_node(application.argument, 2))
-        lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
+        if self.end_label is not None:
+            lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, arg_prop=arg_prop, binder=application.binder_name))
         return PatternRenderResult(lines=lines)
 
     @staticmethod
@@ -160,13 +163,17 @@ class DualApplicationRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Zur Prüfungvon  @prop (@binder) ist notwendig dass @condition_prop",
+        header_template: str = "Zur Prüfung von @prop (@binder) ist notwendig, dass @condition_prop",
         reason_label: str = "weil",
-        end_label : str = "Prüfung @binder abgeschlossen.",
+        end_label: str | None = "Prüfung @binder abgeschlossen.",
+        warrant_indent_delta: int = 2,
+        condition_indent_delta: int = 2,
     ):
         self.header_template = header_template
         self.reason_label = reason_label
         self.end_label = end_label
+        self.warrant_indent_delta = warrant_indent_delta
+        self.condition_indent_delta = condition_indent_delta
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         application = match_dual_application_structure(node)
@@ -177,9 +184,10 @@ class DualApplicationRenderer:
         condition_prop = context.render_prop(application.condition_prop)
         lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, condition_prop=condition_prop, binder=application.binder_name)]
         lines.append(context.indent_str(1) + self._apply_template(self.reason_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
-        lines.extend(context.render_node(application.warrant, 3))
-        lines.extend(context.render_node(application.condition, 2))
-        lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
+        lines.extend(context.render_node(application.warrant, self.warrant_indent_delta))
+        lines.extend(context.render_node(application.condition, self.condition_indent_delta))
+        if self.end_label is not None:
+            lines.append(context.indent_str(1) + self._apply_template(self.end_label, prop=prop, condition_prop=condition_prop, binder=application.binder_name))
         return PatternRenderResult(lines=lines)
 
     @staticmethod
@@ -193,11 +201,15 @@ class DefeasibleWarrantRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "Für @prop spricht ",
+        header_template: str = "Für @prop spricht:",
         exception_label: str = "aber",
+        support_indent_delta: int = 2,
+        exception_indent_delta: int = 2,
     ):
         self.header_template = header_template
         self.exception_label = exception_label
+        self.support_indent_delta = support_indent_delta
+        self.exception_indent_delta = exception_indent_delta
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         warrant = match_defeasible_warrant_structure(node)
@@ -206,9 +218,9 @@ class DefeasibleWarrantRenderer:
 
         prop = context.render_prop(warrant.prop)
         lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=warrant.binder_name)]
-        lines.extend(context.render_node(warrant.support, 2))
+        lines.extend(context.render_node(warrant.support, self.support_indent_delta))
         lines.append(context.indent_str(1) + self._apply_template(self.exception_label, prop=prop, binder=warrant.binder_name))
-        lines.extend(context.render_node(warrant.exception, 3))
+        lines.extend(context.render_node(warrant.exception, self.exception_indent_delta))
         return PatternRenderResult(lines=lines)
 
     @staticmethod
@@ -222,11 +234,15 @@ class DualDefeasibleWarrantRenderer:
     def __init__(
         self,
         *,
-        header_template: str = "gegen @prop spricht ",
+        header_template: str = "gegen @prop spricht:",
         requirement_template: str = "aber",
+        requirement_indent_delta: int = 2,
+        support_indent_delta: int = 2,
     ):
         self.requirement_template = requirement_template
         self.header_template = header_template
+        self.requirement_indent_delta = requirement_indent_delta
+        self.support_indent_delta = support_indent_delta
 
     def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
         warrant = match_dual_defeasible_warrant_structure(node)
@@ -234,11 +250,10 @@ class DualDefeasibleWarrantRenderer:
             return None
 
         prop = context.render_prop(warrant.prop)
-        # lines = context.render_node(warrant.support, 0)
-        lines=[context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=warrant.binder_name)]
-        lines.extend(context.render_node(warrant.requirement, 2))
+        lines = [context.indent_str() + self._apply_template(self.header_template, prop=prop, binder=warrant.binder_name)]
+        lines.extend(context.render_node(warrant.requirement, self.requirement_indent_delta))
         lines.append(context.indent_str(1) + self._apply_template(self.requirement_template, prop=prop, binder=warrant.binder_name))
-        lines.extend(context.render_node(warrant.support, 3))
+        lines.extend(context.render_node(warrant.support, self.support_indent_delta))
         return PatternRenderResult(lines=lines)
 
     @staticmethod

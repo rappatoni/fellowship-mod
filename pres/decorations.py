@@ -72,17 +72,18 @@ def render_declaration(
     name: str,
     declarations: Mapping[str, str] | None,
     decorations: Mapping[str, str] | None,
+    connective_templates: Mapping[str, str] | None = None,
 ) -> str:
     """Render a declaration name using explicit and compositional decorations."""
     declarations = declarations or {}
     decorations = decorations or {}
     if name in decorations:
         prop = declarations.get(name)
-        args = _declaration_template_args(prop, declarations, decorations) if prop else []
+        args = _declaration_template_args(prop, declarations, decorations, connective_templates) if prop else []
         return _apply_template(decorations[name], args)
     prop = declarations.get(name)
     if prop:
-        return render_prop(prop, declarations, decorations)
+        return render_prop(prop, declarations, decorations, connective_templates)
     return name
 
 
@@ -90,6 +91,7 @@ def render_prop(
     prop: str | None,
     declarations: Mapping[str, str] | None,
     decorations: Mapping[str, str] | None,
+    connective_templates: Mapping[str, str] | None = None,
 ) -> str:
     """Render a proposition string through the wrapper decoration registry."""
     if prop is None:
@@ -103,13 +105,14 @@ def render_prop(
         parser.expect_end()
     except DecorationError:
         return text
-    return _render_ast(ast, declarations or {}, decorations or {})
+    return _render_ast(ast, declarations or {}, decorations or {}, connective_templates or {})
 
 
 def _declaration_template_args(
     prop: str,
     declarations: Mapping[str, str],
     decorations: Mapping[str, str],
+    connective_templates: Mapping[str, str] | None = None,
 ) -> list[str]:
     try:
         parser = _Parser(prop)
@@ -117,18 +120,25 @@ def _declaration_template_args(
         parser.expect_end()
     except DecorationError:
         return []
+    connective_templates = connective_templates or {}
     if isinstance(ast, _Binary) and ast.op == "->":
-        return [_render_ast(ast.left, declarations, decorations), _render_ast(ast.right, declarations, decorations)]
+        return [_render_ast(ast.left, declarations, decorations, connective_templates), _render_ast(ast.right, declarations, decorations, connective_templates)]
     if isinstance(ast, _Binary) and ast.op == "-":
-        return [_render_ast(ast.left, declarations, decorations), _render_ast(ast.right, declarations, decorations)]
+        return [_render_ast(ast.left, declarations, decorations, connective_templates), _render_ast(ast.right, declarations, decorations, connective_templates)]
     if isinstance(ast, _Unary):
-        return [_render_ast(ast.body, declarations, decorations)]
+        return [_render_ast(ast.body, declarations, decorations, connective_templates)]
     if isinstance(ast, _App):
         return [_render_term(arg.value, decorations) for arg in ast.args]
     return []
 
 
-def _render_ast(ast: _Prop, declarations: Mapping[str, str], decorations: Mapping[str, str]) -> str:
+def _render_ast(
+    ast: _Prop,
+    declarations: Mapping[str, str],
+    decorations: Mapping[str, str],
+    connective_templates: Mapping[str, str] | None = None,
+) -> str:
+    connective_templates = connective_templates or {}
     if isinstance(ast, _Name):
         if ast.value in decorations:
             return _apply_template(decorations[ast.value], [])
@@ -139,12 +149,16 @@ def _render_ast(ast: _Prop, declarations: Mapping[str, str], decorations: Mappin
             return _apply_template(decorations[ast.head], args)
         return " ".join([ast.head, *args])
     if isinstance(ast, _Unary):
-        body = _render_ast(ast.body, declarations, decorations)
+        body = _render_ast(ast.body, declarations, decorations, connective_templates)
+        if ast.op in connective_templates:
+            return _apply_named_template(connective_templates[ast.op], {"body": body, "arg": body})
         if ast.op == "~":
             return f"not {body}"
         return f"{ast.op}{body}"
-    left = _render_ast(ast.left, declarations, decorations)
-    right = _render_ast(ast.right, declarations, decorations)
+    left = _render_ast(ast.left, declarations, decorations, connective_templates)
+    right = _render_ast(ast.right, declarations, decorations, connective_templates)
+    if ast.op in connective_templates:
+        return _apply_named_template(connective_templates[ast.op], {"left": left, "right": right, "A": left, "B": right})
     if ast.op == "->":
         return f"{left} -> {right}"
     return f"{left}-{right}"
@@ -164,6 +178,13 @@ def _apply_template(template: str, args: list[str]) -> str:
         return match.group(0)
 
     return _ARG_RE.sub(repl, template)
+
+
+def _apply_named_template(template: str, values: Mapping[str, str]) -> str:
+    rendered = template
+    for key, value in values.items():
+        rendered = rendered.replace(f"@{key}", value)
+    return rendered
 
 
 class _Parser:

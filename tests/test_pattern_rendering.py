@@ -1,5 +1,5 @@
 from core.ac.ast import Cons, DI, ID, Mu, Mutilde, Sonc
-from pres.nl import natural_language_argumentative_rendering, natural_language_rendering, pretty_natural
+from pres.nl import natural_language_argumentative_rendering, natural_language_rendering, pretty_natural, pruefschema_rendering
 
 
 def _alt_pair(name="alt", prop="A", left=None, right=None):
@@ -238,3 +238,22 @@ def test_argumentative_rendering_uses_dual_application_pattern_block():
             "      done B",
         ]
     )
+
+
+def test_pruefschema_rendering_numbers_patterns_and_uses_connective_defaults():
+    node = _alt_pair(
+        "head",
+        "A",
+        Mu(ID("w", "A"), "A", DI("f", "B->A"), Cons(DI("v", "B"), ID("w", "A"))),
+        _alt_pair("tail", "A", DI("case2", "A-B"), DI("case3", "A")),
+    )
+
+    out = pretty_natural(node, pruefschema_rendering)
+
+    assert "Fallgruppe 1:" in out
+    assert "oder Fallgruppe 2:" in out
+    assert "oder Fallgruppe 3:" in out
+    assert "B impliziert A" in out
+    assert "A ohne B" in out
+    assert "(@binder)ist" not in out
+    assert "Prüfungvon" not in out

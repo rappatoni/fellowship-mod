@@ -1,6 +1,6 @@
 import re
 from typing import Mapping
-from pres.decorations import render_prop
+from pres.decorations import render_declaration, render_prop
 from pres.pattern_render import (
     AlternativeCasesRenderer,
     AlternativeCounterexamplesRenderer,
@@ -25,7 +25,7 @@ def pretty_natural(
     return '\n'.join(lines)
 
 class Rendering_Semantics:
-    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None):
+    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None, connective_templates=None):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -39,12 +39,57 @@ class Rendering_Semantics:
         #self.Done = Done
         self.ID = ID
         self.DI = DI
+        self.connective_templates = dict(connective_templates or {})
         self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
-natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
-pruefschema_rendering = Rendering_Semantics('   ', ["Es ist genügt zu prüfen, dass "], ["Es ist notwendigerweise zu prüfen, ob "], "Angenommen ", "und ", "Prüfung fehlgeschlagen", "Prüfung fehlgeschlagen", "sofern nichts entgegensteht: ",  "sofern nichts anderes bekannt ist, ist zu verneinen: ", ["es ist ausgeschlossen, dass: ", "Prüfung abgeschlossen: "], ["es liegt vor: ", "Prüfung fehlgeschlagen: "],  pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(), ApplicationRenderer(), DualApplicationRenderer(), DefeasibleWarrantRenderer(), DualDefeasibleWarrantRenderer()])
+natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(child_indent_delta=3), ApplicationRenderer(header_template="Für @prop ist hinreichend, dass @arg_prop", end_label=None), DualApplicationRenderer(header_template="Für @prop ist notwendig dass @condition_prop", warrant_indent_delta=3, end_label=None), DefeasibleWarrantRenderer(header_template="Für @prop spricht ", exception_indent_delta=3), DualDefeasibleWarrantRenderer(header_template="gegen @prop spricht ", support_indent_delta=3)])
+pruefschema_rendering = Rendering_Semantics(
+    '   ',
+    ["Es genügt zu prüfen, dass "],
+    ["Es ist notwendigerweise zu prüfen, ob "],
+    "Angenommen ",
+    "und",
+    "Prüfung fehlgeschlagen: ",
+    "Prüfung fehlgeschlagen: ",
+    "sofern nichts entgegensteht: ",
+    "sofern nichts anderes bekannt ist, ist zu verneinen: ",
+    ["es ist ausgeschlossen, dass: ", "Prüfung abgeschlossen: "],
+    ["es liegt vor: ", "Prüfung fehlgeschlagen: "],
+    pattern_renderers=[
+        AlternativeCasesRenderer(
+            header_template="Die Prüfung, ob @prop gilt, zerfällt in folgende Fallgruppen:",
+            first_case_label="Fallgruppe @index:",
+            next_case_label="oder Fallgruppe @index:",
+        ),
+        AlternativeCounterexamplesRenderer(
+            header_template="Für @prop sind folgende Prüfpunkte notwendig:",
+            first_condition_label="Prüfpunkt @index:",
+            next_condition_label="und Prüfpunkt @index:",
+        ),
+        ApplicationRenderer(
+            header_template="Zur Prüfung von @prop (@binder) ist hinreichend, dass @arg_prop gilt.",
+            reason_label="weil",
+            separator_label="und",
+            end_label="Prüfung @binder abgeschlossen.",
+        ),
+        DualApplicationRenderer(
+            header_template="Zur Prüfung von @prop (@binder) ist notwendig, dass @condition_prop gilt.",
+            reason_label="weil",
+            end_label="Prüfung @binder abgeschlossen.",
+        ),
+        DefeasibleWarrantRenderer(
+            header_template="Für @prop spricht:",
+            exception_label="aber",
+        ),
+        DualDefeasibleWarrantRenderer(
+            header_template="Gegen @prop spricht:",
+            requirement_template="aber",
+        ),
+    ],
+    connective_templates={"->": "@left impliziert @right", "-": "@left ohne @right"},
+)
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
 # Implemented as a dedicated semantics object plus a visitor special-case.
@@ -223,7 +268,28 @@ class _NLVisitor(ProofTermVisitor):
         return self.semantic.indentation * self.indent
 
     def _render_prop(self, prop: str | None) -> str:
-        return render_prop(prop, self.declarations, self.decorations)
+        return render_prop(
+            prop,
+            self.declarations,
+            self.decorations,
+            getattr(self.semantic, "connective_templates", {}),
+        )
+
+    def _render_declaration_or_prop(self, name: str, prop: str | None) -> str:
+        if name in self.declarations or name in self.decorations:
+            return render_declaration(
+                name,
+                self.declarations,
+                self.decorations,
+                getattr(self.semantic, "connective_templates", {}),
+            )
+        return self._render_prop(prop)
+
+    @staticmethod
+    def _leaf_prefix(prefix, index: int) -> str:
+        if isinstance(prefix, (list, tuple)):
+            return prefix[index]
+        return prefix
 
     def _with_indent(self, delta: int, node):
         old = self.indent
@@ -367,38 +433,38 @@ class _NLVisitor(ProofTermVisitor):
 
     def visit_Goal(self, term: Goal):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{term.prop}")
+        self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{self._render_prop(term.prop)}")
         return term
     
     def visit_Laog(self, term: Laog):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{term.prop}")
+        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{self._render_prop(term.prop)}")
         return term
     
     def visit_Deleg(self, term: Deleg):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{term.prop}")
+        self.lines.append(f"{indent_str}" + self.semantic.Deleg + f"{self._render_prop(term.prop)}")
         return term
     
     def visit_Geled(self, term: Geled):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{term.prop}")
+        self.lines.append(f"{indent_str}" + self.semantic.Geled + f"{self._render_prop(term.prop)}")
         return term
 
     def visit_DI(self, term: DI):
         indent_str = self._indent_str()
         if term.name in self.bound_dis:
-            self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.DI[1] + f"{term.name}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 1) + f"{term.name}")
         else:
-            self.lines.append(f"{indent_str}" + self.semantic.DI[0] + f"{self._render_prop(term.prop)}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
         return term
 
     def visit_ID(self, term: ID):
         indent_str = self._indent_str()
         if term.name in self.bound_ids:
-            self.lines.append(f"{indent_str}".removesuffix(self.semantic.indentation) + self.semantic.ID[1] + f"{term.name}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 1) + f"{term.name}")
         else:
-            self.lines.append(f"{indent_str}" + self.semantic.ID[0] + f"{self._render_prop(term.prop)}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
         return term
 
     def visit_Sonc(self, term: Sonc):

@@ -13,6 +13,7 @@ from pres.nl import (
     natural_language_rendering,
     natural_language_dialectical_rendering,
     natural_language_argumentative_rendering,
+    pruefschema_rendering,
 )
 from wrap.prover import ProverError
 
@@ -194,7 +195,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = pretty_natural(self.body, natural_language_dialectical_rendering, **render_context)
         elif self.rendering == "intuitionistic":
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
-        # Close or discard the theorem after extracting the state.
+        elif self.rendering == "pruefschema":
+            self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
         if declare:
             try:
                 self.prover.send_command('qed.')

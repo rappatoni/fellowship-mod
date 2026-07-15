@@ -4,7 +4,7 @@ from pres.nl import (
     natural_language_dialectical_rendering,
     natural_language_argumentative_rendering,
 )
-from core.ac.ast import Admal, Mu, Mutilde, Lamda, Cons, Sonc, Goal, ID, DI, Hyp, Pyh
+from core.ac.ast import Admal, Mu, Mutilde, Lamda, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh
 
 
 def test_nl_simple_mu_cons_goal_di_id_matches_expected():
@@ -125,3 +125,33 @@ def test_nl_admal_tracks_bound_id_name():
     bound = Admal(Pyh(ID("k", "A"), "A"), ID("k", "A"))
     out = pretty_natural(bound, natural_language_rendering)
     assert out == "done k"
+
+
+def test_nl_structural_leaves_render_decorated_props():
+    declarations = {"Bird": "iota -> bool", "Tweety": "iota"}
+    decorations = {"Bird": "@arg1 is a bird", "Tweety": "Tweety"}
+
+    assert pretty_natural(
+        Goal("1", "Bird Tweety"),
+        natural_language_rendering,
+        declarations=declarations,
+        decorations=decorations,
+    ) == "? Tweety is a bird"
+    assert pretty_natural(
+        Laog("1", "Bird Tweety"),
+        natural_language_rendering,
+        declarations=declarations,
+        decorations=decorations,
+    ) == " ?Tweety is a bird"
+    assert pretty_natural(
+        Deleg("1", "Bird Tweety"),
+        natural_language_rendering,
+        declarations=declarations,
+        decorations=decorations,
+    ) == " !Tweety is a bird"
+    assert pretty_natural(
+        Geled("1", "Bird Tweety"),
+        natural_language_rendering,
+        declarations=declarations,
+        decorations=decorations,
+    ) == "! Tweety is a bird"
