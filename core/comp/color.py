@@ -2,7 +2,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Optional
 from pres.gen import ProofTermGenerationVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc, Deleg, Geled
 
 
 @dataclass(frozen=True)
@@ -220,9 +220,14 @@ class AcceptanceColoringVisitor:
         "yellow": "\x1b[33m",
         "reset": "\x1b[0m",
     }
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, prop_colors: list[tuple[str, str]] | None = None):
         super().__init__()
         self.verbose = verbose
+        self.prop_colors = dict(prop_colors or [])
+        invalid_colors = set(self.prop_colors.values()) - set(self.ANSI)
+        invalid_colors.discard("reset")
+        if invalid_colors:
+            raise ValueError(f"Unknown acceptance colors: {', '.join(sorted(invalid_colors))}")
         self._memo_unattacked: dict[int, bool] = {}
         self._memo_color: dict[int, Optional[str]] = {}
 
@@ -231,6 +236,21 @@ class AcceptanceColoringVisitor:
         return self.visit(node)
 
     # utilities
+    def _is_term_open(self, node: ProofTerm) -> bool:
+        return isinstance(node, (Goal, Deleg))
+
+    def _is_context_open(self, node: ProofTerm) -> bool:
+        return isinstance(node, (Laog, Geled))
+
+    def _parametric_color(self, node: ProofTerm) -> Optional[str]:
+        prop = getattr(node, "prop", None)
+        if prop is None:
+            return None
+        return self.prop_colors.get(prop)
+
+    def _leaf_color(self, node: ProofTerm, fallback: Optional[str] = None) -> Optional[str]:
+        return self._parametric_color(node) or fallback
+
     def _wrap(self, color: Optional[str], s: str) -> str:
         if not color:
             return s
@@ -269,15 +289,15 @@ class AcceptanceColoringVisitor:
         return False
 
     def _non_affine_goal_side(self, n: Mu) -> bool:
-        """μ with Goal on term-side is non-affine for attacks iff id occurs in context."""
-        return isinstance(n.term, Goal) and self._var_occurs(n.id.name, n.context)
+        """μ with an open term-side is non-affine for attacks iff id occurs in context."""
+        return self._is_term_open(n.term) and self._var_occurs(n.id.name, n.context)
 
     def _non_affine_laog_side(self, n: Mutilde) -> bool:
-        """μ′ with Laog on context-side is non-affine for attacks iff di occurs in term."""
-        return isinstance(n.context, Laog) and self._var_occurs(n.di.name, n.term)
+        """μ′ with an open context-side is non-affine for attacks iff di occurs in term."""
+        return self._is_context_open(n.context) and self._var_occurs(n.di.name, n.term)
 
     def _has_open(self, n: ProofTerm) -> bool:
-        if isinstance(n, (Goal, Laog)):
+        if self._is_term_open(n) or self._is_context_open(n):
             return True
         for child in getattr(n, 'term', None), getattr(n, 'context', None):
             if child is not None and self._has_open(child):
@@ -292,13 +312,13 @@ class AcceptanceColoringVisitor:
         if not self._has_open(n):
             self._memo_unattacked[mid] = True
             return True
-        if isinstance(n, Lamda) and isinstance(n.term, Goal):
+        if isinstance(n, Lamda) and self._is_term_open(n.term):
             self._memo_unattacked[mid] = True
             return True
-        if isinstance(n, Cons) and isinstance(n.term, Goal) and self._unattacked(n.context):
+        if isinstance(n, Cons) and self._is_term_open(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
-        if isinstance(n, Cons) and self._unattacked(n.term) and isinstance(n.context, Laog):
+        if isinstance(n, Cons) and self._unattacked(n.term) and self._is_context_open(n.context):
             self._memo_unattacked[mid] = True
             return True
         if isinstance(n, Lamda) and self._unattacked(n.term):
@@ -307,14 +327,14 @@ class AcceptanceColoringVisitor:
         if isinstance(n, Cons) and self._unattacked(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
-        if isinstance(n, Admal) and isinstance(n.context, Laog):
+        if isinstance(n, Admal) and self._is_context_open(n.context):
             self._memo_unattacked[mid] = True
             return True
 
-        if isinstance(n, Sonc) and isinstance(n.term, Goal) and self._unattacked(n.context):
+        if isinstance(n, Sonc) and self._is_term_open(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
-        if isinstance(n, Sonc) and self._unattacked(n.term) and isinstance(n.context, Laog):
+        if isinstance(n, Sonc) and self._unattacked(n.term) and self._is_context_open(n.context):
             self._memo_unattacked[mid] = True
             return True
 
@@ -332,7 +352,7 @@ class AcceptanceColoringVisitor:
         if isinstance(n, Mutilde) and self._unattacked(n.term) and self._unattacked(n.context):
             self._memo_unattacked[mid] = True
             return True
-        # Non-affine binders do not constitute attacks on immediate Goal/Laog
+        # Non-affine binders do not constitute attacks on immediate open leaves.
         if isinstance(n, Mu) and self._non_affine_goal_side(n):
             self._memo_unattacked[mid] = True
             return True
@@ -347,6 +367,13 @@ class AcceptanceColoringVisitor:
         memo = self._memo_color.get(mid)
         if memo is not None:
             return memo
+        parametric_color = self._parametric_color(n) if (self._is_term_open(n) or self._is_context_open(n)) else None
+        if parametric_color is not None:
+            self._memo_color[mid] = parametric_color
+            return parametric_color
+        if self._is_term_open(n) or self._is_context_open(n):
+            self._memo_color[mid] = "yellow"
+            return "yellow"
         if self._unattacked(n):
             self._memo_color[mid] = "green"
             return "green"
@@ -355,11 +382,11 @@ class AcceptanceColoringVisitor:
             self._memo_color[mid] = c
             return c
         if isinstance(n, Cons):
-            if isinstance(n.term, Goal):
+            if self._is_term_open(n.term):
                 c2 = self.classify(n.context)
                 self._memo_color[mid] = c2
                 return c2
-            if isinstance(n.context, Laog):
+            if self._is_context_open(n.context):
                 c1 = self.classify(n.term)
                 self._memo_color[mid] = c1
                 return c1
@@ -379,8 +406,8 @@ class AcceptanceColoringVisitor:
                 f"left={c1}, right={c2}"
             )
         if isinstance(n, Mu):
-            if isinstance(n.term, Goal):
-                # Non-affine μ cannot attack the Goal side (assumption is discharged)
+            if self._is_term_open(n.term):
+                # Non-affine μ cannot attack the open term side (assumption is discharged)
                 if self._non_affine_goal_side(n):
                     self._memo_color[mid] = "green"
                     return "green"
@@ -390,7 +417,7 @@ class AcceptanceColoringVisitor:
                 if c_c == "yellow": self._memo_color[mid] = "yellow"; return "yellow"
                 raise ValueError(
                     f"Acceptance coloring incomplete for Mu node {self._node_pres(n)}: "
-                    f"term is Goal; context_color={c_c}"
+                    f"term is open; context_color={c_c}"
                 )
             c_t = self.classify(n.term)
             c_c = self.classify(n.context)
@@ -405,8 +432,8 @@ class AcceptanceColoringVisitor:
                 f"term_color={c_t}, context_color={c_c}"
             )
         if isinstance(n, Mutilde):
-            if isinstance(n.context, Laog):
-                # Non-affine μ′ cannot attack the Laog side (assumption is discharged)
+            if self._is_context_open(n.context):
+                # Non-affine μ′ cannot attack the open context side (assumption is discharged)
                 if self._non_affine_laog_side(n):
                     self._memo_color[mid] = "green"
                     return "green"
@@ -416,7 +443,7 @@ class AcceptanceColoringVisitor:
                 if c_t == "yellow": self._memo_color[mid] = "yellow"; return "yellow"
                 raise ValueError(
                     f"Acceptance coloring incomplete for Mutilde node {self._node_pres(n)}: "
-                    f"context is Laog; term_color={c_t}"
+                    f"context is open; term_color={c_t}"
                 )
             c_t = self.classify(n.term)
             c_c = self.classify(n.context)
@@ -437,11 +464,11 @@ class AcceptanceColoringVisitor:
 
         if isinstance(n, Sonc):
             # mirror Cons but with (context*term) orientation
-            if isinstance(n.term, Goal):
+            if self._is_term_open(n.term):
                 c2 = self.classify(n.context)
                 self._memo_color[mid] = c2
                 return c2
-            if isinstance(n.context, Laog):
+            if self._is_context_open(n.context):
                 c1 = self.classify(n.term)
                 self._memo_color[mid] = c1
                 return c1
@@ -483,6 +510,10 @@ class AcceptanceColoringVisitor:
             return self.visit_Goal(node)
         if isinstance(node, Laog):
             return self.visit_Laog(node)
+        if isinstance(node, Deleg):
+            return self.visit_Deleg(node)
+        if isinstance(node, Geled):
+            return self.visit_Geled(node)
         if isinstance(node, ID):
             return self.visit_ID(node)
         if isinstance(node, DI):
@@ -494,9 +525,9 @@ class AcceptanceColoringVisitor:
         openP, reset = self._ansi(color)
         t_str = self.visit(node.term)
         c_str = self.visit(node.context)
-        if isinstance(node.term, Goal):
+        if self._is_term_open(node.term):
             t_str = f"{openP}{t_str}{reset}"
-        if isinstance(node.context, Laog):
+        if self._is_context_open(node.context):
             c_str = f"{openP}{c_str}{reset}"
         s = (
             f"{openP}μ{node.id.name}:{node.prop}.<"
@@ -513,9 +544,9 @@ class AcceptanceColoringVisitor:
         openP, reset = self._ansi(color)
         t_str = self.visit(node.term)
         c_str = self.visit(node.context)
-        if isinstance(node.term, Goal):
+        if self._is_term_open(node.term):
             t_str = f"{openP}{t_str}{reset}"
-        if isinstance(node.context, Laog):
+        if self._is_context_open(node.context):
             c_str = f"{openP}{c_str}{reset}"
         s = (
             f"{openP}μ'{node.di.name}:{node.prop}.<"
@@ -531,7 +562,7 @@ class AcceptanceColoringVisitor:
         color = self.classify(node)
         openP, reset = self._ansi(color)
         inner = self.visit(node.term)
-        if isinstance(node.term, Goal):
+        if self._is_term_open(node.term):
             inner = f"{openP}{inner}{reset}"
         s = (
             f"{openP}λ{node.di.di.name}:{node.di.prop}."
@@ -544,7 +575,7 @@ class AcceptanceColoringVisitor:
         color = self.classify(node)
         openP, reset = self._ansi(color)
         inner = self.visit(node.context)
-        if isinstance(node.context, Laog):
+        if self._is_context_open(node.context):
             inner = f"{openP}{inner}{reset}"
         s = (
             f"{openP}λ{node.id.id.name}:{node.id.prop}."
@@ -558,9 +589,9 @@ class AcceptanceColoringVisitor:
         openP, reset = self._ansi(color)
         left  = self.visit(node.term)
         right = self.visit(node.context)
-        if isinstance(node.term, Goal):
+        if self._is_term_open(node.term):
             left = f"{openP}{left}{reset}"
-        if isinstance(node.context, Laog):
+        if self._is_context_open(node.context):
             right = f"{openP}{right}{reset}"
         s = f"{left}{openP}*{self.ANSI['reset']}{right}"
         return s
@@ -570,18 +601,28 @@ class AcceptanceColoringVisitor:
         openP, reset = self._ansi(color)
         left  = self.visit(node.context)
         right = self.visit(node.term)
-        if isinstance(node.term, Goal):
+        if self._is_term_open(node.term):
             right = f"{openP}{right}{reset}"
-        if isinstance(node.context, Laog):
+        if self._is_context_open(node.context):
             left = f"{openP}{left}{reset}"
         s = f"{left}{openP}*{self.ANSI['reset']}{right}"
         return s
 
     def visit_Goal(self, node: Goal):
-        return f"{node.number}:{node.prop}"
+        color = self._leaf_color(node)
+        return self._wrap(color, f"{node.number}:{node.prop}")
 
     def visit_Laog(self, node: Laog):
-        return f"{node.number}:{node.prop}"
+        color = self._leaf_color(node)
+        return self._wrap(color, f"{node.number}:{node.prop}")
+
+    def visit_Deleg(self, node: Deleg):
+        color = self._leaf_color(node)
+        return self._wrap(color, f"?{node.number}:{node.prop}")
+
+    def visit_Geled(self, node: Geled):
+        color = self._leaf_color(node)
+        return self._wrap(color, f"?{node.number}:{node.prop}")
 
     def visit_ID(self, node: ID):
         s = f"{node.name}:{node.prop}" if node.prop else f"{node.name}"
@@ -594,8 +635,12 @@ class AcceptanceColoringVisitor:
     def visit_unhandled(self, node):
         return self._wrap(self.classify(node), repr(node))
 
-def pretty_colored_proof_term(pt: ProofTerm, verbose: bool = False) -> str:
-    return AcceptanceColoringVisitor(verbose=verbose).render(pt)
+def pretty_colored_proof_term(
+    pt: ProofTerm,
+    verbose: bool = False,
+    prop_colors: list[tuple[str, str]] | None = None,
+) -> str:
+    return AcceptanceColoringVisitor(verbose=verbose, prop_colors=prop_colors).render(pt)
 
 
 def label_debate_term(pt: ProofTerm, verbose: bool = False) -> dict[int, DebateNodeLabel]:
