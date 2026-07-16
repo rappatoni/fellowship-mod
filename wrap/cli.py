@@ -1576,6 +1576,8 @@ def main() -> None:
                     help='set logger level (overrides FSP_LOGLEVEL)')
     ap.add_argument('--log-file', dest='log_file',
                     help='write logs to FILE (in addition to stdout)')
+    ap.add_argument('--load', metavar='FILE',
+                    help='load a .fspy script before entering interactive mode (use with --interactive)')
     g.add_argument('--interactive', action='store_true',
                    help='start an interactive Fellowship REPL')
     g.add_argument('--script', metavar='FILE',
@@ -1587,14 +1589,22 @@ def main() -> None:
     # Configure CLI logging (explicit --log-level wins; else env FSP_LOGLEVEL; default INFO)
     configure_logging_cli(args.log_level, args.log_file)
 
+    if args.load and not args.interactive:
+        ap.error('--load can only be used together with --interactive')
+
     if args.import_args is not None:
         _handle_import_command(ap, args.import_args)
         return
 
-    prover = setup_prover()             # ⇐ creates the ProverWrapper, 
+    prover = setup_prover()             # ⇐ creates the ProverWrapper,
                                         #    registers pop, declares A,B,C,D …
 
     if args.interactive:                # --- REPL -----------------
+        if args.load:
+            load_script = Path(args.load).expanduser()
+            if not load_script.is_file():
+                ap.error(f'load file {load_script} does not exist')
+            execute_script(prover, str(load_script), strict=True, stop_on_error=True, isolate=False)
         interactive_mode(prover)
 
     else:                               # --- batch ----------------
