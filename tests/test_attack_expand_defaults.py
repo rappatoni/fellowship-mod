@@ -247,3 +247,54 @@ def test_reinforce_delegates_to_support_no():
 
     assert out == "ok"
     mocked.assert_called_once_with(target, name="r1", on=A, expand_defaults="no")
+
+
+def test_thetaexpander_strict_off_skips_declared_strict_proof():
+    expr = Mu(ID("alpha", A), A, DI("strict_axiom", A), ID("alpha", A))
+
+    expander = ThetaExpander(
+        A,
+        mode="term",
+        expand_defaults="no",
+        allow_strict=False,
+        strict_names={"strict_axiom"},
+    )
+    out = expander.visit(expr)
+
+    assert expander.found_target is False
+    assert expander.changed is False
+    assert isinstance(out, Mu)
+
+
+def test_thetaexpander_strict_on_exposes_declared_strict_proof():
+    expr = Mu(ID("alpha", A), A, DI("strict_axiom", A), ID("alpha", A))
+
+    expander = ThetaExpander(
+        A,
+        mode="term",
+        expand_defaults="no",
+        allow_strict=True,
+        strict_names={"strict_axiom"},
+    )
+    out = expander.visit(expr)
+
+    assert expander.found_target is True
+    assert expander.changed is True
+    assert isinstance(out, Mu)
+
+
+def test_thetaexpander_strict_on_ignores_undeclared_leaf():
+    expr = Mu(ID("alpha", A), A, DI("ordinary_leaf", A), ID("alpha", A))
+
+    expander = ThetaExpander(
+        A,
+        mode="term",
+        expand_defaults="only",
+        allow_strict=True,
+        strict_names={"strict_axiom"},
+    )
+    out = expander.visit(expr)
+
+    assert expander.found_target is False
+    assert expander.changed is False
+    assert isinstance(out, Mu)

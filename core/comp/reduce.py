@@ -1236,10 +1236,12 @@ class ThetaExpander(ProofTermVisitor):
       - mode='term'    → expose term-side targets of proposition A
       - mode='context' → expose context-side targets of proposition A
     """
-    def __init__(self, target_prop: str, mode: str = "term", *, expand_defaults: str = "also", verbose: bool = False):
+    def __init__(self, target_prop: str, mode: str = "term", *, expand_defaults: str = "also", allow_strict: bool = False, strict_names=None, verbose: bool = False):
         self.target_prop = target_prop
         self.mode = mode  # 'term' | 'context'
         self.expand_defaults = expand_defaults  # 'no' | 'only' | 'also'
+        self.allow_strict = allow_strict
+        self.strict_names = set(strict_names or ())
         self.verbose = verbose
         self._i = 0
         self.changed = False
@@ -1296,7 +1298,63 @@ class ThetaExpander(ProofTermVisitor):
             return self._is_bureaucratic_default_term(node)
         return self._is_bureaucratic_default_context(node)
 
+    def _is_strict_term_leaf(self, node) -> bool:
+        return (
+            self.mode == "term"
+            and isinstance(node, (ID, DI))
+            and getattr(node, "name", None) in self.strict_names
+            and getattr(node, "prop", None) == self.target_prop
+        )
+
+    def _is_strict_context_leaf(self, node) -> bool:
+        return (
+            self.mode == "context"
+            and isinstance(node, (ID, DI))
+            and getattr(node, "name", None) in self.strict_names
+            and getattr(node, "prop", None) == self.target_prop
+        )
+
+    def _is_strict_target(self, node) -> bool:
+        return self._is_strict_term_leaf(node) or self._is_strict_context_leaf(node)
+
+    def _contains_open_or_delegation_leaf(self, node) -> bool:
+        if isinstance(node, (Goal, Laog, Deleg, Geled)):
+            return True
+        for child in getattr(node, 'term', None), getattr(node, 'context', None):
+            if child is not None and self._contains_open_or_delegation_leaf(child):
+                return True
+        return False
+
+    def _contains_strict_leaf(self, node) -> bool:
+        if isinstance(node, (ID, DI)) and getattr(node, "name", None) in self.strict_names:
+            return getattr(node, "prop", None) == self.target_prop
+        for child in getattr(node, 'term', None), getattr(node, 'context', None):
+            if child is not None and self._contains_strict_leaf(child):
+                return True
+        return False
+
+    def _is_strict_proof_target(self, node) -> bool:
+        if getattr(node, "prop", None) != self.target_prop:
+            return False
+        if self.mode == "term" and not isinstance(node, Term):
+            return False
+        if self.mode == "context" and not isinstance(node, Context):
+            return False
+        return self._contains_strict_leaf(node) and not self._contains_open_or_delegation_leaf(node)
+
+    def _strict_leaf_as_open_target(self, node):
+        A = self.target_prop
+        if self._is_strict_term_leaf(node):
+            self.changed = True
+            return Goal(self._fresh_label("StrictT"), A)
+        if self._is_strict_context_leaf(node):
+            self.changed = True
+            return Laog(self._fresh_label("StrictC"), A)
+        return node
+
     def _allow_target(self, node) -> bool:
+        if self._is_strict_proof_target(node):
+            return self.allow_strict
         is_default = self._is_default_target(node)
         if self.expand_defaults == "only":
             return is_default
@@ -1569,19 +1627,34 @@ class ThetaExpander(ProofTermVisitor):
                 return deepcopy(node)
 
             new = self._visit_children(node)
+            if self._is_strict_target(new):
+                new = self._strict_leaf_as_open_target(new)
 
             if self._is_exposed_target(new):
                 return new
+            if self.allow_strict and self._is_strict_proof_target(node):
+                parent_pres = getattr(parent, "pres", repr(parent)) if parent is not None else "<root>"
+                logger.debug(
+                    "Exposing %s-side strict target: %s (parent: %s, slot: %s, expand_defaults=%s, allow_strict=%s)",
+                    self.mode,
+                    getattr(new, "pres", repr(new)),
+                    parent_pres,
+                    slot,
+                    self.expand_defaults,
+                    self.allow_strict,
+                )
+                return self._expand_candidate(new)
             if self._would_introduce_bureaucratic_default_redex(new, parent, slot=slot):
                 return new
             parent_pres = getattr(parent, "pres", repr(parent)) if parent is not None else "<root>"
             logger.debug(
-                "Exposing %s-side default-eta target: %s (parent: %s, slot: %s, expand_defaults=%s)",
+                "Exposing %s-side default-eta target: %s (parent: %s, slot: %s, expand_defaults=%s, allow_strict=%s)",
                 self.mode,
                 getattr(new, "pres", repr(new)),
                 parent_pres,
                 slot,
                 self.expand_defaults,
+                self.allow_strict,
             )
             return self._expand_candidate(new)
 

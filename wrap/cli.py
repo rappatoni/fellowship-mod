@@ -127,7 +127,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         undergird NEW supporter target [on PROP]
                         reinforce NEW supporter target [on PROP]
                         support   NEW supporter target [on PROP]
-                        attack    NEW attacker  target [on PROP]
+                        attack    NEW attacker  target [strict] [on PROP]
                         rebut     NEW attacker  target [on PROP]
                         out      INDEX ARG NAME   (also accepts: out NAME ARG INDEX)
                         tou      INDEX ARG NAME   (also accepts: tou NAME ARG INDEX)
@@ -477,31 +477,22 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             if stop_on_error:
                                 break
                     elif command.startswith('attack '):
-                        # Format: attack NEW_NAME attacker target [on <PROP...>]
-                        parts = command.split()
-                        if len(parts) < 4:
-                            logger.error("Invalid attack command. Use: attack NEW_NAME attacker target [on PROP]")
+                        # Format: attack NEW_NAME attacker target [strict] [on <PROP...>]
+                        try:
+                            new_name, attacker_name, target_name, on_prop, allow_strict_attack = _parse_attack_command(command)
+                        except SyntaxError as e:
+                            logger.error("%s", e)
                             continue
-                        new_name = parts[1]
-                        attacker_name = parts[2]
-                        target_name = parts[3]
-                        # Optional: parse 'on <prop...>'
-                        on_prop = None
-                        if len(parts) > 4:
-                            try:
-                                on_idx = parts.index('on', 4)
-                                on_prop = " ".join(parts[on_idx+1:]).strip()
-                            except ValueError:
-                                on_prop = None
                         attacker = prover.get_argument(attacker_name)
                         target = prover.get_argument(target_name)
                         if attacker and target:
                             try:
-                                result = attacker.attack(target, name=new_name, on=on_prop)
+                                result = attacker.attack(target, name=new_name, on=on_prop, allow_strict=allow_strict_attack)
                                 prover.register_argument(result)
-                                logger.info("Constructed attack '%s' (target '%s' by '%s'%s).",
+                                logger.info("Constructed attack '%s' (target '%s' by '%s'%s%s).",
                                             result.name, target.name, attacker.name,
-                                            f" on {on_prop}" if on_prop else "")
+                                            f" on {on_prop}" if on_prop else "",
+                                            " allowing strict targets" if allow_strict_attack else "")
                             except ProverError as e:
                                 if strict:
                                     if isolate:
@@ -874,30 +865,24 @@ def interactive_mode(prover: ProverWrapper) -> None:
                                  verb.capitalize(), supporter_name, target_name)
 
             elif command.startswith('attack '):
-                # Format: attack NEW_NAME attacker target [on PROP...]
-                parts = command.split()
-                if len(parts) < 4:
-                    print("Invalid attack command. Use: attack NEW_NAME attacker target [on PROP]")
-                    logger.error("Invalid attack command. Use: attack NEW_NAME attacker target [on PROP]")
+                # Format: attack NEW_NAME attacker target [strict] [on PROP...]
+                try:
+                    new_name, attacker_name, target_name, on_prop, allow_strict_attack = _parse_attack_command(command)
+                except SyntaxError as e:
+                    print(str(e))
+                    logger.error("%s", e)
                     continue
-                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
-                on_prop = None
-                if len(parts) > 4:
-                    try:
-                        on_idx = parts.index('on', 4)
-                        on_prop = " ".join(parts[on_idx+1:]).strip()
-                    except ValueError:
-                        on_prop = None
                 attacker = prover.get_argument(attacker_name)
                 target = prover.get_argument(target_name)
                 if attacker and target:
                     try:
-                        result = attacker.attack(target, name=new_name, on=on_prop)
+                        result = attacker.attack(target, name=new_name, on=on_prop, allow_strict=allow_strict_attack)
                         prover.register_argument(result)
                         suffix = f" on {on_prop}" if on_prop else ""
-                        print(f"Constructed attack '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}).")
-                        logger.info("Constructed attack '%s' (target '%s' by '%s'%s).",
-                                    result.name, target.name, attacker.name, suffix)
+                        strict_suffix = " allowing strict targets" if allow_strict_attack else ""
+                        print(f"Constructed attack '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}{strict_suffix}).")
+                        logger.info("Constructed attack '%s' (target '%s' by '%s'%s%s).",
+                                    result.name, target.name, attacker.name, suffix, strict_suffix)
                     except Exception as e:
                         print(f"Prover error during attack: {e}")
                         logger.error("Prover error during attack: %s", e)
@@ -1150,6 +1135,46 @@ def interactive_mode(prover: ProverWrapper) -> None:
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
+
+
+def _parse_attack_command(command: str) -> tuple[str, str, str, str | None, bool]:
+    """Parse `attack NEW attacker target [strict] [on PROP...]`.
+
+    Strict-target attacks are opt-in and can be enabled with any of:
+    `strict`, `--strict`, `allow-strict`, `--allow-strict`,
+    `strict-proofs`, or `--strict-proofs`.
+    """
+    parts = command.split()
+    if len(parts) < 4:
+        raise SyntaxError("Invalid attack command. Use: attack NEW_NAME attacker target [strict] [on PROP]")
+
+    new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
+    strict_tokens = {
+        "strict",
+        "--strict",
+        "allow-strict",
+        "--allow-strict",
+        "strict-proofs",
+        "--strict-proofs",
+    }
+    allow_strict = False
+    remainder: list[str] = []
+    for token in parts[4:]:
+        if token in strict_tokens:
+            allow_strict = True
+        else:
+            remainder.append(token)
+
+    on_prop = None
+    if remainder:
+        try:
+            on_idx = remainder.index('on')
+        except ValueError:
+            on_idx = -1
+        if on_idx >= 0:
+            on_prop = " ".join(remainder[on_idx + 1:]).strip() or None
+
+    return new_name, attacker_name, target_name, on_prop, allow_strict
 
 
 def _parse_projection_debate_command(prover: ProverWrapper, command: str) -> tuple[str, str, str, int | None]:

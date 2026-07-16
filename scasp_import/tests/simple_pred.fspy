@@ -19,5 +19,5 @@ start counterargument attack_arg (Bird[Clumsy])
 moxia vox.
 end counterargument
 
-attack test attack_arg simple_pred
+attack test attack_arg simple_pred --allow strict
 render test pruefschema

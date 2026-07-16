@@ -708,7 +708,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def get_conclusion(self) -> str:
         return self.conclusion
 
-    def _theta_expand(self, body: ProofTerm, issue: str, mode: str, *, assumptions: dict, declarations: dict, expand_defaults: str = "also"):
+    def _theta_expand(self, body: ProofTerm, issue: str, mode: str, *, assumptions: dict, declarations: dict, expand_defaults: str = "also", allow_strict: bool = False):
         """
         Deep-copy, enrich, selectively expose grafting targets for `issue`
         in the given `mode` ('term'|'context'), then regenerate presentation.
@@ -716,11 +716,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
           - 'no'   → only non-default targets
           - 'only' → only default targets
           - 'also' → both
+        If `allow_strict` is true, strict proof leaves/axioms with the target
+        proposition may first be converted to open targets and then exposed.
         Returns (expanded_body, found_target, changed_flag).
         """
         eb = copy.deepcopy(body)
         eb = PropEnrichmentVisitor(assumptions=assumptions, axiom_props=declarations).visit(eb)
-        te = ThetaExpander(issue, mode=mode, expand_defaults=expand_defaults, verbose=False)
+        te = ThetaExpander(issue, mode=mode, expand_defaults=expand_defaults, allow_strict=allow_strict, strict_names=declarations.keys(), verbose=False)
         eb = te.visit(eb)
         from core.comp.alpha import FreshenBinderNames
         eb = FreshenBinderNames().visit(eb)
@@ -728,17 +730,19 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.debug("Default-eta exposure freshened binder names to avoid collisions.")
         if not te.found_target:
             logger.warning(
-                "Default-eta exposure found no targets for issue '%s' (mode=%s, expand_defaults=%s)",
+                "Default-eta exposure found no targets for issue '%s' (mode=%s, expand_defaults=%s, allow_strict=%s)",
                 issue,
                 mode,
                 expand_defaults,
+                allow_strict,
             )
         elif not te.changed:
             logger.debug(
-                "Default-eta exposure found targets already in long form for issue '%s' (mode=%s, expand_defaults=%s)",
+                "Default-eta exposure found targets already in long form for issue '%s' (mode=%s, expand_defaults=%s, allow_strict=%s)",
                 issue,
                 mode,
                 expand_defaults,
+                allow_strict,
             )
         return eb, te.found_target, te.changed
 
@@ -839,13 +843,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     def reinforce(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None) -> "Argument":
         issue = on or self.conclusion
         return self.support(other_argument, name=name, on=issue, expand_defaults="no")
-    def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
+    def attack(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also", allow_strict: bool = False) -> "Argument":
         """
         θ-based attacker (generalizes undercut and rebut):
           - Orientation by attacker root binder:
               Mu       → attack terms (mode='term')
               Mutilde  → attack contexts (mode='context')
           - Theta-expand the attacked argument on `issue`, filtered by `expand_defaults`.
+          - If `allow_strict` is true, also allow strict proof leaves/axioms to be
+            opened and attacked. This is intentionally opt-in.
           - Build a one-step adapter to embed the attacker at the right kind.
           - Chain attacker → adapter (η at root) → θ-expanded target.
         """
@@ -863,11 +869,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             raise TypeError("attack: attacker must start with Mu or Mutilde binder")
         logger.debug("Target kind for attack: %s", target_kind)
         logger.debug(
-            "Theta-expanding attacked argument '%s' on issue '%s' (mode=%s, expand_defaults=%s)",
+            "Theta-expanding attacked argument '%s' on issue '%s' (mode=%s, expand_defaults=%s, allow_strict=%s)",
             other_argument.name,
             issue,
             target_kind,
             expand_defaults,
+            allow_strict,
         )
         expanded_body, found_target, te_changed = other_argument._theta_expand(
             other_argument.body,
@@ -876,14 +883,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             assumptions=other_argument.assumptions,
             declarations=self.prover.declarations,
             expand_defaults=expand_defaults,
+            allow_strict=allow_strict,
         )
         if not found_target:
             raise ValueError(
-                f"attack: no target with proposition '{issue}' found for mode={target_kind} and expand_defaults={expand_defaults}"
+                f"attack: no target with proposition '{issue}' found for mode={target_kind}, expand_defaults={expand_defaults}, allow_strict={allow_strict}"
             )
         if not te_changed:
             raise ValueError(
-                f"attack: target with proposition '{issue}' for mode={target_kind} and expand_defaults={expand_defaults} is already in exposed form"
+                f"attack: target with proposition '{issue}' for mode={target_kind}, expand_defaults={expand_defaults}, allow_strict={allow_strict} is already in exposed form"
             )
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
         temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
@@ -897,7 +905,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 attacked_key = key
                 break
         if attacked_key is None:
-            raise ValueError(f"attack: target assumption '{issue}' not found in attacked argument (exact match required)")
+            raise ValueError(f"attack: target assumption '{issue}' not found in attacked argument (exact match required, allow_strict={allow_strict})")
         issue = expanded_arg.assumptions[attacked_key]["prop"]
         logger.debug("Attacked issue resolved to: %s (key=%s)", issue, attacked_key)
         if target_kind == "term":
