@@ -700,6 +700,8 @@ def _register_display_decoration(tree: dict[str, Any], atom: _ScaspAtom, state: 
     display = tree.get("display")
     if not isinstance(display, dict):
         return
+    if display.get("type") != "pred":
+        return
     text = display.get("text")
     if not isinstance(text, str) or not text.strip():
         return

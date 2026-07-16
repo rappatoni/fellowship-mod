@@ -155,3 +155,22 @@ def test_nl_structural_leaves_render_decorated_props():
         declarations=declarations,
         decorations=decorations,
     ) == "! Tweety is a bird"
+
+
+def test_nl_unbound_declaration_name_does_not_decorate_its_prop():
+    from pres.nl import pruefschema_rendering
+
+    declarations = {"A": "bool", "a": "A"}
+
+    assert pretty_natural(
+        DI("a", "A"),
+        natural_language_rendering,
+        declarations=declarations,
+        decorations={},
+    ) == "by A"
+    assert pretty_natural(
+        DI("a", "A"),
+        pruefschema_rendering,
+        declarations=declarations,
+        decorations={},
+    ) == "es liegt vor: A"

@@ -69,6 +69,19 @@ def test_decoration_command_parser_and_compositional_rendering():
     assert render_prop("A -> B", declarations, decorations, {"->": "@left impliziert @right"}) == "Foo impliziert Bar"
 
 
+def test_declaration_names_are_not_implicit_decorations_for_their_types():
+    declarations = {"A": "bool", "a": "A"}
+
+    assert render_prop("A", declarations, {}) == "A"
+    assert render_declaration("a", declarations, {}) == "A"
+    assert render_prop("A -> A", declarations, {}, {"->": "@left impliziert @right"}) == "A impliziert A"
+
+    assert render_prop("A", declarations, {"a": "Decorated a"}) == "A"
+    assert render_prop("A", declarations, {"A": "Decorated A"}) == "Decorated A"
+    assert render_declaration("a", declarations, {"a": "Decorated a"}) == "Decorated a"
+    assert render_declaration("a", declarations, {"A": "Decorated A", "a": "Decorated a"}) == "Decorated a"
+
+
 def test_natural_language_and_tree_renderers_consume_decorations():
     body = Mu(ID("alpha", "Bird Tweety"), "Bird Tweety", DI("bird_tweety", "Bird Tweety"), ID("alpha", "Bird Tweety"))
     declarations = {"bird_tweety": "Bird Tweety"}
@@ -108,6 +121,19 @@ def test_scasp_display_metadata_emits_wrapper_decorations():
     script = result.to_fspy(name="birds")
     assert 'decorate Bird : "@arg1 is a bird"' in script
     assert "register birds : Bird[Tweety] := μ" in script
+
+
+def test_scasp_non_pred_display_metadata_does_not_emit_decorations():
+    payload = _answer_tree(_atom("a"))
+    payload["answers"][0]["tree"][0]["display"] = {"text": "a", "type": "mid"}
+
+    result = translate_json(payload)
+
+    assert result.decorations == {}
+    script = result.to_fspy(name="plain_bool")
+    assert "decorate A" not in script
+    assert "declare A:bool." in script
+    assert "declare a:(A)." in script
 
 
 def test_scasp_display_markup_is_simplified_to_positional_template():

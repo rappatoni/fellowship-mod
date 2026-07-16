@@ -257,3 +257,6 @@ def test_pruefschema_rendering_numbers_patterns_and_uses_connective_defaults():
     assert "A ohne B" in out
     assert "(@binder)ist" not in out
     assert "Prüfungvon" not in out
+    assert "├─" in out
+    assert "└─" in out
+    assert "│" in out

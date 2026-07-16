@@ -22,10 +22,48 @@ def pretty_natural(
 ) -> str:
     lines = []
     traverse_proof_term(semantic, proof_term, lines, indent=0, declarations=declarations, decorations=decorations)
+    if getattr(semantic, "tree_guides", False):
+        lines = _with_tree_guides(lines, semantic.indentation)
     return '\n'.join(lines)
 
+
+def _line_level(line: str, indentation: str) -> tuple[int, str]:
+    level = 0
+    rest = line
+    while indentation and rest.startswith(indentation):
+        level += 1
+        rest = rest[len(indentation):]
+    return level, rest
+
+
+def _has_later_sibling(levels: list[int], index: int, level: int) -> bool:
+    for later_level in levels[index + 1:]:
+        if later_level < level:
+            return False
+        if later_level == level:
+            return True
+    return False
+
+
+def _with_tree_guides(lines: list[str], indentation: str) -> list[str]:
+    if not indentation:
+        return lines
+    parsed = [_line_level(line, indentation) for line in lines]
+    levels = [level for level, _ in parsed]
+    guided: list[str] = []
+    for index, (level, text) in enumerate(parsed):
+        if level == 0:
+            guided.append(text)
+            continue
+        parts: list[str] = []
+        for ancestor_level in range(1, level):
+            parts.append("│  " if _has_later_sibling(levels, index, ancestor_level) else "   ")
+        parts.append("├─ " if _has_later_sibling(levels, index, level) else "└─ ")
+        guided.append("".join(parts) + text)
+    return guided
+
 class Rendering_Semantics:
-    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None, connective_templates=None):
+    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None, connective_templates=None, tree_guides: bool = False):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -40,6 +78,7 @@ class Rendering_Semantics:
         self.ID = ID
         self.DI = DI
         self.connective_templates = dict(connective_templates or {})
+        self.tree_guides = tree_guides
         self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
@@ -64,18 +103,18 @@ pruefschema_rendering = Rendering_Semantics(
             next_case_label="oder Fallgruppe @index:",
         ),
         AlternativeCounterexamplesRenderer(
-            header_template="Für @prop sind folgende Prüfpunkte notwendig:",
+            header_template="Zur Prüfung von @prop müssen folgende Prüfpunkte abgearbeitet werden:",
             first_condition_label="Prüfpunkt @index:",
             next_condition_label="und Prüfpunkt @index:",
         ),
         ApplicationRenderer(
-            header_template="Zur Prüfung von @prop (@binder) ist hinreichend, dass @arg_prop gilt.",
+            header_template="Für @prop (Prüfung: @binder) ist es hinreichend, dass @arg_prop gilt.",
             reason_label="weil",
             separator_label="und",
             end_label="Prüfung @binder abgeschlossen.",
         ),
         DualApplicationRenderer(
-            header_template="Zur Prüfung von @prop (@binder) ist notwendig, dass @condition_prop gilt.",
+            header_template="Für @prop (Prüfung: @binder) ist notwendig, dass @condition_prop gilt.",
             reason_label="weil",
             end_label="Prüfung @binder abgeschlossen.",
         ),
@@ -89,6 +128,7 @@ pruefschema_rendering = Rendering_Semantics(
         ),
     ],
     connective_templates={"->": "@left impliziert @right", "-": "@left ohne @right"},
+    tree_guides=True,
 )
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
@@ -454,6 +494,8 @@ class _NLVisitor(ProofTermVisitor):
     def visit_DI(self, term: DI):
         indent_str = self._indent_str()
         if term.name in self.bound_dis:
+            if not getattr(self.semantic, "tree_guides", False):
+                indent_str = indent_str.removesuffix(self.semantic.indentation)
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 1) + f"{term.name}")
         else:
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
@@ -462,6 +504,8 @@ class _NLVisitor(ProofTermVisitor):
     def visit_ID(self, term: ID):
         indent_str = self._indent_str()
         if term.name in self.bound_ids:
+            if not getattr(self.semantic, "tree_guides", False):
+                indent_str = indent_str.removesuffix(self.semantic.indentation)
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 1) + f"{term.name}")
         else:
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
