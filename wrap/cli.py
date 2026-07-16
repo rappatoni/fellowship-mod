@@ -126,6 +126,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         support   NEW supporter target [on PROP]
                         attack    NEW attacker  target [on PROP]
                         rebut     NEW attacker  target [on PROP]
+                        out      INDEX ARG NAME   (also accepts: out NAME ARG INDEX)
+                        tou      INDEX ARG NAME   (also accepts: tou NAME ARG INDEX)
+                        sub      ARG NAME         (also accepts: sub NAME ARG)
+                        bus      ARG NAME         (also accepts: bus NAME ARG)
+                        attacker ARG NAME         (also accepts: attacker NAME ARG)
+                        regatta  ARG NAME         (also accepts: regatta NAME ARG)
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
           - Lines starting with '#' are user-facing comments and are printed to stdout.
           - Lines starting with '%' are invisible comments and are ignored.
@@ -310,6 +316,25 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         else:
                             logger.warning("Argument '%s' not found for normalization", name)
                             #print(f"Argument '{name}' not found.")
+                    elif command.startswith(('out ', 'tou ', 'sub ', 'bus ', 'attacker ', 'regatta ')):
+                        try:
+                            result = projection_debate_cmd(prover, command)
+                            logger.info("Constructed %s '%s'.", command.split()[0], result.name)
+                        except Exception as e:
+                            if strict:
+                                if isolate:
+                                    try:
+                                        prover.close()
+                                    except Exception:
+                                        pass
+                                else:
+                                    prover.echo_notes = prev_echo
+                                logger.info("Finished script %s", script_path)
+                                raise ProverError(f"{script_path}:{lineno}: {e}") from e
+                            logger.error("%s failed: %s", command.split()[0].capitalize(), e)
+                            if stop_on_error:
+                                break
+
                     elif command.startswith('undermine ') or command.startswith('undercut '):
                         # Format: undermine NEW_NAME attacker target
                         # Legacy alias: undercut NEW_NAME attacker target
@@ -694,7 +719,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Debate ops: undermine, undergird, reinforce, support, attack, rebut.
+          - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
 
         #TODO: implement human-oriented REPL output.
@@ -768,6 +793,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 else:
                     print(f"Argument '{name}' not found.")
                     logger.warning("Argument '%s' not found for normalization (interactive)", name)
+
+            elif command.startswith(('out ', 'tou ', 'sub ', 'bus ', 'attacker ', 'regatta ')):
+                try:
+                    result = projection_debate_cmd(prover, command)
+                    print(f"Constructed {command.split()[0]} '{result.name}'.")
+                    logger.info("Constructed %s '%s'.", command.split()[0], result.name)
+                except Exception as e:
+                    print(f"{command.split()[0].capitalize()} failed: {e}")
+                    logger.error("%s failed: %s", command.split()[0].capitalize(), e)
 
             elif command.startswith('undermine ') or command.startswith('undercut '):
                 # Format: undermine NEW_NAME attacker target
@@ -1110,6 +1144,64 @@ def interactive_mode(prover: ProverWrapper) -> None:
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
+
+
+def _parse_projection_debate_command(prover: ProverWrapper, command: str) -> tuple[str, str, str, int | None]:
+    parts = command.split()
+    if not parts:
+        raise ValueError("empty command")
+    verb = parts[0]
+    if verb in {"out", "tou"}:
+        if len(parts) != 4:
+            raise SyntaxError(f"Invalid {verb} command. Use: {verb} INDEX ARG NAME")
+        if parts[1].lstrip("+-").isdigit():
+            index_text, arg_name, new_name = parts[1], parts[2], parts[3]
+        else:
+            new_name, arg_name, index_text = parts[1], parts[2], parts[3]
+        try:
+            index = int(index_text)
+        except ValueError as e:
+            raise SyntaxError(f"Invalid {verb} command. Index must be an integer") from e
+        return verb, arg_name, new_name, index
+
+    if verb in {"sub", "bus", "attacker", "regatta"}:
+        if len(parts) != 3:
+            raise SyntaxError(f"Invalid {verb} command. Use: {verb} ARG NAME")
+        if prover.get_argument(parts[1]) is not None and prover.get_argument(parts[2]) is None:
+            arg_name, new_name = parts[1], parts[2]
+        else:
+            new_name, arg_name = parts[1], parts[2]
+        return verb, arg_name, new_name, None
+
+    raise ValueError(f"unknown projection debate command '{verb}'")
+
+
+def projection_debate_cmd(prover: ProverWrapper, command: str) -> Argument:
+    verb, arg_name, new_name, index = _parse_projection_debate_command(prover, command)
+    arg = prover.get_argument(arg_name)
+    if arg is None:
+        raise ValueError(f"Argument '{arg_name}' not found")
+
+    if verb == "out":
+        assert index is not None
+        result = arg.out(index, name=new_name)
+    elif verb == "tou":
+        assert index is not None
+        result = arg.tou(index, name=new_name)
+    elif verb == "sub":
+        result = arg.sub(name=new_name)
+    elif verb == "bus":
+        result = arg.bus(name=new_name)
+    elif verb == "attacker":
+        result = arg.attacker(name=new_name)
+    elif verb == "regatta":
+        result = arg.regatta(name=new_name)
+    else:
+        raise ValueError(f"unknown projection debate command '{verb}'")
+
+    prover.register_argument(result)
+    return result
+
 
 def _parse_register_command(command: str) -> tuple[str, str, bool, str]:
     """Parse `register NAME [strict] : TYPE := PROOF_TERM`.

@@ -1,8 +1,16 @@
 import logging, copy, os
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
-from core.ac.ast import ProofTerm, Mu, Mutilde, Goal, Laog, ID, DI
+from core.ac.ast import Admal, Cons, Context, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term
 from core.ac.prop_render import prop_to_command
+from core.ac.alt_structure import (
+    match_alt_structure,
+    match_alternative_counterexample_structure,
+    match_application_structure,
+    match_defeasible_warrant_structure,
+    match_dual_application_structure,
+    match_dual_defeasible_warrant_structure,
+)
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.reduce import ArgumentTermReducer, EtaReducer, ThetaExpander
@@ -92,6 +100,180 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if self.enrich == "PROPS":
             self.enrich_props()
             self.generate_proof_term()
+
+    @staticmethod
+    def _fresh_open_number(prefix: str = "open") -> str:
+        if not hasattr(Argument, "_open_counter"):
+            Argument._open_counter = 0
+        Argument._open_counter += 1
+        return f"{prefix}{Argument._open_counter}"
+
+    @staticmethod
+    def _binder_names(node: ProofTerm | None) -> set[str]:
+        names: set[str] = set()
+
+        def walk(n: ProofTerm | None) -> None:
+            if n is None:
+                return
+            if isinstance(n, Mu):
+                names.add(n.id.name)
+                walk(n.term)
+                walk(n.context)
+            elif isinstance(n, Mutilde):
+                names.add(n.di.name)
+                walk(n.term)
+                walk(n.context)
+            elif isinstance(n, Lamda):
+                names.add(n.di.di.name)
+                walk(n.term)
+            elif isinstance(n, Admal):
+                names.add(n.id.id.name)
+                walk(n.context)
+            elif isinstance(n, Cons):
+                walk(n.term)
+                walk(n.context)
+            elif isinstance(n, Sonc):
+                walk(n.context)
+                walk(n.term)
+
+        walk(node)
+        return names
+
+    @staticmethod
+    def _external_binders_to_open_leaves(node: ProofTerm, external_names: set[str]) -> ProofTerm:
+        def walk(n: ProofTerm, local_names: set[str]) -> ProofTerm:
+            if isinstance(n, DI):
+                if n.name in external_names and n.name not in local_names:
+                    return Goal(Argument._fresh_open_number("g"), n.prop)
+                return n
+            if isinstance(n, ID):
+                if n.name in external_names and n.name not in local_names:
+                    return Laog(Argument._fresh_open_number("l"), n.prop)
+                return n
+            if isinstance(n, Mu):
+                next_local = set(local_names)
+                next_local.add(n.id.name)
+                n.term = walk(n.term, next_local)
+                n.context = walk(n.context, next_local)
+                return n
+            if isinstance(n, Mutilde):
+                next_local = set(local_names)
+                next_local.add(n.di.name)
+                n.term = walk(n.term, next_local)
+                n.context = walk(n.context, next_local)
+                return n
+            if isinstance(n, Lamda):
+                next_local = set(local_names)
+                next_local.add(n.di.di.name)
+                n.term = walk(n.term, next_local)
+                return n
+            if isinstance(n, Admal):
+                next_local = set(local_names)
+                next_local.add(n.id.id.name)
+                n.context = walk(n.context, next_local)
+                return n
+            if isinstance(n, Cons):
+                n.term = walk(n.term, local_names)
+                n.context = walk(n.context, local_names)
+                return n
+            if isinstance(n, Sonc):
+                n.context = walk(n.context, local_names)
+                n.term = walk(n.term, local_names)
+                return n
+            return n
+
+        return walk(node, set())
+
+    def _ensure_body_available(self) -> None:
+        if self.body is None:
+            if not self.executed:
+                self.execute()
+            if self.body is None:
+                raise ValueError("argument body missing")
+
+    def _project_argument(self, body: ProofTerm, name: Optional[str], *, source_body: ProofTerm | None = None) -> "Argument":
+        body = copy.deepcopy(body)
+        if source_body is not None:
+            external_names = self._binder_names(source_body)
+            body = self._external_binders_to_open_leaves(body, external_names)
+        conclusion = getattr(body, "prop", None)
+        if conclusion is None:
+            raise ValueError("projected body has no proposition")
+
+        projected = Argument(
+            self.prover,
+            name or f"{self.name}_projection",
+            conclusion,
+            rendering=self.rendering,
+            enrich=self.enrich,
+            is_anti=isinstance(body, Context),
+        )
+        projected.body = body
+        projected.assumptions = copy.deepcopy(self.assumptions)
+        projected.delegations = copy.deepcopy(self.delegations)
+        projected.normal_body = None
+        projected.normal_form = None
+        projected.normal_representation = None
+        projected.executed = False
+        return projected
+
+    def out(self, index: int, name: Optional[str] = None) -> "Argument":
+        if not isinstance(index, int):
+            raise SyntaxError("out index must be an integer")
+        self._ensure_body_available()
+        alt = match_alt_structure(self.body)
+        if alt is not None:
+            if index < 0 or index >= len(alt.elements):
+                raise IndexError("index out of range")
+            return self._project_argument(alt.elements[index], name, source_body=self.body)
+        if isinstance(self.body, Term):
+            if index == 0:
+                return self._project_argument(self.body, name, source_body=self.body)
+            raise IndexError("index out of range")
+        raise ValueError("top level is not an `AltStructure`")
+
+    def tou(self, index: int, name: Optional[str] = None) -> "Argument":
+        if not isinstance(index, int):
+            raise SyntaxError("tou index must be an integer")
+        self._ensure_body_available()
+        alt = match_alternative_counterexample_structure(self.body)
+        if alt is not None:
+            if index < 0 or index >= len(alt.elements):
+                raise IndexError("index out of range")
+            return self._project_argument(alt.elements[index], name, source_body=self.body)
+        if isinstance(self.body, Context):
+            if index == 0:
+                return self._project_argument(self.body, name, source_body=self.body)
+            raise IndexError("index out of range")
+        raise ValueError("top level is not an `AlternativeCounterexampleStructure`")
+
+    def sub(self, name: Optional[str] = None) -> "Argument":
+        self._ensure_body_available()
+        application = match_application_structure(self.body)
+        if application is None:
+            raise ValueError("top level is not an application structure")
+        return self._project_argument(application.argument, name, source_body=self.body)
+
+    def bus(self, name: Optional[str] = None) -> "Argument":
+        self._ensure_body_available()
+        application = match_dual_application_structure(self.body)
+        if application is None:
+            raise ValueError("top level is not a dual application structure")
+        return self._project_argument(application.condition, name, source_body=self.body)
+
+    def attacker(self, name: Optional[str] = None) -> "Argument":
+        self._ensure_body_available()
+        warrant = match_defeasible_warrant_structure(self.body)
+        if warrant is None:
+            raise ValueError("top level is not a defeasible warrant structure")
+        return self._project_argument(warrant.exception, name, source_body=self.body)
+
+    def regatta(self, name: Optional[str] = None) -> "Argument":
+        self._ensure_body_available()
+        warrant = match_dual_defeasible_warrant_structure(self.body)
+        if warrant is None:
+            raise ValueError("top level is not a dual defeasible warrant structure")
+        return self._project_argument(warrant.support, name, source_body=self.body)
 
     def _eta_reduce_body(self) -> None:
         if self.body is None:

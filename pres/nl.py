@@ -498,7 +498,7 @@ class _NLVisitor(ProofTermVisitor):
                 indent_str = indent_str.removesuffix(self.semantic.indentation)
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 1) + f"{term.name}")
         else:
-            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 0) + f"{self._render_prop(term.prop)}" + f"{(term.name)}")
         return term
 
     def visit_ID(self, term: ID):
@@ -508,7 +508,7 @@ class _NLVisitor(ProofTermVisitor):
                 indent_str = indent_str.removesuffix(self.semantic.indentation)
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 1) + f"{term.name}")
         else:
-            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 0) + f"{self._render_declaration_or_prop(term.name, term.prop)}")
+            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 0) + f"{self._render_prop(term.prop)}" + f"{(term.name)}")
         return term
 
     def visit_Sonc(self, term: Sonc):
