@@ -82,7 +82,7 @@ let toplevel () =
                Machine.set_external_error msg;
                if !(Machine.machine_mode) then begin
                  print_endline ";;BEGIN_ML_DATA;;";
-                 print_endline (Machine.snapshot !cairn);
+                 print_endline (Machine.snapshot_for_echo !cairn);
                  print_endline ";;END_ML_DATA;;";
                end
 		 
@@ -99,7 +99,7 @@ let toplevel () =
                Machine.set_external_error msg;
                if !(Machine.machine_mode) then begin
                  print_endline ";;BEGIN_ML_DATA;;";
-                 print_endline (Machine.snapshot !cairn);
+                 print_endline (Machine.snapshot_for_echo !cairn);
                  print_endline ";;END_ML_DATA;;";
                end
 	);
@@ -157,4 +157,3 @@ let _ =
   if !toplvl 
   then toplevel()
   else compiler()
-

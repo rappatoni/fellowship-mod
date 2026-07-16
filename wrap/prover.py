@@ -59,14 +59,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
         return atom
 
     def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
-        """Send a command to Fellowship
+        """Send a single command to Fellowship.
 
         command -- The command string
         silent -- A flag determining verbosity (off if 1). TODO: Replace by dedicated logger.
 
         Returns a preparsed (sexp) proof state.
         """
-        
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -90,6 +89,97 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         output = self.prover.before
         logger.log(5, "<< %s", output)
+        return self._finalize_state_from_output(
+            output,
+            command_for_error=command,
+            silent=silent,
+            include_ui=include_ui,
+            allow_incomplete=allow_incomplete,
+        )
+
+    def send_commands(self, commands: List[str], silent: int = 1, *, include_ui: bool = False) -> Dict[str, Any]:
+        """Send a batch of complete Fellowship commands and return the final state.
+
+        The commands are written to the prover in one block, then we consume one
+        prompt per command.  Each prompt segment is finalized in order so errors
+        from intermediate commands are surfaced just as they are with repeated
+        :meth:`send_command` calls.
+        """
+        cleaned = [cmd.strip() for cmd in commands if cmd and cmd.strip()]
+        if not cleaned:
+            raise ValueError("send_commands requires at least one command")
+
+        block = "\n".join(cleaned)
+        logger.log(5, ">> batch(%d)\n%s", len(cleaned), block)
+        outputs: List[str] = []
+        try:
+            self.prover.send(block + "\n")
+            for _cmd in cleaned:
+                self.prover.expect('fsp <')
+                outputs.append(self.prover.before)
+        except PexpectTIMEOUT as e:
+            out = "".join(outputs) + getattr(self.prover, "before", "")
+            self.last_output_text = out
+            logger.error("pexpect timeout on command batch %r: %s", cleaned, e)
+            raise ProverError(f"Prover I/O timeout during command batch: {e}") from e
+        except PexpectEOF as e:
+            out = "".join(outputs) + getattr(self.prover, "before", "")
+            self.last_output_text = out
+            logger.error("pexpect EOF on command batch %r: %s", cleaned, e)
+            raise ProverError(f"Prover I/O EOF during command batch: {e}") from e
+
+        logger.log(5, "<< batch %s", "".join(outputs))
+        state: Optional[Dict[str, Any]] = None
+        for cmd, output in zip(cleaned, outputs):
+            state = self._finalize_state_from_output(
+                output,
+                command_for_error=cmd,
+                silent=silent,
+                include_ui=include_ui,
+                allow_incomplete=False,
+            )
+        if state is None:
+            raise MachinePayloadError("Machine block missing in prover output.")
+        return state
+
+    def send_commands_quiet_final(self, commands: List[str], silent: int = 1) -> Dict[str, Any]:
+        """Replay commands with lightweight intermediate machine payloads.
+
+        Fellowship's quiet machine mode avoids serializing the full proof term
+        after every replay step.  Intermediate quiet payloads are still parsed
+        so errors stop replay immediately; turning quiet mode off emits one full
+        final snapshot, which is returned to the caller.
+        """
+        cleaned = [cmd.strip() for cmd in commands if cmd and cmd.strip()]
+        if not cleaned:
+            raise ValueError("send_commands_quiet_final requires at least one command")
+
+        try:
+            self.send_command("machine quiet on.", silent=silent)
+        except ProverError as e:
+            logger.debug("Quiet replay unavailable; falling back to normal batch replay: %s", e)
+            return self.send_commands(cleaned, silent=silent)
+        try:
+            for cmd in cleaned:
+                self.send_command(cmd, silent=silent)
+        except Exception:
+            try:
+                self.send_command("machine quiet off.", silent=silent)
+            except Exception:
+                pass
+            raise
+        return self.send_command("machine quiet off.", silent=silent)
+
+    def _finalize_state_from_output(
+        self,
+        output: str,
+        *,
+        command_for_error: str,
+        silent: int = 1,
+        include_ui: bool = False,
+        allow_incomplete: bool = False,
+    ) -> Dict[str, Any]:
+        """Parse prover output and apply the standard state side effects."""
         self.last_output_text = output
         state = self._extract_machine_block(output)
         if state is None:
@@ -101,14 +191,14 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 if include_ui:
                     state["_ui"] = output.strip()
             else:
-                logger.error("Machine block missing in prover output for command %r", command)
+                logger.error("Machine block missing in prover output for command %r", command_for_error)
                 raise MachinePayloadError("Machine block missing in prover output.")
 
         # If there's no machine block, only allow continuing when we can prove it's a no-op
         # (currently: plaintext parse error detected) OR when the caller explicitly allows
         # dot-terminated / multi-line commands.
         if (not MACHINE_BLOCK_RE.search(output)) and not (state.get('_no_machine_block_ok') or allow_incomplete):
-            logger.error("No machine block and no safe no-op indicator for command %r", command)
+            logger.error("No machine block and no safe no-op indicator for command %r", command_for_error)
             raise MachinePayloadError("Machine block missing in prover output (possible desync).")
 
         if include_ui:

@@ -1,4 +1,4 @@
-(* 
+(*
   // The Fellowship Proof Assistant
   // Copyright Florent Kirchner, Claudio Sacerdoti Coen
   // This file is distributed under the terms of the CeCILL license version 2.
@@ -47,29 +47,29 @@ let set_state, is_current_goal, current_goal_marker =
 
 let rec pretty_natural_t3rm n frm =
  function
-    TermMeta id -> fprintf frm ".... (%s%s)%s" 
+    TermMeta id -> fprintf frm ".... (%s%s)%s"
       (current_goal_marker id) id (if is_current_goal id then " <======" else "")
   | DelegationTermMeta id -> fprintf frm ".... (%s%s)%s"
       (current_goal_marker id) id (if is_current_goal id then " <======" else "")
   | True_constructor -> fprintf frm "by definition of %s" (pretty_prop True)
   | Hyp id -> fprintf frm "by %s" id
-  | Lambda (id,p,t) -> 
+  | Lambda (id,p,t) ->
       (fprintf frm "assume %s (%s)" (pretty_prop p) id ;
        ind n frm ;
        pretty_natural_t3rm n frm t )
-  | LambdaFO (id,p,t) -> 
+  | LambdaFO (id,p,t) ->
       (fprintf frm "consider an arbitrary but fixed %s of type %s"
 	id (pretty_sort p) ;
        ind n frm ;
        pretty_natural_t3rm n frm t )
-  | Cons' (c,t) -> 
+  | Cons' (c,t) ->
       (pp_print_string frm "<???" ;
        pretty_natural_context (n + 1) frm c ;
        ind (n + 1) frm ;
        pretty_natural_t3rm (n + 1) frm t ;
        ind n frm ;
        pp_print_string frm "???>" )
-  | TermsPair(t,t') -> 
+  | TermsPair(t,t') ->
       (pretty_natural_t3rm n frm t ;
        ind n frm ;
        pp_print_string frm "and" ;
@@ -78,35 +78,35 @@ let rec pretty_natural_t3rm n frm =
   | TermsPairFO(p,t,t') ->
       (* we hide the witness *)
       pretty_natural_t3rm n frm t'
-  | Left t -> 
+  | Left t ->
       (pretty_natural_t3rm n frm t ;
        ind n frm ;
        pp_print_string frm "trivial" )
-  | Right t -> 
+  | Right t ->
       (pretty_natural_t3rm n frm t ;
        ind n frm ;
        pp_print_string frm "trivial" )
-  | Mu (id,p,cmd) -> 
+  | Mu (id,p,cmd) ->
       (fprintf frm "we need to prove %s" (pretty_prop p) ;
        ind (n + 1) frm ;
        pretty_natural_command (n + 1) frm cmd )
 and pretty_natural_context n frm =
  function
-    ContextMeta id -> 
+    ContextMeta id ->
       (ind (n - 1) frm ;
-       fprintf frm "...(%s%s)%s" 
+       fprintf frm "...(%s%s)%s"
 	(current_goal_marker id) id (if is_current_goal id then " <======" else "") )
   | DelegationContextMeta id ->
       (ind (n - 1) frm ;
        fprintf frm "...(%s%s)%s"
 	(current_goal_marker id) id (if is_current_goal id then " <======" else "") )
-  | False_eliminator -> 
+  | False_eliminator ->
       (ind (n - 1) frm ;
        pp_print_string frm "absurd" )
-  | Concl id -> 
+  | Concl id ->
       (ind (n - 1) frm ;
        pp_print_string frm "done" )
-  | Cons (t,c) -> 
+  | Cons (t,c) ->
       (ind n frm ;
        pp_print_string frm "and " ;
        pretty_natural_t3rm n frm t ;
@@ -114,23 +114,23 @@ and pretty_natural_context n frm =
   | ConsFO (t,c) ->
       (* we hide the argument t *)
       pretty_natural_context n frm c
-  | Lambda' (id,p,c) -> 
+  | Lambda' (id,p,c) ->
       (ind n frm ;
        fprintf frm "<???%s(%s)" (pretty_prop p) id ;
        pretty_natural_context (n + 1) frm c ;
        ind n frm )
-  | DestructTermsPair(id,p,id',p',cmd) -> 
+  | DestructTermsPair(id,p,id',p',cmd) ->
       (ind n frm ;
-       fprintf frm "we proved %s (%s) and %s (%s)" 
+       fprintf frm "we proved %s (%s) and %s (%s)"
 	(pretty_prop p) id (pretty_prop p') id' ;
        ind n frm ;
        pretty_natural_command n frm cmd )
-  | DestructTermsPairFO(id,p,c) -> 
+  | DestructTermsPairFO(id,p,c) ->
       (ind n frm ;
        fprintf frm "let %s be the element of type %s that satisfies the property"
 	id (pretty_sort p) ;
        pretty_natural_context n frm c )
-  | ContextsPair(c,c') -> 
+  | ContextsPair(c,c') ->
       (ind n frm ;
        pp_print_string frm "by cases: " ;
        ind (n + 1) frm ;
@@ -143,18 +143,18 @@ and pretty_natural_context n frm =
        ind (n + 2) frm ;
        pp_print_string frm "by case hypothesis" ;
        pretty_natural_context (n + 2) frm c' )
-  | MuTilde (id,p,cmd) -> 
+  | MuTilde (id,p,cmd) ->
       (ind n frm ;
        fprintf frm "we proved %s (%s)" (pretty_prop p) id ;
        ind n frm ;
        pretty_natural_command n frm cmd )
 and pretty_natural_command n frm =
  function
-    Play (t,c) -> 
+    Play (t,c) ->
       (pretty_natural_t3rm n frm t ;
        pretty_natural_context n frm c )
 
-let pretty_natural pt frm = 
+let pretty_natural pt frm =
  let pt' = if !lj then pt else Interpreter_proof_terms.lk_to_lj_plus_em pt in
   (*CSC: expensive test, can be avoided *)
   if pt' <> pt then
@@ -173,7 +173,7 @@ let pretty_hyps hl frm = List.iter (pretty_hyp frm) hl
 let pretty_ccls cl frm = List.iter (pretty_ccl frm) cl
 
 let pretty_env env frm =
- fprintf frm "%s@\n%s@\n" 
+ fprintf frm "%s@\n%s@\n"
   (String.concat "\n"
    (List.map (fun (id,sort) -> id ^ ":" ^ pretty_sort sort) env))
   env_separator
@@ -182,12 +182,12 @@ let pretty_goal (id,goal) frm =
  pretty_env goal.env frm ;
  let goal_id = (match goal.kind with GoalObligation -> "?" | DelegationObligation -> "!") ^ id in
  match goal.active with
-  | (RightHandSide,p) -> 
+  | (RightHandSide,p) ->
       pretty_hyps goal.hyp frm ;
       fprintf frm "%s%s@\n" turnstile goal_id ;
       pretty_ccls (("*",p,true)::goal.ccl) frm
   | (LeftHandSide,p) ->
-      pretty_hyps (("*",p,true)::goal.hyp) frm ; 
+      pretty_hyps (("*",p,true)::goal.hyp) frm ;
       fprintf frm "%s%s@\n" turnstile goal_id ;
       pretty_ccls goal.ccl frm
 
@@ -208,12 +208,12 @@ let pretty_pt pt frm =
 
 let pretty_goals cur goals frm =
  let n = List.length goals in
- if n <> 0 then 
-  try 
-  (fprintf frm "%d %s yet to prove!@\n" 
+ if n <> 0 then
+  try
+  (fprintf frm "%d %s yet to prove!@\n"
     n (if n = 1 then "goal" else "goals") ;
    pretty_goal (List.nth goals (cur - 1)) frm )
-  with _ -> 
+  with _ ->
   (printf "This is NOT supposed to happen. You get to spank the programmer.@." ;
    exit (-1) )
 
@@ -223,23 +223,23 @@ let pretty_cairn cairn frm =
  match cairn with
   | Idle (None,s) -> ()
   | Idle (Some m,s) ->
-      begin match m#loc with 
+      begin match m#loc with
 	| None ->
 	     fprintf frm "%s@\n" m#to_string ;
 	| Some pos ->
 	    (localization pos frm ;
 	     fprintf frm "%s@\n" m#to_string )
       end
-  | Success s when s.goals = [] -> 
+  | Success s when s.goals = [] ->
       (fprintf frm "Closed the last branch: @\nProof completed!@\n@\n" ;
        pretty_pt s.pt frm )
-  | Success s -> 
+  | Success s ->
       (fprintf frm "Closed a branch. @\n@\n" ;
-       pretty_pt s.pt frm ; 
+       pretty_pt s.pt frm ;
        pretty_goals s.index s.goals frm )
   | Subgoals (0,s) ->
       fprintf frm "Standing by. @\n@\n"
-  | Subgoals (1,s) -> 
+  | Subgoals (1,s) ->
       (pretty_pt s.pt frm ;
        pretty_goals s.index s.goals frm )
   | Subgoals (n,s) ->
@@ -247,36 +247,43 @@ let pretty_cairn cairn frm =
        pretty_pt s.pt frm ;
        pretty_goals s.index s.goals frm)
   | Exception (m,s) ->
-      begin match m#loc with 
+      begin match m#loc with
 	| None ->
 	    (fprintf frm "%s@\n@\n" m#to_string ;
-	     pretty_pt s.pt frm ; 
+	     pretty_pt s.pt frm ;
 	     pretty_goals s.index s.goals frm )
 	| Some pos ->
 	    (localization pos frm ;
 	     fprintf frm "%s@\n@\n" m#to_string ;
-	     pretty_pt s.pt frm ; 
+	     pretty_pt s.pt frm ;
 	     pretty_goals s.index s.goals frm )
       end
 
 (*The main printing function.*)
-let echo pp_fsp_fun = 
-  let ui_buffer = Buffer.create 16 in
-  let ui_frm = formatter_of_buffer ui_buffer in
-  pp_print_newline ui_frm () ; 
-  (*The first box sets the indentation*)
-  pp_open_vbox ui_frm 0 ;
-    pp_print_string ui_frm "    > " ;
-  pp_close_box ui_frm () ;
-  (*The second box prints the real text*)
-  pp_open_vbox ui_frm 0 ;
-    pp_open_hbox ui_frm () ;
-      pp_fsp_fun ui_frm ;
+let echo pp_fsp_fun =
+  if !Machine.machine_quiet then begin
+    if !Machine.machine_mode then begin
+      let payload = Machine.snapshot_for_echo !Core.cairn in
+      Printf.printf ";;BEGIN_ML_DATA;; %s ;;END_ML_DATA;;\n%!" payload;
+    end
+  end else begin
+    let ui_buffer = Buffer.create 16 in
+    let ui_frm = formatter_of_buffer ui_buffer in
+    pp_print_newline ui_frm () ;
+    (*The first box sets the indentation*)
+    pp_open_vbox ui_frm 0 ;
+      pp_print_string ui_frm "    > " ;
     pp_close_box ui_frm () ;
-  pp_close_box ui_frm () ;
-  pp_print_newline ui_frm () ;
-  Buffer.output_buffer stdout ui_buffer ;
-  if !Machine.machine_mode then begin
-    let payload = Machine.snapshot !Core.cairn in
-    Printf.printf ";;BEGIN_ML_DATA;; %s ;;END_ML_DATA;;\n%!" payload;
+    (*The second box prints the real text*)
+    pp_open_vbox ui_frm 0 ;
+      pp_open_hbox ui_frm () ;
+        pp_fsp_fun ui_frm ;
+      pp_close_box ui_frm () ;
+    pp_close_box ui_frm () ;
+    pp_print_newline ui_frm () ;
+    Buffer.output_buffer stdout ui_buffer ;
+    if !Machine.machine_mode then begin
+      let payload = Machine.snapshot_for_echo !Core.cairn in
+      Printf.printf ";;BEGIN_ML_DATA;; %s ;;END_ML_DATA;;\n%!" payload;
+    end
   end

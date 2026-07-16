@@ -143,12 +143,39 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             start_cmd = f'theorem {self.name} : ({prop_to_command(self.conclusion)}).'
         start_payload = self.prover.send_command(start_cmd)
         output = start_payload
-        # Execute each instruction
+        # Execute each instruction.  Ordinary Fellowship commands are batched
+        # by default to avoid one pexpect round-trip per proof step.  Custom
+        # Python tactics may call back into the wrapper, so pending Fellowship
+        # commands are flushed before and after such tactic boundaries.
         last_output = start_payload
         instr_list = list(self.instructions)
         total = len(instr_list)
+        use_batch_replay = (
+            os.getenv("FSP_BATCH_REPLAY", "1").lower() not in {"0", "false", "no"}
+            and hasattr(self.prover, "send_commands")
+        )
+        use_quiet_replay = (
+            use_batch_replay
+            and os.getenv("FSP_QUIET_REPLAY", "1").lower() not in {"0", "false", "no"}
+            and hasattr(self.prover, "send_commands_quiet_final")
+        )
+        pending_commands: list[str] = []
+
+        def flush_pending() -> None:
+            nonlocal last_output
+            if not pending_commands:
+                return
+            if use_quiet_replay:
+                output = self.prover.send_commands_quiet_final(pending_commands)
+            else:
+                output = self.prover.send_commands(pending_commands)
+            last_output = output
+            logger.trace("Batched prover output: %s", output)
+            pending_commands.clear()
+
         for i, instr in enumerate(instr_list):
             if instr.startswith('tactic '):
+                flush_pending()
                 # Handle custom tactic invocation within argument execution
                 parts = instr.split()
                 tactic_name = parts[1]
@@ -156,16 +183,26 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 output = self.prover.execute_tactic(tactic_name, *tactic_args)
                 last_output = output
             else:
+                norm = instr.strip().lower()
+                command = instr.strip() + '.'
+                # Preserve the historical special case: if a final "next"
+                # raises, ignore it.  Keep that one command on the old single
+                # command path so we still know exactly which command failed.
+                should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay
+                if use_batch_replay and not should_single_step:
+                    pending_commands.append(command)
+                    continue
+                flush_pending()
                 try:
-                    output = self.prover.send_command(instr.strip() + '.')
+                    output = self.prover.send_command(command)
                     last_output = output
                     logger.trace("Prover output: %s", output)
                 except ProverError as e:
-                    norm = instr.strip().lower()
                     if i == total - 1 and norm == "next":
                         logger.warning("Ignoring ProverError on final 'next': %s", e)
                         break
                     raise
+        flush_pending()
         # Capture the assumptions (open goals) using the last successful state
         if last_output is None:
             last_output = start_payload

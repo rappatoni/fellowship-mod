@@ -26,6 +26,7 @@ type token =
   | DISCARD
   | QUIT
   | HELP
+  | MACHINE
   | AXIOM
   | CUT
   | ELIM

@@ -490,6 +490,9 @@ let jack_instr =
   | DiscardAll -> help_discard_all
   | DiscardTheorem -> help_discard_theorem
   | Quit -> help_quit
+  | MachineQuiet true -> ("machine quiet on", "Enable lightweight machine payloads for replay.")
+  | MachineQuiet false -> ("machine quiet off", "Disable lightweight machine payloads for replay.")
+  | MachineSnapshot -> ("machine snapshot", "Force the next machine payload to include the full proof state.")
 
 let instr_list =
  String.concat ", "
@@ -497,7 +500,7 @@ let instr_list =
     (* in alphabetical order *)
     [ CheckOut; CheckOutProofTerm; Declare; Deny; DiscardAll; DiscardTheorem;
       ExportNaturalLanguage; Min false; Lj true; Lj false; Min true; Next; Prev;
-      AntiTheorem; Theorem; Qed; Quit; Undo ]
+      AntiTheorem; Theorem; Qed; Quit; Undo; MachineQuiet true; MachineQuiet false; MachineSnapshot ]
   ) ^ "."
 
 let jack_help args =

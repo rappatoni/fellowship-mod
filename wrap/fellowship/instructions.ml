@@ -30,6 +30,8 @@ type instruction =
   | DiscardAll
   | DiscardTheorem
   | Quit
+  | MachineQuiet of bool
+  | MachineSnapshot
 
 let pretty_instruction = function
   | Lj b -> if b then "lj" else "lk"
@@ -48,6 +50,8 @@ let pretty_instruction = function
   | DiscardAll -> "discard all"
   | DiscardTheorem -> "discard theorem"
   | Quit -> "quit"
+  | MachineQuiet b -> if b then "machine quiet on" else "machine quiet off"
+  | MachineSnapshot -> "machine snapshot"
 
 type instr_plus_args = instruction * (arg list)
 
@@ -360,8 +364,10 @@ let jack_instruction (instruction,args) cairn =
   match instruction with
     | Lj b -> lj_logic_switch b args cairn
     | Min b -> min_logic_switch b args cairn
+    | MachineQuiet b -> Machine.machine_quiet := b; cairn
+    | MachineSnapshot -> Machine.request_full_snapshot (); cairn
     | x -> too_late := true ; begin match x with
-      | Lj _ | Min _ -> assert false
+      | Lj _ | Min _ | MachineQuiet _ | MachineSnapshot -> assert false
       | Declare -> declare args cairn
       | Theorem -> theorem args cairn
       | Deny -> deny args cairn
@@ -377,4 +383,3 @@ let jack_instruction (instruction,args) cairn =
       | Undo -> undo args cairn
       | Quit -> quit ()
     end
-

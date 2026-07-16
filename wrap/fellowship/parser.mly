@@ -17,7 +17,7 @@
 %token COQ PVS ISABELLE
 %token <string> IDENT
 %token COQ PVS ISABELLE
-%token LJ LK MIN FULL DECLARE THEOREM NEXT PREV QED CHECKOUT EXPORT PROOF TERM NATURAL LANGUAGE UNDO DISCARD QUIT HELP
+%token LJ LK MIN FULL DECLARE THEOREM NEXT PREV QED CHECKOUT EXPORT PROOF TERM NATURAL LANGUAGE UNDO DISCARD QUIT HELP MACHINE
 %token AXIOM CUT ELIM IDTAC IN FOCUS CONTRACTION WEAKEN BY DEFAULT
 %token TACTICALS TYPES TERMS FORMULAE
 %token PROP SET
@@ -82,6 +82,8 @@ instr:
 | DISCARD THEOREM                          { if !toplvl then DiscardTheorem
 					     else raise Parsing.Parse_error }
 | QUIT                                     { Quit }
+| MACHINE IDENT IDENT                      { if $2 = "quiet" && $3 = "on" then MachineQuiet true else if $2 = "quiet" && $3 = "off" then MachineQuiet false else raise Parsing.Parse_error }
+| MACHINE IDENT                            { if $2 = "snapshot" then MachineSnapshot else raise Parsing.Parse_error }
 
 tac: 
 /* primitive tactics */

@@ -36,6 +36,7 @@
     "isabelle", ISABELLE;
     "help", HELP;
     "undo", UNDO;
+    "machine", MACHINE;
     "quit", QUIT;
     "axiom", AXIOM;
     "cut", CUT;

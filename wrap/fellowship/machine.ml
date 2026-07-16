@@ -12,6 +12,16 @@ let machine_mode : bool ref = ref (
   | Some ("0" | "false" | "no") -> false
   | _ -> true)
 
+(** When true, machine mode emits a cheap status/errors payload instead of the
+    full proof-term/goals/declarations snapshot.  Used by wrapper-side replay. *)
+let machine_quiet : bool ref = ref false
+
+(** Force the next machine payload to be a full snapshot even if quiet mode is on. *)
+let machine_snapshot_once : bool ref = ref false
+
+let request_full_snapshot () : unit =
+  machine_snapshot_once := true
+
 (** Return an *ASCII* placeholder payload for now – will be filled later. *)
 (*let snapshot (_c : Core.cairn) : string =
   "(state (mode idle))"*)
@@ -53,6 +63,48 @@ let sexp_goal ((meta, g) : Core.metaid * Core.goal) =
 (*--------------------------------------------------------------------*)
 let hash s = Digest.to_hex (Digest.string s)
 
+let mode_of_cairn (cairn : Core.cairn) : string =
+  if Core.isCptScs cairn then "success"
+  else if Core.isExn cairn then "exception"
+  else if Core.isOngoing cairn then "subgoals"
+  else "idle"
+
+let messages_snapshot (cairn : Core.cairn) : string =
+  (* collect an externally supplied parse error once, then clear it *)
+  let ext_err =
+    match !external_error with
+    | Some s -> external_error := None; Some s
+    | None -> None
+  in
+  (* collect Core message if present *)
+  match ext_err, Core.get_msg cairn with
+  | Some e, Some m when Core.isExn cairn ->
+      Printf.sprintf
+        "(messages (errors %s %s) (warnings) (notes))"
+        (sexp_string e) (sexp_string (m#to_string))
+  | Some e, _ ->
+      Printf.sprintf
+        "(messages (errors %s) (warnings) (notes))"
+        (sexp_string e)
+  | None, Some m when Core.isExn cairn ->
+      Printf.sprintf
+        "(messages (errors %s) (warnings) (notes))"
+        (sexp_string (m#to_string))
+  | None, Some m ->
+      Printf.sprintf
+        "(messages (errors) (warnings) (notes %s))"
+        (sexp_string (m#to_string))
+  | None, None ->
+      "(messages (errors) (warnings) (notes))"
+
+let snapshot_quiet (cairn : Core.cairn) : string =
+  let st = Core.get_state cairn in
+  let mode = mode_of_cairn cairn in
+  let messages_sexp = messages_snapshot cairn in
+  Printf.sprintf
+    "(state (mode %s)(current-goal-index %d)%s)"
+    mode st.index messages_sexp
+
 let snapshot (cairn : Core.cairn) : string =
   (* force ASCII pretty‑printing temporarily *)
   let saved_ascii = !ascii in
@@ -61,11 +113,7 @@ let snapshot (cairn : Core.cairn) : string =
   let st = Core.get_state cairn in
 
   (* mode ------------------------------------------------------------*)
-  let mode =
-    if Core.isCptScs cairn then "success"
-    else if Core.isExn cairn then "exception"
-    else if Core.isOngoing cairn then "subgoals"
-    else "idle" in
+  let mode = mode_of_cairn cairn in
 
   (* goals -----------------------------------------------------------*)
   let goals_sexp = String.concat " " (List.map sexp_goal st.goals) in
@@ -95,34 +143,8 @@ let snapshot (cairn : Core.cairn) : string =
     String.concat " " (List.rev_append sig_sexp (List.rev_append thm_sexp mox_sexp)) in
 
   (* messages -------------------------------------------------------*)
-  let messages_sexp =
-    (* collect an externally supplied parse error once, then clear it *)
-    let ext_err =
-      match !external_error with
-      | Some s -> external_error := None; Some s
-      | None -> None
-    in
-    (* collect Core message if present *)
-    match ext_err, Core.get_msg cairn with
-    | Some e, Some m when Core.isExn cairn ->
-        Printf.sprintf
-          "(messages (errors %s %s) (warnings) (notes))"
-          (sexp_string e) (sexp_string (m#to_string))
-    | Some e, _ ->
-        Printf.sprintf
-          "(messages (errors %s) (warnings) (notes))"
-          (sexp_string e)
-    | None, Some m when Core.isExn cairn ->
-        Printf.sprintf
-          "(messages (errors %s) (warnings) (notes))"
-          (sexp_string (m#to_string))
-    | None, Some m ->
-        Printf.sprintf
-          "(messages (errors) (warnings) (notes %s))"
-          (sexp_string (m#to_string))
-    | None, None ->
-        "(messages (errors) (warnings) (notes))"
-  in
+  let messages_sexp = messages_snapshot cairn in
+
   (* restore user ascii preference ----------------------------------*)
   ascii := saved_ascii;
 
@@ -130,3 +152,12 @@ let snapshot (cairn : Core.cairn) : string =
   Printf.sprintf
     "(state (mode %s)(current-goal-index %d)(goals %s)(proof-term %s)(proof-term-hash %s)(decls %s)%s)"
     mode st.index goals_sexp (sexp_string pt_ascii) (sexp_string pt_hash) decls_sexp messages_sexp
+
+let snapshot_for_echo (cairn : Core.cairn) : string =
+  if !machine_snapshot_once then begin
+    machine_snapshot_once := false;
+    snapshot cairn
+  end else if !machine_quiet then
+    snapshot_quiet cairn
+  else
+    snapshot cairn
