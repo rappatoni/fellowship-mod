@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os, sys
+import shlex
 import json
 import tempfile
 from pathlib import Path
@@ -119,6 +120,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
+            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
           - Debate ops: undermine NEW attacker target
                         undercut  NEW attacker target   (backward compatible alias)
                         undergird NEW supporter target [on PROP]
@@ -719,6 +722,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
+            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
 
@@ -1405,12 +1410,58 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
-def color_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = True) -> None:
+def _parse_color_argument_spec(spec: str) -> tuple[str, list[tuple[str, str]] | None]:
+    """Parse `ARG [PROP=COLOR ...]` for color/color-nf commands.
+
+    Examples:
+      color a A=red B=green
+      color a "Bird Tweety=yellow"
+    """
+    try:
+        parts = shlex.split(spec)
+    except ValueError as e:
+        raise ValueError(f"Invalid color command: {e}") from e
+    if not parts:
+        raise ValueError("Invalid color command. Use: color ARG [PROP=COLOR ...]")
+
+    name = parts[0]
+    prop_colors: list[tuple[str, str]] = []
+    for item in parts[1:]:
+        if "=" not in item:
+            raise ValueError(
+                "Invalid color mapping %r. Use PROP=COLOR; quote propositions with spaces." % item
+            )
+        prop, color = item.rsplit("=", 1)
+        prop = prop.strip()
+        color = color.strip().lower()
+        if not prop or not color:
+            raise ValueError(
+                "Invalid color mapping %r. Both proposition and color are required." % item
+            )
+        prop_colors.append((prop, color))
+
+    return name, prop_colors or None
+
+
+def color_argument_cmd(prover: ProverWrapper, spec: str, normalized: bool = True) -> None:
     """CLI for coloring the proof term of an argument.
+
+    Syntax:
+        color ARG [PROP=COLOR ...]
+        color-nf ARG [PROP=COLOR ...]
+
+    Quote mappings whose propositions contain spaces, e.g.:
+        color birds "Bird Tweety=red" "Abnormal Tweety=yellow"
 
     If normalized is True, color the normal form; otherwise color the current
     executed proof term without normalizing first.
     """
+    try:
+        name, prop_colors = _parse_color_argument_spec(spec)
+    except ValueError as e:
+        logger.error("%s", e)
+        return
+
     arg = prover.get_argument(name)
     if not arg:
         logger.error(f"Argument '{name}' not found.")
@@ -1428,12 +1479,14 @@ def color_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = True
         label = "unnormalized"
 
     try:
-        colored = pretty_colored_proof_term(pt, verbose=False)
+        colored = pretty_colored_proof_term(pt, verbose=False, prop_colors=prop_colors)
     except Exception as e:
         logger.error("Coloring failed for '%s': %s", arg.name, e)
         return
     logger.info("")  # spacer before colored output
     logger.info("Colored %s proof term for %s:", label, arg.name)
+    if prop_colors:
+        logger.info("Prop colors: %s", ", ".join(f"{prop}={color}" for prop, color in prop_colors))
     logger.info(colored)
     logger.info("")  # spacer after colored output
 

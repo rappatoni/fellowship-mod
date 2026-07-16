@@ -17,7 +17,7 @@ register simple_pred : Bird_list[List_tweety_clumsy] := μalpha9:Bird_list List_
 deny vox : (Bird[Clumsy]).
 start counterargument attack_arg (Bird[Clumsy])
 moxia vox.
-end counterarguments
+end counterargument
 
 attack test attack_arg simple_pred
 render test pruefschema
