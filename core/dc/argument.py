@@ -191,6 +191,34 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             if self.body is None:
                 raise ValueError("argument body missing")
 
+    @staticmethod
+    def _peel_outer_eta(node: ProofTerm) -> ProofTerm:
+        """Ignore outer eta-expanded wrappers for projection debate operators.
+
+        Term eta wrappers have shape ``mu alpha.<t||alpha>``.  Context eta
+        wrappers have shape ``mu' x.<x||E>``.  The helper peels repeatedly so a
+        projection can see the debate structure immediately below such wrappers.
+        """
+        current = node
+        while True:
+            if (
+                isinstance(current, Mu)
+                and isinstance(current.id, ID)
+                and isinstance(current.context, ID)
+                and current.context.name == current.id.name
+            ):
+                current = current.term
+                continue
+            if (
+                isinstance(current, Mutilde)
+                and isinstance(current.di, DI)
+                and isinstance(current.term, DI)
+                and current.term.name == current.di.name
+            ):
+                current = current.context
+                continue
+            return current
+
     def _project_argument(self, body: ProofTerm, name: Optional[str], *, source_body: ProofTerm | None = None) -> "Argument":
         body = copy.deepcopy(body)
         if source_body is not None:
@@ -221,14 +249,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if not isinstance(index, int):
             raise SyntaxError("out index must be an integer")
         self._ensure_body_available()
-        alt = match_alt_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        alt = match_alt_structure(body)
         if alt is not None:
             if index < 0 or index >= len(alt.elements):
                 raise IndexError("index out of range")
             return self._project_argument(alt.elements[index], name, source_body=self.body)
-        if isinstance(self.body, Term):
+        if isinstance(body, Term):
             if index == 0:
-                return self._project_argument(self.body, name, source_body=self.body)
+                return self._project_argument(body, name, source_body=self.body)
             raise IndexError("index out of range")
         raise ValueError("top level is not an `AltStructure`")
 
@@ -236,41 +265,46 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if not isinstance(index, int):
             raise SyntaxError("tou index must be an integer")
         self._ensure_body_available()
-        alt = match_alternative_counterexample_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        alt = match_alternative_counterexample_structure(body)
         if alt is not None:
             if index < 0 or index >= len(alt.elements):
                 raise IndexError("index out of range")
             return self._project_argument(alt.elements[index], name, source_body=self.body)
-        if isinstance(self.body, Context):
+        if isinstance(body, Context):
             if index == 0:
-                return self._project_argument(self.body, name, source_body=self.body)
+                return self._project_argument(body, name, source_body=self.body)
             raise IndexError("index out of range")
         raise ValueError("top level is not an `AlternativeCounterexampleStructure`")
 
     def sub(self, name: Optional[str] = None) -> "Argument":
         self._ensure_body_available()
-        application = match_application_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        application = match_application_structure(body)
         if application is None:
             raise ValueError("top level is not an application structure")
         return self._project_argument(application.argument, name, source_body=self.body)
 
     def bus(self, name: Optional[str] = None) -> "Argument":
         self._ensure_body_available()
-        application = match_dual_application_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        application = match_dual_application_structure(body)
         if application is None:
             raise ValueError("top level is not a dual application structure")
         return self._project_argument(application.condition, name, source_body=self.body)
 
     def attacker(self, name: Optional[str] = None) -> "Argument":
         self._ensure_body_available()
-        warrant = match_defeasible_warrant_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        warrant = match_defeasible_warrant_structure(body)
         if warrant is None:
             raise ValueError("top level is not a defeasible warrant structure")
         return self._project_argument(warrant.exception, name, source_body=self.body)
 
     def regatta(self, name: Optional[str] = None) -> "Argument":
         self._ensure_body_available()
-        warrant = match_dual_defeasible_warrant_structure(self.body)
+        body = self._peel_outer_eta(self.body)
+        warrant = match_dual_defeasible_warrant_structure(body)
         if warrant is None:
             raise ValueError("top level is not a dual defeasible warrant structure")
         return self._project_argument(warrant.support, name, source_body=self.body)
