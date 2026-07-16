@@ -201,7 +201,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     }
                     recording = True
                     logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
-            elif command == 'end argument':
+            elif command in {'end argument', 'end counterargument', 'end antitheorem'}:
                     if not recording:
                         logger.warning("Not currently recording an argument.")
                         continue
@@ -1006,7 +1006,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"acdc: fatal prover communication error: {e}")
                     logger.error("Fatal prover communication error starting argument: %s", e)
                     break
-            elif command == 'end argument':
+            elif command in {'end argument', 'end counterargument', 'end antitheorem'}:
                 if not recording:
                     print("Not currently recording an argument.")
                     continue
@@ -1027,7 +1027,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     prover,
                     name=current_argument['name'],
                     conclusion=current_argument['conclusion'],
-                    instructions=current_argument['instructions']
+                    instructions=current_argument['instructions'],
+                    is_anti=current_argument.get('is_anti', False)
                 )
                 arg.execute()
                 # Store the argument for later use
