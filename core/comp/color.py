@@ -427,6 +427,10 @@ class AcceptanceColoringVisitor:
                 self._memo_color[mid] = "red"; return "red"
             if (c_t == "yellow" and c_c == "green") or (c_t == "green" and c_c == "yellow"):
                 self._memo_color[mid] = "yellow"; return "yellow"
+            if c_t == "red" and c_c == "red":
+                self._memo_color[mid] = "red"; return "red"
+            if c_t == "yellow" and c_c == "yellow":
+                self._memo_color[mid] = "yellow"; return "yellow"
             raise ValueError(
                 f"Acceptance coloring incomplete for Mu node {self._node_pres(n)}: "
                 f"term_color={c_t}, context_color={c_c}"
@@ -452,6 +456,10 @@ class AcceptanceColoringVisitor:
             if (c_t == "red" and c_c in {"green","yellow"}) or (c_c == "red" and c_t in {"green","yellow"}):
                 self._memo_color[mid] = "red"; return "red"
             if (c_t == "yellow" and c_c == "green") or (c_t == "green" and c_c == "yellow"):
+                self._memo_color[mid] = "yellow"; return "yellow"
+            if c_t == "red" and c_c == "red":
+                self._memo_color[mid] = "red"; return "red"
+            if c_t == "yellow" and c_c == "yellow":
                 self._memo_color[mid] = "yellow"; return "yellow"
             raise ValueError(
                 f"Acceptance coloring incomplete for Mutilde node {self._node_pres(n)}: "

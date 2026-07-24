@@ -13,4 +13,18 @@ axiom.
 
 end argument
 
+# A -> \bar{B}, \bar{B} -> A connective definitions.
 
+start counterargument mixed_impl B
+cut (false) x.
+cut (B->false) y.
+cut (A->B->false) z.
+next.
+elim.
+next.
+axiom.
+elim.
+axiom.
+axiom.
+elim.
+end counterargument

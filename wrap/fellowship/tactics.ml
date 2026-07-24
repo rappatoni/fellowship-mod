@@ -689,6 +689,23 @@ let thens (tac, _pos) tac_list details =
         in
         aux [] goals tac_list
 
+let smart_axiom args (id,g,context,thms,pt) =
+  (match args with
+    | [] ->
+      (let l = match (fst g.active) with
+      RightHandSide -> g.hyp | LeftHandSide -> g.ccl in
+      try
+       (* smart_axiom does not detect weakened hypotheses/conclusions *)
+       (*CSC: is this what we always want? do you want to give a warning *)
+       (*CSC: to the user? how?                                          *)
+       let decl,_,_ =
+        List.find (function (_,p,w) -> (snd g.active) = p && w) l in
+       axiom [Ident decl] (id,g,context,thms,pt)
+      with
+       Not_found -> RException (new tactic_msg Not_trivial) )
+    | [Ident _] -> axiom args (id,g,context,thms,pt)
+    | _ -> RException (new tactic_msg (Need_args "at most one identifier")))
+
 let focus args (id,g,context,thms,pt) =
   match args with 
     | [Ident ident ; Ident ident'] ->
@@ -754,7 +771,7 @@ let weaken args (id,g,context,thms,pt) =
 
 let jack_tactical tactical cairn = 
   let rec multiplex = function
-    | TPlug (Axiom,args,pos) -> axiom args , pos
+    | TPlug (Axiom,args,pos) -> smart_axiom args , pos
     | TPlug (Cut,args,pos) -> cut args , pos
     | TPlug (Elim,args,pos) -> elim args , pos
     | TPlug (ByDefault,args,pos) -> by_default args , pos
