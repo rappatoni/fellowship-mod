@@ -552,3 +552,21 @@ Useful background references:
 
 For raw prover usage, build and run `wrap/fellowship/fsp` directly and use
 `help.` inside the prover.
+
+## License
+
+AIDA is distributed under the **GNU General Public License version 3 only**
+(`GPL-3.0-only`), except for third-party material that carries its own license.
+See the top-level `LICENSE` file for the GPLv3 text.
+
+The bundled Fellowship source under `wrap/fellowship/` was originally written
+by Florent Kirchner and Claudio Sacerdoti Coen and is distributed under
+**CeCILL v2.0**; its full license text is retained in
+`wrap/fellowship/COPYING`. Files derived from that source retain their original
+CeCILL notices and identify the AIDA modifications separately. The combined
+modified Fellowship work in this repository is distributed under
+`GPL-3.0-only`, as permitted by CeCILL v2.0 Article 5.3.4.
+
+The manuscript source under `papers/comma2026/` has its own academic-content
+license; see `papers/comma2026/LICENSE.md`. Publisher-supplied templates and
+other third-party files retain their respective licenses and notices.
