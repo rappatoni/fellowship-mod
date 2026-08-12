@@ -1,4 +1,7 @@
-(* machine.ml – minimal toggle & dummy snapshot *)
+(* AIDA Fellowship machine-mode support
+   Copyright (C) 2025-2026 Max Rapp
+   SPDX-License-Identifier: GPL-3.0-only
+*)
 
 open Core
 

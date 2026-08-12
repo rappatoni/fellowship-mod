@@ -1,6 +1,6 @@
 type token =
   | IDENT of (
-# 18 "parser.mly"
+# 22 "parser.mly"
         string
 # 6 "parser.mli"
 )

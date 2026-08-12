@@ -1,5 +1,9 @@
 # Florent Kirchner			-- LogiCal
 # Makefile
+# Modifications Copyright (C) 2025-2026 Max Rapp
+# The modifications are licensed under GPL-3.0-only. This combined file is
+# distributed under GPL-3.0-only as permitted by CeCILL v2.0 Article 5.3.4;
+# the original CeCILL notice and terms remain applicable to the original work.
 
 
 # Variable definition

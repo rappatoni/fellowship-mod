@@ -1,4 +1,4 @@
-# 7 "lexer.mll"
+# 11 "lexer.mll"
  
   open Lexing
   open Parser
@@ -186,102 +186,102 @@ let rec nexttoken lexbuf =
 and __ocaml_lex_nexttoken_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 79 "lexer.mll"
+# 83 "lexer.mll"
             ( Format.printf "fsp < @?" ; newline lexbuf; nexttoken lexbuf )
 # 192 "lexer.ml"
 
   | 1 ->
-# 80 "lexer.mll"
+# 84 "lexer.mll"
                      ( nexttoken lexbuf )
 # 197 "lexer.ml"
 
   | 2 ->
-# 81 "lexer.mll"
+# 85 "lexer.mll"
             ( nexttoken lexbuf )
 # 202 "lexer.ml"
 
   | 3 ->
-# 82 "lexer.mll"
+# 86 "lexer.mll"
             ( id_or_kwd (lexeme lexbuf) )
 # 207 "lexer.ml"
 
   | 4 ->
-# 83 "lexer.mll"
+# 87 "lexer.mll"
             ( DOT )
 # 212 "lexer.ml"
 
   | 5 ->
-# 84 "lexer.mll"
+# 88 "lexer.mll"
             ( VIR )
 # 217 "lexer.ml"
 
   | 6 ->
-# 85 "lexer.mll"
+# 89 "lexer.mll"
             ( PVIR )
 # 222 "lexer.ml"
 
   | 7 ->
-# 86 "lexer.mll"
+# 90 "lexer.mll"
             ( COLON )
 # 227 "lexer.ml"
 
   | 8 ->
-# 87 "lexer.mll"
+# 91 "lexer.mll"
             ( NEG )
 # 232 "lexer.ml"
 
   | 9 ->
-# 88 "lexer.mll"
+# 92 "lexer.mll"
             ( ARROW )
 # 237 "lexer.ml"
 
   | 10 ->
-# 89 "lexer.mll"
+# 93 "lexer.mll"
             ( MINUS )
 # 242 "lexer.ml"
 
   | 11 ->
-# 90 "lexer.mll"
+# 94 "lexer.mll"
             ( AND )
 # 247 "lexer.ml"
 
   | 12 ->
-# 91 "lexer.mll"
+# 95 "lexer.mll"
             ( OR )
 # 252 "lexer.ml"
 
   | 13 ->
-# 92 "lexer.mll"
+# 96 "lexer.mll"
             ( LPAR )
 # 257 "lexer.ml"
 
   | 14 ->
-# 93 "lexer.mll"
+# 97 "lexer.mll"
             ( RPAR )
 # 262 "lexer.ml"
 
   | 15 ->
-# 94 "lexer.mll"
+# 98 "lexer.mll"
             ( LBRA )
 # 267 "lexer.ml"
 
   | 16 ->
-# 95 "lexer.mll"
+# 99 "lexer.mll"
             ( RBRA )
 # 272 "lexer.ml"
 
   | 17 ->
-# 96 "lexer.mll"
+# 100 "lexer.mll"
             ( PIPE )
 # 277 "lexer.ml"
 
   | 18 ->
-# 97 "lexer.mll"
+# 101 "lexer.mll"
             ( EOF )
 # 282 "lexer.ml"
 
   | 19 ->
-# 98 "lexer.mll"
+# 102 "lexer.mll"
             ( raise (Lexing_error (lexeme lexbuf)) )
 # 287 "lexer.ml"
 
@@ -289,3 +289,4 @@ and __ocaml_lex_nexttoken_rec lexbuf __ocaml_lex_state =
       __ocaml_lex_nexttoken_rec lexbuf __ocaml_lex_state
 
 ;;
+
