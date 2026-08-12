@@ -7,7 +7,7 @@ from pres.gen import ProofTermGenerationVisitor
 
 # Normalize logical symbols to the prover's ASCII syntax
 ASCII_REPLACEMENTS = {
-    '⊥': '_F_',
+    '⊥': 'false',
     '¬': '~',
     '→': '->',
     '∧': '/\\',

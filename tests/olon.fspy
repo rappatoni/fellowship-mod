@@ -1,0 +1,67 @@
+# This script exercises odd loops over negation (olons) and positive loops.
+lk.
+declare A,B,C:bool.
+declare rule1 : (B -> A).
+deny rule2 : (B - C).
+declare rule3 : (A -> C).
+declare rule4: (A -> C -> false).
+
+start counterargument olonMaker C
+cut (A->C->false) rule.
+axiom rule4.
+elim.
+by default.
+next.
+elim.
+axiom.
+elim.
+end counterargument
+
+start argument first A
+cut (B->A) rule.
+axiom rule1.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start counterargument second B
+cut (B-C) rule.
+elim.
+by default.
+next.
+axiom.
+moxia rule2.
+end argument
+
+start argument third C
+cut (A->C) rule.
+axiom rule3.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+# This is an example of a positive loop: A can defend itself against C by counter attacking.
+attack intermediate second first
+attack final third intermediate
+# But we want to prevent infinite loops where first is now again introduced as a supporter for third. How to do this?
+
+
+# Worse are olons where A attacks itself (directly or through another argument). Use rule4 to demonstrate this.
+start counterargument olonMaker C
+cut (A->C->false) rule.
+axiom rule4.
+elim.
+by default.
+next.
+elim.
+axiom.
+elim.
+end counterargument
+
+# support olon olonMaker intermediate
+# register olonMaker2 : C := μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>
+# register test : C := μ'olon_maker:C.<olon_maker:C||μ'rule:C.<rule4:A->C->false||1.2.1:A!*rule:C*_F_>>
