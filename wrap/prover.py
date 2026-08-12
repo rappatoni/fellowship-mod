@@ -39,6 +39,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5, env=env_used)
         self.prover.expect('fsp <')
+        # Pexpect sleeps for 50 ms before every send by default.  Fellowship is
+        # already at a stable prompt here and does not perform password-style
+        # terminal echo negotiation, so that defensive delay only adds linear
+        # latency to proof replay.
+        self.prover.delaybeforesend = None
         self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
         self.last_state: Any = None
         self.last_output_text: str = ""
