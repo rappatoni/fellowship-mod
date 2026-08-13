@@ -17,7 +17,7 @@ class _BatchFakeProver:
 
     def _state(self):
         return {
-            "proof-term": '";:thesis:A.<thesis||?1>"',
+            "proof-term": '";:thesis:A.<thesis||1?>"',
             "goals": [
                 ["goal", ["meta", '"1"'], ["side", "rhs"], ["active-prop", '"A"']]
             ],

@@ -19,7 +19,7 @@ def test_execute_with_empty_instructions_uses_start_payload_and_sets_assumptions
             self.commands.append(cmd)
             # Minimal payload matching Argument._parse_proof_state expectations.
             return {
-                "proof-term": '";:thesis:A.<thesis||?1>"',
+                "proof-term": '";:thesis:A.<thesis||1?>"',
                 "goals": [
                     [
                         "goal",

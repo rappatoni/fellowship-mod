@@ -453,8 +453,12 @@ let rec pretty_t3rm =
       sprintf "%s%s:%s.%s" (symbol ()).mu id (pretty_prop p) (pretty_command cmd)
 and pretty_context =
  function
-    ContextMeta id -> sprintf "?%s" id
-  | DelegationContextMeta id -> sprintf "!%s" id
+    (* Marker position encodes the category: leading for terms (see
+       pretty_t3rm), trailing for contexts.  Without this the spellings
+       overlap and "!n"/"?n" can be read as either a term or a context,
+       which makes application chains structurally ambiguous. *)
+    ContextMeta id -> sprintf "%s?" id
+  | DelegationContextMeta id -> sprintf "%s!" id
   | False_eliminator -> "_F_"
   | Concl id -> id
   | Cons (t,c) -> sprintf "%s*%s" (pretty_t3rm t) (pretty_context c)

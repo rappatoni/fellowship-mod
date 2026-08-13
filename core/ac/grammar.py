@@ -18,12 +18,13 @@ class Grammar():
             admal: "λ" pyh "." context
             cons: term "*" context
             sonc: context "*" term
+            // Marker position encodes the category: leading for terms,
+            // trailing for contexts.  A shared spelling would let "!n"/"?n"
+            // be read as either, making application chains ambiguous.
             goal: "?" number [":" prop]
-            laog: "?" number [":" prop]
-                | number [":" prop] "?"
+            laog: number [":" prop] "?"
             deleg: "!" number [":" prop]
-            geled: "!" number [":" prop]
-                 | number [":" prop] "!"
+            geled: number [":" prop] "!"
 
             ?prop: implication
             ?implication: minus

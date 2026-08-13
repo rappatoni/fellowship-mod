@@ -13,7 +13,7 @@ def affine_mu_rule_test():
     """Test affine μ‑rule with *arbitrary* affine variable names"""
     logger.info("AFFINE μ‑RULE REDUCTION TEST")
 
-    term_str = "μalpha:B.<μu:B.<?1.1||alpha>||μ'x:B.<?1.2||μ'beta:B.<t||?1.3>>>"
+    term_str = "μalpha:B.<μu:B.<?1.1||alpha>||μ'x:B.<?1.2||μ'beta:B.<t||1.3?>>>"
     logger.info("affine variable is named 'u': "+term_str+".")
 
     grammar = Grammar()

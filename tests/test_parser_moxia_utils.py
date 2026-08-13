@@ -52,7 +52,7 @@ def test_argument_execute_starts_antitheorem_for_mutilde_body(monkeypatch):
             self.commands.append(cmd)
             # minimal machine payload matching Argument._parse_proof_state expectations
             return {
-                "proof-term": '";:thesis:A.<thesis||?1>"',
+                "proof-term": '";:thesis:A.<thesis||1?>"',
                 "goals": [
                     ["goal", ["meta", '"1"'], ["side", "lhs"], ["active-prop", '"A"']]
                 ],
@@ -87,7 +87,7 @@ def test_argument_execute_starts_theorem_for_mu_body(monkeypatch):
         def send_command(self, cmd):
             self.commands.append(cmd)
             return {
-                "proof-term": '";:thesis:A.<thesis||?1>"',
+                "proof-term": '";:thesis:A.<thesis||1?>"',
                 "goals": [
                     ["goal", ["meta", '"1"'], ["side", "rhs"], ["active-prop", '"A"']]
                 ],

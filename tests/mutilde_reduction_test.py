@@ -12,15 +12,15 @@ def mutilde_affine_defence_test():
     """Checks the *throw‑away* affine rule when the **outer binder is µ'**.
 
     Input:
-        μ'alpha:B.<μx:B.<μz:B.<?2||t>||?1>||μ'y:B.<alpha||?3>>
+        μ'alpha:B.<μx:B.<μz:B.<?2||t>||1?>||μ'y:B.<alpha||3?>>
 
     µ'y is an *affine* binder, so the entire left branch can
     be discarded.  Expected normal form:
-        μ'α:B.< B:alpha || ?3 >
+        μ'α:B.< B:alpha || 3? >
     """
     logger.info("Mutilde affine defence test")
 
-    proof = "μ'alpha:B.<μx:B.<μz:B.<?2||t>||?1>||μ'y:B.<alpha||?3>>"
+    proof = "μ'alpha:B.<μx:B.<μz:B.<?2||t>||1?>||μ'y:B.<alpha||3?>>"
     logger.info("Input: %s", proof)
 
     grammar = Grammar()
