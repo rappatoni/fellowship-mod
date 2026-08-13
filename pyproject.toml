@@ -14,6 +14,11 @@ dependencies = [
   "pexpect>=4.8,<5",
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest>=8,<9",
+]
+
 [project.scripts]
 acdc = "wrap.cli:main"
 
