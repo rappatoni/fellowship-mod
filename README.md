@@ -9,8 +9,8 @@ The repository combines:
 - the native Fellowship prover under `wrap/fellowship/`
 - a Python wrapper (`wrap/prover.py`) that talks to Fellowship in machine mode
 - an argument/debate layer (`core/dc/argument.py`)
-- multiple presentation layers (`pres/`) for natural language, mirror views,
-  coloring, and acceptance trees
+- multiple presentation layers (`pres/`) for natural language, coloring, and
+  acceptance trees
 
 An earlier motivation/theory overview is available
 [here](https://www8.cs.fau.de/ext/teaching/wise2024-25/oberseminar/slides-rapp.pdf).
@@ -34,9 +34,6 @@ The current codebase supports:
   - `dialectical`
   - `intuitionistic`
   - `vanilla`
-- mirror renderers:
-  - `mirror`
-  - `mirror-tree`
 - acceptance coloring of normalized proof terms
 - acceptance-tree export through Graphviz (with DOT fallback)
 - machine-mode integration with Fellowship, including prover state extraction
@@ -387,8 +384,6 @@ Examples to inspect:
 - `dialectical`
 - `intuitionistic`
 - `vanilla`
-- `mirror`
-- `mirror-tree`
 
 Examples:
 
@@ -400,9 +395,7 @@ Then inside the REPL:
 
 ```text
 render myarg vanilla
-render myarg mirror
 render-nf myarg dialectical
-render myarg mirror-tree
 ```
 
 ## Acceptance coloring and trees
@@ -479,15 +472,6 @@ Demonstrates:
 - `render ... vanilla`
 - `color`
 
-### Mirror rendering example
-
-File: `tests/mirror_minimal.fspy`
-
-Demonstrates:
-- `render m vanilla`
-- `render m mirror`
-- `render m mirror-tree`
-
 ### Antitheorem / moxia example
 
 File: `tests/moxia_antitheorem.fspy`
@@ -530,7 +514,7 @@ make binlink
 ## Repository layout
 
 - `core/` — core ASTs, transformations, reduction, grafting, argument logic
-- `pres/` — presentation layers (proof terms, NL, mirror, coloring, trees)
+- `pres/` — presentation layers (proof terms, NL, coloring, trees)
 - `wrap/` — Python wrapper code and the native Fellowship subtree
 - `wrap/fellowship/` — native prover sources and `fsp` binary build target
 - `tests/` — pytest tests and `.fspy` / `.fsp` examples

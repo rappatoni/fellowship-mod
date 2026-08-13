@@ -216,7 +216,9 @@ def test_fspy_counterargument_recording_and_rendering(monkeypatch):
 
          # Check that the argument is correctly executed:
         assert isinstance(arg.body, pt.Mutilde)
-        assert arg.body.term.name == 'thesis'
+        # execute() renames the outer binder from Fellowship's 'thesis' to the
+        # argument's own name, so the self-reference carries that name too.
+        assert arg.body.term.name == 'notA'
         assert arg.body.context.name == 'mA'
 
         # decls include sort and the denied moxia; recorded counterargument is NOT QED, so it's not in decls
