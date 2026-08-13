@@ -37,10 +37,24 @@ def is_negation_prop(p: str) -> bool:
         return rhs in ("⊥", "_F_")
     return False
 
+def is_primitive_negation_prop(p: str) -> bool:
+    """Whether p is a primitive negation, as opposed to an arrow into falsum.
+
+    Fellowship treats the two differently: eliminating ¬A consumes the falsum
+    in the same step, while eliminating A->false leaves the falsum as an open
+    goal.  is_negation_prop conflates them, so it must not be used to decide
+    whether a falsum still needs discharging.
+    """
+    if not isinstance(p, str):
+        return False
+    ps = p.replace(" ", "")
+    return ps.startswith("¬") or ps.startswith("~")
+
 class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely functional later
     def __init__(self, *, root_name: str | None = None):
         self.instructions = collections.deque('')
         self._neg_bound_names = set()  # names bound by λ in ¬-elim scaffolds
+        self._autoclosed_falsum = set()  # id()s of ⊥ leaves already discharged by ¬-elim
         self.root_name = root_name
 
     def _is_synthetic_root_name(self, name: str | None) -> bool:
@@ -67,6 +81,24 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             if child is not None:
                 self._collect_neg_bound_names(child)
 
+    def _collect_autoclosed_falsum(self, node: ProofTerm):
+        # A ⊥ leaf closing an application chain normally needs its own elim to
+        # discharge it.  The exception is negation elimination: eliminating a
+        # primitive ¬A consumes the falsum in the same step, so emitting a
+        # command for that ⊥ would leave the replay one elim ahead of the
+        # prover.  Record those leaves so instruction generation skips them.
+        if isinstance(node, (Mu, Mutilde)) and isinstance(getattr(node, "context", None), Cons):
+            tail = node.context
+            while isinstance(tail, Cons):
+                tail = tail.context
+            if isinstance(tail, (ID, DI)) and getattr(tail, "name", None) == "_F_":
+                head = getattr(node, "term", None)
+                if is_primitive_negation_prop(getattr(head, "prop", None)):
+                    self._autoclosed_falsum.add(id(tail))
+        for child in (getattr(node, 'term', None), getattr(node, 'context', None)):
+            if child is not None:
+                self._collect_autoclosed_falsum(child)
+
     def _node_pres(self, n: ProofTerm) -> str:
         c = deepcopy(n)
         c = ProofTermGenerationVisitor().visit(c)
@@ -77,6 +109,9 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Pre-scan to find bound-negation lambda binders (H2 in ¬-elim)
         self._neg_bound_names.clear()
         self._collect_neg_bound_names(proofterm)
+        # Pre-scan to find ⊥ leaves that ¬-elim already discharged
+        self._autoclosed_falsum.clear()
+        self._collect_autoclosed_falsum(proofterm)
         self.visit(proofterm)
         # Ensure ASCII-only syntax and no trailing dot (execute() appends '.')
         sanitized = []
@@ -118,22 +153,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         raise Exception(f"Could not identify cut proposition for Mu node {self._node_pres(node)}")
 
     def visit_Mutilde(self, node: Mutilde):
-        # Exact neg-elim scaffold on the left (unique orientation in our AST/printing):
-        # μ′ H1:¬A . < H1 || adapter*_F_ >
-        # Left of ||: DI named H1; Right of ||: Cons with falsum on term side and adapter on context side.
-        left = getattr(node, "term", None)       # H1 is on the left side of ||
-        right = getattr(node, "context", None)   # adapter*_F_ sits on the right side of ||
-        if not self._is_synthetic_root_name(node.di.name) and isinstance(left, DI) and getattr(left, "name", None) == getattr(node.di, "name", None):
-            if isinstance(right, Cons):
-                falsum_term = getattr(right, "term", None)      # ⊥ / _F_ must be on term side
-                if getattr(falsum_term, "flag", None) == "Falsum" or is_falsum_prop(getattr(falsum_term, "prop", "")):
-                    adapter_ctx = getattr(right, "context", None)  # adapter is the context side
-                    if adapter_ctx is not None:
-                        # Visit adapter first (emits 'axiom adapter'), then prepend 'elim H1'
-                        self.visit(adapter_ctx)
-                        self.instructions.appendleft(f"elim {node.di.name}")
-                        return node
-        # Default traversal and instruction
         node = super().visit_Mutilde(node)
         if self._is_synthetic_root_name(node.di.name):
             return node
@@ -200,6 +219,15 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         return node
     
 
+    def _emit_falsum_elim(self, node) -> None:
+        # Discharge the ⊥ closing an application chain.  appendleft, not
+        # append: instructions are built right-to-left, and visit_Cons reaches
+        # the context before the term, so this lands immediately after the
+        # chain's own commands rather than at the end of the whole replay.
+        if id(node) in self._autoclosed_falsum:
+            return
+        self.instructions.appendleft('elim.')
+
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
         if node.name:
@@ -208,6 +236,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
                 return node
             if node.flag == "Falsum":
+                self._emit_falsum_elim(node)
                 return node
             else:
                 self.instructions.appendleft(f'moxia {node.name}.')
@@ -223,6 +252,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
                 return node
             if node.flag == "Falsum":
+                self._emit_falsum_elim(node)
                 return node
             else:
                 self.instructions.appendleft(f'axiom {node.name}.')
