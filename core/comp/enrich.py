@@ -24,6 +24,31 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         self.bound_vars = bound_vars if bound_vars else {}
         self.verbose = verbose
  
+    def _unwrap_outer_parens(self, prop: str) -> str:
+        """Drop parentheses that wrap the whole proposition.
+
+        str.strip("()") removes characters rather than a matching pair, so it
+        mangles propositions whose leading "(" is structural: "(true-A)-B"
+        becomes "true-A)-B", which no longer parses.  Only strip when the
+        opening parenthesis is closed by the final character.
+        """
+        if not isinstance(prop, str):
+            return prop
+        text = prop.strip()
+        while text.startswith("(") and text.endswith(")"):
+            depth = 0
+            for index, char in enumerate(text):
+                if char == "(":
+                    depth += 1
+                elif char == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+            if index != len(text) - 1:
+                break  # the first "(" closes early, so it is not a wrapper
+            text = text[1:-1].strip()
+        return text
+
     def _needs_parens_for_imp_left(self, prop: str) -> bool:
         return bool(prop) and ("->" in prop or "-" in prop)
 
@@ -109,24 +134,22 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_ID(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                logger.debug("Enriching axiom %s with type %s",
-                            node.name, self.axiom_props[node.name].strip("()"))
-                node.prop = self.axiom_props[node.name].strip("()")
+                node.prop = self._unwrap_outer_parens(self.axiom_props[node.name])
+                logger.debug("Enriching axiom %s with type %s", node.name, node.prop)
             else:
                 logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
             logger.debug("Enriching bound variable %s with type %s",
                         node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
-            if node.prop.startswith("~") or node.prop.startswith("¬"):
-                node.flag = "bound_negation"
-                if self.verbose: pass
-                logger.debug('Bound negation flagged for instruction generation.')
         elif node.prop:
             self.bound_vars[node.name] = node.prop
         elif node.name == "_F_":
             node.flag = "Falsum"
             logger.debug("Falsum flagged for instruction generation.")
+        elif node.name == "_T_":
+            node.flag = "Truth"
+            logger.debug("Truth flagged for instruction generation.")
         else:
             warnings.warn(f'Enrichment of node {node} not possible.')
         return node
@@ -135,22 +158,21 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_DI(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
+                node.prop = self._unwrap_outer_parens(self.axiom_props[node.name])
                 logger.debug("Enriching axiom %s with type %s based on declared axiom",
-                            node.name, self.axiom_props[node.name].strip("()"))
-                node.prop = self.axiom_props[node.name].strip("()")
+                            node.name, node.prop)
             else:
                 logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
         elif node.name in self.bound_vars and node.prop is None:
             logger.debug("Enriching bound variable %s with type %s based on bound variable",
                         node.name, self.bound_vars[node.name])
             node.prop = self.bound_vars[node.name]
-            if node.prop.startswith("~") or node.prop.startswith("¬"):
-                node.flag = "bound_negation"
-                if self.verbose: pass
-                logger.debug('Bound negation flagged for instruction generation.')
         elif node.name == "_F_":
             node.flag = "Falsum"
             logger.debug("Falsum flagged for instruction generation.")
+        elif node.name == "_T_":
+            node.flag = "Truth"
+            logger.debug("Truth flagged for instruction generation.")
         else:
             warnings.warn(f'Enrichment of node {node.name} not possible.')
         return node

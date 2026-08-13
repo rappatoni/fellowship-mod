@@ -152,7 +152,31 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             return node
         raise Exception(f"Could not identify cut proposition for Mu node {self._node_pres(node)}")
 
+    def _is_negation_elim_wrapper(self, node: Mutilde) -> bool:
+        # Fellowship encodes context-side negation elimination as
+        #   μ′ H:¬A . < H || chain*_F_ >
+        # The wrapper is representation rather than a cut anyone performed.
+        if self._is_synthetic_root_name(node.di.name):
+            return False
+        left = getattr(node, "term", None)
+        right = getattr(node, "context", None)
+        if not isinstance(left, (ID, DI)) or getattr(left, "name", None) != node.di.name:
+            return False
+        if not isinstance(right, Cons):
+            return False
+        if not is_primitive_negation_prop(getattr(node, "prop", None)):
+            return False
+        tail = right
+        while isinstance(tail, Cons):
+            tail = tail.context
+        return isinstance(tail, (ID, DI)) and getattr(tail, "name", None) == "_F_"
+
     def visit_Mutilde(self, node: Mutilde):
+        if self._is_negation_elim_wrapper(node):
+            # The chain already supplies the elim; emit nothing for the
+            # wrapper and skip its self-reference.
+            self.visit(node.context)
+            return node
         node = super().visit_Mutilde(node)
         if self._is_synthetic_root_name(node.di.name):
             return node
@@ -219,12 +243,16 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         return node
     
 
-    def _emit_falsum_elim(self, node) -> None:
-        # Discharge the ⊥ closing an application chain.  appendleft, not
+    def _emit_unit_elim(self, node) -> None:
+        # Discharge the ⊥ or ⊤ closing an application chain.  appendleft, not
         # append: instructions are built right-to-left, and visit_Cons reaches
         # the context before the term, so this lands immediately after the
         # chain's own commands rather than at the end of the whole replay.
-        if id(node) in self._autoclosed_falsum:
+        #
+        # Only ⊥ has an exception: eliminating a primitive ¬A consumes it in
+        # the same step.  There is no primitive co-negation — Neg is the only
+        # unary connective — so every ⊤ needs its elim.
+        if getattr(node, "flag", None) == "Falsum" and id(node) in self._autoclosed_falsum:
             return
         self.instructions.appendleft('elim.')
 
@@ -233,10 +261,10 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         if node.name:
             if self._is_synthetic_root_name(node.name):
                 return node
-            if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
+            if node.name in self._neg_bound_names:
                 return node
-            if node.flag == "Falsum":
-                self._emit_falsum_elim(node)
+            if node.flag in ("Falsum", "Truth"):
+                self._emit_unit_elim(node)
                 return node
             else:
                 self.instructions.appendleft(f'moxia {node.name}.')
@@ -249,10 +277,10 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         if node.name:
             if self._is_synthetic_root_name(node.name):
                 return node
-            if getattr(node, "flag", None) == "bound negation" or node.name in self._neg_bound_names:
+            if node.name in self._neg_bound_names:
                 return node
-            if node.flag == "Falsum":
-                self._emit_falsum_elim(node)
+            if node.flag in ("Falsum", "Truth"):
+                self._emit_unit_elim(node)
                 return node
             else:
                 self.instructions.appendleft(f'axiom {node.name}.')

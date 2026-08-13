@@ -6,17 +6,6 @@ deny rule2 : (B - C).
 declare rule3 : (A -> C).
 declare rule4: (A -> C -> false).
 
-start counterargument olonMaker C
-cut (A->C->false) rule.
-axiom rule4.
-elim.
-by default.
-next.
-elim.
-axiom.
-elim.
-end counterargument
-
 start argument first A
 cut (B->A) rule.
 axiom rule1.
@@ -63,5 +52,25 @@ elim.
 end counterargument
 
 # support olon olonMaker intermediate
-# register olonMaker2 : C := μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>
+register olonMaker2 : C := μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>
 # register test : C := μ'olon_maker:C.<olon_maker:C||μ'rule:C.<rule4:A->C->false||1.2.1:A!*rule:C*_F_>>
+
+start counterargument neg_tester ~A
+elim.
+end argument
+
+deny elur1: (true - A - B).
+start argument tester A
+cut (true - A - B) elur.
+elim.
+by default.
+next.
+elim.
+axiom.
+elim.
+moxia elur1.
+end argument
+
+register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
+
+
