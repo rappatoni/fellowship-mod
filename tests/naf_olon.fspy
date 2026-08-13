@@ -1,0 +1,61 @@
+# Worse are olons where an argument attacks itself (directly or through another argument). Here is an example:
+declare P,Q,R:bool.
+declare pRule : (Q->P).
+declare qRule : ((R->false)->Q).
+declare rRule : (P -> R).
+
+# The term-side R->false that qRule needs is derived from a geled for R:
+# introduce h:R, cut on R, close the term side with h, and take the remaining
+# context side for R by default.  That geled is the negation-as-failure
+# assumption each argument rests on.
+
+# argument Pfirst derives P from geled R
+start argument Pfirst P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+cut ((R->false)->Q) rule2.
+axiom qRule.
+elim.
+elim h.
+cut (R) alpha.
+axiom h.
+by default.
+next.
+axiom.
+axiom rule.
+end argument
+
+# argument Qfirst derives Q from geled R
+start argument Qfirst Q
+cut ((R->false)->Q) rule.
+axiom qRule.
+elim.
+elim h.
+cut (R) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+# argument Rfirst derives R from geled R
+start argument Rfirst R
+cut (P->R) rule.
+axiom rRule.
+elim.
+cut (Q->P) rule2.
+axiom pRule.
+elim.
+cut ((R->false)->Q) rule3.
+axiom qRule.
+elim.
+elim h.
+cut (R) alpha.
+axiom h.
+by default.
+next.
+axiom.
+axiom rule2.
+axiom rule.
+end argument
