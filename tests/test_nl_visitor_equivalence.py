@@ -20,7 +20,7 @@ def test_nl_simple_mu_cons_goal_di_id_matches_expected():
     assert out == "\n".join(
         [
             "we need to prove A(x)",
-            "   by B -> A",
+            "   by B -> A (f)",
             "   and",
             "   ? B",
             "done x",
@@ -105,7 +105,7 @@ def test_vanilla_rendering_mutilde_uses_tree_guides():
 
 def test_nl_unbound_id_renders_prop_but_bound_id_renders_name():
     unbound = ID("free", "A")
-    assert pretty_natural(unbound, natural_language_rendering) == "done A"
+    assert pretty_natural(unbound, natural_language_rendering) == "done A (free)"
 
     bound = Mu(ID("x", "A"), "A", DI("fact", "A"), ID("x", "A"))
     out = pretty_natural(bound, natural_language_rendering)
@@ -114,7 +114,7 @@ def test_nl_unbound_id_renders_prop_but_bound_id_renders_name():
 
 def test_nl_unbound_di_renders_prop_but_bound_di_renders_name():
     unbound = DI("fact", "A")
-    assert pretty_natural(unbound, natural_language_rendering) == "by A"
+    assert pretty_natural(unbound, natural_language_rendering) == "by A (fact)"
 
     bound = Lamda(Hyp(DI("h", "A"), "A"), DI("h", "A"))
     out = pretty_natural(bound, natural_language_rendering)
@@ -167,10 +167,10 @@ def test_nl_unbound_declaration_name_does_not_decorate_its_prop():
         natural_language_rendering,
         declarations=declarations,
         decorations={},
-    ) == "by A"
+    ) == "by A (a)"
     assert pretty_natural(
         DI("a", "A"),
         pruefschema_rendering,
         declarations=declarations,
         decorations={},
-    ) == "es liegt vor: A"
+    ) == "es liegt vor: A (a)"

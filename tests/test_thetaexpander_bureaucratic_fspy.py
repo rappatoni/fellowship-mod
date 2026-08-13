@@ -26,7 +26,7 @@ def test_thetaexpander_atomic_term_exposes_once_via_fspy(prover):
     body = args["atomic_term"].body
 
     assert body is not None
-    assert getattr(body, "pres", None) == "μatomic_term:P.<1:P||atomic_term:P>"
+    assert getattr(body, "pres", None) == "μatomic_term:P.<?1:P||atomic_term:P>"
 
 
 def test_thetaexpander_atomic_context_exposes_once_via_fspy(prover):
@@ -34,7 +34,7 @@ def test_thetaexpander_atomic_context_exposes_once_via_fspy(prover):
     body = args["atomic_context"].body
 
     assert body is not None
-    assert getattr(body, "pres", None) == "μ'atomic_context:P.<atomic_context:P||1:P>"
+    assert getattr(body, "pres", None) == "μ'atomic_context:P.<atomic_context:P||1:P?>"
 
 def test_thetaexpander_affine_parent_blocks_via_fspy(prover):
     args = _run_thetaexpander_cases(prover)

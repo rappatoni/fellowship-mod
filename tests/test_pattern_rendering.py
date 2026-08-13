@@ -22,9 +22,9 @@ def test_argumentative_rendering_uses_alternative_pattern_block():
         [
             "Die Prüfung, ob A zerfällt in folgende Fallgruppen:",
             "   Fallgruppe:",
-            "      by A",
+            "      by A (case1)",
             "   oder Fallgruppe:",
-            "      by A",
+            "      by A (case2)",
         ]
     )
 
@@ -41,11 +41,11 @@ def test_argumentative_rendering_flattens_right_nested_alternatives():
         [
             "Die Prüfung, ob A zerfällt in folgende Fallgruppen:",
             "   Fallgruppe:",
-            "      by A",
+            "      by A (case1)",
             "   oder Fallgruppe:",
-            "      by A",
+            "      by A (case2)",
             "   oder Fallgruppe:",
-            "      by A",
+            "      by A (case3)",
         ]
     )
 
@@ -91,9 +91,9 @@ def test_argumentative_rendering_uses_alternative_counterexample_pattern_block()
         [
             "Für A ist notwendigerweise zu prüfen:",
             "   Prüfpunkt:",
-            "         done A",
+            "         done A (cond1)",
             "   und Prüfpunkt:",
-            "         done A",
+            "         done A (cond2)",
         ]
     )
 
@@ -110,11 +110,11 @@ def test_argumentative_rendering_flattens_left_nested_counterexamples():
         [
             "Für A ist notwendigerweise zu prüfen:",
             "   Prüfpunkt:",
-            "         done A",
+            "         done A (cond1)",
             "   und Prüfpunkt:",
-            "         done A",
+            "         done A (cond2)",
             "   und Prüfpunkt:",
-            "         done A",
+            "         done A (cond3)",
         ]
     )
 
@@ -132,9 +132,9 @@ def test_argumentative_rendering_uses_defeasible_warrant_pattern_block():
     assert out == "\n".join(
         [
             "Für A spricht ",
-            "      by A",
+            "      by A (support)",
             "   aber",
-            "         done A",
+            "         done A (exception)",
         ]
     )
 
@@ -152,9 +152,9 @@ def test_argumentative_rendering_uses_dual_defeasible_warrant_pattern_block():
     assert out == "\n".join(
         [
             "gegen A spricht ",
-            "      done A",
+            "      done A (requirement)",
             "   aber",
-            "         by A",
+            "         by A (support)",
         ]
     )
 
@@ -172,9 +172,9 @@ def test_argumentative_rendering_uses_reversed_defeasible_warrant_pattern_block(
     assert out == "\n".join(
         [
             "Für A spricht ",
-            "      by A",
+            "      by A (support)",
             "   aber",
-            "         done A",
+            "         done A (exception)",
         ]
     )
 
@@ -192,9 +192,9 @@ def test_argumentative_rendering_uses_reversed_dual_defeasible_warrant_pattern_b
     assert out == "\n".join(
         [
             "gegen A spricht ",
-            "      done A",
+            "      done A (requirement)",
             "   aber",
-            "         by A",
+            "         by A (support)",
         ]
     )
 
@@ -213,9 +213,9 @@ def test_argumentative_rendering_uses_application_pattern_block():
         [
             "Für A ist hinreichend, dass B",
             "   weil",
-            "      by B -> A",
+            "      by B -> A (f)",
             "   und",
-            "      by B",
+            "      by B (v)",
         ]
     )
 
@@ -234,8 +234,8 @@ def test_argumentative_rendering_uses_dual_application_pattern_block():
         [
             "Für A ist notwendig dass B",
             "   weil",
-            "         done B -> A",
-            "      done B",
+            "         done B -> A (f)",
+            "      done B (e)",
         ]
     )
 

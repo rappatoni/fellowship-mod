@@ -150,9 +150,9 @@ def test_argument_eta_reduce_body_refreshes_enriched_proof_term():
     arg.enrich_props()
     arg.generate_proof_term()
 
-    assert arg.enriched_proof_term == "μ'demo:P.<demo:P||1:P>"
+    assert arg.enriched_proof_term == "μ'demo:P.<demo:P||1:P?>"
 
     arg._eta_reduce_body()
 
     assert isinstance(arg.body, Laog)
-    assert arg.enriched_proof_term == "1:P"
+    assert arg.enriched_proof_term == "1:P?"
