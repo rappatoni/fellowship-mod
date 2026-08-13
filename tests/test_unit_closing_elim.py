@@ -113,3 +113,16 @@ def test_free_standing_negation_proof_keeps_its_own_commands():
         "next",
         "moxia rule",
     ]
+
+
+def test_term_side_negation_elimination_collapses_to_one_elim():
+    # Fellowship answers `elim` on a ~A goal with μH2:¬A.<λH3:A.μH4:⊥.<H3||X>||H2>.
+    # That wrapper is its encoding of the elimination, not a proof anyone wrote,
+    # so the whole block must come back as the single elim that produced it.
+    # Replayed against the prover: reaches the same goal state as the original.
+    instructions = _instructions(
+        "μthesis:B.<μH1:B.<μH2:¬A.<λH3:A.μH4:⊥.<H3||1.1.1?>||H2>||1.2?>||thesis>",
+        assumptions={"1.1.1": {"prop": "A"}, "1.2": {"prop": "~A"}},
+    )
+
+    assert instructions == ["cut (~A) H1", "elim H2", "next", "next"]
