@@ -18,6 +18,7 @@ DECLARATIONS = {
     "A": "bool", "B": "bool", "C": "bool",
     "rule4": "A->C->false", "neg": "~C",
     "n": "~A", "a": "A", "elur1": "(true-A)-B",
+    "P": "bool", "Q": "bool", "R": "bool", "qRule": "(R->false)->Q",
 }
 
 
@@ -89,3 +90,26 @@ def test_negation_elimination_wrapper_emits_no_cut_of_its_own():
     )
 
     assert instructions == ["cut (~A) H1", "axiom n", "elim", "axiom a"]
+
+
+def test_free_standing_negation_proof_keeps_its_own_commands():
+    # A proof of R->false built from a context-side default for R has the same
+    # shape as Fellowship's ¬-elim scaffold -- λh:R.μ_:⊥.<h||X> -- but here it
+    # is a first-class argument rather than a wrapper the prover collapses, so
+    # it must generate its introduction, cut and axiom rather than be skipped.
+    instructions = _instructions(
+        "μ'rule:Q.<qRule:(R->false)->Q||λh:R.μalpha:⊥.<h:R||1.2.1.1.2:R!>*rule:Q>",
+        assumptions={},
+    )
+
+    assert instructions == [
+        "cut ((R -> false) -> Q) rule",
+        "axiom qRule",
+        "elim",
+        "elim h",
+        "cut (R) alpha",
+        "axiom h",
+        "by default",
+        "next",
+        "moxia rule",
+    ]

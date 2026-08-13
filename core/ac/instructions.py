@@ -53,33 +53,11 @@ def is_primitive_negation_prop(p: str) -> bool:
 class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely functional later
     def __init__(self, *, root_name: str | None = None):
         self.instructions = collections.deque('')
-        self._neg_bound_names = set()  # names bound by λ in ¬-elim scaffolds
         self._autoclosed_falsum = set()  # id()s of ⊥ leaves already discharged by ¬-elim
         self.root_name = root_name
 
     def _is_synthetic_root_name(self, name: str | None) -> bool:
         return bool(name) and name == "thesis"
-
-    def _collect_neg_bound_names(self, node: ProofTerm):
-        # Detect λ H:A . μ _:⊥ . < H || … > scaffolds and record H
-        if isinstance(node, Lamda):
-            # binder name
-            name = getattr(getattr(node, "di", None), "di", None)
-            name = getattr(name, "name", None)
-            body = getattr(node, "term", None)
-            if name and isinstance(body, Mu) and is_falsum_prop(getattr(body, "prop", "")):
-                left = getattr(body, "term", None)  # μ’s term (left of ||)
-                if isinstance(left, (ID, DI)) and getattr(left, "name", None) == name:
-                    self._neg_bound_names.add(name)
-        # Recurse into children
-        if isinstance(node, Mu) or isinstance(node, Mutilde) or isinstance(node, Cons):
-            for child in (getattr(node, 'term', None), getattr(node, 'context', None)):
-                if child is not None:
-                    self._collect_neg_bound_names(child)
-        elif isinstance(node, Lamda):
-            child = getattr(node, "term", None)
-            if child is not None:
-                self._collect_neg_bound_names(child)
 
     def _collect_autoclosed_falsum(self, node: ProofTerm):
         # A ⊥ leaf closing an application chain normally needs its own elim to
@@ -106,9 +84,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
 
     def return_instructions(self, proofterm):
         self.instructions.clear()
-        # Pre-scan to find bound-negation lambda binders (H2 in ¬-elim)
-        self._neg_bound_names.clear()
-        self._collect_neg_bound_names(proofterm)
         # Pre-scan to find ⊥ leaves that ¬-elim already discharged
         self._autoclosed_falsum.clear()
         self._collect_autoclosed_falsum(proofterm)
@@ -144,8 +119,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Default traversal and instruction
         node = super().visit_Mu(node)
         if self._is_synthetic_root_name(node.id.name):
-            return node
-        if is_falsum_prop(getattr(node, "prop", "")):
             return node
         if node.contr:
             self.instructions.appendleft(f"cut ({prop_to_command(fn(node.contr))}) {node.id.name}.")
@@ -187,11 +160,8 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
 
     def visit_Lamda(self, node: Lamda):
         node = super().visit_Lamda(node)
-        # Skip the inner lambda used by negation-elimination scaffolding
         name = getattr(getattr(node, "di", None), "di", None)
         name = getattr(name, "name", None)
-        if name and name in self._neg_bound_names:
-            return node
         if name:
             self.instructions.appendleft(f'elim {name}.')
         else:
@@ -261,8 +231,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         if node.name:
             if self._is_synthetic_root_name(node.name):
                 return node
-            if node.name in self._neg_bound_names:
-                return node
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
                 return node
@@ -276,8 +244,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         node = super().visit_DI(node)
         if node.name:
             if self._is_synthetic_root_name(node.name):
-                return node
-            if node.name in self._neg_bound_names:
                 return node
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
