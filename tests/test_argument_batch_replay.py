@@ -5,6 +5,26 @@ from wrap.prover import ProverError, ProverWrapper
 from wrap.sexp_parser import SexpParser
 
 
+class _SpawnFakeChild:
+    def __init__(self):
+        self.before = ""
+        self.delaybeforesend = 0.05
+        self.expected = []
+
+    def expect(self, pattern):
+        self.expected.append(pattern)
+
+
+def test_prover_wrapper_disables_pexpect_send_delay_after_initial_prompt(monkeypatch):
+    child = _SpawnFakeChild()
+    monkeypatch.setattr("wrap.prover.pexpect.spawn", lambda *args, **kwargs: child)
+
+    ProverWrapper("fsp")
+
+    assert child.expected == ["fsp <"]
+    assert child.delaybeforesend is None
+
+
 class _BatchFakeProver:
     def __init__(self, *, fail_final_next: bool = False):
         self.commands = []
