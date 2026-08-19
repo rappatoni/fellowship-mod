@@ -28,6 +28,12 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         self.delegations = delegations if delegations else {}
         self.axiom_props = axiom_props if axiom_props else {}
         self.bound_vars = bound_vars if bound_vars else {}
+        # First-order variables are tracked apart from bound_vars, which maps a
+        # proof variable to its *proposition*.  A first-order variable has a
+        # sort, not a proposition, and putting one in the same table would let
+        # a name collision hand a Sort to a proof leaf.  core/ac/resolve.py
+        # keeps the two namespaces separate for the same reason.
+        self.fo_vars: set[str] = set()
         self.verbose = verbose
  
     def _unwrap_outer_parens(self, prop: str) -> str:
@@ -107,6 +113,22 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         return str(PQuant(quantifier, (var,), sort, body_prop))
 
     # -- scope -------------------------------------------------------------
+
+    @contextmanager
+    def _bound_first_order(self, name: str):
+        """Bind a first-order variable for the duration of a subtree.
+
+        It shadows any proof variable of the same name: within the binder's
+        body that name denotes an individual, not a proof, so it has no
+        proposition in scope.
+        """
+        was_present = name in self.fo_vars
+        self.fo_vars.add(name)
+        try:
+            yield
+        finally:
+            if not was_present:
+                self.fo_vars.discard(name)
 
     @contextmanager
     def _bound(self, name: str, prop):
@@ -195,6 +217,15 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
+        if node.name in self.fo_vars:
+            # Shadowed by a first-order binder, so this name denotes an
+            # individual here.  Reaching past the shadow to an outer binding or
+            # to the axiom table would give it someone else's proposition.
+            warnings.warn(
+                f"{node.name!r} is bound as a first-order variable here, so it has "
+                f"no proposition in scope"
+            )
+            return node
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
                 node.prop = self._canonical(self.axiom_props[node.name])
@@ -219,6 +250,15 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
+        if node.name in self.fo_vars:
+            # Shadowed by a first-order binder, so this name denotes an
+            # individual here.  Reaching past the shadow to an outer binding or
+            # to the axiom table would give it someone else's proposition.
+            warnings.warn(
+                f"{node.name!r} is bound as a first-order variable here, so it has "
+                f"no proposition in scope"
+            )
+            return node
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
                 node.prop = self._canonical(self.axiom_props[node.name])
@@ -274,7 +314,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_LamdaFO(self, node: LamdaFO):
         """Universal introduction: the body's type, quantified over the binder."""
-        with self._bound(node.var, node.sort):
+        with self._bound_first_order(node.var):
             node = super().visit_LamdaFO(node)
         if node.prop is None and node.term.prop:
             node.prop = self._quantify(
@@ -284,7 +324,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_DestructTermsPairFO(self, node: DestructTermsPairFO):
         """Existential elimination: the dual of universal introduction."""
-        with self._bound(node.var, node.sort):
+        with self._bound_first_order(node.var):
             node = super().visit_DestructTermsPairFO(node)
         if node.prop is None and node.context.prop:
             node.prop = self._quantify(

@@ -153,3 +153,49 @@ def test_a_first_order_binder_is_scoped_too():
     visitor = PropEnrichmentVisitor()
     visitor.visit(resolve(parse_proof_term("μt:A.<λx:N.a||t>"), DECLARATIONS))
     assert "x" not in visitor.bound_vars
+
+
+# ---------------------------------------------------------------------------
+#  First-order variables are a separate namespace
+# ---------------------------------------------------------------------------
+
+
+def test_a_first_order_binder_does_not_give_a_proof_leaf_a_sort():
+    """bound_vars maps a proof variable to its *proposition*.
+
+    A first-order variable has a sort, so tracking it in the same table let a
+    name collision hand a Sort to a proof leaf -- `inner x .prop` came out as
+    SSym('N') rather than a proposition.
+    """
+    visitor = PropEnrichmentVisitor()
+    node = visitor.visit(
+        resolve(parse_proof_term("μt:A.<λx:N.μu:A.<x||u>||t>"), DECLARATIONS)
+    )
+    inner = node.term.term.term
+    assert inner.prop is None
+    assert not isinstance(inner.prop, SSym)
+
+
+def test_a_shadowed_proof_variable_is_not_given_the_outer_proposition():
+    """Reaching past the shadow would give the name someone else's type."""
+    visitor = PropEnrichmentVisitor(bound_vars={"x": "Outer"})
+    node = visitor.visit(
+        resolve(parse_proof_term("μt:A.<λx:N.μu:A.<x||u>||t>"), DECLARATIONS)
+    )
+    assert node.term.term.term.prop is None
+    assert visitor.bound_vars["x"] == "Outer"     # and the outer one survives
+
+
+def test_a_shadowed_axiom_is_not_reached_through_either():
+    visitor = PropEnrichmentVisitor(axiom_props={"x": "SomeAxiom"})
+    node = visitor.visit(
+        resolve(parse_proof_term("μt:A.<λx:N.μu:A.<x||u>||t>"), DECLARATIONS)
+    )
+    assert node.term.term.term.prop is None
+
+
+def test_the_first_order_namespace_is_unwound():
+    visitor = PropEnrichmentVisitor()
+    visitor.visit(resolve(parse_proof_term("μt:A.<λx:N.a||t>"), DECLARATIONS))
+    assert visitor.fo_vars == set()
+    assert "x" not in visitor.bound_vars
