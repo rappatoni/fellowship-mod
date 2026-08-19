@@ -11,7 +11,7 @@ from pres.pattern_render import (
     PatternRenderContext,
     PatternRenderingRegistry,
 )
-from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI
+from core.ac.ast import Deleg, ProofTerm, Mu, Mutilde, Lamda, Cons, Sonc, Admal, Goal, Laog, Deleg, Geled, ID, DI, LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO
 
 def pretty_natural(
     proof_term: "ProofTerm",
@@ -63,7 +63,11 @@ def _with_tree_guides(lines: list[str], indentation: str) -> list[str]:
     return guided
 
 class Rendering_Semantics:
-    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None, connective_templates=None, tree_guides: bool = False):
+    def __init__(self, indentation, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, *, pattern_renderers=None, connective_templates=None, tree_guides: bool = False,
+                 LamdaFO_template="consider an arbitrary but fixed @var of type @sort",
+                 DestructTermsPairFO_template="let @var of type @sort be such a thing",
+                 ConsFO_template="instantiated at @witness",
+                 TermsPairFO_template="witnessed by @witness"):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -78,6 +82,13 @@ class Rendering_Semantics:
         self.ID = ID
         self.DI = DI
         self.connective_templates = dict(connective_templates or {})
+        # Phrasing for the first-order nodes, keyword-only so the existing
+        # positional constructions stay valid.  Defaults follow Fellowship's
+        # own natural-language rendering (print.ml:63-129).
+        self.LamdaFO = LamdaFO_template
+        self.DestructTermsPairFO = DestructTermsPairFO_template
+        self.ConsFO = ConsFO_template
+        self.TermsPairFO = TermsPairFO_template
         self.tree_guides = tree_guides
         self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
 
@@ -278,9 +289,45 @@ class _VanillaVisitor(ProofTermVisitor):
         self._emit(f"{node.name}:{node.prop}" if node.prop else f"{node.name}")
         return node
 
+    # -- first-order nodes -------------------------------------------------
+
+    def visit_LamdaFO(self, node: LamdaFO):
+        self._emit(f"λ{node.var}:{node.sort}.")
+        self._newline()
+        old_prefix = self.prefix
+        self.prefix = self._child_prefix(old_prefix, True)
+        try:
+            self.visit(node.term)
+        finally:
+            self.prefix = old_prefix
+        return node
+
+    def visit_ConsFO(self, node: ConsFO):
+        self._emit(f"{node.fo_term}*")
+        self.visit(node.context)
+        return node
+
+    def visit_TermsPairFO(self, node: TermsPairFO):
+        self._emit(f"({node.witness},")
+        self.visit(node.term)
+        self._emit(")")
+        return node
+
+    def visit_DestructTermsPairFO(self, node: DestructTermsPairFO):
+        self._emit(f"({node.var}:{node.sort}).")
+        self.visit(node.context)
+        return node
+
     def visit_unhandled(self, node):
         self._emit(f"Unhandled term type: {type(node)}")
         return node
+
+
+def _fill(template: str, **values: str) -> str:
+    """Substitute @name placeholders, as decorations and connectives do."""
+    for name, value in values.items():
+        template = template.replace(f"@{name}", value)
+    return template
 
 
 class _NLVisitor(ProofTermVisitor):
@@ -469,6 +516,42 @@ class _NLVisitor(ProofTermVisitor):
         self.lines.append(f"{indent_str}" + self.semantic.Cons)
         self.visit(term.term)
         self.visit(term.context)
+        return term
+
+    # -- first-order nodes -------------------------------------------------
+    #
+    # A first-order variable is not a proof variable, so it does not join
+    # bound_dis/bound_ids -- those decide whether a leaf reads as a reference
+    # to an assumption, which an individual never is.
+
+    def visit_LamdaFO(self, term: LamdaFO):
+        self.lines.append(
+            self._indent_str()
+            + _fill(self.semantic.LamdaFO, var=term.var, sort=str(term.sort))
+        )
+        self.visit(term.term)
+        return term
+
+    def visit_DestructTermsPairFO(self, term: DestructTermsPairFO):
+        self.lines.append(
+            self._indent_str()
+            + _fill(self.semantic.DestructTermsPairFO, var=term.var, sort=str(term.sort))
+        )
+        self.visit(term.context)
+        return term
+
+    def visit_ConsFO(self, term: ConsFO):
+        self.lines.append(
+            self._indent_str() + _fill(self.semantic.ConsFO, witness=str(term.fo_term))
+        )
+        self.visit(term.context)
+        return term
+
+    def visit_TermsPairFO(self, term: TermsPairFO):
+        self.lines.append(
+            self._indent_str() + _fill(self.semantic.TermsPairFO, witness=str(term.witness))
+        )
+        self.visit(term.term)
         return term
 
     def visit_Goal(self, term: Goal):

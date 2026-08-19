@@ -181,8 +181,18 @@ def _render_ast(
             return _apply_template(decorations[head], args)
         return " ".join([head, *args])
 
+    def render_operand(node: Prop) -> str:
+        """An operand, bracketed when it is a quantifier.
+
+        A quantifier body extends maximally, so `for all x, P x -> Q` reads as
+        though the arrow were inside it.  The proposition printer parenthesises
+        for the same reason; prose needs it at least as much.
+        """
+        rendered = render(node)
+        return f"({rendered})" if isinstance(node, PQuant) else rendered
+
     if isinstance(ast, PNeg):
-        body = render(ast.body)
+        body = render_operand(ast.body)
         if "~" in connective_templates:
             return _apply_named_template(connective_templates["~"], {"body": body, "arg": body})
         return f"not {body}"
@@ -200,8 +210,8 @@ def _render_ast(
         return f"{opening} {variables} of type {ast.sort}, {body}"
 
     if isinstance(ast, PBin):
-        left = render(ast.left)
-        right = render(ast.right)
+        left = render_operand(ast.left)
+        right = render_operand(ast.right)
         op = ast.op.value
         if op in connective_templates:
             return _apply_named_template(

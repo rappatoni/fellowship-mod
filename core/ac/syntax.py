@@ -108,7 +108,10 @@ mutilde:    _MUTILDE NAME ":" prop "." command
 command:    "<" term _PARALLEL context ">"
 
 pairfo:     "(" foterm "," term ")"
-destruct:   "(" NAME ":" sort ")" "." tight_context
+// A destructor is a context, so it can never be the left operand of `*`.
+// Its body therefore extends maximally and needs no parentheses, which is
+// what core.ml:499 emits.
+destruct:   "(" NAME ":" sort ")" "." context
 
 goal:       "?" number annot?
 deleg:      "!" number annot?
