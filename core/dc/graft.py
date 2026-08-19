@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any, Tuple
 from copy import deepcopy
 import logging
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, FirstOrderNotSupported, first_order_node
 from core.comp.alpha import _collect_binder_names, _fresh, _AlphaRename
 
 logger = logging.getLogger(__name__)
@@ -164,6 +164,11 @@ class _GraftVisitor(ProofTermVisitor):
             new.context = self.visit(node.context)
             return new
 
+        found = first_order_node(node)
+        if found is not None:
+            # Falling through to deepcopy would return the subtree untouched,
+            # so a graft inside it would silently not happen.
+            raise FirstOrderNotSupported("Grafting", found)
         return deepcopy(node)
 
     # ------------------------------------------------------------------

@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 from typing import Optional, Any
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, Admal, Sonc
+from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, Admal, Sonc, FirstOrderNotSupported, first_order_node
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.color import AcceptanceColoringVisitor
@@ -157,6 +157,9 @@ class ArgumentTermReducer(ProofTermVisitor):
         self._binder_names: set[str] = set()
         
     def reduce(self, root: "ProofTerm") -> "ProofTerm":
+        found = first_order_node(root)
+        if found is not None:
+            raise FirstOrderNotSupported("Reduction", found)
         """Return the normal form; log a table of (no, term, rule, comments)."""
         #logger.info("Starting argument term reduction.")
         self._root = root
@@ -1213,6 +1216,9 @@ class EtaReducer:
         self.verbose = verbose
 
     def reduce(self, root: ProofTerm) -> ProofTerm:
+        found = first_order_node(root)
+        if found is not None:
+            raise FirstOrderNotSupported("Eta reduction", found)
         # μ α . < t || α >  →  t
         if isinstance(root, Mu) and isinstance(root.context, ID) and root.context.name == root.id.name:
             if self.verbose:

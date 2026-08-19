@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from core.ac.ast import Admal, Cons, Context, Deleg, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term
+from core.ac.ast import Admal, Cons, Context, Deleg, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term, FirstOrderNotSupported, first_order_node
 
 
 @dataclass(frozen=True)
@@ -345,4 +345,7 @@ def _same_tree(left: ProofTerm, right: ProofTerm) -> bool:
     if isinstance(left, (Goal, Laog)):
         return left.number == right.number and left.prop == right.prop
 
+    found = first_order_node(left)
+    if found is not None:
+        raise FirstOrderNotSupported("Structural comparison", found)
     return False

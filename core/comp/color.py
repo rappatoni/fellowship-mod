@@ -2,7 +2,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Optional
 from pres.gen import ProofTermGenerationVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc, Deleg, Geled
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, ID, DI, Admal, Sonc, Deleg, Geled, FirstOrderNotSupported, first_order_node
 
 
 @dataclass(frozen=True)
@@ -156,6 +156,11 @@ class DebateTermLabeller:
                 status = self._combine_pair(left, right, node)
                 self._open_site[nid] = None
         else:
+            found = first_order_node(node)
+            if found is not None:
+                # Defaulting to green would report a first-order term as
+                # accepted without having examined it.
+                raise FirstOrderNotSupported("Acceptance labelling", found)
             status = "green"
             self._open_site[nid] = None
 
@@ -367,6 +372,12 @@ class AcceptanceColoringVisitor:
         memo = self._memo_color.get(mid)
         if memo is not None:
             return memo
+        found = first_order_node(n)
+        if found is not None:
+            # Checked before anything else: `_unattacked` answers True for a
+            # node it does not recognise, so a first-order term would be
+            # reported green -- accepted, without having been examined.
+            raise FirstOrderNotSupported("Acceptance colouring", found)
         parametric_color = self._parametric_color(n) if (self._is_term_open(n) or self._is_context_open(n)) else None
         if parametric_color is not None:
             self._memo_color[mid] = parametric_color

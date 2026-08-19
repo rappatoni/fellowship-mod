@@ -1,6 +1,6 @@
 import logging
 from typing import Dict, List
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp
+from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp, FirstOrderNotSupported, first_order_node
 
 logger = logging.getLogger('fsp.parser')
 
@@ -132,6 +132,12 @@ def match_trees(nodeA: "ProofTerm", nodeB: "ProofTerm", mapping: Dict[str, str])
         return True
 
     else:
+        found = first_order_node(nodeA)
+        if found is not None:
+            # Returning False here would make a first-order term compare
+            # unequal to itself, which reads as "no match" rather than as
+            # "not supported".
+            raise FirstOrderNotSupported("Structural matching", found)
         # Unhandled node type
         return False
 

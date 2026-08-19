@@ -246,3 +246,40 @@ class DestructTermsPairFO(Context):
                 f"DestructTermsPairFO.context expects a Context node, got "
                 f"{type(context).__name__}"
             )
+
+
+#: The four first-order constructors, as a tuple for isinstance tests.
+FIRST_ORDER_NODES = (LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO)
+
+
+def first_order_node(node: "ProofTerm"):
+    """The first first-order construct in ``node``, or None if there is none.
+
+    Reduction and the debate operations do not yet handle first-order terms:
+    the reduction rules for first-order AC/DC are not settled, and grafting
+    into a first-order binder needs design work.  They use this to refuse such
+    a term outright rather than walk into it and quietly do the wrong thing --
+    several of them fall through to "return the node unchanged" or "not equal"
+    on a node they do not recognise, which would be silent and wrong.
+    """
+    if isinstance(node, FIRST_ORDER_NODES):
+        return node
+    for slot in ("term", "context"):
+        child = getattr(node, slot, None)
+        if isinstance(child, ProofTerm):
+            found = first_order_node(child)
+            if found is not None:
+                return found
+    return None
+
+
+class FirstOrderNotSupported(NotImplementedError):
+    """Raised where a first-order construct has no defined behaviour yet."""
+
+    def __init__(self, operation: str, node: "ProofTerm"):
+        super().__init__(
+            f"{operation} does not support first-order terms yet, and this one "
+            f"contains a {type(node).__name__}. The first-order reduction and "
+            f"grafting rules are not settled; see Milestone B in the plan."
+        )
+        self.node = node
