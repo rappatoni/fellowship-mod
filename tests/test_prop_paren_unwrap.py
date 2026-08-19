@@ -44,5 +44,8 @@ def test_enriched_proof_term_still_parses_for_a_structural_type():
     ).visit(body)
     enriched = ProofTermGenerationVisitor().visit(body).pres
 
-    assert "elur1:(true-A)-B" in enriched
+    # Enrichment canonicalises: subtraction is left associative, so the
+    # parentheses are redundant and dropped.  Same proposition, and -- the
+    # point of the test -- the enriched term still parses.
+    assert "elur1:true-A-B" in enriched
     Grammar().parser.parse(enriched)  # must round-trip

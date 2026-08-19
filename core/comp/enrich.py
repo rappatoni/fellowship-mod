@@ -1,7 +1,13 @@
 from typing import Optional, Dict, Any
 import logging, warnings
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
+from contextlib import contextmanager
+
+from core.ac.ast import (
+    Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
+)
+from core.ac.prop import BinOp, PBin, PQuant, Prop, PropError, Quantifier
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +55,77 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             text = text[1:-1].strip()
         return text
 
-    def _needs_parens_for_imp_left(self, prop: str) -> bool:
-        return bool(prop) and ("->" in prop or "-" in prop)
+    # -- building propositions ---------------------------------------------
+    #
+    # Node propositions are strings, so these parse, build and print again.
+    # That is worth the round trip: parenthesisation now follows the real
+    # precedence rather than a substring test for "->" or "-", which put
+    # brackets around any predicate whose name happened to contain a hyphen.
 
-    def _needs_parens_for_minus_side(self, prop: str) -> bool:
-        return bool(prop) and ("->" in prop or "-" in prop)
+    @staticmethod
+    def _as_prop(text):
+        """A node's proposition as a Prop, or None if it cannot be read.
 
-    def _mk_imp(self, left: str, right: str) -> str:
-        left_s = f"({left})" if self._needs_parens_for_imp_left(left) else left
-        return f"{left_s}->{right}"
+        Conjunction and disjunction are outside AIDA's fragment, so a
+        declaration mentioning them will not parse; callers fall back to
+        string handling rather than failing.
+        """
+        if text is None or isinstance(text, Prop):
+            return text
+        try:
+            return Prop.parse(text)
+        except PropError:
+            return None
 
-    def _mk_minus(self, left: str, right: str) -> str:
-        left_s = f"({left})" if self._needs_parens_for_minus_side(left) else left
-        right_s = f"({right})" if self._needs_parens_for_minus_side(right) else right
-        return f"{left_s}-{right_s}"
+    def _canonical(self, prop: str) -> str:
+        """A declared proposition in canonical spelling.
+
+        Subsumes dropping the parentheses Fellowship wraps a declared type in,
+        and does it by understanding the proposition rather than by matching
+        brackets.  Propositions outside the fragment keep the older textual
+        treatment.
+        """
+        parsed = self._as_prop(prop)
+        return str(parsed) if parsed is not None else self._unwrap_outer_parens(prop)
+
+    def _combine(self, left: str, op: BinOp, right: str):
+        left_prop, right_prop = self._as_prop(left), self._as_prop(right)
+        if left_prop is None or right_prop is None:
+            return None
+        return str(PBin(left_prop, op, right_prop))
+
+    def _mk_imp(self, left: str, right: str):
+        return self._combine(left, BinOp.IMP, right)
+
+    def _mk_minus(self, left: str, right: str):
+        return self._combine(left, BinOp.MINUS, right)
+
+    def _quantify(self, quantifier: Quantifier, var: str, sort, body: str):
+        body_prop = self._as_prop(body)
+        if body_prop is None:
+            return None
+        return str(PQuant(quantifier, (var,), sort, body_prop))
+
+    # -- scope -------------------------------------------------------------
+
+    @contextmanager
+    def _bound(self, name: str, prop):
+        """Bind a variable for the duration of a subtree.
+
+        bound_vars used to be written and never unwound, so a binder's type
+        leaked into its siblings and outlived its scope.  First-order
+        variables add a second namespace, which makes that worse.
+        """
+        missing = object()
+        previous = self.bound_vars.get(name, missing)
+        self.bound_vars[name] = prop
+        try:
+            yield
+        finally:
+            if previous is missing:
+                self.bound_vars.pop(name, None)
+            else:
+                self.bound_vars[name] = previous
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
         goal_num = node.number.strip()
@@ -134,7 +197,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_ID(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                node.prop = self._unwrap_outer_parens(self.axiom_props[node.name])
+                node.prop = self._canonical(self.axiom_props[node.name])
                 logger.debug("Enriching axiom %s with type %s", node.name, node.prop)
             else:
                 logger.debug("Axiom %s already enriched with type %s", node.name, node.prop)
@@ -158,7 +221,7 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         node = super().visit_DI(node)
         if node.name in self.axiom_props and node.name not in self.bound_vars:
             if node.prop is None:
-                node.prop = self._unwrap_outer_parens(self.axiom_props[node.name])
+                node.prop = self._canonical(self.axiom_props[node.name])
                 logger.debug("Enriching axiom %s with type %s based on declared axiom",
                             node.name, node.prop)
             else:
@@ -178,8 +241,8 @@ class PropEnrichmentVisitor(ProofTermVisitor):
         return node
 
     def visit_Lamda(self, node: Lamda):
-        self.bound_vars[node.di.di.name] = node.di.prop
-        node = super().visit_Lamda(node)
+        with self._bound(node.di.di.name, node.di.prop):
+            node = super().visit_Lamda(node)
         # Optionally compute node.prop from node.di.prop + "->" + node.term.prop
         # if node.di.prop and node.term.prop exist.
         if node.prop is None and node.di.prop and node.term.prop:
@@ -188,8 +251,8 @@ class PropEnrichmentVisitor(ProofTermVisitor):
 
     def visit_Admal(self, node: Admal):
         # bind context variable (ID) with its declared prop
-        self.bound_vars[node.id.id.name] = node.id.prop
-        node = super().visit_Admal(node)
+        with self._bound(node.id.id.name, node.id.prop):
+            node = super().visit_Admal(node)
         if node.prop is None and node.id.prop and node.context.prop:
             node.prop = self._mk_minus(node.id.prop, node.context.prop)
         return node
@@ -207,16 +270,61 @@ class PropEnrichmentVisitor(ProofTermVisitor):
             node.prop = self._mk_minus(node.term.prop, node.context.prop)
         return node
 
+    # -- first-order nodes -------------------------------------------------
+
+    def visit_LamdaFO(self, node: LamdaFO):
+        """Universal introduction: the body's type, quantified over the binder."""
+        with self._bound(node.var, node.sort):
+            node = super().visit_LamdaFO(node)
+        if node.prop is None and node.term.prop:
+            node.prop = self._quantify(
+                Quantifier.FORALL, node.var, node.sort, node.term.prop
+            )
+        return node
+
+    def visit_DestructTermsPairFO(self, node: DestructTermsPairFO):
+        """Existential elimination: the dual of universal introduction."""
+        with self._bound(node.var, node.sort):
+            node = super().visit_DestructTermsPairFO(node)
+        if node.prop is None and node.context.prop:
+            node.prop = self._quantify(
+                Quantifier.EXISTS, node.var, node.sort, node.context.prop
+            )
+        return node
+
+    def visit_ConsFO(self, node: ConsFO):
+        """Universal instantiation.  Its type cannot be built from its children.
+
+        `Cons(t,c)` has type `t.prop -> c.prop`, because an arrow is recoverable
+        from its two sides.  `ConsFO(t,c)` instead consumes a `forall x:S, P`
+        where `P[t/x]` is `c.prop`, and recovering `P` from the result of a
+        substitution is not determined -- several `P` give the same instance.
+
+        The proposition is therefore left unset, and the enclosing command
+        takes its type from the other side, which visit_Mu and visit_Mutilde
+        already do.  Nothing downstream needs it: instruction generation emits
+        `elim [t]` from the witness alone.
+        """
+        return super().visit_ConsFO(node)
+
+    def visit_TermsPairFO(self, node: TermsPairFO):
+        """Existential introduction.  Also not recoverable from its children.
+
+        Fellowship's printer discards this node's binder and body
+        (`core.ml:449`), so unlike ConsFO the information is absent from the
+        term rather than merely non-invertible.  Same consequence.
+        """
+        return super().visit_TermsPairFO(node)
+
     def visit_Mu(self, node: Mu):
-        self.bound_vars[node.id.name]=node.prop
-        node = super().visit_Mu(node)
+        with self._bound(node.id.name, node.prop):
+            node = super().visit_Mu(node)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
 
     def visit_Mutilde(self, node: Mutilde):
-       
-        self.bound_vars[node.di.name]=node.prop
-        node = super().visit_Mutilde(node)
+        with self._bound(node.di.name, node.prop):
+            node = super().visit_Mutilde(node)
         #print("node.term, node.context", node.term.prop, node.context.prop)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
