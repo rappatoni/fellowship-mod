@@ -3,6 +3,7 @@ from typing import Any, List, Tuple, Optional, Dict, Callable
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
+from core.ac.signature import Declaration
 from mod import store
 
 logger = logging.getLogger('fsp.wrapper')
@@ -49,7 +50,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.last_output_text: str = ""
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
-        self.declarations: Dict[str, str] = {}
+        self.declarations: Dict[str, Declaration] = {}
         self.decorations: Dict[str, str] = {}
  
 
@@ -381,10 +382,19 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         Expected shape (per `machine.ml`):
             decls = [ [ ['name', '"A"'], ['kind','sort'], ['sort','"bool"'] ], ... ]
+
+        Values are stored as `Declaration`, a `str` subclass that also carries
+        the payload's `kind`.  The kind is what tells a sort apart from a
+        proposition, which first-order proof-term resolution depends on.
         """
         decls = state.get('decls')
         if not isinstance(decls, list):
             return
+
+        def tagged(value: Any, kind: str) -> Any:
+            # A payload missing its sort/prop field used to store None; keep
+            # that rather than turning it into the string "None".
+            return Declaration(value, kind) if isinstance(value, str) else value
 
         for entry in decls:
             nm   = entry.get('name')
@@ -394,25 +404,30 @@ TODO: Mechanism to declare a scenario of default assumptions.
             if isinstance(nm, str):
                 nm = self._unquote(nm)
             if not nm in self.declarations:
+                # The value is kept as a Declaration -- a str carrying the kind
+                # alongside the text.  Readers that only want the text are
+                # unaffected; first-order resolution needs the kind to tell a
+                # sort annotation from a proposition, which Fellowship prints
+                # identically.
                 if kind == 'sort':
                     typ = entry.get('sort')
                     if isinstance(typ, str):
                         typ = self._unquote(typ)
-                    self.declarations[nm]= typ
+                    self.declarations[nm] = tagged(typ, 'sort')
                     logger.info("'%s' : '%s'  declared.", nm, typ)
                 elif kind == 'prop':
                     # We store the proposition string for axioms/theorems.
                     pr = entry.get('prop')
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
-                    self.declarations[nm] = pr
+                    self.declarations[nm] = tagged(pr, 'prop')
                     logger.info("'%s' : '%s'  declared.", nm, pr)
                 elif kind == 'moxia':
                     # Store the proposition string for refutations (deny).
                     pr = entry.get('prop')
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
-                    self.declarations[nm] = pr
+                    self.declarations[nm] = tagged(pr, 'moxia')
                     logger.info("'%s' : '%s'  denied.", nm, pr)
             
 

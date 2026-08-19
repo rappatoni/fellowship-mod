@@ -46,6 +46,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
         self.delegations = {} # Dict of Delegations: {deleg_number : {prop : some_str, deleg_index : some_int, label : some_str}
+        # First-order variable context per goal: {goal_number: {var_name: sort}}.
+        # Fellowship reports this as `(env ((name "x")(sort "N")) ...)`; it is
+        # what distinguishes a first-order variable bound by a λ over a sort
+        # from a proof variable bound by a λ over a proposition.
+        self.goal_envs = {}
         self.proof_term = None  # To store the proof term if needed.
         self.enriched_proof_term = None # To store an enriched and/or rewritten proof term if needed.
         self.body: ProofTerm = None # parsed proof term created from proof_term
@@ -506,10 +511,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         - goal_number := value of (meta ...)
         - prop        := value of (active-prop ...) (quotes removed)
+        - env         := value of (env ((name ...)(sort ...)) ...), the
+                         first-order variable context, into self.goal_envs
         """
         self.proof_term = self._normalize_pt_to_unicode(proof_state.get('proof-term').strip('"'))
         res = {}
         dels = {}
+        envs = {}
         goals = proof_state.get('goals')
 
         # Normalize: 'goals' may be a single `(goal ...)` list or a list of them.
@@ -523,16 +531,42 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         goal_entries = _as_goal_list(goals)
 
+        def _as_env(entries) -> Dict[str, str]:
+            """Read `(env ((name "x")(sort "N")) ...)` into {name: sort}.
+
+            Fellowship lists the innermost binder first; dict insertion order
+            preserves that.
+            """
+            env: Dict[str, str] = {}
+            for entry in entries:
+                if not isinstance(entry, list):
+                    continue
+                fields = {}
+                for pair in entry:
+                    if isinstance(pair, list) and len(pair) == 2:
+                        fields[pair[0]] = self._unquote(pair[1])
+                name, sort = fields.get('name'), fields.get('sort')
+                if name is not None and sort is not None:
+                    env[name] = sort
+            return env
+
         for g in goal_entries:
         #for g in goals:
             attrs = {}
+            env = {}
             for item in g[1:]:
                 if isinstance(item, list) and len(item) == 2:
                     k, v = item
                     attrs[k] = self._unquote(v)
+                # `env` holds a variable number of entries, so it never matches
+                # the 2-element shape above and used to be dropped entirely.
+                if isinstance(item, list) and item and item[0] == 'env':
+                    env = _as_env(item[1:])
             meta = self._unquote(attrs.get('meta')) if 'meta' in attrs else None
             prop = self._unquote(attrs.get('active-prop')) if 'active-prop' in attrs else None
             kind = self._unquote(attrs.get('kind')) if 'kind' in attrs else None
+            if meta:
+                envs[meta] = env
             if kind == "delegation":
                 if meta and prop is not None:
                     dels[meta] = {"prop": prop, "label": None}
@@ -541,6 +575,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                     res[meta] = {"prop": prop, "label": None}
         self.assumptions = res
         self.delegations = dels
+        self.goal_envs = envs
 
     # def extract_assumptions(self, output):
     #     #print("Match conclusion to assumption.")

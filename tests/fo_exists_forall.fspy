@@ -1,0 +1,47 @@
+% First-order fixture: the exists/forall swap, (∃y∀x. P x y) -> (∀x∃y. P x y).
+%
+% Ported from tests/test_fo_3.fsp, which is an orphaned upstream Fellowship
+% script and no longer replays: its `focus` / `elim in` steps fail against the
+% current binary.  Both are expanded here into `cut` + `axiom`, which is exactly
+% what tactics.ml:713-735 defines them as.
+%
+% This is the primary first-order regression case because one small proof
+% exercises all four first-order proof-term constructors:
+%
+%   \x:N.        LambdaFO             forall-introduction
+%   (y:N).       DestructTermsPairFO  exists-elimination
+%   (y,...)      TermsPairFO          exists-introduction
+%   x*K2         ConsFO               forall-instantiation
+%
+% Expected proof term at qed:
+%   ;:thesis:exists y:N,forall x:N,P x y->forall x:N,exists y:N,P x y.
+%     <\H:exists y:N,forall x:N,P x y.\x:N.
+%       ;:th:exists y:N,P x y.
+%         <H||(y:N).;:'K:forall x:N,P x y.<(y,;:K2:P x y.<K||x*K2>)||th>>
+%      ||thesis>
+%
+% Note the two lambdas: `\H:exists y:N,...` is a propositional Lamda and
+% `\x:N.` is a LambdaFO.  They are spelled identically, which is why parsing
+% needs the declaration table to tell a sort annotation from a proposition.
+
+lj.
+minimal.
+
+declare N: type.
+declare P: N -> N -> bool.
+
+% Kept on one line: script mode has no continuation handling, unlike the REPL.
+theorem fo_exists_forall : ((exists y:N, forall x:N, P [x] [y]) -> (forall x:N, exists y:N, P [x] [y])).
+elim H.
+elim.
+cut (exists y:N, forall x:N, P [x] [y]) th.
+axiom H.
+elim.
+cut (exists y:N, P [x] [y]) K.
+elim [y].
+cut (forall x:N, P [x] [y]) K2.
+axiom K.
+elim [x].
+axiom.
+axiom th.
+qed.

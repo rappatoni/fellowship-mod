@@ -1,0 +1,28 @@
+% Minimal first-order fixture: universal instantiation.
+%
+% Ground truth for the first-order work.  Everything here is passed straight
+% through to Fellowship, so this script exercises the prover's first-order path
+% without depending on the wrapper's proof-term parser.  The `start argument`
+% form of the same proof is added once the parser understands ConsFO.
+%
+% Expected proof term at qed:
+%   ;:thesis:P O.<;:th:P O.<ax||O*th>||thesis>
+% where `O*th` is ConsFO -- a first-order instantiation, not a propositional
+% Cons.  Note `focus ax th.` is deliberately spelled out as `cut` + `axiom`:
+% `focus` aborts the prover on a first-order goal.  See tasks.org,
+% aida-fellowship-focus-firstorder-crash.
+
+lj.
+minimal.
+
+declare N: type.
+declare O: N.
+declare P: N -> bool.
+declare ax: (forall n:N, P [n]).
+
+theorem fo_forall: (P [O]).
+cut (forall n:N, P [n]) th.
+axiom ax.
+elim [O].
+axiom.
+qed.

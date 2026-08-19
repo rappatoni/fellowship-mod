@@ -68,7 +68,10 @@ def test_truth_closing_a_chain_always_gets_an_elim():
 
     assert instructions == [
         "cut (A) tester",
-        "cut ((true-A)-B) elur",
+        # `-` is left associative for the command parser, so the redundant
+        # parentheses are no longer emitted; the prover reads `true-A-B` and
+        # `(true-A)-B` as the same proposition.
+        "cut (true-A-B) elur",
         "elim",
         "by default",
         "next",

@@ -1,45 +1,32 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
-from dataclasses import dataclass
 from typing import Mapping
 
+from core.ac.prop import (
+    PApp,
+    PBin,
+    PFalse,
+    PNeg,
+    PQuant,
+    PSym,
+    PTrue,
+    Prop,
+    PropError,
+    TApp,
+    TSym,
+)
+
+logger = logging.getLogger(__name__)
 
 _DECORATE_RE = re.compile(r"^decorate\s+(?P<name>[^\s:]+)\s*:\s*(?P<text>.+?)\s*\.?$")
-_TOKEN_RE = re.compile(r"\s*(->|[()~\-]|[^\s()~\-]+)")
 _ARG_RE = re.compile(r"@arg(\d+)")
 
 
 class DecorationError(ValueError):
     """Raised when a wrapper-side decoration command is malformed."""
-
-
-@dataclass(frozen=True)
-class _Name:
-    value: str
-
-
-@dataclass(frozen=True)
-class _App:
-    head: str
-    args: tuple[_Name, ...]
-
-
-@dataclass(frozen=True)
-class _Unary:
-    op: str
-    body: "_Prop"
-
-
-@dataclass(frozen=True)
-class _Binary:
-    op: str
-    left: "_Prop"
-    right: "_Prop"
-
-
-_Prop = _Name | _App | _Unary | _Binary
 
 
 def parse_decorate_command(command: str) -> tuple[str, str]:
@@ -99,13 +86,25 @@ def render_prop(
     text = prop.strip()
     if not text:
         return text
-    try:
-        parser = _Parser(text)
-        ast = parser.parse()
-        parser.expect_end()
-    except DecorationError:
+    ast = _parse(text)
+    if ast is None:
         return text
     return _render_ast(ast, declarations or {}, decorations or {}, connective_templates or {})
+
+
+def _parse(text: str) -> Prop | None:
+    """Parse a proposition, or return None if it cannot be read.
+
+    Rendering must not bring down a whole argument, so an unreadable
+    proposition falls back to its raw text.  It is logged rather than dropped
+    silently -- an unparseable proposition here means the renderer is showing
+    undecorated output, which is easy to mistake for a missing decoration.
+    """
+    try:
+        return Prop.parse(text)
+    except PropError as error:
+        logger.debug("Falling back to raw text for proposition %r: %s", text, error)
+        return None
 
 
 def _declaration_template_args(
@@ -114,60 +113,125 @@ def _declaration_template_args(
     decorations: Mapping[str, str],
     connective_templates: Mapping[str, str] | None = None,
 ) -> list[str]:
-    try:
-        parser = _Parser(prop)
-        ast = parser.parse()
-        parser.expect_end()
-    except DecorationError:
+    ast = _parse(prop)
+    if ast is None:
         return []
     connective_templates = connective_templates or {}
-    if isinstance(ast, _Binary) and ast.op == "->":
-        return [_render_ast(ast.left, declarations, decorations, connective_templates), _render_ast(ast.right, declarations, decorations, connective_templates)]
-    if isinstance(ast, _Binary) and ast.op == "-":
-        return [_render_ast(ast.left, declarations, decorations, connective_templates), _render_ast(ast.right, declarations, decorations, connective_templates)]
-    if isinstance(ast, _Unary):
-        return [_render_ast(ast.body, declarations, decorations, connective_templates)]
-    if isinstance(ast, _App):
-        return [_render_term(arg.value, decorations) for arg in ast.args]
+
+    def render(node) -> str:
+        return _render_ast(node, declarations, decorations, connective_templates)
+
+    if isinstance(ast, PBin):
+        return [render(ast.left), render(ast.right)]
+    if isinstance(ast, PNeg):
+        return [render(ast.body)]
+    if isinstance(ast, PQuant):
+        return [render(ast.body)]
+    if isinstance(ast, PApp):
+        _, args = _flatten_application(ast)
+        return [_render_term(arg, decorations) for arg in args]
     return []
 
 
+def _flatten_application(prop: PApp) -> tuple[str, list]:
+    """Split ``P x y`` into its head name and its argument terms, in order."""
+    args = []
+    node: Prop = prop
+    while isinstance(node, PApp):
+        args.append(node.arg)
+        node = node.pred
+    args.reverse()
+    return _atom_name(node), args
+
+
+def _atom_name(prop: Prop) -> str:
+    """The decoration-registry key for an atomic proposition."""
+    if isinstance(prop, PSym):
+        return prop.name
+    if isinstance(prop, PTrue):
+        return "true"
+    if isinstance(prop, PFalse):
+        return "false"
+    # A compound predicate head is not well-sorted in Fellowship, but rendering
+    # should still show something rather than raise.
+    return str(prop)
+
+
 def _render_ast(
-    ast: _Prop,
+    ast: Prop,
     declarations: Mapping[str, str],
     decorations: Mapping[str, str],
     connective_templates: Mapping[str, str] | None = None,
 ) -> str:
     connective_templates = connective_templates or {}
-    if isinstance(ast, _Name):
-        if ast.value in decorations:
-            return _apply_template(decorations[ast.value], [])
-        return ast.value
-    if isinstance(ast, _App):
-        args = [_render_term(arg.value, decorations) for arg in ast.args]
-        if ast.head in decorations:
-            return _apply_template(decorations[ast.head], args)
-        return " ".join([ast.head, *args])
-    if isinstance(ast, _Unary):
-        body = _render_ast(ast.body, declarations, decorations, connective_templates)
-        if ast.op in connective_templates:
-            return _apply_named_template(connective_templates[ast.op], {"body": body, "arg": body})
-        if ast.op == "~":
-            return f"not {body}"
-        return f"{ast.op}{body}"
-    left = _render_ast(ast.left, declarations, decorations, connective_templates)
-    right = _render_ast(ast.right, declarations, decorations, connective_templates)
-    if ast.op in connective_templates:
-        return _apply_named_template(connective_templates[ast.op], {"left": left, "right": right, "A": left, "B": right})
-    if ast.op == "->":
-        return f"{left} -> {right}"
-    return f"{left}-{right}"
+
+    def render(node: Prop) -> str:
+        return _render_ast(node, declarations, decorations, connective_templates)
+
+    if isinstance(ast, (PSym, PTrue, PFalse)):
+        name = _atom_name(ast)
+        if name in decorations:
+            return _apply_template(decorations[name], [])
+        return name
+
+    if isinstance(ast, PApp):
+        head, arg_terms = _flatten_application(ast)
+        args = [_render_term(arg, decorations) for arg in arg_terms]
+        if head in decorations:
+            return _apply_template(decorations[head], args)
+        return " ".join([head, *args])
+
+    if isinstance(ast, PNeg):
+        body = render(ast.body)
+        if "~" in connective_templates:
+            return _apply_named_template(connective_templates["~"], {"body": body, "arg": body})
+        return f"not {body}"
+
+    if isinstance(ast, PQuant):
+        body = render(ast.body)
+        variables = ", ".join(ast.names)
+        key = ast.quantifier.value
+        if key in connective_templates:
+            return _apply_named_template(
+                connective_templates[key],
+                {"vars": variables, "sort": str(ast.sort), "body": body, "arg": body},
+            )
+        opening = "for all" if key == "forall" else "for some"
+        return f"{opening} {variables} of type {ast.sort}, {body}"
+
+    if isinstance(ast, PBin):
+        left = render(ast.left)
+        right = render(ast.right)
+        op = ast.op.value
+        if op in connective_templates:
+            return _apply_named_template(
+                connective_templates[op],
+                {"left": left, "right": right, "A": left, "B": right},
+            )
+        if op == "->":
+            return f"{left} -> {right}"
+        return f"{left}-{right}"
+
+    raise DecorationError(f"Cannot render proposition node {type(ast).__name__}")
 
 
-def _render_term(name: str, decorations: Mapping[str, str]) -> str:
-    if name in decorations:
-        return _apply_template(decorations[name], [])
-    return name
+def _render_term(term, decorations: Mapping[str, str]) -> str:
+    """Render a first-order term, decorating every symbol it contains.
+
+    Recurses into applications so that a decoration for ``O`` also applies in
+    ``S O``; a decoration names a thing, wherever that thing occurs.
+    """
+    if isinstance(term, TSym):
+        if term.name in decorations:
+            return _apply_template(decorations[term.name], [])
+        return term.name
+    if isinstance(term, TApp):
+        fun = _render_term(term.fun, decorations)
+        arg = _render_term(term.arg, decorations)
+        # Mirrors the term printer: a nested application in argument position
+        # keeps its parentheses.
+        return f"{fun} ({arg})" if isinstance(term.arg, TApp) else f"{fun} {arg}"
+    return str(term)
 
 
 def _apply_template(template: str, args: list[str]) -> str:
@@ -185,81 +249,3 @@ def _apply_named_template(template: str, values: Mapping[str, str]) -> str:
     for key, value in values.items():
         rendered = rendered.replace(f"@{key}", value)
     return rendered
-
-
-class _Parser:
-    def __init__(self, text: str):
-        self.tokens = self._tokenize(text)
-        self.pos = 0
-
-    def _tokenize(self, text: str) -> list[str]:
-        tokens: list[str] = []
-        index = 0
-        while index < len(text):
-            match = _TOKEN_RE.match(text, index)
-            if match is None:
-                raise DecorationError(f"Cannot tokenize proposition near: {text[index:]!r}")
-            tokens.append(match.group(1))
-            index = match.end()
-        return tokens
-
-    def parse(self) -> _Prop:
-        return self._parse_implication()
-
-    def expect_end(self) -> None:
-        if self._peek() is not None:
-            raise DecorationError(f"Unexpected proposition token: {self._peek()!r}")
-
-    def _peek(self) -> str | None:
-        if self.pos >= len(self.tokens):
-            return None
-        return self.tokens[self.pos]
-
-    def _consume(self, token: str | None = None) -> str:
-        current = self._peek()
-        if current is None:
-            raise DecorationError("Unexpected end of proposition")
-        if token is not None and current != token:
-            raise DecorationError(f"Expected {token!r}, got {current!r}")
-        self.pos += 1
-        return current
-
-    def _parse_implication(self) -> _Prop:
-        left = self._parse_minus()
-        if self._peek() == "->":
-            self._consume("->")
-            right = self._parse_implication()
-            return _Binary("->", left, right)
-        return left
-
-    def _parse_minus(self) -> _Prop:
-        left = self._parse_unary()
-        if self._peek() == "-":
-            self._consume("-")
-            right = self._parse_unary()
-            return _Binary("-", left, right)
-        return left
-
-    def _parse_unary(self) -> _Prop:
-        if self._peek() == "~":
-            self._consume("~")
-            return _Unary("~", self._parse_unary())
-        if self._peek() == "(":
-            self._consume("(")
-            inner = self._parse_implication()
-            self._consume(")")
-            return inner
-        return self._parse_application()
-
-    def _parse_application(self) -> _Prop:
-        names: list[str] = []
-        while True:
-            token = self._peek()
-            if token is None or token in {"->", "-", "~", "(", ")"}:
-                break
-            names.append(self._consume())
-        if not names:
-            raise DecorationError(f"Expected proposition atom, got {self._peek()!r}")
-        if len(names) == 1:
-            return _Name(names[0])
-        return _App(names[0], tuple(_Name(arg) for arg in names[1:]))
