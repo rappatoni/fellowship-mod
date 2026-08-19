@@ -40,6 +40,11 @@ DEFAULT_SCRIPTS = [
     # "counterarguments_and_undercut.fspy",
     # "multiple_undercuts.fspy",
     "multiple_supports_stack_vs_queue.fspy",
+    # The first-order fixtures.  They also use bare `axiom.`, but pass the
+    # commands straight through rather than recording an argument and
+    # replaying it, which is where the issue above bites.
+    "fo_forall.fspy",
+    "fo_exists_forall.fspy",
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]

@@ -37,6 +37,9 @@ The current codebase supports:
 - acceptance coloring of normalized proof terms
 - acceptance-tree export through Graphviz (with DOT fallback)
 - machine-mode integration with Fellowship, including prover state extraction
+- first-order propositions and proof terms: `forall` / `exists`, sorts, and
+  first-order terms, through parsing, type synthesis, replay and rendering
+  (see *First-order logic* below for what is and is not supported)
 
 ## Requirements
 
@@ -375,6 +378,78 @@ Examples to inspect:
 - `tests/non_affine_test.py`
 - `tests/test_affine_cut.py`
 - `tests/test_affine_elim.py`
+
+## First-order logic
+
+AIDA reads and replays the first-order fragment of Fellowship: universal and
+existential quantification, sorts, and first-order terms.
+
+### Declaring a signature
+
+```text
+declare N : type.                       a sort
+declare O : N.                          a constant
+declare S : N -> N.                     a function
+declare P : N -> bool.                  a predicate
+declare ax : (forall n:N, P [n]).       an axiom
+```
+
+A predicate is applied with brackets on input — `P [x] [y]`, `Even [S (S O)]` —
+and the prover prints it juxtaposed, as `P x y`. Both spellings are accepted
+wherever AIDA reads a proposition.
+
+### Proposition syntax
+
+```text
+f, g ::= true | false | x | ~f | f g            atoms, negation, application
+       | f -> g | f - g                          implication, subtraction
+       | forall x,...,y : s, f                   universal
+       | exists x,...,y : s, f                   existential
+```
+
+Precedence, loosest first: `-`, then `->`, then `\/`, then `/\`, then `~`,
+then application. Implication is right associative and the rest are left
+associative. A quantifier body extends as far to the right as it can, so a
+quantifier used as an operand is parenthesised: `(forall x:N, P [x]) -> A`.
+
+Conjunction and disjunction are part of Fellowship but **not** of AIDA's
+fragment: there are no proof-term constructors for them here, so a proposition
+using them can be declared but not argued about.
+
+### Working with quantifiers
+
+`elim` introduces a quantified goal and names the fresh variable; `elim [t]`
+instantiates a quantified hypothesis at `t`. `focus` aborts the prover on a
+first-order goal, so use its expansion — `cut (<prop>) name.` followed by
+`axiom <name>.` — which is what `focus` is defined as anyway.
+
+```text
+lj.
+minimal.
+declare N : type.
+declare O : N.
+declare P : N -> bool.
+declare ax : (forall n:N, P [n]).
+
+theorem fo_forall : (P [O]).
+cut (forall n:N, P [n]) th.
+axiom ax.
+elim [O].
+axiom.
+qed.
+```
+
+Worked examples: `tests/fo_forall.fspy`, and `tests/fo_exists_forall.fspy`,
+which proves `(exists y, forall x. P x y) -> (forall x, exists y. P x y)` and
+exercises every first-order proof-term constructor.
+
+### What is not supported yet
+
+Normalization and the debate operations — `reduce`, `chain`, `support`,
+`attack` and acceptance colouring — do not handle first-order terms. The
+reduction rules for first-order AC/DC are not settled, so rather than guess,
+those operations raise `FirstOrderNotSupported` naming the construct they
+stopped at.
 
 ## Render styles
 
