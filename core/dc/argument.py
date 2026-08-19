@@ -492,8 +492,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         s = s.replace(";:",   "μ")
         # lambda
         s = s.replace("\\",   "λ")
-        s = s.replace("~", "¬")
-        s = s.replace("false", "⊥")
+        # `~` and `false` used to be rewritten to `¬` and `⊥` here.  They no
+        # longer are: the grammar accepts both spellings, and the substitution
+        # was a blind str.replace that corrupted any identifier containing
+        # them -- `μfalsehood:A.<a||falsehood>` became `μ⊥hood:A.<a||⊥hood>`.
         return s
 
     @staticmethod

@@ -63,8 +63,9 @@ PRINTED = [
 ]
 
 # Spellings Fellowship emitted before its printer learned to parenthesise a
-# quantifier in subformula position.  They are still accepted, so an older
-# transcript or a hand-written proposition keeps parsing.
+# quantifier in subformula position.  They are rejected rather than guessed at:
+# `~forall x:N,Un x` and `B-forall x:N,Un x` each have two readings, and the
+# printer now writes the parentheses that tell them apart.
 LEGACY_UNPARENTHESISED = [
     "~forall x:N,Un x",
     "B-forall x:N,Un x",
@@ -137,8 +138,9 @@ def test_negation_binds_tighter_than_arrow():
 
 
 @pytest.mark.parametrize("text", LEGACY_UNPARENTHESISED)
-def test_legacy_unparenthesised_quantifiers_still_parse(text):
-    assert Prop.parse(text) is not None
+def test_ambiguous_unparenthesised_quantifiers_are_rejected(text):
+    with pytest.raises(PropError):
+        Prop.parse(text)
 
 
 def test_quantifier_scope_is_recoverable_in_both_directions():

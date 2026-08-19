@@ -21,10 +21,17 @@ def to_ascii_logic(s: str) -> str:
 def fn(negated_prop: str):
     return negated_prop.replace("¬", "~")
 
+#: Falsum reaches this module under three spellings: `false` is what the
+#: prover prints and what a parsed proposition renders back to, `⊥` is what
+#: `Argument._normalize_pt_to_unicode` rewrites it to, and `_F_` is the name
+#: of the eliminator leaf.
+_FALSUM_SPELLINGS = ('⊥', 'false', '_F_')
+
+
 def is_falsum_prop(p: str) -> bool:
     if not isinstance(p, str):
         return False
-    return p.strip() in ('⊥', '_F_')
+    return p.strip() in _FALSUM_SPELLINGS
 
 def is_negation_prop(p: str) -> bool:
     if not isinstance(p, str):
@@ -34,7 +41,7 @@ def is_negation_prop(p: str) -> bool:
         return True
     if "->" in ps:
         rhs = ps.split("->", 1)[1]
-        return rhs in ("⊥", "_F_")
+        return rhs in _FALSUM_SPELLINGS
     return False
 
 def is_primitive_negation_prop(p: str) -> bool:

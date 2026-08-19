@@ -10,7 +10,7 @@ import pytest
 
 from core.ac.ast import Cons, ConsFO, DI, Lamda, LamdaFO
 from core.ac.prop import TSym
-from core.ac.proof_parser import parse_proof_term
+from core.ac.syntax import parse_proof_term
 from core.ac.resolve import ResolutionError, resolve
 from core.ac.signature import Declaration
 

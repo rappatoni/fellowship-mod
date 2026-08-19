@@ -42,7 +42,6 @@ inverse of the prover's output.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Set
@@ -271,7 +270,9 @@ class Prop:
     @staticmethod
     def parse(text: str) -> "Prop":
         """Parse Fellowship's printed proposition syntax."""
-        return _Parser(text).parse_whole()
+        from core.ac.syntax import parse as _parse
+
+        return _parse(text, "prop")
 
 
 def _paren(text: str, condition: bool) -> str:
@@ -504,228 +505,26 @@ def _term_canonical(term: Term, env: Dict[str, int]) -> str:
 # ---------------------------------------------------------------------------
 #  Parsing
 # ---------------------------------------------------------------------------
-
-# Order matters: "->" must be tried before "-".
-_TOKEN = re.compile(
-    r"""\s*(?:
-          (?P<arrow>->)
-        | (?P<punct>[()\[\],:~-])
-        | (?P<name>[^\s()\[\],:~>-][^\s()\[\],:~-]*)
-    )""",
-    re.VERBOSE,
-)
-
-_KEYWORDS = {"forall", "exists", "true", "false"}
-
-
-def _tokenize(text: str) -> list:
-    tokens = []
-    index = 0
-    length = len(text)
-    while index < length:
-        if text[index].isspace():
-            index += 1
-            continue
-        match = _TOKEN.match(text, index)
-        if match is None or match.end() == index:
-            raise PropError(f"cannot tokenize proposition near {text[index:]!r}")
-        tokens.append(match.group(match.lastgroup))
-        index = match.end()
-    return tokens
-
-
-class _Parser:
-    """Recursive-descent parser for Fellowship's *printed* proposition syntax.
-
-    Precedence follows the printer (core.ml), not the parser (parser.mly):
-    ``-`` is looser than ``->``, negation binds tightest, and a quantifier body
-    extends as far to the right as it can.
-    """
-
-    def __init__(self, text: str):
-        self.text = text
-        self.tokens = _tokenize(text)
-        self.pos = 0
-
-    # -- plumbing ----------------------------------------------------------
-
-    def peek(self):
-        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
-
-    def next(self):
-        token = self.peek()
-        if token is None:
-            raise PropError(f"unexpected end of proposition in {self.text!r}")
-        self.pos += 1
-        return token
-
-    def expect(self, token: str) -> str:
-        found = self.next()
-        if found != token:
-            raise PropError(f"expected {token!r}, found {found!r} in {self.text!r}")
-        return found
-
-    # -- entry -------------------------------------------------------------
-
-    def parse_whole(self) -> Prop:
-        prop = self.parse_prop()
-        if self.peek() is not None:
-            raise PropError(f"trailing input {self.peek()!r} in {self.text!r}")
-        return prop
-
-    # -- levels ------------------------------------------------------------
-
-    def parse_prop(self) -> Prop:
-        """Loosest level.  A quantifier here swallows everything to its right."""
-        if self.peek() in ("forall", "exists"):
-            return self.parse_quant()
-        return self.parse_minus()
-
-    def parse_quant(self) -> Prop:
-        quantifier = Quantifier(self.next())
-        names = [self.parse_name()]
-        while self.peek() == ",":
-            self.next()
-            names.append(self.parse_name())
-        self.expect(":")
-        sort = self.parse_sort()
-        self.expect(",")
-        return PQuant(quantifier, tuple(names), sort, self.parse_prop())
-
-    def parse_minus(self) -> Prop:
-        """Subtraction: the loosest binary connective, left associative."""
-        left = self.parse_imp()
-        while self.peek() == "-":
-            self.next()
-            if self.peek() in ("forall", "exists"):
-                # Older transcripts print `B-forall x:S,P` unparenthesised.
-                return PBin(left, BinOp.MINUS, self.parse_quant())
-            left = PBin(left, BinOp.MINUS, self.parse_imp())
-        return left
-
-    def parse_imp(self) -> Prop:
-        """Implication: right associative, tighter than subtraction."""
-        left = self.parse_neg()
-        if self.peek() == "->":
-            self.next()
-            if self.peek() in ("forall", "exists"):
-                return PBin(left, BinOp.IMP, self.parse_quant())
-            return PBin(left, BinOp.IMP, self.parse_imp())
-        return left
-
-    def parse_neg(self) -> Prop:
-        if self.peek() == "~":
-            self.next()
-            if self.peek() in ("forall", "exists"):
-                # core.ml prints ~forall x:A,Q x without parentheses.
-                return PNeg(self.parse_quant())
-            return PNeg(self.parse_neg())
-        return self.parse_application()
-
-    def parse_application(self) -> Prop:
-        prop = self.parse_atom()
-        while True:
-            token = self.peek()
-            if token is None or token in {"->", "-", ",", ":", ")", "]", "~"}:
-                break
-            if token == "(":
-                # After a predicate head, a parenthesised group is a term.
-                self.next()
-                prop = PApp(prop, self.parse_term())
-                self.expect(")")
-                continue
-            if token == "[":
-                # Tolerate the bracketed input spelling as well as the printed
-                # juxtaposition, so a hand-written proposition also parses.
-                self.next()
-                prop = PApp(prop, self.parse_term())
-                self.expect("]")
-                continue
-            prop = PApp(prop, TSym(self.parse_name()))
-        return prop
-
-    def parse_atom(self) -> Prop:
-        token = self.next()
-        if token == "true":
-            return PTrue()
-        if token == "false":
-            return PFalse()
-        if token == "(":
-            inner = self.parse_prop()
-            self.expect(")")
-            return inner
-        if token in {"->", "-", "~", ")", ",", ":", "[", "]"}:
-            raise PropError(f"expected a proposition, found {token!r} in {self.text!r}")
-        return PSym(token)
-
-    # -- terms and sorts ---------------------------------------------------
-
-    def parse_term(self) -> Term:
-        term = self.parse_term_atom()
-        while True:
-            token = self.peek()
-            if token is None or token in {")", "]", ",", ":", "->", "-", "~"}:
-                break
-            term = TApp(term, self.parse_term_atom())
-        return term
-
-    def parse_term_atom(self) -> Term:
-        if self.peek() == "(":
-            self.next()
-            inner = self.parse_term()
-            self.expect(")")
-            return inner
-        return TSym(self.parse_name())
-
-    def parse_sort(self) -> Sort:
-        left = self.parse_sort_atom()
-        if self.peek() == "->":
-            self.next()
-            return SArr(left, self.parse_sort())
-        return left
-
-    def parse_sort_atom(self) -> Sort:
-        if self.peek() == "(":
-            self.next()
-            inner = self.parse_sort()
-            self.expect(")")
-            return inner
-        if self.peek() == "[":
-            # `declare f : [termf -> form] -> form.` uses brackets to group.
-            self.next()
-            inner = self.parse_sort()
-            self.expect("]")
-            return inner
-        name = self.parse_name()
-        if name == "type":
-            return SSet()
-        if name == "bool":
-            return SProp()
-        return SSym(name)
-
-    def parse_name(self) -> str:
-        token = self.next()
-        if token in {"->", "-", "~", "(", ")", "[", "]", ",", ":"}:
-            raise PropError(f"expected a name, found {token!r} in {self.text!r}")
-        return token
+#
+# The grammar lives in `core.ac.syntax`, together with the proof-term rules
+# that use it -- a proof term's binder annotations are propositions, and a
+# second description of this syntax would be one more thing to keep in step
+# with core.ml and parser.mly.  The import is deferred because that module
+# imports the AST classes defined above.
 
 
 def parse_sort(text: str) -> Sort:
     """Parse a sort such as ``type``, ``bool`` or ``N->N->bool``."""
-    parser = _Parser(text)
-    sort = parser.parse_sort()
-    if parser.peek() is not None:
-        raise PropError(f"trailing input {parser.peek()!r} in sort {text!r}")
-    return sort
+    from core.ac.syntax import parse as _parse
+
+    return _parse(text, "sort")
 
 
 def parse_term(text: str) -> Term:
     """Parse a first-order term such as ``O`` or ``S (S O)``."""
-    parser = _Parser(text)
-    term = parser.parse_term()
-    if parser.peek() is not None:
-        raise PropError(f"trailing input {parser.peek()!r} in term {text!r}")
-    return term
+    from core.ac.syntax import parse as _parse
+
+    return _parse(text, "foterm")
 
 
 def term_to_command(term: Term) -> str:

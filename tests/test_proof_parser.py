@@ -28,7 +28,7 @@ from core.ac.ast import (
     TermsPairFO,
 )
 from core.ac.prop import TApp, TSym
-from core.ac.proof_parser import ProofTermSyntaxError, parse_proof_term
+from core.ac.syntax import ProofTermSyntaxError, parse_proof_term
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +271,10 @@ def test_category_violation_is_reported_not_guessed():
 
 
 def test_a_term_may_not_stand_where_a_context_is_expected():
-    """A goal carries a leading marker, so it is a term wherever it appears."""
-    with pytest.raises(ProofTermSyntaxError, match="term.*context"):
+    """A goal carries a leading marker, so it is a term wherever it appears.
+
+    The grammar rejects it outright rather than re-reading it as a context.
+    """
+    with pytest.raises(ProofTermSyntaxError) as failure:
         parse_proof_term("μt:A.<a||?1>")
+    assert "μt:A.<a||?1>" in str(failure.value)
