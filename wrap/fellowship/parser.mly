@@ -32,10 +32,19 @@
 
 /* Token priorities / associativity */
 
+/* Loosest first.  Subtraction is the loosest binary connective, then
+   implication, then disjunction, then conjunction -- the conventional
+   ordering, and the one core.ml's pretty_prop has always printed with.
+   These used to sit on one flat "%left MINUS AND OR" level, which made
+   conjunction no tighter than disjunction and put subtraction above
+   implication, so the printer emitted propositions the parser read back as
+   something else. */
 %nonassoc VIR
 %nonassoc FORALL EXISTS
+%left MINUS
 %right ARROW PVIR
-%left MINUS AND OR 
+%left OR
+%left AND
 %nonassoc NEG
 %nonassoc LBRA RBRA
 

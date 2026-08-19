@@ -228,11 +228,18 @@ let rec pretty_prop ?(parentprio = 0) ?(assoc = false) p = match p with
        | TApp _ -> sprintf "%s (%s)" (pretty_prop prop) (pretty_term term))
   | UProp(Neg,p) -> sprintf "%s%s" (symbol ()).neg (pretty_prop ~parentprio:12 p)
   | BProp(p1,op,p2) ->
+      (* Priorities match parser.mly's precedence declarations: subtraction
+         is the loosest binary connective, then implication, then disjunction,
+         then conjunction.  The associativity flags are (left_tolerates_same,
+         right_tolerates_same).  Conj and Disj used to be (true, true), which
+         parenthesises neither operand and so printed A/\(B/\C) and
+         (A/\B)/\C alike -- the grouping was unrecoverable.  They are
+         left-associative, so only the left operand may share the level. *)
       let ops,prio,assoc1,assoc2 = match op with
-	  Conj->   (symbol ()).conj, 10, true, true
-	| Disj ->  (symbol ()).disj,  8, true, true
+	  Conj->   (symbol ()).conj, 10, true, false
+	| Disj ->  (symbol ()).disj,  8, true, false
 	| Imp ->   (symbol ()).imply, 6, false, true
-        | Minus -> (symbol ()).minus, 4, false, false
+        | Minus -> (symbol ()).minus, 4, true, false
       in
        if prio < parentprio || (parentprio = prio && not assoc) then
          sprintf "(%s%s%s)"
@@ -242,12 +249,22 @@ let rec pretty_prop ?(parentprio = 0) ?(assoc = false) p = match p with
          sprintf "%s%s%s"
           (pretty_prop ~parentprio:prio ~assoc:assoc1 p1) ops
           (pretty_prop ~parentprio:prio ~assoc:assoc2 p2)
-  | Quant (q,(names,sort),prop) -> 
+  | Quant (q,(names,sort),prop) ->
       let quants = match q with
 	| Exists -> (symbol ()).exts
 	| Forall -> (symbol ()).fall
       in
+      (* A quantifier body extends as far to the right as it can, so a
+         quantifier standing as a strict subformula needs parentheses to keep
+         its scope.  Without them (forall x:A,Q x)->C and forall x:A,(Q x->C)
+         print identically and the reading is lost: the first is not
+         recoverable from the string by any amount of context.  Every other
+         connective already guards on parentprio this way; this branch used to
+         ignore its argument. *)
+      let body =
 	sprintf "%s%s:%s,%s" quants (pretty_comma_list names) (pretty_sort sort) (pretty_prop prop)
+      in
+       if parentprio > 0 then sprintf "(%s)" body else body
 
 (*Useful for the weird quantified variables list*)
 let rec list_flatten = function
