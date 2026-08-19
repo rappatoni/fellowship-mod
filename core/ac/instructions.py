@@ -1,7 +1,11 @@
 from copy import deepcopy
 import collections
 from core.comp.visitor import ProofTermVisitor
-from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI
+from core.ac.ast import (
+    ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
+)
+from core.ac.prop import term_to_command
 from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
 
@@ -195,6 +199,39 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Mirror Cons: emit plain elim for context*term
         node = super().visit_Sonc(node)
         self.instructions.appendleft('elim.')
+        return node
+
+    # -- first-order eliminations ------------------------------------------
+    #
+    # Each first-order node came from one `elim` (tactics.ml:502-607).  The two
+    # that bind a variable name it; the two that supply a witness bracket it.
+    #
+    # The bracketing is not cosmetic.  Fellowship *prints* a first-order term
+    # juxtaposed -- `Even O`, `S (S O)` -- but only *accepts* it bracketed, so
+    # the witness has to be re-serialised on the way back out.
+
+    def visit_LamdaFO(self, node: LamdaFO):
+        """Universal introduction: `elim` naming the fresh eigenvariable."""
+        node = super().visit_LamdaFO(node)
+        self.instructions.appendleft(f'elim {node.var}.')
+        return node
+
+    def visit_DestructTermsPairFO(self, node: DestructTermsPairFO):
+        """Existential elimination: likewise names its variable."""
+        node = super().visit_DestructTermsPairFO(node)
+        self.instructions.appendleft(f'elim {node.var}.')
+        return node
+
+    def visit_ConsFO(self, node: ConsFO):
+        """Universal instantiation: `elim [t]` with the witness."""
+        node = super().visit_ConsFO(node)
+        self.instructions.appendleft(f'elim {term_to_command(node.fo_term)}.')
+        return node
+
+    def visit_TermsPairFO(self, node: TermsPairFO):
+        """Existential introduction: also `elim [t]`, with the witness."""
+        node = super().visit_TermsPairFO(node)
+        self.instructions.appendleft(f'elim {term_to_command(node.witness)}.')
         return node
 
     def visit_Goal(self, node: Goal):
