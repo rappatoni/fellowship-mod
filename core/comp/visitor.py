@@ -1,4 +1,7 @@
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Deleg, Geled
+from core.ac.ast import (
+    Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, ID, DI, Deleg, Geled,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
+)
 
 class ProofTermVisitor:
     def visit(self, node):
@@ -28,6 +31,14 @@ class ProofTermVisitor:
             return self.visit_Admal(node)
         elif isinstance(node, Sonc):
             return self.visit_Sonc(node)
+        elif isinstance(node, LamdaFO):
+            return self.visit_LamdaFO(node)
+        elif isinstance(node, ConsFO):
+            return self.visit_ConsFO(node)
+        elif isinstance(node, TermsPairFO):
+            return self.visit_TermsPairFO(node)
+        elif isinstance(node, DestructTermsPairFO):
+            return self.visit_DestructTermsPairFO(node)
         else:
             return self.visit_unhandled(node)
 
@@ -75,6 +86,27 @@ class ProofTermVisitor:
         return node
 
     def visit_DI(self, node: DI):
+        return node
+
+    # -- first-order nodes -------------------------------------------------
+    #
+    # Each keeps its body in the same `.term`/`.context` slot as its
+    # propositional counterpart, so the default traversal is the same shape.
+
+    def visit_LamdaFO(self, node: LamdaFO):
+        node.term = self.visit(node.term)
+        return node
+
+    def visit_ConsFO(self, node: ConsFO):
+        node.context = self.visit(node.context)
+        return node
+
+    def visit_TermsPairFO(self, node: TermsPairFO):
+        node.term = self.visit(node.term)
+        return node
+
+    def visit_DestructTermsPairFO(self, node: DestructTermsPairFO):
+        node.context = self.visit(node.context)
         return node
 
     def visit_unhandled(self, node):

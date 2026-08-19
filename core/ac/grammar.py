@@ -1,227 +1,41 @@
-from lark import Lark, Transformer
-from core.ac.ast import Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh
+"""Compatibility surface for the proof-term parser.
 
-class Grammar():
+The parser itself lives in :mod:`core.ac.proof_parser`, which replaced a
+Lark/Earley grammar.  Earley resolves ambiguity by silently choosing a parse,
+and the proof-term syntax is genuinely ambiguous read as a context-free
+grammar: the old grammar found three parses for ``λx:A.y*z``.  Fellowship's
+syntax is really two mutually recursive grammars, one for terms and one for
+contexts, and parsing with the target category in hand removes the ambiguity
+instead of arbitrating it.
+
+``Grammar`` and ``ProofTermTransformer`` are kept because a dozen call sites
+and tests use them.  Parsing now happens in one step, so the transformer is an
+identity; prefer :func:`core.ac.proof_parser.parse_proof_term` in new code.
+"""
+
+from core.ac.proof_parser import ProofTermSyntaxError, parse_proof_term
+
+__all__ = ["Grammar", "ProofTermTransformer", "ProofTermSyntaxError", "parse_proof_term"]
+
+
+class _Parser:
+    """Adapter presenting the parser under the old ``.parser.parse`` shape."""
+
+    @staticmethod
+    def parse(text, start=None, **kwargs):
+        return parse_proof_term(text)
+
+
+class Grammar:
+    """Historical entry point: ``Grammar().parser.parse(text)``."""
+
     def __init__(self):
-        self.proof_term_grammar = r'''
-            ?start: proof_term
+        self.parser = _Parser()
 
-            proof_term: term | context
 
-            term: typed_di | di | lamda | sonc |  mu | goal | deleg
+class ProofTermTransformer:
+    """Historical no-op: parsing already yields the AST."""
 
-            context: typed_id | id | cons | admal | mutilde | laog | geled
-
-            mu: "μ" id ":" prop "." "<" term "||" context ">"
-            mutilde: "μ'" di ":" prop "." "<" term "||" context ">"
-            lamda: "λ" hyp "." term
-            admal: "λ" pyh "." context
-            cons: term "*" context
-            sonc: context "*" term
-            // Marker position encodes the category: leading for terms,
-            // trailing for contexts.  A shared spelling would let "!n"/"?n"
-            // be read as either, making application chains ambiguous.
-            goal: "?" number [":" prop]
-            laog: number [":" prop] "?"
-            deleg: "!" number [":" prop]
-            geled: number [":" prop] "!"
-
-            ?prop: implication
-            ?implication: minus
-                        | minus "->" implication        -> implies_prop
-            ?minus: unary
-                  | minus "-" unary                  -> minus_prop
-            ?unary: "~" unary                        -> neg_prop
-                  | "true"                           -> true_prop
-                  | "false"                          -> false_prop
-                  | pred_app
-                  | "(" prop ")"                    -> grouped_prop
-            pred_app: name name*                      -> prop_app_chain
-            atom: name                               -> atom_name
-            name: /[^\[\].<>*~:,\-\s()?!|]+/
-            typed_id: id ":" prop
-            typed_di: di ":" prop
-            hyp: di ":" prop
-            pyh : id ":" prop
-            id: /[a-zA-Z_][a-zA-Z0-9_]*/
-            di: /[a-zA-Z_][a-zA-Z0-9_]*/
-            number: NUMBER ("." NUMBER)*
-
-            %import common.NUMBER
-            %import common.WS
-            %ignore WS
-        '''
-
-        self.parser = Lark(self.proof_term_grammar, start='start')
-
-class ProofTermTransformer(Transformer):
-
-    def _optional_prop(self, value):
-        if value is None:
-            return None
-        prop = str(value)
-        return None if prop == "None" else prop
-
-    def proof_term(self, items):
-        return items[0]
-
-    def term(self, items):
-        return items[0]
-
-    def context(self, items):
-        return items[0]
-
-    def mu(self, items) -> "Mu":
-        id_ = items[0]
-        prop = items[1]
-        term = items[2]
-        context = items[3]
-        return Mu(id_, prop, term, context)
-
-    def mutilde(self, items) -> "Mutilde":
-        di_ = items[0]
-        prop = items[1]
-        term = items[2]
-        context = items[3]
-        return Mutilde(di_, prop, term, context)
-
-    def lamda(self, items) -> "Lamda":
-        hyp = items[0]
-        term = items[1]
-        return Lamda(hyp, term)
-
-    # def hyp(self, items):
-    #     id_ = items[0]
-    #     return Hyp(id_)
-
-    def admal(self, items) -> "Admal":
-        pyh = items[0]
-        context = items[1]
-        return Admal(pyh, context)
-
-    def sonc(self, items) -> "Sonc":
-        context = items[0]
-        term = items[1]
-        return Sonc(context, term)
-
-    def pyh(self, token) -> "Pyh":
-        id_ = token[0]
-        prop = str(token[1])
-        return Pyh(id_, prop)
-
-    def cons(self, items) -> "Cons":
-        term = items[0]
-        context = items[1]
-        return Cons(term, context)
-
-    def goal(self, items) -> "Goal":
-        number = items[0]
-        prop = self._optional_prop(items[1]) if len(items) > 1 else None
-        return Goal(number, prop)
-
-    def laog(self, items) -> "Laog":
-        number = items[0]
-        prop = self._optional_prop(items[1]) if len(items) > 1 else None
-        return Laog(number, prop)
-    
-    def deleg(self, items) -> "Deleg":
-        number = items[0]
-        prop = self._optional_prop(items[1]) if len(items) > 1 else None
-        return Deleg(number, prop)
-
-    def geled(self, items) -> "Geled":
-        number = items[0]
-        prop = self._optional_prop(items[1]) if len(items) > 1 else None
-        return Geled(number, prop)
-
-    def number(self, items):
-        return '.'.join(items)
-
-    def prop(self, items):
-        return str(items[0])
-
-    def implies_prop(self, items):
-        left = str(items[0])
-        right = str(items[1])
-        if isinstance(items[0], str) and items[0].startswith("(") and items[0].endswith(")"):
-            left = items[0]
-        return f"{left}->{right}"
-
-    def minus_prop(self, items):
-        left = str(items[0])
-        right = str(items[1])
-        if isinstance(items[0], str) and items[0].startswith("(") and items[0].endswith(")"):
-            left = items[0]
-        if isinstance(items[1], str) and items[1].startswith("(") and items[1].endswith(")"):
-            right = items[1]
-        return f"{left}-{right}"
-
-    def neg_prop(self, items):
-        inner = str(items[0])
-        return f"~{inner}"
-
-    def true_prop(self, items):
-        return "true"
-
-    def false_prop(self, items):
-        return "false"
-
-    def grouped_prop(self, items):
-        return f"({items[0]})"
-
-    def name(self, items):
-        return str(items[0])
-
-    def prop_app_chain(self, items):
-        return " ".join(str(item) for item in items)
-
-        return str(items[0])
-
-    def typed_id(self, items) -> "ID":
-        id_ = items[0]
-        prop = self._optional_prop(items[1])
-        id_.prop = prop
-        return id_
-
-    def typed_di(self, items) -> "DI":
-        di = items[0]
-        prop = self._optional_prop(items[1])
-        di.prop = prop
-        return di
-
-    def id(self, token) -> "ID":
-        name = str(token[0])
-        # if re.fullmatch(re.compile('.*tt.*'),name):
-        #     propstring = name.split("tt")[1]
-        #     propstring = propstring.replace("implies", "->")
-        #     propstring = propstring.replace ("ll", "(")
-        #     propstring = propstring.replace ("rr", ")")
-        #     propstring = propstring.replace("after","*")
-        #     propstring = propstring.replace("not","¬")
-        #     prop = propstring
-        # else:
-        # print(token)
-        prop = None
-        return ID(name, prop)
-
-    def di(self, token) -> "DI":
-        name = str(token[0])
-        # if re.fullmatch(re.compile('.*tt.*'),name):
-        #     # print("Matched")
-        #     propstring = name.split("tt")[1]
-        #     propstring = propstring.replace("implies", "->")
-        #     propstring = propstring.replace ("ll", "(")
-        #     propstring = propstring.replace ("rr", ")")
-        #     propstring = propstring.replace("after","*")
-        #     propstring = propstring.replace("not","¬")
-        #     prop = propstring
-        #     # print("PROP")
-        #     # print(prop)
-        # else:
-        prop = None
-        return DI(name, prop)
-
-    def hyp(self, token) -> "Hyp":
-        di = token[0]
-        prop = str(token[1])
-        return Hyp(di, prop)
+    @staticmethod
+    def transform(tree):
+        return tree

@@ -457,10 +457,19 @@ let rec pretty_t3rm =
   | DelegationTermMeta id -> sprintf "!%s" id
   | True_constructor -> "_T_"
   | Hyp id -> id
-  | Lambda (id,p,t) -> 
-      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_prop p) (pretty_t3rm t)
-  | LambdaFO (id,p,t) -> 
-      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_sort p) (pretty_t3rm t)
+  | Lambda (id,p,t) ->
+      (* A lambda binds tighter than `*`, so a body that is itself an
+         application must be parenthesised to stay inside the lambda.  Without
+         this, Lambda over a Cons' and the other reading print alike:
+         λh:R.b*c would mean (λh:R.b)*c, which is the commoner shape and so
+         the default, leaving this one inexpressible. *)
+      let body = pretty_t3rm t in
+      let body = (match t with Cons' _ -> "(" ^ body ^ ")" | _ -> body) in
+      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_prop p) body
+  | LambdaFO (id,p,t) ->
+      let body = pretty_t3rm t in
+      let body = (match t with Cons' _ -> "(" ^ body ^ ")" | _ -> body) in
+      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_sort p) body
   | Cons' (c,t) -> sprintf "%s*%s" (pretty_context c) (pretty_t3rm t)
   | TermsPair (t,t') -> sprintf "(%s,%s)" (pretty_t3rm t) (pretty_t3rm t')
   | TermsPairFO (_,t,t') -> sprintf "(%s,%s)" (pretty_term t) (pretty_t3rm t')
@@ -481,7 +490,10 @@ and pretty_context =
   | Cons (t,c) -> sprintf "%s*%s" (pretty_t3rm t) (pretty_context c)
   | ConsFO (t,c) -> sprintf "%s*%s" (pretty_term t) (pretty_context c)
   | Lambda' (id,p,t) ->
-      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_prop p) (pretty_context t)
+      let body = pretty_context t in
+      let body =
+       (match t with Cons _ | ConsFO _ -> "(" ^ body ^ ")" | _ -> body) in
+      sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_prop p) body
   | DestructTermsPair (id,p,id',p',cmd) ->
       sprintf "(%s:%s,%s:%s).%s" id (pretty_prop p) id' (pretty_prop p') (pretty_command cmd)
   | DestructTermsPairFO (id,p,c) ->

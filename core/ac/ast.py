@@ -154,3 +154,95 @@ class Hyp(ProofTerm):
         self.flag = None
         if not isinstance(di, DI):
             raise TypeError(f"Hyp expects DI in binder position, got {type(di).__name__}")
+
+
+# ---------------------------------------------------------------------------
+#  First-order constructs
+# ---------------------------------------------------------------------------
+#
+# Fellowship's four first-order proof-term constructors (core.ml:400-436).
+# Each keeps its body in `.term` or `.context` so that the many traversals
+# which recurse blindly on those two attributes descend into them for free.
+#
+# Three of the four are printed ambiguously with a propositional counterpart:
+# LambdaFO like Lambda, ConsFO like Cons, TermsPairFO like TermsPair.  The
+# parser cannot tell them apart on syntax alone, so it produces the
+# propositional node and `core.ac.resolve` reclassifies using the prover's
+# declaration table.  DestructTermsPairFO is the exception: `(x:S).c` has no
+# propositional twin in AIDA's fragment, so the parser emits it directly.
+
+
+class LamdaFO(Term):
+    """Universal introduction: ``λx:S.t``, binding a first-order variable.
+
+    Spelled exactly like :class:`Lamda`; the annotation is a sort rather than
+    a proposition, which is the only difference and is not visible in the
+    printed form.
+    """
+
+    def __init__(self, var: str, sort, term: "Term"):
+        self.var = var
+        self.sort = sort
+        self.term = term
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(term, Term):
+            raise TypeError(f"LamdaFO.term expects a Term node, got {type(term).__name__}")
+
+
+class ConsFO(Context):
+    """Universal instantiation: ``t*c``, where ``t`` is a first-order term.
+
+    Spelled exactly like :class:`Cons`; the head is a first-order term rather
+    than a proof term.
+    """
+
+    def __init__(self, fo_term, context: "Context"):
+        self.fo_term = fo_term
+        self.context = context
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(context, Context):
+            raise TypeError(
+                f"ConsFO.context expects a Context node, got {type(context).__name__}"
+            )
+
+
+class TermsPairFO(Term):
+    """Existential introduction: ``(t,u)`` with witness ``t``.
+
+    Fellowship's printer discards this node's binder and body
+    (``core.ml:449``), so the proposition cannot be reconstructed from the
+    printed term; it has to come from the enclosing goal.  The witness, which
+    is what ``elim [t]`` replay needs, is printed.
+    """
+
+    def __init__(self, witness, term: "Term"):
+        self.witness = witness
+        self.term = term
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(term, Term):
+            raise TypeError(
+                f"TermsPairFO.term expects a Term node, got {type(term).__name__}"
+            )
+
+
+class DestructTermsPairFO(Context):
+    """Existential elimination: ``(x:S).c``, binding a first-order variable."""
+
+    def __init__(self, var: str, sort, context: "Context"):
+        self.var = var
+        self.sort = sort
+        self.context = context
+        self.prop = None
+        self.pres = None
+        self.flag = None
+        if not isinstance(context, Context):
+            raise TypeError(
+                f"DestructTermsPairFO.context expects a Context node, got "
+                f"{type(context).__name__}"
+            )
