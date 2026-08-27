@@ -1,0 +1,32 @@
+lj.
+declare A,B:bool.
+# Prove contraposition from a deleg A->B
+#
+# A-B is A/\~B, the counterexample shape for A->B, so refuting it is exactly
+# the contrapositive ~B->~A.  Refuting X-Y asks for Y from X: elim puts the
+# subtrahend in the conclusions and leaves a context goal for the minuend, so
+# A-B asks for B from A, which the deleg A->B supplies.  (B-A would ask for A
+# from B instead, which A->B does not give -- see the note at the end.)
+start counterargument contra A-B
+elim h.
+cut (A->B) rule.
+by default.
+next.
+elim.
+axiom rule.
+moxia h.
+end counterargument
+
+# The remaining open goal is the deleg A->B itself, so the counterargument
+# rests on that single default.
+#
+# For the mirrored conclusion B-A the deleg has to be mirrored too:
+# start counterargument contra2 B-A
+# elim h.
+# cut (B->A) rule.
+# by default.
+# next.
+# elim.
+# axiom rule.
+# moxia h.
+# end counterargument

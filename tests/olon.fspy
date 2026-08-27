@@ -39,7 +39,6 @@ attack final third intermediate
 # But we want to prevent infinite loops where first is now again introduced as a supporter for third. How to do this?
 
 
-# Worse are olons where A attacks itself (directly or through another argument). Use rule4 to demonstrate this.
 start counterargument olonMaker C
 cut (A->C->false) rule.
 axiom rule4.
@@ -51,7 +50,6 @@ axiom.
 elim.
 end counterargument
 
-# support olon olonMaker intermediate
 register olonMaker2 : C := μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>
 # register test : C := μ'olon_maker:C.<olon_maker:C||μ'rule:C.<rule4:A->C->false||1.2.1:A!*rule:C*_F_>>
 
@@ -73,4 +71,4 @@ end argument
 
 register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
 
-
+support olon olonMaker intermediate
