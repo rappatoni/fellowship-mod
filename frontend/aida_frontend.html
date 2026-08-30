@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AIDA - Debate Graph</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.9/standalone/umd/vis-network.min.js"></script>
+<style>
+  :root {
+    --paper: #f7f5f0;
+    --ink: #1f1c18;
+    --rule: #d8d3c6;
+    --accepted: #3f7a4f;
+    --defeated: #a13f3f;
+    --open: #b8912e;
+    --accent: #2d4a53;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 13px;
+  }
+  header {
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  header h1 {
+    margin: 0 0 2px;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    font-weight: 700;
+  }
+  header p { margin: 0; color: #6b665c; font-size: 12px; }
+
+  html, body { height: 100%; }
+  .layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: 1fr;   /* fixes #graph rendering at 0 height */
+    height: calc(100vh - 130px);
+  }
+  .panel {
+    border-right: 1px solid var(--rule);
+    padding: 16px;
+    overflow-y: auto;
+    min-height: 0;             /* allow the grid item to actually scroll instead of growing */
+  }
+  section { margin-bottom: 22px; }
+  section h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 0 0 8px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 4px;
+  }
+  label { display: block; font-size: 11px; color: #6b665c; margin: 8px 0 3px; }
+  input, textarea, select {
+    width: 100%;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 5px 7px;
+    border: 1px solid var(--rule);
+    background: #fff;
+    color: var(--ink);
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 7px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.88; }
+  button.ghost {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .checkbox-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .checkbox-row input { width: auto; }
+  #status-line {
+    font-size: 11px;
+    padding: 8px 24px;
+    color: #6b665c;
+    border-bottom: 1px solid var(--rule);
+    min-height: 14px;
+  }
+  #status-line.error { color: var(--defeated); }
+  #graph { width: 100%; height: 100%; min-height: 0; }
+  .legend {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 24px;
+    font-size: 11px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .swatch { width: 10px; height: 10px; display: inline-block; margin-right: 5px; border-radius: 2px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AIDA - Debate Graph</h1>
+  <p>Session-backed viewer for the FastAPI /sessions backend</p>
+</header>
+
+<div class="legend">
+  <span><span class="swatch" style="background:var(--accepted)"></span>ACCEPTED</span>
+  <span><span class="swatch" style="background:var(--defeated)"></span>DEFEATED</span>
+  <span><span class="swatch" style="background:var(--open)"></span>OPEN</span>
+</div>
+
+<div id="status-line">not connected</div>
+
+<div class="layout">
+  <div class="panel">
+
+    <section>
+      <h2>Connection</h2>
+      <label>API base URL</label>
+      <input id="apiBase" value="http://127.0.0.1:8000">
+      <label>Session ID</label>
+      <input id="sessionId" placeholder="none yet">
+      <button onclick="createSession()">New session</button>
+      <button class="ghost" onclick="refreshGraph()">Refresh graph</button>
+    </section>
+
+    <section>
+      <h2>Declare</h2>
+      <label>Declarations (one per line, end with '.')</label>
+      <textarea id="declInput" placeholder="declare A, B : bool.&#10;declare r1: (A -> B)."></textarea>
+      <button onclick="sendDeclare()">Send declarations</button>
+    </section>
+
+    <section>
+      <h2>Register argument</h2>
+      <label>Name</label>
+      <input id="argName" placeholder="arg1">
+      <label>Conclusion</label>
+      <input id="argConclusion" placeholder="UseMetro">
+      <label>Instructions (one per line, no trailing dots)</label>
+      <textarea id="argInstructions" placeholder="cut (A -> B) th&#10;axiom r1&#10;elim&#10;next&#10;axiom"></textarea>
+      <div class="checkbox-row">
+        <input type="checkbox" id="argIsAnti">
+        <label style="margin:0">is_anti</label>
+      </div>
+      <button onclick="registerArgument()">Register + typecheck</button>
+    </section>
+
+    <section>
+      <h2>Compile</h2>
+      <label>Action</label>
+      <select id="compileAction">
+        <option value="attack">attack</option>
+        <option value="undercut">undercut</option>
+        <option value="rebut">rebut</option>
+        <option value="support">support</option>
+        <option value="undergird">undergird</option>
+        <option value="reinforce">reinforce</option>
+      </select>
+      <label>Source (attacker/supporter)</label>
+      <input id="compileSource" placeholder="arg2">
+      <label>Target</label>
+      <input id="compileTarget" placeholder="arg1">
+      <label>On (issue, optional)</label>
+      <input id="compileOn" placeholder="leave blank for default">
+      <label>Result name (optional)</label>
+      <input id="compileResultName" placeholder="auto-generated if blank">
+      <button onclick="compileArguments()">Compile</button>
+    </section>
+
+  </div>
+
+  <div id="graph"></div>
+</div>
+
+<script>
+let network = null;
+
+function apiBase() { return document.getElementById('apiBase').value.replace(/\/$/, ''); }
+function sid() { return document.getElementById('sessionId').value.trim(); }
+
+function setStatus(msg, isError) {
+  const el = document.getElementById('status-line');
+  el.textContent = msg;
+  el.className = isError ? 'error' : '';
+}
+
+async function api(method, path, body) {
+  const res = await fetch(apiBase() + path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const detail = data && data.detail ? JSON.stringify(data.detail) : res.statusText;
+    throw new Error(`${res.status}: ${detail}`);
+  }
+  return data;
+}
+
+async function createSession() {
+  try {
+    const data = await api('POST', '/sessions');
+    document.getElementById('sessionId').value = data.session_id;
+    setStatus('session created: ' + data.session_id);
+    await refreshGraph();
+  } catch (e) { setStatus(e.message, true); }
+}
+
+async function sendDeclare() {
+  if (!sid()) return setStatus('no session yet', true);
+  const lines = document.getElementById('declInput').value.split('\n').map(s => s.trim()).filter(Boolean);
+  try {
+    await api('POST', `/sessions/${sid()}/declare`, { declarations: lines });
+    setStatus(`declared ${lines.length} line(s)`);
+  } catch (e) { setStatus(e.message, true); }
+}
+
+async function registerArgument() {
+  if (!sid()) return setStatus('no session yet', true);
+  const instructions = document.getElementById('argInstructions').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const body = {
+    name: document.getElementById('argName').value.trim(),
+    conclusion: document.getElementById('argConclusion').value.trim(),
+    instructions,
+    is_anti: document.getElementById('argIsAnti').checked,
+  };
+  try {
+    const data = await api('POST', `/sessions/${sid()}/arguments`, body);
+    setStatus(`${data.name} -> ${data.status}`);
+    await refreshGraph();
+  } catch (e) { setStatus(e.message, true); }
+}
+
+async function compileArguments() {
+  if (!sid()) return setStatus('no session yet', true);
+  const body = {
+    action: document.getElementById('compileAction').value,
+    source: document.getElementById('compileSource').value.trim(),
+    target: document.getElementById('compileTarget').value.trim(),
+    on: document.getElementById('compileOn').value.trim() || null,
+    result_name: document.getElementById('compileResultName').value.trim() || null,
+  };
+  try {
+    const data = await api('POST', `/sessions/${sid()}/compile`, body);
+    setStatus(`${data.name} -> ${data.status}`);
+    await refreshGraph();
+  } catch (e) { setStatus(e.message, true); }
+}
+
+const STATUS_COLOR = { ACCEPTED: '#3f7a4f', DEFEATED: '#a13f3f', OPEN: '#b8912e' };
+
+async function refreshGraph() {
+  if (!sid()) return setStatus('no session yet', true);
+  try {
+    const data = await api('GET', `/sessions/${sid()}/graph`);
+    const nodes = data.nodes.map(n => ({
+      id: n.name,
+      label: `${n.name}\n[${n.conclusion}]`,
+      color: { background: STATUS_COLOR[n.status] || '#999', border: '#1f1c18' },
+      font: { color: '#fff', face: 'monospace', size: 12 },
+      shape: 'box',
+      margin: 8,
+    }));
+    const edges = [];
+    data.edges.forEach(e => {
+      // Two edges per compile action: attacker -> result, and target -> result.
+      // This makes u1/u2 show up as genuinely produced by the compile step,
+      // instead of floating boxes disconnected from what created them.
+      edges.push({
+        from: e.source, to: e.result, label: e.action,
+        font: { size: 10, align: 'top' }, arrows: 'to', color: { color: '#6b665c' },
+      });
+      edges.push({
+        from: e.target, to: e.result, label: 'target',
+        font: { size: 9, align: 'top', color: '#a39d8e' }, arrows: 'to',
+        dashes: true, color: { color: '#c9c3b4' },
+      });
+    });
+    const container = document.getElementById('graph');
+    const graphData = {
+      nodes: new vis.DataSet(nodes),
+      edges: new vis.DataSet(edges),
+    };
+    const options = {
+      layout: { hierarchical: { direction: 'UD', sortMethod: 'directed', levelSeparation: 90, nodeSpacing: 140 } },
+      physics: false,
+      interaction: { dragNodes: true, zoomView: true },
+    };
+    if (network) network.destroy();
+    network = new vis.Network(container, graphData, options);
+    network.once('afterDrawing', () => network.fit());
+    setStatus(`graph: ${nodes.length} node(s), ${edges.length} edge(s)`);
+  } catch (e) { setStatus(e.message, true); }
+}
+</script>
+</body>
+</html>

@@ -586,6 +586,67 @@ make binlink
 
 `make binlink` creates a short local `./acdc` symlink to `.venv/bin/acdc`.
 
+## Web editor prototype (backend + frontend)
+
+A session-based FastAPI backend and a minimal browser-based graph viewer,
+prototyping a web front-end for AIDA, are available on the `hamad/editor`
+branch. These are separate processes from the CLI (`acdc`) — they wrap the
+same wrapper API (`wrap.cli.setup_prover`, `core.dc.argument.Argument`)
+rather than replacing it.
+
+### Running the backend
+
+From the repository root, with the virtual environment set up
+(`make install`, `make -C wrap/fellowship`):
+
+```bash
+.venv/bin/python -m uvicorn server:app --reload
+```
+
+This starts the API at `http://127.0.0.1:8000`. Interactive API docs are
+available at `http://127.0.0.1:8000/docs`.
+
+Each debate is a **session**: a session holds one live prover process and
+its registered arguments, kept in memory for the lifetime of the session.
+Sessions do not persist across a server restart.
+
+Typical flow:
+1. `POST /sessions` — creates a new session, returns a `session_id`
+2. `POST /sessions/{sid}/declare` — send `declare ...` lines
+3. `POST /sessions/{sid}/arguments` — register one argument (name,
+   conclusion, instructions, `is_anti`); this is the "type checker" step —
+   Fellowship-side errors are reported back with the offending instructions
+   rather than crashing the session
+4. `POST /sessions/{sid}/compile` — combine two existing arguments via one
+   of `attack` / `undercut` / `rebut` / `support` / `undergird` /
+   `reinforce`
+5. `GET /sessions/{sid}/graph` — returns the session's arguments and
+   compilation actions as `nodes`/`edges`, for visualization
+6. `DELETE /sessions/{sid}` — closes the session's prover process; do this
+   when done, sessions are not cleaned up automatically
+
+### Running the frontend
+
+`aida_frontend.html` is a standalone file — open it directly in a browser
+(double-click it, or `file://` it); it is **not** served by the backend. It
+talks to the backend over HTTP using the "API base URL" field on the page
+(defaults to `http://127.0.0.1:8000`), so the backend must be running
+separately at the same time.
+
+The frontend lets you create a session, send declarations, register
+arguments, compile them, and view the resulting debate as a colored graph
+(green = ACCEPTED, red = DEFEATED, amber = OPEN).
+
+### Known limitations
+
+- The `/compile` endpoint surfaces Fellowship's current reinstatement
+  behavior as-is: undercutting an undercutter does not currently reinstate
+  the original argument's status. This is a known issue in the underlying
+  labeling/reduction logic, not specific to the API layer.
+- A prover process is spawned per session (not per request), but
+  round-trips through Fellowship still take on the order of 1-2 seconds;
+  this may not be fast enough for live, per-keystroke re-evaluation.
+
 ## Repository layout
 
 - `core/` — core ASTs, transformations, reduction, grafting, argument logic
@@ -596,6 +657,8 @@ make binlink
 - `pyproject.toml` — package metadata and console-script entry point
 - `Makefile` — development and testing shortcuts
 - `README.md` — this file
+- `server.py` — FastAPI backend for the web editor prototype (session-based)
+- `frontend/aida_frontend.html` — standalone browser frontend for the web editor prototype
 
 ## Notes on Fellowship itself
 
