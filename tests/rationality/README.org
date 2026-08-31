@@ -1,0 +1,106 @@
+#+title: Rationality-postulate fixture suite (verification target T4)
+
+# AI NOTE: Drafted by an AI agent (Claude) from the approved critique plan of
+# 2026-08-29. Scenario data and expected labellings are spec inputs for the
+# graph labeller of debate-graph-spec.org; review before relying on them.
+
+This directory holds the benchmark scenarios for verification target T4 of
+[[file:../../debate-graph-spec.org]]: machine-checkable instances of the
+rationality postulates (closure, direct and indirect consistency,
+subargument closure, non-interference/crash-resistance) plus the canonical
+loop cases. Each fixture records its *expected labelling* as data; the graph
+labeller, once implemented, is diffed against it.
+
+IMPORTANT: the expected labellings below are hand-derived from the theory
+and are *pending oracle validation* (milestone M7 of
+[[file:../../propositional-fragment-plan.org]]). They are to be regenerated
+from the naive ADF oracle and the third-party adf-bdd cross-check, not
+from any existing experimental algorithm; until then treat them as
+conjectured, not authoritative. Fixtures are not yet in
+the default suite (=tests/conftest.py DEFAULT_SCRIPTS=); run one explicitly:
+
+: .venv/bin/python -m pytest tests/script_test.py --script tests/rationality/<name>.fspy
+
+Status legend: [runnable] replays through the prover today (verified);
+[spec-only] scenario and expected labelling recorded here, .fspy pending a
+design decision noted inline.
+
+* self_attack.fspy [runnable]
+
+Odd loop of length 1: one argument for P resting on the NAF default for P
+itself. Expected grounded labelling: P UNDEC (both sides). Postulate
+exercised: none directly; baseline for loop handling. Skeptical and
+credulous evaluation must both yield a suspended focus (no labelling makes
+P IN).
+
+* even_loop.fspy [runnable]
+
+Even loop of length 2: P rests on default absence of Q and vice versa.
+Expected: grounded P UNDEC, Q UNDEC; preferred labellings {P IN, Q OUT}
+and {P OUT, Q IN}; stable the same. Evaluation of issue P: credulous mode
+picks the witness labelling with P IN and returns a value; skeptical mode
+yields a suspended focus. This is the key fixture for issue M4 of the
+critique: a per-critical-pair strategy can mix the two preferred
+labellings and accept both P and Q - the two-stage discipline of
+call-by-onus.org Layer 4 must not.
+
+* odd_loop (covered by ../naf_olon.fspy) [runnable]
+
+Odd loop of length 3 (P <- notR-style chain through Q, R). Expected
+grounded and preferred: all three UNDEC (odd loops admit no two-valued
+labelling). Already exercised by the existing fixture; the T4 suite reuses
+it rather than duplicating.
+
+* married_bachelor.fspy [spec-only]
+
+Caminada's canonical consistency example. Defeasible: wears-ring => married;
+parties => bachelor. Strict: bachelor -> not married (and, by transposition,
+married -> not bachelor). Facts: wears-ring, parties.
+
+Expected: direct consistency must hold - no labelling makes both =married=
+and =bachelor= IN; grounded labelling: both UNDEC (the two defeasible
+arguments rebut each other through the strict layer, symmetrically).
+Failure mode being tested: unrestricted rebut with a strict layer that is
+not transposition-closed accepts both conclusions and then derives falsum
+(closure + consistency violated).
+
+Pending design decision: the encoding of a *defeasible rule* (as opposed to
+a defeasible premise). Candidates: (a) rule as axiom, antecedent from a
+presumption (premise-defeasibility only); (b) the rule proposition itself
+delegated (=by default= on the implication). The choice changes which
+attacks exist and belongs to the instantiation mapping of
+debate-graph-spec.org section on T4.
+
+* contamination.fspy [spec-only]
+
+Non-interference / crash-resistance (Caminada-Wu). Two disconnected
+components: (1) any simple debate, e.g. the even_loop pair; (2) an isolated
+strict contradiction: axioms a : A and na : A -> false, giving strict edges
+to both sides of A (edges marked CONTR).
+
+Expected: the labels of component (1) are identical with and without
+component (2) present. Failure mode being tested: ex falso contaminating
+unrelated components - CONTR must propagate only along dependency edges
+(debate-graph-spec.org, strict layer).
+
+Pending: needs the CONTR edge-marking pass to exist before an expected
+labelling file can be diffed; the scenario itself is expressible today.
+
+* support_cycle.fspy [spec-only]
+
+Two arguments supporting each other's open obligation: argument for P with
+obligation Q, argument for Q with obligation P; no presumption anywhere.
+Expected grounded labelling: both OUT (obligations default to false;
+mutual support lifts nothing off the ground - no free lunch from support
+cycles). This is the support-side analogue of the loop fixtures and pins
+down the evidential (Oren-Norman-style) reading of support: support
+transmits acceptance, it does not create it.
+
+* begging_the_question.fspy [spec-only]
+
+Question-begging capture (debate-graph-spec.org section 2.4): an attack on
+an argument for A whose counterargument itself presumes the contrary of A,
+grafted non-capture-avoidingly so the rootstock captures the assumption.
+Expected: the composite labels A IN via the argument from contradiction;
+the attack edge is neutralized. Pending: canonical-assumption naming must
+be a checked invariant before this can be a stable fixture (same section).

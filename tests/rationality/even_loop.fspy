@@ -1,0 +1,38 @@
+lj.
+
+# Rationality fixture: even attack loop of length 2.
+# P rests on the default absence of Q; Q rests on the default absence of P.
+# Expected labellings (graph labeller, see README.org):
+#   grounded:  P UNDEC, Q UNDEC
+#   preferred: two labellings - {P IN, Q OUT} and {P OUT, Q IN}
+#   credulous evaluation of issue P: value; skeptical: suspended focus.
+
+declare P,Q:bool.
+declare pRule : ((Q->false)->P).
+declare qRule : ((P->false)->Q).
+
+# argument Pdefault derives P from geled Q
+start argument Pdefault P
+cut ((Q->false)->P) rule.
+axiom pRule.
+elim.
+elim h.
+cut (Q) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+# argument Qdefault derives Q from geled P
+start argument Qdefault Q
+cut ((P->false)->Q) rule.
+axiom qRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
