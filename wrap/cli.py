@@ -5,6 +5,7 @@ import json
 import tempfile
 from pathlib import Path
 import shutil
+import subprocess
 import argparse
 import logging
 from typing import Any, Optional
@@ -297,9 +298,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     elif command.startswith("color "):
                         color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
                     elif command.startswith("graph "):
-                        # Usage: graph ARG [FILE.dot]
+                        # Usage: graph ARG [FILE.dot] [show]
                         parts = command.split()
-                        graph_argument_cmd(prover, parts[1], parts[2] if len(parts) >= 3 else None)
+                        opts = parts[2:]
+                        show = "show" in opts
+                        dot_path = next((o for o in opts if o != "show"), None)
+                        graph_argument_cmd(prover, parts[1], dot_path, show=show)
                     elif command.startswith("label "):
                         label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
                     elif command.startswith("evaluate "):
@@ -785,9 +789,12 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif command.startswith("color "):
                 color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
             elif command.startswith("graph "):
-                # Usage: graph ARG [FILE.dot]
+                # Usage: graph ARG [FILE.dot] [show]
                 parts = command.split()
-                graph_argument_cmd(prover, parts[1], parts[2] if len(parts) >= 3 else None)
+                opts = parts[2:]
+                show = "show" in opts
+                dot_path = next((o for o in opts if o != "show"), None)
+                graph_argument_cmd(prover, parts[1], dot_path, show=show)
             elif command.startswith("label "):
                 label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
             elif command.startswith("evaluate "):
@@ -1555,11 +1562,54 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     return arg, graph
 
 
-def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None) -> None:
+def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Optional[str]:
+    """Render DOT to an image file, or None when Graphviz is unavailable.
+
+    Tries the graphviz Python package first, then the `dot` binary.
+    """
+    try:
+        import graphviz  # type: ignore
+        return graphviz.Source(dot_source).render(filename=out_base, format=fmt, cleanup=True)
+    except Exception as e:
+        logger.debug("graphviz package unavailable or failed: %s", e)
+    dot_binary = shutil.which("dot")
+    if dot_binary:
+        out_path = f"{out_base}.{fmt}"
+        try:
+            subprocess.run([dot_binary, f"-T{fmt}", "-o", out_path],
+                           input=dot_source, text=True, check=True,
+                           capture_output=True, timeout=60)
+            return out_path
+        except Exception as e:
+            logger.debug("dot binary failed: %s", e)
+    return None
+
+
+def _open_file(path: str) -> bool:
+    """Open a file in the platform viewer; True if the opener was launched."""
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", path], check=True, timeout=30)
+        elif sys.platform.startswith("win"):
+            os.startfile(path)  # type: ignore[attr-defined]
+        else:
+            subprocess.run(["xdg-open", path], check=True, timeout=30)
+        return True
+    except Exception as e:
+        logger.debug("Could not open %s: %s", path, e)
+        return False
+
+
+def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
+                       show: bool = False) -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT.
 
     Syntax:
-        graph ARG [FILE.dot]
+        graph ARG [FILE.dot] [show]
+
+    With `show`, render the graph and open it in the platform viewer;
+    when Graphviz is not installed, print an indented text view instead
+    (which always works and needs no dependencies).
     """
     arg, graph = _compile_argument_graph(prover, name)
     if graph is None:
@@ -1575,10 +1625,30 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
                     f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
     for (key, side), kinds in graph.defaults.items():
         logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
+    labels = None
+    try:
+        from core.comp.adf_label import grounded_labels
+        labels = grounded_labels(graph)
+    except Exception as e:
+        logger.debug("Labelling unavailable for the graph view: %s", e)
     if dot_path:
         with open(dot_path, "w") as fh:
-            fh.write(graph.to_dot())
+            fh.write(graph.to_dot(labels=labels))
         logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
+    if show:
+        image = _render_graph_image(graph.to_dot(labels=labels), f"{name}_graph")
+        if image and _open_file(image):
+            logger.info("Graph rendered to %s and opened.", image)
+            return
+        if image:
+            logger.info("Graph rendered to %s (open it manually).", image)
+            return
+        logger.info("")
+        logger.info("Debate graph '%s' (install graphviz for a rendered picture):", name)
+        logger.info("")
+        for line in graph.to_text(labels=labels).splitlines():
+            logger.info("  %s", line)
+        logger.info("")
 
 
 def label_argument_cmd(prover: ProverWrapper, name: str) -> None:

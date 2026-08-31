@@ -33,7 +33,7 @@ end counterargument
 
 attack datt qAtt pArg
 
-graph datt
+graph datt show
 label datt
 evaluate datt skeptical
 evaluate datt credulous

@@ -218,10 +218,33 @@ detects a machine-mode desynchronization.
   - render the original or normalized term
 - `color ARG`
   - show acceptance coloring for the normalized term
+  - note: this is the older shape-based classification, not the debate
+    labelling; use `label` for acceptance status
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
   - render an acceptance tree
 - `chain ARG1 ARG2`
   - graft / chain one argument into another
+
+### Debate-graph commands
+
+These compile the argument's term into a debate graph, label it by
+grounded ADF semantics and evaluate it under that labelling. They cover
+the cycle-free, quantifier-free fragment and refuse anything outside it
+with a one-line message.
+
+- `graph ARG [FILE.dot] [show]`
+  - compile the debate graph and print its nodes, hyperedges and default
+    markers; write Graphviz DOT when a filename is given
+  - `show` renders the graph and opens it in the platform viewer; without
+    Graphviz installed it prints an indented text view instead
+- `label ARG`
+  - print the grounded labelling: one `IN` / `OUT` / `UNDEC` per
+    proposition and side
+- `evaluate ARG [skeptical|credulous] [cbn|cbv]`
+  - label-guided evaluation; prints the normal-form class (`VALUE`,
+    `EXCEPTION`, `OPEN`) and the normal form, cached as `.labelled_nf`
+  - the mode decides `UNDEC` conflicts; the base strategy resolves only
+    critical pairs the labelling leaves open
 
 ### Debate commands
 

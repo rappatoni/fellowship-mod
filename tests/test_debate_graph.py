@@ -241,3 +241,63 @@ class TestDocument:
         dot = g.to_dot()
         assert dot.startswith("digraph debate {") and dot.endswith("}")
         assert "pArg" in dot
+
+    def test_dot_export_with_labels_fills_nodes(self):
+        from core.comp.adf_label import grounded_labels
+        g = compile_debate(parg_body(Deleg("1", "Q")), "pArg", strict_names=STRICT)
+        dot = g.to_dot(labels=grounded_labels(g))
+        assert "fillcolor=" in dot
+        assert "t=IN" in dot
+
+
+class TestTextView:
+    def test_tree_shape_and_labels(self):
+        from core.comp.adf_label import grounded_labels
+        body = parg_body(t_sup("Q", Goal("1", "Q"), qarg_body()))
+        g = compile_debate(body, "dsup", strict_names=STRICT)
+        text = g.to_text(labels=grounded_labels(g))
+        lines = text.splitlines()
+        assert lines[0].startswith("P[term]")
+        assert "dsup  (argument, defeasible)" in lines[1]
+        assert any("Q[term]" in ln and "[obligation]" in ln for ln in lines)
+        assert any("qArg  (supporter" in ln for ln in lines)
+        # Indentation grows with depth.
+        depths = [len(ln) - len(ln.lstrip()) for ln in lines[1:] if ln.strip()]
+        assert depths == sorted(depths)
+
+    def test_contrary_is_shown_once(self):
+        # Both sides of Q materialized: the contest appears exactly once,
+        # and the walk does not descend back into the 2-cycle.
+        g = DebateGraph()
+        g.add_node("Q")
+        g.add_edge(edge_helper("argQ", canonical_prop("Q"), "term",
+                               [src_helper(canonical_prop("R"), "term", "presumption")]))
+        g.add_node("R")
+        g.mark_default(canonical_prop("Q"), "context", "presumption")
+        text = g.to_text()
+        assert text.count("contested by") == 1
+
+    def test_labels_optional(self):
+        g = compile_debate(parg_body(Goal("1", "Q")), "pArg", strict_names=STRICT)
+        text = g.to_text()
+        assert "P[term]" in text
+        assert "IN" not in text and "OUT" not in text
+
+    def test_every_statement_appears(self):
+        from core.comp.adf_label import grounded_labels
+        body = parg_body(t_sup("Q", Goal("1", "Q"), qarg_body()))
+        g = compile_debate(body, "dsup", strict_names=STRICT)
+        text = g.to_text(labels=grounded_labels(g))
+        for key, side in g.statements():
+            assert f"{g.nodes[key]}[{side}]" in text
+
+
+def edge_helper(name, target, side, sources):
+    from core.dc.debate_graph import Edge
+    return Edge(name=name, target_key=target, target_side=side,
+                sources=tuple(sources), strict=False, role="argument")
+
+
+def src_helper(key, side, kind):
+    from core.dc.debate_graph import Source
+    return Source(key=key, side=side, kind=kind, site="s")

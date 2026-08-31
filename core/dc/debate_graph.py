@@ -205,17 +205,130 @@ class DebateGraph:
 
     # -- presentation -------------------------------------------------------
 
-    def to_dot(self) -> str:
-        lines = ["digraph debate {", "  rankdir=BT;"]
+    def statements(self) -> list:
+        """Every (key, side) pair the graph mentions, in a stable order."""
+        seen = []
+
+        def add(key, side):
+            if (key, side) not in seen:
+                seen.append((key, side))
+
+        for edge in self.edges:
+            add(edge.target_key, edge.target_side)
+            for source in edge.sources:
+                add(source.key, source.side)
+        for key, side in self.defaults:
+            add(key, side)
+        return seen
+
+    def _roots(self) -> list:
+        """Conclusion statements: edge targets that feed no other edge."""
+        targets = [(e.target_key, e.target_side) for e in self.edges]
+        used = {(s.key, s.side) for e in self.edges for s in e.sources}
+        roots = [t for t in dict.fromkeys(targets) if t not in used]
+        if roots:
+            return roots
+        return list(dict.fromkeys(targets)) or self.statements()
+
+    def to_text(self, labels=None, root=None) -> str:
+        """An indented tree view, rooted at the graph's conclusion(s).
+
+        ``labels`` maps (key, side) to IN/OUT/UNDEC and is shown inline
+        when given.  Revisited statements are marked rather than expanded,
+        so a cyclic graph still renders.
+        """
+        out = []
+
+        def annotate(statement):
+            key, side = statement
+            text = f"{self.nodes.get(key, key)}[{side}]"
+            if labels and statement in labels:
+                text += f"  {labels[statement]}"
+            kinds = self.defaults.get(statement)
+            if kinds:
+                text += f"  [{', '.join(sorted(kinds))}]"
+            return text
+
+        materialized = set(self.statements())
+        rendered = set()
+
+        def walk(statement, prefix, path):
+            rendered.add(statement)
+            if statement in path:
+                out.append(f"{prefix}(cycle back to {annotate(statement)})")
+                return
+            path = path | {statement}
+            incoming = [
+                e for e in self.edges
+                if (e.target_key, e.target_side) == statement
+            ]
+            contrary = (statement[0], "context" if statement[1] == "term" else "term")
+            # Contrariness is symmetric, so descend into it once only: the
+            # back-link from the contrary to this statement adds nothing.
+            show_contrary = contrary in materialized and contrary not in path
+            branches = len(incoming) + (1 if show_contrary else 0)
+            drawn = 0
+            for edge in incoming:
+                drawn += 1
+                last = drawn == branches
+                branch = "`-- " if last else "|-- "
+                strictness = "strict" if edge.strict else "defeasible"
+                out.append(f"{prefix}{branch}{edge.name}  ({edge.role}, {strictness})")
+                child_prefix = prefix + ("    " if last else "|   ")
+                for j, source in enumerate(edge.sources):
+                    child = (source.key, source.side)
+                    last_source = j == len(edge.sources) - 1
+                    sub_branch = "`-- " if last_source else "|-- "
+                    out.append(f"{child_prefix}{sub_branch}{annotate(child)}")
+                    walk(child, child_prefix + ("    " if last_source else "|   "), path)
+            if show_contrary:
+                # The contrary side is a mutual attack: each statement's
+                # acceptance condition negates the other's.  Where the two
+                # sides face each other directly, say so once instead of
+                # descending into the 2-cycle.
+                last = drawn + 1 == branches
+                branch = "`-- " if last else "|-- "
+                out.append(f"{prefix}{branch}contested by {annotate(contrary)}")
+                walk(contrary, prefix + ("    " if last else "|   "), path)
+
+        roots = [root] if root else self._roots()
+        for statement in roots:
+            out.append(annotate(statement))
+            walk(statement, "", frozenset())
+        orphans = [s for s in materialized if s not in rendered]
+        if orphans:
+            out.append("")
+            out.append("not reachable from the conclusion:")
+            for statement in orphans:
+                out.append(f"  {annotate(statement)}")
+        return "\n".join(out)
+
+    def to_dot(self, labels=None) -> str:
+        """Graphviz source.  With ``labels``, nodes are filled by status."""
+        fill = {"IN": "#cdebc5", "OUT": "#f2c4c4", "UNDEC": "#e0e0e0"}
+        lines = ["digraph debate {", "  rankdir=BT;",
+                 '  node [shape=box, style="rounded,filled", fillcolor=white];']
         ids = {key: f"n{i}" for i, key in enumerate(self.nodes)}
         for key, display in self.nodes.items():
             marks = []
+            statuses = []
             for side in ("term", "context"):
                 for kind in sorted(self.defaults.get((key, side), ())):
                     marks.append(f"{side[0]}:{kind[0]}")
+                if labels and (key, side) in labels:
+                    statuses.append(f"{side[0]}={labels[(key, side)]}")
             suffix = f"\\n[{' '.join(marks)}]" if marks else ""
+            if statuses:
+                suffix += f"\\n{' '.join(statuses)}"
             label = display.replace('"', '\\"')
-            lines.append(f'  {ids[key]} [label="{label}{suffix}"];')
+            colour = ""
+            if labels:
+                own = [labels.get((key, side)) for side in ("term", "context")]
+                decided = [s for s in own if s]
+                if decided:
+                    # Term side drives the fill; it is the proponent's status.
+                    colour = f', fillcolor="{fill.get(decided[0], "white")}"'
+            lines.append(f'  {ids[key]} [label="{label}{suffix}"{colour}];')
         for edge in self.edges:
             style = {
                 "supporter": "color=darkgreen",
