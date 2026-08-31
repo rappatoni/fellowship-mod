@@ -137,6 +137,32 @@ make cli ARGS="--help"
 make cli ARGS="--script tests/normalize_render.fspy"
 ```
 
+### Preloading a script into interactive mode
+
+`--load FILE` runs a `.fspy` script (strictly, stopping on the first error)
+before dropping into the REPL. It can only be combined with `--interactive`:
+
+```bash
+.venv/bin/acdc --interactive --load tests/normalize_render.fspy
+```
+
+### Importing from s(CASP)
+
+`--import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]` translates an
+external proof/argument representation into a `.fspy` script. Currently the
+only supported `SOURCE_LANGUAGE` is `scasp`. `MODE` is either:
+- `file` — write the translated script to `TARGET_FILE_NAME` (default:
+  `SOURCE_JSON` with its extension replaced by `.fspy`) and exit
+- `interactive` — translate to a temporary script, replay it strictly, and
+  drop into the REPL with the result already registered
+
+```bash
+.venv/bin/acdc --import scasp path/to/proof.json file imported.fspy
+.venv/bin/acdc --import scasp path/to/proof.json interactive
+```
+
+See `scasp_import/` for the translator itself.
+
 ## Logging and environment variables
 
 ### CLI logging
@@ -170,6 +196,21 @@ Example:
 ```bash
 FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy
 ```
+
+- `FSP_REDUCE_TERM_WIDTH` (default `72`) — column width for the term column
+  when `reduce` prints its step-by-step trace.
+
+### Other environment variables
+
+- `FSP_ECHO_NOTES` (default `1`, i.e. on) — set to `0`/`false`/`no` to
+  suppress echoing Fellowship's informational notes.
+- `FSP_BATCH_REPLAY` (default `1`, i.e. on) — set to `0`/`false`/`no` to send
+  each instruction of a recorded argument to Fellowship one at a time instead
+  of batching them into fewer round-trips. Mainly useful for debugging replay
+  issues.
+- `FSP_QUIET_REPLAY` (default `1`, i.e. on; only applies when batch replay is
+  also on) — set to `0`/`false`/`no` to keep Fellowship's per-instruction
+  output during batched replay instead of suppressing all but the final one.
 
 ## Workflow overview
 
@@ -216,12 +257,72 @@ detects a machine-mode desynchronization.
 - `render ARG [STYLE]`
 - `render-nf ARG [STYLE]`
   - render the original or normalized term
-- `color ARG`
-  - show acceptance coloring for the normalized term
+- `color ARG [PROP=COLOR ...]`
+- `color-nf ARG [PROP=COLOR ...]`
+  - show acceptance coloring for the unnormalized (`color`) or normalized
+    (`color-nf`) term; optional `PROP=COLOR` pairs override the default
+    coloring for specific propositions. Quote a pair whose proposition
+    contains spaces, e.g. `color a "Bird Tweety=red"`.
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
   - render an acceptance tree
 - `chain ARG1 ARG2`
   - graft / chain one argument into another
+
+### Projection / extraction commands
+
+These pull a sub-term back out of an already-recorded argument and register
+it under a new name, projecting the wrapper-side metadata (assumptions,
+delegations, decorations) along with it. Each accepts its `ARG`/`NAME`
+arguments in either order (`out INDEX ARG NAME` or `out NAME ARG INDEX`); the
+wrapper disambiguates by checking which name is already a registered
+argument.
+
+- `out INDEX ARG NAME`
+  - extract element `INDEX` (0-based) from a top-level alternative structure
+    (nested `mu`-bound choices between terms)
+- `tou INDEX ARG NAME`
+  - extract element `INDEX` from a top-level alternative-counterexample
+    structure (the dual, context-side form of `out`)
+- `sub ARG NAME`
+  - extract the argument of a top-level application structure
+- `bus ARG NAME`
+  - extract the condition of a top-level dual-application structure
+- `attacker ARG NAME`
+  - extract the exception branch of a top-level defeasible-warrant structure
+- `regatta ARG NAME`
+  - extract the support branch of a top-level dual-defeasible-warrant
+    structure
+
+Each command raises an error if `ARG`'s top level does not have the expected
+shape (e.g. `out` on an argument that is not an alternative structure), or if
+`INDEX` is out of range. See `tests/test_projection_debate_ops.py` for
+worked examples of every shape.
+
+### Registering proof terms directly
+
+- `register NAME [strict] : TYPE := PROOF_TERM`
+  - replay a hand-written proof term against Fellowship and register the
+    result as a named argument, without going through `start argument` /
+    `end argument`. `TYPE` is the conclusion proposition; `PROOF_TERM` is
+    parsed with the same proof-term grammar used elsewhere in AIDA (see
+    *First-order logic* and `pres/` for term syntax). Without `strict`, the
+    replayed theorem is discarded after the wrapper extracts the argument
+    state; with `strict`, replay is finalized with `qed.` so Fellowship
+    actually declares the theorem/antitheorem.
+
+  ```text
+  register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
+  ```
+
+  (from `tests/olon.fspy`, which also shows the `μ'`-headed dual form)
+
+### Custom tactics
+
+- `tactic NAME ARGS...`
+  - invoke a custom tactic registered on the wrapper via
+    `ProverWrapper.register_custom_tactic`. `setup_prover()` currently
+    registers only `pop`, which is marked deprecated in the source and is not
+    expected to work; the mechanism otherwise has no bundled tactics.
 
 ### Debate commands
 
@@ -233,8 +334,11 @@ detects a machine-mode desynchronization.
   - support restricted to default targets
 - `reinforce NEW SUPPORTER TARGET [on PROP]`
   - support restricted to non-default targets
-- `attack NEW ATTACKER TARGET [on PROP]`
-  - generic attack operation
+- `attack NEW ATTACKER TARGET [strict] [on PROP]`
+  - generic attack operation. With `strict` (also accepted as `--strict`,
+    `allow-strict`, or `--allow-strict`), strict proof leaves/axioms on the
+    target may also be opened and attacked; this is opt-in because it is
+    otherwise treated as invalid.
 - `rebut NEW ATTACKER TARGET [on PROP]`
   - attack restricted to non-default targets
 
