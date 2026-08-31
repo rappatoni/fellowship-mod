@@ -45,6 +45,9 @@ DEFAULT_SCRIPTS = [
     # replaying it, which is where the issue above bites.
     "fo_forall.fspy",
     "fo_exists_forall.fspy",
+    # The runnable rationality-postulate fixtures (tests/rationality/).
+    "rationality/self_attack.fspy",
+    "rationality/even_loop.fspy",
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]

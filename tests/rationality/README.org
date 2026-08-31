@@ -51,6 +51,15 @@ grounded and preferred: all three UNDEC (odd loops admit no two-valued
 labelling). Already exercised by the existing fixture; the T4 suite reuses
 it rather than duplicating.
 
+* Graph-level postulate fixtures [runnable]
+
+tests/rationality/test_postulates.py holds the oracle-validated
+graph-level forms of the scenarios below (married-bachelor,
+contamination/non-interference, support chains): the DebateGraph is
+built directly, labelled by core/comp/adf_label.py, and checked against
+the naive oracle and (where installed) adf-bdd. The .fspy forms remain
+tracked separately since they additionally exercise the prover pipeline.
+
 * married_bachelor.fspy [spec-only]
 
 Caminada's canonical consistency example. Defeasible: wears-ring => married;
@@ -90,11 +99,18 @@ labelling file can be diffed; the scenario itself is expressible today.
 
 Two arguments supporting each other's open obligation: argument for P with
 obligation Q, argument for Q with obligation P; no presumption anywhere.
-Expected grounded labelling: both OUT (obligations default to false;
-mutual support lifts nothing off the ground - no free lunch from support
-cycles). This is the support-side analogue of the loop fixtures and pins
-down the evidential (Oren-Norman-style) reading of support: support
-transmits acceptance, it does not create it.
+
+Expected labelling, *corrected against the ADF oracle during M0/M7*
+(the original conjecture said grounded = both OUT; that is the *stable*
+answer, not the grounded one): grounded leaves a mutual-support cycle
+UNDEC on both nodes; the two-valued models are {both IN} and {both OUT};
+stable semantics selects both OUT. The evidential intuition ("support
+transmits acceptance, it does not create it" - no free lunch from support
+cycles) is captured by stable, while grounded merely refuses to decide.
+See test_support_cycle_grounded_is_undecided in tests/test_oracles.py.
+Note the fixture is cyclic, hence outside the acyclic fragment: the graph
+compiler refuses it (CyclicDebateNotSupported) and only the oracle labels
+it.
 
 * begging_the_question.fspy [spec-only]
 
