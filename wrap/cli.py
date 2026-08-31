@@ -296,6 +296,20 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
                     elif command.startswith("color "):
                         color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
+                    elif command.startswith("graph "):
+                        # Usage: graph ARG [FILE.dot]
+                        parts = command.split()
+                        graph_argument_cmd(prover, parts[1], parts[2] if len(parts) >= 3 else None)
+                    elif command.startswith("label "):
+                        label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
+                    elif command.startswith("evaluate "):
+                        # Usage: evaluate ARG [skeptical|credulous] [cbn|cbv]
+                        parts = command.split()
+                        evaluate_argument_cmd(
+                            prover, parts[1],
+                            parts[2] if len(parts) >= 3 else "skeptical",
+                            parts[3] if len(parts) >= 4 else "cbn",
+                        )
                     elif command.startswith("tree "):
                         parts = command.split()
                         # Usage:
@@ -770,6 +784,20 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
             elif command.startswith("color "):
                 color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
+            elif command.startswith("graph "):
+                # Usage: graph ARG [FILE.dot]
+                parts = command.split()
+                graph_argument_cmd(prover, parts[1], parts[2] if len(parts) >= 3 else None)
+            elif command.startswith("label "):
+                label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
+            elif command.startswith("evaluate "):
+                # Usage: evaluate ARG [skeptical|credulous] [cbn|cbv]
+                parts = command.split()
+                evaluate_argument_cmd(
+                    prover, parts[1],
+                    parts[2] if len(parts) >= 3 else "skeptical",
+                    parts[3] if len(parts) >= 4 else "cbn",
+                )
             elif command.startswith("tree "):
                 parts = command.split()
                 if len(parts) == 2:
@@ -1501,6 +1529,115 @@ def color_argument_cmd(prover: ProverWrapper, spec: str, normalized: bool = True
         logger.info("Prop colors: %s", ", ".join(f"{prop}={color}" for prop, color in prop_colors))
     logger.info(colored)
     logger.info("")  # spacer after colored output
+
+def _compile_argument_graph(prover: ProverWrapper, name: str):
+    """Resolve an argument and compile its body into a DebateGraph.
+
+    Returns (arg, graph) or (arg, None) after printing the refusal - the
+    log-and-refuse convention: compile errors are one-line messages, not
+    tracebacks.
+    """
+    from core.dc.debate_graph import compile_debate, DebateCompileError
+    from core.ac.ast import FirstOrderNotSupported
+
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error("Argument '%s' not found.", name)
+        return None, None
+    if not arg.executed:
+        arg.execute()
+    try:
+        graph = compile_debate(arg.body, name, strict_names=prover.declarations.keys())
+    except (DebateCompileError, FirstOrderNotSupported) as e:
+        print(f"graph: refused: {e}")
+        logger.warning("Debate graph compilation refused for '%s': %s", name, e)
+        return arg, None
+    return arg, graph
+
+
+def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None) -> None:
+    """CLI: compile an argument's debate graph; print a summary, optionally DOT.
+
+    Syntax:
+        graph ARG [FILE.dot]
+    """
+    arg, graph = _compile_argument_graph(prover, name)
+    if graph is None:
+        return
+    logger.info("Debate graph for '%s': %d nodes, %d edges", name, len(graph.nodes), len(graph.edges))
+    for edge in graph.edges:
+        sources = ", ".join(
+            f"{graph.nodes[s.key]}[{s.side[0]}:{s.kind[:4]}]" for s in edge.sources
+        ) or "-"
+        strictness = "strict" if edge.strict else "defeasible"
+        logger.info("  %s (%s, %s): %s <- %s",
+                    edge.name, edge.role, strictness,
+                    f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
+    for (key, side), kinds in graph.defaults.items():
+        logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
+    if dot_path:
+        with open(dot_path, "w") as fh:
+            fh.write(graph.to_dot())
+        logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
+
+
+def label_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI: grounded ADF labels of an argument's debate graph.
+
+    Syntax:
+        label ARG
+    """
+    from core.comp.adf_label import grounded_labels
+
+    arg, graph = _compile_argument_graph(prover, name)
+    if graph is None:
+        return
+    labels = grounded_labels(graph)
+    logger.info("Grounded labelling for '%s':", name)
+    for (key, side), label in labels.items():
+        logger.info("  %-40s %-8s %s", graph.nodes[key], side, label)
+
+
+def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical", base: str = "cbn") -> None:
+    """CLI: label-guided evaluation of an argument's debate term.
+
+    Syntax:
+        evaluate ARG [skeptical|credulous] [cbn|cbv]
+
+    The normal form is cached on the argument as .labelled_nf.
+    """
+    from core.comp.evaluate import evaluate_debate, EvaluationRefused
+    from core.dc.debate_graph import DebateCompileError
+    from core.ac.ast import FirstOrderNotSupported
+    from pres.gen import ProofTermGenerationVisitor
+    import copy as _copy
+
+    if mode not in ("skeptical", "credulous"):
+        logger.error("evaluate: mode must be 'skeptical' or 'credulous', got '%s'", mode)
+        return
+    if base not in ("cbn", "cbv"):
+        logger.error("evaluate: base strategy must be 'cbn' or 'cbv', got '%s'", base)
+        return
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error("Argument '%s' not found.", name)
+        return
+    if not arg.executed:
+        arg.execute()
+    try:
+        nf, nf_class, labels, graph = evaluate_debate(
+            arg.body, name, strict_names=prover.declarations.keys(),
+            mode=mode, base=base,
+        )
+    except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported) as e:
+        print(f"evaluate: refused: {e}")
+        logger.warning("Evaluation refused for '%s': %s", name, e)
+        return
+    arg.labelled_nf = nf
+    pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+    logger.info("Evaluated '%s' (%s, base %s): %s", name, mode, base, nf_class.upper())
+    logger.info("  normal form: %s", pretty)
+
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
     """CLI: render the colored acceptance tree (proof terms or NL) and save it as a file."""
