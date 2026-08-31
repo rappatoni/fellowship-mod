@@ -1,0 +1,555 @@
+#+title: AIDA repository tasks
+#+startup: overview
+#+todo: BACKLOG(b) NEXT(n) DOING(i) WAITING(w@/!) REVIEW(r) | DONE(d!) DROPPED(x@/!)
+#+property: Effort_ALL 0:15 0:30 1:00 2:00 4:00 8:00
+#+columns: %40ITEM %TODO %AREA %EISENHOWER %ICK %EFFORT %DEFERRALS %REPO %SYNC_WITH
+
+* Thesis-critical implementation
+
+** NEXT Finish the propositional s(CASP) translation for the negated fragment
+:PROPERTIES:
+:ID:             aida-propositional-scasp-translation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:phd-aida-propositional-scasp-translation
+:OUTCOME:        AIDA translates the supported propositional s(CASP) negated fragment into the intended AC/DC representation.
+:VERIFY:         Run the documented test suite and check positive and negative translation cases covering every supported propositional construct.
+:END:
+
+** BACKLOG Specify the JSON format for explanation terms
+:PROPERTIES:
+:ID:             aida-explanation-term-json-format
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A versioned JSON format specifies every supported explanation-term constructor, identifier, binding, and recursive relationship.
+:VERIFY:         Validate representative explanation terms against the schema and confirm lossless serialization and deserialization tests.
+:END:
+
+** BACKLOG Prepare AIDA for the demo feature freeze
+DEADLINE: <2026-09-04 Fri>
+:PROPERTIES:
+:ID:             aida-demo-readiness
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:phd-aida-demo-readiness
+:OUTCOME:        The AIDA demo is rehearsed, includes all theoretically ready results, and is polished and stable by the feature freeze.
+:VERIFY:         Run the final demo workflow and documented tests, and review the August 31 practice record together with the completed child outcomes.
+:END:
+
+*** BACKLOG Practice the demo during KWARC's second hour
+DEADLINE: <2026-08-31 Mon>
+:PROPERTIES:
+:ID:             aida-practice-demo-kwarc
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The complete AIDA demo has been delivered during KWARC's second hour and actionable feedback has been recorded.
+:VERIFY:         Record the rehearsal date, exercised demo path, observed failures, timing, and resulting follow-up tasks.
+:END:
+
+*** BACKLOG Integrate theoretically ready results before the demo freeze
+DEADLINE: <2026-09-04 Fri>
+:PROPERTIES:
+:ID:             aida-integrate-theory-before-demo-freeze
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Every result declared theoretically ready before the freeze is integrated into the AIDA demo or explicitly excluded with a recorded reason.
+:VERIFY:         Compare the ready-results list with the implemented demo capabilities and run the relevant integration tests.
+:END:
+
+*** BACKLOG Polish AIDA before the demo freeze
+DEADLINE: <2026-09-04 Fri>
+:PROPERTIES:
+:ID:             aida-polish-before-demo-freeze
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Demo-blocking bugs are fixed and the documentation, performance, and presentation are ready for the frozen demo.
+:VERIFY:         Run the demo workflow and documented tests, review open demo-blocking defects, and check the user-facing documentation and presentation path.
+:END:
+
+** BACKLOG Integrate AIDA into the DIREGA demonstrator
+:PROPERTIES:
+:ID:             aida-direga-demonstrator-integration
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-demo-readiness
+:SYNC_WITH:      id:phd-aida-direga-demonstrator-integration
+:TARGET_DATE:    TBD: before the DIREGA steering committee meeting
+:OUTCOME:        AIDA is integrated into the DIREGA demonstrator before the steering committee meeting.
+:VERIFY:         Run the documented DIREGA demonstrator workflow end to end and record the tested integration revision.
+:END:
+
+** DONE Add first-order support to AIDA's front end
+CLOSED: [2026-08-19 Wed]
+:PROPERTIES:
+:ID:             aida-first-order-front-end
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Quantified propositions and first-order proof terms are parsed, typed, replayed and rendered, so a first-order proof term round-trips from the prover through AIDA and back to qed.
+:VERIFY:         Run the documented test suite; replay tests/fo_forall.fspy and tests/fo_exists_forall.fspy; confirm the minimal proof generates =elim [O]= rather than a bare =elim= plus a spurious =axiom O=.
+:END:
+
+Evidence: 585 tests pass, against a 209-test baseline; the two failures
+(=test_graft_affine_capture=, =test_onus_categories=) predate the work and
+were confirmed failing on the parent commit. Both fixtures replay to =qed=,
+and =tests/test_fo_instructions.py= drives the full round trip prover →
+parse → resolve → enrich → instructions → prover.
+
+Scope: quantifiers only. Conjunction and disjunction remain outside the
+fragment. Node =.prop= is still a string; threading =Prop= objects onto the
+AST was deferred, since it is only needed by the operations in
+[[id:aida-first-order-reduction]].
+
+Five prover-side defects were found and fixed on the way:
+
+- =pretty_prop='s priorities disagreed with =parser.mly='s, so the prover
+  printed propositions it could not read back: =A-(B->C)= printed as =A-B->C=
+  and reparsed as =(A-B)->C=. Both now use the conventional ordering.
+- =Conj= and =Disj= carried associativity flags that parenthesised neither
+  operand, so =A/\(B/\C)= and =(A/\B)/\C= printed alike.
+- =pretty_prop='s quantifier branch ignored =parentprio=, so
+  =(forall x, Q x) -> C= and =forall x, (Q x -> C)= printed alike.
+- =pretty_t3rm= and =pretty_context= emitted no grouping parentheses at all,
+  so =Admal(h, Cons(b,c))= was unprintable and was read as =Cons(Lamda(h,b), c)=.
+- The Python side read =¬A= as a symbol *named* =¬A= rather than as a
+  negation, and =⊥= likewise.
+
+** BACKLOG Extend first-order support to reduction and the debate operations
+:PROPERTIES:
+:ID:             aida-first-order-reduction
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-first-order-front-end
+:OUTCOME:        Normalization, grafting, support/attack and acceptance colouring handle first-order terms instead of refusing them.
+:VERIFY:         A first-order argument normalizes, is grafted onto and attacked, with the reduction rules recorded and a semantic-equivalence check against the prover.
+:END:
+
+Deferred deliberately: the reduction rules for first-order AC/DC are not
+settled theory. The COMMA paper lists a first-order extension as future work
+(=papers/comma2026/main.tex:564=), so implementing reduction now would mean
+inventing the rules rather than following them.
+
+Seven entry points currently raise =FirstOrderNotSupported= rather than
+guess: both reducers, both grafts, structural matching, shape comparison,
+acceptance colouring and debate labelling. Each has a fall-through that would
+otherwise be silent and wrong — grafting returns the node unchanged, matching
+reports "not equal", colouring reports "green".
+
+Threading =Prop= objects onto node =.prop= belongs to this task rather than
+to the front end: it is what the ~40 proposition-comparison and dict-key
+sites in =reduce.py=, =graft.py=, =argument.py= and =color.py= need, and
+those are exactly the operations deferred here.
+
+* Specification and verification
+
+Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
+approved critique plan of 2026-08-29; see also the Layer 4 section of
+[[file:call-by-onus.org]] and the fixture suite in [[file:tests/rationality/README.org]]).
+
+** DOING Implement the cycle-free, quantifier-free fragment (M0-M7)
+:PROPERTIES:
+:ID:             aida-propositional-fragment-implementation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Acyclic quantifier-free debates compile to a DebateGraph, are labelled by a grounded ADF labeller verified against a naive in-tree oracle and the third-party adf-bdd solver, and evaluate under the onus-labelled discipline satisfying the adequacy commuting square; the experimental labellers are audited and fixed or demoted.
+:VERIFY:         Run the V0-V6 checks of propositional-fragment-plan.org: oracle self-checks and three-way solver agreement, per-fixture adequacy (IN => value, OUT => exception), graft-order commutation property tests, conservativity postcondition, acyclicity refusal on naf_olon.fspy, and the labeller divergence report.
+:END:
+
+Plan, trust hierarchy, milestone estimates (10-16 developer-days) and risk
+register: [[file:propositional-fragment-plan.org]]. Entry point is M0
+(semantic oracles); the two pre-existing test failures are triaged
+spec-first in M1. Note R9: the full plan lands after the 2026-09-04 demo
+freeze; a ~5-day demo slice (M0 ADF oracle + M2-M4 + DOT export) exists.
+
+Progress 2026-08-31: M0-M7 implemented and committed (d908d94..9e71782),
+CLI wiring (a448d87), contested fixture (af42ed1); suite green at 722
+passed / 1 deliberate xfail. Remaining before DONE: the child tasks below
+(verification residues, strong normalization); see the per-milestone logs
+in the plan file.
+
+*** NEXT Extend the oracle normalizer to full normal forms
+:PROPERTIES:
+:ID:             aida-oracle-strong-normalization
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Evaluation prints full normal forms: the minimal normalizer reduces under congruences with a fixed deterministic order, so residues like the contested case's inner redex reduce to the contradiction command mu b1.<?Q || !Q> instead of surviving.
+:VERIFY:         The contested fixture's skeptical evaluation prints the fully reduced residue; the adequacy-square tests pass with both sides routed through the strong normalizer; a determinism test shows identical output across repeated runs and a nested-redex test fires an inner (>mu).
+:END:
+
+The root-only weak normalizer leaves inner redexes untouched (observed on
+tests/rationality/contested.fspy: ?Q is not substituted for b2). NF
+*classes* are unaffected - only the printed term is under-reduced. The
+congruence order chosen must be recorded and its determinism argued
+(part of the T1 obligation); the skip rules of call-by-onus.org remain
+unsettled theory, so the extension fixes one order rather than deriving
+it.
+
+*** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
+:PROPERTIES:
+:ID:             aida-fragment-verification-residues
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The graft-order commutation property test exists (V1), Argument.normalize asserts the conservativity postcondition (V2), and a winning attacker's evaluation yields an abort-shaped term so V3 strengthens from OUT-implies-not-a-value to OUT-implies-exception.
+:VERIFY:         Property-based test filling independent sites in both orders with alpha-equal results; a strict normal form containing an open leaf trips the new assertion; the in-attacker case in tests/test_evaluate.py asserts class exception.
+:END:
+
+*** BACKLOG Rewire the presentation layers to grounded labels
+:PROPERTIES:
+:ID:             aida-renderers-grounded-labels
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-demo-readiness
+:OUTCOME:        The color/color-nf commands, pres/color.py rendering and the acceptance-tree export display the grounded ADF labels instead of the demoted shape classification, and the CLI help/README documents graph, label and evaluate.
+:VERIFY:         The audit corpus of tests/test_labeller_audit.py renders with colours matching the M4 labels; README lists the three commands; the divergence tripwire test is retired or inverted.
+:END:
+
+Deliberately blocked until after the 2026-09-04 demo freeze (risk R6 in
+the plan: current renderer output is user-visible demo behaviour).
+
+*** BACKLOG Resolve the legacy reducer audit findings
+:PROPERTIES:
+:ID:             aida-legacy-reducer-findings
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The onus-parallel discipline is either made label-sound or explicitly retired to base-strategy duty; the B-0016/B-0017 classifier findings and the strict-xfail in tests/test_onus_categories.py are resolved accordingly.
+:VERIFY:         The M6 audit probe divergences (OUT supporter kept, OUT attacker scaffold unresolved) either disappear or the retired code paths are unreachable from the CLI; the xfail is removed or its test deleted with the decision recorded.
+:END:
+
+Audit evidence: M5/M6 logs in propositional-fragment-plan.org
+(onus-parallel keeps OUT supporters and cannot discard OUT attackers).
+
+*** BACKLOG Investigate the Geled reroute asymmetry in attack composition
+:PROPERTIES:
+:ID:             aida-attack-geled-reroute
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided and recorded whether Argument.attack should reroute a delegated (Geled) conclusion port to the catch variable the way it reroutes an open (Laog) one, and the chosen behaviour is tested.
+:VERIFY:         A test composes an attack with a by-default challenge and asserts the recorded reroute behaviour; the shape catalogue in core/dc/debate_graph.py documents the outcome.
+:END:
+
+Observed 2026-08-31 while building tests/rationality/contested.fspy: a
+challenge ending in a Laog gets its tail rerouted to alt, a by-default
+(Geled) challenge does not. The compiler handles the un-rerouted form as
+an identity edge (presumption marker), which is semantically equivalent
+for labelling, but the term-level asymmetry is undocumented.
+
+*** BACKLOG Express the married-bachelor and contamination fixtures as .fspy
+:PROPERTIES:
+:ID:             aida-postulate-fixtures-fspy
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The married-bachelor and contamination scenarios run as .fspy scripts through the prover pipeline, matching the graph-level expectations of tests/rationality/test_postulates.py.
+:VERIFY:         Both scripts replay in DEFAULT_SCRIPTS and their label output matches the recorded graph-level labellings.
+:END:
+
+Blocked in substance on strict edges with premises (the transposal
+closure is vacuous in the current fragment; see the transposal note in
+core/comp/adf_label.py) - the strict bridge of married-bachelor cannot
+yet be expressed as a compiled term.
+
+** BACKLOG Prove well-definedness of label-guided reduction (T1, T6)
+:PROPERTIES:
+:ID:             aida-spec-labelled-reduction-well-defined
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Proofs that sigma-guided reduction is deterministic and terminating on compiled debate terms, that labelling commutes with grafting, and that entry-point unfolding with capture-based cycle-breaking terminates well-typed.
+:VERIFY:         Written proofs reviewed against debate-graph-spec.org targets T1 and T6, plus property-based tests comparing graft-then-label with label-then-graft on generated debates.
+:END:
+
+** BACKLOG Establish the polarized categorical semantics (T2)
+:PROPERTIES:
+:ID:             aida-spec-polarized-semantics
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The delegation-free CBN and CBV quotients are shown to be control and co-control categories, the polynomial extension C[X] is conservative, and the label-guided evaluation is an adjunction or polarized model with the uniform strategies as degenerate cases.
+:VERIFY:         Written proofs checked against the control-category axiom list and the polarized-model axioms, with the duality statement (term/context swaps credulous/skeptical) proved or refuted explicitly.
+:END:
+
+** BACKLOG Prove computational adequacy of the labelling (T3)
+:PROPERTIES:
+:ID:             aida-spec-computational-adequacy
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-spec-labelled-reduction-well-defined
+:OUTCOME:        For a fixed witness labelling sigma, an issue labelled IN normalizes to a value, OUT to an abort term, and UNDEC to the mode-dependent residue, proved by induction on the fixpoint stages of sigma.
+:VERIFY:         Written proof plus one fixture per label per mode in tests/rationality/ whose evaluated normal form matches the predicted class.
+:END:
+
+** BACKLOG Verify the rationality postulates on the fixture suite (T4)
+:PROPERTIES:
+:ID:             aida-spec-rationality-postulates
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The instantiation mapping (attack relation, subargument closure, conclusion function) is defined, closure, direct and indirect consistency, subargument closure and non-interference are proved for it, and the tests/rationality/ suite is complete and runnable with recorded expected labellings.
+:VERIFY:         Written proofs leaning on the transposition-closed strict layer, plus the graph labeller diffed against every expected labelling in tests/rationality/README.org, including the contamination pair.
+:END:
+
+** BACKLOG Align the term labeller with the graph labelling (T5)
+:PROPERTIES:
+:ID:             aida-spec-labeller-alignment
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-spec-rationality-postulates
+:OUTCOME:        On tree-shaped debates the ADF grounded labelling agrees with the existing term labeller under the green/red/yellow correspondence, and the term labeller becomes a derived view of the graph labeller.
+:VERIFY:         Regression: existing color.py fixtures produce identical colours through both paths; the _combine_pair tables are re-derived from the Kleene evaluation with no remaining incomplete-case exceptions.
+:END:
+
+* Performance and architecture
+
+** BACKLOG Replace stepwise proof replay with certificate-oriented checking
+:PROPERTIES:
+:ID:             aida-certificate-checking-architecture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Large proof terms are checked through a bounded number of structured backend requests, with no full intermediate snapshots and no rechecking of unchanged composition prefixes.
+:VERIFY:         Differential tests accept and reject the same valid and invalid proof corpus as Fellowship; instrumentation confirms a bounded request count per registered proof term; repeated benchmarks record wall time, CPU time, proof size, and semantic result.
+:END:
+
+*** Issues and suggested fixes
+
+- [ ] /Stepwise protocol despite batching./ Quiet replay still performs one
+  send, prompt wait, and response parse for every tactic. Introduce a
+  prover-side =check_term= or framed bulk-replay request that returns the
+  failing step or one final state without prompt-oriented PTY traffic.
+- [ ] /Full proof-state snapshots./ Non-quiet replay repeatedly pretty-prints,
+  hashes, and serializes the growing proof term, goals, and declarations. Keep
+  quiet intermediate responses and emit at most one full final snapshot.
+- [ ] /Proof-term reverse compilation./ Registration parses a proof term,
+  translates it into tactics, replays those tactics, and then retains the
+  original AST. Add a direct proof-term parser/checker accepting one structured
+  certificate; retain tactic replay only for interactive proof construction.
+- [ ] /Repeated checking of growing compositions./ Chaining and debate
+  construction replay the entire combined term, so repeated composition can
+  recheck increasingly large prefixes. Represent compositions as immutable
+  DAGs or certificates, cache checks by term and environment hash, and verify
+  only the new composition boundary where the calculus permits it.
+
+* Correctness and maintenance
+
+** BACKLOG Emit the closing elimination for falsum-typed applications
+:PROPERTIES:
+:ID:             aida-instructions-falsum-closing-elim
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Instruction generation emits the extra elimination that discharges a falsum result, so a generated sequence matches the hand-written proof for an axiom of shape A -> C -> false.
+:VERIFY:         Register the olonMaker2 proof term with =strict= and confirm =qed= succeeds; diff the generated instruction deque against the manual sequence in tests/olon.fspy.
+:END:
+
+The generator emits one elimination per =Cons=/=Sonc= node, but a
+falsum-typed result needs one more to close =false= by ex falso. The guarded
+branch in =core/ac/instructions.py= already knows the rule and is gated on an
+unrelated self-reference precondition. Currently latent: =register= and
+=support= discard rather than =qed=, so the open falsum goal is tolerated.
+
+** BACKLOG Fix the focus tactic crash on first-order goals
+:PROPERTIES:
+:ID:             aida-fellowship-focus-firstorder-crash
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The documented first-order even_2 session runs to =qed= instead of aborting the prover.
+:VERIFY:         Replay the command sequence from wrap/fellowship/documentation/documentation.tex through fsp and confirm no fatal exception.
+:END:
+
+=focus ES th.= aborts with =Fatal error: exception Invalid_argument("List.nth")=.
+Pre-existing and unrelated to the marker-notation change: reproduced against
+the binary built before that change. Blocks
+[[id:aida-fellowship-doc-marker-notation]].
+
+Reconfirmed while doing [[id:aida-first-order-front-end]], and less urgent
+than it looks. =focus= is sugar: =tactics.ml:713-735= defines it as
+=cut (prop-of-ax) name.= followed by =axiom ax.=, it is not first-order
+specific, and AIDA never emits it — =InstructionsGenerationVisitor='s whole
+vocabulary is =cut=, =elim=, =axiom=, =moxia=, =next= and =by default=, and
+no =.fspy= script uses =focus=. The manual expansion reaches =qed= on the
+exact goal where =focus= aborts, which is how both first-order fixtures are
+written. It also no-ops silently when applied to a conclusion.
+
+** BACKLOG Regenerate the Fellowship documentation transcripts
+:PROPERTIES:
+:ID:             aida-fellowship-doc-marker-notation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The proof-term transcripts in wrap/fellowship/documentation/documentation.tex match the current printer, where placeholder markers lead for terms and trail for contexts.
+:VERIFY:         Replay the documented session against the current fsp and diff the emitted proof terms against the transcript excerpts.
+:END:
+
+Six excerpts still show the old notation, where a context placeholder was
+printed with a leading marker, for example =<ES||S O*?1.2.1>= which should now
+read =<ES||S O*1.2.1?>=. Left unchanged deliberately: this is inherited CeCILL
+documentation, and the session cannot currently be replayed to verify
+regenerated output, so the excerpts were not hand-derived. Blocked by
+[[id:aida-fellowship-focus-firstorder-crash]].
