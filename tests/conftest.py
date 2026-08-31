@@ -48,6 +48,7 @@ DEFAULT_SCRIPTS = [
     # The runnable rationality-postulate fixtures (tests/rationality/).
     "rationality/self_attack.fspy",
     "rationality/even_loop.fspy",
+    "rationality/contested.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",
     #"tests/test2.fspy",

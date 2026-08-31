@@ -44,6 +44,18 @@ critique: a per-critical-pair strategy can mix the two preferred
 labellings and accept both P and Q - the two-stage discipline of
 call-by-onus.org Layer 4 must not.
 
+* contested.fspy [runnable]
+
+Contested node without any propositional cycle: pArg argues P from a
+*delegated* Q; a counterargument challenges Q resting on its own
+delegation. Both sides of Q are presumption-backed, so grounded labels
+(Q, term), (Q, context) and (P, term) UNDEC - the V-two correction case.
+The CLI evaluation modes diverge: =evaluate datt skeptical= yields OPEN
+(the UNDEC attacked side is dropped), =evaluate datt credulous= yields
+VALUE with the presumption standing. The .fspy form of
+tests/test_evaluate.py::TestContested, exercised through graph / label /
+evaluate.
+
 * odd_loop (covered by ../naf_olon.fspy) [runnable]
 
 Odd loop of length 3 (P <- notR-style chain through Q, R). Expected
