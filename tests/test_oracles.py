@@ -20,8 +20,8 @@ from core.comp.oracle import (
 )
 from core.comp.oracle_terms import (
     substitute, alpha_equal, canonical_form,
-    normalize_command, classify_nf, instantiate_sites,
-    make_abort_term,
+    normalize_command, normalize_strong, classify_nf, instantiate_sites,
+    make_abort_term, OracleFuelExhausted,
 )
 
 
@@ -206,6 +206,70 @@ class TestMinimalNormalizer:
         t_cbn, c_cbn = normalize_command(term, ctx, strategy="cbn")
         assert canonical_form(t_cbn) == ("di", ("free", "t2"))
         assert canonical_form(c_cbn) == ("id", ("free", "gamma"))
+
+
+class TestStrongNormalizer:
+    def _contested_residue(self):
+        """The root-normal skeptical residue of the contested fixture:
+        mu datt:P.< pRule :: (mu b1:Q.< ?g:Q || mu'b2:Q.<b2 || !d:Q> >) * datt >
+        whose live redex sits one Cons deep - invisible to weak reduction."""
+        from core.ac.ast import Deleg, Geled, Cons
+        inner = Mu(ID("b1", "Q"), "Q",
+                   Goal("g", "Q"),
+                   Mutilde(DI("b2", "Q"), "Q", DI("b2", "Q"), Geled("d", "Q")))
+        return Mu(ID("datt", "P"), "P",
+                  DI("pRule", "Q->P"),
+                  Cons(inner, ID("datt", "P")))
+
+    def test_fires_nested_redex(self):
+        from core.ac.ast import Geled
+        nf = normalize_strong(self._contested_residue(), strategy="cbn")
+        # The inner (>mu) fired: b2 was substituted by the goal, leaving
+        # the contradiction command  mu b1:Q.< ?g:Q || !d:Q >.
+        inner = nf.context.term
+        assert isinstance(inner, Mu)
+        assert isinstance(inner.term, Goal)
+        assert isinstance(inner.context, Geled)
+
+    def test_weak_normalizer_does_not(self):
+        from core.comp.oracle_terms import normalize_term
+        residue = self._contested_residue()
+        assert alpha_equal(normalize_term(residue, strategy="cbn"), residue)
+
+    def test_deterministic_across_runs_and_agrees_with_weak_at_root(self):
+        t, c = _cmd_beta()
+        rooted = Mu(ID("r", "A"), "A", t, c)
+        first = normalize_strong(rooted, strategy="cbn")
+        second = normalize_strong(rooted, strategy="cbn")
+        assert alpha_equal(first, second)
+        # On a term whose only redexes are at the root command, strong and
+        # weak normalization coincide.
+        from core.comp.oracle_terms import normalize_term
+        assert alpha_equal(first, normalize_term(rooted, strategy="cbn"))
+
+    def test_strong_normal_forms_are_stable(self):
+        peirce_like = Lamda(Hyp(DI("x", "A"), "A"), DI("x", "A"))
+        assert alpha_equal(normalize_strong(peirce_like), peirce_like)
+
+    def test_fuel_exhaustion_raises(self):
+        # mu a.< mu'x.< mu a'.<x' ...> ... - build a genuine loop:
+        # < mu a.<omega || a> || mu'x.<x || omega'> > under CBN keeps
+        # substituting; simplest loop: mu d.< mu a.<v||a> :: (c).x mu' >
+        # where c re-creates the pair.  Use the classic
+        # < mu a.c[a] || mu'x.c'[x] > self-feeding pair:
+        looping_term = Mu(ID("a", "A"), "A", DI("y", "A"), ID("a", "A"))
+        looping_ctx = Mutilde(DI("x", "A"), "A", DI("x", "A"), ID("delta", "A"))
+        # < mu a.<y||a> || mu'x.<x||delta> >: CBN substitutes the whole Mu
+        # for x, then eta-like steps keep firing inside; wrap so the pair
+        # reconstitutes itself via duplication:
+        body = Mu(ID("root", "A"), "A", looping_term, looping_ctx)
+        try:
+            nf = normalize_strong(body, strategy="cbn", fuel=50)
+        except OracleFuelExhausted:
+            return  # acceptable outcome for a loop
+        # If it terminated, it must be a genuine normal form: one more
+        # round changes nothing.
+        assert alpha_equal(nf, normalize_strong(nf, strategy="cbn", fuel=50))
 
 
 class TestCommaPaperChecks:

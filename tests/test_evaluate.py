@@ -13,7 +13,7 @@ import pytest
 from core.ac.ast import Mu, Mutilde, Cons, Goal, Deleg, Geled, ID, DI
 from core.comp.evaluate import evaluate_debate, EvaluationRefused
 from core.comp.oracle_terms import (
-    instantiate_sites, normalize_term, alpha_equal, classify_nf,
+    instantiate_sites, normalize_strong, alpha_equal, classify_nf,
 )
 from core.dc.debate_graph import canonical_prop
 
@@ -93,7 +93,7 @@ class TestSupport:
         manual = instantiate_sites(pre_graft, {"1": supporter})
 
         nf, _, _, _ = evaluate_debate(composed, "d", strict_names=STRICT)
-        assert alpha_equal(nf, normalize_term(manual, strategy="cbn"))
+        assert alpha_equal(nf, normalize_strong(manual, strategy="cbn"))
 
 
 class TestAttack:

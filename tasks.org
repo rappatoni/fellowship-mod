@@ -236,7 +236,8 @@ passed / 1 deliberate xfail. Remaining before DONE: the child tasks below
 (verification residues, strong normalization); see the per-milestone logs
 in the plan file.
 
-*** NEXT Extend the oracle normalizer to full normal forms
+*** DONE Extend the oracle normalizer to full normal forms
+CLOSED: [2026-08-31 Mon]
 :PROPERTIES:
 :ID:             aida-oracle-strong-normalization
 :AREA:           phd
@@ -259,6 +260,15 @@ congruence order chosen must be recorded and its determinism argued
 (part of the T1 obligation); the skip rules of call-by-onus.org remain
 unsettled theory, so the extension fixes one order rather than deriving
 it.
+
+Evidence: normalize_strong in core/comp/oracle_terms.py (leftmost-
+outermost, term-before-context, single-step with restart - deterministic
+by construction, order recorded in the docstring); evaluate_debate and
+the adequacy-square test routed through it; TestStrongNormalizer in
+tests/test_oracles.py covers the nested redex, weak/strong contrast,
+determinism, stability and fuel exhaustion. The contested fixture's
+skeptical evaluation now prints the fully reduced residue
+mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:

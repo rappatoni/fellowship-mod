@@ -309,6 +309,53 @@ def normalize_term(v, strategy: str = "cbn", fuel: int = 500):
     return v
 
 
+def _step_anywhere(node, strategy: str):
+    """Fire ONE reduction at the leftmost-outermost command with a root
+    redex.  Command positions are exactly the (term, context) pairs of
+    Mu/Mutilde binders.  Returns the rewritten node, or None if the whole
+    tree is in normal form.
+    """
+    if isinstance(node, (Mu, Mutilde)):
+        step = _step_command(node.term, node.context, strategy)
+        if step is not None:
+            node.term, node.context = step
+            return node
+    for slot in ("term", "context"):
+        child = getattr(node, slot, None)
+        if isinstance(child, ProofTerm):
+            stepped = _step_anywhere(child, strategy)
+            if stepped is not None:
+                setattr(node, slot, stepped)
+                return node
+    return None
+
+
+def normalize_strong(v, strategy: str = "cbn", fuel: int = 2000):
+    """Full normalization: the four standard rules under all congruences.
+
+    The congruence order is fixed - leftmost-outermost, term slot before
+    context slot, one step at a time with restart from the root - so the
+    result is deterministic by construction (part of the T1 obligation;
+    the skip rules of call-by-onus.org are unsettled theory, and this
+    function fixes one order rather than deriving it).  Critical pairs
+    are resolved by ``strategy`` exactly as in the weak normalizer; on
+    debate terms this runs AFTER sigma has resolved the scaffolds, so
+    only base-strategy pairs remain.
+    """
+    if strategy not in ("cbn", "cbv"):
+        raise ValueError(f"strategy must be 'cbn' or 'cbv', got {strategy!r}")
+    _check_propositional(v, "Oracle normalization")
+    v = deepcopy(v)
+    for _ in range(fuel):
+        stepped = _step_anywhere(v, strategy)
+        if stepped is None:
+            return v
+        v = stepped
+    raise OracleFuelExhausted(
+        f"No full normal form after {fuel} steps under {strategy}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Normal-form classifier
 # ---------------------------------------------------------------------------

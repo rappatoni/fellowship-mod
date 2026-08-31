@@ -7,7 +7,8 @@ the witness labelling sigma resolving exactly the critical pairs that the
 support/attack scaffolds are.
 
 A scaffold  mu alt:A.< mu _:A.<ORIG || alt> || mu'_:A.<... SCION ...> >
-holds the critical pair  < Mu(affine) || Mutilde(affine) >:
+(mirrored on the context side) holds the critical pair
+< Mu(affine) || Mutilde(affine) >:
 
 - (mu<) discards the scion wing and keeps ORIG - the CBV choice;
 - (>mu) discards the ORIG wing and keeps the scion - the CBN choice.
@@ -16,8 +17,9 @@ holds the critical pair  < Mu(affine) || Mutilde(affine) >:
 (the discarded wing's binder is affine by construction - the M8 side
 condition of the critique - and the eta step afterwards is valid exactly
 when the catch variable is uncaught, which is checked, not assumed).  The
-result is normalized by the minimal M0 normalizer under the base strategy
-and classified by the spec-derived NF classifier.
+result is fully normalized (normalize_strong: the four standard rules
+under a fixed leftmost-outermost congruence order) under the base
+strategy and classified by the spec-derived NF classifier.
 
 Wing choice (site of proposition A; sigma consulted at the scion's target
 statement):
@@ -42,7 +44,7 @@ from core.ac.ast import (
 )
 from core.comp.adf_label import grounded_labels
 from core.comp.oracle_terms import (
-    normalize_term, classify_nf, _occurs,
+    normalize_strong, classify_nf, _occurs,
 )
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
@@ -174,5 +176,5 @@ def evaluate_debate(
     graph = compile_debate(body, name, strict_names=strict_names)
     labels = grounded_labels(graph)
     resolved = resolve_scaffolds(body, labels, mode)
-    normal_form = normalize_term(resolved, strategy=base)
+    normal_form = normalize_strong(resolved, strategy=base)
     return normal_form, classify_nf(normal_form), labels, graph
