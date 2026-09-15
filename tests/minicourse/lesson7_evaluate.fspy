@@ -1,0 +1,34 @@
+% Lesson 7 - Label-guided evaluation.
+%
+% Two debates that differ only in the kind of their single site, and
+% therefore in label and in normal-form class:
+%   pOpen : site is an obligation  -> OUT -> the term stays OPEN
+%   pPres : site is a presumption  -> IN  -> the term is a VALUE
+%
+% For the UNDEC case, where the two modes disagree, see
+% tests/rationality/contested.fspy.
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+
+start argument pOpen P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+next.
+axiom rule.
+end argument
+
+start argument pPres P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+
+label pOpen
+evaluate pOpen
+label pPres
+evaluate pPres
