@@ -259,3 +259,47 @@ class TestLesson3GammaIteration:
         loop = ADF(["p", "q"], {"p": neg(var("q")), "q": neg(var("p"))})
         v0 = {"p": None, "q": None}
         assert gamma(loop, v0) == v0
+
+
+class TestLesson4GuardSideConditions:
+    """The guard's two side conditions, which the lesson spec states.
+
+    Pinned because the lesson originally presented the guard as
+    unconditional, which does not match what compile_conditions emits.
+    """
+
+    def conditions(self, graph):
+        from coursekit import conditions_of
+        return conditions_of(graph)
+
+    def build(self, edges, markers):
+        from coursekit import graph_from_edges
+        return graph_from_edges(["Q", "R"], edges, markers)
+
+    def test_guard_dropped_when_defeasible_part_is_empty(self):
+        g = self.build(
+            [("qStrict", "Q", "term", [], True, "supporter")],
+            [("Q", "term", "obligation"), ("Q", "context", "presumption")],
+        )
+        # Not (true | (false & ~Q[c])): the guard is skipped.
+        assert self.conditions(g)["Q[t]"] == "(true | false)"
+
+    def test_no_guard_and_no_outer_or_without_strict_edges(self):
+        g = self.build(
+            [], [("Q", "term", "obligation"), ("Q", "context", "presumption")]
+        )
+        assert self.conditions(g)["Q[t]"] == "false"
+
+    def test_guard_present_when_defeasible_part_is_non_empty(self):
+        g = self.build(
+            [("e", "Q", "term", [("R", "term", "presumption")], False, "argument")],
+            [("Q", "context", "presumption")],
+        )
+        assert self.conditions(g)["Q[t]"] == "(R[t] & ~Q[c])"
+
+    def test_no_guard_when_the_contrary_is_not_materialised(self):
+        g = self.build(
+            [("e", "Q", "term", [("R", "term", "presumption")], False, "argument")],
+            [],
+        )
+        assert self.conditions(g)["Q[t]"] == "R[t]"
