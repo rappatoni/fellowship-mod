@@ -389,6 +389,55 @@ challenge ending in a Laog gets its tail rerouted to alt, a by-default
 an identity edge (presumption marker), which is semantically equivalent
 for labelling, but the term-level asymmetry is undocumented.
 
+*** BACKLOG Name the host hyperedge after its own subargument
+:PROPERTIES:
+:ID:             aida-host-edge-naming
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A compiled hyperedge is named after the subargument it actually records, so the host edge of the lesson-2 composite reads =cArg= rather than =d2=, and no synthetic theta-expansion name can reach an edge name.
+:VERIFY:         Compile a support composite and assert the edge names are the constituent argument names; assert no edge name matches =theta_expand_*=; run the same compilation twice in one process and assert the edge names are identical.
+:END:
+
+Found by the author while working lesson 2 of the minicourse, 2026-09-15.
+Edge naming is asymmetric: =_Compiler.compile= hands the *debate's* name
+straight to =_add_edge_from_body= for the host body, while scions go
+through =_scion_name=, which recovers the argument's own name from its
+eta-binder. So the host edge of a composite carries the composite's name
+even though it records a different subargument's derivation.
+
+Measured on the lesson-2 composite, the eta-binder chain of the body is
+
+: outermost -> innermost: ['d2', 'theta_expand_cArg_4379018016', 'cArg']
+
+and the compiler takes the outermost. The truthful name is the innermost,
+=cArg=; the middle entry is a synthetic temporary minted by
+=Argument._theta_expand= as =theta_expand_{name}_{id(expanded_body)}=.
+
+Two things to fix, the second more than cosmetic:
+
+- peel the eta-wrapper chain and name the host edge after the innermost
+  binder, skipping synthetic =theta_expand_*= names - or keep the debate
+  name and record the subargument's name in a separate field, so both are
+  available;
+- the synthetic name embeds =id(expanded_body)=, a memory address. It is
+  nondeterministic across runs and meaningless to a reader. Today it
+  cannot reach an edge name, because only scions are named from binders
+  and a scion is never a theta-expansion wrapper - but nothing enforces
+  that, and if a composite is ever used as a scion the graph would grow
+  run-dependent edge names, making printed output unstable and any test
+  asserting on them flaky.
+
+Diagnostic only at present: =Edge.name= and =Edge.role= are carried for
+printing and never consulted by the labeller or the evaluator, so no
+label or normal form depends on this.
+
 *** BACKLOG Express the married-bachelor and contamination fixtures as .fspy
 :PROPERTIES:
 :ID:             aida-postulate-fixtures-fspy
