@@ -263,14 +263,15 @@ class TestLesson3GammaIteration:
     """Pins the Gamma-iteration table added to Lesson 3."""
 
     def test_iteration_reaches_the_grounded_fixed_point(self):
+        """Lesson 3 uses bare statement names: sides belong to lesson 4."""
         from core.comp.oracle import const
-        adf = ADF(["P", "Q"], {"P": var("Q"), "Q": const(True)})
-        v0 = {"P": None, "Q": None}
+        adf = ADF(["a", "b"], {"a": var("b"), "b": const(True)})
+        v0 = {"a": None, "b": None}
         v1 = gamma(adf, v0)
         v2 = gamma(adf, v1)
         v3 = gamma(adf, v2)
-        assert v1 == {"P": None, "Q": True}
-        assert v2 == {"P": True, "Q": True}
+        assert v1 == {"a": None, "b": True}
+        assert v2 == {"a": True, "b": True}
         assert v3 == v2                       # fixed point
         assert grounded_interpretation(adf) == v2
 
