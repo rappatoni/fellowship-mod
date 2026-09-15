@@ -339,3 +339,29 @@ class TestLesson2RoleIsDiagnostic:
         before = conditions_of(g)
         g.edges = [replace(e, role="attacker") for e in g.edges]
         assert conditions_of(g) == before
+
+
+class TestLesson5EdgeAcyclicButUndecided:
+    """The minimal witness for 'acyclic edges, still UNDEC' (lesson 5)."""
+
+    def test_zero_edges_still_grounds_undecided(self):
+        from coursekit import conditions_of, graph_from_edges
+        g = graph_from_edges(
+            ["Q"], [],
+            [("Q", "term", "presumption"), ("Q", "context", "presumption")],
+        )
+        assert g.edges == []
+        assert g.is_acyclic()                      # trivially: no edges
+        assert conditions_of(g) == {
+            "Q[t]": "(true & ~Q[c])", "Q[c]": "(true & ~Q[t])"}
+        assert set(grounded_labels(g).values()) == {"UNDEC"}
+
+    def test_undec_propagates_through_an_acyclic_edge(self):
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["P", "Q"],
+            [("pArg", "P", "term", [("Q", "term", "presumption")], False, "argument")],
+            [("Q", "context", "presumption")],
+        )
+        assert g.is_acyclic()
+        assert set(grounded_labels(g).values()) == {"UNDEC"}
