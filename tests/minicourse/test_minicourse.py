@@ -27,6 +27,8 @@ from core.dc.debate_graph import (
 )
 from wrap.cli import execute_script, setup_prover
 
+from coursekit import readable  # course helper, same directory
+
 K = canonical_prop
 A, B, C, P, Q = K("A"), K("B"), K("C"), K("P"), K("Q")
 
@@ -55,28 +57,6 @@ def t_att(prop, orig, scion_ctx):
     return Mu(ID("alt", prop), prop,
               Mu(ID("_", prop), prop, orig, ID("alt", prop)),
               Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx))
-
-
-def readable(condition, graph=None):
-    """The notation the course prints conditions in."""
-    tag = condition[0]
-    if tag == "const":
-        return "true" if condition[1] else "false"
-    if tag == "var":
-        key, side = split_statement(condition[1])
-        name = graph.nodes[key] if graph else key
-        return f"{name}[{side[0]}]"
-    if tag == "not":
-        return f"~{readable(condition[1], graph)}"
-    if tag in ("and", "or"):
-        empty, glue = ("true", " & ") if tag == "and" else ("false", " | ")
-        parts = condition[1]
-        if not parts:
-            return empty
-        if len(parts) == 1:
-            return readable(parts[0], graph)
-        return "(" + glue.join(readable(p, graph) for p in parts) + ")"
-    raise AssertionError(condition)
 
 
 # --- Lesson 1 ---------------------------------------------------------
