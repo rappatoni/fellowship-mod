@@ -257,3 +257,24 @@ def test_lesson_fixture_replays(script, tmp_path, monkeypatch):
         execute_script(prover, str(source), strict=True)
     finally:
         prover.close()
+
+
+class TestLesson3GammaIteration:
+    """Pins the Gamma-iteration table added to Lesson 3."""
+
+    def test_iteration_reaches_the_grounded_fixed_point(self):
+        from core.comp.oracle import const
+        adf = ADF(["P", "Q"], {"P": var("Q"), "Q": const(True)})
+        v0 = {"P": None, "Q": None}
+        v1 = gamma(adf, v0)
+        v2 = gamma(adf, v1)
+        v3 = gamma(adf, v2)
+        assert v1 == {"P": None, "Q": True}
+        assert v2 == {"P": True, "Q": True}
+        assert v3 == v2                       # fixed point
+        assert grounded_interpretation(adf) == v2
+
+    def test_even_loop_is_stationary_at_all_undecided(self):
+        loop = ADF(["p", "q"], {"p": neg(var("q")), "q": neg(var("p"))})
+        v0 = {"p": None, "q": None}
+        assert gamma(loop, v0) == v0
