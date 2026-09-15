@@ -270,6 +270,48 @@ determinism, stability and fuel exhaustion. The contested fixture's
 skeptical evaluation now prints the fully reduced residue
 mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
+*** NEXT Decide credulous mode by a witness labelling, not per scaffold
+:PROPERTIES:
+:ID:             aida-credulous-witness-labelling
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        It is settled whether the implemented credulous/skeptical modes agree with the specified witness-labelling discipline; either a counterexample with several linked contested nodes is recorded and the modes are reimplemented to choose sigma existentially, or a proof/argument is recorded that the local policy coincides with an extension for every graph in the fragment.
+:VERIFY:         Construct debates with two or more contested nodes linked through edges; compare the local-policy outcome against evaluation under each preferred/two-valued labelling; assert in a test that the selected labels are jointly realised by some single extension.
+:END:
+
+Discovered 2026-09-15 while tutoring lesson 3. =evaluate_debate=
+(core/comp/evaluate.py:177) always takes sigma := =grounded_labels(graph)=;
+the mode then only picks the wing at each UNDEC *scaffold*, independently,
+via =_wing_choice=. The specification is different:
+[[file:propositional-fragment-plan.org]] Layer 4 and the "Step 1: choose a
+witness labelling first" section of [[file:call-by-onus.org]] require
+credulous mode to choose existentially a labelling in which the issue is
+IN, and then to evaluate the whole term against that fixed sigma.
+
+So the implementation is a *local approximation* of the specified
+discipline, and issue M4 of the original critique - per-critical-pair
+choices are locally greedy and may correspond to no extension - is not in
+fact discharged by the code.
+
+On a single contested node the two coincide: the local "discard the UNDEC
+attacker" selects exactly the extension in which the proponent wins.
+Unverified, and the substance of this task: whether they still coincide
+when several contested nodes are linked through edges, so that the local
+choices could combine into an assignment no single extension realises.
+
+If the local policy turns out to be sound in this fragment, record the
+argument and keep the cheaper implementation; if not, sigma must be chosen
+before resolution and the modes reimplemented. Either way the minicourse's
+lesson 7 text needs to match the outcome, since it currently describes the
+mode table without stating that sigma is always grounded.
+
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:
 :ID:             aida-fragment-verification-residues
