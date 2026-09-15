@@ -303,3 +303,39 @@ class TestLesson4GuardSideConditions:
             [],
         )
         assert self.conditions(g)["Q[t]"] == "R[t]"
+
+
+class TestLesson2RoleIsDiagnostic:
+    """A strict edge can carry role 'supporter': the two are independent.
+
+    Pinned because the lesson 4 exercise on conjunctive support depends on
+    'supporter' not being a synonym for 'defeasible edge'.
+    """
+
+    def test_strict_edge_can_be_a_supporter(self):
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["A", "B", "C"],
+            [("d2", "C", "term",
+              [("A", "term", "obligation"), ("B", "term", "obligation")],
+              False, "argument"),
+             ("bArg", "B", "term", [], True, "supporter")],
+        )
+        by_name = {e.name: e for e in g.edges}
+        assert by_name["bArg"].role == "supporter" and by_name["bArg"].strict
+        assert by_name["d2"].role == "argument" and not by_name["d2"].strict
+
+    def test_conditions_do_not_depend_on_role(self):
+        """Flipping every role leaves the acceptance conditions identical."""
+        from dataclasses import replace
+        from coursekit import conditions_of, graph_from_edges
+        g = graph_from_edges(
+            ["A", "B", "C"],
+            [("d2", "C", "term",
+              [("A", "term", "obligation"), ("B", "term", "obligation")],
+              False, "argument"),
+             ("bArg", "B", "term", [], True, "supporter")],
+        )
+        before = conditions_of(g)
+        g.edges = [replace(e, role="attacker") for e in g.edges]
+        assert conditions_of(g) == before
