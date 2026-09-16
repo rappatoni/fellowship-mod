@@ -160,12 +160,14 @@ def _keep_attack_wing(node):
     return result
 
 
-def derivation_status(record, labels) -> str:
+def derivation_status(records, labels) -> str:
     """The status of a scion's OWN derivation under sigma, read off the
-    edge record the compiler builds for it (``scion_record``):
+    edge records the compiler builds for it (``scion_record``), one per
+    alternative derivation:
 
-    IN    iff its target statement and every one of its sources are IN;
-    OUT   iff its target or any source is OUT;
+    IN    iff some alternative has its target statement and every one of
+          its sources IN;
+    OUT   iff every alternative has its target or some source OUT;
     UNDEC otherwise.
 
     The sources are the ones the graph has for that edge - open sites,
@@ -174,16 +176,24 @@ def derivation_status(record, labels) -> str:
     label alone says that *some* derivation of the statement is live,
     not that this one is (tasks.org, aida-supporter-derivation-status).
     """
-    found = [labels.get((record.target_key, record.target_side))]
-    found += [labels.get((s.key, s.side)) for s in record.sources]
-    if any(label is None for label in found):
-        raise EvaluationRefused(
-            f"No label for a source of the scion '{record.name}'; the "
-            f"labelling and the term disagree about the debate's shape."
-        )
-    if all(label == "IN" for label in found):
+    statuses = []
+    for record in records:
+        found = [labels.get((record.target_key, record.target_side))]
+        found += [labels.get((s.key, s.side)) for s in record.sources]
+        if any(label is None for label in found):
+            raise EvaluationRefused(
+                f"No label for a source of the scion '{record.name}'; the "
+                f"labelling and the term disagree about the debate's shape."
+            )
+        if all(label == "IN" for label in found):
+            statuses.append("IN")
+        elif any(label == "OUT" for label in found):
+            statuses.append("OUT")
+        else:
+            statuses.append("UNDEC")
+    if "IN" in statuses:
         return "IN"
-    if any(label == "OUT" for label in found):
+    if all(s == "OUT" for s in statuses):
         return "OUT"
     return "UNDEC"
 
@@ -208,8 +218,9 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
         match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
-            record, closed = scion_record(match, env, strict_names)
-            if not closed:
+            records = scion_record(match, env, strict_names)
+            closed = [r for r in records if not r.captures]
+            if len(closed) < len(records):
                 # Absorbed into the host's derivation (see the compiler):
                 # the scion is part of the argument, not a choice sigma
                 # makes.  Keep it; sigma judges the enclosing edge.
@@ -218,13 +229,13 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 kept = (_keep_scion_support(node, scion_raw, alt) if role == "supporter"
                         else _keep_attack_wing(node))
                 return walk(kept, env)
-            statement = (record.target_key, record.target_side)
+            statement = (closed[0].target_key, closed[0].target_side)
             if labels.get(statement) is None:
                 raise EvaluationRefused(
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
-            status = derivation_status(record, labels)
+            status = derivation_status(closed, labels)
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)

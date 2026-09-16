@@ -136,6 +136,28 @@ class Edge:
     #: one of its binders (see _Compiler): kept for presentation, not
     #: labelled on their own.
     absorbed: tuple = ()
+    #: The subargument's body, for unfolding (core/dc/unfold.py); not part
+    #: of the edge's identity.
+    term: object = field(default=None, compare=False, repr=False)
+
+
+@dataclass(frozen=True)
+class _Alt:
+    """One alternative derivation of a body while compiling: the sources
+    and captures it accumulates and the records it absorbed."""
+
+    sources: tuple = ()
+    captures: tuple = ()
+    absorbed: tuple = ()
+    defeasible: bool = False   # a subargument it applies is defeasible
+
+    def __add__(self, other):
+        return _Alt(self.sources + other.sources, self.captures + other.captures,
+                    self.absorbed + other.absorbed, self.defeasible or other.defeasible)
+
+
+_EMPTY = _Alt()
+MAX_ALTERNATIVES = 256
 
 
 @dataclass(frozen=True)
@@ -654,20 +676,22 @@ class _Compiler:
         found = first_order_node(body)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
-        record, closed = self.compile_body(deepcopy(body), _host_name(body, name), role, {})
-        assert closed, "a top-level body cannot capture: free variables are refused"
-        self.graph.add_edge(record)
+        for record in self.compile_body(deepcopy(body), _host_name(body, name), role, {}):
+            assert not record.captures, "a top-level body cannot capture: free variables are refused"
+            self.graph.add_edge(record)
 
     # -- one subargument ----------------------------------------------------
 
     def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None):
-        """Compile one subargument body.
+        """Compile one subargument body into its alternative derivations.
 
         ``outer`` maps the variables bound by enclosing subarguments to
-        (prop, side, owner).  Returns (record, closed): ``closed`` is
-        False when the body captured one of them, in which case the
-        record is to be absorbed by the caller and its edges are not
-        added to the graph.  Closed nested subarguments are added here.
+        (prop, side, owner).  Returns a list of Edge records, one per
+        alternative: a scaffold whose scion is absorbed offers two ways
+        to derive the target (the site's own route and the scion's), and
+        alternatives multiply.  A record with ``captures`` is not closed:
+        the caller absorbs it.  Records without captures are the edges;
+        closed nested subarguments are added to the graph here.
         """
         side, prop = self._root_statement(body, name)
         if expect_side is not None and side != expect_side:
@@ -681,8 +705,6 @@ class _Compiler:
                 f"issue is '{expect_prop}'."
             )
         target_key = self.graph.add_node(prop)
-        sources, captures, absorbed = [], [], []
-        defeasible_subarguments = []
         root_lambda = _peel_eta(body)
         if not isinstance(root_lambda, Lamda):
             root_lambda = None
@@ -690,15 +712,22 @@ class _Compiler:
         def bind(env, names):
             return {**env, **names}
 
-        def merge_child(rec, child_captures, env):
-            """Absorb a nested subargument's record into this one."""
-            absorbed.append(rec)
-            sources.extend(rec.sources)
-            for cap in child_captures:
-                bound = env.get(cap.name)
-                if bound is not None and bound[1] == cap.side:
-                    continue  # discharged by one of our own binders
-                captures.append(cap)
+        def product(alts_a, alts_b):
+            out = [a + b for a in alts_a for b in alts_b]
+            if len(out) > MAX_ALTERNATIVES:
+                raise DebateCompileError(
+                    f"Edge '{name}': more than {MAX_ALTERNATIVES} alternative "
+                    f"derivations; refusing to enumerate."
+                )
+            return out
+
+        def discharged(captures, env):
+            """Captures our own binders satisfy are dropped; the rest climb."""
+            return tuple(c for c in captures
+                         if not (c.name in env and env[c.name][1] == c.side))
+
+        def absorbed_alt(rec, env):
+            return _Alt(rec.sources, discharged(rec.captures, env), (rec,), False)
 
         def walk(node, env, spine):
             for leaf_type, (lside, kind) in _LEAF_INFO.items():
@@ -708,22 +737,20 @@ class _Compiler:
                             f"Edge '{name}': open site {node.number!r} has no "
                             f"proposition; run enrichment first."
                         )
-                    sources.append(Source(self.graph.add_node(node.prop), lside, kind,
-                                          str(node.number), spine))
-                    return
+                    return [_Alt((Source(self.graph.add_node(node.prop), lside, kind,
+                                         str(node.number), spine),))]
             if isinstance(node, (ID, DI)):
                 vside = "context" if isinstance(node, ID) else "term"
                 bound = env.get(node.name)
                 if bound is not None and bound[1] == vside:
-                    return
+                    return [_EMPTY]
                 if node.name in self.strict_names:
                     self._check_kind(node.name, vside, name)
-                    return
+                    return [_EMPTY]
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:
-                    captures.append(Capture(node.name, self.graph.add_node(enclosing[0]),
-                                            vside, enclosing[2]))
-                    return
+                    return [_Alt((), (Capture(node.name, self.graph.add_node(enclosing[0]),
+                                              vside, enclosing[2]),))]
                 raise DebateCompileError(
                     f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
                     f"variable '{node.name}' is neither bound nor a declared axiom; "
@@ -732,6 +759,7 @@ class _Compiler:
             match = _match_scaffold(node, self.strict_names)
             if match is not None:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match
+                alt_side = "context" if isinstance(node, Mu) else "term"
                 if srole == "attacker":
                     scion = _restore_scion(scion_raw, scion_kind, alt, sprop, f"r{next(self._fresh)}")
                     target_side = "context" if site_side == "term" else "term"
@@ -739,75 +767,75 @@ class _Compiler:
                 else:
                     scion = scion_raw
                     target_side = site_side
-                    alt_side = "context" if isinstance(node, Mu) else "term"
                     sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
                                  alt: (sprop, alt_side, name)}
                 label = _scion_name(scion, f"{name}.{srole}{next(self._fresh)}")
-                rec, closed = self.compile_body(scion, label, srole, sub_outer,
-                                                expect_side=target_side, expect_prop=sprop)
-                if closed:
-                    self.graph.add_edge(rec)
-                    walk(orig, env, spine)          # the site stays a source
-                    return
-                # absorbed: the scion is part of this derivation.  A
-                # supporter fills its site - the ORIG wing, an obligation or
-                # an earlier support of the same site, is the alternative
-                # the term keeps and the graph does not (open question,
-                # tasks.org aida-absorbed-alternatives); an attacked site
-                # stays open beside the attacker.
-                if srole == "attacker":
-                    wing = node.context if isinstance(node, Mu) else node.term
-                    walk(wing.term if isinstance(node, Mu) else wing.context, env, spine)
-                merge_child(rec, rec.captures, bind(env, {alt: (sprop, "context" if isinstance(node, Mu) else "term")}))
-                return
+                records = self.compile_body(scion, label, srole, sub_outer,
+                                            expect_side=target_side, expect_prop=sprop)
+                closed = [r for r in records if not r.captures]
+                absorbed = [r for r in records if r.captures]
+                alts = []
+                if closed or not absorbed:
+                    # The site stays a source of this derivation and the
+                    # closed scions are its own edges.
+                    for rec in closed:
+                        self.graph.add_edge(rec)
+                    alts += walk(orig, env, spine)
+                # An absorbed scion is part of this derivation: a supporter
+                # fills its site, an attacked site stays open beside it.
+                inner = bind(env, {alt: (sprop, alt_side)})
+                for rec in absorbed:
+                    child = [absorbed_alt(rec, inner)]
+                    if srole == "attacker":
+                        wing = node.context if isinstance(node, Mu) else node.term
+                        child = product(child, walk(wing.term if isinstance(node, Mu) else wing.context, env, spine))
+                    alts += child
+                return alts
             if isinstance(node, Lamda) and node is not root_lambda:
                 lname = f"{name}.\u03bb{next(self._fresh)}"
                 sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
-                rec, closed = self.compile_body(node, lname, "subargument", sub_outer)
+                records = self.compile_body(node, lname, "subargument", sub_outer)
+                closed = [r for r in records if not r.captures]
+                absorbed = [r for r in records if r.captures]
+                alts = []
                 if closed:
-                    self.graph.add_edge(rec)
-                    sources.append(Source(rec.target_key, "term", "subargument", rec.name, spine))
-                    if not rec.strict:
-                        defeasible_subarguments.append(rec.name)
-                else:
-                    merge_child(rec, rec.captures, env)
-                return
+                    for rec in closed:
+                        self.graph.add_edge(rec)
+                    alts.append(_Alt((Source(closed[0].target_key, "term", "subargument", lname, spine),),
+                                     (), (), not any(r.strict for r in closed)))
+                for rec in absorbed:
+                    alts.append(absorbed_alt(rec, env))
+                return alts
             if isinstance(node, Lamda):
-                walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
-                return
+                return walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
             if isinstance(node, Mu):
                 inner = bind(env, {node.id.name: (node.prop, "context")})
                 spine2 = spine if _is_affine_binder(node.id.name) else spine + ((node.prop, "context"),)
-                walk(node.term, inner, spine2)
-                walk(node.context, inner, spine2)
-                return
+                return product(walk(node.term, inner, spine2), walk(node.context, inner, spine2))
             if isinstance(node, Mutilde):
                 inner = bind(env, {node.di.name: (node.prop, "term")})
                 spine2 = spine if _is_affine_binder(node.di.name) else spine + ((node.prop, "term"),)
-                walk(node.term, inner, spine2)
-                walk(node.context, inner, spine2)
-                return
+                return product(walk(node.term, inner, spine2), walk(node.context, inner, spine2))
             if isinstance(node, Admal):
-                walk(node.context, bind(env, {node.id.id.name: (node.id.prop, "context")}), spine)
-                return
+                return walk(node.context, bind(env, {node.id.id.name: (node.id.prop, "context")}), spine)
             if isinstance(node, (Cons, Sonc)):
-                walk(node.term, env, spine)
-                walk(node.context, env, spine)
-                return
+                return product(walk(node.term, env, spine), walk(node.context, env, spine))
             raise DebateCompileError(
                 f"Edge '{name}': unhandled node {type(node).__name__} during "
                 f"source collection."
             )
 
-        walk(body, {}, ())
-        # Strict = the derivation uses no indeterminate anywhere: none among
-        # its own sites, and none inside the subarguments it applies.
-        strict = (not any(s.kind in ("obligation", "presumption") for s in sources)
-                  and not defeasible_subarguments)
-        record = Edge(name=name, target_key=target_key, target_side=side,
-                      sources=tuple(sources), strict=strict, role=role,
-                      captures=tuple(captures), absorbed=tuple(absorbed))
-        return record, not captures
+        records = []
+        for i, alt in enumerate(walk(body, {}, ())):
+            # Strict = the derivation uses no indeterminate anywhere: none
+            # among its own sites, and none inside the subarguments it applies.
+            strict = (not any(s.kind in ("obligation", "presumption") for s in alt.sources)
+                      and not alt.defeasible)
+            records.append(Edge(name=name if i == 0 else f"{name}#{i + 1}",
+                                target_key=target_key, target_side=side,
+                                sources=alt.sources, strict=strict, role=role,
+                                captures=alt.captures, absorbed=alt.absorbed, term=body))
+        return records
 
     def _root_statement(self, body, name):
         if isinstance(body, Mu):
@@ -861,8 +889,8 @@ def _peel_eta(body):
 def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     """For the evaluator: compile a scaffold's scion against the binders in
     scope (``env``: name -> (prop, side)) exactly as the compiler does and
-    return (record, closed).  ``closed`` False means the scion is absorbed
-    into its host and is not a choice sigma makes."""
+    return its alternative records.  Records with captures are absorbed
+    into the host and are not a choice sigma makes."""
     role, site_side, prop, orig, scion_raw, alt, scion_kind = match
     compiler = _Compiler(strict_names, strict_kinds)
     if role == "attacker":

@@ -360,7 +360,13 @@ graph does not already contain. Observations bearing on the answer:
   subgraph within which alone implicit attacks fire - contradicts the
   universal-substitution decision and should be rejected unless that
   decision is revisited.
-To be decided before phase C starts.
+Decided (author, 2026-09-17): option (i)+(ii) - the verbs name a debate
+whose issue is the host's conclusion and *assert* that the attacker
+concludes the contrary of (the supporter concludes) a statement
+reachable from that issue in the document graph, erroring otherwise;
+they add no edge. Explicit scoping rejected. Under graph-first the
+composed term is no longer what graph/label/evaluate use: they unfold
+the issue from the document graph (B3).
 
 *** DONE Decide credulous mode by a witness labelling, not per scaffold
 CLOSED: [2026-09-16 Wed]
