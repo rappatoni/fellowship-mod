@@ -671,6 +671,95 @@ Found 2026-09-16: an edge with sources Q[t] and (~Q)[c] prints as
 =(Q[t] & ~Q[c])=, exactly the guard's shape. The toolkit uses =~= for
 meta-negation; the proposition printer uses =~= for object negation.
 
+*** BACKLOG Expose the intermediate conclusions of curried implications
+:PROPERTIES:
+:ID:             aida-curried-intermediate-conclusions
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Every logically progressing step of an elimination spine is attackable and supportable: theta-expansion names each partial application of a curried implication as a term of its own (so B->C in an application of A->(B->C) to A and B becomes a term-side target), and the compiler emits one hyperedge per such step, so that an accepted refutation of an intermediate conclusion defeats the final one.
+:VERIFY:         In tests/minicourse/lesson5_labels.fspy, `attack d6 test d5` with the challenge to B->C succeeds; with A and B presumed and a strict refutation of B->C, `label` prints B->C context IN and C term OUT (today: C term IN, see the notes); the compiled graph for an application of A->(B->C) has edges C[t] <- B->C[t], B[t] and B->C[t] <- A[t] (plus the implication's own edge once aida-strict-layer lands); every expanded term replays in Fellowship; a three-premise curried implication exposes both of its intermediate conclusions; existing grounded-label tests are unchanged or the change is justified.
+:END:
+
+Found 2026-09-16 by the author, from an attack in
+tests/minicourse/lesson5_labels.fspy that failed:
+=attack d6 test d5= with =test= a counterargument to B->C, against =cArg=,
+which derives C from A and B via the axiom abc : A->(B->C).
+
+*Why the attack fails.* =cArg= never proves B->C. The two =elim= steps
+build the elimination stack =?A * !B * r=, and B->C occurs only as the
+type of that stack's tail - a *context*:
+
+: A->B->C   context:Cons, term:DI
+: B->C      context:Cons                 <- no term-side node
+: C         context:ID,   term:Mu
+
+A counterargument attacks term-side nodes, so =ThetaExpander= finds no
+target and =Argument.attack= raises. Strictness and default status are
+not the cause: an attack on the conclusion C (neither default nor
+strict) succeeds. An argument *for* B->C does find the context node, but
+the result is the proof fed into the stack as an alternative route; the
+graph shows no conflict at all.
+
+*The spec disagrees with this.* debate-graph-spec.org says theta-normal
+form exposes one open obligation per logically progressing node. The
+step that eliminates A is such a node, and its conclusion is B->C; the
+implementation only exposes nodes that already exist in the term.
+
+*Half 1 - theta-expansion (verified 2026-09-16).* Naming the partial
+application turns the intermediate conclusion into a term:
+
+: before :  < abc  ||  ?A * !B * r >
+: after  :  < mu b:B->C.< abc || ?A * b >  ||  !B * r >
+
+The rewritten term replays in Fellowship (instructions: cut (B -> C),
+cut (A -> B -> C), axiom abc, elim, next, moxia b, elim, by default,
+next, moxia r, ...), and once it is in this form the challenge to B->C
+attacks it successfully.
+
+*Half 2 - the compiler (verified 2026-09-16).* Naming is not enough.
+=compile_debate= still emits a single edge for the whole argument,
+C[t] <- A[t], B[t], so the intermediate conclusion is not a node on the
+path to C. With A and B presumed and a strict refutation of B->C
+attacking the rewritten term:
+
+: edges  : B->C[c] <- (none, strict)      C[t] <- A[t], B[t]
+: labels : B->C[c] IN,   C[t] IN
+
+The attack lands and is accepted, yet C is untouched. The spec requires
+the presentation to be "closed under subarguments (every subargument of a
+registered argument contributes its own hyperedge)"; the compiler only
+emits edges for whole arguments (the host and each scion). It must emit
+C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
+
+*Why it is gnarly* (the author's word):
+
+- A curried implication with n premises has n-1 intermediate
+  conclusions. Expanding every one is linear and deterministic (one mu
+  per elimination step), but =ThetaExpander= is driven by the issue
+  proposition, so it has to find the right prefix of the spine - the one
+  whose type is the issue - and split the stack exactly there.
+- The same implication may be applied several times, and the same
+  intermediate type may occur on several spines; which occurrences are
+  targets is the same universal-substitution question as for leaf sites.
+- The split interacts with =aida-strict-layer=: once the implication is
+  an edge of its own, each elimination step becomes an implication edge
+  with one premise, and each of those has a transposal. Designing the
+  two together avoids doing the spine decomposition twice.
+- The first-order analogue is the instantiation spine: a partially
+  instantiated =forall x, A x -> B x= has intermediate conclusions too
+  (=ConsFO= in the stack), so the same splitting is needed once
+  =aida-first-order-reduction= opens that fragment.
+- The compiler must recognise the named partial application as a
+  subargument (a mu-bound term with a proposition, not a scaffold),
+  which it currently has no shape for.
+
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:
 :ID:             aida-fragment-verification-residues
