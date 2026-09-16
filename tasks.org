@@ -933,7 +933,7 @@ a compiler bug. Left as is for now.
 :VERIFY:         Property-based test filling independent sites in both orders with alpha-equal results; a strict normal form containing an open leaf trips the new assertion; in the in-attacker case of tests/test_evaluate.py the defeated site holds an affine mu whose context is the refutation and whose term is an open site, and the whole normal form is alpha-equal to instantiate_sites applied by hand with that clash (the commuting-square check on the OUT row). Note 2026-09-16: an earlier version of this line demanded an "abort term mu _.<x || attacker>" with a closed payload x; there is no such x for a defeated presumption, and the open obligation at the site is correct.
 :END:
 
-*** BACKLOG Rewire the presentation layers to grounded labels
+*** NEXT Retire color.py and rewire the presentation layers to grounded labels
 :PROPERTIES:
 :ID:             aida-renderers-grounded-labels
 :AREA:           phd
@@ -945,13 +945,15 @@ a compiler bug. Left as is for now.
 :ICK:            2
 :EFFORT:         4:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-demo-readiness
-:OUTCOME:        The color/color-nf commands, pres/color.py rendering and the acceptance-tree export display the grounded ADF labels instead of the demoted shape classification, and the CLI help/README documents graph, label and evaluate.
-:VERIFY:         The audit corpus of tests/test_labeller_audit.py renders with colours matching the M4 labels; README lists the three commands; the divergence tripwire test is retired or inverted.
+:OUTCOME:        pres/color.py and its shape-based classification are removed; the color/color-nf commands are dropped or re-pointed at the grounded labels; the acceptance-tree export and every renderer display the grounded ADF labels; the demo relies on graph/label/evaluate; README documents the three commands and no longer mentions color.
+:VERIFY:         grep for AcceptanceColoringVisitor, DebateTermLabeller and pretty_colored_proof_term finds nothing outside git history; tests/test_labeller_audit.py is deleted with its verdict recorded in this note; the tree export on the audit corpus shows colours matching the grounded labels; the demo script runs end to end on the new commands.
 :END:
 
-Deliberately blocked until after the 2026-09-04 demo freeze (risk R6 in
-the plan: current renderer output is user-visible demo behaviour).
+Decision (author, 2026-09-16): color goes; the demo relies on the new
+implementation. The earlier block on the demo freeze (risk R6) is
+lifted. Audit verdict for the record (from tests/test_labeller_audit.py,
+six-case corpus): the shape classifier reads a supported argument as
+defeated and an unfilled-obligation argument as accepted.
 
 *** BACKLOG Resolve the legacy reducer audit findings
 :PROPERTIES:
