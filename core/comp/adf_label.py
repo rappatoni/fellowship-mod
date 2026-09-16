@@ -224,8 +224,9 @@ def labellings(graph: DebateGraph, semantics: str = "grounded"):
     {(key, side): label} dicts, computed by adf-bdd (the production path;
     raises AdfBddNotFound when the solver is missing, no fallback).
 
-    grounded -> exactly one; complete/stable -> possibly many, in adf-bdd's
-    deterministic order; preferred -> the <=_i-maximal complete ones.  A
+    grounded -> exactly one; complete/stable -> possibly many; preferred
+    -> the <=_i-maximal complete ones.  Always in the canonical order of
+    ``labelling_key``, which is the numbering `label` prints.  A
     semantics with no labelling (stable on an odd cycle) returns [].
     """
     if semantics not in SEMANTICS:
@@ -239,7 +240,20 @@ def labellings(graph: DebateGraph, semantics: str = "grounded"):
         )
     if semantics == "preferred":
         found = [v for v in found if not any(w != v and _leq_information(v, w) for w in found)]
-    return found
+    return sorted(found, key=labelling_key)
+
+
+_LABEL_RANK = {"IN": 0, "OUT": 1, "UNDEC": 2}
+
+
+def labelling_key(labels: dict) -> tuple:
+    """Canonical sort key: statements in sorted order, IN < OUT < UNDEC.
+
+    adf-bdd's enumeration order is an artifact of its BDDs and differs
+    between modes; sorting makes "labelling number N" mean the same
+    labelling across runs, modes and semantics, so `label` and `evaluate`
+    agree on the numbering."""
+    return tuple((s, _LABEL_RANK[labels[s]]) for s in sorted(labels))
 
 
 def intersection_labelling(labels_list):

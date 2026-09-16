@@ -189,3 +189,129 @@ class TestIssueOf:
         assert issue_of(parg(Deleg("1", "Q"))) == (P, "term")
         ctx = Mutilde(DI("x", "Q"), "Q", DI("x", "Q"), Geled("d", "Q"))
         assert issue_of(ctx) == (Q, "context")
+
+
+class TestWitnessSelection:
+    """Canonical numbering, selection by number, evaluation under all."""
+
+    def graph(self):
+        return compile_debate(contested(), "d", strict_names=STRICT)
+
+    def test_numbering_is_canonical_and_shared_across_modes(self):
+        from core.comp.adf_label import labelling_key
+        for semantics in ("complete", "preferred", "stable"):
+            found = labellings(self.graph(), semantics)
+            assert [labelling_key(l) for l in found] == sorted(labelling_key(l) for l in found)
+        # preferred and stable coincide here and so must their numbering.
+        assert labellings(self.graph(), "preferred") == labellings(self.graph(), "stable")
+
+    def test_accepting_witnesses_are_numbered_like_label(self):
+        from core.comp.evaluate import accepting_witnesses
+        g = self.graph()
+        found = labellings(g, "preferred")
+        acc = accepting_witnesses(g, (P, "term"), "preferred")
+        assert [(i, s) for i, s in acc] == [(i, s) for i, s in enumerate(found, 1) if s[(P, "term")] == "IN"]
+        assert len(acc) == 1
+
+    def test_pick_by_number(self):
+        g = self.graph()
+        found = labellings(g, "preferred")
+        accepting = next(i for i, s in enumerate(found, 1) if s[(P, "term")] == "IN")
+        rejecting = next(i for i, s in enumerate(found, 1) if s[(P, "term")] != "IN")
+        sigma, tiebreak = witness_labelling(g, (P, "term"), "credulous", "preferred", witness=accepting)
+        assert sigma == found[accepting - 1] and tiebreak == "credulous"
+        with pytest.raises(EvaluationRefused, match="does not accept"):
+            witness_labelling(g, (P, "term"), "credulous", "preferred", witness=rejecting)
+        with pytest.raises(EvaluationRefused, match="does not exist"):
+            witness_labelling(g, (P, "term"), "credulous", "preferred", witness=len(found) + 1)
+        with pytest.raises(EvaluationRefused, match="only applies to credulous"):
+            witness_labelling(g, (P, "term"), "skeptical", "preferred", witness=1)
+
+    def test_default_is_the_first_accepting_witness(self):
+        g = self.graph()
+        default, _ = witness_labelling(g, (P, "term"), "credulous", "preferred")
+        first_number = next(i for i, s in enumerate(labellings(g, "preferred"), 1) if s[(P, "term")] == "IN")
+        picked, _ = witness_labelling(g, (P, "term"), "credulous", "preferred", witness=first_number)
+        assert default == picked
+
+    def test_evaluate_debate_accepts_a_witness(self):
+        body = contested()
+        g = compile_debate(body, "d", strict_names=STRICT)
+        n = next(i for i, s in enumerate(labellings(g, "preferred"), 1) if s[(P, "term")] == "IN")
+        nf, cls, sigma, _ = evaluate_debate(body, "d", strict_names=STRICT, mode="credulous", witness=n)
+        assert cls == "value" and sigma[(P, "term")] == "IN"
+
+    def test_evaluate_witnesses_lists_every_accepting_labelling(self):
+        from core.comp.evaluate import evaluate_witnesses
+        from core.comp.oracle_terms import alpha_equal
+        body = contested()
+        results, g = evaluate_witnesses(body, "d", strict_names=STRICT, semantics="complete")
+        # complete has three labellings here; exactly one accepts P.
+        assert len(labellings(g, "complete")) == 3 and len(results) == 1
+        number, nf, cls, sigma = results[0]
+        assert cls == "value" and sigma[(P, "term")] == "IN"
+        default_nf, *_ = evaluate_debate(body, "d", strict_names=STRICT, mode="credulous", semantics="complete")
+        assert alpha_equal(nf, default_nf)
+
+    def test_rejected_issue_has_no_witnesses(self):
+        from core.comp.evaluate import evaluate_witnesses
+        results, _ = evaluate_witnesses(two_supporters_on_contrary_presumptions(), "d",
+                                        strict_names=STRICT, semantics="preferred")
+        assert results == []
+
+
+class TestTwoAcceptingWitnesses:
+    """A debate with two accepting witnesses, found while adding witness
+    selection (2026-09-16).  P from a presumed Q; Q also supported by yQ
+    resting on a presumed S, which a presumed refutation of S contests.
+    Preferred gives two labellings, both with P IN, differing on S.
+
+    Witness 1 (S refuted) exposes a gap in the wing-choice rule: the
+    resolver consults sigma at the scion's TARGET statement (Q[t], IN by
+    presumption) and keeps the supporter yQ although yQ's own derivation
+    is defeated (its source S[t] is OUT).  The normal form is then open
+    at the S site while sigma says P is IN - an adequacy violation inside
+    the acyclic fragment.  Pinned here; the rule change (consult the
+    supporter's sources, not just its target) is tasks.org
+    aida-supporter-derivation-status."""
+
+    def body(self):
+        s_contest = t_att("S", Deleg("s", "S"),
+                          Mutilde(DI("x", "S"), "S", DI("x", "S"), Geled("ds", "S")))
+        yQ = eta("yQ", "Q", Mu(ID("r", "Q"), "Q", DI("sq", "S->Q"),
+                                Cons(s_contest, ID("r", "Q"))))
+        return parg(t_sup("Q", Deleg("1", "Q"), yQ))
+
+    STRICT = STRICT | {"sq"}
+
+    def results(self):
+        from core.comp.evaluate import evaluate_witnesses
+        return evaluate_witnesses(self.body(), "d", strict_names=self.STRICT, semantics="preferred")
+
+    def test_two_accepting_witnesses_differing_on_s(self):
+        results, _ = self.results()
+        assert [r[0] for r in results] == [1, 2]
+        assert {r[3][(S, "term")] for r in results} == {"IN", "OUT"}
+        assert all(r[3][(P, "term")] == "IN" for r in results)
+
+    def test_witness_choice_changes_the_normal_form(self):
+        from core.comp.oracle_terms import alpha_equal
+        results, _ = self.results()
+        assert not alpha_equal(results[0][1], results[1][1])
+        for n, nf, _, _ in results:
+            picked, *_ = evaluate_debate(self.body(), "d", strict_names=self.STRICT,
+                                         mode="credulous", witness=n)
+            assert alpha_equal(picked, nf)
+
+    @pytest.mark.xfail(strict=True, reason=(
+        "aida-supporter-derivation-status: the supporter is kept on the "
+        "strength of its target's label although its own derivation is "
+        "defeated under this witness; adequacy (IN -> value) fails."))
+    def test_every_accepting_witness_yields_a_value(self):
+        results, _ = self.results()
+        assert all(cls == "value" for _, _, cls, _ in results)
+
+    def test_the_witness_with_s_accepted_yields_a_value(self):
+        results, _ = self.results()
+        ok = [cls for _, _, cls, sigma in results if sigma[(S, "term")] == "IN"]
+        assert ok == ["value"]

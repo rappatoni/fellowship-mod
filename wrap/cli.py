@@ -1504,7 +1504,7 @@ def _open_file(path: str) -> bool:
 def _dispatch_label(prover: ProverWrapper, command: str) -> None:
     parts = command.split()
     try:
-        _, semantics, _ = _split_eval_tokens(parts[2:])
+        _, semantics, _, _ = _split_eval_tokens(parts[2:])
     except ValueError as e:
         logger.error("label: %s", e)
         return
@@ -1514,12 +1514,15 @@ def _dispatch_label(prover: ProverWrapper, command: str) -> None:
 def _dispatch_evaluate(prover: ProverWrapper, command: str) -> None:
     parts = command.split()
     try:
-        mode, semantics, base = _split_eval_tokens(parts[2:])
+        mode, semantics, base, witness = _split_eval_tokens(parts[2:])
     except ValueError as e:
         logger.error("evaluate: %s", e)
         return
+    if witness is not None and (mode or "skeptical") != "credulous":
+        logger.error("evaluate: a witness number or 'all' requires credulous mode")
+        return
     evaluate_argument_cmd(prover, parts[1], mode or "skeptical", base or "cbn",
-                          semantics or "preferred")
+                          semantics or "preferred", witness)
 
 
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
@@ -1583,9 +1586,10 @@ _BASE_TOKENS = ("cbn", "cbv")
 
 def _split_eval_tokens(tokens):
     """Order-free option parsing for label/evaluate: each token is a mode,
-    a semantics or a base strategy.  Returns (mode, semantics, base), any
-    of them None if absent; raises ValueError on an unknown token."""
-    mode = semantics = base = None
+    a semantics, a base strategy, a witness number or "all".  Returns
+    (mode, semantics, base, witness) with witness None, an int or "all";
+    raises ValueError on an unknown token."""
+    mode = semantics = base = witness = None
     for tok in tokens:
         if tok in _MODE_TOKENS:
             mode = tok
@@ -1593,11 +1597,16 @@ def _split_eval_tokens(tokens):
             semantics = tok
         elif tok in _BASE_TOKENS:
             base = tok
+        elif tok == "all":
+            witness = "all"
+        elif tok.isdigit() and int(tok) >= 1:
+            witness = int(tok)
         else:
             raise ValueError(
-                f"unknown option '{tok}' (expected one of {_MODE_TOKENS + _SEMANTICS_TOKENS + _BASE_TOKENS})"
+                f"unknown option '{tok}' (expected one of {_MODE_TOKENS + _SEMANTICS_TOKENS + _BASE_TOKENS}, "
+                f"a witness number or 'all')"
             )
-    return mode, semantics, base
+    return mode, semantics, base, witness
 
 
 def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "grounded") -> None:
@@ -1635,18 +1644,22 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
             logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
 
 def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
-                          base: str = "cbn", semantics: str = "preferred") -> None:
+                          base: str = "cbn", semantics: str = "preferred",
+                          witness=None) -> None:
     """CLI: label-guided evaluation of an argument's debate term.
 
     Syntax:
-        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]
+        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all]
 
     Options may appear in any order.  The mode ranges over the chosen
     semantics (default preferred); the base strategy resolves only critical
-    pairs the witness labelling leaves open.  The normal form is cached on
-    the argument as .labelled_nf.
+    pairs the witness labelling leaves open.  In credulous mode N picks
+    labelling N of `label ARG SEMANTICS` as the witness and `all`
+    evaluates under every labelling that accepts the issue.  The normal
+    form (the last one, under `all`) is cached on the argument as
+    .labelled_nf.
     """
-    from core.comp.evaluate import evaluate_debate, EvaluationRefused
+    from core.comp.evaluate import evaluate_debate, evaluate_witnesses, EvaluationRefused
     from core.dc.debate_graph import DebateCompileError, declaration_kinds
     from core.ac.ast import FirstOrderNotSupported
     from pres.gen import ProofTermGenerationVisitor
@@ -1658,19 +1671,34 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
         return
     if not arg.executed:
         arg.execute()
+    common = dict(strict_names=prover.declarations.keys(),
+                  strict_kinds=declaration_kinds(prover.declarations),
+                  base=base, semantics=semantics)
     try:
+        if witness == "all":
+            results, _ = evaluate_witnesses(arg.body, name, **common)
+            if not results:
+                logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
+                            name, semantics, base)
+                return
+            logger.info("Evaluated '%s' (credulous, %s, base %s) under %d accepting witness(es):",
+                        name, semantics, base, len(results))
+            for number, nf, nf_class, _sigma in results:
+                pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+                logger.info("  [%d] %s", number, nf_class.upper())
+                logger.info("      normal form: %s", pretty)
+                arg.labelled_nf = nf
+            return
         nf, nf_class, sigma, graph = evaluate_debate(
-            arg.body, name, strict_names=prover.declarations.keys(),
-            strict_kinds=declaration_kinds(prover.declarations),
-            mode=mode, base=base, semantics=semantics,
-        )
+            arg.body, name, mode=mode, witness=witness, **common)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)
         return
     arg.labelled_nf = nf
     pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
-    logger.info("Evaluated '%s' (%s, %s, base %s): %s", name, mode, semantics, base, nf_class.upper())
+    chosen = f", witness {witness}" if witness is not None else ""
+    logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
     logger.info("  normal form: %s", pretty)
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:

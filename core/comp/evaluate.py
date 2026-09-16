@@ -28,15 +28,20 @@ policy):
     semantics S in {grounded, complete, preferred, stable}; default for
     evaluation is "preferred", the classical home of credulous/skeptical.
 
-    credulous : sigma := some labelling of S in which the ISSUE (the
-                debate's root statement) is IN, taken in adf-bdd's
-                deterministic order.  Under a two-valued semantics every
-                scaffold is then decided by sigma and no tiebreak is used.
-                If no labelling of S makes the issue IN, the issue is
-                credulously rejected: sigma := grounded and the residue is
-                resolved skeptically - it must NOT be resolved with the
-                credulous tiebreak, which is exactly the unsound local
-                policy (see TestLocalPolicyWasUnsound).
+    credulous : sigma := a labelling of S in which the ISSUE (the
+                debate's root statement) is IN.  Which one only affects
+                the normal form (which supporters and presumptions
+                survive), never the verdict.  By default the first such
+                labelling in the canonical numbering `label ARG S`
+                prints; ``witness=N`` picks labelling N of that numbering
+                (refused if its issue is not IN); ``evaluate_witnesses``
+                evaluates under every one.  Under a two-valued semantics
+                every scaffold is then decided by sigma and no tiebreak
+                is used.  If no labelling of S makes the issue IN, the
+                issue is credulously rejected: sigma := grounded and the
+                residue is resolved skeptically - it must NOT be resolved
+                with the credulous tiebreak, which is exactly the unsound
+                local policy (see TestLocalPolicyWasUnsound).
     skeptical : sigma := the statement-wise intersection of all labellings
                 of S (UNDEC where they disagree); residue resolved
                 skeptically.
@@ -206,10 +211,7 @@ def issue_of(body: ProofTerm):
     )
 
 
-def witness_labelling(graph, issue, mode: str, semantics: str = "preferred"):
-    """Choose sigma per the module docstring.  Returns (sigma, tiebreak)."""
-    if mode not in _MODES:
-        raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+def _candidates(graph, semantics):
     if semantics not in SEMANTICS:
         raise ValueError(f"semantics must be one of {SEMANTICS}, got {semantics!r}")
     candidates = labellings(graph, semantics)
@@ -218,8 +220,45 @@ def witness_labelling(graph, issue, mode: str, semantics: str = "preferred"):
             f"No labelling exists under {semantics} semantics for this debate; "
             f"choose another semantics."
         )
+    return candidates
+
+
+def accepting_witnesses(graph, issue, semantics: str = "preferred"):
+    """[(number, sigma)] for every labelling of ``semantics`` with the
+    issue IN, numbered as `label ARG semantics` numbers them (1-based)."""
+    return [(i, sigma) for i, sigma in enumerate(_candidates(graph, semantics), 1)
+            if sigma.get(issue) == "IN"]
+
+
+def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
+                      witness=None):
+    """Choose sigma per the module docstring.  Returns (sigma, tiebreak).
+
+    ``witness``: None for the default choice, or the 1-based number of a
+    labelling in the canonical numbering (credulous mode only)."""
+    if mode not in _MODES:
+        raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+    candidates = _candidates(graph, semantics)
     if mode == "skeptical":
+        if witness is not None:
+            raise EvaluationRefused(
+                "A witness number only applies to credulous evaluation; "
+                "skeptical evaluation uses the intersection of all labellings."
+            )
         return intersection_labelling(candidates), "skeptical"
+    if witness is not None:
+        if not 1 <= witness <= len(candidates):
+            raise EvaluationRefused(
+                f"Witness {witness} does not exist: {semantics} has "
+                f"{len(candidates)} labelling(s); see `label` for the numbering."
+            )
+        sigma = candidates[witness - 1]
+        if sigma.get(issue) != "IN":
+            raise EvaluationRefused(
+                f"Labelling {witness} does not accept the issue "
+                f"({sigma.get(issue)}); a credulous witness must label it IN."
+            )
+        return sigma, "credulous"
     for sigma in candidates:
         if sigma.get(issue) == "IN":
             return sigma, "credulous"
@@ -238,21 +277,57 @@ def evaluate_debate(
     mode: str = "skeptical",
     base: str = "cbn",
     semantics: str = "preferred",
+    witness=None,
 ):
     """Compile, label, choose the witness sigma, resolve, normalize,
     classify.
 
     Returns (normal_form, nf_class, sigma, graph).  ``base`` is the
     strategy for critical pairs sigma does not decide; ``semantics`` the
-    labelling semantics the modes range over.
+    labelling semantics the modes range over; ``witness`` the number of
+    the credulous witness to use (default: the first accepting one).
     """
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    sigma, tiebreak = witness_labelling(graph, issue_of(body), mode, semantics, witness)
+    normal_form = _evaluate_under(body, name, sigma, tiebreak, strict_names, base)
+    return normal_form, classify_nf(normal_form), sigma, graph
+
+
+def evaluate_witnesses(
+    body: ProofTerm,
+    name: str,
+    *,
+    strict_names=None,
+    strict_kinds=None,
+    base: str = "cbn",
+    semantics: str = "preferred",
+):
+    """Credulous evaluation under every accepting witness.
+
+    Returns (results, graph) with results = [(number, normal_form,
+    nf_class, sigma)] for each labelling of ``semantics`` whose issue is
+    IN, in the canonical numbering; empty if the issue is credulously
+    rejected.  The verdict is the same for all (a value); the normal
+    forms differ in which supporters and presumptions survive.
+    """
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    results = []
+    for number, sigma in accepting_witnesses(graph, issue_of(body), semantics):
+        nf = _evaluate_under(body, name, sigma, "credulous", strict_names, base)
+        results.append((number, nf, classify_nf(nf), sigma))
+    return results, graph
+
+
+def _compile_for_evaluation(body, name, strict_names, strict_kinds):
     found = first_order_node(body)
     if found is not None:
         raise FirstOrderNotSupported("Debate evaluation", found)
-    graph = compile_debate(body, name, strict_names=strict_names,
-                           strict_kinds=strict_kinds)
-    sigma, tiebreak = witness_labelling(graph, issue_of(body), mode, semantics)
+    return compile_debate(body, name, strict_names=strict_names,
+                          strict_kinds=strict_kinds)
+
+
+def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     resolved = resolve_scaffolds(body, sigma, tiebreak, strict_names=strict_names)
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
-    return normal_form, classify_nf(normal_form), sigma, graph
+    return normal_form

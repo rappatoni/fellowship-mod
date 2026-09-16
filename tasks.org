@@ -431,6 +431,66 @@ makes credulous coincide with skeptical (OPEN). Suite 806 passed, 2
 skipped, 4 xfailed, 2 xpassed. Not done: the in-tree stable oracle (the
 reduct), still adf-bdd-only, as the plan allowed.
 
+*** DONE Select the credulous witness by number and emit all witnesses
+CLOSED: [2026-09-16 Wed]
+:PROPERTIES:
+:ID:             aida-witness-selection
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Labellings are numbered canonically (same number, same labelling across runs, modes and semantics); `evaluate ARG credulous [SEMANTICS] N` evaluates against labelling N of `label ARG SEMANTICS` and refuses if it does not accept the issue; `evaluate ARG credulous [SEMANTICS] all` prints one normal form per accepting labelling; the default witness is the first accepting one in that numbering.
+:VERIFY:         tests/test_witness.py::TestWitnessSelection (numbering canonical and shared, accepting witnesses numbered like `label`, pick by number incl. the three refusals, default equals the first accepting number, evaluate_debate with witness, evaluate_witnesses lists every accepting labelling, rejected issue yields none); the CLI run on contested.fspy shows witness 1 VALUE, witness 2 refused, `all` one witness, skeptical with a number refused.
+:END:
+
+Requested by the author 2026-09-16 after A3 ("how is the labelling
+chosen if there are multiple? can this be adjusted? can alternatives be
+emitted?"). Evidence: =labellings= sorts by =labelling_key= (statements
+in sorted order, IN < OUT < UNDEC); =witness_labelling(..., witness=N)=,
+=accepting_witnesses=, =evaluate_debate(..., witness=N)= and
+=evaluate_witnesses= in core/comp/evaluate.py; CLI tokens N and =all=
+(credulous only). README and minicourse lesson 7 updated. Suite 981
+passed, 2 skipped, 4 xfailed, 2 xpassed.
+
+*** NEXT Decide a supporter's wing by its own derivation, not its target's label
+:PROPERTIES:
+:ID:             aida-supporter-derivation-status
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        resolve_scaffolds keeps a supporter (attacker) wing only if that scion's own derivation is live under sigma - all of its sources IN and its target statement IN - rather than whenever the target statement is IN by any means; adequacy (issue IN implies a value) holds on the two-witness fixture for every accepting witness, and lesson 7's wing-choice table states the rule.
+:VERIFY:         tests/test_witness.py::TestTwoAcceptingWitnesses::test_every_accepting_witness_yields_a_value flips from strict xfail to passing; the existing wing-choice tests (test_evaluate.py, test_witness.py, minicourse lesson 7) are unchanged in outcome; the adequacy check in tests/test_evaluate.py is extended with the fixture.
+:END:
+
+Found 2026-09-16 while adding witness selection. Fixture: P from a
+presumed Q; Q also supported by yQ resting on a presumed S, which a
+presumed refutation of S contests. Preferred has two labellings, both
+with P IN, differing on S. Under the witness with S refuted, the
+resolver consults sigma at the scion's *target* statement Q[t] - IN by
+presumption - and keeps yQ although yQ's own source S[t] is OUT; the S
+site then holds the defeated clash and the normal form is OPEN while
+sigma says P is IN. The wing-choice rule in lesson 7 ("sigma consulted
+at the scion's target statement") is where the gap is: a statement
+label says *some* derivation of the statement is live, not that *this*
+scion's is. The same applies to attackers (Q[c] IN does not mean this
+challenge is the live one). Proposed rule: a scion wing is kept iff all
+of its sources are IN and its target is IN under sigma; its sources
+are the ORIG-wing leaves of its decomposition, which the compiler
+already computes. Not applied yet because the rule is spec text the
+author studied; decide, then it is a small change in
+=resolve_scaffolds= plus the table in lesson 7.
+
 *** DONE Package adf-bdd and make it the primary labeller
 CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
