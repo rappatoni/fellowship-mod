@@ -173,7 +173,18 @@ class DebateGraph:
     # -- structure ----------------------------------------------------------
 
     def parents(self, key: str) -> set:
-        """Propositions the given one depends on through any edge."""
+        """Propositions the given one depends on through any edge.
+
+        Sides are dropped on purpose.  Merging the two contrary statements
+        of a proposition contracts every contrariness link, so a cycle over
+        these parents is exactly a derivation cycle in the author's sense:
+        a cycle through derivation edges and contrariness links that
+        contains at least one derivation edge.  A contrariness-only cycle
+        (a plain rebuttal) contracts to a loop-free node and is admitted.
+        An implication edge and its own transposal always form such a
+        cycle, so transposal-closed debates are outside this (initial)
+        fragment; see task aida-cyclic-fragment.
+        """
         out = set()
         for edge in self.edges:
             if edge.target_key == key:

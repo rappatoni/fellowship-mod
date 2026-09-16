@@ -365,8 +365,8 @@ Implementation notes:
   conditions (=compile_conditions=) and from terms to graphs
   (=compile_debate=) remains our code, and drift there is not caught
   by this change - the known defects in those layers
-  (=aida-strict-refutation-edges=, =aida-strict-layer=,
-  =aida-statement-level-acyclicity=) are unaffected by it.
+  (=aida-strict-refutation-edges=, =aida-strict-layer=) are
+  unaffected by it.
 - *Opens the door to other semantics.* adf-bdd also computes complete
   (=--com=) and stable (=--stm=) interpretations, which
   =aida-credulous-witness-labelling= needs and the in-tree code cannot
@@ -405,7 +405,14 @@ node with strict edges to both its term and context side"). Every
 existing CONTR test builds its strict edges by hand; none reaches CONTR
 from a term. Independent of the acyclicity and contrariness-edge tasks.
 
-*** BACKLOG Check acyclicity at statement level
+*** DROPPED Check acyclicity at statement level
+CLOSED: [2026-09-16 Wed]
+:LOGBOOK:
+- State "DROPPED"    from "BACKLOG"    [2026-09-16 Wed] \\
+  Premise was wrong: the "false refusal" it targeted is a genuine
+  derivation cycle through contrariness, and the proposition-level
+  check is the right one. See the note below and aida-cyclic-fragment.
+:END:
 :PROPERTIES:
 :ID:             aida-statement-level-acyclicity
 :AREA:           phd
@@ -417,43 +424,92 @@ from a term. Independent of the acyclicity and contrariness-edge tasks.
 :ICK:            1
 :EFFORT:         1:00
 :DEFERRALS:      0
-:OUTCOME:        DebateGraph.parents and is_acyclic range over (proposition, side) statements, so the transposal pair Q[t] <- P[t], P[c] <- Q[c] is admitted while mutual undercut is still refused and contested propositions are still admitted.
-:VERIFY:         test_minicourse.py::TestLesson5FragmentBoundary::test_transposal_pair_is_falsely_refused flips; the mutual-undercut and rebuttal tests in the same class keep passing; naf_olon.fspy is still refused.
+:OUTCOME:        (dropped) DebateGraph.parents and is_acyclic would range over (proposition, side) statements.
+:VERIFY:         (dropped)
 :END:
 
-Confirmed 2026-09-16 (session audit A5). =parents()= collects
-=source.key= and drops =source.side=, so the check runs on the
-proposition projection of the hyperedge relation. The enforced boundary
-is correct where it currently matters - derivation cycles through
-distinct propositions are refused, contested propositions (rebuttal)
-are admitted, matching the author's stated intent that "cycle-free"
-means no mutual undercut, not no rebuttal. The defect is false
-refusals: two edges on opposite sides of two propositions share no
-statement yet are refused. That pair is precisely a strict transposal,
-so this blocks the strict-layer transposal closure of
-debate-graph-spec.org (Layer 3 step 2) the moment it is implemented,
-and blocks the .fspy married-bachelor fixture
-(=aida-postulate-fixtures-fspy=). Supersedes the "acyclicity checker
-runs on the wrong graph" wording elsewhere in this file, which
-overstated the problem: the checker need not see contrariness cycles.
+Retracted 2026-09-16 after the author's objection. The task claimed that
+the edge pair Q[t] <- P[t], P[c] <- Q[c] "shares no statement" and is
+therefore falsely refused. That followed derivation edges only and
+ignored contrariness. The two edges are arguments that undermine each
+other: P |- Q concludes Q against the other's premise not-Q, and
+not-Q |- not-P concludes not-P against the other's premise P. That is
+mutual undermining - exactly the author's notion of a cycle - and it
+runs Q[t] <- P[t] ~ P[c] <- Q[c] ~ Q[t]. With presumption premises the
+labelling confirms it: all four statements UNDEC, three two-valued
+models.
 
-*Caveat added 2026-09-16 - do not make this switch naively.* The
-proposition-level check currently also refuses an edge whose source is
-the *contrary* of its target, =Q[t] <- Q[c]= (the shape of a proof by
-contradiction). That edge makes =compile_conditions= emit
-=Q[t] = (Q[c] & ~Q[c])= - a non-unipolar condition, the one case where
-the production Kleene labeller and the oracle disagree:
+Why the implemented check is the right one. The author's boundary is:
+refuse iff the statement graph with derivation edges *and* contrariness
+links has a cycle containing at least one derivation edge. =parents()=
+drops the side, which merges each pair of contrary statements into one
+node, i.e. contracts every contrariness link. A cycle containing a
+derivation edge survives the contraction as a proposition-level cycle,
+and a proposition-level cycle lifts back by inserting contrariness hops;
+a contrariness-only cycle (plain rebuttal) contracts to a single node
+without a loop and is admitted. So the proposition-level check computes
+that boundary exactly. It also refuses the proof-by-contradiction edge
+Q[t] <- Q[c] (a derivation edge from Q to Q), which is what keeps the
+compiled conditions unipolar for the Kleene labeller.
 
-: production : Q[t] UNDEC, Q[c] UNDEC
-: oracle     : Q[t] OUT,   Q[c] IN
+The check treats contrariness links as always present, whereas
+=compile_conditions= only generates a guard when a side has a
+defeasible part. With obligation premises the pair above has no cycle
+in its conditions and grounds two-valued (all OUT), yet is refused.
+That matches the author's structural notion - the mutual attack exists
+whether or not it bites - and is not a defect.
 
-At statement level =Q[t] <- Q[c]= is not a cycle, so a plain switch
-would admit this graph and production labels would silently diverge
-from the definition. The fix must therefore either keep refusing edges
-whose source is the target's contrary, or add a unipolarity assertion to
-=compile_conditions= (refuse, or fall back to the oracle, on failure).
-Add this graph to VERIFY: refused, or labelled in agreement with the
-oracle.
+The consequence that motivated the task is real but belongs elsewhere:
+an implication edge and its own transposal always form this pattern, so
+once transposal closure exists every debate using an implication leaves
+the acyclic fragment. Decision (author, 2026-09-16): accept that; the
+acyclic fragment is only the initial one, and the next fragment admits
+cycles. Carried forward in =aida-cyclic-fragment=.
+
+*** BACKLOG Extend the fragment to admit derivation cycles
+:PROPERTIES:
+:ID:             aida-cyclic-fragment
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-credulous-witness-labelling
+:OUTCOME:        compile_debate admits debate graphs with derivation cycles (mutual undercut, even loops, an implication together with its own transposal); they are labelled, the evaluation modes resolve them through a witness labelling chosen from complete/stable labellings rather than per scaffold, and unfolding such a graph back into a debate term terminates.
+:VERIFY:         tests/rationality/even_loop.fspy, naf_olon.fspy and a mutual-undercut fixture compile instead of raising CyclicDebateNotSupported; their grounded labels agree with adf-bdd and the oracle; credulous and skeptical evaluation on even_loop agree with evaluation under an explicitly chosen stable labelling; the proof-by-contradiction edge Q[t] <- Q[c] is either still refused or labelled in agreement with the oracle; an unfolding test terminates on every cyclic fixture (T6).
+:END:
+
+Created 2026-09-16 from the author's decision on the transposal/cycle
+clash: the acyclic fragment is the initial one, and the next fragment
+admits cycles. Needed for =aida-strict-layer=, whose transposal closure
+makes every debate that uses an implication cyclic by construction.
+
+What refusing cycles currently protects, and what has to replace it:
+
+- *Mode policy locality* (critique issue M4). The evaluation modes pick
+  wings per scaffold against the grounded labelling. On cyclic graphs
+  that can combine choices from incompatible extensions. Replacement:
+  the witness-labelling discipline of =aida-credulous-witness-labelling=
+  (hence the block), using complete/stable labellings -
+  =aida-adf-bdd-primary= makes those available.
+- *Unfolding termination* (T6). Replacement: the capture-based cycle
+  breaking of debate-graph-spec.org ("break cycles by mu/mu'-capture at
+  the first repeated (proposition, side) on the current spine").
+- *Unipolarity of compiled conditions.* The refusal of Q[t] <- Q[c]
+  keeps the Kleene labeller faithful. That edge makes
+  =compile_conditions= emit Q[t] = (Q[c] & ~Q[c]), where the production
+  labeller says Q[t] UNDEC, Q[c] UNDEC and the oracle says Q[t] OUT,
+  Q[c] IN. Replacement: keep refusing that one shape, assert
+  unipolarity in =compile_conditions=, or rely on adf-bdd as the
+  primary labeller.
+
+The acyclicity check itself should stay as it is (proposition level; see
+=aida-statement-level-acyclicity= for why it is exact) and become a
+classifier - "which fragment is this debate in" - rather than a refusal.
 
 *** BACKLOG Decide whether contrariness is an edge or a synthesised guard
 :PROPERTIES:
@@ -467,8 +523,7 @@ oracle.
 :ICK:            3
 :EFFORT:         4:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-statement-level-acyclicity
-:OUTCOME:        It is decided and recorded whether the compiler represents contrariness between Q[term] and Q[context] as explicit hyperedges (one per direction, justified by the constructibility of the corresponding attack terms) or keeps the synthesised NOT-contrary guard of compile_conditions; if edges, the primitive contrariness shape mu att.<mu _.<t||att>||mu'_.<t||t'>> is added to _match_scaffold and the acyclicity check is restricted to derivation edges so rebuttals are not refused as 2-cycles.
+:OUTCOME:        It is decided and recorded whether the compiler represents contrariness between Q[term] and Q[context] as explicit hyperedges (one per direction, justified by the constructibility of the corresponding attack terms) or keeps the synthesised NOT-contrary guard of compile_conditions; if edges, the primitive contrariness shape mu att.<mu _.<t||att>||mu'_.<t||t'>> is added to _match_scaffold and contrariness edges are excluded from DebateGraph.parents, so that the acyclicity check keeps contracting contrariness links rather than counting them (otherwise every rebuttal becomes a refused self-loop).
 :VERIFY:         The lesson-8 clash term compiles to the decided representation; grounded labels on every existing fixture are unchanged by the representation choice (they must be: the two encodings are semantically equivalent); test_minicourse.py::TestLesson8StrictRefutationDropped::test_primitive_contrariness_shape_is_not_matched flips if the edge representation is chosen.
 :END:
 
@@ -479,9 +534,10 @@ its dual - so the compilation should record them exactly as it records
 any other derivation, and the term and graph levels would then agree
 about when the two sides of a proposition conflict (which also
 subsumes =aida-attack-geled-reroute=). The cost: contrariness edges form
-a 2-cycle by construction, so the acyclicity check must distinguish
-derivation edges from contrariness edges or every rebuttal is refused.
-Hence blocked on the statement-level acyclicity fix. Design decision,
+a 2-cycle by construction. The acyclicity check handles contrariness
+by contracting it (=parents()= drops the side), so contrariness edges
+must be kept out of =parents()=, or every rebuttal becomes a refused
+self-loop. Design decision,
 not a bug: the spec (Layer 3, "an attacking edge on (n,s) is a
 supporting edge on the contrary side") is satisfiable either way.
 
@@ -497,7 +553,7 @@ supporting edge on the contrary side") is satisfiable either way.
 :ICK:            3
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-statement-level-acyclicity
+:BLOCKED_BY:     id:aida-cyclic-fragment
 :OUTCOME:        The compiler represents every implication proposition an argument applies - declared (strict) or delegated (defeasible) - as its own hyperedge with sources, separate from the premises it is applied to; the closure of debate-graph-spec.org Layer 3 step 2 transposes every such edge, strict or defeasible alike (design decision: all implications in this system contrapose), and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens through either kind of implication and Q-versus-not-Q conflicts are visible to the labeller.
 :VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); the modus-tollens fixture tests/rationality/modus_tollens.fspy - an argument for P from a presumed Q via the declared axiom Q->P, plus a denied refutation of P - compiles to an implication edge P[t] <- Q[t] with its transposal Q[c] <- P[c]; the same holds with the axiom replaced by a delegated `by default` implication (delegated implications contrapose too, by design), and `label` prints Q term OUT, Q context IN, P term OUT (today, with the rule fused into the defeasible edge, Q stays IN); the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
 :END:
@@ -574,9 +630,13 @@ Consequence, measured (hand-built graphs, same session):
 :                        Q[c]=(P[c] | false)   P[c]=(true|false)
 :                        labels: P OUT, Q OUT, P[c] IN, Q[c] IN
 
-With P strictly refuted, Q should fall; today it stays IN. And the
-correct graph is refused by the proposition-level acyclicity check -
-hence the block on =aida-statement-level-acyclicity=.
+With P strictly refuted, Q should fall; today it stays IN. The correct
+graph is refused by the acyclicity check, and rightly so: an implication
+edge and its own transposal always undermine each other, which is a
+derivation cycle through contrariness. Every debate that uses an
+implication therefore leaves the acyclic fragment once this task lands,
+hence the block on =aida-cyclic-fragment= (author's decision: the
+acyclic fragment is only the initial one).
 
 Object negation. =canonical_prop= maps =~K=, =-K= and =K->false= to one
 node, distinct from K, and nothing links the two: Q and ~Q both presumed

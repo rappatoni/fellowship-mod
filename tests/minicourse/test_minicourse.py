@@ -405,21 +405,57 @@ class TestLesson5FragmentBoundary:
         assert g.is_acyclic()
         assert set(grounded_labels(g).values()) == {"UNDEC"}
 
-    def test_transposal_pair_is_falsely_refused(self):
-        """Lesson 5 exercise 4 / lesson 8 item 3: pins the defect.
+    def test_transposal_pair_is_a_derivation_cycle(self):
+        """Lesson 5: Q[t] <- P[t] with its transposal P[c] <- Q[c].
 
-        No statement depends on itself, yet the proposition-level check
-        refuses. When parents() is fixed to range over statements, this
-        test must flip - that flip is the evidence for the fix.
+        The two edges share no statement, yet the arguments undermine each
+        other through contrariness, so the refusal is correct. With
+        presumption premises the conditions really are cyclic.
         """
         from coursekit import graph_from_edges
         g = graph_from_edges(
             ["P", "Q"],
-            [("qFromP", "Q", "term", [("P", "term", "obligation")], False, "argument"),
-             ("notPFromNotQ", "P", "context", [("Q", "context", "obligation")], False, "argument")],
+            [("arg1", "Q", "term", [("P", "term", "presumption")], False, "argument"),
+             ("arg2", "P", "context", [("Q", "context", "presumption")], False, "argument")],
         )
-        assert not g.is_acyclic()          # the defect, pinned
-        assert set(grounded_labels(g).values()) == {"OUT"}   # labeller is fine with it
+        assert not g.is_acyclic()
+        assert set(grounded_labels(g).values()) == {"UNDEC"}
+
+    def test_refused_even_when_no_guard_bites(self):
+        """The structural notion: refused although the conditions of the
+        obligation-premise version are acyclic and ground two-valued."""
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["P", "Q"],
+            [("arg1", "Q", "term", [("P", "term", "obligation")], False, "argument"),
+             ("arg2", "P", "context", [("Q", "context", "obligation")], False, "argument")],
+        )
+        assert not g.is_acyclic()
+        assert set(grounded_labels(g).values()) == {"OUT"}
+
+    def test_even_loop_closes_only_through_contrariness(self):
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["P", "Q"],
+            [("pArg", "P", "term", [("Q", "context", "presumption")], False, "argument"),
+             ("qArg", "Q", "term", [("P", "context", "presumption")], False, "argument")],
+        )
+        derivation_statements = [
+            {(e.target_key, e.target_side)} | {(s.key, s.side) for s in e.sources}
+            for e in g.edges
+        ]
+        assert not (derivation_statements[0] & derivation_statements[1])
+        assert not g.is_acyclic()
+
+    def test_proof_by_contradiction_edge_is_refused(self):
+        """Q[t] <- Q[c]: a derivation edge from Q to Q. Refusing it keeps
+        the compiled conditions unipolar for the Kleene labeller."""
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["Q"],
+            [("byContra", "Q", "term", [("Q", "context", "presumption")], False, "argument")],
+        )
+        assert not g.is_acyclic()
 
 
 class TestLesson8StrictRefutationDropped:
