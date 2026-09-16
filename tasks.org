@@ -739,7 +739,7 @@ Found 2026-09-16: an edge with sources Q[t] and (~Q)[c] prints as
 =(Q[t] & ~Q[c])=, exactly the guard's shape. The toolkit uses =~= for
 meta-negation; the proposition printer uses =~= for object negation.
 
-*** BACKLOG Expose the intermediate conclusions of curried implications
+*** WAITING Expose the intermediate conclusions of curried implications
 :PROPERTIES:
 :ID:             aida-curried-intermediate-conclusions
 :AREA:           phd
@@ -754,6 +754,11 @@ meta-negation; the proposition printer uses =~= for object negation.
 :OUTCOME:        Every logically progressing step of an elimination spine is attackable and supportable: theta-expansion names each partial application of a curried implication as a term of its own (so B->C in an application of A->(B->C) to A and B becomes a term-side target), and the compiler emits one hyperedge per such step, so that an accepted refutation of an intermediate conclusion defeats the final one.
 :VERIFY:         In tests/minicourse/lesson5_labels.fspy, `attack d6 test d5` with the challenge to B->C succeeds; with A and B presumed and a strict refutation of B->C, `label` prints B->C context IN and C term OUT (today: C term IN, see the notes); the compiled graph for an application of A->(B->C) has edges C[t] <- B->C[t], B[t] and B->C[t] <- A[t] (plus the implication's own edge once aida-strict-layer lands); every expanded term replays in Fellowship; a three-premise curried implication exposes both of its intermediate conclusions; existing grounded-label tests are unchanged or the change is justified.
 :END:
+
+Status (author, 2026-09-16): a bug, but deliberately *not* part of the
+follow-up implementation plan (fragment-followups-plan.org phase D2 is
+withdrawn); the author will think about it separately. WAITING on that
+design thought, not on any other task.
 
 Found 2026-09-16 by the author, from an attack in
 tests/minicourse/lesson5_labels.fspy that failed:
@@ -915,7 +920,7 @@ the plan: current renderer output is user-visible demo behaviour).
 Audit evidence: M5/M6 logs in propositional-fragment-plan.org
 (onus-parallel keeps OUT supporters and cannot discard OUT attackers).
 
-*** BACKLOG Investigate the Geled reroute asymmetry in attack composition
+*** BACKLOG Make presumption ports capturable like obligation ports
 :PROPERTIES:
 :ID:             aida-attack-geled-reroute
 :AREA:           phd
@@ -927,9 +932,24 @@ Audit evidence: M5/M6 logs in propositional-fragment-plan.org
 :ICK:            2
 :EFFORT:         2:00
 :DEFERRALS:      0
-:OUTCOME:        It is decided and recorded whether Argument.attack should reroute a delegated (Geled) conclusion port to the catch variable the way it reroutes an open (Laog) one, and the chosen behaviour is tested.
-:VERIFY:         A test composes an attack with a by-default challenge and asserts the recorded reroute behaviour; the shape catalogue in core/dc/debate_graph.py documents the outcome.
+:OUTCOME:        Grafting captures presumption ports (Deleg/Geled) exactly as it captures obligation ports (Goal/Laog): a by-default challenge attacking a site is wired to the catch variable, so the composed term encodes the steal and the evaluator's outcome on it agrees with the graph's labelling; the shape catalogue documents the wiring.
+:VERIFY:         The by-default challenge in tests/rationality/contested.fspy composes to an attack wing whose scion tail is the catch variable alt (today: the Geled survives unrerouted); on the graph the attack still yields Q[t] UNDEC / Q[c] UNDEC, and skeptical evaluation still drops the attacked side - i.e. the labels and the mode outcomes are unchanged by the wiring, which is the point; the shape catalogue in core/dc/debate_graph.py records the Geled/Deleg reroute alongside Laog/Goal; test_graft_affine_capture is extended with a presumption-site case.
 :END:
+
+Decision (author, 2026-09-16): presumptions *are* capturable. The
+asymmetry is a defect of =_CapturingSubst= (core/dc/graft.py), which
+dispatches on Goal/Laog only; Deleg/Geled must be rewritten to the
+in-scope binder the same way. Rationale, from the side-by-side example:
+with an open-port challenge the scion tail is rerouted to alt and the
+composed term encodes the steal; with a by-default challenge the Geled
+survives unrerouted, the term has no steal wiring, and the composition
+is *a challenge parked next to the host*, not an attack. The graph does
+not care (contrariness comes from proposition identity, so the labels
+are UNDEC/UNDEC either way and the evaluator, which follows sigma, gives
+the right outcome) - but the term is wrong as a term: evaluated by any
+label-free reduction it could not abort the host, and under graph-first
+unfolding must produce the wired form. Likely subsumed by
+=aida-contrariness-as-edges= if that is taken; otherwise a small fix.
 
 Observed 2026-08-31 while building tests/rationality/contested.fspy: a
 challenge ending in a Laog gets its tail rerouted to alt, a by-default
