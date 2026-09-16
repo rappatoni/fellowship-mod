@@ -362,7 +362,8 @@ graph does not already contain. Observations bearing on the answer:
   decision is revisited.
 To be decided before phase C starts.
 
-*** NEXT Decide credulous mode by a witness labelling, not per scaffold
+*** DONE Decide credulous mode by a witness labelling, not per scaffold
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-credulous-witness-labelling
 :AREA:           phd
@@ -403,6 +404,32 @@ argument and keep the cheaper implementation; if not, sigma must be chosen
 before resolution and the modes reimplemented. Either way the minicourse's
 lesson 7 text needs to match the outcome, since it currently describes the
 mode table without stating that sigma is always grounded.
+
+Evidence (2026-09-16, commit A3). *The local policy was unsound in the
+acyclic fragment*: two supporters of P, one resting on the presumption
+!S, the other on the presumed refutation S! (via a declared
+(S->false)->B), are each kept by the local credulous rule and P
+evaluates to a value, although no complete, preferred or stable
+labelling has S[t] and S[c] both IN
+(tests/test_witness.py::TestLocalPolicyWasUnsound, four tests: graph
+shape, no labelling accepts the issue, old policy returns a value, new
+discipline rejects). Implemented: =adf_label.labellings(graph,
+semantics)= for grounded/complete/preferred/stable via adf-bdd (preferred
+= information-maximal complete), =intersection_labelling=;
+=evaluate.witness_labelling(graph, issue, mode, semantics)= chooses sigma
+per the docstring (credulous: first labelling with the issue IN, else
+grounded resolved skeptically - never with the credulous tiebreak, which
+is the unsound policy; skeptical: intersection); =evaluate_debate= takes
+=semantics= (default preferred) and returns the witness sigma;
+=resolve_scaffolds= gains a =trace= so a test asserts that under a
+two-valued witness no tiebreak is consulted. CLI: =label ARG
+[SEMANTICS]= (numbered list when several), =evaluate ARG= with mode,
+semantics and base in any order. Checked on contested.fspy: complete
+agrees with the oracle's =complete_interpretations=, stable labellings
+are two-valued models, preferred = stable there; grounded semantics
+makes credulous coincide with skeptical (OPEN). Suite 806 passed, 2
+skipped, 4 xfailed, 2 xpassed. Not done: the in-tree stable oracle (the
+reduct), still adf-bdd-only, as the plan allowed.
 
 *** DONE Package adf-bdd and make it the primary labeller
 CLOSED: [2026-09-16 Wed]

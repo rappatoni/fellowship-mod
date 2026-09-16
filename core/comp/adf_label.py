@@ -203,17 +203,62 @@ def kleene_eval(f, valuation):
     raise ValueError(f"Unknown formula tag: {tag!r}")
 
 
+#: The labelling semantics the labeller can be asked for.  "preferred" is
+#: derived from "complete" (its <=_i-maximal members); the other three are
+#: adf-bdd modes.  Semantics is a parameter because credulous/skeptical
+#: acceptance only exists relative to a multi-extension semantics
+#: (tasks.org, aida-credulous-witness-labelling).
+SEMANTICS = ("grounded", "complete", "preferred", "stable")
+
+
+def _to_labels(interpretation) -> dict:
+    return {split_statement(s): _LABEL[v] for s, v in interpretation.items()}
+
+
+def _leq_information(v: dict, w: dict) -> bool:
+    return all(v[s] == "UNDEC" or v[s] == w[s] for s in v)
+
+
+def labellings(graph: DebateGraph, semantics: str = "grounded"):
+    """All labellings of the graph under ``semantics``, as a list of
+    {(key, side): label} dicts, computed by adf-bdd (the production path;
+    raises AdfBddNotFound when the solver is missing, no fallback).
+
+    grounded -> exactly one; complete/stable -> possibly many, in adf-bdd's
+    deterministic order; preferred -> the <=_i-maximal complete ones.  A
+    semantics with no labelling (stable on an odd cycle) returns [].
+    """
+    if semantics not in SEMANTICS:
+        raise ValueError(f"semantics must be one of {SEMANTICS}, got {semantics!r}")
+    adf = graph_to_adf(graph, guard=False)
+    mode = "complete" if semantics == "preferred" else semantics
+    found = [_to_labels(v) for v in run_adf_bdd(adf, mode)]
+    if semantics == "grounded" and len(found) != 1:
+        raise RuntimeError(
+            f"adf-bdd returned {len(found)} grounded interpretations; expected exactly one"
+        )
+    if semantics == "preferred":
+        found = [v for v in found if not any(w != v and _leq_information(v, w) for w in found)]
+    return found
+
+
+def intersection_labelling(labels_list):
+    """The statement-wise agreement of several labellings: a label where
+    all agree, UNDEC where they differ.  The skeptical reading."""
+    if not labels_list:
+        raise ValueError("no labellings to intersect")
+    out = {}
+    for statement in labels_list[0]:
+        values = {lab[statement] for lab in labels_list}
+        out[statement] = values.pop() if len(values) == 1 else "UNDEC"
+    return out
+
+
 def grounded_labels(graph: DebateGraph):
     """Grounded labels {(key, side): "IN" | "OUT" | "UNDEC"} - the
     production path, computed by adf-bdd.  Raises AdfBddNotFound when the
     solver is not installed; there is no fallback."""
-    adf = graph_to_adf(graph, guard=False)
-    interpretations = run_adf_bdd(adf, "grounded")
-    if len(interpretations) != 1:
-        raise RuntimeError(
-            f"adf-bdd returned {len(interpretations)} grounded interpretations; expected exactly one"
-        )
-    return {split_statement(s): _LABEL[v] for s, v in interpretations[0].items()}
+    return labellings(graph, "grounded")[0]
 
 
 def grounded_labels_kleene(graph: DebateGraph):

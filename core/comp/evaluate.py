@@ -21,8 +21,29 @@ result is fully normalized (normalize_strong: the four standard rules
 under a fixed leftmost-outermost congruence order) under the base
 strategy and classified by the spec-derived NF classifier.
 
-Wing choice (site of proposition A; sigma consulted at the scion's target
-statement):
+Which sigma (the witness-labelling discipline, tasks.org
+aida-credulous-witness-labelling, replacing the earlier per-scaffold
+policy):
+
+    semantics S in {grounded, complete, preferred, stable}; default for
+    evaluation is "preferred", the classical home of credulous/skeptical.
+
+    credulous : sigma := some labelling of S in which the ISSUE (the
+                debate's root statement) is IN, taken in adf-bdd's
+                deterministic order.  Under a two-valued semantics every
+                scaffold is then decided by sigma and no tiebreak is used.
+                If no labelling of S makes the issue IN, the issue is
+                credulously rejected: sigma := grounded and the residue is
+                resolved skeptically - it must NOT be resolved with the
+                credulous tiebreak, which is exactly the unsound local
+                policy (see TestLocalPolicyWasUnsound).
+    skeptical : sigma := the statement-wise intersection of all labellings
+                of S (UNDEC where they disagree); residue resolved
+                skeptically.
+
+Wing choice at a scaffold (site of proposition A; sigma consulted at the
+scion's target statement); the UNDEC rows are the tiebreak, reached only
+when sigma itself leaves the statement undecided:
 
     supporter IN            -> keep scion        attacker IN   -> keep attack wing
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG
@@ -46,7 +67,9 @@ from core.ac.ast import (
     ProofTerm, Mu, Mutilde, ID, DI,
     first_order_node, FirstOrderNotSupported,
 )
-from core.comp.adf_label import grounded_labels
+from core.comp.adf_label import (
+    grounded_labels, labellings, intersection_labelling, SEMANTICS,
+)
 from core.comp.oracle_terms import (
     normalize_strong, classify_nf, _occurs,
 )
@@ -124,11 +147,16 @@ def _keep_attack_wing(node):
     return result
 
 
-def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=()) -> ProofTerm:
+def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
+                      trace=None) -> ProofTerm:
     """Replace every scaffold by its sigma-chosen wing, innermost-last.
 
+    ``mode`` is the TIEBREAK for statements ``labels`` leaves UNDEC; the
+    choice of ``labels`` itself is ``witness_labelling``'s job.
     ``strict_names`` lets the matcher recognise the primitive contrariness
-    term, whose stolen-value slot holds a declared name."""
+    term.  ``trace``, if a list, receives (statement, label) for every
+    scaffold consulted - tests use it to check that under a two-valued
+    witness no tiebreak was needed."""
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     strict_names = set(strict_names or ())
@@ -150,6 +178,8 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=()) -> Pr
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
+            if trace is not None:
+                trace.append((statement, label))
             choice = _wing_choice(role, label, mode)
             if choice == "orig":
                 return walk(_keep_orig(node, orig, alt))
@@ -165,6 +195,40 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=()) -> Pr
     return walk(deepcopy(body))
 
 
+def issue_of(body: ProofTerm):
+    """The debate's issue: the root statement (proposition, side)."""
+    if isinstance(body, Mu):
+        return (canonical_prop(body.prop), "term")
+    if isinstance(body, Mutilde):
+        return (canonical_prop(body.prop), "context")
+    raise EvaluationRefused(
+        f"Cannot read the issue off a {type(body).__name__} root; expected a mu/mu' binder."
+    )
+
+
+def witness_labelling(graph, issue, mode: str, semantics: str = "preferred"):
+    """Choose sigma per the module docstring.  Returns (sigma, tiebreak)."""
+    if mode not in _MODES:
+        raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+    if semantics not in SEMANTICS:
+        raise ValueError(f"semantics must be one of {SEMANTICS}, got {semantics!r}")
+    candidates = labellings(graph, semantics)
+    if not candidates:
+        raise EvaluationRefused(
+            f"No labelling exists under {semantics} semantics for this debate; "
+            f"choose another semantics."
+        )
+    if mode == "skeptical":
+        return intersection_labelling(candidates), "skeptical"
+    for sigma in candidates:
+        if sigma.get(issue) == "IN":
+            return sigma, "credulous"
+    # Credulously rejected: no extension accepts the issue.  Fall back to
+    # the grounded labelling and resolve the residue skeptically - never
+    # with the credulous tiebreak, which would manufacture acceptance.
+    return grounded_labels(graph), "skeptical"
+
+
 def evaluate_debate(
     body: ProofTerm,
     name: str,
@@ -173,18 +237,21 @@ def evaluate_debate(
     strict_kinds=None,
     mode: str = "skeptical",
     base: str = "cbn",
+    semantics: str = "preferred",
 ):
-    """Compile, label, resolve, normalize, classify.
+    """Compile, label, choose the witness sigma, resolve, normalize,
+    classify.
 
-    Returns (normal_form, nf_class, labels, graph).  ``base`` is the
-    strategy for critical pairs sigma does not decide.
+    Returns (normal_form, nf_class, sigma, graph).  ``base`` is the
+    strategy for critical pairs sigma does not decide; ``semantics`` the
+    labelling semantics the modes range over.
     """
     found = first_order_node(body)
     if found is not None:
         raise FirstOrderNotSupported("Debate evaluation", found)
     graph = compile_debate(body, name, strict_names=strict_names,
                            strict_kinds=strict_kinds)
-    labels = grounded_labels(graph)
-    resolved = resolve_scaffolds(body, labels, mode, strict_names=strict_names)
+    sigma, tiebreak = witness_labelling(graph, issue_of(body), mode, semantics)
+    resolved = resolve_scaffolds(body, sigma, tiebreak, strict_names=strict_names)
     normal_form = normalize_strong(resolved, strategy=base)
-    return normal_form, classify_nf(normal_form), labels, graph
+    return normal_form, classify_nf(normal_form), sigma, graph

@@ -247,8 +247,8 @@ detects a machine-mode desynchronization.
 
 ### Debate-graph commands
 
-These compile the argument's term into a debate graph, label it by
-grounded ADF semantics and evaluate it under that labelling. They cover
+These compile the argument's term into a debate graph, label it by an
+ADF semantics and evaluate it under a witness labelling. They cover
 the cycle-free, quantifier-free fragment and refuse anything outside it
 with a one-line message.
 
@@ -257,14 +257,19 @@ with a one-line message.
     markers; write Graphviz DOT when a filename is given
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
-- `label ARG`
-  - print the grounded labelling: one `IN` / `OUT` / `UNDEC` per
-    proposition and side
-- `evaluate ARG [skeptical|credulous] [cbn|cbv]`
-  - label-guided evaluation; prints the normal-form class (`VALUE`,
-    `EXCEPTION`, `OPEN`) and the normal form, cached as `.labelled_nf`
-  - the mode decides `UNDEC` conflicts; the base strategy resolves only
-    critical pairs the labelling leaves open
+- `label ARG [grounded|complete|preferred|stable]`
+  - print the labelling(s) of the chosen semantics (default grounded):
+    one `IN` / `OUT` / `UNDEC` per proposition and side; several
+    labellings are numbered
+- `evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]`
+  - label-guided evaluation; options in any order, defaults skeptical,
+    preferred, cbn; prints the normal-form class (`VALUE`, `EXCEPTION`,
+    `OPEN`) and the normal form, cached as `.labelled_nf`
+  - credulous evaluates against one labelling of the chosen semantics in
+    which the argument's issue is IN (if none exists, against the
+    grounded labelling, resolved skeptically); skeptical against the
+    intersection of all of them; the base strategy resolves only
+    critical pairs that labelling leaves open
 
 ### Debate commands
 

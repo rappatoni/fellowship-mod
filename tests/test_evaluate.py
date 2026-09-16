@@ -133,13 +133,20 @@ class TestContested:
         return parg(t_att("Q", Deleg("1", "Q"), challenge))
 
     def test_mode_policy_diverges(self):
-        nf_c, cls_c, labels, _ = evaluate_debate(
+        from core.comp.adf_label import grounded_labels
+        from core.dc.debate_graph import compile_debate
+        nf_c, cls_c, sigma_c, g = evaluate_debate(
             self.body(), "d", strict_names=STRICT, mode="credulous")
-        nf_s, cls_s, _, _ = evaluate_debate(
+        nf_s, cls_s, sigma_s, _ = evaluate_debate(
             self.body(), "d", strict_names=STRICT, mode="skeptical")
-        assert labels[(Q, "term")] == "UNDEC"
-        assert labels[(Q, "context")] == "UNDEC"
-        # Credulous discards the UNDEC attacker: the presumption stands.
+        grounded = grounded_labels(g)
+        assert grounded[(Q, "term")] == "UNDEC"
+        assert grounded[(Q, "context")] == "UNDEC"
+        # A3: the credulous witness is a preferred labelling with the issue
+        # IN, so it decides Q; the skeptical sigma is the intersection.
+        assert sigma_c[(P, "term")] == "IN" and sigma_c[(Q, "term")] == "IN"
+        assert sigma_s == grounded
+        # Credulous keeps the presumption: the attacker is OUT in the witness.
         assert cls_c == "value"
         assert contains(nf_c, lambda n: isinstance(n, Deleg))
         # Skeptical discards the UNDEC attacked side: not a value.

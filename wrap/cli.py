@@ -306,15 +306,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         dot_path = next((o for o in opts if o != "show"), None)
                         graph_argument_cmd(prover, parts[1], dot_path, show=show)
                     elif command.startswith("label "):
-                        label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
+                        _dispatch_label(prover, command)
                     elif command.startswith("evaluate "):
-                        # Usage: evaluate ARG [skeptical|credulous] [cbn|cbv]
-                        parts = command.split()
-                        evaluate_argument_cmd(
-                            prover, parts[1],
-                            parts[2] if len(parts) >= 3 else "skeptical",
-                            parts[3] if len(parts) >= 4 else "cbn",
-                        )
+                        _dispatch_evaluate(prover, command)
                     elif command.startswith("tree "):
                         parts = command.split()
                         # Usage:
@@ -797,15 +791,9 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 dot_path = next((o for o in opts if o != "show"), None)
                 graph_argument_cmd(prover, parts[1], dot_path, show=show)
             elif command.startswith("label "):
-                label_argument_cmd(prover, command.split(maxsplit=1)[1].strip())
+                _dispatch_label(prover, command)
             elif command.startswith("evaluate "):
-                # Usage: evaluate ARG [skeptical|credulous] [cbn|cbv]
-                parts = command.split()
-                evaluate_argument_cmd(
-                    prover, parts[1],
-                    parts[2] if len(parts) >= 3 else "skeptical",
-                    parts[3] if len(parts) >= 4 else "cbn",
-                )
+                _dispatch_evaluate(prover, command)
             elif command.startswith("tree "):
                 parts = command.split()
                 if len(parts) == 2:
@@ -1602,6 +1590,27 @@ def _open_file(path: str) -> bool:
         return False
 
 
+def _dispatch_label(prover: ProverWrapper, command: str) -> None:
+    parts = command.split()
+    try:
+        _, semantics, _ = _split_eval_tokens(parts[2:])
+    except ValueError as e:
+        logger.error("label: %s", e)
+        return
+    label_argument_cmd(prover, parts[1], semantics or "grounded")
+
+
+def _dispatch_evaluate(prover: ProverWrapper, command: str) -> None:
+    parts = command.split()
+    try:
+        mode, semantics, base = _split_eval_tokens(parts[2:])
+    except ValueError as e:
+        logger.error("evaluate: %s", e)
+        return
+    evaluate_argument_cmd(prover, parts[1], mode or "skeptical", base or "cbn",
+                          semantics or "preferred")
+
+
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
                        show: bool = False) -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT.
@@ -1656,35 +1665,75 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
         logger.info("")
 
 
-def label_argument_cmd(prover: ProverWrapper, name: str) -> None:
-    """CLI: grounded ADF labels of an argument's debate graph.
+_SEMANTICS_TOKENS = ("grounded", "complete", "preferred", "stable")
+_MODE_TOKENS = ("skeptical", "credulous")
+_BASE_TOKENS = ("cbn", "cbv")
+
+
+def _split_eval_tokens(tokens):
+    """Order-free option parsing for label/evaluate: each token is a mode,
+    a semantics or a base strategy.  Returns (mode, semantics, base), any
+    of them None if absent; raises ValueError on an unknown token."""
+    mode = semantics = base = None
+    for tok in tokens:
+        if tok in _MODE_TOKENS:
+            mode = tok
+        elif tok in _SEMANTICS_TOKENS:
+            semantics = tok
+        elif tok in _BASE_TOKENS:
+            base = tok
+        else:
+            raise ValueError(
+                f"unknown option '{tok}' (expected one of {_MODE_TOKENS + _SEMANTICS_TOKENS + _BASE_TOKENS})"
+            )
+    return mode, semantics, base
+
+
+def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "grounded") -> None:
+    """CLI: ADF labelling(s) of an argument's debate graph.
 
     Syntax:
-        label ARG
+        label ARG [grounded|complete|preferred|stable]
+
+    grounded prints the one grounded labelling; the others print every
+    labelling of that semantics, numbered.
     """
-    from core.comp.adf_label import grounded_labels
+    from core.comp.adf_label import labellings
 
     arg, graph = _compile_argument_graph(prover, name)
     if graph is None:
         return
     try:
-        labels = grounded_labels(graph)
+        found = labellings(graph, semantics)
     except AdfBddNotFound as e:
         print(f"label: refused: {e}")
         logger.error("Labelling refused for '%s': %s", name, e)
         return
-    logger.info("Grounded labelling for '%s':", name)
-    for (key, side), label in labels.items():
-        logger.info("  %-40s %-8s %s", graph.nodes[key], side, label)
+    if not found:
+        logger.info("No %s labelling exists for '%s'.", semantics, name)
+        return
+    if len(found) == 1:
+        logger.info("%s labelling for '%s':", semantics.capitalize(), name)
+        for (key, side), label in found[0].items():
+            logger.info("  %-40s %-8s %s", graph.nodes[key], side, label)
+        return
+    logger.info("%d %s labellings for '%s':", len(found), semantics, name)
+    for i, labels in enumerate(found, 1):
+        logger.info("  [%d]", i)
+        for (key, side), label in labels.items():
+            logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
 
-
-def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical", base: str = "cbn") -> None:
+def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
+                          base: str = "cbn", semantics: str = "preferred") -> None:
     """CLI: label-guided evaluation of an argument's debate term.
 
     Syntax:
-        evaluate ARG [skeptical|credulous] [cbn|cbv]
+        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]
 
-    The normal form is cached on the argument as .labelled_nf.
+    Options may appear in any order.  The mode ranges over the chosen
+    semantics (default preferred); the base strategy resolves only critical
+    pairs the witness labelling leaves open.  The normal form is cached on
+    the argument as .labelled_nf.
     """
     from core.comp.evaluate import evaluate_debate, EvaluationRefused
     from core.dc.debate_graph import DebateCompileError, declaration_kinds
@@ -1692,12 +1741,6 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     from pres.gen import ProofTermGenerationVisitor
     import copy as _copy
 
-    if mode not in ("skeptical", "credulous"):
-        logger.error("evaluate: mode must be 'skeptical' or 'credulous', got '%s'", mode)
-        return
-    if base not in ("cbn", "cbv"):
-        logger.error("evaluate: base strategy must be 'cbn' or 'cbv', got '%s'", base)
-        return
     arg = prover.get_argument(name)
     if not arg:
         logger.error("Argument '%s' not found.", name)
@@ -1705,10 +1748,10 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     if not arg.executed:
         arg.execute()
     try:
-        nf, nf_class, labels, graph = evaluate_debate(
+        nf, nf_class, sigma, graph = evaluate_debate(
             arg.body, name, strict_names=prover.declarations.keys(),
             strict_kinds=declaration_kinds(prover.declarations),
-            mode=mode, base=base,
+            mode=mode, base=base, semantics=semantics,
         )
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
@@ -1716,9 +1759,8 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
         return
     arg.labelled_nf = nf
     pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
-    logger.info("Evaluated '%s' (%s, base %s): %s", name, mode, base, nf_class.upper())
+    logger.info("Evaluated '%s' (%s, %s, base %s): %s", name, mode, semantics, base, nf_class.upper())
     logger.info("  normal form: %s", pretty)
-
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
     """CLI: render the colored acceptance tree (proof terms or NL) and save it as a file."""
