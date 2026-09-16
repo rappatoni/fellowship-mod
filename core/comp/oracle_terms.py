@@ -419,9 +419,19 @@ def classify_nf(v) -> str:
 # ---------------------------------------------------------------------------
 
 def make_abort_term(prop: str, inner_term, inner_context):
-    """The throw term mu _:prop.< inner_term :: inner_context > — the
-    vacuous affine witness of ``prop`` in the abort state (the abort
-    morphism's syntax; see debate-graph-spec.org, Semantics subsection)."""
+    """The throw term mu _:prop.< inner_term :: inner_context >.
+
+    An affine mu discarding the demand for ``prop``: the COMMA paper's
+    throw shape.  At a defeated site the intended ``inner_context`` is
+    the winning refutation and ``inner_term`` is the site's own
+    indeterminate (an open site), so the result is the *clash*
+    mu _.<[:A] || E> - not a closed witness.  This constructor accepts
+    any well-typed pair; it does not conjure a payload, and a caller
+    passing a free variable as ``inner_term`` gets a term with a free
+    variable.  (An earlier docstring called this "the vacuous affine
+    witness in the abort state, T -> F -> A"; that misread an ednote
+    about ex contradictione quodlibet, which needs a contradiction in
+    hand, not a refutation facing a hole.)"""
     return Mu(ID("_", prop), prop, inner_term, inner_context)
 
 
