@@ -284,7 +284,8 @@ determinism, stability and fuel exhaustion. The contested fixture's
 skeptical evaluation now prints the fully reduced residue
 mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
-*** BACKLOG Switch to graph-first: operators build the graph, terms by unfolding
+*** DONE Switch to graph-first: operators build the graph, terms by unfolding
+CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
 :ID:             aida-graph-first
 :AREA:           phd
@@ -311,7 +312,53 @@ experimental code in the tree; the oracles and Fellowship replay are
 what make it checkable. Sub-steps B1-B4 in the plan. Effort is for the
 first step; the plan estimates 5-8 days for the phase.
 
-*** BACKLOG Build the whole-file document graph
+Evidence (2026-09-17, commit B). Decided with the author: option 1 for
+the verbs (name + assert, no edge). Done:
+- B1: one edge per closed subargument - argument bodies, scions, and
+  every lambda (an implication under a hypothesis); a subargument that
+  captured a binder of an enclosing one is absorbed into it and kept on
+  record. Alternative derivations (a site's own route vs an absorbed
+  scion's) are separate records. NOT done: decomposition of elimination
+  spines into intermediate conclusions - that is
+  aida-curried-intermediate-conclusions (WAITING by the author's
+  decision) and stays with it.
+- B2: the verbs still build their composed term for the term-level
+  commands (render/reduce/tree) but add nothing to the graph; they
+  assert reachability (ProverWrapper.check_reachable) and error
+  otherwise; composed arguments carry composed=True.
+- B3: core/dc/unfold.py. From an issue: the issue's site wrapped in a
+  support scaffold per deriving edge and an attack scaffold per edge or
+  default marker of the contrary, each edge's body expanded with its
+  sites unfolded the same way; binders of enclosing bodies are in scope
+  and a site for a bound statement becomes the variable (capture); a
+  statement already on the path with no binder in scope stays a bare
+  site (T6: each statement expanded once per path). Scaffold catch
+  variables are wiring, not scope. Under lj continuations are dropped
+  under a lambda (LJ keeps one conclusion); under lk both hypotheses
+  and continuations are captured. Lambda subargument edges never attach
+  as scions; they are inline in their parent.
+- B4: tests/test_unfold.py::test_adequacy_restated - for every term-side
+  statement of six fixture documents, IN -> value and OUT -> not a value
+  with unfolding as the bridge. Both D0 gaps close: self_attack
+  evaluates OPEN (the presumed refutation is now an attack scaffold),
+  cyclic_undercut's A evaluates to its presumption.
+- Peirce's law: the document graph is cyclic (P -> Q -> P through the
+  hypothesis); unfolding from the thesis under lk captures f, h and the
+  continuation; the issue graph is one strict edge, IN, nothing else
+  IN, and the value is alpha-equal to lambda f. mu a.< f || (lambda h.
+  mu _.< h || a >) * a > (test_peirce_is_a_theorem). The even loop under
+  lj is symmetric (grounded UNDEC, skeptical OPEN, credulous VALUE for
+  each side).
+- Fellowship replay of unfolded terms: not done; the unfolded term is
+  checked by compilation, labelling and evaluation only. Left for E.
+Found: splitting the lambda off weakens the *grounded* label on
+negation-as-implication - self_attack's P[t] is UNDEC (was OUT when the
+edge was fused), because the ADF no longer sees that (P->false)[t] is
+P[c]; preferred and stable still say OUT. D1's negation bridge
+((neg K)[t] <-> K[c]) repairs it; noted there.
+
+*** DONE Build the whole-file document graph
+CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
 :ID:             aida-document-graph
 :AREA:           phd
@@ -367,6 +414,20 @@ reachable from that issue in the document graph, erroring otherwise;
 they add no edge. Explicit scoping rejected. Under graph-first the
 composed term is no longer what graph/label/evaluate use: they unfold
 the issue from the document graph (B3).
+
+Evidence (2026-09-17, commit C): the document graph lives in mod.store
+("graph", like the argument registry) and ProverWrapper.register_argument
+compiles every atomic argument into it (composed ones are debates and
+add nothing); the logic mode (lj/lk) is tracked from the user's
+commands; `graph`, `label`, `evaluate` and `tree` resolve a name to its
+issue and unfold the document (wrap/cli.py _issue_term); `graph
+document` / `label document` show the document graph. Fixture
+tests/rationality/document_attack.fspy: `label pArg` is IN before a
+counterargument to Q is registered on its own and UNDEC after, with no
+verb; tests/test_document.py checks that, that a composed debate adds
+nothing, that the verbs refuse an unreachable target, and the logic
+tracking. The per-argument path still works for a single-argument file
+(a lone argument unfolds to itself).
 
 *** DONE Decide credulous mode by a witness labelling, not per scaffold
 CLOSED: [2026-09-16 Wed]

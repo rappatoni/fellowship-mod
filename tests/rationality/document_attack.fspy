@@ -1,0 +1,40 @@
+% Phase C (aida-document-graph, 2026-09-17): the document graph is one
+% graph for the whole file, and an attack registered anywhere counts
+% everywhere the proposition occurs.
+%
+% pArg argues P from a presumed Q.  qAtt is a counterargument to Q,
+% registered on its own - never composed with pArg by a verb.  Because
+% proposition identity is global to the file, `label pArg` already sees
+% the contest on Q:  Q[t] UNDEC, Q[c] UNDEC, P[t] UNDEC, and the modes
+% diverge exactly as in contested.fspy.
+%
+% `label document` shows the whole document graph's labelling; `graph
+% document` its edges.
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+
+label pArg
+
+% An unrelated-looking counterargument, registered later, no verb.
+start counterargument qAtt Q
+by default.
+end counterargument
+
+graph document
+label pArg
+evaluate pArg skeptical
+evaluate pArg credulous
+
+% The verbs assert (tests/test_document.py): a supporter must conclude a
+% statement reachable from the host's issue, an attacker the contrary of
+% one; `support bad rArg pArg` with an unrelated R is refused.

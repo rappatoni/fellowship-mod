@@ -5,6 +5,10 @@ from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
 from core.ac.signature import Declaration
 from mod import store
+from core.dc.debate_graph import (
+    DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
+)
+from core.ac.ast import FirstOrderNotSupported
 
 logger = logging.getLogger('fsp.wrapper')
 
@@ -72,6 +76,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         Returns a preparsed (sexp) proof state.
         """
+        stripped = command.strip().rstrip(".").strip()
+        if stripped in ("lj", "lk"):
+            store.document["logic"] = stripped
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -475,8 +482,67 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return f"Error: Tactic '{tactic_name}' is not defined."
 
     def register_argument(self, argument: Any) -> None:
-        """ Register a new argument (i.e. a partial Fellowship proof.)"""
+        """ Register a new argument (i.e. a partial Fellowship proof.)
+
+        An atomic argument (not one the debate operators composed) also
+        contributes its hyperedges to the document graph; a composed one
+        is a *debate*, named for its issue, and adds nothing - the
+        conflicts it names are already in the document (option (i)+(ii)
+        of the aida-document-graph decision)."""
         self.arguments[argument.name] = argument
+        if not getattr(argument, "composed", False):
+            self.document_add(argument)
+
+    # -- the document graph (Phase C) --------------------------------------
+
+    @property
+    def document(self) -> DebateGraph:
+        return store.document.setdefault("graph", DebateGraph())
+
+    @property
+    def logic(self) -> str:
+        """"lk" (classical, default) or "lj", as last selected by the user."""
+        return store.document.get("logic", "lk")
+
+    def document_add(self, argument: Any) -> None:
+        """Compile an argument into hyperedges and merge them into the
+        document graph.  Refusals are logged, not raised: the argument is
+        still registered for the term-level commands."""
+        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
+            return
+        try:
+            graph = compile_debate(argument.body, argument.name,
+                                   strict_names=self.declarations.keys(),
+                                   strict_kinds=declaration_kinds(self.declarations))
+        except (DebateCompileError, FirstOrderNotSupported) as e:
+            logger.warning("Argument '%s' not added to the document graph: %s", argument.name, e)
+            return
+        self.document.merge(graph)
+        logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
+
+    @staticmethod
+    def issue_of(argument: Any):
+        """The statement an argument (or debate) is about."""
+        side = "context" if getattr(argument, "is_anti", False) else "term"
+        return (canonical_prop(argument.conclusion), side)
+
+    def check_reachable(self, host: Any, scion: Any, kind: str) -> None:
+        """The debate verbs' assertion (aida-document-graph decision): an
+        attacker must conclude the contrary of a statement reachable from
+        the host's issue, a supporter must conclude such a statement.
+        Only checked when the host is in the document graph."""
+        issue = self.issue_of(host)
+        if issue not in set(self.document.statements()):
+            return
+        reach = self.document.reachable(issue)
+        key, side = self.issue_of(scion)
+        wanted = (key, ("context" if side == "term" else "term")) if kind == "attack" else (key, side)
+        if wanted not in reach:
+            display = self.document.nodes.get(key, scion.conclusion)
+            raise ProverError(
+                f"{kind}: '{scion.name}' concludes {display}[{side[0]}], but no statement "
+                f"{display}[{wanted[1][0]}] is reachable from '{host.name}' in the document graph."
+            )
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

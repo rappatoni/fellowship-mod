@@ -227,22 +227,36 @@ detects a machine-mode desynchronization.
 
 ### Debate-graph commands
 
-These compile the argument's term into a debate graph, label it by an
-ADF semantics and evaluate it under a witness labelling. Derivation
-cycles are admitted; `graph` reports which fragment (acyclic or cyclic)
-a debate is in. They cover
+Every atomic argument you register (`start argument ... end argument`,
+`register`) adds its hyperedges to one **document graph** for the whole
+file; proposition identity is global to it, so a counterargument to Q
+registered anywhere contests every use of Q. The debate verbs
+(`attack`, `support`, `chain`) name a debate whose issue is the host's
+conclusion and check that the attacker concludes the contrary of (the
+supporter concludes) a statement reachable from that issue; they add no
+edge. `graph`, `label` and `evaluate` take a name, read its issue,
+**unfold** the document graph from that issue into a debate term
+(cycles broken by capture: a demand for P inside a proof of P->Q is the
+hypothesis, a demand for a refutation of P inside a proof of P is the
+continuation - under `lj` only hypotheses are captured), compile that
+term into the issue's debate graph, label it by an ADF semantics and
+evaluate it under a witness labelling. `graph document` and `label
+document` show the document graph itself. Derivation cycles are
+admitted; `graph` reports which fragment (acyclic or cyclic) a debate
+is in. They cover
 the quantifier-free fragment and refuse first-order terms with a
 one-line message.
 
-- `graph ARG [FILE.dot] [show]`
-  - compile the debate graph and print its nodes, hyperedges and default
-    markers; write Graphviz DOT when a filename is given
+- `graph ARG|document [FILE.dot] [show]`
+  - print the nodes, hyperedges and default markers of ARG's issue graph
+    (unfolded from the document) or of the document graph; write
+    Graphviz DOT when a filename is given
   - every lambda is a subargument edge of its own; a subargument that
     captured a binder of an enclosing one is absorbed into it and listed
     under that edge with what it captured (`~ absorbed ...`)
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
-- `label ARG [grounded|complete|preferred|stable]`
+- `label ARG|document [grounded|complete|preferred|stable]`
   - print the labelling(s) of the chosen semantics (default grounded):
     one `IN` / `OUT` / `UNDEC` per proposition and side; several
     labellings are numbered

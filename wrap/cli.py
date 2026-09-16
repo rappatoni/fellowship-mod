@@ -1437,30 +1437,60 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
-def _compile_argument_graph(prover: ProverWrapper, name: str):
-    """Resolve an argument and compile its body into a DebateGraph.
+def _issue_term(prover: ProverWrapper, name: str):
+    """Resolve NAME to (arg, issue, term): the debate term for the
+    argument's issue, unfolded from the document graph (Phase C).
 
-    Returns (arg, graph) or (arg, None) after printing the refusal - the
-    log-and-refuse convention: compile errors are one-line messages, not
-    tracebacks.
+    Every registered atomic argument is in the document; a composed
+    argument (a debate) names its host's issue.  An argument the document
+    refused at registration falls back to its own term, with a notice.
+    Returns (arg, issue, None) after printing a refusal.
     """
-    from core.dc.debate_graph import compile_debate, DebateCompileError, declaration_kinds
-    from core.ac.ast import FirstOrderNotSupported
+    from core.dc.unfold import unfold, UnfoldError
 
     arg = prover.get_argument(name)
     if not arg:
         logger.error("Argument '%s' not found.", name)
-        return None, None
+        return None, None, None
     if not arg.executed:
         arg.execute()
+    issue = prover.issue_of(arg)
+    document = prover.document
+    if issue not in set(document.statements()):
+        logger.warning("'%s' is not in the document graph; using its own term.", name)
+        return arg, issue, arg.body
     try:
-        graph = compile_debate(arg.body, name, strict_names=prover.declarations.keys(),
+        term = unfold(document, issue, classical=prover.logic != "lj")
+    except UnfoldError as e:
+        print(f"graph: refused: {e}")
+        logger.warning("Unfolding refused for '%s': %s", name, e)
+        return arg, issue, None
+    return arg, issue, term
+
+
+def _compile_argument_graph(prover: ProverWrapper, name: str):
+    """(arg, graph, term) for NAME: the issue's debate graph, compiled
+    from the term unfolded out of the document graph; or, for the name
+    ``document``, the document graph itself.  (arg, None, term) after
+    printing the refusal - the log-and-refuse convention: compile errors
+    are one-line messages, not tracebacks.
+    """
+    from core.dc.debate_graph import compile_debate, DebateCompileError, declaration_kinds
+    from core.ac.ast import FirstOrderNotSupported
+
+    if name == "document":
+        return None, prover.document, None
+    arg, issue, term = _issue_term(prover, name)
+    if term is None:
+        return arg, None, None
+    try:
+        graph = compile_debate(term, name, strict_names=prover.declarations.keys(),
                                strict_kinds=declaration_kinds(prover.declarations))
     except (DebateCompileError, FirstOrderNotSupported) as e:
         print(f"graph: refused: {e}")
         logger.warning("Debate graph compilation refused for '%s': %s", name, e)
-        return arg, None
-    return arg, graph
+        return arg, None, term
+    return arg, graph, term
 
 
 def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Optional[str]:
@@ -1536,10 +1566,16 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     when Graphviz is not installed, print an indented text view instead
     (which always works and needs no dependencies).
     """
-    arg, graph = _compile_argument_graph(prover, name)
+    arg, graph, _term = _compile_argument_graph(prover, name)
     if graph is None:
         return
-    logger.info("Debate graph for '%s': %d nodes, %d edges", name, len(graph.nodes), len(graph.edges))
+    if arg is None:
+        logger.info("Document graph: %d nodes, %d edges (every registered atomic argument)",
+                    len(graph.nodes), len(graph.edges))
+    else:
+        key, side = prover.issue_of(arg)
+        logger.info("Debate graph for '%s' (issue %s[%s], unfolded from the document): %d nodes, %d edges",
+                    name, graph.nodes.get(key, arg.conclusion), side[0], len(graph.nodes), len(graph.edges))
     for edge in graph.edges:
         sources = ", ".join(
             f"{graph.nodes[s.key]}[{s.side[0]}:{s.kind[:4]}]" for s in edge.sources
@@ -1624,7 +1660,7 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
     """
     from core.comp.adf_label import labellings
 
-    arg, graph = _compile_argument_graph(prover, name)
+    arg, graph, _term = _compile_argument_graph(prover, name)
     if graph is None:
         return
     try:
@@ -1669,18 +1705,18 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     from pres.gen import ProofTermGenerationVisitor
     import copy as _copy
 
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error("Argument '%s' not found.", name)
+    if name == "document":
+        logger.error("evaluate needs an argument or debate name; 'document' has no issue.")
         return
-    if not arg.executed:
-        arg.execute()
+    arg, issue, term = _issue_term(prover, name)
+    if term is None:
+        return
     common = dict(strict_names=prover.declarations.keys(),
                   strict_kinds=declaration_kinds(prover.declarations),
                   base=base, semantics=semantics)
     try:
         if witness == "all":
-            results, _ = evaluate_witnesses(arg.body, name, **common)
+            results, _ = evaluate_witnesses(term, name, **common)
             if not results:
                 logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
                             name, semantics, base)
@@ -1694,7 +1730,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 arg.labelled_nf = nf
             return
         nf, nf_class, sigma, graph = evaluate_debate(
-            arg.body, name, mode=mode, witness=witness, **common)
+            term, name, mode=mode, witness=witness, **common)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)
@@ -1712,7 +1748,7 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
     written uncoloured with a one-line notice."""
     from core.comp.adf_label import grounded_labels
 
-    arg, graph = _compile_argument_graph(prover, name)
+    arg, graph, _term = _compile_argument_graph(prover, name)
     if arg is None:
         return
     labels = None

@@ -238,6 +238,25 @@ class DebateGraph:
                 out |= {s.key for s in edge.sources}
         return out
 
+    def reachable(self, statement) -> set:
+        """Statements connected to ``statement``: through the sources of
+        the edges deriving each statement and through contrariness - the
+        rational closure of the spec, as reachability."""
+        materialized = set(self.statements())
+        seen, todo = set(), [statement]
+        while todo:
+            s = todo.pop()
+            if s in seen:
+                continue
+            seen.add(s)
+            for edge in self.edges:
+                if (edge.target_key, edge.target_side) == s:
+                    todo.extend((src.key, src.side) for src in edge.sources)
+            c = (s[0], "context" if s[1] == "term" else "term")
+            if c in materialized:
+                todo.append(c)
+        return seen
+
     def is_acyclic(self) -> bool:
         WHITE, GRAY, BLACK = 0, 1, 2
         color = {k: WHITE for k in self.nodes}

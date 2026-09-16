@@ -737,6 +737,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Create a new Argument instance
         combined_argument = Argument(self.prover, combined_name, combined_conclusion, combined_instructions)
         combined_argument.body = combined_body
+        combined_argument.composed = True   # a debate, not an atomic argument
         logger.debug("Instructions '%s'", combined_instructions)
         # Execute the combined argument
         combined_argument.execute()
@@ -790,6 +791,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return eb, te.found_target, te.changed
 
     def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
+        check = getattr(self.prover, "check_reachable", None)
+        if check is not None:
+            check(other_argument, self, "support")
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             logger.debug("Executing supporter argument '%s'", self.name)
@@ -898,6 +902,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
           - Build a one-step adapter to embed the attacker at the right kind.
           - Chain attacker → adapter (η at root) → θ-expanded target.
         """
+        check = getattr(self.prover, "check_reachable", None)
+        if check is not None:
+            check(other_argument, self, "attack")
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             logger.debug("Executing attacker argument '%s'", self.name)

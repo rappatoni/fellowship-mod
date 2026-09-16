@@ -50,6 +50,7 @@ DEFAULT_SCRIPTS = [
     "rationality/contested.fspy",
     "rationality/two_witnesses.fspy",
     "rationality/cyclic_undercut.fspy",
+    "rationality/document_attack.fspy",
     "rationality/modus_tollens.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",
@@ -156,3 +157,4 @@ def reset_global_store():
     # Keep declarations session-scoped (per ProverWrapper instance).
     # Arguments are global via mod.store; clear between tests to avoid bleed-through.
     store.arguments.clear()
+    store.document.clear()
