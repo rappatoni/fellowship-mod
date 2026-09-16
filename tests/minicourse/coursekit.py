@@ -38,7 +38,12 @@ def readable(condition, graph=None) -> str:
         name = graph.nodes[key] if graph else key
         return f"{name}[{side[0]}]"
     if tag == "not":
-        return f"~{readable(condition[1], graph)}"
+        # Meta-negation of the acceptance condition.  Rendered as "not" so
+        # it cannot be confused with object negation "~" inside a
+        # proposition: the guard on Q[c] prints "not Q[c]", an edge sourced
+        # at the node ~Q prints "~Q[c]" (tasks.org,
+        # aida-course-negation-notation).
+        return f"not {readable(condition[1], graph)}"
     if tag in ("and", "or"):
         empty, glue = ("true", " & ") if tag == "and" else ("false", " | ")
         parts = condition[1]
@@ -56,7 +61,7 @@ def label_of(statement, graph):
 
 
 def conditions_of(graph) -> dict:
-    """{"Q[t]": "(true & ~Q[c])", ...} - readable, in graph order."""
+    """{"Q[t]": "(true & not Q[c])", ...} - readable, in graph order."""
     out = {}
     for statement, condition in compile_conditions(graph).items():
         key, side = split_statement(statement)

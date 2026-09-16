@@ -1,4 +1,5 @@
 import logging, copy, os
+from itertools import count
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Admal, Cons, Context, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term
@@ -39,6 +40,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     
     """
     
+    #: Deterministic sequence for the theta-expansion temporaries (was
+    #: id(body), a memory address that changed between runs).
+    _theta_seq = count(1)
+
     def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS", is_anti: bool = False):
         # TODO: some of these stil need type hints.
         self.prover = prover
@@ -827,7 +832,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
 
         logger.debug("Creating expanded argument for supported argument '%s'", other_argument.name)
-        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        temp_name = f"theta_expand_{other_argument.name}_{next(Argument._theta_seq)}"
         expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded argument")
@@ -932,7 +937,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 f"attack: target with proposition '{issue}' for mode={target_kind}, expand_defaults={expand_defaults}, allow_strict={allow_strict} is already in exposed form"
             )
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
-        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        temp_name = f"theta_expand_{other_argument.name}_{next(Argument._theta_seq)}"
         expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded attacked argument")
@@ -988,20 +993,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # 1. deep‑copy then reduce
         red_ast = copy.deepcopy(self.body)
-        eval_disc = os.getenv("FSP_EVAL_DISCIPLINE", "legacy")
-        # Backwards/ergonomic aliases
-        if eval_disc == "onus_parallel":
-            eval_disc = "onus-parallel"
-        if eval_disc in ("onus_only", "onus-only"):
-            eval_disc = "onus"
-        onus_fb   = os.getenv("FSP_ONUS_FALLBACK", "none")
-        onus_st   = os.getenv("FSP_ONUS_STANCE", "skeptical")
+        # The legacy reducer (call-by-onus retired 2026-09-16; sigma-first
+        # evaluation lives in core/comp/evaluate.py).
         red_ast = ArgumentTermReducer(
-            evaluation_discipline=eval_disc,
-            onus_fallback=onus_fb,
-            onus_stance=onus_st,
-            assumptions=self.assumptions,                  # opcional pero recomendable (para snapshot)
-            axiom_props=self.prover.declarations           # clave para que _is_axiom_leaf funcione
+            assumptions=self.assumptions,
+            axiom_props=self.prover.declarations,
         ).reduce(red_ast)
         # V2 (propositional-fragment-plan.org): reduction of a strict, closed
         # argument must not leave an open obligation behind.

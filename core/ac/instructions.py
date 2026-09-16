@@ -107,6 +107,14 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                 s = s[:-1].strip()
             s = to_ascii_logic(s)
             sanitized.append(s)
+        # A trailing `next` can never do useful work: it exists to move the
+        # prover to the goal the following instructions address, and nothing
+        # follows.  When the last open site is also the last goal, Fellowship
+        # refuses it ("There is only one goal, impossible to switch"), so
+        # drop it here rather than let Argument.execute swallow the error
+        # (tasks.org, aida-trailing-next-warning).
+        if sanitized and sanitized[-1] == "next":
+            sanitized.pop()
         self.instructions = collections.deque(sanitized)
         return self.instructions
 

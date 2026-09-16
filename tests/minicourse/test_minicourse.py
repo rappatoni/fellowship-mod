@@ -132,8 +132,8 @@ class TestLesson4Conditions:
                            "datt", strict_names={"pRule"})
         assert self.conditions(g) == {
             "P[t]": "Q[t]",
-            "Q[t]": "(true & ~Q[c])",
-            "Q[c]": "(true & ~Q[t])",
+            "Q[t]": "(true & not Q[c])",
+            "Q[c]": "(true & not Q[t])",
         }
         assert {(g.nodes[k], s): v for (k, s), v in grounded_labels(g).items()} == {
             ("P", "term"): "UNDEC", ("Q", "term"): "UNDEC", ("Q", "context"): "UNDEC"}
@@ -281,7 +281,7 @@ class TestLesson4GuardSideConditions:
             [("qStrict", "Q", "term", [], True, "supporter")],
             [("Q", "term", "obligation"), ("Q", "context", "presumption")],
         )
-        # Not (true | (false & ~Q[c])): the guard is skipped.
+        # Not (true | (false & not Q[c])): the guard is skipped.
         assert self.conditions(g)["Q[t]"] == "(true | false)"
 
     def test_no_guard_and_no_outer_or_without_strict_edges(self):
@@ -295,7 +295,7 @@ class TestLesson4GuardSideConditions:
             [("e", "Q", "term", [("R", "term", "presumption")], False, "argument")],
             [("Q", "context", "presumption")],
         )
-        assert self.conditions(g)["Q[t]"] == "(R[t] & ~Q[c])"
+        assert self.conditions(g)["Q[t]"] == "(R[t] & not Q[c])"
 
     def test_no_guard_when_the_contrary_is_not_materialised(self):
         g = self.build(
@@ -353,7 +353,7 @@ class TestLesson5EdgeAcyclicButUndecided:
         assert g.edges == []
         assert g.is_acyclic()                      # trivially: no edges
         assert conditions_of(g) == {
-            "Q[t]": "(true & ~Q[c])", "Q[c]": "(true & ~Q[t])"}
+            "Q[t]": "(true & not Q[c])", "Q[c]": "(true & not Q[t])"}
         assert set(grounded_labels(g).values()) == {"UNDEC"}
 
     def test_undec_propagates_through_an_acyclic_edge(self):

@@ -484,6 +484,34 @@ _LEAF_INFO = {
 }
 
 
+#: Prefix of the temporaries Argument._theta_expand mints around an
+#: attacked or supported body.  They are bookkeeping, not subarguments,
+#: and never name an edge.
+SYNTHETIC_PREFIX = "theta_expand_"
+
+
+def _host_name(body, fallback: str) -> str:
+    """The subargument a host body records: the innermost binder of its
+    eta-wrapper chain  mu d.< mu theta.< mu cArg.< ... || cArg > || theta > || d >
+    that is not synthetic - here ``cArg``, not the debate's own ``d``
+    (tasks.org, aida-host-edge-naming)."""
+    names = []
+    node = body
+    while True:
+        if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
+            names.append(node.id.name)
+            node = node.term
+        elif isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
+            names.append(node.di.name)
+            node = node.context
+        else:
+            break
+    for candidate in reversed(names):
+        if not candidate.startswith(SYNTHETIC_PREFIX):
+            return candidate
+    return fallback
+
+
 def _scion_name(body, fallback: str) -> str:
     """An eta-wrapped scion carries its argument name in the root binder."""
     if isinstance(body, Mu) and isinstance(body.context, ID) and body.context.name == body.id.name:
@@ -544,8 +572,9 @@ class _Compiler:
         found = first_order_node(body)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
-        clean = self._decompose(deepcopy(body), name)
-        self._add_edge_from_body(clean, name, role)
+        edge_name = _host_name(body, name)
+        clean = self._decompose(deepcopy(body), edge_name)
+        self._add_edge_from_body(clean, edge_name, role)
 
     # -- scaffold decomposition ---------------------------------------------
 

@@ -227,7 +227,9 @@ class TestScaffoldDecomposition:
         g = compile_debate(body, "deep", strict_names=STRICT)
         assert len(g.edges) == 3
         names = {e.name for e in g.edges}
-        assert names == {"deep", "qArg", "rArg"}
+        # The host edge is named after the subargument it records (pArg),
+        # not after the debate ("deep"): aida-host-edge-naming.
+        assert names == {"pArg", "qArg", "rArg"}
         g.assert_acyclic()
 
     def test_cycle_refused(self):
@@ -278,7 +280,7 @@ class TestTextView:
         text = g.to_text(labels=grounded_labels(g))
         lines = text.splitlines()
         assert lines[0].startswith("P[term]")
-        assert "dsup  (argument, defeasible)" in lines[1]
+        assert "pArg  (argument, defeasible)" in lines[1]  # host edge named after its subargument
         assert any("Q[term]" in ln and "[obligation]" in ln for ln in lines)
         assert any("qArg  (supporter" in ln for ln in lines)
         # Indentation grows with depth.
@@ -321,3 +323,31 @@ def edge_helper(name, target, side, sources):
 def src_helper(key, side, kind):
     from core.dc.debate_graph import Source
     return Source(key=key, side=side, kind=kind, site="s")
+
+
+class TestHostEdgeNaming:
+    """aida-host-edge-naming: edges carry their own subargument's name."""
+
+    def composite(self):
+        # The shape Argument.support builds: the debate's eta wrapper, the
+        # synthetic theta-expansion wrapper, then the host argument.
+        body = parg_body(t_sup("Q", Goal("1", "Q"), qarg_body()))
+        return eta_term("d2", "P", eta_term("theta_expand_pArg_4379018016", "P", body))
+
+    def test_edges_are_named_after_the_constituents(self):
+        g = compile_debate(self.composite(), "d2", strict_names=STRICT)
+        assert {e.name for e in g.edges} == {"pArg", "qArg"}
+
+    def test_no_synthetic_name_reaches_an_edge(self):
+        g = compile_debate(self.composite(), "d2", strict_names=STRICT)
+        assert not any(e.name.startswith("theta_expand_") for e in g.edges)
+
+    def test_names_are_stable_across_compilations(self):
+        a = [e.name for e in compile_debate(self.composite(), "d2", strict_names=STRICT).edges]
+        b = [e.name for e in compile_debate(self.composite(), "d2", strict_names=STRICT).edges]
+        assert a == b
+
+    def test_bare_body_falls_back_to_the_debate_name(self):
+        body = Mu(ID("k", "P"), "P", DI("pRule", "Q->P"), Cons(Goal("1", "Q"), ID("k", "P")))
+        g = compile_debate(body, "solo", strict_names=STRICT)
+        assert g.edges[0].name == "solo"

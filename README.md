@@ -174,24 +174,6 @@ You can also set the default log level with:
 export FSP_LOGLEVEL=DEBUG
 ```
 
-### Reduction / normalization controls
-
-Normalization behavior is controlled by environment variables read by
-`core.dc.argument.Argument.normalize()`:
-
-- `FSP_EVAL_DISCIPLINE`
-  - `legacy` (default)
-  - `onus`
-  - `onus-parallel`
-- `FSP_ONUS_FALLBACK`
-- `FSP_ONUS_STANCE`
-
-Example:
-
-```bash
-FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy
-```
-
 ## Workflow overview
 
 A typical wrapper workflow is:

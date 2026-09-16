@@ -99,7 +99,9 @@ def test_instruction_generator_skips_literal_thesis_root():
 
     instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
 
-    assert instructions == ["next", "next"]
+    # One `next` per open site, minus the trailing one that could never
+    # succeed (aida-trailing-next-warning, 2026-09-16).
+    assert instructions == ["next"]
 
 
 def test_instruction_generator_still_emits_cut_for_non_thesis_root_name():
@@ -110,7 +112,7 @@ def test_instruction_generator_still_emits_cut_for_non_thesis_root_name():
 
     instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
 
-    assert instructions == ["cut (P) demo", "next", "next"]
+    assert instructions == ["cut (P) demo", "next"]
 
 def test_argument_rename_outer_binder_rewrites_bound_occurrences():
     from core.dc.argument import Argument

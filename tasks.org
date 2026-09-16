@@ -865,7 +865,8 @@ can produce. Related: =aida-strict-refutation-edges= (declared
 refutations are dropped; the same "strict references carry no side"
 problem at the leaf level).
 
-*** BACKLOG Distinguish meta-negation from object negation in the course notation
+*** DONE Distinguish meta-negation from object negation in the course notation
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-course-negation-notation
 :AREA:           phd
@@ -884,6 +885,14 @@ problem at the leaf level).
 Found 2026-09-16: an edge with sources Q[t] and (~Q)[c] prints as
 =(Q[t] & ~Q[c])=, exactly the guard's shape. The toolkit uses =~= for
 meta-negation; the proposition printer uses =~= for object negation.
+
+Evidence (2026-09-16): =readable= in tests/minicourse/coursekit.py
+renders the meta-negation as =not X=, so the guard prints =not Q[c]=
+and an edge sourced at the node ~Q prints =~Q[c]=; the six pinned
+condition strings in tests/minicourse/test_minicourse.py and the
+sixteen occurrences in minicourse.org lessons 4-5 and 8 (the author's
+own answer on lesson 4 left as written) use the new rendering;
+tests/minicourse passes.
 
 *** WAITING Expose the intermediate conclusions of curried implications
 :PROPERTIES:
@@ -1113,7 +1122,8 @@ D0's business); peirces_law.fspy is refused on a free term variable
 =h= from a cut whose hypothesis the compiler does not yet bind.
 Suite 965 passed, 2 skipped, 4 xfailed, 2 xpassed.
 
-*** BACKLOG Resolve the legacy reducer audit findings
+*** DONE Resolve the legacy reducer audit findings
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-legacy-reducer-findings
 :AREA:           phd
@@ -1136,6 +1146,21 @@ in propositional-fragment-plan.org (onus-parallel keeps OUT supporters
 and cannot discard OUT attackers). Rules 5-25 of call-by-onus.org are
 the deprecated system; rules 1-4 (the four standard reductions) and
 the Layer 4 section remain live.
+
+Evidence (2026-09-16): removed from core/comp/reduce.py the
+=evaluation_discipline= / =onus_fallback= / =onus_stance= parameters,
+=_classify_for_onus=, =_decide_onus=, =_onus_apply_once=,
+=_maybe_warn_onus_divergence= and the sixteen divergence-warning call
+sites; =Argument.normalize= no longer reads FSP_EVAL_DISCIPLINE /
+FSP_ONUS_FALLBACK / FSP_ONUS_STANCE and README's "Reduction /
+normalization controls" section is gone; tests/test_onus_categories.py
+deleted (its two live tests exercised =_is_ap_node= only, its strict
+xfail was B-0017). grep for "onus" in core/, wrap/, pres/, tests/ finds
+only the three historical notes naming call-by-onus.org. Still open by
+design, and now the whole of this task's residue: the reducer itself
+(=reduce= / =normalize= / =render-nf= / =tree= run it) and
+core/comp/legacy_shape.py, which go together when graph-first unfolding
+(aida-graph-first) supplies the normal forms.
 
 *** BACKLOG Make presumption ports capturable like obligation ports
 :PROPERTIES:
@@ -1174,7 +1199,8 @@ challenge ending in a Laog gets its tail rerouted to alt, a by-default
 an identity edge (presumption marker), which is semantically equivalent
 for labelling, but the term-level asymmetry is undocumented.
 
-*** BACKLOG Decide whether the trailing 'next' in regenerated instructions is a bug
+*** DONE Decide whether the trailing 'next' in regenerated instructions is a bug
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-trailing-next-warning
 :AREA:           phd
@@ -1211,7 +1237,19 @@ that cannot succeed (a latent bug masked by the special case), or is
 "final next may fail" the intended contract for leaving a goal open?
 Any support whose adapter chain leaves the open site last prints this.
 
-*** BACKLOG Name the host hyperedge after its own subargument
+Decision and evidence (2026-09-16): a defect in the generator. A =next=
+is emitted to move the prover to the goal the *following* instructions
+address; with nothing following it can do no work, and when the open
+site is the last goal Fellowship refuses it. =return_instructions= now
+drops a trailing =next= (core/ac/instructions.py); the special case in
+=Argument.execute= stays as a defensive guard but is no longer
+exercised. tests/test_trailing_next.py (four cases) and the two pins in
+tests/test_default_eta_long.py and tests/test_unit_closing_elim.py
+updated; replaying tests/minicourse/lesson5_labels.fspy prints the
+warning zero times and =label d5= is unchanged.
+
+*** DONE Name the host hyperedge after its own subargument
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-host-edge-naming
 :AREA:           phd
@@ -1259,6 +1297,17 @@ Two things to fix, the second more than cosmetic:
 Diagnostic only at present: =Edge.name= and =Edge.role= are carried for
 printing and never consulted by the labeller or the evaluator, so no
 label or normal form depends on this.
+
+Evidence (2026-09-16): =_host_name= in core/dc/debate_graph.py peels the
+eta-wrapper chain of a host body and names the edge after the innermost
+binder that is not synthetic (=SYNTHETIC_PREFIX= "theta_expand_"),
+falling back to the debate name for a bare body; the lesson-2 host edge
+now prints =cArg= (minicourse.org updated). =Argument._theta_expand=
+mints its temporaries from a class-level counter instead of
+=id(body)=, so names are deterministic. tests/test_debate_graph.py
+=TestHostEdgeNaming= (constituent names, no synthetic name, stable
+across two compilations, bare-body fallback) plus the two adjusted pins
+in that file.
 
 *** BACKLOG Express the married-bachelor and contamination fixtures as .fspy
 :PROPERTIES:
