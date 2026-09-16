@@ -715,6 +715,34 @@ the acyclic fragment. Decision (author, 2026-09-16): accept that; the
 acyclic fragment is only the initial one, and the next fragment admits
 cycles. Carried forward in =aida-cyclic-fragment=.
 
+*** BACKLOG Decide how the graph records the alternative an absorbed supporter replaces
+:PROPERTIES:
+:ID:             aida-absorbed-alternatives
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided whether an absorbed supporter's ORIG wing (the site's earlier state: an obligation, or an earlier supporter of the same site) is represented in the graph - as a separate edge per closed alternative derivation, or not at all - and the compiler does it.
+:VERIFY:         On the Peirce fixture the route through p2 (P from (P->Q)->P applied to an open P->Q obligation) is either a second edge for the thesis, defeasible, or documented as absent by design; test_debate_graph.py::TestCapturedScionsAreAbsorbed covers the chosen behaviour.
+:END:
+
+Found 2026-09-17 (author: "get rid of the unprincipled modifications").
+When a supporter is absorbed, the compiler keeps the scion's derivation
+and drops the ORIG wing of the scaffold. For a bare obligation that is
+right (the site is filled). For an earlier supporter of the same site
+it silently discards an alternative derivation the term still carries
+as the other wing of the critical pair. A probe that named the dropped
+route ("supersedes") and a dashed rendering of absorbed records in the
+DOT graph were removed the same day as ad hoc. The principled options:
+one edge per closed alternative (the product over absorbed scaffolds
+of scion-route and ORIG-route), or none. Absorbed records with their
+captures stay on Edge.absorbed and in the text listing only.
+
 *** DONE Extend the fragment to admit derivation cycles
 CLOSED: [2026-09-16 Wed]
 :PROPERTIES:

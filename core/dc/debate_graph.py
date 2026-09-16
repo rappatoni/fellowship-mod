@@ -17,7 +17,7 @@ This module is being built along propositional-fragment-plan.org:
 """
 
 from copy import deepcopy
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from itertools import count
 
 from core.ac.ast import (
@@ -136,9 +136,6 @@ class Edge:
     #: one of its binders (see _Compiler): kept for presentation, not
     #: labelled on their own.
     absorbed: tuple = ()
-    #: Names of the subarguments in the ORIG wing an absorbed supporter
-    #: replaced (an earlier support of the same site), dropped with it.
-    supersedes: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -286,7 +283,6 @@ class DebateGraph:
                 f"{indent}~ absorbed {rec.name} ({rec.role}): "
                 f"{self.nodes.get(rec.target_key, rec.target_key)}[{rec.target_side[0]}] <- {sources}"
                 + (f"   uses {uses}" if uses else "")
-                + (f"   supersedes {', '.join(rec.supersedes)}" if rec.supersedes else "")
             )
             lines.extend(self.describe_absorbed(rec, indent + "    "))
         return lines
@@ -408,33 +404,8 @@ class DebateGraph:
                 lines.append(
                     f'  {ids[edge.target_key]} [peripheries=2];'
                 )
-            self._dot_absorbed(edge, ids, lines)
         lines.append("}")
         return "\n".join(lines)
-
-    def _dot_absorbed(self, edge, ids, lines) -> None:
-        """Absorbed subarguments, dashed: their sources, the statement they
-        derive, the edge they were merged into, and the captures that
-        caused it (dotted, from the statement the variable stands for)."""
-        for rec in edge.absorbed:
-            tgt = ids[rec.target_key]
-            head = "normal" if rec.target_side == "term" else "empty"
-            for source in rec.sources:
-                lines.append(
-                    f"  {ids[source.key]} -> {tgt} "
-                    f'[style=dashed color=gray40 arrowhead={head} label="{rec.name}"];'
-                )
-            lines.append(
-                f"  {tgt} -> {ids[edge.target_key]} "
-                f'[style=dashed color=gray40 arrowhead=onormal label="{rec.name} absorbed into {edge.name}"];'
-            )
-            for cap in rec.captures:
-                lines.append(
-                    f"  {ids[cap.key]} -> {tgt} "
-                    f'[style=dotted color=purple arrowhead=vee label="uses {cap.name}:{cap.side[0]} of {cap.owner}"];'
-                )
-            self._dot_absorbed(rec, ids, lines)
-
 
 # ---------------------------------------------------------------------------
 # M3: scaffold shapes
@@ -779,15 +750,14 @@ class _Compiler:
                     walk(orig, env, spine)          # the site stays a source
                     return
                 # absorbed: the scion is part of this derivation.  A
-                # supporter fills its site (the ORIG wing is dropped, and
-                # any earlier supporter in it is named as superseded); an
-                # attacked site stays open beside the attacker.
+                # supporter fills its site - the ORIG wing, an obligation or
+                # an earlier support of the same site, is the alternative
+                # the term keeps and the graph does not (open question,
+                # tasks.org aida-absorbed-alternatives); an attacked site
+                # stays open beside the attacker.
                 if srole == "attacker":
                     wing = node.context if isinstance(node, Mu) else node.term
                     walk(wing.term if isinstance(node, Mu) else wing.context, env, spine)
-                else:
-                    rec = replace(rec, supersedes=self._subargument_names(
-                        orig, sprop, isinstance(node, Mu), env, outer, name))
                 merge_child(rec, rec.captures, bind(env, {alt: (sprop, "context" if isinstance(node, Mu) else "term")}))
                 return
             if isinstance(node, Lamda) and node is not root_lambda:
@@ -838,26 +808,6 @@ class _Compiler:
                       sources=tuple(sources), strict=strict, role=role,
                       captures=tuple(captures), absorbed=tuple(absorbed))
         return record, not captures
-
-    def _subargument_names(self, wing, prop, term_side, env, outer, name):
-        """Names of the subarguments inside a dropped ORIG wing, compiled
-        on the side (nothing reaches the graph) so a superseded route is
-        at least named in the record."""
-        probe = _Compiler(self.strict_names, self.strict_kinds)
-        probe.graph.nodes.update(self.graph.nodes)
-        if term_side:
-            body = Mu(ID("_probe", prop), prop, deepcopy(wing), ID("_probe", prop))
-        else:
-            body = Mutilde(DI("_probe", prop), prop, DI("_probe", prop), deepcopy(wing))
-        try:
-            sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
-            rec, _closed = probe.compile_body(body, "_probe", "argument", sub_outer)
-        except DebateCompileError:
-            return ()
-        # top level only: what was directly at the site, not what those
-        # subarguments contained in turn
-        names = [e.name for e in probe.graph.edges] + [r.name for r in rec.absorbed]
-        return tuple(n for n in names if n != "_probe")
 
     def _root_statement(self, body, name):
         if isinstance(body, Mu):
