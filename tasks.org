@@ -828,6 +828,38 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
 
+*** BACKLOG Design: propagation of an abort through axioms and moxias
+:PROPERTIES:
+:ID:             aida-abort-propagation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided, with a soundness argument recorded, whether and how an affine throw sitting inside an elimination spine (under a Cons whose head is an axiom or moxia that cannot be further decomposed) propagates to the root, so that a defeated debate's normal form is itself an exception; or, if propagation is rejected, the adequacy statement is fixed at OUT-implies-not-a-value and classify_nf is given a spine-aware notion of "aborted".
+:VERIFY:         A written note in call-by-onus.org states the additional reduction rules (or the decision not to add them) and their soundness argument; if rules are added, the in-attacker case of tests/test_evaluate.py asserts class exception and subject reduction is checked by replaying the normal form through Fellowship; if not, classify_nf's spine-aware definition is tested on the defeated fixture.
+:END:
+
+Design issue, not a bug (author, 2026-09-16). Once the abort term sits
+at a defeated site (=aida-fragment-verification-residues=), a defeated
+debate for P still normalises to
+
+: mu pArg:P.< pRule:Q->P || mu b1:Q.< x:Q || nq:Q > * pArg:P >
+
+- the throw is one Cons deep under the axiom =pRule=, the root binder is
+non-affine, and =classify_nf= (root affine mu = exception) does not see
+it; the term even classifies as a value. For "OUT implies exception" the
+throw would have to bubble up through =pRule * ...=, i.e. through an
+axiom / moxia head that the standard rules cannot decompose. The four
+standard reductions do not do this; it needs additional rules, and the
+author has not yet examined whether such rules can be sound. Related to
+the unsettled skip rules of call-by-onus.org (minicourse lesson 8 item
+14), not to the compiler bugs. Left as is for now.
+
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:
 :ID:             aida-fragment-verification-residues
@@ -840,8 +872,8 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
 :ICK:            2
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        The graft-order commutation property test exists (V1), Argument.normalize asserts the conservativity postcondition (V2), and a winning attacker's evaluation yields an abort-shaped term so V3 strengthens from OUT-implies-not-a-value to OUT-implies-exception.
-:VERIFY:         Property-based test filling independent sites in both orders with alpha-equal results; a strict normal form containing an open leaf trips the new assertion; the in-attacker case in tests/test_evaluate.py asserts class exception.
+:OUTCOME:        The graft-order commutation property test exists (V1), Argument.normalize asserts the conservativity postcondition (V2), and at a site whose attacker wins the evaluator leaves the abort term (the affine throw mu _:A.<v || attacker>) rather than the scaffold's stolen-value obligation, so a defeated debate's normal form contains no spurious open obligation (V3, first half; the propagation half is the design issue aida-abort-propagation).
+:VERIFY:         Property-based test filling independent sites in both orders with alpha-equal results; a strict normal form containing an open leaf trips the new assertion; in the in-attacker case of tests/test_evaluate.py the normal form contains no Goal at the defeated site and the abort term mu _.<x || attacker> sits there instead, alpha-equal to the term obtained by substituting that abort term for the site by hand and normalising (the commuting-square check, extended to the defeat case).
 :END:
 
 *** BACKLOG Rewire the presentation layers to grounded labels
