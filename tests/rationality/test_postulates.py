@@ -173,3 +173,23 @@ class TestThirdPartyAgreement:
         theirs = run_adf_bdd(adf, "grounded")
         assert len(theirs) == 1
         assert theirs[0] == grounded_interpretation(adf)
+
+
+class TestObjectNegationConsistency:
+    """Direct consistency with negation in the object language.
+
+    Q and ~Q are distinct graph nodes, and nothing relates them until the
+    strict layer adds the negation bridge (task aida-strict-layer). Until
+    then both are accepted. Strict xfail: this flips when the bridge exists.
+    """
+
+    @pytest.mark.xfail(strict=True, reason="strict layer / negation bridge not implemented (aida-strict-layer)")
+    def test_q_and_not_q_are_not_both_accepted(self):
+        g = DebateGraph()
+        g.add_node("Q")
+        g.add_node("~Q")
+        g.mark_default(K("Q"), "term", "presumption")
+        g.mark_default(K("~Q"), "term", "presumption")
+        labels = grounded_labels(g)
+        assert not (labels[(K("Q"), "term")] == "IN"
+                    and labels[(K("~Q"), "term")] == "IN")

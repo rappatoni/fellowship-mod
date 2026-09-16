@@ -374,6 +374,24 @@ and blocks the .fspy married-bachelor fixture
 runs on the wrong graph" wording elsewhere in this file, which
 overstated the problem: the checker need not see contrariness cycles.
 
+*Caveat added 2026-09-16 - do not make this switch naively.* The
+proposition-level check currently also refuses an edge whose source is
+the *contrary* of its target, =Q[t] <- Q[c]= (the shape of a proof by
+contradiction). That edge makes =compile_conditions= emit
+=Q[t] = (Q[c] & ~Q[c])= - a non-unipolar condition, the one case where
+the production Kleene labeller and the oracle disagree:
+
+: production : Q[t] UNDEC, Q[c] UNDEC
+: oracle     : Q[t] OUT,   Q[c] IN
+
+At statement level =Q[t] <- Q[c]= is not a cycle, so a plain switch
+would admit this graph and production labels would silently diverge
+from the definition. The fix must therefore either keep refusing edges
+whose source is the target's contrary, or add a unipolarity assertion to
+=compile_conditions= (refuse, or fall back to the oracle, on failure).
+Add this graph to VERIFY: refused, or labelled in agreement with the
+oracle.
+
 *** BACKLOG Decide whether contrariness is an edge or a synthesised guard
 :PROPERTIES:
 :ID:             aida-contrariness-as-edges
@@ -403,6 +421,89 @@ derivation edges from contrariness edges or every rebuttal is refused.
 Hence blocked on the statement-level acyclicity fix. Design decision,
 not a bug: the spec (Layer 3, "an attacking edge on (n,s) is a
 supporting edge on the contrary side") is satisfiable either way.
+
+*** BACKLOG Implement the strict layer: rule/premise split, transposals, negation bridge
+:PROPERTIES:
+:ID:             aida-strict-layer
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-statement-level-acyclicity
+:OUTCOME:        The compiler represents a strict inference rule used by an argument as its own strict hyperedge with sources, separate from the defeasible premises it is applied to; the strict layer of debate-graph-spec.org (Layer 3 steps 1-2) closes those edges under transposition and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens and Q-versus-not-Q conflicts are visible to the labeller.
+:VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); a compiled pArg (P from presumed Q via the axiom Q->P) under a strict refutation of P labels Q OUT, matching the hand-built graph in the task notes; the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
+:END:
+
+Recorded 2026-09-16. What exists: nothing. =core/comp/adf_label.py='s
+docstring says the transposal closure is "vacuously satisfied"; no code
+implements it, and =grep transpos core wrap pres= finds only that
+docstring.
+
+Why the closure has nothing to act on today. The spec defines
+=strict(e)= as "no obligation or presumption source". A source is an
+obligation, a presumption, or an assumption, and the compiler refuses
+assumptions. So every strict edge the compiler can emit has zero
+sources, and a zero-source edge has zero transposals. The closure is
+trivially satisfied because the set it would act on is empty - not
+because the graph is closed in any useful sense.
+
+Where the strict rules went. A strict axiom used inside an argument does
+not become a strict edge. =pArg=, which derives P from a presumed Q via
+the declared axiom =pRule : Q->P=, compiles to one edge
+=P[t] <- Q[t:presumption]=, marked *defeasible* because of its premise.
+The rule and its premise are fused, and the edge's strictness is decided
+by the premise. The rule's transposal =Q[c] <- P[c]= (modus tollens) is
+therefore never generated.
+
+Consequence, measured (hand-built graphs, same session):
+
+: as compiled today      P[t]=(Q[t] & ~P[c])   Q[t]=true   P[c]=(true|false)
+:                        labels: P OUT, Q IN, P[c] IN
+: with rule + transposal P[t]=(Q[t] | (Q[t] & ~P[c]))   Q[t]=(true & ~Q[c])
+:                        Q[c]=(P[c] | false)   P[c]=(true|false)
+:                        labels: P OUT, Q OUT, P[c] IN, Q[c] IN
+
+With P strictly refuted, Q should fall; today it stays IN. And the
+correct graph is refused by the proposition-level acyclicity check -
+hence the block on =aida-statement-level-acyclicity=.
+
+Object negation. =canonical_prop= maps =~K=, =-K= and =K->false= to one
+node, distinct from K, and nothing links the two: Q and ~Q both presumed
+ground both IN (oracle agrees - the conditions are faithful, the defect
+is in what the conditions omit). The strict derivations relating a
+refutation of K to a proof of K->false exist in the calculus; the bridge
+edges are an instance of the same strict-layer work.
+
+The married-bachelor fixture passes only because its strict bridge is
+built by hand with =kind="assumption"= sources, which no compiled term
+can produce. Related: =aida-strict-refutation-edges= (declared
+refutations are dropped; the same "strict references carry no side"
+problem at the leaf level).
+
+*** BACKLOG Distinguish meta-negation from object negation in the course notation
+:PROPERTIES:
+:ID:             aida-course-negation-notation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            0
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        tests/minicourse/coursekit.py renders the acceptance-condition negation differently from the proposition printer's negation, so a condition over the node ~Q is no longer printed identically to the guard on Q[c].
+:VERIFY:         conditions_of on a graph with an edge sourced at (~Q)[c] prints a string distinguishable from the guard's "not Q[c]"; minicourse.org lessons 4-5 use the new rendering; tests/minicourse/ passes.
+:END:
+
+Found 2026-09-16: an edge with sources Q[t] and (~Q)[c] prints as
+=(Q[t] & ~Q[c])=, exactly the guard's shape. The toolkit uses =~= for
+meta-negation; the proposition printer uses =~= for object negation.
 
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:
