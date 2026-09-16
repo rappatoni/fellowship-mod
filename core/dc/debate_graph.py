@@ -513,10 +513,17 @@ def declaration_kinds(declarations) -> dict:
     return out
 
 
+#: Fellowship's eliminator leaves.  `_F_` is the canonical refutation of
+#: falsum (the tail of a negation elimination  mu' H:~A.< H || a * _F_ >),
+#: `_T_` the canonical proof of truth.  They are strict axioms of the
+#: base category, on the side their kind fixes, and never sources.
+BUILTIN_LEAVES = {"_F_": "moxia", "_T_": "prop"}
+
+
 class _Compiler:
     def __init__(self, strict_names, strict_kinds=None):
-        self.strict_names = set(strict_names or ())
-        self.strict_kinds = dict(strict_kinds or {})
+        self.strict_names = set(strict_names or ()) | set(BUILTIN_LEAVES)
+        self.strict_kinds = {**BUILTIN_LEAVES, **dict(strict_kinds or {})}
         self.graph = DebateGraph()
         self._fresh = count(1)
 

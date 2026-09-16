@@ -9,7 +9,6 @@ import subprocess
 import argparse
 import logging
 from typing import Any, Optional
-from pres.color import pretty_colored_proof_term
 from pres.tree import render_acceptance_tree_dot
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
@@ -122,8 +121,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
-            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
+          - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine NEW attacker target
                         undercut  NEW attacker target   (backward compatible alias)
                         undergird NEW supporter target [on PROP]
@@ -294,10 +293,6 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         name = parts[1] if len(parts) >= 2 else ""
                         style = parts[2] if len(parts) >= 3 else None
                         render_argument_cmd(prover, name, False, style=style)
-                    elif command.startswith("color-nf "):
-                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
-                    elif command.startswith("color "):
-                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
                     elif command.startswith("graph "):
                         # Usage: graph ARG [FILE.dot] [show]
                         parts = command.split()
@@ -726,8 +721,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
-            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
+          - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
 
@@ -779,10 +774,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     name = parts[1] if len(parts) >= 2 else ""
                     style = parts[2] if len(parts) >= 3 else None
                     render_argument_cmd(prover, name, False, style=style)
-            elif command.startswith("color-nf "):
-                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
-            elif command.startswith("color "):
-                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
             elif command.startswith("graph "):
                 # Usage: graph ARG [FILE.dot] [show]
                 parts = command.split()
@@ -1446,86 +1437,6 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
-def _parse_color_argument_spec(spec: str) -> tuple[str, list[tuple[str, str]] | None]:
-    """Parse `ARG [PROP=COLOR ...]` for color/color-nf commands.
-
-    Examples:
-      color a A=red B=green
-      color a "Bird Tweety=yellow"
-    """
-    try:
-        parts = shlex.split(spec)
-    except ValueError as e:
-        raise ValueError(f"Invalid color command: {e}") from e
-    if not parts:
-        raise ValueError("Invalid color command. Use: color ARG [PROP=COLOR ...]")
-
-    name = parts[0]
-    prop_colors: list[tuple[str, str]] = []
-    for item in parts[1:]:
-        if "=" not in item:
-            raise ValueError(
-                "Invalid color mapping %r. Use PROP=COLOR; quote propositions with spaces." % item
-            )
-        prop, color = item.rsplit("=", 1)
-        prop = prop.strip()
-        color = color.strip().lower()
-        if not prop or not color:
-            raise ValueError(
-                "Invalid color mapping %r. Both proposition and color are required." % item
-            )
-        prop_colors.append((prop, color))
-
-    return name, prop_colors or None
-
-
-def color_argument_cmd(prover: ProverWrapper, spec: str, normalized: bool = True) -> None:
-    """CLI for coloring the proof term of an argument.
-
-    Syntax:
-        color ARG [PROP=COLOR ...]
-        color-nf ARG [PROP=COLOR ...]
-
-    Quote mappings whose propositions contain spaces, e.g.:
-        color birds "Bird Tweety=red" "Abnormal Tweety=yellow"
-
-    If normalized is True, color the normal form; otherwise color the current
-    executed proof term without normalizing first.
-    """
-    try:
-        name, prop_colors = _parse_color_argument_spec(spec)
-    except ValueError as e:
-        logger.error("%s", e)
-        return
-
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error(f"Argument '{name}' not found.")
-        return
-
-    if normalized:
-        if arg.normal_body is None:
-            arg.normalize()
-        pt = arg.normal_body
-        label = "normalized"
-    else:
-        if not arg.executed:
-            arg.execute()
-        pt = arg.body
-        label = "unnormalized"
-
-    try:
-        colored = pretty_colored_proof_term(pt, verbose=False, prop_colors=prop_colors)
-    except Exception as e:
-        logger.error("Coloring failed for '%s': %s", arg.name, e)
-        return
-    logger.info("")  # spacer before colored output
-    logger.info("Colored %s proof term for %s:", label, arg.name)
-    if prop_colors:
-        logger.info("Prop colors: %s", ", ".join(f"{prop}={color}" for prop, color in prop_colors))
-    logger.info(colored)
-    logger.info("")  # spacer after colored output
-
 def _compile_argument_graph(prover: ProverWrapper, name: str):
     """Resolve an argument and compile its body into a DebateGraph.
 
@@ -1763,11 +1674,24 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     logger.info("  normal form: %s", pretty)
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
-    """CLI: render the colored acceptance tree (proof terms or NL) and save it as a file."""
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error("Argument '%s' not found.", name)
+    """CLI: render the acceptance tree (proof terms or NL), coloured by the
+    grounded ADF labels of the argument's debate graph, and save it as a
+    file.  If the graph is refused or adf-bdd is missing the tree is
+    written uncoloured with a one-line notice."""
+    from core.comp.adf_label import grounded_labels
+
+    arg, graph = _compile_argument_graph(prover, name)
+    if arg is None:
         return
+    labels = None
+    if graph is not None:
+        try:
+            labels = grounded_labels(graph)
+        except AdfBddNotFound as e:
+            print(f"tree: labels unavailable: {e}")
+            logger.warning("Tree for '%s' drawn without labels: %s", name, e)
+    else:
+        logger.warning("Tree for '%s' drawn without labels: debate graph refused.", name)
     if arg.normal_body is None:
         arg.normalize()
     try:
@@ -1779,6 +1703,7 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
             nl_style=nl_style,
             declarations=getattr(prover, "declarations", {}),
             decorations=getattr(prover, "decorations", {}),
+            labels=labels,
         )
     except Exception as e:
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)

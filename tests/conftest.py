@@ -15,7 +15,6 @@ from wrap.cli import (
     setup_prover,
     reduce_argument_cmd,
     render_argument_cmd,
-    color_argument_cmd,
     tree_argument_cmd,
     main,
 )

@@ -1054,7 +1054,8 @@ Evidence (2026-09-16, commit A4), tests/test_verification_residues.py:
   original, normalised the same way; both classify "open".
 Suite 965 passed, 2 skipped, 4 xfailed, 2 xpassed.
 
-*** NEXT Retire color.py and rewire the presentation layers to grounded labels
+*** DONE Retire color.py and rewire the presentation layers to grounded labels
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-renderers-grounded-labels
 :AREA:           phd
@@ -1076,6 +1077,42 @@ lifted. Audit verdict for the record (from tests/test_labeller_audit.py,
 six-case corpus): the shape classifier reads a supported argument as
 defeated and an unfilled-obligation argument as accepted.
 
+Evidence (2026-09-16, commit A5-renderers). Removed: pres/color.py,
+core/comp/color.py (AcceptanceColoringVisitor, DebateTermLabeller,
+pretty_colored_proof_term, label_debate_term), the =color= / =color-nf=
+commands and their parser, tests/test_acceptance_coloring.py and
+tests/test_labeller_audit.py (verdict recorded above); the colouring rows
+of tests/test_fo_guardrails.py. =tree ARG= now compiles the argument's
+debate graph, takes the grounded labels from adf-bdd and fills each box
+on the spine by the label of the statement its binder establishes (IN
+green, OUT red, UNDEC yellow; pres/tree.py =LABEL_FILL=); if the graph
+is refused or adf-bdd is missing the tree is written uncoloured with a
+one-line notice. tests/test_tree_labels.py checks every box against the
+grounded label on the six-case audit corpus. The demo fixtures
+(alternative_arguments, basic_support, counterarguments_and_undercut,
+marius_example, multiple_undercuts, peirces_law) call =label= where
+they called =color=; README and pres/README.md no longer mention
+colouring. The grep for the three names finds only this note and
+git history.
+
+One residue, by design: the legacy ArgumentTermReducer's support and
+defence rules test defeat with the same shape predicate (=_is_red=). It
+now lives in core/comp/legacy_shape.py as =LegacyShapeClassifier=, with
+a module docstring forbidding any other importer, and is retired with
+the reducer under =aida-legacy-reducer-findings=.
+
+Found on the way: the demo fixtures were refused by the compiler on
+Fellowship's negation-elimination tail =_F_= ("free context variable").
+It is the canonical refutation of falsum, a strict axiom of the base
+category; the compiler now carries =BUILTIN_LEAVES= {_F_: moxia, _T_:
+prop} and two tests in tests/test_debate_graph.py pin it. After the
+fix counterarguments_and_undercut.fspy labels and colours its trees
+fully; multiple_undercuts.fspy and alternative_arguments.fspy are
+refused as derivation cycles (genuinely outside the acyclic fragment,
+D0's business); peirces_law.fspy is refused on a free term variable
+=h= from a cut whose hypothesis the compiler does not yet bind.
+Suite 965 passed, 2 skipped, 4 xfailed, 2 xpassed.
+
 *** BACKLOG Resolve the legacy reducer audit findings
 :PROPERTIES:
 :ID:             aida-legacy-reducer-findings
@@ -1088,7 +1125,7 @@ defeated and an unfilled-obligation argument as accepted.
 :ICK:            3
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        Call-by-onus is retired: the onus-parallel / onus disciplines, the onus classifier, and the FSP_EVAL_DISCIPLINE / FSP_ONUS_FALLBACK / FSP_ONUS_STANCE knobs are removed from core/comp/reduce.py, wrap/cli.py and README.md, with sigma-first evaluation (core/comp/evaluate.py) the only debate evaluation path; the B-0016/B-0017 findings and the strict xfail in tests/test_onus_categories.py are closed by deletion with the decision recorded.
+:OUTCOME:        Call-by-onus is retired: the onus-parallel / onus disciplines, the onus classifier, and the FSP_EVAL_DISCIPLINE / FSP_ONUS_FALLBACK / FSP_ONUS_STANCE knobs are removed from core/comp/reduce.py, wrap/cli.py and README.md, with sigma-first evaluation (core/comp/evaluate.py) the only debate evaluation path; the B-0016/B-0017 findings and the strict xfail in tests/test_onus_categories.py are closed by deletion with the decision recorded; core/comp/legacy_shape.py (the reducer's shape predicate, the last remnant of the retired colouring) goes with the reducer's support/defence rules.
 :VERIFY:         No code path reachable from the CLI or from evaluate_debate consults an onus stance or fallback; grep for onus-parallel, onus_stance, onus_fallback and FSP_ONUS finds only historical notes; tests/test_onus_categories.py is deleted or reduced to tests of the four standard rules; the documented test suite passes; README no longer lists the onus environment variables.
 :END:
 

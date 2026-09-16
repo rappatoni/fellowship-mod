@@ -166,6 +166,26 @@ class TestSingleArgumentEdge:
         with pytest.raises(DebateCompileError, match="mystery"):
             compile_debate(body, "a", strict_names=STRICT)
 
+    def test_falsum_eliminator_leaf_is_a_builtin_axiom(self):
+        """Fellowship encodes negation elimination as
+        mu' H:~A.< H || a * _F_ >; the tail _F_ is the canonical
+        refutation of false, a strict axiom of the base category, not a
+        free variable (the demo fixtures were refused on it before
+        2026-09-16)."""
+        neg_elim = Mutilde(DI("H", "~A"), "~A", DI("H", "~A"),
+                           Cons(Goal("1", "A"), ID("_F_", "false")))
+        body = Mutilde(DI("c", "~A"), "~A", DI("nA", "~A"), neg_elim)
+        g = compile_debate(body, "c", strict_names={"nA"})
+        assert [(s.key, s.side, s.kind) for e in g.edges for s in e.sources] == [
+            (canonical_prop("A"), "term", "obligation")
+        ]
+        assert not any(k.endswith("_F_") for k in g.nodes)
+
+    def test_falsum_leaf_on_the_wrong_side_is_refused(self):
+        body = eta_term("a", "false", DI("_F_", "false"))
+        with pytest.raises(DebateCompileError, match="_F_"):
+            compile_debate(body, "a", strict_names=STRICT)
+
 
 class TestScaffoldDecomposition:
     def test_term_support(self):

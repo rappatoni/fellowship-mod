@@ -30,7 +30,7 @@ end argument
 support first sup1 arg1
 render first vanilla
 reduce first
-color first
+label first
 #
 # Now we test a defeated supporter
 #
@@ -53,4 +53,4 @@ undercut second counter first
 # Render, reduce, color
 render second vanilla
 reduce second
-color second
+label second

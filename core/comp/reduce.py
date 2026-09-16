@@ -6,7 +6,7 @@ from core.comp.visitor import ProofTermVisitor
 from core.ac.ast import ProofTerm, Term, Context, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI, Admal, Sonc, FirstOrderNotSupported, first_order_node
 from pres.gen import ProofTermGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
-from core.comp.color import AcceptanceColoringVisitor
+from core.comp.legacy_shape import LegacyShapeClassifier
 from core.comp.alpha import _collect_binder_names
 
 logger = logging.getLogger(__name__)
@@ -40,9 +40,12 @@ def _is_affine(varname: str, command: ProofTerm) -> bool:
     return False
 
 def _is_red(command: ProofTerm) -> bool:
-    """Return True iff the subtree starting at this binder is colored red."""
+    """Legacy defeat test: the subtree's SHAPE shows an attack scaffold.
+
+    This is the legacy reducer's own predicate (see core/comp/legacy_shape.py);
+    it is not the ADF labelling and must not be read as acceptance."""
     try:
-        return AcceptanceColoringVisitor(verbose=False).classify(command) == "red"
+        return LegacyShapeClassifier(verbose=False).classify(command) == "red"
     except Exception:
         return False
 

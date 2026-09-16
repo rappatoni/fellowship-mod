@@ -8,9 +8,11 @@ otherwise be silent and wrong:
 * grafting returns an unrecognised node unchanged, so a graft inside it would
   simply not happen;
 * structural matching returns "not equal", so a first-order term would compare
-  unequal to itself;
-* acceptance colouring answers "green", reporting a term as accepted without
-  having examined it.
+  unequal to itself.
+
+(The shape colouring that used to be guarded here was retired on
+2026-09-16; the legacy reducer's private shape predicate is covered by the
+reduction row.)
 """
 
 import warnings
@@ -22,7 +24,6 @@ from core.ac.ast import FirstOrderNotSupported, first_order_node
 from core.ac.resolve import resolve
 from core.ac.signature import Declaration
 from core.ac.syntax import parse_proof_term
-from core.comp.color import AcceptanceColoringVisitor, DebateTermLabeller
 from core.comp.reduce import ArgumentTermReducer, EtaReducer
 from core.dc.graft import graft_single, graft_uniform
 from core.dc.match_utils import match_trees
@@ -77,8 +78,6 @@ def test_the_error_names_the_operation_and_the_construct():
         pytest.param(lambda t: EtaReducer().reduce(t), id="eta_reduction"),
         pytest.param(lambda t: match_trees(t, t, {}), id="structural_match"),
         pytest.param(lambda t: _same_tree(t.context, t.context), id="shape_comparison"),
-        pytest.param(lambda t: AcceptanceColoringVisitor().classify(t), id="colouring"),
-        pytest.param(lambda t: DebateTermLabeller().label(t), id="labelling"),
     ],
 )
 def test_deferred_operations_refuse_first_order_terms(operation):
@@ -107,12 +106,6 @@ def test_grafting_refuses_a_first_order_root(graft):
 
 def test_reduction_still_accepts_a_propositional_term():
     assert ArgumentTermReducer().reduce(propositional()) is not None
-
-
-def test_colouring_still_accepts_a_propositional_term():
-    assert AcceptanceColoringVisitor().classify(propositional()) in {
-        "green", "red", "yellow", None,
-    }
 
 
 def test_matching_still_compares_propositional_terms():

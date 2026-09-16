@@ -9,7 +9,7 @@ The repository combines:
 - the native Fellowship prover under `wrap/fellowship/`
 - a Python wrapper (`wrap/prover.py`) that talks to Fellowship in machine mode
 - an argument/debate layer (`core/dc/argument.py`)
-- multiple presentation layers (`pres/`) for natural language, coloring, and
+- multiple presentation layers (`pres/`) for natural language and
   acceptance trees
 
 An earlier motivation/theory overview is available
@@ -34,8 +34,9 @@ The current codebase supports:
   - `dialectical`
   - `intuitionistic`
   - `vanilla`
-- acceptance coloring of normalized proof terms
-- acceptance-tree export through Graphviz (with DOT fallback)
+- debate graphs, ADF labelling (via adf-bdd) and label-guided evaluation
+- acceptance-tree export through Graphviz (with DOT fallback), coloured by
+  the grounded labels
 - machine-mode integration with Fellowship, including prover state extraction
 - first-order propositions and proof terms: `forall` / `exists`, sorts, and
   first-order terms, through parsing, type synthesis, replay and rendering
@@ -236,12 +237,9 @@ detects a machine-mode desynchronization.
 - `render ARG [STYLE]`
 - `render-nf ARG [STYLE]`
   - render the original or normalized term
-- `color ARG`
-  - show acceptance coloring for the normalized term
-  - note: this is the older shape-based classification, not the debate
-    labelling; use `label` for acceptance status
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
-  - render an acceptance tree
+  - render an acceptance tree coloured by the grounded labels (see
+    Debate-graph commands); drawn uncoloured if the graph is refused
 - `chain ARG1 ARG2`
   - graft / chain one argument into another
 
@@ -494,7 +492,7 @@ exercises every first-order proof-term constructor.
 ### What is not supported yet
 
 Normalization and the debate operations — `reduce`, `chain`, `support`,
-`attack` and acceptance colouring — do not handle first-order terms. The
+`attack` and the debate graph — do not handle first-order terms. The
 reduction rules for first-order AC/DC are not settled, so rather than guess,
 those operations raise `FirstOrderNotSupported` naming the construct they
 stopped at.
@@ -521,17 +519,7 @@ render myarg vanilla
 render-nf myarg dialectical
 ```
 
-## Acceptance coloring and trees
-
-### Coloring
-
-```text
-color ARG
-```
-
-This normalizes the argument if needed and prints a colored proof-term view.
-
-### Acceptance trees
+## Acceptance trees
 
 ```text
 tree ARG
@@ -540,7 +528,13 @@ tree ARG nl
 tree ARG nl dialectical
 ```
 
-Tree rendering uses Graphviz when available and otherwise writes a `.dot` file.
+Tree rendering uses Graphviz when available and otherwise writes a `.dot`
+file. Each box on the spine is filled by the grounded ADF label of the
+statement its binder establishes (green IN, red OUT, yellow UNDEC), taken
+from the argument's debate graph; the former `color` / `color-nf`
+commands and their shape-based classification were removed on 2026-09-16
+(they read a supported argument as defeated). Use `label` for the labels
+as text.
 
 ## Examples
 
@@ -575,7 +569,7 @@ This script demonstrates:
 - `start counterargument ...`
 - `undercut`
 - `reduce`
-- `color`
+- `label`
 - `tree ... nl`
 - `deny` / `moxia`
 
@@ -593,7 +587,7 @@ Demonstrates:
 - `support`
 - `undercut`
 - `render ... vanilla`
-- `color`
+- `label`
 
 ### Antitheorem / moxia example
 
@@ -637,7 +631,7 @@ make binlink
 ## Repository layout
 
 - `core/` — core ASTs, transformations, reduction, grafting, argument logic
-- `pres/` — presentation layers (proof terms, NL, coloring, trees)
+- `pres/` — presentation layers (proof terms, NL, trees)
 - `wrap/` — Python wrapper code and the native Fellowship subtree
 - `wrap/fellowship/` — native prover sources and `fsp` binary build target
 - `tests/` — pytest tests and `.fspy` / `.fsp` examples
