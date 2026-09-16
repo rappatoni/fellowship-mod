@@ -579,7 +579,7 @@ The acyclicity check itself should stay as it is (proposition level; see
 =aida-statement-level-acyclicity= for why it is exact) and become a
 classifier - "which fragment is this debate in" - rather than a refusal.
 
-*** BACKLOG Decide whether contrariness is an edge or a synthesised guard
+*** BACKLOG Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
 :PROPERTIES:
 :ID:             aida-contrariness-as-edges
 :AREA:           phd
@@ -591,23 +591,42 @@ classifier - "which fragment is this debate in" - rather than a refusal.
 :ICK:            3
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        It is decided and recorded whether the compiler represents contrariness between Q[term] and Q[context] as explicit hyperedges (one per direction, justified by the constructibility of the corresponding attack terms) or keeps the synthesised NOT-contrary guard of compile_conditions; if edges, the primitive contrariness shape mu att.<mu _.<t||att>||mu'_.<t||t'>> is added to _match_scaffold and contrariness edges are excluded from DebateGraph.parents, so that the acyclicity check keeps contracting contrariness links rather than counting them (otherwise every rebuttal becomes a refused self-loop).
-:VERIFY:         The lesson-8 clash term compiles to the decided representation; grounded labels on every existing fixture are unchanged by the representation choice (they must be: the two encodings are semantically equivalent); test_minicourse.py::TestLesson8StrictRefutationDropped::test_primitive_contrariness_shape_is_not_matched flips if the edge representation is chosen.
+:OUTCOME:        (design issue, no change planned) The synthesised NOT-contrary guard is kept as the representation of contrariness. If provenance of clashes is ever wanted on the graph, it is added as a distinct edge KIND that contributes only the guard to acceptance conditions and is ignored by parents(); never as a derivation edge.
+:VERIFY:         Nothing to verify while no change is made. Should the edge kind be introduced: grounded labels on every fixture are bit-identical before and after (the encodings are equivalent by construction), and a test asserts that a strict proof of Q does NOT make Q[context] IN (the failure of the naive derivation-edge encoding).
 :END:
 
-Raised by the author 2026-09-16 (session audits A2, A3). The argument
-for edges: contrary witnesses t : Q and Q : t' correspond to
-constructible debate terms - mu att.<mu _.<t||att>||mu'_.<t||t'>> and
-its dual - so the compilation should record them exactly as it records
-any other derivation, and the term and graph levels would then agree
-about when the two sides of a proposition conflict (which also
-subsumes =aida-attack-geled-reroute=). The cost: contrariness edges form
-a 2-cycle by construction. The acyclicity check handles contrariness
-by contracting it (=parents()= drops the side), so contrariness edges
-must be kept out of =parents()=, or every rebuttal becomes a refused
-self-loop. Design decision,
-not a bug: the spec (Layer 3, "an attacking edge on (n,s) is a
-supporting edge on the contrary side") is satisfiable either way.
+Raised by the author 2026-09-16 (session audits A2, A3), settled as a
+design note the same day: cosmetic, no change.
+
+Evidence. The primitive contrariness term
+mu att:Q.< mu _.<!d1 || att> || mu'_.<!d1' || d2!> > compiles today to a
+graph with no edges and two default markers; compile_conditions
+synthesises the guard from the fact that both sides of Q are
+materialised, and the labelling (UNDEC/UNDEC) is correct. The naive
+alternative - record the clash as derivation edges Q[c] <- Q[t] and
+Q[t] <- Q[c] - is *wrong*, not merely different: it makes the proof of
+Q a source of the refutation of Q, the conditions become non-unipolar,
+and with a strict proof of Q the refutation of Q labels strictly IN.
+A clash says two witnesses conflict, not that one derives the other,
+and a hyperedge can only say "derives". The only correct edge form is
+a distinct kind that contributes the guard and nothing else and that
+parents() ignores - which reproduces today's conditions exactly.
+
+Why it is cosmetic even under graph-first: unfolding does not need the
+edge. When unfolding reaches a proposition materialised on both sides,
+contrariness follows from proposition identity, so the clash term is
+reconstructible from the two default markers. The edge would preserve
+only *provenance* - that d1 and d2 were once composed by a specific
+attack - which no label or evaluation consumes.
+
+Correction to an earlier note: _match_scaffold does match the primitive
+contrariness term when its stolen-value slot holds a presumption; it
+fails only for a declared name there, which is =aida-strict-refutation-
+edges=, not a matcher gap. The "fifth shape" was misdiagnosed.
+
+The Geled asymmetry (=aida-attack-geled-reroute=) is therefore NOT
+subsumed by this note, as earlier written; it stands on its own as a
+term-level defect of _CapturingSubst.
 
 *** BACKLOG Implement implication edges, transposal closure and the negation bridge
 :PROPERTIES:
