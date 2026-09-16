@@ -748,6 +748,43 @@ challenge ending in a Laog gets its tail rerouted to alt, a by-default
 an identity edge (presumption marker), which is semantically equivalent
 for labelling, but the term-level asymmetry is undocumented.
 
+*** BACKLOG Decide whether the trailing 'next' in regenerated instructions is a bug
+:PROPERTIES:
+:ID:             aida-trailing-next-warning
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided and recorded whether the warning "Ignoring ProverError on final 'next': There is only one goal, impossible to switch." signals a defect; either InstructionsGenerationVisitor stops emitting a 'next' that cannot succeed, or the special case in Argument.execute is documented as the intended way to leave a deliberately open goal.
+:VERIFY:         Replaying tests/minicourse/lesson5_labels.fspy either no longer prints the warning, or the chosen behaviour is documented at core/dc/argument.py:422 and covered by a test; label d5 still prints A, B and C term IN.
+:END:
+
+Observed 2026-09-16 while running tests/minicourse/lesson5_labels.fspy.
+The warning does not come from the script's own arguments (cArg ends
+with =axiom r=, aArg with =axiom axA=). It comes from the intermediate
+argument =aArg_adapter_support_aArg_cArg= that =support= builds:
+
+: ['cut (A) _', 'cut (A) aArg', 'axiom axA', 'moxia aArg', 'next']
+
+=support= chains the supporter into an adapter whose body has a
+deliberately open site. =chain= regenerates instructions from the
+combined term via =InstructionsGenerationVisitor=, which emits =next.=
+for every open site (=visit_Goal= / =visit_Laog=, core/ac/instructions.py
+around line 237) regardless of whether another goal remains. Here the
+open site is the last goal, so the trailing =next= fails;
+=Argument.execute= (core/dc/argument.py:422) ignores a failing final
+=next= as a "historical special case". The resulting d5 is correct.
+
+Open question for the author: is the generator wrong to emit a =next=
+that cannot succeed (a latent bug masked by the special case), or is
+"final next may fail" the intended contract for leaving a goal open?
+Any support whose adapter chain leaves the open site last prints this.
+
 *** BACKLOG Name the host hyperedge after its own subargument
 :PROPERTIES:
 :ID:             aida-host-edge-naming
