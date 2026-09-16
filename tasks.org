@@ -329,10 +329,10 @@ and is called by nothing.
 :URGENT:         no
 :EISENHOWER:     Q2
 :ICK:            3
-:EFFORT:         4:00
+:EFFORT:         8:00
 :DEFERRALS:      0
-:OUTCOME:        It is settled whether the implemented credulous/skeptical modes agree with the specified witness-labelling discipline; either a counterexample with several linked contested nodes is recorded and the modes are reimplemented to choose sigma existentially, or a proof/argument is recorded that the local policy coincides with an extension for every graph in the fragment.
-:VERIFY:         Construct debates with two or more contested nodes linked through edges; compare the local-policy outcome against evaluation under each preferred/two-valued labelling; assert in a test that the selected labels are jointly realised by some single extension.
+:OUTCOME:        The labeller takes a semantics parameter (grounded, complete, stable; preferred later) routed to adf-bdd, and the credulous/skeptical modes are defined over it - credulous chooses one labelling of that semantics with the issue IN and skeptical takes the intersection - so every scaffold is resolved against a single witness sigma; it is settled, by counterexample or by argument, whether the previous per-scaffold policy was ever unsound in the acyclic fragment.
+:VERIFY:         `label ARG complete` and `label ARG stable` agree with adf-bdd on every fixture (even_loop: two stable labellings; the support cycle: stable both-OUT vs grounded UNDEC, the M0 finding); a test asserts that the labels evaluation selects are jointly realised by one labelling of the chosen semantics; debates with two or more contested nodes linked through edges compare the old local-policy outcome against the witness-labelling outcome and the difference, if any, is recorded; `evaluate` accepts a semantics argument in the CLI.
 :END:
 
 Discovered 2026-09-15 while tutoring lesson 3. =evaluate_debate=
