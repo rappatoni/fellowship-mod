@@ -895,7 +895,8 @@ throw would have to bubble up through =pRule * ...=, i.e. through an
 axiom / moxia head that the standard rules cannot decompose. The four
 standard reductions do not do this; it needs additional rules, and the
 author has not yet examined whether such rules can be sound. Any such
-rules would extend the reduction system of call-by-onus.org; the
+rules would extend the four standard reductions (Layer 0), not the
+deprecated call-by-onus system; the
 question is *which* rules exist, not congruence order, which is
 irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
 a compiler bug. Left as is for now.
@@ -948,12 +949,17 @@ the plan: current renderer output is user-visible demo behaviour).
 :ICK:            3
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        The onus-parallel discipline is either made label-sound or explicitly retired to base-strategy duty; the B-0016/B-0017 classifier findings and the strict-xfail in tests/test_onus_categories.py are resolved accordingly.
-:VERIFY:         The M6 audit probe divergences (OUT supporter kept, OUT attacker scaffold unresolved) either disappear or the retired code paths are unreachable from the CLI; the xfail is removed or its test deleted with the decision recorded.
+:OUTCOME:        Call-by-onus is retired: the onus-parallel / onus disciplines, the onus classifier, and the FSP_EVAL_DISCIPLINE / FSP_ONUS_FALLBACK / FSP_ONUS_STANCE knobs are removed from core/comp/reduce.py, wrap/cli.py and README.md, with sigma-first evaluation (core/comp/evaluate.py) the only debate evaluation path; the B-0016/B-0017 findings and the strict xfail in tests/test_onus_categories.py are closed by deletion with the decision recorded.
+:VERIFY:         No code path reachable from the CLI or from evaluate_debate consults an onus stance or fallback; grep for onus-parallel, onus_stance, onus_fallback and FSP_ONUS finds only historical notes; tests/test_onus_categories.py is deleted or reduced to tests of the four standard rules; the documented test suite passes; README no longer lists the onus environment variables.
 :END:
 
-Audit evidence: M5/M6 logs in propositional-fragment-plan.org
-(onus-parallel keeps OUT supporters and cannot discard OUT attackers).
+Decision (author, 2026-09-16): call-by-onus is *fully deprecated* in
+favour of sigma-first evaluation. This closes the question the M6
+audit left open ('retire or fix'): retire. Audit evidence: M5/M6 logs
+in propositional-fragment-plan.org (onus-parallel keeps OUT supporters
+and cannot discard OUT attackers). Rules 5-25 of call-by-onus.org are
+the deprecated system; rules 1-4 (the four standard reductions) and
+the Layer 4 section remain live.
 
 *** BACKLOG Make presumption ports capturable like obligation ports
 :PROPERTIES:

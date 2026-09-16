@@ -194,3 +194,38 @@ class TestEndToEndFromTerm:
         assert labels[(Q, "term")] == "IN"
         assert labels[(P, "term")] == "IN"
         assert grounded_labels_via_oracle(graph) == labels
+
+
+class TestNonUnipolarShape:
+    """The one condition shape the compiler can emit where the Kleene
+    fixpoint diverges from the definition: an edge whose source is the
+    contrary of its target, Q[t] <- Q[c], giving Q[t] = (Q[c] & ~Q[c]).
+
+    Pinned in both directions: the production Kleene path is WRONG here
+    (a false UNDEC where the definition says OUT), and the oracle and
+    adf-bdd are right and agree.  Bears on lesson 8 item 15: once adf-bdd
+    is primary (aida-adf-bdd-primary) this shape needs no refusal, and
+    the Kleene cross-check should refuse non-unipolar input rather than
+    answer.
+    """
+
+    def _graph(self):
+        g = DebateGraph()
+        g.add_node("Q")
+        g.add_edge(edge("byContra", Q, "term",
+                        [src(Q, "context", "presumption")]))
+        return g
+
+    def test_kleene_diverges_from_definition(self):
+        g = self._graph()
+        assert grounded_labels(g)[(Q, "term")] == "UNDEC"            # the defect
+        assert grounded_labels_via_oracle(g)[(Q, "term")] == "OUT"    # the definition
+        assert grounded_labels_via_oracle(g)[(Q, "context")] == "IN"
+
+    @needs_adf_bdd
+    def test_adf_bdd_agrees_with_the_definition(self):
+        from core.comp.oracle import grounded_interpretation
+        adf = graph_to_adf(self._graph())
+        theirs = run_adf_bdd(adf, "grounded")
+        assert len(theirs) == 1
+        assert theirs[0] == grounded_interpretation(adf)
