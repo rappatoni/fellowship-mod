@@ -312,6 +312,98 @@ before resolution and the modes reimplemented. Either way the minicourse's
 lesson 7 text needs to match the outcome, since it currently describes the
 mode table without stating that sigma is always grounded.
 
+*** NEXT Record strict refutations as context-side edges
+:PROPERTIES:
+:ID:             aida-strict-refutation-edges
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A declared refutation reached by an argument compiles to a strict context-side edge, so a term encoding a clash at Q materialises both Q[term] and Q[context] and strict_contradictions reports Q; the compiler consumes declaration kinds ("prop" vs "moxia") instead of names alone.
+:VERIFY:         The lesson-8 clash term mu att.<mu _.<t||att>||mu'_.<t||t'>> with t declared and t' denied compiles to two strict edges on opposite sides; strict_contradictions returns {Q}; test_minicourse.py::TestLesson8StrictRefutationDropped flips from pinning the defect to asserting the fix; the M4/M7 CONTR tests gain at least one case built from a compiled term rather than by hand.
+:END:
+
+Confirmed 2026-09-16 (session audit A4). =_collect_sources= in
+core/dc/debate_graph.py treats every name in =strict_names= as a strict
+reference needing no support and records nothing for it, not even which
+side it witnesses. =compile_debate= is called with
+=prover.declarations.keys()=, discarding the kind that wrap/prover.py
+already records (=Declaration(kind='prop')= for =declare=,
+=kind='moxia'= for =deny=). Result: the author's own contrariness term
+compiles to one strict edge for Q[term], labels Q IN, and
+=strict_contradictions= is empty. Spec violated:
+debate-graph-spec.org, Layer 3 step 3 ("detect strict contradictions: a
+node with strict edges to both its term and context side"). Every
+existing CONTR test builds its strict edges by hand; none reaches CONTR
+from a term. Independent of the acyclicity and contrariness-edge tasks.
+
+*** BACKLOG Check acyclicity at statement level
+:PROPERTIES:
+:ID:             aida-statement-level-acyclicity
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        DebateGraph.parents and is_acyclic range over (proposition, side) statements, so the transposal pair Q[t] <- P[t], P[c] <- Q[c] is admitted while mutual undercut is still refused and contested propositions are still admitted.
+:VERIFY:         test_minicourse.py::TestLesson5FragmentBoundary::test_transposal_pair_is_falsely_refused flips; the mutual-undercut and rebuttal tests in the same class keep passing; naf_olon.fspy is still refused.
+:END:
+
+Confirmed 2026-09-16 (session audit A5). =parents()= collects
+=source.key= and drops =source.side=, so the check runs on the
+proposition projection of the hyperedge relation. The enforced boundary
+is correct where it currently matters - derivation cycles through
+distinct propositions are refused, contested propositions (rebuttal)
+are admitted, matching the author's stated intent that "cycle-free"
+means no mutual undercut, not no rebuttal. The defect is false
+refusals: two edges on opposite sides of two propositions share no
+statement yet are refused. That pair is precisely a strict transposal,
+so this blocks the strict-layer transposal closure of
+debate-graph-spec.org (Layer 3 step 2) the moment it is implemented,
+and blocks the .fspy married-bachelor fixture
+(=aida-postulate-fixtures-fspy=). Supersedes the "acyclicity checker
+runs on the wrong graph" wording elsewhere in this file, which
+overstated the problem: the checker need not see contrariness cycles.
+
+*** BACKLOG Decide whether contrariness is an edge or a synthesised guard
+:PROPERTIES:
+:ID:             aida-contrariness-as-edges
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-statement-level-acyclicity
+:OUTCOME:        It is decided and recorded whether the compiler represents contrariness between Q[term] and Q[context] as explicit hyperedges (one per direction, justified by the constructibility of the corresponding attack terms) or keeps the synthesised NOT-contrary guard of compile_conditions; if edges, the primitive contrariness shape mu att.<mu _.<t||att>||mu'_.<t||t'>> is added to _match_scaffold and the acyclicity check is restricted to derivation edges so rebuttals are not refused as 2-cycles.
+:VERIFY:         The lesson-8 clash term compiles to the decided representation; grounded labels on every existing fixture are unchanged by the representation choice (they must be: the two encodings are semantically equivalent); test_minicourse.py::TestLesson8StrictRefutationDropped::test_primitive_contrariness_shape_is_not_matched flips if the edge representation is chosen.
+:END:
+
+Raised by the author 2026-09-16 (session audits A2, A3). The argument
+for edges: contrary witnesses t : Q and Q : t' correspond to
+constructible debate terms - mu att.<mu _.<t||att>||mu'_.<t||t'>> and
+its dual - so the compilation should record them exactly as it records
+any other derivation, and the term and graph levels would then agree
+about when the two sides of a proposition conflict (which also
+subsumes =aida-attack-geled-reroute=). The cost: contrariness edges form
+a 2-cycle by construction, so the acyclicity check must distinguish
+derivation edges from contrariness edges or every rebuttal is refused.
+Hence blocked on the statement-level acyclicity fix. Design decision,
+not a bug: the spec (Layer 3, "an attacking edge on (n,s) is a
+supporting edge on the contrary side") is satisfiable either way.
+
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:
 :ID:             aida-fragment-verification-residues

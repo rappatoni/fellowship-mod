@@ -365,3 +365,79 @@ class TestLesson5EdgeAcyclicButUndecided:
         )
         assert g.is_acyclic()
         assert set(grounded_labels(g).values()) == {"UNDEC"}
+
+
+class TestLesson5KleeneVersusGamma:
+    """Kleene and Gamma diverge on non-unipolar conditions (lesson 5)."""
+
+    def test_tautology_witness(self):
+        from core.comp.adf_label import kleene_eval
+        from core.comp.oracle import disj
+        adf = ADF(["p", "q"], {"p": disj(var("q"), neg(var("q"))), "q": const_true()})
+        v0 = {"p": None, "q": None}
+        assert gamma(adf, v0)["p"] is True
+        assert kleene_eval(adf.ac["p"], v0) is None
+
+
+def const_true():
+    from core.comp.oracle import const
+    return const(True)
+
+
+class TestLesson5FragmentBoundary:
+    """What is_acyclic refuses and admits, and its false-refusal defect."""
+
+    def test_mutual_undercut_is_refused(self):
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["Pa", "Pb", "A", "B"],
+            [("aArg", "A", "term", [("Pa", "term", "presumption")], False, "argument"),
+             ("bArg", "B", "term", [("Pb", "term", "presumption")], False, "argument"),
+             ("aUndercutsB", "Pb", "context", [("A", "term", "presumption")], False, "attacker"),
+             ("bUndercutsA", "Pa", "context", [("B", "term", "presumption")], False, "attacker")],
+        )
+        assert not g.is_acyclic()
+
+    def test_rebuttal_is_admitted_and_undecided(self):
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["Q"], [], [("Q", "term", "presumption"), ("Q", "context", "presumption")])
+        assert g.is_acyclic()
+        assert set(grounded_labels(g).values()) == {"UNDEC"}
+
+    def test_transposal_pair_is_falsely_refused(self):
+        """Lesson 5 exercise 4 / lesson 8 item 3: pins the defect.
+
+        No statement depends on itself, yet the proposition-level check
+        refuses. When parents() is fixed to range over statements, this
+        test must flip - that flip is the evidence for the fix.
+        """
+        from coursekit import graph_from_edges
+        g = graph_from_edges(
+            ["P", "Q"],
+            [("qFromP", "Q", "term", [("P", "term", "obligation")], False, "argument"),
+             ("notPFromNotQ", "P", "context", [("Q", "context", "obligation")], False, "argument")],
+        )
+        assert not g.is_acyclic()          # the defect, pinned
+        assert set(grounded_labels(g).values()) == {"OUT"}   # labeller is fine with it
+
+
+class TestLesson8StrictRefutationDropped:
+    """Lesson 8 item 5: a declared refutation is invisible to the compiler."""
+
+    def test_clash_term_compiles_to_strict_in(self):
+        from core.comp.adf_label import strict_contradictions
+        term = Mu(ID("att", "Q"), "Q",
+                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
+                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("t2", "Q")))
+        g = compile_debate(term, "dbg", strict_names={"t", "t2"})
+        assert [(e.target_side, e.strict, e.sources) for e in g.edges] == [("term", True, ())]
+        assert grounded_labels(g)[(Q, "term")] == "IN"     # the defect, pinned
+        assert strict_contradictions(g) == set()           # CONTR cannot fire
+
+    def test_primitive_contrariness_shape_is_not_matched(self):
+        from core.dc.debate_graph import _match_scaffold
+        term = Mu(ID("att", "Q"), "Q",
+                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
+                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("t2", "Q")))
+        assert _match_scaffold(term) is None
