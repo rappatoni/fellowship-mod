@@ -404,7 +404,8 @@ before resolution and the modes reimplemented. Either way the minicourse's
 lesson 7 text needs to match the outcome, since it currently describes the
 mode table without stating that sigma is always grounded.
 
-*** NEXT Package adf-bdd and make it the primary labeller
+*** DONE Package adf-bdd and make it the primary labeller
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-adf-bdd-primary
 :AREA:           phd
@@ -419,6 +420,29 @@ mode table without stating that sigma is always grounded.
 :OUTCOME:        adf-bdd is a packaged, version-pinned dependency located the same way as the Fellowship binary, and grounded_labels (hence label, evaluate and graph show) obtains its labels from adf-bdd; the in-tree Kleene fixpoint and the enumeration oracle remain as double-checks against it rather than as the primary implementation.
 :VERIFY:         A fresh `make install` provides adf-bdd without a manual cargo step; with ADF_BDD_BIN unset and the binary off PATH the packaged one is still found; the CLI label/evaluate output is unchanged on every fixture in DEFAULT_SCRIPTS and tests/minicourse; a test asserts that the primary path invokes adf-bdd; the cross-check tests compare adf-bdd against the Kleene fixpoint and the oracle and no longer skip when the binary is absent from PATH; the documented behaviour when adf-bdd cannot be run is exercised by a test.
 :END:
+
+Evidence (2026-09-16, commit A2): `make install` now depends on a new
+`adf-bdd` target (`cargo install adf-bdd-bin --version 0.3.0 --root
+.venv`), so the binary lands at .venv/bin/adf-bdd next to acdc;
+find_adf_bdd resolves ADF_BDD_BIN, the active venv, ./.venv, PATH,
+~/.cargo/bin in that order and resolve_adf_bdd raises AdfBddNotFound
+naming the search order; grounded_labels is the adf-bdd path (--lib
+naive, unguarded ADF export), grounded_labels_kleene is the cross-check
+and asserts unipolarity (NonUnipolarConditions on the Q[t] <- Q[c]
+shape), grounded_labels_via_oracle unchanged. No fallback anywhere: the
+CLI's label/evaluate refuse with the message, graph shows the structure
+and says why labels are missing. The test session requires the binary
+up front (conftest autouse fixture) and the three skip markers are gone.
+Tests: test_adf_label.py::TestProductionAgainstOracle (adf-bdd and
+Kleene each against the oracle), ::TestNonUnipolarShape (adf-bdd right,
+Kleene refuses), ::TestNoFallback. Suite 790 passed in 24 s - the
+subprocess per labelling costs nothing noticeable at fixture scale.
+Also fixed on the way: the committed Makefile contained its whole
+preamble twice (Make warned "overriding commands" for every target and
+the second copy silently won), now a single copy; and the `venv` target
+re-ran `python3 -m venv` over the existing venv, which with Homebrew's
+3.14 clobbered a uv-made 3.12 venv's pyvenv.cfg - it now creates the
+venv only when none exists.
 
 Decision (author, 2026-09-16), reversing the trust hierarchy of
 [[file:propositional-fragment-plan.org]], which made the in-tree

@@ -10,8 +10,9 @@ import pytest
 
 from core.ac.ast import Mu, Mutilde, Cons, Goal, Deleg, ID, DI
 from core.comp.adf_label import (
-    grounded_labels, grounded_labels_via_oracle, graph_to_adf,
-    strict_contradictions, compile_conditions,
+    grounded_labels, grounded_labels_kleene, grounded_labels_via_oracle,
+    graph_to_adf, strict_contradictions, compile_conditions,
+    NonUnipolarConditions,
 )
 from core.comp.oracle import find_adf_bdd, run_adf_bdd, grounded_interpretation
 from core.dc.debate_graph import (
@@ -114,8 +115,12 @@ class TestHandWorkedLabels:
 
 class TestProductionAgainstOracle:
     @pytest.mark.parametrize("graph", ALL_GRAPHS, ids=lambda g: ",".join(sorted(g.nodes.values())))
-    def test_kleene_fixpoint_equals_oracle_grounded(self, graph):
+    def test_primary_adf_bdd_equals_oracle_grounded(self, graph):
         assert grounded_labels(graph) == grounded_labels_via_oracle(graph)
+
+    @pytest.mark.parametrize("graph", ALL_GRAPHS, ids=lambda g: ",".join(sorted(g.nodes.values())))
+    def test_kleene_cross_check_equals_oracle_grounded(self, graph):
+        assert grounded_labels_kleene(graph) == grounded_labels_via_oracle(graph)
 
     def test_unipolarity_of_compiled_conditions(self):
         # The soundness argument for the Kleene path requires every
@@ -137,13 +142,6 @@ class TestProductionAgainstOracle:
                     assert len(signs) == 1, (stmt, var_name)
 
 
-needs_adf_bdd = pytest.mark.skipif(
-    find_adf_bdd() is None,
-    reason="adf-bdd binary not installed (cargo install adf-bdd-bin)",
-)
-
-
-@needs_adf_bdd
 class TestThirdPartyCrossCheck:
     @pytest.mark.parametrize("graph", ALL_GRAPHS, ids=lambda g: ",".join(sorted(g.nodes.values())))
     def test_adf_bdd_agrees_on_grounded(self, graph):
@@ -212,12 +210,10 @@ class TestNonUnipolarShape:
     fixpoint diverges from the definition: an edge whose source is the
     contrary of its target, Q[t] <- Q[c], giving Q[t] = (Q[c] & ~Q[c]).
 
-    Pinned in both directions: the production Kleene path is WRONG here
-    (a false UNDEC where the definition says OUT), and the oracle and
-    adf-bdd are right and agree.  Bears on lesson 8 item 15: once adf-bdd
-    is primary (aida-adf-bdd-primary) this shape needs no refusal, and
-    the Kleene cross-check should refuse non-unipolar input rather than
-    answer.
+    The Kleene fixpoint is wrong on it (a false UNDEC where the definition
+    says OUT); adf-bdd, the primary labeller, and the oracle are right and
+    agree, and the Kleene cross-check refuses the shape (lesson 8 item 15,
+    decided 2026-09-16).
     """
 
     def _graph(self):
@@ -227,16 +223,32 @@ class TestNonUnipolarShape:
                         [src(Q, "context", "presumption")]))
         return g
 
-    def test_kleene_diverges_from_definition(self):
+    def test_primary_path_is_right_and_kleene_refuses(self):
         g = self._graph()
-        assert grounded_labels(g)[(Q, "term")] == "UNDEC"            # the defect
-        assert grounded_labels_via_oracle(g)[(Q, "term")] == "OUT"    # the definition
-        assert grounded_labels_via_oracle(g)[(Q, "context")] == "IN"
+        labels = grounded_labels(g)                                   # adf-bdd
+        assert labels[(Q, "term")] == "OUT" and labels[(Q, "context")] == "IN"
+        assert grounded_labels_via_oracle(g) == labels                # the definition
+        with pytest.raises(NonUnipolarConditions, match="both"):
+            grounded_labels_kleene(g)                                 # refuses, never answers
 
-    @needs_adf_bdd
     def test_adf_bdd_agrees_with_the_definition(self):
         from core.comp.oracle import grounded_interpretation
         adf = graph_to_adf(self._graph())
         theirs = run_adf_bdd(adf, "grounded")
         assert len(theirs) == 1
         assert theirs[0] == grounded_interpretation(adf)
+
+
+class TestNoFallback:
+    def test_missing_binary_refuses(self):
+        from core.comp.oracle import run_adf_bdd, AdfBddNotFound
+        adf = graph_to_adf(graph_support_chain("presumption"))
+        with pytest.raises(AdfBddNotFound):
+            run_adf_bdd(adf, "grounded", binary="/nonexistent/adf-bdd")
+
+    def test_primary_path_is_not_kleene(self):
+        """The guard against silent drift: the primary labeller must not be
+        the in-tree fixpoint.  It is exercised by the non-unipolar shape,
+        where the two disagree; see TestNonUnipolarShape."""
+        from core.comp import adf_label
+        assert adf_label.grounded_labels is not adf_label.grounded_labels_kleene

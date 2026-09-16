@@ -137,13 +137,6 @@ class TestDiamondExport:
         assert "ac(s1,c(v))." in text
 
 
-needs_adf_bdd = pytest.mark.skipif(
-    find_adf_bdd() is None,
-    reason="adf-bdd binary not installed (cargo install adf-bdd-bin)",
-)
-
-
-@needs_adf_bdd
 class TestAdfBddCrossCheck:
     """Three-way-agreement seed: naive oracle vs the independent solver."""
 

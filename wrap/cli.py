@@ -15,6 +15,7 @@ from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
+from core.comp.oracle import AdfBddNotFound
 from scasp_import.importer import ScaspImportError, translate_json
 from pres.decorations import parse_decorate_command
 
@@ -1630,8 +1631,11 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     try:
         from core.comp.adf_label import grounded_labels
         labels = grounded_labels(graph)
-    except Exception as e:
-        logger.debug("Labelling unavailable for the graph view: %s", e)
+    except AdfBddNotFound as e:
+        # The graph itself needs no labeller; labels are an overlay.  But
+        # say loudly why they are missing - there is no fallback labeller.
+        print(f"graph: labels unavailable: {e}")
+        logger.warning("Labels unavailable for the graph view: %s", e)
     if dot_path:
         with open(dot_path, "w") as fh:
             fh.write(graph.to_dot(labels=labels))
@@ -1663,7 +1667,12 @@ def label_argument_cmd(prover: ProverWrapper, name: str) -> None:
     arg, graph = _compile_argument_graph(prover, name)
     if graph is None:
         return
-    labels = grounded_labels(graph)
+    try:
+        labels = grounded_labels(graph)
+    except AdfBddNotFound as e:
+        print(f"label: refused: {e}")
+        logger.error("Labelling refused for '%s': %s", name, e)
+        return
     logger.info("Grounded labelling for '%s':", name)
     for (key, side), label in labels.items():
         logger.info("  %-40s %-8s %s", graph.nodes[key], side, label)
@@ -1701,7 +1710,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
             strict_kinds=declaration_kinds(prover.declarations),
             mode=mode, base=base,
         )
-    except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported) as e:
+    except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)
         return

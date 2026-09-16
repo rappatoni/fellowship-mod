@@ -155,13 +155,6 @@ class TestSupportChains:
             assert grounded_labels(g) == grounded_labels_via_oracle(g)
 
 
-needs_adf_bdd = pytest.mark.skipif(
-    find_adf_bdd() is None,
-    reason="adf-bdd binary not installed (cargo install adf-bdd-bin)",
-)
-
-
-@needs_adf_bdd
 class TestThirdPartyAgreement:
     @pytest.mark.parametrize("make", [
         married_bachelor,

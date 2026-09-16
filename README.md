@@ -46,6 +46,8 @@ The current codebase supports:
 - Python 3.11+
 - `make`
 - an OCaml toolchain to build the native Fellowship binary
+- a Rust toolchain (`cargo`) to build the `adf-bdd` solver, which the
+  debate labeller requires
 
 ## Installation
 
@@ -81,6 +83,24 @@ pipx install .
 
 If you do that, make sure `acdc` can still find the native `fsp` binary
 via one of the mechanisms below.
+
+## Locating the adf-bdd binary
+
+Debate labelling (`label`, `evaluate`, `graph ... show`) is computed by
+[adf-bdd](https://github.com/ellmau/adf-obdd), a third-party solver for
+abstract dialectical frameworks. `make install` builds it into
+`.venv/bin/adf-bdd` (pinned version, via `cargo install`). The wrapper
+resolves it in this order:
+
+1. `ADF_BDD_BIN`
+2. the active virtual environment's `bin/adf-bdd`
+3. repo-local `.venv/bin/adf-bdd`
+4. `adf-bdd` found on `PATH`
+5. `~/.cargo/bin/adf-bdd`
+
+There is no fallback: if the binary cannot be found, labelling refuses
+with a message naming this search order. The in-tree labellers exist only
+as cross-checks of adf-bdd, not as substitutes.
 
 ## Locating the Fellowship binary
 

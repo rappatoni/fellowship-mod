@@ -75,6 +75,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
              "If omitted, the default suite is run."
     )
 
+@pytest.fixture(scope="session", autouse=True)
+def require_adf_bdd():
+    """The debate labeller is adf-bdd, with no fallback (tasks.org,
+    aida-adf-bdd-primary).  Fail the session up front, once and clearly,
+    rather than letting every labelling test fail with the same message."""
+    from core.comp.oracle import resolve_adf_bdd
+    resolve_adf_bdd()
+
+
 @pytest.fixture(scope="session")
 def prover():
     """Launch a *single* FSP process for the whole test session."""

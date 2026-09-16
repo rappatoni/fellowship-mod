@@ -26,16 +26,23 @@ even when the debate graph is propositionally acyclic, so such nodes can
 ground to UNDEC (mutual rebut).  "Acyclic implies two-valued" holds only
 for uncontested graphs.
 
-Two implementations of grounded labelling:
+Three implementations of grounded labelling (trust order decided by the
+author, 2026-09-16, task aida-adf-bdd-primary):
 
-- ``grounded_labels``: the production path - Kleene-fixpoint iteration.
-  Sound against the ADF (completion-based) semantics because every
-  compiled condition is unipolar: each statement occurs with only one
-  polarity in any condition (sources positively, the contrary negatively),
-  and on unipolar formulas Kleene evaluation coincides with the
-  supervaluation that gamma computes.
-- ``grounded_labels_via_oracle``: the same labels through the naive M0
-  oracle (enumeration); the correctness criterion in tests.
+- ``grounded_labels``: the PRODUCTION path - the third-party adf-bdd
+  solver, run on the exported acceptance conditions.  It implements the
+  ADF semantics directly and is trusted against specification drift in
+  our own code.  It refuses to run without the binary; there is no
+  fallback.
+- ``grounded_labels_kleene``: the in-tree Kleene-fixpoint iteration, kept
+  as a cross-check.  Sound only on *unipolar* conditions (each statement
+  with one polarity per condition); it asserts unipolarity and raises
+  NonUnipolarConditions otherwise instead of answering.  The compiler can
+  produce a non-unipolar condition in exactly one way - an edge whose
+  source is the contrary of its own target, Q[t] <- Q[c] - and on that
+  shape Kleene is wrong (UNDEC where the definition says OUT).
+- ``grounded_labels_via_oracle``: the naive enumeration oracle, correct
+  by construction and limited to 14 statements; the second cross-check.
 
 Transposal note: the transposal closure of debate-graph-spec.org is NOT
 implemented.  It currently has nothing to act on because the compiler
@@ -50,7 +57,7 @@ included; strictness affects default status only, never closure.
 
 from core.comp.oracle import (
     ADF, const, var, neg, conj, disj,
-    eval_formula, grounded_interpretation,
+    eval_formula, grounded_interpretation, run_adf_bdd,
 )
 from core.dc.debate_graph import DebateGraph
 
@@ -116,14 +123,49 @@ def compile_conditions(graph: DebateGraph):
     return conditions
 
 
-def graph_to_adf(graph: DebateGraph) -> ADF:
-    """The compiled ADF, for the oracle path and the adf-bdd cross-check.
-
-    Subject to the oracle's statement-count guard; the production path
-    (``grounded_labels``) has no such limit.
-    """
+def graph_to_adf(graph: DebateGraph, *, guard: bool = True) -> ADF:
+    """The compiled ADF.  With the guard (default) it is limited to the
+    oracle's 14 statements; the production path passes ``guard=False``
+    because adf-bdd has no such limit - and must never hand an unguarded
+    ADF to the enumeration functions."""
     conditions = compile_conditions(graph)
-    return ADF(list(conditions), conditions)
+    return ADF(list(conditions), conditions, guard=guard)
+
+
+# ---------------------------------------------------------------------------
+# Unipolarity: the precondition of the Kleene cross-check
+# ---------------------------------------------------------------------------
+
+class NonUnipolarConditions(ValueError):
+    """A compiled condition mentions some statement in both polarities; the
+    Kleene fixpoint is not sound on it and refuses rather than answer."""
+
+
+def _polarities(f, sign: bool, acc: dict) -> dict:
+    tag = f[0]
+    if tag == "var":
+        acc.setdefault(f[1], set()).add(sign)
+    elif tag == "not":
+        _polarities(f[1], not sign, acc)
+    elif tag in ("and", "or"):
+        for g in f[1]:
+            _polarities(g, sign, acc)
+    return acc
+
+
+def check_unipolar(conditions) -> None:
+    """Raise NonUnipolarConditions if any condition is not unipolar."""
+    for stmt, condition in conditions.items():
+        bad = [v for v, signs in _polarities(condition, True, {}).items() if len(signs) > 1]
+        if bad:
+            key, side = split_statement(stmt)
+            offenders = ", ".join(f"{split_statement(v)[0]}[{split_statement(v)[1]}]" for v in bad)
+            raise NonUnipolarConditions(
+                f"Condition of {key}[{side}] mentions {offenders} in both "
+                f"polarities; the Kleene cross-check is not sound here (an "
+                f"edge whose source is the contrary of its target). Use the "
+                f"primary labeller."
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -162,8 +204,23 @@ def kleene_eval(f, valuation):
 
 
 def grounded_labels(graph: DebateGraph):
-    """Grounded labels {(key, side): "IN" | "OUT" | "UNDEC"} - production path."""
+    """Grounded labels {(key, side): "IN" | "OUT" | "UNDEC"} - the
+    production path, computed by adf-bdd.  Raises AdfBddNotFound when the
+    solver is not installed; there is no fallback."""
+    adf = graph_to_adf(graph, guard=False)
+    interpretations = run_adf_bdd(adf, "grounded")
+    if len(interpretations) != 1:
+        raise RuntimeError(
+            f"adf-bdd returned {len(interpretations)} grounded interpretations; expected exactly one"
+        )
+    return {split_statement(s): _LABEL[v] for s, v in interpretations[0].items()}
+
+
+def grounded_labels_kleene(graph: DebateGraph):
+    """Grounded labels by the in-tree Kleene fixpoint - a CROSS-CHECK, not
+    the production path.  Refuses non-unipolar conditions."""
     conditions = compile_conditions(graph)
+    check_unipolar(conditions)
     valuation = {stmt: None for stmt in conditions}
     changed = True
     while changed:

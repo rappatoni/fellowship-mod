@@ -99,7 +99,10 @@ class ADF:
     (a subset of) the statements.
     """
 
-    def __init__(self, statements, ac):
+    def __init__(self, statements, ac, *, guard: bool = True):
+        """``guard=False`` lifts the statement-count limit.  Only the
+        adf-bdd path may do that: the enumeration functions below are
+        exponential and must never see an unguarded large ADF."""
         self.statements = tuple(statements)
         self.ac = dict(ac)
         if len(set(self.statements)) != len(self.statements):
@@ -116,7 +119,7 @@ class ADF:
                 raise ValueError(
                     f"Acceptance condition of {s!r} mentions unknown statements: {sorted(unknown)}"
                 )
-        if len(self.statements) > MAX_ORACLE_STATEMENTS:
+        if guard and len(self.statements) > MAX_ORACLE_STATEMENTS:
             raise ValueError(
                 f"Naive oracle is limited to {MAX_ORACLE_STATEMENTS} statements "
                 f"(got {len(self.statements)}); it enumerates interpretations "
@@ -286,18 +289,54 @@ _ADF_BDD_TOKEN = re.compile(r"([TFu])\((\w+)\)")
 _ADF_BDD_VALUE = {"T": True, "F": False, "u": None}
 
 
+ADF_BDD_SEARCH_ORDER = (
+    "ADF_BDD_BIN",
+    "<active venv>/bin/adf-bdd",
+    "./.venv/bin/adf-bdd",
+    "adf-bdd on PATH",
+    "~/.cargo/bin/adf-bdd",
+)
+
+
 def find_adf_bdd() -> Optional[str]:
-    """Path to the adf-bdd binary, honoring $ADF_BDD_BIN, PATH, ~/.cargo/bin."""
+    """Path to the adf-bdd binary, or None.  Mirrors the Fellowship
+    binary's resolution: environment variable, packaged location (the
+    active virtual environment, where `make install` puts it), repo-local
+    venv, PATH, then a plain `cargo install` location."""
+    import sys
     env = os.environ.get("ADF_BDD_BIN")
-    if env and os.path.isfile(env):
+    if env and os.path.isfile(env) and os.access(env, os.X_OK):
         return env
+    for candidate in (
+        os.path.join(sys.prefix, "bin", "adf-bdd"),
+        os.path.join(os.getcwd(), ".venv", "bin", "adf-bdd"),
+    ):
+        if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
+            return candidate
     on_path = shutil.which("adf-bdd")
     if on_path:
         return on_path
     cargo = os.path.expanduser("~/.cargo/bin/adf-bdd")
-    if os.path.isfile(cargo):
+    if os.path.isfile(cargo) and os.access(cargo, os.X_OK):
         return cargo
     return None
+
+
+class AdfBddNotFound(RuntimeError):
+    """The labeller needs adf-bdd and it is not installed.  No fallback."""
+
+
+def resolve_adf_bdd() -> str:
+    """Path to adf-bdd, or raise AdfBddNotFound with the search order."""
+    found = find_adf_bdd()
+    if found is None:
+        raise AdfBddNotFound(
+            "adf-bdd binary not found. Run `make install` (or `make adf-bdd`) "
+            "to build it into the venv, or set ADF_BDD_BIN. Searched: "
+            + ", ".join(ADF_BDD_SEARCH_ORDER)
+            + ". There is no fallback labeller."
+        )
+    return found
 
 
 def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
@@ -309,12 +348,9 @@ def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
     """
     if mode not in _ADF_BDD_MODES:
         raise ValueError(f"mode must be one of {sorted(_ADF_BDD_MODES)}, got {mode!r}")
-    binary = binary or find_adf_bdd()
-    if binary is None:
-        raise RuntimeError(
-            "adf-bdd binary not found (install with `cargo install adf-bdd-bin` "
-            "or set ADF_BDD_BIN)"
-        )
+    binary = binary or resolve_adf_bdd()
+    if not (os.path.isfile(binary) and os.access(binary, os.X_OK)):
+        raise AdfBddNotFound(f"adf-bdd binary is not executable: {binary}")
     text, name_map = diamond_export(adf)
     reverse = {v: k for k, v in name_map.items()}
     with tempfile.NamedTemporaryFile("w", suffix=".adf", delete=False) as fh:
@@ -322,7 +358,10 @@ def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
         path = fh.name
     try:
         proc = subprocess.run(
-            [binary, "-q", "--lx", _ADF_BDD_MODES[mode], path],
+            # --lib naive: measured 2026-09-16, the default hybrid backend
+            # grows ~quartically on plain chains (9.8 s at 301 statements)
+            # while naive takes 178 ms with identical output.
+            [binary, "-q", "--lx", "--lib", "naive", _ADF_BDD_MODES[mode], path],
             capture_output=True, text=True, timeout=120,
         )
     finally:
