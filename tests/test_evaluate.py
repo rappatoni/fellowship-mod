@@ -179,3 +179,29 @@ class TestRefusals:
             parg(Deleg("1", "Q")), "d", strict_names=STRICT)
         assert labels[(P, "term")] == "IN"
         assert cls == "value"
+
+
+class TestAdequacyAcrossWitnesses:
+    """Adequacy per accepting witness on the two-witness fixture
+    (aida-supporter-derivation-status): every credulous witness yields a
+    value, and the wing kept is the one whose derivation is live under
+    that witness."""
+
+    def body(self):
+        s_contest = t_att("S", Deleg("s", "S"),
+                          Mutilde(DI("x", "S"), "S", DI("x", "S"), Geled("ds", "S")))
+        yq = eta("yQ", "Q", Mu(ID("r", "Q"), "Q", DI("sq", "S->Q"),
+                                Cons(s_contest, ID("r", "Q"))))
+        return parg(t_sup("Q", Deleg("1", "Q"), yq))
+
+    def test_in_implies_value_for_every_witness(self):
+        from core.comp.evaluate import evaluate_witnesses
+        results, _ = evaluate_witnesses(self.body(), "d", strict_names=STRICT | {"sq"})
+        assert len(results) == 2
+        for _, nf, cls, sigma in results:
+            assert sigma[(P, "term")] == "IN" and cls == "value"
+            s_in = sigma[(canonical_prop("S"), "term")] == "IN"
+            # S accepted: Q derived from S (the presumption of S in the
+            # term); S refuted: the presumption of Q stands instead.
+            assert contains(nf, lambda n: isinstance(n, Deleg) and n.prop == ("S" if s_in else "Q"))
+            assert not contains(nf, lambda n: isinstance(n, Deleg) and n.prop == ("Q" if s_in else "S"))

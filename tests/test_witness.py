@@ -266,14 +266,13 @@ class TestTwoAcceptingWitnesses:
     resting on a presumed S, which a presumed refutation of S contests.
     Preferred gives two labellings, both with P IN, differing on S.
 
-    Witness 1 (S refuted) exposes a gap in the wing-choice rule: the
-    resolver consults sigma at the scion's TARGET statement (Q[t], IN by
-    presumption) and keeps the supporter yQ although yQ's own derivation
-    is defeated (its source S[t] is OUT).  The normal form is then open
-    at the S site while sigma says P is IN - an adequacy violation inside
-    the acyclic fragment.  Pinned here; the rule change (consult the
-    supporter's sources, not just its target) is tasks.org
-    aida-supporter-derivation-status."""
+    Witness 1 (S refuted) exposed a gap in the original wing-choice rule
+    (fixed 2026-09-16, aida-supporter-derivation-status): consulting sigma
+    at the scion's TARGET statement only (Q[t], IN by presumption) kept
+    the supporter yQ although yQ's own source S[t] is OUT, leaving the
+    normal form open while sigma said P is IN.  Wings are now decided by
+    the scion's derivation status - target and all sources IN - so under
+    witness 1 yQ is dropped and the presumption of Q stands."""
 
     def body(self):
         s_contest = t_att("S", Deleg("s", "S"),
@@ -303,13 +302,16 @@ class TestTwoAcceptingWitnesses:
                                          mode="credulous", witness=n)
             assert alpha_equal(picked, nf)
 
-    @pytest.mark.xfail(strict=True, reason=(
-        "aida-supporter-derivation-status: the supporter is kept on the "
-        "strength of its target's label although its own derivation is "
-        "defeated under this witness; adequacy (IN -> value) fails."))
     def test_every_accepting_witness_yields_a_value(self):
         results, _ = self.results()
         assert all(cls == "value" for _, _, cls, _ in results)
+
+    def test_witness_with_s_refuted_keeps_the_presumption_of_q(self):
+        from core.comp.oracle_terms import alpha_equal, normalize_strong
+        results, _ = self.results()
+        (nf,) = [nf for _, nf, _, sigma in results if sigma[(S, "term")] == "OUT"]
+        expected = normalize_strong(parg(Deleg("1", "Q")))
+        assert alpha_equal(nf, expected)
 
     def test_the_witness_with_s_accepted_yields_a_value(self):
         results, _ = self.results()

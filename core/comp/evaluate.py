@@ -46,9 +46,14 @@ policy):
                 of S (UNDEC where they disagree); residue resolved
                 skeptically.
 
-Wing choice at a scaffold (site of proposition A; sigma consulted at the
-scion's target statement); the UNDEC rows are the tiebreak, reached only
-when sigma itself leaves the statement undecided:
+Wing choice at a scaffold (site of proposition A) is decided by the
+scion's DERIVATION STATUS under sigma (``derivation_status``): IN iff the
+scion's target statement and all of its sources are IN, OUT iff any of
+them is OUT, UNDEC otherwise.  Consulting the target statement alone was
+unsound: Q[t] IN says some derivation of Q is live, not that this
+supporter's is (aida-supporter-derivation-status, 2026-09-16).  The
+UNDEC rows are the tiebreak, reached only when sigma leaves the status
+undecided:
 
     supporter IN            -> keep scion        attacker IN   -> keep attack wing
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG
@@ -80,7 +85,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
-    DebateCompileError,
+    DebateCompileError, _LEAF_INFO,
 )
 
 
@@ -152,6 +157,49 @@ def _keep_attack_wing(node):
     return result
 
 
+def derivation_status(scion, target_statement, labels, strict_names=()) -> str:
+    """The status of a scion's OWN derivation under sigma.
+
+    IN    iff its target statement and every one of its sources are IN;
+    OUT   iff its target or any source is OUT;
+    UNDEC otherwise.
+
+    The sources are the leaves of the scion's decomposition: open sites
+    on its spine and the ORIG wings of scaffolds nested inside it (a
+    nested scion belongs to another edge).  This is the statement-level
+    labelling read at edge level; the target label alone says that
+    *some* derivation of the statement is live, not that this one is
+    (tasks.org, aida-supporter-derivation-status)."""
+    strict_names = set(strict_names or ())
+    found = [labels.get(target_statement)]
+
+    def walk(node):
+        if not isinstance(node, ProofTerm):
+            return
+        match = _match_scaffold(node, strict_names)
+        if match is not None:
+            walk(match[3])  # the ORIG wing: this scion's own site
+            return
+        for leaf_type, (side, _kind) in _LEAF_INFO.items():
+            if isinstance(node, leaf_type):
+                found.append(labels.get((canonical_prop(node.prop), side)))
+                return
+        for slot in ("term", "context"):
+            walk(getattr(node, slot, None))
+
+    walk(scion)
+    if any(label is None for label in found):
+        raise EvaluationRefused(
+            f"No label for a source of the scion at {target_statement}; the "
+            f"labelling and the term disagree about the debate's shape."
+        )
+    if all(label == "IN" for label in found):
+        return "IN"
+    if any(label == "OUT" for label in found):
+        return "OUT"
+    return "UNDEC"
+
+
 def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                       trace=None) -> ProofTerm:
     """Replace every scaffold by its sigma-chosen wing, innermost-last.
@@ -177,15 +225,15 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 else ("context" if site_side == "term" else "term")
             )
             statement = (canonical_prop(prop), target_side)
-            label = labels.get(statement)
-            if label is None:
+            if labels.get(statement) is None:
                 raise EvaluationRefused(
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
+            status = derivation_status(scion_raw, statement, labels, strict_names)
             if trace is not None:
-                trace.append((statement, label))
-            choice = _wing_choice(role, label, mode)
+                trace.append((statement, status))
+            choice = _wing_choice(role, status, mode)
             if choice == "orig":
                 return walk(_keep_orig(node, orig, alt))
             if role == "supporter":

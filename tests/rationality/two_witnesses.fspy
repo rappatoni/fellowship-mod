@@ -11,14 +11,14 @@
 %   [1]  P IN  Q IN  S[t] OUT  S[c] IN      (S refuted)
 %   [2]  P IN  Q IN  S[t] IN   S[c] OUT     (S accepted)
 %
-% Expected today:
+% Expected (rule fixed 2026-09-16):
 %   evaluate d credulous 2  -> VALUE   Q derived from S via yQ
-%   evaluate d credulous 1  -> OPEN    yQ is kept because Q[t] is IN
-%                                      (by presumption), although yQ's
-%                                      own source S[t] is OUT; the S
-%                                      site holds the defeated clash.
-% Correct for witness 1 would be VALUE with the presumption !Q standing:
-%   mu d:P.< pRule:Q->P || !..:Q * d >
+%   evaluate d credulous 1  -> VALUE   yQ is dropped - its source S[t]
+%                                      is OUT under this witness - and
+%                                      the presumption !Q stands:
+%                                      mu d:P.< pRule:Q->P || !..:Q * d >
+% Before the fix witness 1 was OPEN: the resolver read only Q[t] (IN by
+% presumption) and kept yQ with its S site holding the defeated clash.
 lk.
 declare P,Q,S:bool.
 declare pRule : (Q->P).
@@ -52,7 +52,7 @@ end counterargument
 attack yAtt sChal yQ
 support d yAtt pArg
 
-graph d
+graph d show
 label d preferred
 evaluate d credulous 2
 evaluate d credulous 1

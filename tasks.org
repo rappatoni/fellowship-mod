@@ -457,7 +457,8 @@ in sorted order, IN < OUT < UNDEC); =witness_labelling(..., witness=N)=,
 (credulous only). README and minicourse lesson 7 updated. Suite 981
 passed, 2 skipped, 4 xfailed, 2 xpassed.
 
-*** NEXT Decide a supporter's wing by its own derivation, not its target's label
+*** DONE Decide a supporter's wing by its own derivation, not its target's label
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-supporter-derivation-status
 :AREA:           phd
@@ -492,8 +493,20 @@ author studied; decide, then it is a small change in
 =resolve_scaffolds= plus the table in lesson 7.
 
 Fixture: tests/rationality/two_witnesses.fspy (replayed by the script
-suite) - =evaluate d credulous 1= is OPEN, =evaluate d credulous 2= is
-VALUE, =evaluate d credulous all= shows both.
+suite).
+
+Decision (author, 2026-09-16): apply the proposed rule. Evidence:
+=derivation_status(scion, target, sigma)= in core/comp/evaluate.py -
+IN iff the target statement and every source of the scion (open sites
+on its spine, ORIG wings of nested scaffolds) are IN, OUT iff any is
+OUT, else UNDEC - and =resolve_scaffolds= feeds that status, not the
+target label, to the wing-choice table; the trace records it. Both
+witnesses of the fixture now evaluate to VALUE, witness 1 to the
+presumption term =mu d:P.< pRule || !Q * d >= (alpha-equal to
+normalising the unsupported original). Tests:
+TestTwoAcceptingWitnesses (xfail flipped, plus the witness-1 normal
+form), tests/test_evaluate.py::TestAdequacyAcrossWitnesses; every
+pre-existing wing-choice test unchanged. Lesson 7 states the rule.
 
 *** DONE Package adf-bdd and make it the primary labeller
 CLOSED: [2026-09-16 Wed]
