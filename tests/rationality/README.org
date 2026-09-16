@@ -56,6 +56,22 @@ VALUE with the presumption standing. The .fspy form of
 tests/test_evaluate.py::TestContested, exercised through graph / label /
 evaluate.
 
+* modus_tollens.fspy [runnable, exposes a known defect]
+
+Strict rule under a strict refutation: =tp= argues P from a *presumed* Q
+via the declared axiom =pRule : Q->P=; =t= is a denied refutation of P.
+Contraposition of the rule carries the refutation to the premise, so the
+required labelling is Q term OUT, Q context IN, P term OUT, P context IN.
+
+Today the compiler fuses the rule with its defeasible premise into one
+defeasible edge and generates no transposal, so Q stays IN - the defect
+tracked as =aida-strict-layer=. The fixture is in DEFAULT_SCRIPTS so the
+CLI path keeps replaying; its compiled form is pinned as a strict xfail in
+=test_postulates.py::TestModusTollensFixture=, which flips when the strict
+layer lands. Note the defect is NOT that the fragment lacks strict rules:
+the rule is strict, its premise is defeasible, and the edge conflates
+them.
+
 * odd_loop (covered by ../naf_olon.fspy) [runnable]
 
 Odd loop of length 3 (P <- notR-style chain through Q, R). Expected

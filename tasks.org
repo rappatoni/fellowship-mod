@@ -436,7 +436,7 @@ supporting edge on the contrary side") is satisfiable either way.
 :DEFERRALS:      0
 :BLOCKED_BY:     id:aida-statement-level-acyclicity
 :OUTCOME:        The compiler represents a strict inference rule used by an argument as its own strict hyperedge with sources, separate from the defeasible premises it is applied to; the strict layer of debate-graph-spec.org (Layer 3 steps 1-2) closes those edges under transposition and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens and Q-versus-not-Q conflicts are visible to the labeller.
-:VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); a compiled pArg (P from presumed Q via the axiom Q->P) under a strict refutation of P labels Q OUT, matching the hand-built graph in the task notes; the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
+:VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); the modus-tollens fixture tests/rationality/modus_tollens.fspy - an argument for P from a presumed Q via the declared axiom Q->P, plus a denied refutation of P - compiles to a strict rule edge P[t] <- Q[t] with its transposal Q[c] <- P[c], and `label` prints Q term OUT, Q context IN, P term OUT (today, with the rule fused into the defeasible edge, Q stays IN); the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
 :END:
 
 Recorded 2026-09-16. What exists: nothing. =core/comp/adf_label.py='s
@@ -444,13 +444,31 @@ docstring says the transposal closure is "vacuously satisfied"; no code
 implements it, and =grep transpos core wrap pres= finds only that
 docstring.
 
-Why the closure has nothing to act on today. The spec defines
-=strict(e)= as "no obligation or presumption source". A source is an
-obligation, a presumption, or an assumption, and the compiler refuses
-assumptions. So every strict edge the compiler can emit has zero
-sources, and a zero-source edge has zero transposals. The closure is
-trivially satisfied because the set it would act on is empty - not
-because the graph is closed in any useful sense.
+Why the closure has nothing to act on today - corrected 2026-09-16.
+The earlier note (and the docstring in core/comp/adf_label.py) called
+the closure "vacuous in the fragment" as though that were a property of
+the fragment. It is not; it is a symptom of the rule/premise fusion
+described below. The spec's =strict(e)= is a property of the
+*derivation*, and a strict rule applied to a defeasible premise is a
+strict rule: the premise is what is defeasible. The compiler merges the
+two into one edge and lets the premise decide its strictness, so no
+strict edge with sources is ever emitted and the closure acts on the
+empty set. The author's own construction shows what is lost: from a
+strict refutation t of P and a defeasible t' for P from presumed Q via
+the axiom Q->P, one *can* build an attack on t' at Q from t by
+contraposition - the term binds the premise, mu' q.<rule || alpha>. The
+compiled graph cannot represent it because the rule is not an edge.
+
+Defeasible edges need no transposal of their own. In the fragment every
+defeasible edge is a strict rule applied to defeasible premises
+(premise-defeasibility: the rule is a declared axiom, the defeasibility
+lives in `by default` at the premise), and transposing the *rule*
+already carries a refutation of the conclusion to the premise, where
+the presumption is defeated through the guard. Genuinely defeasible
+*rules*, if ever admitted, must not be transposed (the ASPIC+ reason:
+contraposing "birds fly" against "Tweety does not fly" would conclude
+Tweety is not a bird) - which is exactly why strict and defeasible must
+be separate edges in the graph rather than one bit per edge.
 
 Where the strict rules went. A strict axiom used inside an argument does
 not become a strict edge. =pArg=, which derives P from a presumed Q via

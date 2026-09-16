@@ -193,3 +193,33 @@ class TestObjectNegationConsistency:
         labels = grounded_labels(g)
         assert not (labels[(K("Q"), "term")] == "IN"
                     and labels[(K("~Q"), "term")] == "IN")
+
+
+class TestModusTollensFixture:
+    """The compiled form of tests/rationality/modus_tollens.fspy.
+
+    Today the rule Q->P is fused into the defeasible edge and no
+    transposal exists, so the strict refutation of P never reaches Q.
+    Strict xfail: flips when aida-strict-layer lands.
+    """
+
+    def _compiled_graph(self):
+        from core.ac.ast import Mu, Cons, Deleg, ID, DI
+        from core.dc.debate_graph import compile_debate
+        tp = Mu(ID("tp", "P"), "P",
+                Mu(ID("r", "P"), "P", DI("pRule", "Q->P"),
+                   Cons(Deleg("1", "Q"), ID("r", "P"))),
+                ID("tp", "P"))
+        g = compile_debate(tp, "tp", strict_names={"pRule"})
+        g.add_edge(edge("t", K("P"), "context", [], strict=True, role="attacker"))
+        return g
+
+    def test_rule_is_not_yet_its_own_edge(self):
+        g = self._compiled_graph()
+        strict_with_sources = [e for e in g.edges if e.strict and e.sources]
+        assert strict_with_sources == []          # the fusion, pinned
+
+    @pytest.mark.xfail(strict=True, reason="rule/premise fusion; no transposal (aida-strict-layer)")
+    def test_refuting_p_refutes_q(self):
+        labels = grounded_labels(self._compiled_graph())
+        assert labels[(K("Q"), "term")] == "OUT"
