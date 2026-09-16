@@ -408,8 +408,32 @@ class DebateGraph:
                 lines.append(
                     f'  {ids[edge.target_key]} [peripheries=2];'
                 )
+            self._dot_absorbed(edge, ids, lines)
         lines.append("}")
         return "\n".join(lines)
+
+    def _dot_absorbed(self, edge, ids, lines) -> None:
+        """Absorbed subarguments, dashed: their sources, the statement they
+        derive, the edge they were merged into, and the captures that
+        caused it (dotted, from the statement the variable stands for)."""
+        for rec in edge.absorbed:
+            tgt = ids[rec.target_key]
+            head = "normal" if rec.target_side == "term" else "empty"
+            for source in rec.sources:
+                lines.append(
+                    f"  {ids[source.key]} -> {tgt} "
+                    f'[style=dashed color=gray40 arrowhead={head} label="{rec.name}"];'
+                )
+            lines.append(
+                f"  {tgt} -> {ids[edge.target_key]} "
+                f'[style=dashed color=gray40 arrowhead=onormal label="{rec.name} absorbed into {edge.name}"];'
+            )
+            for cap in rec.captures:
+                lines.append(
+                    f"  {ids[cap.key]} -> {tgt} "
+                    f'[style=dotted color=purple arrowhead=vee label="uses {cap.name}:{cap.side[0]} of {cap.owner}"];'
+                )
+            self._dot_absorbed(rec, ids, lines)
 
 
 # ---------------------------------------------------------------------------
