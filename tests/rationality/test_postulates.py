@@ -223,3 +223,56 @@ class TestModusTollensFixture:
     def test_refuting_p_refutes_q(self):
         labels = grounded_labels(self._compiled_graph())
         assert labels[(K("Q"), "term")] == "OUT"
+
+
+class TestCurriedAttack:
+    """The compiled form of tests/rationality/curried_attack.fspy.
+
+    A challenge to B->C cannot attack an argument that derives C from A
+    and B via A->(B->C): the intermediate conclusion B->C occurs only as
+    a context type in the elimination stack. Strict xfail; flips when
+    aida-curried-intermediate-conclusions lands.
+    """
+
+    def _host(self, prover):
+        from core.dc.argument import Argument
+        c = Argument(prover, 'cArg', 'C',
+                     ['cut (A->(B->C)) r', 'axiom abc', 'elim', 'next',
+                      'elim', 'by default', 'next', 'axiom r'])
+        c.execute()
+        return c
+
+    @pytest.fixture
+    def curried_prover(self):
+        from wrap.cli import setup_prover
+        p = setup_prover()
+        p.send_command('lk.')
+        p.send_command('declare A,B,C:bool.')
+        p.send_command('declare abc : (A->(B->C)).')
+        yield p
+        p.close()
+
+    def test_intermediate_conclusion_is_context_only(self, curried_prover):
+        """Pins the cause: no term-side node is typed B->C."""
+        from core.ac.ast import ProofTerm, Term
+        host = self._host(curried_prover)
+        term_props = set()
+
+        def walk(n):
+            if not isinstance(n, ProofTerm):
+                return
+            if isinstance(n, Term) and getattr(n, "prop", None):
+                term_props.add(n.prop)
+            for slot in ("term", "context"):
+                walk(getattr(n, slot, None))
+
+        walk(host.body)
+        assert "B->C" not in term_props
+
+    @pytest.mark.xfail(strict=True, reason="curried intermediate conclusions not exposed (aida-curried-intermediate-conclusions)")
+    def test_challenge_to_intermediate_conclusion_attacks(self, curried_prover):
+        from core.dc.argument import Argument
+        host = self._host(curried_prover)
+        challenge = Argument(curried_prover, 'test', 'B->C', ['by default'], is_anti=True)
+        challenge.execute()
+        challenge.attack(host, name='d6')   # raises today

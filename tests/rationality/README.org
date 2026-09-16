@@ -76,6 +76,20 @@ axiom replaced by a `by default` implication must behave the same way
 except for decisiveness: a strict transposal sinks Q to OUT, a delegated
 one leaves Q contested (UNDEC). Both are in =aida-strict-layer='s VERIFY.
 
+* curried_attack.fspy [not in DEFAULT_SCRIPTS, exposes a known defect]
+
+An attack on the intermediate conclusion of a curried implication:
+=cArg= derives C from A and B via =abc : A->(B->C)=, and a challenge to
+B->C tries to attack it. The attack fails today, because B->C occurs in
+the term only as the type of the elimination stack's tail (a context),
+so theta-expansion finds no term-side target. Found by the author while
+working lesson 5 of the minicourse; tracked as
+=aida-curried-intermediate-conclusions=, whose two halves (name the
+partial application; emit one hyperedge per elimination step) are
+recorded there. Its compiled form is pinned as a strict xfail in
+=test_postulates.py::TestCurriedAttack=, alongside a test pinning the
+cause. Kept out of DEFAULT_SCRIPTS since strict replay raises.
+
 * odd_loop (covered by ../naf_olon.fspy) [runnable]
 
 Odd loop of length 3 (P <- notR-style chain through Q, R). Expected

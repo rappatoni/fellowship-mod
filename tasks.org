@@ -270,6 +270,55 @@ determinism, stability and fuel exhaustion. The contested fixture's
 skeptical evaluation now prints the fully reduced residue
 mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
+*** BACKLOG Switch to graph-first: operators build the graph, terms by unfolding
+:PROPERTIES:
+:ID:             aida-graph-first
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The debate operators (support, attack, chain) add edges to the debate graph instead of grafting terms; the compiler emits one hyperedge per subargument; debate terms are recovered from the graph by unfolding from an issue with mu/mu'-capture breaking cycles; rational closure is reachability on the graph and is never performed as term-level substitution; every unfolded term replays in Fellowship.
+:VERIFY:         The M6 adequacy check restated as "evaluating the unfolded term for an issue yields the class its label predicts" passes for every issue of every fixture; a rational-closure test shows that a supporter's own subarguments and the rootstock's subarguments are both present in the unfolded term with no term-level substitution having been performed; an unfolding-termination test (T6) passes on every fixture; every unfolded term replays through the prover.
+:END:
+
+Phase B of [[file:fragment-followups-plan.org]]. The specification
+(debate-graph-spec.org, "Rational closure" and "Layer 2->4 interface")
+makes the graph primary and the term derived; the initial fragment
+implemented the reverse, and as a result rational closure is
+implemented nowhere and each further feature (transposals, curried
+conclusions, contrariness edges) is harder than it needs to be. This is
+a rewrite of the debate operations in core/dc/argument.py, the oldest
+experimental code in the tree; the oracles and Fellowship replay are
+what make it checkable. Sub-steps B1-B4 in the plan. Effort is for the
+first step; the plan estimates 5-8 days for the phase.
+
+*** BACKLOG Build the whole-file document graph
+:PROPERTIES:
+:ID:             aida-document-graph
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-graph-first
+:OUTCOME:        One debate graph per .fspy file holds every registered argument, attack and support; graph, label and evaluate take an issue (an entry point into the document) rather than a single argument; attacking a proposition is universal across the file because proposition identity is global to it.
+:VERIFY:         A two-debate .fspy file in which an attack on P registered in one debate changes P's label when the other debate is labelled; compile_document is wired to the CLI and covered by a test; the per-argument path still works for a single-argument file.
+:END:
+
+Phase C of [[file:fragment-followups-plan.org]] - the "phase 2" the
+author had in mind for the document-level graph. =compile_document= in
+core/dc/debate_graph.py already merges several arguments into one graph
+and is called by nothing.
+
 *** NEXT Decide credulous mode by a witness labelling, not per scaffold
 :PROPERTIES:
 :ID:             aida-credulous-witness-labelling
