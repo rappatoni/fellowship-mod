@@ -333,6 +333,35 @@ author had in mind for the document-level graph. =compile_document= in
 core/dc/debate_graph.py already merges several arguments into one graph
 and is called by nothing.
 
+Open design question (raised by the author, 2026-09-16): what do the
+manual verbs =attack= / =support= / =chain= mean once the document
+graph exists? Under the spec's universal-substitution decision,
+contrariness follows from proposition identity, so registering a
+counterargument to Q already conflicts with every use of Q in the
+document - the attack is implicit, and the verb adds no conflict the
+graph does not already contain. Observations bearing on the answer:
+- The graph is built *incrementally* as arguments are registered and
+  operators applied (phase B2); it is not recompiled on evaluation.
+  What is recomputed per evaluation is the labelling (one adf-bdd call
+  over the graph).
+- Scope is reachability from the issue. Non-interference guarantees
+  that arguments not connected to the issue do not affect its label, so
+  independent debates in one file do not interfere unless they share a
+  proposition - and when they do, the universal-substitution decision
+  says they should interact.
+- Hence the verbs are redundant for *semantics*. Candidate roles, none
+  of which changes a label: (i) naming - =attack d att host= names
+  debate d with issue = host's conclusion; (ii) assertion - it checks
+  that att really concludes the contrary of a site reachable in host
+  and errors otherwise, so nobody believes an attack landed when the
+  graph shows none; (iii) presentation - it fixes which scion unfolding
+  uses when producing a term for display.
+- The alternative - explicit scoping, a debate as a user-selected
+  subgraph within which alone implicit attacks fire - contradicts the
+  universal-substitution decision and should be rejected unless that
+  decision is revisited.
+To be decided before phase C starts.
+
 *** NEXT Decide credulous mode by a witness labelling, not per scaffold
 :PROPERTIES:
 :ID:             aida-credulous-witness-labelling
