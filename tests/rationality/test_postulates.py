@@ -276,3 +276,53 @@ class TestCurriedAttack:
         challenge = Argument(curried_prover, 'test', 'B->C', ['by default'], is_anti=True)
         challenge.execute()
         challenge.attack(host, name='d6')   # raises today
+
+
+class TestCaptureIsACycle:
+    """A captured presumption is a derivation cycle, decided by the labelling.
+
+    Rootstock t argues A from a lemma B; attacker a refutes B on a
+    presumption that A is refuted, which grafting binds to t's outer
+    binder. On the graph that is A[t] <- B[t], B[c] <- A[c], a cycle
+    through contrariness. No term-level inference is needed to settle it.
+    """
+
+    def _graph(self, t_strict: bool):
+        from core.dc.debate_graph import DebateGraph
+        g = DebateGraph()
+        g.add_node("A"); g.add_node("B")
+        if t_strict:
+            g.add_edge(edge("t", K("A"), "term",
+                            [Source(K("B"), "term", "assumption", "b")], strict=True))
+            g.add_edge(edge("bax", K("B"), "term", [], strict=True, role="supporter"))
+        else:
+            g.add_edge(edge("t", K("A"), "term", [src("B", "term", "presumption")]))
+        g.add_edge(edge("a", K("B"), "context",
+                        [src("A", "context", "presumption")], role="attacker"))
+        return g
+
+    def test_it_is_a_derivation_cycle(self):
+        assert not self._graph(False).is_acyclic()
+        assert not self._graph(True).is_acyclic()
+
+    def test_strict_rootstock_is_a_proof_by_contradiction(self):
+        """The caught wing (a) is OUT and discarded; t stands. One model."""
+        g = self._graph(True)
+        labels = grounded_labels(g)
+        assert labels[(K("A"), "term")] == "IN"
+        assert labels[(K("B"), "context")] == "OUT"
+        assert labels[(K("A"), "context")] == "OUT"
+        from core.comp.oracle import two_valued_models
+        assert len(two_valued_models(graph_to_adf(g))) == 1
+        assert grounded_labels(g) == grounded_labels_via_oracle(g)
+
+    def test_defeasible_rootstock_is_credulously_contested(self):
+        """Grounded UNDEC; some model accepts t, another accepts a."""
+        g = self._graph(False)
+        assert set(grounded_labels(g).values()) == {"UNDEC"}
+        from core.comp.oracle import two_valued_models
+        models = two_valued_models(graph_to_adf(g))
+        at, bc = f"{K('A')}\x01term", f"{K('B')}\x01context"
+        assert any(m[at] for m in models)       # t credulously accepted
+        assert any(m[bc] for m in models)       # a credulously accepted
+        assert not any(m[at] and m[bc] for m in models)

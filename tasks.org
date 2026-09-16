@@ -556,6 +556,25 @@ What refusing cycles currently protects, and what has to replace it:
   unipolarity in =compile_conditions=, or rely on adf-bdd as the
   primary labeller.
 
+Capture is a derivation cycle (author, 2026-09-16). The evaluator's
+=EvaluationRefused= on a scaffold whose catch variable occurs in a wing
+was presented (minicourse lesson 7, earlier draft) as a typing side
+condition: "dropping the caught wing would un-type the term". It is
+not - a wing with the catch variable free is well-typed - and it is not
+a soundness condition either. A captured presumption is the term-level
+shadow of the cycle A[t] <- B[t], B[c] <- A[c] linked through
+contrariness, and the labelling decides it without term-level
+inference: with t strict except its lemma and a grounded only on the
+captured presumption, grounded gives A IN, B[c] OUT (proof by
+contradiction, the caught wing discarded); with both defeasible, all
+UNDEC with three two-valued models (t and a each credulously
+acceptable, neither skeptically). So the refusal in =_keep_orig= /
+=_keep_scion_support= is a fragment guard in disguise and must go with
+this task; the discard rule becomes "follow sigma", whose only residual
+condition - never discard a wing sigma labels IN - cannot arise under a
+single witness labelling. Pinned graph-level in
+tests/rationality/test_postulates.py::TestCaptureIsACycle.
+
 The acyclicity check itself should stay as it is (proposition level; see
 =aida-statement-level-acyclicity= for why it is exact) and become a
 classifier - "which fragment is this debate in" - rather than a refusal.
