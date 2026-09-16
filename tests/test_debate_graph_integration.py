@@ -84,3 +84,58 @@ def test_context_side_support_compiles(rules_prover):
     assert g.edges == []
     assert g.defaults[(canonical_prop("P"), "context")] == {"obligation"}
     assert list(g.nodes.values()) == ["P"]
+
+
+# ---------------------------------------------------------------------------
+# The cyclic fragment (aida-cyclic-fragment): real prover output with
+# derivation cycles compiles, and the labellings are what the ADF says.
+# ---------------------------------------------------------------------------
+
+from pathlib import Path
+
+from wrap.cli import execute_script
+from core.dc.debate_graph import compile_document, declaration_kinds
+from core.comp.adf_label import labellings, grounded_labels, grounded_labels_via_oracle
+
+
+@pytest.fixture(scope="module")
+def even_loop_prover():
+    prover = setup_prover()
+    yield prover
+    prover.close()
+
+
+def _replay_even_loop(prover):
+    # Replayed per test: conftest's autouse fixture clears the argument
+    # store between tests, so a module-level replay would be lost.
+    execute_script(prover, str(Path("tests/rationality/even_loop.fspy")),
+                   strict=True, stop_on_error=True, isolate=False)
+    return prover.declarations.keys(), declaration_kinds(prover.declarations)
+
+
+def test_even_loop_document_is_cyclic_and_has_two_stable_labellings(even_loop_prover):
+    prover = even_loop_prover
+    names, kinds = _replay_even_loop(prover)
+    bodies = [(n, prover.get_argument(n).body) for n in ("Pdefault", "Qdefault")]
+    g = compile_document(bodies, strict_names=names, strict_kinds=kinds)
+    assert not g.is_acyclic()                      # P[t] <- Q[c] ~ Q[t] <- P[c] ~ P[t]
+    assert set(grounded_labels(g).values()) == {"UNDEC"}
+    assert grounded_labels(g) == grounded_labels_via_oracle(g)
+    # Not the two-labelling Dung even loop: the fixture's refutations are
+    # PRESUMPTIONS with their own default, so "both refutations stand,
+    # neither proof" is a third stable labelling.  P and Q are never both
+    # accepted, and each is credulously acceptable.
+    stable = labellings(g, "stable")
+    assert len(stable) == 3
+    P, Q = canonical_prop("P"), canonical_prop("Q")
+    verdicts = {(l[(P, "term")], l[(Q, "term")]) for l in stable}
+    assert verdicts == {("IN", "OUT"), ("OUT", "IN"), ("OUT", "OUT")}
+    assert len(labellings(g, "preferred")) == 3
+
+
+def test_each_even_loop_argument_alone_is_acyclic(even_loop_prover):
+    prover = even_loop_prover
+    names, kinds = _replay_even_loop(prover)
+    for n in ("Pdefault", "Qdefault"):
+        g = compile_debate(prover.get_argument(n).body, n, strict_names=names, strict_kinds=kinds)
+        assert g.is_acyclic()

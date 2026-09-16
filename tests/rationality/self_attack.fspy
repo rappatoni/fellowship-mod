@@ -20,3 +20,12 @@ by default.
 next.
 axiom.
 end argument
+
+% D0 (2026-09-16): the self-attacking argument compiles as the cyclic
+% edge P[t] <- P[c]:pres; preferred/stable label P[t] OUT, P[c] IN.
+% The evaluation is a value polynomial in the presumption: the defeat
+% comes from the contrariness guard, not from a scaffold, so nothing in
+% the term reflects it (recorded under aida-cyclic-fragment).
+graph SelfAttack
+label SelfAttack preferred
+evaluate SelfAttack credulous

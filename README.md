@@ -228,9 +228,11 @@ detects a machine-mode desynchronization.
 ### Debate-graph commands
 
 These compile the argument's term into a debate graph, label it by an
-ADF semantics and evaluate it under a witness labelling. They cover
-the cycle-free, quantifier-free fragment and refuse anything outside it
-with a one-line message.
+ADF semantics and evaluate it under a witness labelling. Derivation
+cycles are admitted; `graph` reports which fragment (acyclic or cyclic)
+a debate is in. They cover
+the quantifier-free fragment and refuse first-order terms with a
+one-line message.
 
 - `graph ARG [FILE.dot] [show]`
   - compile the debate graph and print its nodes, hyperedges and default

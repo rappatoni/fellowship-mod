@@ -1,0 +1,75 @@
+% A derivation cycle built from the CLI (D0, aida-cyclic-fragment,
+% 2026-09-16): argA argues A from a presumed Q; cQ refutes Q from B
+% (an OBLIGATION), which aB supplies by argB from a presumed R; cR
+% refutes R from a PRESUMED A.  On the graph
+%
+%   A[t] <- Q[t]:pres      cQs: Q[c] <- B[t]:obli
+%   B[t] <- R[t]:pres      cR:  R[c] <- A[t]:pres
+%
+% linked through contrariness at Q and at R: a cycle through A, which
+% the compiler used to refuse and now classifies ("fragment: cyclic").
+% Grounded: A IN (by the presumption inside cR), everything else UNDEC;
+% three preferred labellings.
+%
+% Note the adequacy gap this shows (recorded under aida-cyclic-fragment):
+% A[t] is IN in every labelling because cR PRESUMES A, but that
+% presumption sits inside the attacker, not on the composed term's own
+% spine; argA's derivation of A goes through Q, which the witness
+% defeats, so `evaluate d credulous` is OPEN although sigma says A is
+% IN.  Only unfolding a term from the graph (aida-graph-first) can
+% produce the witness term the label promises.
+lk.
+declare A,B,Q,R:bool.
+declare qa : (Q->A).
+declare rb : (R->B).
+declare bnq : (B->~Q).
+declare anr : (A->~R).
+
+start argument argA A
+cut (Q->A) r.
+axiom qa.
+elim.
+by default.
+next.
+axiom r.
+end argument
+
+start argument argB B
+cut (R->B) r.
+axiom rb.
+elim.
+by default.
+next.
+axiom r.
+end argument
+
+% Refute Q from B, B left as an obligation.
+start counterargument cQ Q
+cut (B->~Q) th.
+axiom bnq.
+elim.
+next.
+elim.
+axiom.
+end counterargument
+
+% Refute R from A, A taken by default.
+start counterargument cR R
+cut (A->~R) th.
+axiom anr.
+elim.
+by default.
+next.
+elim.
+axiom.
+end counterargument
+
+attack aB cR argB
+support cQs aB cQ on B
+attack d cQs argA
+
+graph d
+label d
+label d preferred
+evaluate d credulous
+evaluate d skeptical

@@ -715,7 +715,8 @@ the acyclic fragment. Decision (author, 2026-09-16): accept that; the
 acyclic fragment is only the initial one, and the next fragment admits
 cycles. Carried forward in =aida-cyclic-fragment=.
 
-*** BACKLOG Extend the fragment to admit derivation cycles
+*** DONE Extend the fragment to admit derivation cycles
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-cyclic-fragment
 :AREA:           phd
@@ -727,7 +728,6 @@ cycles. Carried forward in =aida-cyclic-fragment=.
 :ICK:            3
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-credulous-witness-labelling
 :OUTCOME:        compile_debate admits debate graphs with derivation cycles (mutual undercut, even loops, an implication together with its own transposal); they are labelled, the evaluation modes resolve them through a witness labelling chosen from complete/stable labellings rather than per scaffold, and unfolding such a graph back into a debate term terminates.
 :VERIFY:         tests/rationality/even_loop.fspy, naf_olon.fspy and a mutual-undercut fixture compile instead of raising CyclicDebateNotSupported; their grounded labels agree with adf-bdd and the oracle; credulous and skeptical evaluation on even_loop agree with evaluation under an explicitly chosen stable labelling; the proof-by-contradiction edge Q[t] <- Q[c] is either still refused or labelled in agreement with the oracle; an unfolding test terminates on every cyclic fixture (T6).
 :END:
@@ -782,6 +782,66 @@ tests/rationality/test_postulates.py::TestCaptureIsACycle.
 The acyclicity check itself should stay as it is (proposition level; see
 =aida-statement-level-acyclicity= for why it is exact) and become a
 classifier - "which fragment is this debate in" - rather than a refusal.
+
+Evidence (2026-09-16, commit D0; requested by the author "so that the
+Peirce's law fixture works").
+
+- =compile_debate= / =compile_document= no longer assert acyclicity;
+  =is_acyclic= is the classifier and =graph ARG= prints "fragment:
+  acyclic|cyclic"; =CyclicDebateNotSupported= is kept as a name and
+  raised only by =assert_acyclic= on request.
+- Capture. The Peirce fixture was refused not on a cycle but on a
+  captured variable ("free term variable 'h'"): a scion that refers to
+  a binder of its host. Two readings were tried. (S1) record it as an
+  assumption source at the binder's statement, per the spec's
+  "free assumption variables" - labels Peirce's law OUT, because a
+  discharged hypothesis h:P and the continuation beta:P become global
+  demands on P. (S2, taken) *absorb* the scion into the host's edge:
+  the spec's question-begging capture ("the composite is the
+  rootstock's argument from contradiction"); the site it filled is no
+  source any more, its remaining open sites are the host's, and the
+  evaluator keeps such a scion unconditionally. Implemented as
+  =captures= / =scaffold_env= / =attack_wing= in core/dc/debate_graph.py,
+  used by =_Compiler._decompose= and by =resolve_scaffolds= /
+  =derivation_status= in core/comp/evaluate.py. Under S2 the whole
+  Peirce debate collapses to one strict edge for the thesis, labels IN,
+  and =evaluate d5= returns the classical proof term
+  lambda f. mu alpha.< f || (lambda h. mu _.< h || alpha >) * alpha >
+  - the fixture's "intended term". A captured *presumption* (a Geled,
+  which grafting leaves in place) stays a source, so the graph
+  =A[t] <- B[t], B[c] <- A[c]= of TestCaptureIsACycle is unchanged.
+- Evaluator: =_keep_orig= / =_keep_scion_support= no longer refuse a
+  caught wing; the kept wing retains its binder when the catch variable
+  occurs in it (=_keep_wing=).
+- Fixtures: peirces_law.fspy (label IN, VALUE); self_attack.fspy
+  (P[t] <- P[c]:pres, cyclic, preferred P OUT / P[c] IN);
+  naf_olon.fspy's Rfirst (R[t] <- R[c]:pres, cyclic, R OUT); even_loop
+  per argument acyclic, as a document cyclic with grounded all UNDEC and
+  *three* stable labellings (the refutations are presumptions, so "both
+  refutations stand" is stable too) -
+  tests/test_debate_graph_integration.py; the new
+  tests/rationality/cyclic_undercut.fspy (four-edge cycle through A, Q,
+  B, R; three preferred labellings). Unit tests:
+  test_debate_graph.py::TestCapturedScionsAreAbsorbed (five cases,
+  including a hand-built Peirce shape collapsing to one strict edge),
+  test_evaluate.py::TestAbsorbedScaffolds, the cycle-admitted test.
+- T6 (unfolding termination): not applicable yet - there is no
+  unfolding until aida-graph-first; noted there.
+
+Two adequacy gaps found on the way, both term-first artifacts and both
+Phase B's business (aida-graph-first, B4 "adequacy restated"):
+1. *Defeat by the guard alone.* self_attack and Rfirst are labelled OUT
+   through the contrariness guard (the presumed refutation inside the
+   argument itself), but the term has no scaffold at which sigma could
+   act, so =evaluate= returns a value polynomial in the presumption.
+   "OUT implies not a value" holds only for defeats that a scaffold
+   carries.
+2. *IN through a site off the spine.* In cyclic_undercut, A[t] is IN in
+   every labelling because cR *presumes* A; that presumption sits inside
+   the attacker, not on argA's spine, while argA's own derivation goes
+   through the defeated Q, so =evaluate d credulous= is OPEN although
+   sigma says A is IN. The label is right about the statement; only a
+   term unfolded from the graph (B3) can witness it.
 
 *** BACKLOG Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
 :PROPERTIES:
@@ -844,7 +904,6 @@ term-level defect of _CapturingSubst.
 :ICK:            3
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-cyclic-fragment
 :OUTCOME:        The compiler represents every implication proposition an argument applies - declared (strict) or delegated (defeasible) - as its own hyperedge with sources, separate from the premises it is applied to; the closure of debate-graph-spec.org Layer 3 step 2 transposes every such edge, strict or defeasible alike (design decision: all implications in this system contrapose), and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens through either kind of implication and Q-versus-not-Q conflicts are visible to the labeller.
 :VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); the modus-tollens fixture tests/rationality/modus_tollens.fspy - an argument for P from a presumed Q via the declared axiom Q->P, plus a denied refutation of P - compiles to an implication edge P[t] <- Q[t] with its transposal Q[c] <- P[c]; the same holds with the axiom replaced by a delegated `by default` implication (delegated implications contrapose too, by design), and `label` prints Q term OUT, Q context IN, P term OUT (today, with the rule fused into the defeasible edge, Q stays IN); the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
 :END:
@@ -1269,6 +1328,14 @@ the right outcome) - but the term is wrong as a term: evaluated by any
 label-free reduction it could not abort the host, and under graph-first
 unfolding must produce the wired form. Likely subsumed by
 =aida-contrariness-as-edges= if that is taken; otherwise a small fix.
+
+Interaction with the cyclic fragment (2026-09-16): a scion that
+captures a host binder through a *variable* is absorbed into the host's
+edge (see aida-cyclic-fragment). Today only obligations are captured
+into variables, so a presumption stays a Geled leaf and a source; once
+presumptions are rerouted the same way they would be absorbed too -
+the wiring would swallow the presumption that the labelling currently
+sees. Decide whether that is wanted before implementing.
 
 Observed 2026-08-31 while building tests/rationality/contested.fspy: a
 challenge ending in a Laog gets its tail rerouted to alt, a by-default

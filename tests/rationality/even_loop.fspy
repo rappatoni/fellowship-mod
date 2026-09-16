@@ -36,3 +36,13 @@ by default.
 next.
 axiom.
 end argument
+
+% D0 (2026-09-16): each argument alone is acyclic (P[t] <- Q[c]:pres and
+% Q[t] <- P[c]:pres); the even loop only exists in the document graph of
+% both, which compile_document now compiles instead of refusing
+% (tests/test_debate_graph_integration.py): grounded all UNDEC, three
+% stable labellings (the refutations are presumptions, so "both stand" is one).
+graph Pdefault
+label Pdefault
+graph Qdefault
+label Qdefault

@@ -77,6 +77,10 @@ class DebateCompileError(ValueError):
 
 
 class CyclicDebateNotSupported(DebateCompileError):
+    """Retained for callers that still import it.  Since the cyclic
+    fragment (tasks.org, aida-cyclic-fragment, 2026-09-16) compilation no
+    longer raises it: ``DebateGraph.is_acyclic`` classifies a debate, the
+    labelling decides it.  Nothing in the tree raises this any more."""
     """The compiled graph has a propositional dependency cycle.
 
     The cycle-free fragment (propositional-fragment-plan.org) refuses these;
@@ -181,9 +185,9 @@ class DebateGraph:
         a cycle through derivation edges and contrariness links that
         contains at least one derivation edge.  A contrariness-only cycle
         (a plain rebuttal) contracts to a loop-free node and is admitted.
-        An implication edge and its own transposal always form such a
-        cycle, so transposal-closed debates are outside this (initial)
-        fragment; see task aida-cyclic-fragment.
+        Since aida-cyclic-fragment (2026-09-16) ``is_acyclic`` is a
+        classifier - which fragment a debate is in - and no longer a
+        refusal: cyclic graphs are labelled by adf-bdd like any other.
         """
         out = set()
         for edge in self.edges:
@@ -208,10 +212,11 @@ class DebateGraph:
         return all(visit(k) for k in self.nodes if color[k] == WHITE)
 
     def assert_acyclic(self) -> None:
+        """Only for callers that want the initial fragment's guard."""
         if not self.is_acyclic():
             raise CyclicDebateNotSupported(
-                "The compiled debate graph has a propositional dependency "
-                "cycle; the cycle-free fragment refuses it."
+                "The compiled debate graph has a derivation cycle; the "
+                "acyclic fragment refuses it."
             )
 
     # -- presentation -------------------------------------------------------
@@ -512,6 +517,90 @@ def _host_name(body, fallback: str) -> str:
     return fallback
 
 
+def free_names(node) -> set:
+    """{(name, side)} of the variables free in ``node``: ID -> "context",
+    DI -> "term"; shadowing-aware."""
+    out = set()
+
+    def walk(n, bound):
+        if isinstance(n, ID):
+            if ("context", n.name) not in bound:
+                out.add((n.name, "context"))
+            return
+        if isinstance(n, DI):
+            if ("term", n.name) not in bound:
+                out.add((n.name, "term"))
+            return
+        if isinstance(n, Mu):
+            b = bound | {("context", n.id.name)}
+        elif isinstance(n, Mutilde):
+            b = bound | {("term", n.di.name)}
+        elif isinstance(n, Lamda):
+            b = bound | {("term", n.di.di.name)}
+        elif isinstance(n, Admal):
+            b = bound | {("context", n.id.id.name)}
+        else:
+            b = bound
+        for slot in ("term", "context"):
+            child = getattr(n, slot, None)
+            if isinstance(child, ProofTerm):
+                walk(child, b)
+
+    walk(node, frozenset())
+    return out
+
+
+def captures(scion, env: dict, exclude=None, strict_names=()) -> set:
+    """The host binders a scion refers to: {name} of its free variables
+    that ``env`` binds on the matching side, minus declared names and
+    ``exclude`` (an attack scaffold's catch variable is wiring, not
+    capture; a supporter reaching for the catch variable has captured
+    the site's own continuation and is absorbed like any other)."""
+    strict_names = set(strict_names or ())
+    return {
+        name for name, side in free_names(scion)
+        if name != exclude and name not in strict_names
+        and name in env and env[name][1] == side
+    }
+
+
+def scaffold_env(node, env: dict, role: str, alt: str):
+    """The env a scaffold's scion sees, and the name to exclude."""
+    if role == "attacker":
+        return {k: v for k, v in env.items() if k != alt}, alt
+    return {**env, **binder_statements(node)}, None
+
+
+def attack_wing(node):
+    """The attack wing of a scaffold with its binder kept:
+    mu alt.< ?g:A || SCION >  (term side) or  mu' alt.< SCION || g:A? >."""
+    if isinstance(node, Mu):
+        wing = node.context
+        return Mu(ID(node.id.name, node.prop), node.prop,
+                  deepcopy(wing.term), deepcopy(wing.context))
+    wing = node.term
+    return Mutilde(DI(node.di.name, node.prop), node.prop,
+                   deepcopy(wing.term), deepcopy(wing.context))
+
+
+def binder_statements(node) -> dict:
+    """{variable: (prop, side)} for the binders a node introduces.
+
+    An ID bound by mu (or a Pyh under an Admal) stands for a refutation
+    of its proposition - side "context"; a DI bound by mu' or lambda for
+    a proof - side "term".  Affine binders bind nothing referenceable."""
+    out = {}
+    if isinstance(node, Mu) and not _is_affine_binder(node.id.name):
+        out[node.id.name] = (node.prop, "context")
+    elif isinstance(node, Mutilde) and not _is_affine_binder(node.di.name):
+        out[node.di.name] = (node.prop, "term")
+    elif isinstance(node, Lamda) and not _is_affine_binder(node.di.di.name):
+        out[node.di.di.name] = (node.di.prop, "term")
+    elif isinstance(node, Admal) and not _is_affine_binder(node.id.id.name):
+        out[node.id.id.name] = (node.id.prop, "context")
+    return out
+
+
 def _scion_name(body, fallback: str) -> str:
     """An eta-wrapped scion carries its argument name in the root binder."""
     if isinstance(body, Mu) and isinstance(body.context, ID) and body.context.name == body.id.name:
@@ -573,16 +662,39 @@ class _Compiler:
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
         edge_name = _host_name(body, name)
-        clean = self._decompose(deepcopy(body), edge_name)
+        clean = self._decompose(deepcopy(body), edge_name, {})
         self._add_edge_from_body(clean, edge_name, role)
 
     # -- scaffold decomposition ---------------------------------------------
 
-    def _decompose(self, node, host: str):
-        """Replace every scaffold by its ORIG wing; compile scions."""
+    def _decompose(self, node, host: str, env: dict):
+        """Replace every scaffold by its ORIG wing; compile scions - unless
+        the scion CAPTURED a binder of its host, in which case it is
+        absorbed into the host's own derivation.
+
+        ``env`` maps every variable bound by an enclosing binder of the
+        host to its statement (``binder_statements``).  A scion whose free
+        variables meet ``env`` has, while grafting, bound one of its open
+        sites to a hypothesis or continuation of the host: it is no longer
+        a closed subargument of its own but part of the host's argument
+        from contradiction (debate-graph-spec.org, "question-begging
+        capture": the composite is the rootstock's argument from
+        contradiction).  Its remaining open sites become sources of the
+        host's edge; the site it filled is not a source any more.  Until
+        the cyclic fragment (aida-cyclic-fragment, 2026-09-16) such scions
+        were refused as free variables.  See ``captures``.
+        """
         match = _match_scaffold(node, self.strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
+            scion_env, exclude = scaffold_env(node, env, role, alt)
+            if captures(scion_raw, scion_env, exclude, self.strict_names):
+                inlined = scion_raw if role == "supporter" else attack_wing(node)
+                if role == "supporter" and alt in captures(scion_raw, scion_env, None):
+                    # the supporter uses the site's continuation: keep it bound
+                    inlined = Mu(ID(alt, prop), prop, scion_raw, ID(alt, prop)) if isinstance(node, Mu) \
+                        else Mutilde(DI(alt, prop), prop, DI(alt, prop), scion_raw)
+                return self._decompose(inlined, host, env)
             if role == "attacker":
                 scion = _restore_scion(
                     scion_raw, scion_kind, alt, prop, f"r{next(self._fresh)}"
@@ -592,20 +704,25 @@ class _Compiler:
                 scion = scion_raw
                 target_side = site_side
             scion_label = _scion_name(scion, f"{host}.{role}{next(self._fresh)}")
-            clean_scion = self._decompose(scion, scion_label)
+            # A separate edge: nested scaffolds inside it may still capture
+            # this scion's own binders (or the host's, which would have
+            # absorbed it above), so the env travels along.
+            clean_scion = self._decompose(scion, scion_label, {k: v for k, v in scion_env.items() if k != alt})
             self._add_edge_from_body(
                 clean_scion, scion_label, role, expect_side=target_side, expect_prop=prop
             )
-            return self._decompose(orig, host)
+            return self._decompose(orig, host, env)
+        inner = {**env, **binder_statements(node)}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
             if isinstance(child, ProofTerm):
-                setattr(node, slot, self._decompose(child, host))
+                setattr(node, slot, self._decompose(child, host, inner))
         return node
 
     # -- one edge from one clean body ---------------------------------------
 
-    def _add_edge_from_body(self, body, name, role, *, expect_side=None, expect_prop=None):
+    def _add_edge_from_body(self, body, name, role, *, expect_side=None,
+                            expect_prop=None):
         if isinstance(body, Mu):
             side = "term"
         elif isinstance(body, Mutilde):
@@ -745,11 +862,11 @@ def compile_debate(body: ProofTerm, name: str, *, strict_names=None,
     assumptions) - the prover's declaration keys.  ``strict_kinds``: the
     matching {name: kind} (see ``declaration_kinds``); when given, a
     declared name occurring on the wrong side for its kind is refused.
-    Acyclicity is asserted; cyclic results raise CyclicDebateNotSupported.
+    Derivation cycles are admitted (the cyclic fragment); ``is_acyclic``
+    on the result says which fragment the debate is in.
     """
     compiler = _Compiler(strict_names, strict_kinds)
     compiler.compile(body, name)
-    compiler.graph.assert_acyclic()
     return compiler.graph
 
 
@@ -760,5 +877,4 @@ def compile_document(named_bodies, *, strict_names=None, strict_kinds=None) -> D
         compiler = _Compiler(strict_names, strict_kinds)
         compiler.compile(body, name)
         graph.merge(compiler.graph)
-    graph.assert_acyclic()
     return graph

@@ -1550,6 +1550,8 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
                     f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
     for (key, side), kinds in graph.defaults.items():
         logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
+    logger.info("  fragment: %s",
+                "acyclic" if graph.is_acyclic() else "cyclic (derivation cycle; labelled like any other)")
     labels = None
     try:
         from core.comp.adf_label import grounded_labels

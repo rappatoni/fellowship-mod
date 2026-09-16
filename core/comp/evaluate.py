@@ -85,7 +85,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
-    DebateCompileError, _LEAF_INFO,
+    DebateCompileError, _LEAF_INFO, binder_statements, captures, scaffold_env,
 )
 
 
@@ -113,30 +113,33 @@ def _wing_choice(role: str, label: str, mode: str) -> str:
     raise EvaluationRefused(f"Unknown scaffold role {role!r}")
 
 
+def _keep_wing(node, wing, alt):
+    """(mu<) or (>mu) discarding the other wing, then eta if possible.
+
+    The kept wing is  mu alt.< WING || alt >  (mirrored on the context
+    side).  When ``alt`` does not occur in WING the binder is eta-reduced
+    away; when it does - the wing *captured* the catch variable, the
+    term-level shadow of a derivation cycle - the binder stays, since the
+    cyclic fragment (aida-cyclic-fragment) follows sigma's choice like any
+    other and no longer refuses.  Which wing is kept is sigma's decision;
+    a caught wing is discarded exactly when sigma says so.
+    """
+    prop = node.prop
+    if isinstance(node, Mu):
+        if not _occurs(wing, ID, alt):
+            return deepcopy(wing)
+        return Mu(ID(alt, prop), prop, deepcopy(wing), ID(alt, prop))
+    if not _occurs(wing, DI, alt):
+        return deepcopy(wing)
+    return Mutilde(DI(alt, prop), prop, DI(alt, prop), deepcopy(wing))
+
+
 def _keep_orig(node, orig, alt):
-    """(mu<) then eta: valid only if the catch variable is uncaught in ORIG."""
-    caught = (
-        _occurs(orig, ID, alt) if isinstance(node, Mu) else _occurs(orig, DI, alt)
-    )
-    if caught:
-        raise EvaluationRefused(
-            f"Scaffold catch variable '{alt}' occurs in the kept original "
-            f"wing: a capture pattern, outside the acyclic fragment."
-        )
-    return deepcopy(orig)
+    return _keep_wing(node, orig, alt)
 
 
 def _keep_scion_support(node, scion, alt):
-    """(>mu) then eta for a support scaffold: scion must not catch alt."""
-    caught = (
-        _occurs(scion, ID, alt) if isinstance(node, Mu) else _occurs(scion, DI, alt)
-    )
-    if caught:
-        raise EvaluationRefused(
-            f"Scaffold catch variable '{alt}' occurs in the supporter wing: "
-            f"a capture pattern, outside the acyclic fragment."
-        )
-    return deepcopy(scion)
+    return _keep_wing(node, scion, alt)
 
 
 def _keep_attack_wing(node):
@@ -157,7 +160,7 @@ def _keep_attack_wing(node):
     return result
 
 
-def derivation_status(scion, target_statement, labels, strict_names=()) -> str:
+def derivation_status(scion, target_statement, labels, strict_names=(), env=None) -> str:
     """The status of a scion's OWN derivation under sigma.
 
     IN    iff its target statement and every one of its sources are IN;
@@ -166,28 +169,40 @@ def derivation_status(scion, target_statement, labels, strict_names=()) -> str:
 
     The sources are the leaves of the scion's decomposition: open sites
     on its spine and the ORIG wings of scaffolds nested inside it (a
-    nested scion belongs to another edge).  This is the statement-level
+    nested scion belongs to another edge) - except nested scions that
+    captured a binder in scope (``env``), which the compiler absorbed
+    into this derivation and whose own leaves therefore count.  This is
+    the statement-level
     labelling read at edge level; the target label alone says that
     *some* derivation of the statement is live, not that this one is
     (tasks.org, aida-supporter-derivation-status)."""
     strict_names = set(strict_names or ())
     found = [labels.get(target_statement)]
 
-    def walk(node):
+    def walk(node, env):
         if not isinstance(node, ProofTerm):
             return
         match = _match_scaffold(node, strict_names)
         if match is not None:
-            walk(match[3])  # the ORIG wing: this scion's own site
+            role, _side, _prop, orig, nested_scion, alt, _kind = match
+            nested_env, exclude = scaffold_env(node, env, role, alt)
+            if captures(nested_scion, nested_env, exclude, strict_names):
+                # absorbed: its leaves are ours (and the site, if attacked)
+                if role == "attacker":
+                    walk(node.context.term if isinstance(node, Mu) else node.term.context, env)
+                walk(nested_scion, env)
+            else:
+                walk(orig, env)  # the ORIG wing: this scion's own site
             return
         for leaf_type, (side, _kind) in _LEAF_INFO.items():
             if isinstance(node, leaf_type):
                 found.append(labels.get((canonical_prop(node.prop), side)))
                 return
+        inner = {**env, **binder_statements(node)}
         for slot in ("term", "context"):
-            walk(getattr(node, slot, None))
+            walk(getattr(node, slot, None), inner)
 
-    walk(scion)
+    walk(scion, dict(env or {}))
     if any(label is None for label in found):
         raise EvaluationRefused(
             f"No label for a source of the scion at {target_statement}; the "
@@ -214,12 +229,22 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     strict_names = set(strict_names or ())
 
-    def walk(node):
+    def walk(node, env):
         if not isinstance(node, ProofTerm):
             return node
         match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
+            scion_env, exclude = scaffold_env(node, env, role, alt)
+            if captures(scion_raw, scion_env, exclude, strict_names):
+                # Absorbed into the host's derivation (see the compiler):
+                # the scion is part of the argument, not a choice sigma
+                # makes.  Keep it; sigma judges the enclosing edge.
+                if trace is not None:
+                    trace.append(((canonical_prop(prop), site_side), "absorbed"))
+                kept = (_keep_scion_support(node, scion_raw, alt) if role == "supporter"
+                        else _keep_attack_wing(node))
+                return walk(kept, env)
             target_side = (
                 site_side if role == "supporter"
                 else ("context" if site_side == "term" else "term")
@@ -230,22 +255,23 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
-            status = derivation_status(scion_raw, statement, labels, strict_names)
+            status = derivation_status(scion_raw, statement, labels, strict_names, scion_env)
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)
             if choice == "orig":
-                return walk(_keep_orig(node, orig, alt))
+                return walk(_keep_orig(node, orig, alt), env)
             if role == "supporter":
-                return walk(_keep_scion_support(node, scion_raw, alt))
-            return walk(_keep_attack_wing(node))
+                return walk(_keep_scion_support(node, scion_raw, alt), env)
+            return walk(_keep_attack_wing(node), env)
+        inner = {**env, **binder_statements(node)}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
             if isinstance(child, ProofTerm):
-                setattr(node, slot, walk(child))
+                setattr(node, slot, walk(child, inner))
         return node
 
-    return walk(deepcopy(body))
+    return walk(deepcopy(body), {})
 
 
 def issue_of(body: ProofTerm):

@@ -154,26 +154,40 @@ class TestContested:
         assert contains(nf_s, lambda n: isinstance(n, Geled))
 
 
-class TestRefusals:
-    def test_capture_pattern_refused(self):
-        # A supporter wing that reaches for the alt variable is a capture
-        # pattern - outside the acyclic fragment.  The compiler refuses it
-        # already (free variable in the scion edge); the evaluator's own
-        # EvaluationRefused check covers direct resolve_scaffolds use.
-        from core.dc.debate_graph import DebateCompileError
-        scion = Mu(ID("k", "Q"), "Q", Deleg("2", "Q"), ID("alt", "Q"))
-        body = parg(t_sup("Q", Goal("1", "Q"), scion))
-        with pytest.raises(DebateCompileError, match="alt"):
-            evaluate_debate(body, "d", strict_names=STRICT, mode="credulous")
+class TestAbsorbedScaffolds:
+    """A wing that captured a host binder used to be refused ("a capture
+    pattern, outside the acyclic fragment").  Since aida-cyclic-fragment
+    the compiler absorbs such a scion into the host's derivation, and the
+    evaluator keeps it unconditionally - it is part of the argument sigma
+    judges, not a choice sigma makes."""
 
-    def test_capture_refused_by_resolver_directly(self):
+    def body(self):
+        scion = Mu(ID("k", "Q"), "Q", Deleg("2", "Q"), ID("alt", "Q"))
+        return parg(t_sup("Q", Goal("1", "Q"), scion))
+
+    def test_compiles_labels_and_evaluates(self):
+        nf, cls, sigma, g = evaluate_debate(self.body(), "d", strict_names=STRICT, mode="credulous")
+        assert sigma[(Q, "term")] == "IN" and cls == "value"
+
+    def test_kept_wing_retains_its_binder(self):
         from core.comp.evaluate import resolve_scaffolds
-        scion = Mu(ID("k", "Q"), "Q", Deleg("2", "Q"), ID("alt", "Q"))
-        body = parg(t_sup("Q", Goal("1", "Q"), scion))
-        labels = {(Q, "term"): "IN"}
-        with pytest.raises(EvaluationRefused, match="capture"):
-            resolve_scaffolds(body, labels, "credulous")
+        from core.comp.oracle_terms import _occurs
+        labels = {(Q, "term"): "IN", (P, "term"): "IN"}
+        resolved = resolve_scaffolds(self.body(), labels, "credulous")
+        site = resolved.term.context.term          # the Q site of pArg
+        assert isinstance(site, Mu) and site.id.name == "alt"
+        assert _occurs(site.term, ID, "alt")
 
+    def test_absorbed_wing_is_kept_whatever_sigma_says(self):
+        from core.comp.evaluate import resolve_scaffolds
+        trace = []
+        labels = {(Q, "term"): "OUT", (P, "term"): "OUT"}
+        resolved = resolve_scaffolds(self.body(), labels, "credulous", trace=trace)
+        assert trace == [((Q, "term"), "absorbed")]
+        assert not contains(resolved, lambda n: isinstance(n, Goal))
+
+
+class TestRefusals:
     def test_plain_argument_evaluates_without_scaffolds(self):
         nf, cls, labels, _ = evaluate_debate(
             parg(Deleg("1", "Q")), "d", strict_names=STRICT)
