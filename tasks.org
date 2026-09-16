@@ -417,12 +417,24 @@ Implementation notes:
   parses text. The in-tree fixpoint is 10-700x faster on the measured
   graphs. Acceptable for CLI use; keep an eye on it for large documents
   and for any loop that labels repeatedly.
-- *When adf-bdd cannot run.* Decide and document: refuse with a clear
-  message, or fall back to the in-tree labeller with a warning. The
-  log-and-refuse convention of this repo suggests refusing by default.
+- *When adf-bdd cannot run: refuse.* Decided (author, 2026-09-16): no
+  fallback to the in-tree Kleene labeller. The binary is packaged and
+  has to be installed; a missing or failing binary is a clear error
+  naming the resolution order, never a silently different labeller.
+  Rationale: the Kleene path is wrong on non-unipolar conditions
+  (Q[t] <- Q[c] gives UNDEC where the definition says OUT), so a
+  fallback would let that wrong label back in through the door the
+  primary path closed.
 - *Double-check mode.* Decide whether the in-tree cross-check runs on
   every call (cheap at current sizes) or only in tests / behind a flag;
-  a disagreement must be loud, never silently resolved.
+  a disagreement must be loud, never silently resolved. Decided
+  (author, 2026-09-16), part of the item-15 resolution: the Kleene
+  cross-check *asserts unipolarity* of the compiled conditions and
+  refuses (raises) on non-unipolar input rather than answering. The
+  check is syntactic and cheap - non-unipolarity arises iff some edge
+  has a source that is the contrary of its own target - so it runs
+  before every Kleene evaluation. The enumeration oracle needs no such
+  guard; it is correct by construction.
 - *Scope of the guarantee, stated honestly.* adf-bdd checks the ADF
   semantics only. The translation from debate graph to acceptance
   conditions (=compile_conditions=) and from terms to graphs
@@ -566,9 +578,13 @@ What refusing cycles currently protects, and what has to replace it:
   keeps the Kleene labeller faithful. That edge makes
   =compile_conditions= emit Q[t] = (Q[c] & ~Q[c]), where the production
   labeller says Q[t] UNDEC, Q[c] UNDEC and the oracle says Q[t] OUT,
-  Q[c] IN. Replacement: keep refusing that one shape, assert
-  unipolarity in =compile_conditions=, or rely on adf-bdd as the
-  primary labeller.
+  Q[c] IN. Decided (author, 2026-09-16): rely on adf-bdd as the primary
+  labeller (=aida-adf-bdd-primary=), which handles the shape correctly
+  (verified: agrees with the oracle); the Kleene cross-check asserts
+  unipolarity and refuses non-unipolar input; and the graph-level
+  refusal of this shape is NOT kept - it is a legitimate argument form
+  and is admitted with the rest of the cyclic fragment. Pinned in
+  tests/test_adf_label.py::TestNonUnipolarShape.
 
 Capture is a derivation cycle (author, 2026-09-16). The evaluator's
 =EvaluationRefused= on a scaffold whose catch variable occurs in a wing
