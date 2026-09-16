@@ -479,7 +479,8 @@ Implementation notes:
   in-tree fixpoint as the production path and adf-bdd as test-only;
   update them when this lands.
 
-*** NEXT Record strict refutations as context-side edges
+*** DONE Record strict refutations as context-side edges
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-strict-refutation-edges
 :AREA:           phd
@@ -494,6 +495,22 @@ Implementation notes:
 :OUTCOME:        A declared refutation reached by an argument compiles to a strict context-side edge, so a term encoding a clash at Q materialises both Q[term] and Q[context] and strict_contradictions reports Q; the compiler consumes declaration kinds ("prop" vs "moxia") instead of names alone.
 :VERIFY:         The lesson-8 clash term mu att.<mu _.<t||att>||mu'_.<t||t'>> with t declared and t' denied compiles to two strict edges on opposite sides; strict_contradictions returns {Q}; test_minicourse.py::TestLesson8StrictRefutationDropped flips from pinning the defect to asserting the fix; the M4/M7 CONTR tests gain at least one case built from a compiled term rather than by hand.
 :END:
+
+Evidence (2026-09-16, commit A1): the matcher accepts a declared name in
+the stolen-value slot, so the primitive contrariness term
+mu att.<mu _.<t||att>||mu'_.<t||t'>> decomposes into a strict term-side
+edge for t and a strict context-side edge for t'; strict_contradictions
+returns {Q} and both sides label IN (CONTR). The compiler now consumes
+declaration kinds: compile_debate/evaluate_debate take strict_kinds
+(from declaration_kinds(prover.declarations), wired in the CLI), and a
+declared name occurring on the wrong side for its kind - a moxia as a
+proof, a prop as a refutation - is refused. Tests:
+tests/minicourse/test_minicourse.py::TestLesson8StrictRefutationRecorded
+(three tests, replacing the two that pinned the defect) and
+tests/test_adf_label.py::TestStrictContradictions::test_detected_from_a_compiled_term.
+Suite 783 passed. Out of scope here: a declared name used as a leaf
+*inside* an elimination spine still contributes no edge of its own -
+that is the implication-edge work of aida-strict-layer.
 
 Confirmed 2026-09-16 (session audit A4). =_collect_sources= in
 core/dc/debate_graph.py treats every name in =strict_names= as a strict

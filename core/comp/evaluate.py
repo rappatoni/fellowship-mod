@@ -29,11 +29,15 @@ statement):
     supporter UNDEC         -> credulous: scion  attacker UNDEC-> credulous: ORIG
                                skeptical: ORIG                    skeptical: attack wing
 
-v1 limitation, recorded: when an attacker wins, the kept attack wing is
-mu alt.< ?g:A || ATTACKER > - the stolen-value obligation stays open
-rather than being replaced by the abort term, so a defeated debate
-normalizes to an open-or-exception term, not necessarily to a pure
-exception.  Adequacy is asserted as IN -> value, OUT -> not a value.
+What a defeated site holds: when an attacker wins, the kept attack wing
+is mu b.< ?g:A || ATTACKER > with b unused - the winning refutation
+facing the site's own indeterminate under an affine binder.  That is
+the correct term, not a limitation (see debate-graph-spec.org, Semantics
+subsection, corrected 2026-09-16): the site is not instantiated, and a
+defeated presumption has no value to put in the slot.  Consequently the
+adequacy claim on the OUT side is "not a value"; "a closed exception at
+the root" would need the throw to propagate through axiom-headed spines
+(task aida-abort-propagation), which the standard rules do not do.
 """
 
 from copy import deepcopy
@@ -120,15 +124,19 @@ def _keep_attack_wing(node):
     return result
 
 
-def resolve_scaffolds(body: ProofTerm, labels, mode: str) -> ProofTerm:
-    """Replace every scaffold by its sigma-chosen wing, innermost-last."""
+def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=()) -> ProofTerm:
+    """Replace every scaffold by its sigma-chosen wing, innermost-last.
+
+    ``strict_names`` lets the matcher recognise the primitive contrariness
+    term, whose stolen-value slot holds a declared name."""
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+    strict_names = set(strict_names or ())
 
     def walk(node):
         if not isinstance(node, ProofTerm):
             return node
-        match = _match_scaffold(node)
+        match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
             target_side = (
@@ -162,6 +170,7 @@ def evaluate_debate(
     name: str,
     *,
     strict_names=None,
+    strict_kinds=None,
     mode: str = "skeptical",
     base: str = "cbn",
 ):
@@ -173,8 +182,9 @@ def evaluate_debate(
     found = first_order_node(body)
     if found is not None:
         raise FirstOrderNotSupported("Debate evaluation", found)
-    graph = compile_debate(body, name, strict_names=strict_names)
+    graph = compile_debate(body, name, strict_names=strict_names,
+                           strict_kinds=strict_kinds)
     labels = grounded_labels(graph)
-    resolved = resolve_scaffolds(body, labels, mode)
+    resolved = resolve_scaffolds(body, labels, mode, strict_names=strict_names)
     normal_form = normalize_strong(resolved, strategy=base)
     return normal_form, classify_nf(normal_form), labels, graph

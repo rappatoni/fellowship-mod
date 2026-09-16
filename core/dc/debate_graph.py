@@ -384,13 +384,19 @@ def _is_affine_binder(name: str) -> bool:
     return name == "_"
 
 
-def _match_scaffold(n):
+def _match_scaffold(n, strict_names=()):
     """Match one of the four shapes at this node.
 
     Returns (role, site_side, prop, orig, scion_raw, alt_name, scion_kind)
     or None.  ``scion_kind`` is "term"/"context" (what the scion body is);
     attack scions still contain the alt reroute and need
     ``_restore_scion``.
+
+    The stolen-value slot of an attack shape normally holds an open site
+    (the debate operators put a fresh Goal/Laog there).  It may also hold
+    a *declared* name: that is the primitive contrariness term
+    mu att.<mu _.<t || att> || mu'_.<t || t'>>, a strict proof confronting a
+    strict refutation.  ``strict_names`` says which names are declared.
     """
     if isinstance(n, Mu):
         alt, prop = n.id.name, n.prop
@@ -408,7 +414,9 @@ def _match_scaffold(n):
             return None
         if isinstance(w2.context, ID) and w2.context.name == alt:
             return ("supporter", "term", prop, w1.term, w2.term, alt, "term")
-        if isinstance(w2.term, (Goal, Deleg)):
+        if isinstance(w2.term, (Goal, Deleg)) or (
+            isinstance(w2.term, DI) and w2.term.name in strict_names
+        ):
             return ("attacker", "term", prop, w1.term, w2.context, alt, "context")
         return None
     if isinstance(n, Mutilde):
@@ -427,7 +435,9 @@ def _match_scaffold(n):
             return None
         if isinstance(w1.term, DI) and w1.term.name == alt:
             return ("supporter", "context", prop, w2.context, w1.context, alt, "context")
-        if isinstance(w1.context, (Laog, Geled)):
+        if isinstance(w1.context, (Laog, Geled)) or (
+            isinstance(w1.context, ID) and w1.context.name in strict_names
+        ):
             return ("attacker", "context", prop, w2.context, w1.term, alt, "term")
         return None
     return None
@@ -480,14 +490,48 @@ def _scion_name(body, fallback: str) -> str:
         return body.id.name
     if isinstance(body, Mutilde) and isinstance(body.term, DI) and body.term.name == body.di.name:
         return body.di.name
+    if isinstance(body, (ID, DI)):
+        return body.name
     return fallback
 
 
+#: Which declaration kind a declared name must have to appear on a side:
+#: a ``declare``d proposition is a proof (term side), a ``deny``ed one a
+#: refutation (context side).  Sorts never occur as proof-term leaves.
+_KIND_FOR_SIDE = {"term": "prop", "context": "moxia"}
+
+
+def declaration_kinds(declarations) -> dict:
+    """{name: kind} from a prover's declarations mapping (values carry a
+    ``.kind`` of "sort", "prop" or "moxia"); entries without a kind are
+    skipped.  For passing as ``strict_kinds``."""
+    out = {}
+    for name, decl in (declarations or {}).items():
+        kind = getattr(decl, "kind", None)
+        if kind:
+            out[name] = kind
+    return out
+
+
 class _Compiler:
-    def __init__(self, strict_names):
+    def __init__(self, strict_names, strict_kinds=None):
         self.strict_names = set(strict_names or ())
+        self.strict_kinds = dict(strict_kinds or {})
         self.graph = DebateGraph()
         self._fresh = count(1)
+
+    def _check_kind(self, declared: str, side: str, edge_name: str) -> None:
+        """A declared name on a side must have the kind that side needs."""
+        kind = self.strict_kinds.get(declared)
+        if kind is None:
+            return
+        wanted = _KIND_FOR_SIDE[side]
+        if kind != wanted:
+            raise DebateCompileError(
+                f"Edge '{edge_name}': declared name '{declared}' has kind "
+                f"'{kind}' but occurs as a {side}-side leaf, which needs "
+                f"kind '{wanted}'."
+            )
 
     def compile(self, body: ProofTerm, name: str, role: str = "argument") -> None:
         found = first_order_node(body)
@@ -500,7 +544,7 @@ class _Compiler:
 
     def _decompose(self, node, host: str):
         """Replace every scaffold by its ORIG wing; compile scions."""
-        match = _match_scaffold(node)
+        match = _match_scaffold(node, self.strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
             if role == "attacker":
@@ -534,10 +578,21 @@ class _Compiler:
             side = "term"
         elif isinstance(body, (Laog, Geled)):
             side = "context"
+        elif isinstance(body, DI) and body.name in self.strict_names:
+            # A bare declared proof: a strict, source-less edge for its side.
+            side = "term"
+            self._check_kind(body.name, side, name)
+        elif isinstance(body, ID) and body.name in self.strict_names:
+            # A bare declared refutation (a denied proposition): strict,
+            # context side.  Dropping these was the defect of
+            # aida-strict-refutation-edges.
+            side = "context"
+            self._check_kind(body.name, side, name)
         else:
             raise DebateCompileError(
                 f"Edge '{name}': body root {type(body).__name__} is not a "
-                f"mu/mu' binder or an open leaf; refusing to guess its side."
+                f"mu/mu' binder, an open leaf or a declared name; refusing "
+                f"to guess its side."
             )
         prop = getattr(body, "prop", None)
         if not prop:
@@ -590,6 +645,8 @@ class _Compiler:
                     )
                     return
             if isinstance(node, ID):
+                if node.name in self.strict_names and node.name not in bound_ids:
+                    self._check_kind(node.name, "context", name)
                 if node.name not in bound_ids and node.name not in self.strict_names:
                     # Undeclared free variables are refused: the fixture
                     # corpus expresses assumptions as open sites, and the
@@ -604,6 +661,8 @@ class _Compiler:
                     )
                 return
             if isinstance(node, DI):
+                if node.name in self.strict_names and node.name not in bound_dis:
+                    self._check_kind(node.name, "term", name)
                 if node.name not in bound_dis and node.name not in self.strict_names:
                     raise DebateCompileError(
                         f"Edge '{name}': free term variable '{node.name}' "
@@ -642,24 +701,27 @@ class _Compiler:
         return sources
 
 
-def compile_debate(body: ProofTerm, name: str, *, strict_names=None) -> DebateGraph:
+def compile_debate(body: ProofTerm, name: str, *, strict_names=None,
+                   strict_kinds=None) -> DebateGraph:
     """Compile one (possibly composed) debate body into a DebateGraph.
 
-    ``strict_names``: declared axiom names (references to them are strict,
-    not assumptions) - pass the prover's declaration keys.  Acyclicity is
-    asserted; cyclic results raise CyclicDebateNotSupported.
+    ``strict_names``: declared names (references to them are strict, not
+    assumptions) - the prover's declaration keys.  ``strict_kinds``: the
+    matching {name: kind} (see ``declaration_kinds``); when given, a
+    declared name occurring on the wrong side for its kind is refused.
+    Acyclicity is asserted; cyclic results raise CyclicDebateNotSupported.
     """
-    compiler = _Compiler(strict_names)
+    compiler = _Compiler(strict_names, strict_kinds)
     compiler.compile(body, name)
     compiler.graph.assert_acyclic()
     return compiler.graph
 
 
-def compile_document(named_bodies, *, strict_names=None) -> DebateGraph:
+def compile_document(named_bodies, *, strict_names=None, strict_kinds=None) -> DebateGraph:
     """Compile several (name, body) pairs into one merged DebateGraph."""
     graph = DebateGraph()
     for name, body in named_bodies:
-        compiler = _Compiler(strict_names)
+        compiler = _Compiler(strict_names, strict_kinds)
         compiler.compile(body, name)
         graph.merge(compiler.graph)
     graph.assert_acyclic()

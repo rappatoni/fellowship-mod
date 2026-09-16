@@ -168,6 +168,17 @@ class TestStrictContradictions:
     def test_empty_without_double_derivation(self):
         assert strict_contradictions(graph_support_chain("obligation")) == set()
 
+    def test_detected_from_a_compiled_term(self):
+        """CONTR reached from a term, not a hand-built graph: the primitive
+        contrariness term with a declared proof and a denied refutation."""
+        term = Mu(ID("att", "Q"), "Q",
+                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
+                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("nq", "Q")))
+        g = compile_debate(term, "clash", strict_names={"t", "nq"},
+                           strict_kinds={"t": "prop", "nq": "moxia"})
+        assert strict_contradictions(g) == {Q}
+        assert grounded_labels(g) == grounded_labels_via_oracle(g)
+
 
 class TestEndToEndFromTerm:
     def test_compiled_support_debate_labels(self):

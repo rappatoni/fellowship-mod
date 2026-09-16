@@ -1544,7 +1544,7 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     log-and-refuse convention: compile errors are one-line messages, not
     tracebacks.
     """
-    from core.dc.debate_graph import compile_debate, DebateCompileError
+    from core.dc.debate_graph import compile_debate, DebateCompileError, declaration_kinds
     from core.ac.ast import FirstOrderNotSupported
 
     arg = prover.get_argument(name)
@@ -1554,7 +1554,8 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     if not arg.executed:
         arg.execute()
     try:
-        graph = compile_debate(arg.body, name, strict_names=prover.declarations.keys())
+        graph = compile_debate(arg.body, name, strict_names=prover.declarations.keys(),
+                               strict_kinds=declaration_kinds(prover.declarations))
     except (DebateCompileError, FirstOrderNotSupported) as e:
         print(f"graph: refused: {e}")
         logger.warning("Debate graph compilation refused for '%s': %s", name, e)
@@ -1677,7 +1678,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     The normal form is cached on the argument as .labelled_nf.
     """
     from core.comp.evaluate import evaluate_debate, EvaluationRefused
-    from core.dc.debate_graph import DebateCompileError
+    from core.dc.debate_graph import DebateCompileError, declaration_kinds
     from core.ac.ast import FirstOrderNotSupported
     from pres.gen import ProofTermGenerationVisitor
     import copy as _copy
@@ -1697,6 +1698,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     try:
         nf, nf_class, labels, graph = evaluate_debate(
             arg.body, name, strict_names=prover.declarations.keys(),
+            strict_kinds=declaration_kinds(prover.declarations),
             mode=mode, base=base,
         )
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported) as e:

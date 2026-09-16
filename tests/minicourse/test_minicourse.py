@@ -458,22 +458,37 @@ class TestLesson5FragmentBoundary:
         assert not g.is_acyclic()
 
 
-class TestLesson8StrictRefutationDropped:
-    """Lesson 8 item 5: a declared refutation is invisible to the compiler."""
+class TestLesson8StrictRefutationRecorded:
+    """Lesson 8 item 6, fixed (aida-strict-refutation-edges): a declared
+    refutation in the stolen-value slot of the primitive contrariness term
+    compiles to a strict context-side edge, so the clash is visible."""
 
-    def test_clash_term_compiles_to_strict_in(self):
+    def _clash(self):
+        return Mu(ID("att", "Q"), "Q",
+                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
+                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("t2", "Q")))
+
+    def test_clash_term_compiles_to_two_strict_edges(self):
         from core.comp.adf_label import strict_contradictions
-        term = Mu(ID("att", "Q"), "Q",
-                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
-                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("t2", "Q")))
-        g = compile_debate(term, "dbg", strict_names={"t", "t2"})
-        assert [(e.target_side, e.strict, e.sources) for e in g.edges] == [("term", True, ())]
-        assert grounded_labels(g)[(Q, "term")] == "IN"     # the defect, pinned
-        assert strict_contradictions(g) == set()           # CONTR cannot fire
+        g = compile_debate(self._clash(), "dbg", strict_names={"t", "t2"})
+        sides = sorted((e.target_side, e.strict, e.sources) for e in g.edges)
+        assert sides == [("context", True, ()), ("term", True, ())]
+        assert strict_contradictions(g) == {Q}
+        labels = grounded_labels(g)
+        assert labels[(Q, "term")] == "IN" and labels[(Q, "context")] == "IN"   # CONTR
 
-    def test_primitive_contrariness_shape_is_not_matched(self):
+    def test_primitive_contrariness_shape_is_matched(self):
         from core.dc.debate_graph import _match_scaffold
-        term = Mu(ID("att", "Q"), "Q",
-                  Mu(ID("_", "Q"), "Q", DI("t", "Q"), ID("att", "Q")),
-                  Mutilde(DI("_", "Q"), "Q", DI("t", "Q"), ID("t2", "Q")))
-        assert _match_scaffold(term) is None
+        assert _match_scaffold(self._clash(), {"t", "t2"}) is not None
+        assert _match_scaffold(self._clash()) is None      # without the names: not a scaffold
+
+    def test_wrong_kind_is_refused(self):
+        from core.dc.debate_graph import DebateCompileError
+        # t2 is used as a refutation (context leaf) but declared as a proof.
+        with pytest.raises(DebateCompileError, match="kind"):
+            compile_debate(self._clash(), "dbg", strict_names={"t", "t2"},
+                           strict_kinds={"t": "prop", "t2": "prop"})
+        # and the correct kinds pass
+        compile_debate(self._clash(), "dbg", strict_names={"t", "t2"},
+                       strict_kinds={"t": "prop", "t2": "moxia"})
+
