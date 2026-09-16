@@ -261,6 +261,20 @@ congruence order chosen must be recorded and its determinism argued
 unsettled theory, so the extension fixes one order rather than deriving
 it.
 
+Correction (2026-09-16): no determinism argument is needed, and "fixes
+one order rather than deriving it" overstated what was at stake. Under
+a uniform strategy the congruence order is irrelevant: the CBN and CBV
+sub-calculi are confluent and typed terms are strongly normalising, so
+every order reaches the same normal form. Verified over three orders on
+every fixture debate, both modes and both strategies (64 comparisons,
+no difference), pinned in
+tests/test_oracles.py::TestCongruenceOrderIrrelevant. The skip rules of
+call-by-onus.org define the paper's non-uniform call-by-onus strategy,
+which the implementation does not use; they were never the missing
+derivation of this order. The load-bearing choice is elsewhere: sigma
+resolves all scaffolds before any reduction. See minicourse lesson 8
+item 14.
+
 Evidence: normalize_strong in core/comp/oracle_terms.py (leftmost-
 outermost, term-before-context, single-step with restart - deterministic
 by construction, order recorded in the docstring); evaluate_debate and
@@ -880,9 +894,11 @@ it; the term even classifies as a value. For "OUT implies exception" the
 throw would have to bubble up through =pRule * ...=, i.e. through an
 axiom / moxia head that the standard rules cannot decompose. The four
 standard reductions do not do this; it needs additional rules, and the
-author has not yet examined whether such rules can be sound. Related to
-the unsettled skip rules of call-by-onus.org (minicourse lesson 8 item
-14), not to the compiler bugs. Left as is for now.
+author has not yet examined whether such rules can be sound. Any such
+rules would extend the reduction system of call-by-onus.org; the
+question is *which* rules exist, not congruence order, which is
+irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
+a compiler bug. Left as is for now.
 
 *** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
 :PROPERTIES:

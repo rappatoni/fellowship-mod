@@ -374,3 +374,92 @@ class TestInstantiation:
         body = Mu(ID("a", "A"), "A", Deleg("d1", "A"), ID("a", "A"))
         with pytest.raises(TypeError, match="term-side"):
             instantiate_sites(body, {"d1": ID("e", "A")})
+
+
+class TestCongruenceOrderIrrelevant:
+    """Under a uniform strategy the congruence order does not affect the
+    normal form: the CBN and CBV sub-calculi are confluent and typed terms
+    are strongly normalising.  Pins the corrected claim of minicourse
+    lesson 8 item 14.  If a non-uniform rule is ever added to the
+    normaliser, this is the test that should fail.
+    """
+
+    @staticmethod
+    def _step_innermost(node, strategy):
+        from core.ac.ast import ProofTerm
+        from core.comp.oracle_terms import _step_command
+        for slot in ("term", "context"):
+            c = getattr(node, slot, None)
+            if isinstance(c, ProofTerm):
+                s = TestCongruenceOrderIrrelevant._step_innermost(c, strategy)
+                if s is not None:
+                    setattr(node, slot, s)
+                    return node
+        if isinstance(node, (Mu, Mutilde)):
+            st = _step_command(node.term, node.context, strategy)
+            if st is not None:
+                node.term, node.context = st
+                return node
+        return None
+
+    @staticmethod
+    def _step_context_first(node, strategy):
+        from core.ac.ast import ProofTerm
+        from core.comp.oracle_terms import _step_command
+        if isinstance(node, (Mu, Mutilde)):
+            st = _step_command(node.term, node.context, strategy)
+            if st is not None:
+                node.term, node.context = st
+                return node
+        for slot in ("context", "term"):
+            c = getattr(node, slot, None)
+            if isinstance(c, ProofTerm):
+                s = TestCongruenceOrderIrrelevant._step_context_first(c, strategy)
+                if s is not None:
+                    setattr(node, slot, s)
+                    return node
+        return None
+
+    @classmethod
+    def _normalize_with(cls, step, v, strategy, fuel=4000):
+        from copy import deepcopy
+        v = deepcopy(v)
+        for _ in range(fuel):
+            s = step(v, strategy)
+            if s is None:
+                return v
+            v = s
+        raise OracleFuelExhausted("no normal form")
+
+    def _terms(self):
+        from core.ac.ast import Cons, Geled
+        def eta(n, p, i): return Mu(ID(n, p), p, i, ID(n, p))
+        def parg(site):
+            return eta("pArg", "P", Mu(ID("rule", "P"), "P", DI("pRule", "Q->P"),
+                                         Cons(site, ID("rule", "P"))))
+        def t_sup(p, o, s):
+            return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
+                      Mutilde(DI("_", p), p, s, ID("alt", p)))
+        def t_att(p, o, sc):
+            return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
+                      Mutilde(DI("_", p), p, Goal("g", p), sc))
+        chal = Mutilde(DI("x", "Q"), "Q", DI("x", "Q"), Geled("d", "Q"))
+        nested_pair = Mu(ID("root", "A"), "A",
+                         Mu(ID("a", "A"), "A", DI("t1", "A"), ID("beta", "A")),
+                         Mutilde(DI("y", "A"), "A",
+                                 Mu(ID("k", "A"), "A", DI("y", "A"),
+                                    Mutilde(DI("z", "A"), "A", DI("t4", "A"), ID("eps", "A"))),
+                                 ID("gamma", "A")))
+        return {
+            "nested critical pairs with duplication": nested_pair,
+            "support scaffold": parg(t_sup("Q", Goal("1", "Q"), eta("q", "Q", Deleg("2", "Q")))),
+            "attack scaffold": parg(t_att("Q", Deleg("1", "Q"), chal)),
+        }
+
+    @pytest.mark.parametrize("strategy", ["cbn", "cbv"])
+    def test_three_orders_agree(self, strategy):
+        for name, term in self._terms().items():
+            reference = normalize_strong(term, strategy=strategy)
+            for step in (self._step_innermost, self._step_context_first):
+                other = self._normalize_with(step, term, strategy)
+                assert alpha_equal(reference, other), (name, strategy, step.__name__)
