@@ -491,6 +491,10 @@ already computes. Not applied yet because the rule is spec text the
 author studied; decide, then it is a small change in
 =resolve_scaffolds= plus the table in lesson 7.
 
+Fixture: tests/rationality/two_witnesses.fspy (replayed by the script
+suite) - =evaluate d credulous 1= is OPEN, =evaluate d credulous 2= is
+VALUE, =evaluate d credulous all= shows both.
+
 *** DONE Package adf-bdd and make it the primary labeller
 CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
