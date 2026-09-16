@@ -17,7 +17,7 @@ This module is being built along propositional-fragment-plan.org:
 """
 
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from itertools import count
 
 from core.ac.ast import (
@@ -93,8 +93,10 @@ class Source:
     """One unwitnessed input of a hyperedge.
 
     ``kind``: "obligation" (Goal/Laog: burden on the proponent, default
-    OUT), "presumption" (Deleg/Geled: burden delegated, default IN) or
-    "assumption" (a free, undeclared variable).  ``side`` is the side the
+    OUT), "presumption" (Deleg/Geled: burden delegated, default IN),
+    "subargument" (a lambda subargument of the same term, compiled as
+    its own edge; ``site`` is that edge's name) or "assumption" (a free,
+    undeclared variable; unused).  ``side`` is the side the
     site sits on ("term" = a proof of key is needed, "context" = a
     refutation).  ``site`` is the site number / variable name, diagnostic
     only.  ``scope`` records the propositions mu/mu'-bound on the spine
@@ -127,6 +129,28 @@ class Edge:
     sources: tuple
     strict: bool
     role: str = "argument"
+    #: Variables of enclosing subarguments this one uses (non-empty only on
+    #: absorbed records): the loop a capture closes, made visible.
+    captures: tuple = ()
+    #: Records of subarguments merged into this edge because they captured
+    #: one of its binders (see _Compiler): kept for presentation, not
+    #: labelled on their own.
+    absorbed: tuple = ()
+    #: Names of the subarguments in the ORIG wing an absorbed supporter
+    #: replaced (an earlier support of the same site), dropped with it.
+    supersedes: tuple = ()
+
+
+@dataclass(frozen=True)
+class Capture:
+    """A variable of an enclosing subargument used inside an absorbed one:
+    ``name`` bound by ``owner`` (an edge name) for the statement
+    (``key``, ``side``)."""
+
+    name: str
+    key: str
+    side: str
+    owner: str
 
 
 class DebateGraph:
@@ -246,6 +270,27 @@ class DebateGraph:
             return roots
         return list(dict.fromkeys(targets)) or self.statements()
 
+    def describe_absorbed(self, edge, indent: str = "") -> list:
+        """Lines describing the subarguments absorbed into ``edge``, with
+        the captures that caused it - the structure the labelling does
+        not see."""
+        lines = []
+        for rec in edge.absorbed:
+            sources = ", ".join(
+                f"{self.nodes.get(s.key, s.key)}[{s.side[0]}:{s.kind[:4]}]" for s in rec.sources
+            ) or "-"
+            uses = ", ".join(
+                f"{c.name}:{self.nodes.get(c.key, c.key)}[{c.side[0]}] of {c.owner}" for c in rec.captures
+            )
+            lines.append(
+                f"{indent}~ absorbed {rec.name} ({rec.role}): "
+                f"{self.nodes.get(rec.target_key, rec.target_key)}[{rec.target_side[0]}] <- {sources}"
+                + (f"   uses {uses}" if uses else "")
+                + (f"   supersedes {', '.join(rec.supersedes)}" if rec.supersedes else "")
+            )
+            lines.extend(self.describe_absorbed(rec, indent + "    "))
+        return lines
+
     def to_text(self, labels=None, root=None) -> str:
         """An indented tree view, rooted at the graph's conclusion(s).
 
@@ -291,6 +336,8 @@ class DebateGraph:
                 strictness = "strict" if edge.strict else "defeasible"
                 out.append(f"{prefix}{branch}{edge.name}  ({edge.role}, {strictness})")
                 child_prefix = prefix + ("    " if last else "|   ")
+                for line in self.describe_absorbed(edge):
+                    out.append(f"{child_prefix}{line}")
                 for j, source in enumerate(edge.sources):
                     child = (source.key, source.side)
                     last_source = j == len(edge.sources) - 1
@@ -349,6 +396,7 @@ class DebateGraph:
             style = {
                 "supporter": "color=darkgreen",
                 "attacker": "color=red",
+                "subargument": "color=gray40",
             }.get(edge.role, "color=black")
             head = "normal" if edge.target_side == "term" else "empty"
             for source in edge.sources:
@@ -517,72 +565,6 @@ def _host_name(body, fallback: str) -> str:
     return fallback
 
 
-def free_names(node) -> set:
-    """{(name, side)} of the variables free in ``node``: ID -> "context",
-    DI -> "term"; shadowing-aware."""
-    out = set()
-
-    def walk(n, bound):
-        if isinstance(n, ID):
-            if ("context", n.name) not in bound:
-                out.add((n.name, "context"))
-            return
-        if isinstance(n, DI):
-            if ("term", n.name) not in bound:
-                out.add((n.name, "term"))
-            return
-        if isinstance(n, Mu):
-            b = bound | {("context", n.id.name)}
-        elif isinstance(n, Mutilde):
-            b = bound | {("term", n.di.name)}
-        elif isinstance(n, Lamda):
-            b = bound | {("term", n.di.di.name)}
-        elif isinstance(n, Admal):
-            b = bound | {("context", n.id.id.name)}
-        else:
-            b = bound
-        for slot in ("term", "context"):
-            child = getattr(n, slot, None)
-            if isinstance(child, ProofTerm):
-                walk(child, b)
-
-    walk(node, frozenset())
-    return out
-
-
-def captures(scion, env: dict, exclude=None, strict_names=()) -> set:
-    """The host binders a scion refers to: {name} of its free variables
-    that ``env`` binds on the matching side, minus declared names and
-    ``exclude`` (an attack scaffold's catch variable is wiring, not
-    capture; a supporter reaching for the catch variable has captured
-    the site's own continuation and is absorbed like any other)."""
-    strict_names = set(strict_names or ())
-    return {
-        name for name, side in free_names(scion)
-        if name != exclude and name not in strict_names
-        and name in env and env[name][1] == side
-    }
-
-
-def scaffold_env(node, env: dict, role: str, alt: str):
-    """The env a scaffold's scion sees, and the name to exclude."""
-    if role == "attacker":
-        return {k: v for k, v in env.items() if k != alt}, alt
-    return {**env, **binder_statements(node)}, None
-
-
-def attack_wing(node):
-    """The attack wing of a scaffold with its binder kept:
-    mu alt.< ?g:A || SCION >  (term side) or  mu' alt.< SCION || g:A? >."""
-    if isinstance(node, Mu):
-        wing = node.context
-        return Mu(ID(node.id.name, node.prop), node.prop,
-                  deepcopy(wing.term), deepcopy(wing.context))
-    wing = node.term
-    return Mutilde(DI(node.di.name, node.prop), node.prop,
-                   deepcopy(wing.term), deepcopy(wing.context))
-
-
 def binder_statements(node) -> dict:
     """{variable: (prop, side)} for the binders a node introduces.
 
@@ -638,6 +620,22 @@ BUILTIN_LEAVES = {"_F_": "moxia", "_T_": "prop"}
 
 
 class _Compiler:
+    """Term -> hyperedges.
+
+    One edge per *closed* subargument: the body of an argument, every
+    scion of a scaffold, and every lambda (a proof of an implication
+    under a hypothesis).  A subargument that refers to a binder of an
+    enclosing subargument - a hypothesis, a continuation, or a
+    scaffold's catch variable - has *captured* it while grafting; it is
+    not closed, so it is absorbed into the enclosing subargument that
+    binds the variable (cascading outward until closed), its sites
+    become that subargument's sources, and it is kept as a record on
+    the edge (``Edge.absorbed``, with ``Edge.captures``) so the loop it
+    closes stays visible.  The labelling sees closed edges only: a
+    captured variable is discharged by the hypothesis it reaches and
+    never becomes a global claim (aida-cyclic-fragment, 2026-09-17).
+    """
+
     def __init__(self, strict_names, strict_kinds=None):
         self.strict_names = set(strict_names or ()) | set(BUILTIN_LEAVES)
         self.strict_kinds = {**BUILTIN_LEAVES, **dict(strict_kinds or {})}
@@ -661,68 +659,183 @@ class _Compiler:
         found = first_order_node(body)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
-        edge_name = _host_name(body, name)
-        clean = self._decompose(deepcopy(body), edge_name, {})
-        self._add_edge_from_body(clean, edge_name, role)
+        record, closed = self.compile_body(deepcopy(body), _host_name(body, name), role, {})
+        assert closed, "a top-level body cannot capture: free variables are refused"
+        self.graph.add_edge(record)
 
-    # -- scaffold decomposition ---------------------------------------------
+    # -- one subargument ----------------------------------------------------
 
-    def _decompose(self, node, host: str, env: dict):
-        """Replace every scaffold by its ORIG wing; compile scions - unless
-        the scion CAPTURED a binder of its host, in which case it is
-        absorbed into the host's own derivation.
+    def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None):
+        """Compile one subargument body.
 
-        ``env`` maps every variable bound by an enclosing binder of the
-        host to its statement (``binder_statements``).  A scion whose free
-        variables meet ``env`` has, while grafting, bound one of its open
-        sites to a hypothesis or continuation of the host: it is no longer
-        a closed subargument of its own but part of the host's argument
-        from contradiction (debate-graph-spec.org, "question-begging
-        capture": the composite is the rootstock's argument from
-        contradiction).  Its remaining open sites become sources of the
-        host's edge; the site it filled is not a source any more.  Until
-        the cyclic fragment (aida-cyclic-fragment, 2026-09-16) such scions
-        were refused as free variables.  See ``captures``.
+        ``outer`` maps the variables bound by enclosing subarguments to
+        (prop, side, owner).  Returns (record, closed): ``closed`` is
+        False when the body captured one of them, in which case the
+        record is to be absorbed by the caller and its edges are not
+        added to the graph.  Closed nested subarguments are added here.
         """
-        match = _match_scaffold(node, self.strict_names)
-        if match is not None:
-            role, site_side, prop, orig, scion_raw, alt, scion_kind = match
-            scion_env, exclude = scaffold_env(node, env, role, alt)
-            if captures(scion_raw, scion_env, exclude, self.strict_names):
-                inlined = scion_raw if role == "supporter" else attack_wing(node)
-                if role == "supporter" and alt in captures(scion_raw, scion_env, None):
-                    # the supporter uses the site's continuation: keep it bound
-                    inlined = Mu(ID(alt, prop), prop, scion_raw, ID(alt, prop)) if isinstance(node, Mu) \
-                        else Mutilde(DI(alt, prop), prop, DI(alt, prop), scion_raw)
-                return self._decompose(inlined, host, env)
-            if role == "attacker":
-                scion = _restore_scion(
-                    scion_raw, scion_kind, alt, prop, f"r{next(self._fresh)}"
-                )
-                target_side = "context" if site_side == "term" else "term"
-            else:
-                scion = scion_raw
-                target_side = site_side
-            scion_label = _scion_name(scion, f"{host}.{role}{next(self._fresh)}")
-            # A separate edge: nested scaffolds inside it may still capture
-            # this scion's own binders (or the host's, which would have
-            # absorbed it above), so the env travels along.
-            clean_scion = self._decompose(scion, scion_label, {k: v for k, v in scion_env.items() if k != alt})
-            self._add_edge_from_body(
-                clean_scion, scion_label, role, expect_side=target_side, expect_prop=prop
+        side, prop = self._root_statement(body, name)
+        if expect_side is not None and side != expect_side:
+            raise DebateCompileError(
+                f"Edge '{name}': scion is {side}-side where the scaffold "
+                f"needs {expect_side}-side."
             )
-            return self._decompose(orig, host, env)
-        inner = {**env, **binder_statements(node)}
-        for slot in ("term", "context"):
-            child = getattr(node, slot, None)
-            if isinstance(child, ProofTerm):
-                setattr(node, slot, self._decompose(child, host, inner))
-        return node
+        if expect_prop is not None and canonical_prop(prop) != canonical_prop(expect_prop):
+            raise DebateCompileError(
+                f"Edge '{name}': scion concludes '{prop}' but the scaffold "
+                f"issue is '{expect_prop}'."
+            )
+        target_key = self.graph.add_node(prop)
+        sources, captures, absorbed = [], [], []
+        defeasible_subarguments = []
+        root_lambda = _peel_eta(body)
+        if not isinstance(root_lambda, Lamda):
+            root_lambda = None
 
-    # -- one edge from one clean body ---------------------------------------
+        def bind(env, names):
+            return {**env, **names}
 
-    def _add_edge_from_body(self, body, name, role, *, expect_side=None,
-                            expect_prop=None):
+        def merge_child(rec, child_captures, env):
+            """Absorb a nested subargument's record into this one."""
+            absorbed.append(rec)
+            sources.extend(rec.sources)
+            for cap in child_captures:
+                bound = env.get(cap.name)
+                if bound is not None and bound[1] == cap.side:
+                    continue  # discharged by one of our own binders
+                captures.append(cap)
+
+        def walk(node, env, spine):
+            for leaf_type, (lside, kind) in _LEAF_INFO.items():
+                if isinstance(node, leaf_type):
+                    if not node.prop:
+                        raise DebateCompileError(
+                            f"Edge '{name}': open site {node.number!r} has no "
+                            f"proposition; run enrichment first."
+                        )
+                    sources.append(Source(self.graph.add_node(node.prop), lside, kind,
+                                          str(node.number), spine))
+                    return
+            if isinstance(node, (ID, DI)):
+                vside = "context" if isinstance(node, ID) else "term"
+                bound = env.get(node.name)
+                if bound is not None and bound[1] == vside:
+                    return
+                if node.name in self.strict_names:
+                    self._check_kind(node.name, vside, name)
+                    return
+                enclosing = outer.get(node.name)
+                if enclosing is not None and enclosing[1] == vside:
+                    captures.append(Capture(node.name, self.graph.add_node(enclosing[0]),
+                                            vside, enclosing[2]))
+                    return
+                raise DebateCompileError(
+                    f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
+                    f"variable '{node.name}' is neither bound nor a declared axiom; "
+                    f"express assumptions as open sites."
+                )
+            match = _match_scaffold(node, self.strict_names)
+            if match is not None:
+                srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match
+                if srole == "attacker":
+                    scion = _restore_scion(scion_raw, scion_kind, alt, sprop, f"r{next(self._fresh)}")
+                    target_side = "context" if site_side == "term" else "term"
+                    sub_outer = {**outer, **{k: (*v, name) for k, v in env.items() if k != alt}}
+                else:
+                    scion = scion_raw
+                    target_side = site_side
+                    alt_side = "context" if isinstance(node, Mu) else "term"
+                    sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
+                                 alt: (sprop, alt_side, name)}
+                label = _scion_name(scion, f"{name}.{srole}{next(self._fresh)}")
+                rec, closed = self.compile_body(scion, label, srole, sub_outer,
+                                                expect_side=target_side, expect_prop=sprop)
+                if closed:
+                    self.graph.add_edge(rec)
+                    walk(orig, env, spine)          # the site stays a source
+                    return
+                # absorbed: the scion is part of this derivation.  A
+                # supporter fills its site (the ORIG wing is dropped, and
+                # any earlier supporter in it is named as superseded); an
+                # attacked site stays open beside the attacker.
+                if srole == "attacker":
+                    wing = node.context if isinstance(node, Mu) else node.term
+                    walk(wing.term if isinstance(node, Mu) else wing.context, env, spine)
+                else:
+                    rec = replace(rec, supersedes=self._subargument_names(
+                        orig, sprop, isinstance(node, Mu), env, outer, name))
+                merge_child(rec, rec.captures, bind(env, {alt: (sprop, "context" if isinstance(node, Mu) else "term")}))
+                return
+            if isinstance(node, Lamda) and node is not root_lambda:
+                lname = f"{name}.\u03bb{next(self._fresh)}"
+                sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
+                rec, closed = self.compile_body(node, lname, "subargument", sub_outer)
+                if closed:
+                    self.graph.add_edge(rec)
+                    sources.append(Source(rec.target_key, "term", "subargument", rec.name, spine))
+                    if not rec.strict:
+                        defeasible_subarguments.append(rec.name)
+                else:
+                    merge_child(rec, rec.captures, env)
+                return
+            if isinstance(node, Lamda):
+                walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
+                return
+            if isinstance(node, Mu):
+                inner = bind(env, {node.id.name: (node.prop, "context")})
+                spine2 = spine if _is_affine_binder(node.id.name) else spine + ((node.prop, "context"),)
+                walk(node.term, inner, spine2)
+                walk(node.context, inner, spine2)
+                return
+            if isinstance(node, Mutilde):
+                inner = bind(env, {node.di.name: (node.prop, "term")})
+                spine2 = spine if _is_affine_binder(node.di.name) else spine + ((node.prop, "term"),)
+                walk(node.term, inner, spine2)
+                walk(node.context, inner, spine2)
+                return
+            if isinstance(node, Admal):
+                walk(node.context, bind(env, {node.id.id.name: (node.id.prop, "context")}), spine)
+                return
+            if isinstance(node, (Cons, Sonc)):
+                walk(node.term, env, spine)
+                walk(node.context, env, spine)
+                return
+            raise DebateCompileError(
+                f"Edge '{name}': unhandled node {type(node).__name__} during "
+                f"source collection."
+            )
+
+        walk(body, {}, ())
+        # Strict = the derivation uses no indeterminate anywhere: none among
+        # its own sites, and none inside the subarguments it applies.
+        strict = (not any(s.kind in ("obligation", "presumption") for s in sources)
+                  and not defeasible_subarguments)
+        record = Edge(name=name, target_key=target_key, target_side=side,
+                      sources=tuple(sources), strict=strict, role=role,
+                      captures=tuple(captures), absorbed=tuple(absorbed))
+        return record, not captures
+
+    def _subargument_names(self, wing, prop, term_side, env, outer, name):
+        """Names of the subarguments inside a dropped ORIG wing, compiled
+        on the side (nothing reaches the graph) so a superseded route is
+        at least named in the record."""
+        probe = _Compiler(self.strict_names, self.strict_kinds)
+        probe.graph.nodes.update(self.graph.nodes)
+        if term_side:
+            body = Mu(ID("_probe", prop), prop, deepcopy(wing), ID("_probe", prop))
+        else:
+            body = Mutilde(DI("_probe", prop), prop, DI("_probe", prop), deepcopy(wing))
+        try:
+            sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
+            rec, _closed = probe.compile_body(body, "_probe", "argument", sub_outer)
+        except DebateCompileError:
+            return ()
+        # top level only: what was directly at the site, not what those
+        # subarguments contained in turn
+        names = [e.name for e in probe.graph.edges] + [r.name for r in rec.absorbed]
+        return tuple(n for n in names if n != "_probe")
+
+    def _root_statement(self, body, name):
         if isinstance(body, Mu):
             side = "term"
         elif isinstance(body, Mutilde):
@@ -731,6 +844,10 @@ class _Compiler:
             side = "term"
         elif isinstance(body, (Laog, Geled)):
             side = "context"
+        elif isinstance(body, Lamda):
+            side = "term"
+            if not body.prop and body.di.prop and getattr(body.term, "prop", None):
+                body.prop = f"{body.di.prop}->{body.term.prop}"
         elif isinstance(body, DI) and body.name in self.strict_names:
             # A bare declared proof: a strict, source-less edge for its side.
             side = "term"
@@ -752,106 +869,39 @@ class _Compiler:
             raise DebateCompileError(
                 f"Edge '{name}': root proposition missing; run enrichment first."
             )
-        if expect_side is not None and side != expect_side:
-            raise DebateCompileError(
-                f"Edge '{name}': scion is {side}-side where the scaffold "
-                f"needs {expect_side}-side."
-            )
-        if expect_prop is not None and canonical_prop(prop) != canonical_prop(expect_prop):
-            raise DebateCompileError(
-                f"Edge '{name}': scion concludes '{prop}' but the scaffold "
-                f"issue is '{expect_prop}'."
-            )
-        target_key = self.graph.add_node(prop)
-        sources = tuple(self._collect_sources(body, name))
-        strict = not any(s.kind in ("obligation", "presumption") for s in sources)
-        self.graph.add_edge(
-            Edge(
-                name=name,
-                target_key=target_key,
-                target_side=side,
-                sources=sources,
-                strict=strict,
-                role=role,
-            )
-        )
+        return side, prop
 
-    def _collect_sources(self, body, name):
-        sources = []
 
-        def walk(node, bound_ids, bound_dis, spine):
-            for leaf_type, (side, kind) in _LEAF_INFO.items():
-                if isinstance(node, leaf_type):
-                    if not node.prop:
-                        raise DebateCompileError(
-                            f"Edge '{name}': open site {node.number!r} has no "
-                            f"proposition; run enrichment first."
-                        )
-                    sources.append(
-                        Source(
-                            key=self.graph.add_node(node.prop),
-                            side=side,
-                            kind=kind,
-                            site=str(node.number),
-                            scope=spine,
-                        )
-                    )
-                    return
-            if isinstance(node, ID):
-                if node.name in self.strict_names and node.name not in bound_ids:
-                    self._check_kind(node.name, "context", name)
-                if node.name not in bound_ids and node.name not in self.strict_names:
-                    # Undeclared free variables are refused: the fixture
-                    # corpus expresses assumptions as open sites, and the
-                    # default status of a bare free-variable assumption in
-                    # the ADF layer is an unsettled theory decision (the
-                    # enthymemes design replaces them with obligations /
-                    # presumptions).  Refuse rather than guess.
-                    raise DebateCompileError(
-                        f"Edge '{name}': free context variable '{node.name}' "
-                        f"is neither bound nor a declared axiom; express "
-                        f"assumptions as open sites."
-                    )
-                return
-            if isinstance(node, DI):
-                if node.name in self.strict_names and node.name not in bound_dis:
-                    self._check_kind(node.name, "term", name)
-                if node.name not in bound_dis and node.name not in self.strict_names:
-                    raise DebateCompileError(
-                        f"Edge '{name}': free term variable '{node.name}' "
-                        f"is neither bound nor a declared axiom; express "
-                        f"assumptions as open sites."
-                    )
-                return
-            if isinstance(node, Mu):
-                inner = bound_ids | {node.id.name}
-                spine2 = spine if _is_affine_binder(node.id.name) else spine + ((node.prop, "context"),)
-                walk(node.term, inner, bound_dis, spine2)
-                walk(node.context, inner, bound_dis, spine2)
-                return
-            if isinstance(node, Mutilde):
-                inner = bound_dis | {node.di.name}
-                spine2 = spine if _is_affine_binder(node.di.name) else spine + ((node.prop, "term"),)
-                walk(node.term, bound_ids, inner, spine2)
-                walk(node.context, bound_ids, inner, spine2)
-                return
-            if isinstance(node, Lamda):
-                walk(node.term, bound_ids, bound_dis | {node.di.di.name}, spine)
-                return
-            if isinstance(node, Admal):
-                walk(node.context, bound_ids | {node.id.id.name}, bound_dis, spine)
-                return
-            if isinstance(node, (Cons, Sonc)):
-                walk(node.term, bound_ids, bound_dis, spine)
-                walk(node.context, bound_ids, bound_dis, spine)
-                return
-            raise DebateCompileError(
-                f"Edge '{name}': unhandled node {type(node).__name__} during "
-                f"source collection."
-            )
+def _peel_eta(body):
+    """The content under a chain of identity (eta) wrappers."""
+    node = body
+    while True:
+        if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
+            node = node.term
+        elif isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
+            node = node.context
+        else:
+            return node
 
-        walk(body, set(), set(), ())
-        return sources
+
+def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
+    """For the evaluator: compile a scaffold's scion against the binders in
+    scope (``env``: name -> (prop, side)) exactly as the compiler does and
+    return (record, closed).  ``closed`` False means the scion is absorbed
+    into its host and is not a choice sigma makes."""
+    role, site_side, prop, orig, scion_raw, alt, scion_kind = match
+    compiler = _Compiler(strict_names, strict_kinds)
+    if role == "attacker":
+        scion = _restore_scion(scion_raw, scion_kind, alt, prop, "r0")
+        target_side = "context" if site_side == "term" else "term"
+        outer = {k: (*v, owner) for k, v in env.items() if k != alt}
+    else:
+        scion = scion_raw
+        target_side = site_side
+        alt_side = "context" if site_side == "term" else "term"   # mu alt on a term site, mu' alt on a context site
+        outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
+    return compiler.compile_body(scion, _scion_name(scion, "scion"), role, outer,
+                                 expect_side=target_side, expect_prop=prop)
 
 
 def compile_debate(body: ProofTerm, name: str, *, strict_names=None,

@@ -85,7 +85,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
-    DebateCompileError, _LEAF_INFO, binder_statements, captures, scaffold_env,
+    DebateCompileError, binder_statements, scion_record,
 )
 
 
@@ -160,52 +160,25 @@ def _keep_attack_wing(node):
     return result
 
 
-def derivation_status(scion, target_statement, labels, strict_names=(), env=None) -> str:
-    """The status of a scion's OWN derivation under sigma.
+def derivation_status(record, labels) -> str:
+    """The status of a scion's OWN derivation under sigma, read off the
+    edge record the compiler builds for it (``scion_record``):
 
     IN    iff its target statement and every one of its sources are IN;
     OUT   iff its target or any source is OUT;
     UNDEC otherwise.
 
-    The sources are the leaves of the scion's decomposition: open sites
-    on its spine and the ORIG wings of scaffolds nested inside it (a
-    nested scion belongs to another edge) - except nested scions that
-    captured a binder in scope (``env``), which the compiler absorbed
-    into this derivation and whose own leaves therefore count.  This is
-    the statement-level
-    labelling read at edge level; the target label alone says that
-    *some* derivation of the statement is live, not that this one is
-    (tasks.org, aida-supporter-derivation-status)."""
-    strict_names = set(strict_names or ())
-    found = [labels.get(target_statement)]
-
-    def walk(node, env):
-        if not isinstance(node, ProofTerm):
-            return
-        match = _match_scaffold(node, strict_names)
-        if match is not None:
-            role, _side, _prop, orig, nested_scion, alt, _kind = match
-            nested_env, exclude = scaffold_env(node, env, role, alt)
-            if captures(nested_scion, nested_env, exclude, strict_names):
-                # absorbed: its leaves are ours (and the site, if attacked)
-                if role == "attacker":
-                    walk(node.context.term if isinstance(node, Mu) else node.term.context, env)
-                walk(nested_scion, env)
-            else:
-                walk(orig, env)  # the ORIG wing: this scion's own site
-            return
-        for leaf_type, (side, _kind) in _LEAF_INFO.items():
-            if isinstance(node, leaf_type):
-                found.append(labels.get((canonical_prop(node.prop), side)))
-                return
-        inner = {**env, **binder_statements(node)}
-        for slot in ("term", "context"):
-            walk(getattr(node, slot, None), inner)
-
-    walk(scion, dict(env or {}))
+    The sources are the ones the graph has for that edge - open sites,
+    lambda subarguments, and whatever absorbed subarguments contributed.
+    This is the statement-level labelling read at edge level; the target
+    label alone says that *some* derivation of the statement is live,
+    not that this one is (tasks.org, aida-supporter-derivation-status).
+    """
+    found = [labels.get((record.target_key, record.target_side))]
+    found += [labels.get((s.key, s.side)) for s in record.sources]
     if any(label is None for label in found):
         raise EvaluationRefused(
-            f"No label for a source of the scion at {target_statement}; the "
+            f"No label for a source of the scion '{record.name}'; the "
             f"labelling and the term disagree about the debate's shape."
         )
     if all(label == "IN" for label in found):
@@ -235,8 +208,8 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
         match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
-            scion_env, exclude = scaffold_env(node, env, role, alt)
-            if captures(scion_raw, scion_env, exclude, strict_names):
+            record, closed = scion_record(match, env, strict_names)
+            if not closed:
                 # Absorbed into the host's derivation (see the compiler):
                 # the scion is part of the argument, not a choice sigma
                 # makes.  Keep it; sigma judges the enclosing edge.
@@ -245,17 +218,13 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 kept = (_keep_scion_support(node, scion_raw, alt) if role == "supporter"
                         else _keep_attack_wing(node))
                 return walk(kept, env)
-            target_side = (
-                site_side if role == "supporter"
-                else ("context" if site_side == "term" else "term")
-            )
-            statement = (canonical_prop(prop), target_side)
+            statement = (record.target_key, record.target_side)
             if labels.get(statement) is None:
                 raise EvaluationRefused(
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
-            status = derivation_status(scion_raw, statement, labels, strict_names, scion_env)
+            status = derivation_status(record, labels)
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)

@@ -1548,6 +1548,8 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
         logger.info("  %s (%s, %s): %s <- %s",
                     edge.name, edge.role, strictness,
                     f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
+        for line in graph.describe_absorbed(edge, "      "):
+            logger.info(line)
     for (key, side), kinds in graph.defaults.items():
         logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
     logger.info("  fragment: %s",

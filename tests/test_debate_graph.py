@@ -245,9 +245,16 @@ class TestScaffoldDecomposition:
         with pytest.raises(CyclicDebateNotSupported):
             g.assert_acyclic()      # the initial fragment's guard, on request
 
+    def test_bare_lambda_is_an_implication_edge(self):
+        # A lambda is a subargument for an implication; as a root it is
+        # the whole argument (A->A, strict, no sources).
+        g = compile_debate(Lamda(Hyp(DI("x", "A"), "A"), DI("x", "A")), "lam")
+        assert [(e.name, e.strict, e.sources, g.nodes[e.target_key]) for e in g.edges] == [
+            ("lam", True, (), "A->A")]
+
     def test_unknown_root_refused(self):
         with pytest.raises(DebateCompileError, match="refusing"):
-            compile_debate(Lamda(Hyp(DI("x", "A"), "A"), DI("x", "A")), "lam")
+            compile_debate(Cons(Goal("1", "A"), Laog("2", "B")), "cons")
 
 
 class TestDocument:
@@ -360,11 +367,13 @@ class TestHostEdgeNaming:
 
 class TestCapturedScionsAreAbsorbed:
     """A scion that refers to a binder of its host has captured it while
-    grafting: it is no longer a closed subargument but part of the host's
-    argument from contradiction (debate-graph-spec.org, question-begging
-    capture).  The compiler absorbs it: the site it filled is no source
-    any more, its own remaining open sites are the host's.  Before the
-    cyclic fragment this was refused as a free variable."""
+    grafting: it is not closed, so it is absorbed into the subargument
+    that binds the variable and kept as a record there; the site it
+    filled is no source any more, its own open sites are.  Lambdas are
+    subarguments of their own (an implication under a hypothesis), so a
+    scion that captured only the lambda's hypothesis is absorbed into
+    the lambda edge, and the enclosing edge sees a closed implication
+    subargument.  Before the cyclic fragment this was refused."""
 
     def host_with(self, scion):
         # P from  lambda h:P . <site Q>  facing an open refutation of P->Q
@@ -374,27 +383,44 @@ class TestCapturedScionsAreAbsorbed:
                            Lamda(Hyp(DI("h", "P"), "P"), t_sup("Q", Goal("1", "Q"), scion)),
                            Laog("2", "P->Q")))
 
+    @staticmethod
+    def shape(g, edge):
+        return {(g.nodes[s.key], s.side, s.kind) for s in edge.sources}
+
     def test_lambda_hypothesis_captured(self):
         scion = eta_term("p3", "Q", Mu(ID("g", "Q"), "Q", DI("h", "P"), Laog("9", "P")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
-        assert [e.name for e in g.edges] == ["s2"]
-        assert {(g.nodes[s.key], s.side, s.kind) for s in g.edges[0].sources} == {
-            ("P", "context", "obligation"), ("P->Q", "context", "obligation")}
-        # P from a refutation of P: a self-loop through contrariness, i.e.
-        # the proof-by-contradiction shape - cyclic, and admitted.
-        assert not g.is_acyclic()
+        by_name = {e.name: e for e in g.edges}
+        assert set(by_name) == {"s2", "s2.\u03bb1"}
+        lam = by_name["s2.\u03bb1"]
+        # p3 captured h, the lambda's hypothesis: absorbed into the lambda
+        # edge, whose sources are p3's remaining site.
+        assert g.nodes[lam.target_key] == "P->Q" and lam.role == "subargument"
+        assert self.shape(g, lam) == {("P", "context", "obligation")}
+        assert [(r.name, [(c.name, g.nodes[c.key], c.side, c.owner) for c in r.captures])
+                for r in lam.absorbed] == [("p3", [("h", "P", "term", "s2.\u03bb1")])]
+        assert self.shape(g, by_name["s2"]) == {("P->Q", "term", "subargument"),
+                                                ("P->Q", "context", "obligation")}
+        assert not g.is_acyclic()          # P->Q[t] <- P[c] ~ P[t] <- P->Q[t]
 
     def test_mu_continuation_captured(self):
+        # The scion also reaches the host's own mu binder for P (its
+        # continuation), which the lambda does not bind: the lambda edge is
+        # absorbed into s2 in turn.
         scion = eta_term("y", "Q", Mu(ID("g", "Q"), "Q", Goal("8", "P"), ID("beta", "P")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
         assert [e.name for e in g.edges] == ["s2"]
-        assert {(g.nodes[s.key], s.side, s.kind) for s in g.edges[0].sources} == {
-            ("P", "term", "obligation"), ("P->Q", "context", "obligation")}
+        s2 = g.edges[0]
+        assert self.shape(g, s2) == {("P", "term", "obligation"), ("P->Q", "context", "obligation")}
+        assert [r.name for r in s2.absorbed] == ["s2.\u03bb1"]
+        assert [r.name for r in s2.absorbed[0].absorbed] == ["y"]
+        assert [(c.name, c.owner) for c in s2.absorbed[0].captures] == [("beta", "s2")]
 
     def test_closed_scion_stays_its_own_edge(self):
         scion = eta_term("y", "Q", Mu(ID("g", "Q"), "Q", Goal("8", "R"), ID("g", "Q")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
-        assert {e.name for e in g.edges} == {"s2", "y"}
+        assert {e.name for e in g.edges} == {"s2", "s2.\u03bb1", "y"}
+        assert not any(e.absorbed for e in g.edges)
 
     def test_supporter_using_the_catch_variable_is_absorbed(self):
         # The supporter reaches for the scaffold's own catch variable: it
@@ -404,10 +430,12 @@ class TestCapturedScionsAreAbsorbed:
         g = compile_debate(body, "d", strict_names=STRICT)
         assert [e.name for e in g.edges] == ["pArg"]
         assert [(s.side, s.kind) for s in g.edges[0].sources] == [("term", "presumption")]
+        assert [(r.name, [c.name for c in r.captures]) for r in g.edges[0].absorbed] == [("pArg.supporter1", ["alt"])]
 
     def test_peirce_shape_absorbs_everything(self):
         # lambda f. mu alpha.< f || (lambda h. mu _.< h || alpha >) * alpha >
-        # built as supports that capture f and alpha: one strict edge.
+        # built as supports that capture f and alpha: one strict edge, with
+        # the whole loop on record.
         inner = Mu(ID("g2", "Q"), "Q", DI("h", "P"), ID("alpha", "P"))
         pq = Lamda(Hyp(DI("h", "P"), "P"), t_sup("Q", Goal("1", "Q"), eta_term("p3", "Q", inner)))
         body = eta_term("s1", "((P->Q)->P)->P",
@@ -417,6 +445,10 @@ class TestCapturedScionsAreAbsorbed:
                                       ID("alpha", "P")))))
         g = compile_debate(body, "peirce", strict_names=STRICT)
         assert [(e.name, e.strict, e.sources) for e in g.edges] == [("s1", True, ())]
+        s1 = g.edges[0]
+        assert [r.name for r in s1.absorbed] == ["s2"]
+        assert [r.name for r in s1.absorbed[0].absorbed] == ["p3"]
+        assert [(c.name, c.owner) for c in s1.absorbed[0].absorbed[0].captures] == [("h", "s2"), ("alpha", "s1")]
 
     def test_truly_free_variable_still_refused(self):
         with pytest.raises(DebateCompileError, match="mystery"):

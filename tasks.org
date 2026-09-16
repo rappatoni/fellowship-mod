@@ -828,6 +828,28 @@ Peirce's law fixture works").
 - T6 (unfolding termination): not applicable yet - there is no
   unfolding until aida-graph-first; noted there.
 
+Revised 2026-09-17 (author: "go with option 1"). Absorption into the
+whole host hid the loop a capture closes. Now (a) every lambda is a
+subargument edge of its own, targeting the implication it proves, and
+the enclosing edge uses it as a source of kind "subargument"; an edge
+is strict only if no indeterminate occurs in it or in the subarguments
+it applies (otherwise splitting off a lambda would have let the
+conclusion bypass the contrariness guard - the even-loop document
+would have lost its third stable labelling); (b) a scion that captured
+a binder is absorbed into the subargument that binds it, cascading
+outward until closed, and is kept as a record on that edge
+(Edge.absorbed, Edge.captures, Edge.supersedes) which `graph` and
+to_text print; (c) the evaluator reads a scion's sources from the same
+compiler (scion_record), so derivation status and absorption agree
+with the graph by construction. The labelling is unchanged: absorbed
+records are not edges, so a captured hypothesis never becomes a global
+claim (the leak option 2 would have had). Peirce's law shows s1 with
+s2, s2.λ, p3 and s3 absorbed and p2 superseded; the same classical
+proof term results. Tests: TestCapturedScionsAreAbsorbed rewritten (a
+scion capturing only the lambda's hypothesis is absorbed into the
+lambda edge; one capturing the continuation cascades to s2), the bare
+lambda root compiles as an implication edge.
+
 Two adequacy gaps found on the way, both term-first artifacts and both
 Phase B's business (aida-graph-first, B4 "adequacy restated"):
 1. *Defeat by the guard alone.* self_attack and Rfirst are labelled OUT

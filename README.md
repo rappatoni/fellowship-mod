@@ -237,6 +237,9 @@ one-line message.
 - `graph ARG [FILE.dot] [show]`
   - compile the debate graph and print its nodes, hyperedges and default
     markers; write Graphviz DOT when a filename is given
+  - every lambda is a subargument edge of its own; a subargument that
+    captured a binder of an enclosing one is absorbed into it and listed
+    under that edge with what it captured (`~ absorbed ...`)
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
 - `label ARG [grounded|complete|preferred|stable]`
