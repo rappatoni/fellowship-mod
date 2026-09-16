@@ -37,15 +37,15 @@ Two implementations of grounded labelling:
 - ``grounded_labels_via_oracle``: the same labels through the naive M0
   oracle (enumeration); the correctness criterion in tests.
 
-Transposal note: the strict-transposal closure of debate-graph-spec.org
-is NOT implemented.  It currently has nothing to act on, but not because
-the fragment lacks strict rules: the compiler fuses a strict rule with
-the defeasible premise it is applied to into one edge whose strictness
-the premise decides, so no strict edge with sources is ever emitted.
-That fusion is a defect (task aida-strict-layer): a strict refutation of
-a conclusion cannot reach the premise by contraposition, and
-tests/rationality/modus_tollens.fspy shows Q staying IN where modus
-tollens requires OUT.
+Transposal note: the transposal closure of debate-graph-spec.org is NOT
+implemented.  It currently has nothing to act on because the compiler
+fuses an implication with the premise it is applied to into one edge, so
+no implication is ever an edge of its own.  That fusion is a defect (task
+aida-strict-layer): a refutation of a conclusion cannot reach the premise
+by contraposition, and tests/rationality/modus_tollens.fspy shows Q
+staying IN where modus tollens requires OUT.  Design decision recorded
+in that task: every implication contraposes, delegated (defeasible) ones
+included; strictness affects default status only, never closure.
 """
 
 from core.comp.oracle import (

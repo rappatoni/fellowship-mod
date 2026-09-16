@@ -69,8 +69,12 @@ tracked as =aida-strict-layer=. The fixture is in DEFAULT_SCRIPTS so the
 CLI path keeps replaying; its compiled form is pinned as a strict xfail in
 =test_postulates.py::TestModusTollensFixture=, which flips when the strict
 layer lands. Note the defect is NOT that the fragment lacks strict rules:
-the rule is strict, its premise is defeasible, and the edge conflates
-them.
+the implication is strict, its premise is defeasible, and the edge
+conflates them. By design decision every implication in this system
+contraposes, delegated ones included, so the same fixture with the
+axiom replaced by a `by default` implication must behave the same way
+except for decisiveness: a strict transposal sinks Q to OUT, a delegated
+one leaves Q contested (UNDEC). Both are in =aida-strict-layer='s VERIFY.
 
 * odd_loop (covered by ../naf_olon.fspy) [runnable]
 
