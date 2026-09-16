@@ -71,7 +71,7 @@ from core.comp.adf_label import (
     grounded_labels, labellings, intersection_labelling, SEMANTICS,
 )
 from core.comp.oracle_terms import (
-    normalize_strong, classify_nf, _occurs,
+    normalize_strong, classify_nf, _occurs, check_conservativity,
 )
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
@@ -254,4 +254,5 @@ def evaluate_debate(
     sigma, tiebreak = witness_labelling(graph, issue_of(body), mode, semantics)
     resolved = resolve_scaffolds(body, sigma, tiebreak, strict_names=strict_names)
     normal_form = normalize_strong(resolved, strategy=base)
+    check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
     return normal_form, classify_nf(normal_form), sigma, graph

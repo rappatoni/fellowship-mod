@@ -415,6 +415,34 @@ def classify_nf(v) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Conservativity (V2 of propositional-fragment-plan.org, T2-lite)
+# ---------------------------------------------------------------------------
+
+class ConservativityViolation(AssertionError):
+    """A strict, closed input normalised to a term with an open leaf."""
+
+
+def is_strict_closed(node) -> bool:
+    """No site at all: neither obligations (Goal/Laog) nor presumptions
+    (Deleg/Geled).  Such a term lives in the base category C."""
+    return not _contains(node, (Goal, Laog, Deleg, Geled))
+
+
+def check_conservativity(before, after, *, operation: str = "normalisation"):
+    """Executable postcondition: reduction is conservative over C.
+
+    If ``before`` has no site, ``after`` may hold no open leaf - reduction
+    of a strict argument can never manufacture an obligation.  Inputs that
+    already carry a site are exempt (their normal form may legitimately
+    keep it, see classify_nf).  Raises ConservativityViolation."""
+    if is_strict_closed(before) and _contains(after, (Goal, Laog)):
+        raise ConservativityViolation(
+            f"{operation} of a strict, closed term produced an open obligation: "
+            f"reduction is not conservative over the strict fragment here."
+        )
+
+
+# ---------------------------------------------------------------------------
 # Site instantiation (the ev_m side of the adequacy square)
 # ---------------------------------------------------------------------------
 

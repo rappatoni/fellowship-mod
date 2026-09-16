@@ -14,6 +14,7 @@ from core.ac.alt_structure import (
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.reduce import ArgumentTermReducer, EtaReducer, ThetaExpander
+from core.comp.oracle_terms import check_conservativity
 from core.dc.graft import graft_uniform, graft_single
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
@@ -1002,6 +1003,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             assumptions=self.assumptions,                  # opcional pero recomendable (para snapshot)
             axiom_props=self.prover.declarations           # clave para que _is_axiom_leaf funcione
         ).reduce(red_ast)
+        # V2 (propositional-fragment-plan.org): reduction of a strict, closed
+        # argument must not leave an open obligation behind.
+        check_conservativity(self.body, red_ast, operation=f"normalize('{self.name}')")
 
         # 2. optionally enrich props/types
         if enrich:

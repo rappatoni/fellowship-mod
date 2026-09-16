@@ -1014,7 +1014,8 @@ question is *which* rules exist, not congruence order, which is
 irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
 a compiler bug. Left as is for now.
 
-*** BACKLOG Close the fragment verification residues (V1, V2, abort synthesis)
+*** DONE Close the fragment verification residues (V1, V2, abort synthesis)
+CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
 :ID:             aida-fragment-verification-residues
 :AREA:           phd
@@ -1029,6 +1030,29 @@ a compiler bug. Left as is for now.
 :OUTCOME:        The graft-order commutation property test exists (V1), Argument.normalize asserts the conservativity postcondition (V2), and the adequacy square's OUT row is checked: at a site sigma defeats, the normal form holds the clash mu _:A.<[:A] || E> (refutation facing the site's indeterminate) and is alpha-equal to the term obtained by substituting that clash for the site by hand and normalising (V3 in its corrected form; the site is not instantiated, and OUT means "not a value").
 :VERIFY:         Property-based test filling independent sites in both orders with alpha-equal results; a strict normal form containing an open leaf trips the new assertion; in the in-attacker case of tests/test_evaluate.py the defeated site holds an affine mu whose context is the refutation and whose term is an open site, and the whole normal form is alpha-equal to instantiate_sites applied by hand with that clash (the commuting-square check on the OUT row). Note 2026-09-16: an earlier version of this line demanded an "abort term mu _.<x || attacker>" with a closed payload x; there is no such x for a defeated presumption, and the open obligation at the site is correct.
 :END:
+
+Evidence (2026-09-16, commit A4), tests/test_verification_residues.py:
+- V1: =TestV1GraftOrderCommutes= draws 150 seeded random bodies of the
+  propositional fragment with at least two obligation sites, grafts
+  random well-rooted scions at two distinct sites in both orders and
+  asserts alpha-equality (=alpha_equal=) and that both sites are gone.
+  The independence precondition (scion site numbers disjoint from the
+  body's) is asserted, and a sanity test shows it is not vacuous: a
+  scion carrying a stray site numbered like the other target breaks
+  commutation.
+- V2: =check_conservativity(before, after)= in core/comp/oracle_terms.py
+  raises =ConservativityViolation= when a strict, closed input (no
+  Goal/Laog/Deleg/Geled) normalises to a term with an open leaf; called
+  in =Argument.normalize= after the reducer and in =evaluate_debate=
+  after =normalize_strong=. Four unit tests; the whole script suite runs
+  through the assertion without tripping.
+- V3: =TestV3OutRowSquare= (both modes): at the defeated site of the
+  in-attacker case the normal form holds mu b1:Q.<?g2:Q || d:Q!> - an
+  affine binder, an open site as term, the winning refutation as
+  context - and the entire normal form is alpha-equal to
+  =instantiate_sites= applied by hand with that clash to the unattacked
+  original, normalised the same way; both classify "open".
+Suite 965 passed, 2 skipped, 4 xfailed, 2 xpassed.
 
 *** NEXT Retire color.py and rewire the presentation layers to grounded labels
 :PROPERTIES:
