@@ -312,6 +312,69 @@ before resolution and the modes reimplemented. Either way the minicourse's
 lesson 7 text needs to match the outcome, since it currently describes the
 mode table without stating that sigma is always grounded.
 
+*** NEXT Package adf-bdd and make it the primary labeller
+:PROPERTIES:
+:ID:             aida-adf-bdd-primary
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        adf-bdd is a packaged, version-pinned dependency located the same way as the Fellowship binary, and grounded_labels (hence label, evaluate and graph show) obtains its labels from adf-bdd; the in-tree Kleene fixpoint and the enumeration oracle remain as double-checks against it rather than as the primary implementation.
+:VERIFY:         A fresh `make install` provides adf-bdd without a manual cargo step; with ADF_BDD_BIN unset and the binary off PATH the packaged one is still found; the CLI label/evaluate output is unchanged on every fixture in DEFAULT_SCRIPTS and tests/minicourse; a test asserts that the primary path invokes adf-bdd; the cross-check tests compare adf-bdd against the Kleene fixpoint and the oracle and no longer skip when the binary is absent from PATH; the documented behaviour when adf-bdd cannot be run is exercised by a test.
+:END:
+
+Decision (author, 2026-09-16), reversing the trust hierarchy of
+[[file:propositional-fragment-plan.org]], which made the in-tree
+labeller primary and adf-bdd a test-only cross-check. Rationale:
+adf-bdd is a trusted third-party implementation of the ADF semantics,
+and making it primary guards against specification drift in our own
+labelling code. The in-tree implementations become the double-check.
+The plan's trust-hierarchy section must be updated to match.
+
+Implementation notes:
+
+- *Packaging.* Follow the Fellowship pattern: build or fetch a pinned
+  adf-bdd-bin (0.3.0 is what the harness format was locked against;
+  MIT licence) as part of =make install= or a =make -C= target, and
+  resolve it like =resolve_fsp_path= (wrap/cli.py) does - environment
+  variable (=ADF_BDD_BIN= already exists in =find_adf_bdd=), packaged
+  path, repo path, PATH - with an actionable error message.
+- *Backend.* Pass =--lib naive=. Measured 2026-09-16 on synthetic
+  support chains: the default =hybrid= backend grows roughly with the
+  fourth power of chain length (9.8 s at 301 statements, similar for
+  =biodivine=), =naive= takes 178 ms with identical output. Variable
+  ordering (=--lx=, =--an=, default) made no difference. Re-measure on
+  the real fixtures before fixing the choice.
+- *Cost per call.* Each call writes a temp file, starts a process and
+  parses text. The in-tree fixpoint is 10-700x faster on the measured
+  graphs. Acceptable for CLI use; keep an eye on it for large documents
+  and for any loop that labels repeatedly.
+- *When adf-bdd cannot run.* Decide and document: refuse with a clear
+  message, or fall back to the in-tree labeller with a warning. The
+  log-and-refuse convention of this repo suggests refusing by default.
+- *Double-check mode.* Decide whether the in-tree cross-check runs on
+  every call (cheap at current sizes) or only in tests / behind a flag;
+  a disagreement must be loud, never silently resolved.
+- *Scope of the guarantee, stated honestly.* adf-bdd checks the ADF
+  semantics only. The translation from debate graph to acceptance
+  conditions (=compile_conditions=) and from terms to graphs
+  (=compile_debate=) remains our code, and drift there is not caught
+  by this change - the known defects in those layers
+  (=aida-strict-refutation-edges=, =aida-strict-layer=,
+  =aida-statement-level-acyclicity=) are unaffected by it.
+- *Opens the door to other semantics.* adf-bdd also computes complete
+  (=--com=) and stable (=--stm=) interpretations, which
+  =aida-credulous-witness-labelling= needs and the in-tree code cannot
+  provide beyond the 14-statement oracle.
+- *Downstream text.* minicourse.org lessons 3 and 5 describe the
+  in-tree fixpoint as the production path and adf-bdd as test-only;
+  update them when this lands.
+
 *** NEXT Record strict refutations as context-side edges
 :PROPERTIES:
 :ID:             aida-strict-refutation-edges
