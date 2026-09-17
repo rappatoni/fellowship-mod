@@ -10,18 +10,24 @@ graph connects to the issue ends up in the term.
 
 Cycles are broken by capture.  While expanding, the binders of the
 enclosing edge bodies are in scope - a lambda's hypothesis, a mu's
-continuation - each standing for a statement; a site for a statement
-that is bound in scope becomes that variable (the mu/mu'-capture of the
-spec: a demand for P inside a proof of P->Q is the hypothesis h, a
-demand for a refutation of P inside a proof of P is the continuation).
-Scaffold catch variables are wiring, not scope: a scion's site for the
-contested statement stays a site.  Under intuitionistic logic (lj) a
-continuation is not available under a lambda - LJ keeps one conclusion,
-so going under an implication introduction drops the others - and only
-hypotheses are captured there; under lk both are.  A statement that is
-already being expanded on the current path but has no binder in scope
-is left as a bare site: the route through it is circular and stays
-open.  Each statement is therefore expanded at most once per path (T6).
+continuation - each standing for a statement; an OBLIGATION site for a
+statement that is bound in scope becomes that variable (the
+mu/mu'-capture of the spec: a demand for P inside a proof of P->Q is
+the hypothesis h, a demand for a refutation of P inside a proof of P is
+the continuation).  A PRESUMPTION site is never captured: it is not a
+demand that a hypothesis could meet but a default the arguer takes, and
+binding it to the proponent's continuation would turn the opponent's
+default into a classical hypothesis and change the argument (author,
+2026-09-17; the even loop stays symmetric this way).  Scaffold catch
+variables are wiring, not scope.  A statement that is already being
+expanded on the current path but has no binder in scope is left as a
+bare site: the route through it is circular and stays open.  Each
+statement is therefore expanded at most once per path (T6).
+
+Debates are classical: the scaffolds throw to a second conclusion,
+which LJ forbids, so there are no lj debates (author, 2026-09-17) and
+unfolding always captures continuations.  The CLI refuses the debate
+commands while the file is in lj.
 
 Only argument edges attach as supporters and attackers: a lambda
 subargument edge is a piece of its parent's body and appears inline
@@ -51,9 +57,8 @@ def contrary(statement):
 
 
 class Unfolder:
-    def __init__(self, graph: DebateGraph, classical: bool = True):
+    def __init__(self, graph: DebateGraph):
         self.graph = graph
-        self.classical = classical
         self._sites = count(1)
         self._alts = count(1)
         self._used = set()
@@ -131,9 +136,11 @@ class Unfolder:
                     else Mutilde(DI(name, prop), prop, DI(name, prop), term))
         return term
 
-    def statement(self, statement, env, spine):
-        """The term (or context) for a statement in scope ``env``."""
-        if statement in env:
+    def statement(self, statement, env, spine, presumed=False):
+        """The term (or context) for a statement in scope ``env``.  A
+        presumed site (``presumed``: the edge body had a Deleg/Geled
+        there) stays a presumption and is not captured."""
+        if statement in env and not presumed:
             return self._variable(statement, env[statement])
         if statement in spine:
             return self._site(statement)        # circular: stays open
@@ -193,17 +200,18 @@ class Unfolder:
 
         def walk(node, env, names):
             if isinstance(node, (Goal, Deleg)):
-                return self.statement((canonical_prop(node.prop), "term"), env, spine)
+                return self.statement((canonical_prop(node.prop), "term"), env, spine,
+                                      presumed=isinstance(node, Deleg))
             if isinstance(node, (Laog, Geled)):
-                return self.statement((canonical_prop(node.prop), "context"), env, spine)
+                return self.statement((canonical_prop(node.prop), "context"), env, spine,
+                                      presumed=isinstance(node, Geled))
             if isinstance(node, ID):
                 return ID(names.get(("context", node.name), node.name), node.prop)
             if isinstance(node, DI):
                 return DI(names.get(("term", node.name), node.name), node.prop)
             if isinstance(node, Lamda):
                 new = fresh(node.di.di.name)
-                scope = env if self.classical else {s: v for s, v in env.items() if s[1] == "term"}
-                inner = {**scope, (canonical_prop(node.di.prop), "term"): new}
+                inner = {**env, (canonical_prop(node.di.prop), "term"): new}
                 hyp = Hyp(DI(new, node.di.di.prop), node.di.prop)
                 body = Lamda(hyp, walk(node.term, inner, {**names, ("term", node.di.di.name): new}))
                 body.prop = node.prop
@@ -240,7 +248,6 @@ class Unfolder:
         return walk(edge.term, env, {})
 
 
-def unfold(graph: DebateGraph, issue, *, classical: bool = True) -> ProofTerm:
-    """The debate term for ``issue`` = (canonical key, side).  ``classical``
-    False (lj) keeps continuations out of scope under a lambda."""
-    return Unfolder(graph, classical=classical).unfold(issue)
+def unfold(graph: DebateGraph, issue) -> ProofTerm:
+    """The debate term for ``issue`` = (canonical key, side)."""
+    return Unfolder(graph).unfold(issue)

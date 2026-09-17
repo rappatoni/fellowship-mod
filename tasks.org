@@ -284,7 +284,8 @@ determinism, stability and fuel exhaustion. The contested fixture's
 skeptical evaluation now prints the fully reduced residue
 mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
-*** NEXT Unfold lj debates into LJ terms: choose term-side alternatives by sigma
+*** DROPPED Unfold lj debates into LJ terms: choose term-side alternatives by sigma
+CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
 :ID:             aida-lj-unfolding
 :AREA:           phd
@@ -311,8 +312,21 @@ For lj the unfolder must decide term-side alternatives from a
 labelling before writing the term; that needs sigma before the issue
 graph exists - use the document labelling, or iterate: unfold with
 scaffolds for the graph only, label, then unfold again choosing wings.
-Until then the lj fixtures run with `typecheck off` and the tests
-carry strict xfails.
+Dropped (author, 2026-09-17): "There are no lj debates, no need for
+that. The scaffolds are inherently classical." Consequences applied the
+same day: unfolding always captures continuations; the CLI refuses
+graph/label/evaluate while the file is in lj ("debates are classical");
+the lj fixtures even_loop.fspy and self_attack.fspy are back to the
+author's content and have lk copies (even_loop_lk.fspy,
+self_attack_lk.fspy) for the debate commands and tests; no xfails
+remain. And one rule fixed alongside: a *presumption* site is never
+captured - it is a default the arguer takes, not a demand a hypothesis
+could meet - so the opponent's presumed refutation of P inside the
+debate about P stays a presumption rather than becoming the
+proponent's classical hypothesis; that is what keeps the even loop
+symmetric under lk (each side: grounded UNDEC, skeptical OPEN,
+credulous VALUE) and self_attack OPEN. Every statement of every
+fixture document now replays through Fellowship without exception.
 
 *** DONE Switch to graph-first: operators build the graph, terms by unfolding
 CLOSED: [2026-09-17 Wed]
@@ -388,8 +402,10 @@ the verbs (name + assert, no edge). Done:
   rejects (`typecheck off` / FSP_TYPECHECK=0 for production). Every
   unfolded statement of the lk fixtures replays, Peirce's classical
   capture included. Binder names are freshened per unfolded copy, which
-  the replay required ("A symbol named h is already defined"). The lj
-  fixtures fail on term-side scaffolds: aida-lj-unfolding.
+  the replay required ("A symbol named h is already defined"). Debates
+  are classical (author): unfolding always captures continuations, the
+  CLI refuses the debate commands in lj, and presumption sites are never
+  captured (see the dropped aida-lj-unfolding for the rationale).
 Found: splitting the lambda off weakens the *grounded* label on
 negation-as-implication - self_attack's P[t] is UNDEC (was OUT when the
 edge was fused), because the ADF no longer sees that (P->false)[t] is

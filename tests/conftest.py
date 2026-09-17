@@ -51,6 +51,8 @@ DEFAULT_SCRIPTS = [
     "rationality/two_witnesses.fspy",
     "rationality/cyclic_undercut.fspy",
     "rationality/document_attack.fspy",
+    "rationality/even_loop_lk.fspy",
+    "rationality/self_attack_lk.fspy",
     "rationality/modus_tollens.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",

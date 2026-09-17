@@ -25,7 +25,7 @@ def prover():
 
 def issue_graph(prover, name):
     arg = prover.get_argument(name)
-    term = unfold(prover.document, prover.issue_of(arg), classical=prover.logic != "lj")
+    term = unfold(prover.document, prover.issue_of(arg))
     typecheck(prover, term, name, arg.conclusion, arg.is_anti)     # the type oracle
     return compile_debate(term, name, strict_names=prover.declarations.keys(),
                           strict_kinds=declaration_kinds(prover.declarations))
@@ -81,3 +81,14 @@ def test_logic_mode_is_tracked(prover):
     assert prover.logic == "lj"
     prover.send_command("lk.")
     assert prover.logic == "lk"
+
+
+def test_debate_commands_are_refused_in_lj(prover):
+    from wrap.cli import _issue_term
+    prover.send_command("lj.")
+    prover.send_command("declare P:bool.")
+    pArg = Argument(prover, "pArg", "P", ["by default"])
+    pArg.execute(); prover.register_argument(pArg)
+    arg, issue, term = _issue_term(prover, "pArg")
+    assert term is None                      # debates are classical
+    prover.send_command("lk.")

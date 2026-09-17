@@ -120,19 +120,33 @@ class TestShapes:
         _contains(term, lambda n: goals_for_p.append(n) if isinstance(n, Goal) and n.prop == "P" else False)
         assert len(goals_for_p) == 1 and goals_for_p[0] is term.term.term
 
-    def test_continuation_capture_needs_classical_logic(self):
+    def test_continuation_captures_an_obligation(self):
         # A demand for a refutation of P under a lambda inside a proof of
-        # P: captured by the continuation under lk, left open under lj.
+        # P is the continuation: debates are classical.
         host = eta("s2", "P", Mu(ID("beta", "P"), "P",
                                  Lamda(Hyp(DI("h", "P"), "P"), Goal("1", "Q")), Laog("2", "P->Q")))
-        p3 = eta("p3", "Q", Mu(ID("g", "Q"), "Q", DI("x", "P"), Laog("8", "P")))
-        p3.term.term = Goal("9", "P")
+        p3 = eta("p3", "Q", Mu(ID("g", "Q"), "Q", Goal("9", "P"), Laog("8", "P")))
         doc = document(("s2", host), ("p3", p3))
-        lk = unfold(doc, (K("P"), "term"), classical=True)
-        lj = unfold(doc, (K("P"), "term"), classical=False)
-        assert _contains(lk, lambda n: isinstance(n, ID) and n.name == "beta")
-        assert not _contains(lj, lambda n: isinstance(n, ID) and n.name == "beta")
-        assert _contains(lj, lambda n: isinstance(n, Laog) and n.prop == "P")
+        term = unfold(doc, (K("P"), "term"))
+        assert _contains(term, lambda n: isinstance(n, ID) and n.name == "beta")
+        # p3's demand is gone; the one Laog for P left is the root's trivial
+        # challenge (P[c] carries an obligation marker), outside p3
+        laogs = []
+        _contains(term, lambda n: laogs.append(n) if isinstance(n, Laog) and n.prop == "P" else False)
+        assert len(laogs) == 1
+        assert not _contains(term, lambda n: isinstance(n, Mu) and n.id.name == "g"
+                             and _contains(n, lambda m: isinstance(m, Laog)))
+
+    def test_presumption_is_never_captured(self):
+        # The same shape with the refutation of P PRESUMED: the presumption
+        # stays a presumption inside the proof of P; the opponent's default
+        # is not turned into the proponent's hypothesis.
+        host = eta("s2", "P", Mu(ID("beta", "P"), "P",
+                                 Lamda(Hyp(DI("h", "P"), "P"), Goal("1", "Q")), Laog("2", "P->Q")))
+        p3 = eta("p3", "Q", Mu(ID("g", "Q"), "Q", Goal("9", "P"), Geled("8", "P")))
+        doc = document(("s2", host), ("p3", p3))
+        term = unfold(doc, (K("P"), "term"))
+        assert _contains(term, lambda n: isinstance(n, Geled) and n.prop == "P")
 
 
 # ---------------------------------------------------------------------------
@@ -143,9 +157,9 @@ FIXTURES = {
     # script: (atomic argument names, issue argument)
     "tests/rationality/contested.fspy": (["pArg", "qAtt"], "pArg"),
     "tests/rationality/two_witnesses.fspy": (["pArg", "yQ", "sChal"], "pArg"),
-    "tests/rationality/self_attack.fspy": (["SelfAttack"], "SelfAttack"),
+    "tests/rationality/self_attack_lk.fspy": (["SelfAttack"], "SelfAttack"),
     "tests/rationality/cyclic_undercut.fspy": (["argA", "argB", "cQ", "cR"], "argA"),
-    "tests/rationality/even_loop.fspy": (["Pdefault", "Qdefault"], "Pdefault"),
+    "tests/rationality/even_loop_lk.fspy": (["Pdefault", "Qdefault"], "Pdefault"),
     "tests/peirces_law.fspy": (["p1", "s1", "p2", "s2", "p3", "s3"], "p1"),
 }
 
@@ -158,9 +172,6 @@ def prover():
     p.close()
 
 
-LJ_FIXTURES = {s for s in FIXTURES if "lj." in Path(s).read_text()}
-
-
 def load(prover, script):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -170,37 +181,32 @@ def load(prover, script):
     doc = compile_document([(n, prover.get_argument(n).body) for n in names], strict_names=sn, strict_kinds=sk)
     arg = prover.get_argument(issue_name)
     issue = (K(arg.conclusion), "context" if arg.is_anti else "term")
-    classical = "lj." not in Path(script).read_text()
-    return doc, issue, sn, sk, classical
+    assert prover.logic == "lk", "debates are classical; fixtures for unfolding are lk"
+    return doc, issue, sn, sk
 
 
-def unfold_checked(prover, doc, statement, classical):
-    """Unfold and replay through Fellowship - the type oracle.  Under lj
-    a term-side scaffold is not an LJ term (aida-lj-unfolding); those
-    are the only failures tolerated, and only for lj fixtures."""
-    term = unfold(doc, statement, classical=classical)
-    try:
-        typecheck(prover, term, "check", doc.nodes[statement[0]], statement[1] == "context")
-    except TypeCheckFailed:
-        if classical:
-            raise
-        pytest.xfail("lj: term-side scaffolds are LK terms (aida-lj-unfolding)")
+def unfold_checked(prover, doc, statement):
+    """Unfold and replay through Fellowship - the type oracle.  If the
+    arguments type-check, so must their unfolding; a failure here is an
+    unsound unfolding."""
+    term = unfold(doc, statement)
+    typecheck(prover, term, "check", doc.nodes[statement[0]], statement[1] == "context")
     return term
 
 
 @pytest.mark.parametrize("script", list(FIXTURES))
 def test_unfolded_terms_typecheck(prover, script):
     """Every statement of every fixture document unfolds to a term
-    Fellowship accepts and reconstructs (lj term-side cases xfail)."""
-    doc, issue, sn, sk, classical = load(prover, script)
+    Fellowship accepts and reconstructs."""
+    doc, issue, sn, sk = load(prover, script)
     for statement in sorted(set(doc.statements())):
-        unfold_checked(prover, doc, statement, classical)
+        unfold_checked(prover, doc, statement)
 
 
 @pytest.mark.parametrize("script", list(FIXTURES))
 def test_unfolding_terminates_and_compiles(prover, script):
-    doc, issue, sn, sk, classical = load(prover, script)
-    term = unfold_checked(prover, doc, issue, classical)             # T6, typed
+    doc, issue, sn, sk = load(prover, script)
+    term = unfold_checked(prover, doc, issue)                        # T6, typed
     g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
     assert g.edges or g.defaults
 
@@ -209,11 +215,11 @@ def test_unfolding_terminates_and_compiles(prover, script):
 def test_adequacy_restated(prover, script):
     """IN -> value, OUT -> not a value, for every issue of every fixture,
     with unfolding as the bridge (B4)."""
-    doc, issue, sn, sk, classical = load(prover, script)
+    doc, issue, sn, sk = load(prover, script)
     for statement in sorted(set(doc.statements())):
         if statement[1] == "context":
             continue                          # term-side issues suffice here
-        term = unfold(doc, statement, classical=classical)   # typed in test_unfolded_terms_typecheck
+        term = unfold(doc, statement)         # typed in test_unfolded_terms_typecheck
         nf, cls, sigma, g = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk,
                                             mode="skeptical", semantics="grounded")
         label = sigma.get(statement)
@@ -224,9 +230,9 @@ def test_adequacy_restated(prover, script):
 
 
 def test_peirce_is_a_theorem(prover):
-    doc, issue, sn, sk, classical = load(prover, "tests/peirces_law.fspy")
+    doc, issue, sn, sk = load(prover, "tests/peirces_law.fspy")
     assert not doc.is_acyclic()                                     # the document shows the loop
-    term = unfold_checked(prover, doc, issue, classical)
+    term = unfold_checked(prover, doc, issue)
     g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
     assert grounded_labels(g)[issue] == "IN"
     # nothing else is established
@@ -242,12 +248,13 @@ def test_peirce_is_a_theorem(prover):
     assert alpha_equal(nf, classical_proof)
 
 
-def test_even_loop_is_symmetric_under_lj(prover):
-    doc, issue, sn, sk, classical = load(prover, "tests/rationality/even_loop.fspy")
-    assert classical is False
+def test_even_loop_is_symmetric(prover):
+    # Presumptions are never captured, so neither side's presumed
+    # refutation becomes the other side's hypothesis.
+    doc, issue, sn, sk = load(prover, "tests/rationality/even_loop_lk.fspy")
     for name in ("Pdefault", "Qdefault"):
         arg = prover.get_argument(name)
-        term = unfold(doc, (K(arg.conclusion), "term"), classical=False)
+        term = unfold_checked(prover, doc, (K(arg.conclusion), "term"))
         g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
         assert set(grounded_labels(g).values()) == {"UNDEC"}
         _, skeptical, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="skeptical")
@@ -256,8 +263,8 @@ def test_even_loop_is_symmetric_under_lj(prover):
 
 
 def test_self_attack_is_not_a_value(prover):
-    doc, issue, sn, sk, classical = load(prover, "tests/rationality/self_attack.fspy")
-    term = unfold(doc, issue, classical=classical)
+    doc, issue, sn, sk = load(prover, "tests/rationality/self_attack_lk.fspy")
+    term = unfold_checked(prover, doc, issue)
     for mode in ("skeptical", "credulous"):
         _, cls, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode=mode)
         assert cls != "value"
@@ -266,8 +273,8 @@ def test_self_attack_is_not_a_value(prover):
 def test_cyclic_undercut_issue_is_its_presumption(prover):
     # A is IN by cR's presumption; unfolding puts that presumption at the
     # root, so the value is the presumption of A (gap 2 of D0 closed).
-    doc, issue, sn, sk, classical = load(prover, "tests/rationality/cyclic_undercut.fspy")
-    term = unfold_checked(prover, doc, issue, classical)
+    doc, issue, sn, sk = load(prover, "tests/rationality/cyclic_undercut.fspy")
+    term = unfold_checked(prover, doc, issue)
     nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="credulous")
     assert sigma[issue] == "IN" and cls == "value"
     assert _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "A")

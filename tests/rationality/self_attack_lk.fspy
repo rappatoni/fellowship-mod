@@ -1,4 +1,8 @@
-lj.
+% The self-attacking argument as a classical debate (lk copy of
+% self_attack.fspy).  P from a presumed refutation of P: the presumption
+% is never captured by P's continuation, so this does not become the
+% classical proof of P; grounded UNDEC, preferred P OUT, evaluation OPEN.
+lk.
 
 # Rationality fixture: self-attack (odd loop of length 1).
 # One argument for P resting on the negation-as-failure default for P itself:
@@ -21,3 +25,6 @@ next.
 axiom.
 end argument
 
+graph SelfAttack
+label SelfAttack preferred
+evaluate SelfAttack credulous

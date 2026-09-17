@@ -1462,11 +1462,16 @@ def _issue_term(prover: ProverWrapper, name: str):
         arg.execute()
     issue = prover.issue_of(arg)
     document = prover.document
+    if prover.logic == "lj":
+        print("graph: refused: debates are classical (their scaffolds throw to a second "
+              "conclusion, which LJ forbids); select lk for graph, label and evaluate.")
+        logger.warning("Debate commands refused in lj for '%s'.", name)
+        return arg, issue, None
     if issue not in set(document.statements()):
         logger.warning("'%s' is not in the document graph; using its own term.", name)
         return arg, issue, arg.body
     try:
-        term = unfold(document, issue, classical=prover.logic != "lj")
+        term = unfold(document, issue)
     except UnfoldError as e:
         print(f"graph: refused: {e}")
         logger.warning("Unfolding refused for '%s': %s", name, e)

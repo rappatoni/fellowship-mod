@@ -238,16 +238,16 @@ edge. `graph`, `label` and `evaluate` take a name, read its issue,
 **unfold** the document graph from that issue into a debate term
 (cycles broken by capture: a demand for P inside a proof of P->Q is the
 hypothesis, a demand for a refutation of P inside a proof of P is the
-continuation - under `lj` only hypotheses are captured), compile that
+continuation; a presumption is never captured), compile that
 term into the issue's debate graph, label it by an ADF semantics and
 evaluate it under a witness labelling. `graph document` and `label
 document` show the document graph itself. Every unfolded term is
 replayed through Fellowship first - the type oracle: if the arguments
 type-check, so must their unfolding - and refused with a one-line
 message if the prover rejects it; `typecheck off` (or `FSP_TYPECHECK=0`)
-skips the replay for production runs. Under `lj` the term-side
-scaffolds are not LJ terms, so debates with contested proofs cannot be
-unfolded into typed terms yet (see tasks.org, aida-lj-unfolding). Derivation cycles are
+skips the replay for production runs. Debates are classical: their
+scaffolds throw to a second conclusion, which LJ forbids, so the debate
+commands are refused while the file is in `lj`. Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate
 is in. They cover
 the quantifier-free fragment and refuse first-order terms with a
