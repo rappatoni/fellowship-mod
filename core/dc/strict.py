@@ -50,6 +50,7 @@ Both wings strict at an attack is the inconsistent case, delayed for the
 labelling (CONTR); the paper says proofs can be strictly defeated there.
 """
 
+import re
 from copy import deepcopy
 
 from core.ac.ast import (
@@ -269,4 +270,24 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     for edge in edges:
         graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
+    fold_occurrences(graph)
     return graph
+
+
+def fold_occurrences(graph: DebateGraph) -> None:
+    """Unfolding copies a document edge into every site of its statement,
+    and the compiler makes one edge per copy (s3 and s3_2 on Peirce).
+    Fold copies - same name stem, target, sources and strictness - into
+    one, keeping the first name and role; a duplicate disjunct changes no
+    label, so this is presentation only."""
+    seen = {}
+    kept = []
+    for edge in graph.edges:
+        stem = re.sub(r"_\d+$", "", edge.name)          # s3_2 -> s3: an unfolding copy
+        key = (stem, edge.target_key, edge.target_side, edge.strict,
+               tuple((s.key, s.side, s.kind) for s in edge.sources))
+        if key in seen:
+            continue
+        seen[key] = edge
+        kept.append(edge)
+    graph.edges[:] = kept

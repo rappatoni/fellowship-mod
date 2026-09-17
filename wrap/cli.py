@@ -1,5 +1,7 @@
 from __future__ import annotations
 import os, sys
+import atexit
+import collections
 import shlex
 import json
 import tempfile
@@ -713,8 +715,58 @@ def _print_ui(state: Any) -> None:
                 print(e.strip())
 
 
+def _setup_readline() -> None:
+    """Line editing, history and paste-friendliness for the REPL.
+
+    Emacs bindings (readline's default) so C-a/C-e/C-k/M-b work in a
+    terminal such as vterm; a history file so the arrow keys recall
+    earlier commands across sessions; bracketed paste off (GNU readline
+    8.1+ would otherwise hand a pasted block to input() as one line with
+    embedded newlines - _read_lines splits those anyway).  libedit on
+    macOS ignores the GNU-only settings.
+    """
+    try:
+        import readline
+    except ImportError:
+        return
+    for binding in ("set editing-mode emacs", "set enable-bracketed-paste off"):
+        try:
+            readline.parse_and_bind(binding)
+        except Exception:
+            pass
+    history = os.path.expanduser(os.getenv("ACDC_HISTORY", "~/.acdc_history"))
+    try:
+        readline.read_history_file(history)
+    except (FileNotFoundError, OSError):
+        pass
+    try:
+        readline.set_history_length(2000)
+        atexit.register(readline.write_history_file, history)
+    except Exception:
+        pass
+
+
+_pending_lines: "collections.deque[str]" = collections.deque()
+
+
+def _read_line(prompt: str) -> str:
+    """input() that hands a pasted multi-line block back one line at a
+    time: the first call reads the block, later calls drain it."""
+    while not _pending_lines:
+        raw = input(prompt)
+        _pending_lines.extend(raw.split("\n"))
+    return _pending_lines.popleft().strip()
+
+
 def interactive_mode(prover: ProverWrapper) -> None:
     """Enables command line interaction with the wrapper.
+
+        Paste-friendly: a pasted block is executed line by line; lines
+        starting with '#' are echoed as user-facing comments, lines
+        starting with '%' are ignored, blank lines are skipped - the
+        conventions of .fspy scripts - and `load FILE` runs a script in
+        the current session.  Line editing and history come from
+        readline (emacs bindings).
         
         Syntax for commands: 
           - All fellowship commands;
@@ -728,24 +780,38 @@ def interactive_mode(prover: ProverWrapper) -> None:
             "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
+          - Scripts: "load FILE" runs a .fspy file in this session.
 
         #TODO: implement human-oriented REPL output.
     """
-    
+    _setup_readline()
     recording = False
     current_argument = None
     try:
         while True:
             try:
-                prompt = 'Enter command (or "exit" to quit): ' if not recording else 'Enter command (recording): '
-                command = input(prompt).strip()
+                prompt = 'acdc> ' if not recording else 'acdc (recording)> '
+                command = _read_line(prompt)
             except EOFError:
                 print("\nEOFError: No input detected. Exiting interactive mode.")
                 break
-            # Remove trailing dots and whitespace
-            #command = command.rstrip('.').strip()
+            if not command or command.startswith('%'):
+                continue
+            if command.startswith('#'):
+                print(command[1:].lstrip())          # user-facing comment, as in scripts
+                continue
             if command.lower() in ['exit', 'quit']:
                 break
+            if command.startswith('load '):
+                path = Path(command.split(maxsplit=1)[1].strip()).expanduser()
+                if not path.is_file():
+                    print(f"load: no such file {path}")
+                    continue
+                try:
+                    execute_script(prover, str(path), strict=False, stop_on_error=False, isolate=False)
+                except (ProverError, MachinePayloadError) as e:
+                    print(f"load: stopped: {e}")
+                continue
             elif command.startswith("decorate "):
                 try:
                     name, template = parse_decorate_command(command)
@@ -1062,7 +1128,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                             output = prover.send_command(command, include_ui=True, allow_incomplete=True)
                             _print_ui(output)
                             while isinstance(output, dict) and output.get('_need_more_input'):
-                                more = input('... ').strip()
+                                more = _read_line('... ')
                                 output = prover.send_command(more, include_ui=True, allow_incomplete=True)
                                 _print_ui(output)
                             if isinstance(output, dict) and output.get('_need_more_input'):
@@ -1136,7 +1202,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         output = prover.send_command(command, include_ui=True, allow_incomplete=True)
                         _print_ui(output)
                         while isinstance(output, dict) and output.get('_need_more_input'):
-                            more = input('... ').strip()
+                            more = _read_line('... ')
                             output = prover.send_command(more, include_ui=True, allow_incomplete=True)
                             _print_ui(output)
                     except MachinePayloadError as e:

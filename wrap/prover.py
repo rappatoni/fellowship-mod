@@ -98,7 +98,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 self.last_output_text = out
                 state: Dict[str, Any] = {"_need_more_input": True}
                 if include_ui:
-                    state["_ui"] = out.strip()
+                    state["_ui"] = MACHINE_BLOCK_RE.sub("", out).strip()
                 return state
             logger.error("pexpect timeout on command %r: %s", command, e)
             raise ProverError(f"Prover I/O timeout (possible incomplete command): {e}") from e
@@ -208,7 +208,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 # to complete the command.
                 state = {"_need_more_input": True}
                 if include_ui:
-                    state["_ui"] = output.strip()
+                    state["_ui"] = MACHINE_BLOCK_RE.sub("", output).strip()
             else:
                 logger.error("Machine block missing in prover output for command %r", command_for_error)
                 raise MachinePayloadError("Machine block missing in prover output.")
@@ -222,7 +222,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         if include_ui:
             # Keep prover UI text for interactive mode.
-            state['_ui'] = output.strip()
+            state['_ui'] = MACHINE_BLOCK_RE.sub('', output).strip()
             # Also surface extracted plaintext parse errors explicitly so the CLI can show
             # a crisp error even if Fellowship's surrounding UI text is noisy.
             if state.get('_no_machine_block_ok') and state.get('errors'):
