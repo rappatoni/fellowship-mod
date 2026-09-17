@@ -1836,7 +1836,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
     logger.info("  normal form: %s", pretty)
 
-def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
+def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
     """CLI: render the acceptance tree (proof terms or NL), coloured by the
     grounded ADF labels of the argument's debate graph, and save it as a
     file.  If the graph is refused or adf-bdd is missing the tree is
