@@ -1,0 +1,27 @@
+# ================================================================
+#  AC/DC demo 4 - one document graph, universal substitution
+# ================================================================
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+# Before anyone objects, P is IN:
+label pArg
+%stop
+# ---- paste from here ----------------------------------------------------
+# Register a counterargument to Q.  No verb, no composition - just an argument.
+start counterargument qAtt Q
+by default.
+end counterargument
+# Proposition identity is global to the document: every use of Q is contested.
+graph document
+label pArg
+evaluate pArg skeptical
+evaluate pArg credulous

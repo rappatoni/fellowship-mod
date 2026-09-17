@@ -143,7 +143,16 @@ xattr -d com.apple.quarantine "$ACDC_FSP"
 
 ```bash
 .venv/bin/acdc --interactive
+.venv/bin/acdc --interactive --load tests/demo/01_arguments.fspy
 ```
+
+The prompt has readline line editing (emacs bindings) and a history file
+(`~/.acdc_history`, or `ACDC_HISTORY`). A pasted block runs one line at a
+time; lines starting with `#` are echoed as narration and lines starting
+with `%` are ignored, as in scripts. `load FILE` runs a script inside the
+session. A script loaded with `--load` or `load` stops at a `%stop` line,
+so a demo file can hold its setup above the marker and the commands to
+paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
 
 ### Script mode
 

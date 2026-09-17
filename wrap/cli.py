@@ -111,7 +111,7 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -160,6 +160,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             if not command:
                 continue
             if command.startswith('%'):
+                if stop_marker and command.rstrip('.').strip().lower() == '%stop':
+                    # The demo convention: execution stops here; what follows
+                    # is for the presenter to paste into the session.
+                    logger.info("Stopped at %%stop (%s:%d); the rest of the file is yours to paste.", script_path, lineno)
+                    break
                 # invisible comment, skip silently
                 continue
             if command.startswith('#'):
@@ -1606,7 +1611,10 @@ def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Opt
 
 
 def _open_file(path: str) -> bool:
-    """Open a file in the platform viewer; True if the opener was launched."""
+    """Open a file in the platform viewer; True if the opener was launched.
+    ACDC_NO_OPEN=1 (tests, headless runs) skips the viewer."""
+    if os.getenv("ACDC_NO_OPEN"):
+        return False
     try:
         if sys.platform == "darwin":
             subprocess.run(["open", path], check=True, timeout=30)

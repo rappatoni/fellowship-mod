@@ -78,11 +78,20 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
     """Replay ``term`` through Fellowship as a theorem (antitheorem if
     ``is_anti``) for ``conclusion``.  Returns the proof term Fellowship
     reconstructs; raises TypeCheckFailed otherwise."""
-    body = PropEnrichmentVisitor(axiom_props=prover.declarations).visit(deepcopy(term))
-    instructions = list(InstructionsGenerationVisitor().return_instructions(body))
+    import logging
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")            # enrichment of scaffold wiring is not the point here
+        body = PropEnrichmentVisitor(axiom_props=prover.declarations).visit(deepcopy(term))
+        instructions = list(InstructionsGenerationVisitor().return_instructions(body))
     check = Argument(prover, f"typecheck_{name}", conclusion, instructions, is_anti=is_anti)
+    replay_logger = logging.getLogger("core.dc.argument")
+    level = replay_logger.level
+    replay_logger.setLevel(logging.WARNING)        # the replay is a check, not a step to narrate
     try:
-        check.execute()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            check.execute()
     except ProverError as e:
         try:
             prover.send_command("discard theorem.")   # leave the prover clean
@@ -91,6 +100,8 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
         raise TypeCheckFailed(
             f"Fellowship rejected the unfolded term for '{name}': {e}"
         ) from e
+    finally:
+        replay_logger.setLevel(level)
     if shape(_peel_eta(check.body)) != shape(_peel_eta(term)):
         raise TypeCheckFailed(
             f"Fellowship reconstructed a different term for '{name}' than the one unfolded; "

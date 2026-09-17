@@ -1,0 +1,31 @@
+# ================================================================
+#  AC/DC demo 1 - arguments are proof terms
+# ================================================================
+# An argument is a term of the AC/DC calculus with open sites: obligations
+# (?) the arguer still owes, presumptions (!) the arguer takes by default.
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+# pArg argues P: apply the rule Q->P to Q, and take Q by default.
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+%stop
+# ---- paste from here ----------------------------------------------------
+# The term, and its natural-language reading:
+render pArg vanilla
+render pArg
+# Every registered argument is a hyperedge of one document graph:
+graph document
+# The debate about P, unfolded from the document, and its grounded labelling.
+# Q is presumed, so P follows.
+graph pArg
+label pArg
+# Evaluation reduces the debate term under that labelling: a VALUE, polynomial
+# in the presumption of Q.
+evaluate pArg

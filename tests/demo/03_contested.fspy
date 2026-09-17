@@ -1,0 +1,31 @@
+# ================================================================
+#  AC/DC demo 3 - witness labellings, credulous and skeptical
+# ================================================================
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+start counterargument qAtt Q
+by default.
+end counterargument
+%stop
+# ---- paste from here ----------------------------------------------------
+# Grounded semantics leaves the contest undecided:
+label pArg
+# Preferred semantics offers two labellings, one per side of the contest:
+label pArg preferred
+# Skeptical evaluation takes what all labellings agree on - and the site stays
+# open.  Credulous evaluation picks a labelling that accepts P: a VALUE.
+evaluate pArg skeptical
+evaluate pArg credulous
+# Which witness?  Number 1 by default; a number picks another; `all` lists
+# every accepting one.  Labelling 2 rejects P, so it is refused as a witness.
+evaluate pArg credulous all
+evaluate pArg credulous 2

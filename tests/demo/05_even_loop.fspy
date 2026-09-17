@@ -1,0 +1,47 @@
+# ================================================================
+#  AC/DC demo 5 - the even loop: cycles as captured continuations
+# ================================================================
+lk.
+declare P,Q:bool.
+declare pRule : ((Q->false)->P).
+declare qRule : ((P->false)->Q).
+# P holds unless Q; Q holds unless P.  Each argument rests on the presumed
+# refutation of the other's conclusion.
+start argument Pdefault P
+cut ((Q->false)->P) rule.
+axiom pRule.
+elim.
+elim h.
+cut (Q) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+start argument Qdefault Q
+cut ((P->false)->Q) rule.
+axiom qRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+%stop
+# ---- paste from here ----------------------------------------------------
+# Each argument alone is acyclic; together they are the loop:
+graph document
+# Unfolded from P, the loop closes in the term: Qdefault's presumed refutation
+# of P is captured by Pdefault's own continuation.  One copy of each argument.
+graph Pdefault
+# Grounded: everything undecided.  Stable: the two models, and the one where
+# both presumed refutations stand.
+label Pdefault
+label Pdefault stable
+# Neither model is accepted skeptically; each is, credulously, from its own
+# entry point.
+evaluate Pdefault skeptical
+evaluate Pdefault credulous
+evaluate Qdefault credulous

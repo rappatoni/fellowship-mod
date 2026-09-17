@@ -108,6 +108,16 @@ DEADLINE: <2026-09-04 Fri>
 :VERIFY:         Run the demo workflow and documented tests, review open demo-blocking defects, and check the user-facing documentation and presentation path.
 :END:
 
+Progress 2026-09-17: tests/demo/ holds six paste-driven sessions
+(arguments, support/attack, contested/witnesses, document, even loop,
+Peirce) with a README and tests/demo/test_demo.py running each end to
+end; the REPL got readline, paste splitting, '#'/'%' handling, `load
+FILE` and the `%stop` convention for `--load`; the interactive echo no
+longer shows the machine payload; unfolding copies are folded in the
+issue graph. Not rehearsed. Open for the demo: the strict phase is
+experimental (aida-strict-phase-experimental), so demo 6 carries a
+caveat; `graph ... show` needs Graphviz.
+
 ** BACKLOG Integrate AIDA into the DIREGA demonstrator
 :PROPERTIES:
 :ID:             aida-direga-demonstrator-integration

@@ -1,0 +1,48 @@
+# ================================================================
+#  AC/DC demo 2 - support and attack
+# ================================================================
+lk.
+declare P,Q,R,S:bool.
+declare pRule : (Q->P).
+declare qRule : (R->Q).
+# pArg: P from a presumed Q.
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+# qArg: Q from R, with R left as an obligation nobody meets.
+start argument qArg Q
+cut (R->Q) r.
+axiom qRule.
+elim.
+next.
+axiom r.
+end argument
+# qAtt: a counterargument to Q, by default.
+start counterargument qAtt Q
+by default.
+end counterargument
+# sArg: an argument about something else entirely.
+start argument sArg S
+by default.
+end argument
+%stop
+# ---- paste from here ----------------------------------------------------
+# The document already holds every conflict: proposition identity is global.
+graph document
+# The verbs name a debate and CHECK it: the supporter must conclude a statement
+# reachable from the host's issue, the attacker the contrary of one.
+support dsup qArg pArg
+attack datt qAtt pArg
+support bad sArg pArg
+# The debate about P: the site Q supported by qArg and contested by qAtt.
+graph pArg show
+label pArg
+# qArg rests on an obligation, so it is OUT; the presumed challenge and the
+# presumed Q contest each other: UNDEC.  The modes decide the contest.
+evaluate pArg skeptical
+evaluate pArg credulous
