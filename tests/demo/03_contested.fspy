@@ -1,31 +1,43 @@
 # ================================================================
-#  AC/DC demo 3 - witness labellings, credulous and skeptical
+#  AC/DC demo 3 - the Nixon diamond: witness labellings, credulous, skeptical
 # ================================================================
 lk.
-declare P,Q:bool.
-declare pRule : (Q->P).
-start argument pArg P
-cut (Q->P) rule.
-axiom pRule.
-elim.
+declare Quaker, Republican, Pacifist : bool.
+declare quaker : (Quaker).
+declare republican : (Republican).
+# nixonQ: Nixon is a pacifist - he is a Quaker, and Quakers are pacifists (by default).
+start argument nixonQ Pacifist
+cut (Quaker -> Pacifist) quakers_pacifist.
 by default.
 next.
-axiom rule.
+elim.
+axiom quaker.
+axiom quakers_pacifist.
 end argument
-start counterargument qAtt Q
+# nixonR: Nixon is NOT a pacifist - he is a Republican, and Republicans are not (by default).
+start counterargument nixonR Pacifist
+cut (Republican -> ~Pacifist) republicans_hawks.
 by default.
+next.
+elim.
+axiom republican.
+elim.
+axiom.
 end counterargument
 %stop
 # ---- paste from here ----------------------------------------------------
-# Grounded semantics leaves the contest undecided:
-label pArg
+# Two presumed rules, head to head.  Grounded semantics leaves it undecided:
+label nixonQ
 # Preferred semantics offers two labellings, one per side of the contest:
-label pArg preferred
+label nixonQ preferred
 # Skeptical evaluation takes what all labellings agree on - and the site stays
-# open.  Credulous evaluation picks a labelling that accepts P: a VALUE.
-evaluate pArg skeptical
-evaluate pArg credulous
+# open.  Credulous evaluation picks a labelling that accepts pacifism: a VALUE.
+evaluate nixonQ skeptical
+evaluate nixonQ credulous
 # Which witness?  Number 1 by default; a number picks another; `all` lists
-# every accepting one.  Labelling 2 rejects P, so it is refused as a witness.
-evaluate pArg credulous all
-evaluate pArg credulous 2
+# every accepting one.  Labelling 2 rejects pacifism, so it is refused.
+evaluate nixonQ credulous all
+evaluate nixonQ credulous 2
+# The diamond is symmetric: the same from Nixon the Republican's side.
+label nixonR preferred
+evaluate nixonR credulous

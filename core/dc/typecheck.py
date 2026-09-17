@@ -85,9 +85,10 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
         body = PropEnrichmentVisitor(axiom_props=prover.declarations).visit(deepcopy(term))
         instructions = list(InstructionsGenerationVisitor().return_instructions(body))
     check = Argument(prover, f"typecheck_{name}", conclusion, instructions, is_anti=is_anti)
-    replay_logger = logging.getLogger("core.dc.argument")
-    level = replay_logger.level
-    replay_logger.setLevel(logging.WARNING)        # the replay is a check, not a step to narrate
+    quiet = [logging.getLogger("core.dc.argument"), logging.getLogger("fsp.wrapper")]
+    levels = [lg.level for lg in quiet]
+    for lg in quiet:
+        lg.setLevel(logging.WARNING)               # the replay is a check, not a step to narrate
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -101,7 +102,8 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
             f"Fellowship rejected the unfolded term for '{name}': {e}"
         ) from e
     finally:
-        replay_logger.setLevel(level)
+        for lg, level in zip(quiet, levels):
+            lg.setLevel(level)
     if shape(_peel_eta(check.body)) != shape(_peel_eta(term)):
         raise TypeCheckFailed(
             f"Fellowship reconstructed a different term for '{name}' than the one unfolded; "

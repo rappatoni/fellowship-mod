@@ -49,13 +49,15 @@ def test_02_verbs_and_refusal(prover):
     run(prover, "tests/demo/02_support_attack.fspy")
     assert prover.get_argument("dsup") and prover.get_argument("datt")
     assert prover.get_argument("bad") is None                     # refused support
-    assert issue_verdict(prover, "pArg", "skeptical")[0] != "value"
-    assert issue_verdict(prover, "pArg", "credulous")[0] == "value"
+    assert issue_verdict(prover, "tweety", "skeptical")[0] != "value"
+    assert issue_verdict(prover, "tweety", "credulous")[0] == "value"
 
 
 def test_04_document_contest(prover):
     run(prover, "tests/demo/04_document.fspy")
-    assert issue_verdict(prover, "pArg")[1] == "UNDEC"
+    # a strict refutation registered later grounds the presumed rule
+    assert issue_verdict(prover, "tweety")[1] == "OUT"
+    assert issue_verdict(prover, "tweety", "credulous")[0] != "value"
 
 
 def test_05_even_loop_symmetric(prover):

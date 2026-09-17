@@ -1,48 +1,58 @@
 # ================================================================
-#  AC/DC demo 2 - support and attack
+#  AC/DC demo 2 - support and attack: Tweety the penguin
 # ================================================================
 lk.
-declare P,Q,R,S:bool.
-declare pRule : (Q->P).
-declare qRule : (R->Q).
-# pArg: P from a presumed Q.
-start argument pArg P
-cut (Q->P) rule.
-axiom pRule.
-elim.
+declare Bird, Penguin, Flies, Wings : bool.
+declare bird : (Bird).
+declare penguins_are_birds : (Penguin -> Bird).
+declare penguins_dont_fly : (Penguin -> ~Flies).
+declare winged_things_fly : (Wings -> Flies).
+# tweety: Tweety flies, being a bird, since birds fly - by default.
+start argument tweety Flies
+cut (Bird -> Flies) birds_fly.
 by default.
+next.
+elim.
+axiom bird.
+axiom birds_fly.
+end argument
+# wings: Tweety flies because it has wings - if it has wings, which is owed.
+start argument wings Flies
+cut (Wings -> Flies) rule.
+axiom winged_things_fly.
+elim.
 next.
 axiom rule.
 end argument
-# qArg: Q from R, with R left as an obligation nobody meets.
-start argument qArg Q
-cut (R->Q) r.
-axiom qRule.
+# penguin: Tweety does not fly - it is a penguin.  Presumed.
+start counterargument penguin Flies
+cut (Penguin -> ~Flies) rule.
+axiom penguins_dont_fly.
 elim.
-next.
-axiom r.
-end argument
-# qAtt: a counterargument to Q, by default.
-start counterargument qAtt Q
 by default.
+next.
+elim.
+axiom.
 end counterargument
-# sArg: an argument about something else entirely.
-start argument sArg S
+# Something unrelated, to show the verbs check their target.
+declare Sings : bool.
+start argument sings Sings
 by default.
 end argument
 %stop
 # ---- paste from here ----------------------------------------------------
 # The document already holds every conflict: proposition identity is global.
 graph document
-# The verbs name a debate and CHECK it: the supporter must conclude a statement
-# reachable from the host's issue, the attacker the contrary of one.
-support dsup qArg pArg
-attack datt qAtt pArg
-support bad sArg pArg
-# The debate about P: the site Q supported by qArg and contested by qAtt.
-graph pArg show
-label pArg
-# qArg rests on an obligation, so it is OUT; the presumed challenge and the
-# presumed Q contest each other: UNDEC.  The modes decide the contest.
-evaluate pArg skeptical
-evaluate pArg credulous
+# The verbs name a debate and CHECK it: a supporter must conclude a statement
+# reachable from the host's issue, an attacker the contrary of one.
+support dsup wings tweety
+attack datt penguin tweety
+support bad sings tweety
+# The debate about Flies: supported by wings, contested by penguin.
+graph tweety show
+label tweety
+# wings rests on an obligation nobody meets, so it is OUT.  The presumed rule
+# "birds fly" and the presumed "it is a penguin" contest each other: UNDEC.
+# The modes decide the contest.
+evaluate tweety skeptical
+evaluate tweety credulous
