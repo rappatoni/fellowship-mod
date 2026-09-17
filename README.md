@@ -258,8 +258,10 @@ one-line message.
     (unfolded from the document) or of the document graph; write
     Graphviz DOT when a filename is given
   - every lambda is a subargument edge of its own; a subargument that
-    captured a binder of an enclosing one is absorbed into it and listed
-    under that edge with what it captured (`~ absorbed ...`)
+    captured a binder of an enclosing one records the capture as a source
+    at that binder's statement, so the framework shows a sprung trap as a
+    cycle; strictness is then read off the unfolded term and adds a strict
+    edge (`NAME*`) for every closed derivation the framework missed
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
 - `label ARG|document [grounded|complete|preferred|stable]`

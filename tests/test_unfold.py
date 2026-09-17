@@ -31,6 +31,7 @@ from core.dc.debate_graph import (
     DebateGraph, Edge, Source, _match_scaffold,
 )
 from core.dc.unfold import unfold, Unfolder, contrary
+from core.dc.strict import compile_issue, strict_resolve
 from core.dc.typecheck import typecheck, TypeCheckFailed
 from wrap.cli import setup_prover, execute_script
 
@@ -171,7 +172,6 @@ class TestShapes:
         _contains(term, lambda n: captured.append(n) if isinstance(n, ID) and n.name == "beta" else False)
         assert captured and all(getattr(v, "captured_presumption", False) for v in captured)
         g = compile_debate(term, "u", strict_names=STRICT | {"pq"})
-        assert not any(e.captures or e.absorbed for e in g.edges)          # nothing discharged
         by_name = {e.name: e for e in g.edges}
         assert "p3" in by_name
         lam = [e for e in g.edges if e.name.startswith("p3.")]
@@ -263,9 +263,17 @@ def test_peirce_is_a_theorem(prover):
     doc, issue, sn, sk = load(prover, "tests/peirces_law.fspy")
     assert not doc.is_acyclic()                                     # the document shows the loop
     term = unfold_checked(prover, doc, issue)
-    g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
+    # The framework of the term: the trap as a cycle through captured
+    # obligations, the thesis OUT like everything else.
+    framework = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
+    assert not framework.is_acyclic()
+    assert grounded_labels(framework)[issue] == "OUT"
+    # Strictness on the term: every scaffold decided, the whole term closed,
+    # one strict edge for the thesis - and nothing else established.
+    _, strict = strict_resolve(term, sn)
+    assert [(g_key, side) for e in strict for (g_key, side) in [(e.target_key, e.target_side)]] == [issue]
+    g = compile_issue(term, "u", strict_names=sn, strict_kinds=sk)
     assert grounded_labels(g)[issue] == "IN"
-    # nothing else is established
     assert all(v != "IN" for s, v in grounded_labels(g).items() if s != issue)
     nf, cls, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk)
     assert cls == "value"

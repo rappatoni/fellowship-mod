@@ -1497,7 +1497,8 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     printing the refusal - the log-and-refuse convention: compile errors
     are one-line messages, not tracebacks.
     """
-    from core.dc.debate_graph import compile_debate, DebateCompileError, declaration_kinds
+    from core.dc.debate_graph import DebateCompileError, declaration_kinds
+    from core.dc.strict import compile_issue
     from core.ac.ast import FirstOrderNotSupported
 
     if name == "document":
@@ -1506,8 +1507,8 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     if term is None:
         return arg, None, None
     try:
-        graph = compile_debate(term, name, strict_names=prover.declarations.keys(),
-                               strict_kinds=declaration_kinds(prover.declarations))
+        graph = compile_issue(term, name, strict_names=prover.declarations.keys(),
+                              strict_kinds=declaration_kinds(prover.declarations))
     except (DebateCompileError, FirstOrderNotSupported) as e:
         print(f"graph: refused: {e}")
         logger.warning("Debate graph compilation refused for '%s': %s", name, e)
@@ -1606,8 +1607,6 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
         logger.info("  %s (%s, %s): %s <- %s",
                     edge.name, edge.role, strictness,
                     f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
-        for line in graph.describe_absorbed(edge, "      "):
-            logger.info(line)
     for (key, side), kinds in graph.defaults.items():
         logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
     logger.info("  fragment: %s",

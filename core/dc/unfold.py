@@ -25,8 +25,10 @@ mu/mu'-capture of the spec).  Two kinds of site, two meanings:
 - an OBLIGATION captured is a demand met by a hypothesis or
   continuation in scope (a demand for P inside a proof of P->Q is h, a
   demand for a refutation of P inside a proof of P is the
-  continuation): the scion is part of that derivation - Peirce's law -
-  and the compiler absorbs it;
+  continuation) - the trap sprung, Peirce's law.  The framework still
+  records it as an obligation source (it cannot see scope); the term
+  can: strictness is read off the unfolded term (core/dc/strict.py),
+  where the scion is closed and the scaffold is decided by it;
 - a PRESUMPTION captured is the cycle representation (author,
   2026-09-17): the opponent's default "P fails" inside the debate about
   P is P's own continuation, so the loop closes in the term instead of

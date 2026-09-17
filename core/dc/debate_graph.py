@@ -129,47 +129,24 @@ class Edge:
     sources: tuple
     strict: bool
     role: str = "argument"
-    #: Variables of enclosing subarguments this one uses (non-empty only on
-    #: absorbed records): the loop a capture closes, made visible.
-    captures: tuple = ()
-    #: Records of subarguments merged into this edge because they captured
-    #: one of its binders (see _Compiler): kept for presentation, not
-    #: labelled on their own.
-    absorbed: tuple = ()
     #: The subargument's body, for unfolding (core/dc/unfold.py); not part
     #: of the edge's identity.
     term: object = field(default=None, compare=False, repr=False)
 
 
 @dataclass(frozen=True)
-class _Alt:
-    """One alternative derivation of a body while compiling: the sources
-    and captures it accumulates and the records it absorbed."""
+class _Acc:
+    """What a body accumulates while compiling: its sources, and whether a
+    subargument it applies is defeasible."""
 
     sources: tuple = ()
-    captures: tuple = ()
-    absorbed: tuple = ()
-    defeasible: bool = False   # a subargument it applies is defeasible
+    defeasible: bool = False
 
     def __add__(self, other):
-        return _Alt(self.sources + other.sources, self.captures + other.captures,
-                    self.absorbed + other.absorbed, self.defeasible or other.defeasible)
+        return _Acc(self.sources + other.sources, self.defeasible or other.defeasible)
 
 
-_EMPTY = _Alt()
-MAX_ALTERNATIVES = 256
-
-
-@dataclass(frozen=True)
-class Capture:
-    """A variable of an enclosing subargument used inside an absorbed one:
-    ``name`` bound by ``owner`` (an edge name) for the statement
-    (``key``, ``side``)."""
-
-    name: str
-    key: str
-    side: str
-    owner: str
+_EMPTY = _Acc()
 
 
 class DebateGraph:
@@ -308,26 +285,6 @@ class DebateGraph:
             return roots
         return list(dict.fromkeys(targets)) or self.statements()
 
-    def describe_absorbed(self, edge, indent: str = "") -> list:
-        """Lines describing the subarguments absorbed into ``edge``, with
-        the captures that caused it - the structure the labelling does
-        not see."""
-        lines = []
-        for rec in edge.absorbed:
-            sources = ", ".join(
-                f"{self.nodes.get(s.key, s.key)}[{s.side[0]}:{s.kind[:4]}]" for s in rec.sources
-            ) or "-"
-            uses = ", ".join(
-                f"{c.name}:{self.nodes.get(c.key, c.key)}[{c.side[0]}] of {c.owner}" for c in rec.captures
-            )
-            lines.append(
-                f"{indent}~ absorbed {rec.name} ({rec.role}): "
-                f"{self.nodes.get(rec.target_key, rec.target_key)}[{rec.target_side[0]}] <- {sources}"
-                + (f"   uses {uses}" if uses else "")
-            )
-            lines.extend(self.describe_absorbed(rec, indent + "    "))
-        return lines
-
     def to_text(self, labels=None, root=None) -> str:
         """An indented tree view, rooted at the graph's conclusion(s).
 
@@ -373,8 +330,6 @@ class DebateGraph:
                 strictness = "strict" if edge.strict else "defeasible"
                 out.append(f"{prefix}{branch}{edge.name}  ({edge.role}, {strictness})")
                 child_prefix = prefix + ("    " if last else "|   ")
-                for line in self.describe_absorbed(edge):
-                    out.append(f"{child_prefix}{line}")
                 for j, source in enumerate(edge.sources):
                     child = (source.key, source.side)
                     last_source = j == len(edge.sources) - 1
@@ -434,6 +389,7 @@ class DebateGraph:
                 "supporter": "color=darkgreen",
                 "attacker": "color=red",
                 "subargument": "color=gray40",
+                "strict": "color=black penwidth=2",
             }.get(edge.role, "color=black")
             head = "normal" if edge.target_side == "term" else "empty"
             for source in edge.sources:
@@ -553,9 +509,30 @@ def _match_paper_scaffold(n):
     return None
 
 
+def scaffold_parts(node, match):
+    """Where a matched scaffold keeps its original and its scion: two
+    (parent, slot) positions.  Everything else in the node is wiring,
+    and wiring must never be matched as a scaffold of its own - the
+    paper attack's inner context has the legacy C-SUP shape, for one -
+    so a rewriter recurses through these positions, never through raw
+    children of a scaffold."""
+    if match.legacy:
+        if isinstance(node, Mu):
+            return [(node.term, "term"), (node.context, "term" if match[0] == "supporter" else "context")]
+        return [(node.context, "context"), (node.term, "context" if match[0] == "supporter" else "term")]
+    if isinstance(node, Mu):
+        wiring = node.context                       # mu'beta.< mu_.c1 || mu'_.c2 >
+        scion_pos = (wiring.context, "term") if match[0] == "supporter" else (wiring.term, "context")
+        return [(node, "term"), scion_pos]
+    wiring = node.term                              # mu beta.< mu_.c1 || mu'_.c2 >
+    scion_pos = (wiring.term, "context") if match[0] == "supporter" else (wiring.context, "term")
+    return [(node, "context"), scion_pos]
+
+
 def _match_scaffold(n, strict_names=()):
     """Match a scaffold at this node: the paper shapes first, then the
-    legacy M3 shapes.
+    legacy M3 shapes.  Only meaningful top-down: the wiring inside a
+    paper scaffold can itself match a legacy shape (see scaffold_parts).
 
     Returns a 7-tuple (role, site_side, prop, orig, scion, alt_name,
     scion_kind) with a ``legacy`` attribute, or None.  ``scion_kind`` is
@@ -744,20 +721,21 @@ BUILTIN_LEAVES = {"_F_": "moxia", "_T_": "prop"}
 
 
 class _Compiler:
-    """Term -> hyperedges.
+    """Term -> hyperedges: the abstract argumentation framework of a term.
 
-    One edge per *closed* subargument: the body of an argument, every
-    scion of a scaffold, and every lambda (a proof of an implication
-    under a hypothesis).  A subargument that refers to a binder of an
-    enclosing subargument - a hypothesis, a continuation, or a
-    scaffold's catch variable - has *captured* it while grafting; it is
-    not closed, so it is absorbed into the enclosing subargument that
-    binds the variable (cascading outward until closed), its sites
-    become that subargument's sources, and it is kept as a record on
-    the edge (``Edge.absorbed``, with ``Edge.captures``) so the loop it
-    closes stays visible.  The labelling sees closed edges only: a
-    captured variable is discharged by the hypothesis it reaches and
-    never becomes a global claim (aida-cyclic-fragment, 2026-09-17).
+    One edge per subargument: the body of an argument, every scion of a
+    scaffold, and every lambda (a proof of an implication under a
+    hypothesis).  A subargument's sources are its open sites and every
+    variable it uses that an *enclosing* subargument binds - a captured
+    obligation (a demand met by a hypothesis or continuation in scope) is
+    an obligation source at that binder's statement, a captured
+    presumption a presumption source.  So a cycle a capture closes is a
+    cycle here, obligations included: the framework does not know that a
+    demand was met inside a scope.  That is the debate term's business -
+    strictness is read off the unfolded term, not the framework
+    (core/dc/strict.py; author, 2026-09-17: "capturing is a debate
+    phenomenon ... strictness ought to be evaluated on the concrete debate
+    term, not the abstract argumentation framework").
     """
 
     def __init__(self, strict_names, strict_kinds=None):
@@ -783,22 +761,16 @@ class _Compiler:
         found = first_order_node(body)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
-        for record in self.compile_body(deepcopy(body), _host_name(body, name), role, {}):
-            assert not record.captures, "a top-level body cannot capture: free variables are refused"
-            self.graph.add_edge(record)
+        self.graph.add_edge(self.compile_body(deepcopy(body), _host_name(body, name), role, {}))
 
     # -- one subargument ----------------------------------------------------
 
     def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None):
-        """Compile one subargument body into its alternative derivations.
+        """Compile one subargument body into its edge.
 
         ``outer`` maps the variables bound by enclosing subarguments to
-        (prop, side, owner).  Returns a list of Edge records, one per
-        alternative: a scaffold whose scion is absorbed offers two ways
-        to derive the target (the site's own route and the scion's), and
-        alternatives multiply.  A record with ``captures`` is not closed:
-        the caller absorbs it.  Records without captures are the edges;
-        closed nested subarguments are added to the graph here.
+        (prop, side, owner).  Nested subarguments (scions, lambdas) are
+        added to the graph here; the body's own edge is returned.
         """
         side, prop = self._root_statement(body, name)
         if expect_side is not None and side != expect_side:
@@ -819,23 +791,6 @@ class _Compiler:
         def bind(env, names):
             return {**env, **names}
 
-        def product(alts_a, alts_b):
-            out = [a + b for a in alts_a for b in alts_b]
-            if len(out) > MAX_ALTERNATIVES:
-                raise DebateCompileError(
-                    f"Edge '{name}': more than {MAX_ALTERNATIVES} alternative "
-                    f"derivations; refusing to enumerate."
-                )
-            return out
-
-        def discharged(captures, env):
-            """Captures our own binders satisfy are dropped; the rest climb."""
-            return tuple(c for c in captures
-                         if not (c.name in env and env[c.name][1] == c.side))
-
-        def absorbed_alt(rec, env):
-            return _Alt(rec.sources, discharged(rec.captures, env), (rec,), False)
-
         def walk(node, env, spine):
             for leaf_type, (lside, kind) in _LEAF_INFO.items():
                 if isinstance(node, leaf_type):
@@ -844,27 +799,23 @@ class _Compiler:
                             f"Edge '{name}': open site {node.number!r} has no "
                             f"proposition; run enrichment first."
                         )
-                    return [_Alt((Source(self.graph.add_node(node.prop), lside, kind,
-                                         str(node.number), spine),))]
+                    return _Acc((Source(self.graph.add_node(node.prop), lside, kind,
+                                        str(node.number), spine),))
             if isinstance(node, (ID, DI)):
                 vside = "context" if isinstance(node, ID) else "term"
                 bound = env.get(node.name)
                 if bound is not None and bound[1] == vside:
-                    return [_EMPTY]
+                    return _EMPTY
                 if node.name in self.strict_names:
                     self._check_kind(node.name, vside, name)
-                    return [_EMPTY]
+                    return _EMPTY
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:
-                    if getattr(node, "captured_presumption", False):
-                        # A presumption the unfolder bound to an enclosing
-                        # continuation (the cycle representation): still a
-                        # presumption source of THIS edge, so the loop stays
-                        # visible to the labelling; not a discharge.
-                        return [_Alt((Source(self.graph.add_node(enclosing[0]), vside,
-                                             "presumption", node.name, spine),))]
-                    return [_Alt((), (Capture(node.name, self.graph.add_node(enclosing[0]),
-                                              vside, enclosing[2]),))]
+                    # Captured from an enclosing subargument: a source at
+                    # that binder's statement, of the kind the site had.
+                    kind = "presumption" if getattr(node, "captured_presumption", False) else "obligation"
+                    return _Acc((Source(self.graph.add_node(enclosing[0]), vside, kind,
+                                        node.name, spine),))
                 raise DebateCompileError(
                     f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
                     f"variable '{node.name}' is neither bound nor a declared axiom; "
@@ -890,78 +841,44 @@ class _Compiler:
                     sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
                                  alt: (sprop, alt_side, name)}
                 label = _scion_name(scion, f"{name}.{srole}{next(self._fresh)}")
-                records = self.compile_body(scion, label, srole, sub_outer,
-                                            expect_side=target_side, expect_prop=sprop)
-                closed = [r for r in records if not r.captures]
-                absorbed = [r for r in records if r.captures]
-                alts = []
-                if closed or not absorbed:
-                    # The site stays a source of this derivation and the
-                    # closed scions are its own edges.
-                    for rec in closed:
-                        self.graph.add_edge(rec)
-                    alts += walk(orig, env, spine)
-                # An absorbed scion is part of this derivation: a supporter
-                # fills its site, an attacked site stays beside the attacker
-                # (paper shapes: the original itself; legacy shapes: the
-                # fresh obligation in the stolen-value slot).
-                inner = bind(env, {alt: (sprop, alt_side)})
-                for rec in absorbed:
-                    child = [absorbed_alt(rec, inner)]
-                    if srole == "attacker":
-                        if match.legacy:
-                            wing = node.context if isinstance(node, Mu) else node.term
-                            beside = wing.term if isinstance(node, Mu) else wing.context
-                        else:
-                            beside = orig
-                        child = product(child, walk(beside, env, spine))
-                    alts += child
-                return alts
+                self.graph.add_edge(self.compile_body(scion, label, srole, sub_outer,
+                                                      expect_side=target_side, expect_prop=sprop))
+                # the site stays a source of this derivation; the scion is
+                # its own edge
+                return walk(orig, env, spine)
             if isinstance(node, Lamda) and node is not root_lambda:
                 lname = f"{name}.\u03bb{next(self._fresh)}"
                 sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
-                records = self.compile_body(node, lname, "subargument", sub_outer)
-                closed = [r for r in records if not r.captures]
-                absorbed = [r for r in records if r.captures]
-                alts = []
-                if closed:
-                    for rec in closed:
-                        self.graph.add_edge(rec)
-                    alts.append(_Alt((Source(closed[0].target_key, "term", "subargument", lname, spine),),
-                                     (), (), not any(r.strict for r in closed)))
-                for rec in absorbed:
-                    alts.append(absorbed_alt(rec, env))
-                return alts
+                rec = self.compile_body(node, lname, "subargument", sub_outer)
+                self.graph.add_edge(rec)
+                return _Acc((Source(rec.target_key, "term", "subargument", lname, spine),),
+                            not rec.strict)
             if isinstance(node, Lamda):
                 return walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
             if isinstance(node, Mu):
                 inner = bind(env, {node.id.name: (node.prop, "context")})
                 spine2 = spine if _is_affine_binder(node.id.name) else spine + ((node.prop, "context"),)
-                return product(walk(node.term, inner, spine2), walk(node.context, inner, spine2))
+                return walk(node.term, inner, spine2) + walk(node.context, inner, spine2)
             if isinstance(node, Mutilde):
                 inner = bind(env, {node.di.name: (node.prop, "term")})
                 spine2 = spine if _is_affine_binder(node.di.name) else spine + ((node.prop, "term"),)
-                return product(walk(node.term, inner, spine2), walk(node.context, inner, spine2))
+                return walk(node.term, inner, spine2) + walk(node.context, inner, spine2)
             if isinstance(node, Admal):
                 return walk(node.context, bind(env, {node.id.id.name: (node.id.prop, "context")}), spine)
             if isinstance(node, (Cons, Sonc)):
-                return product(walk(node.term, env, spine), walk(node.context, env, spine))
+                return walk(node.term, env, spine) + walk(node.context, env, spine)
             raise DebateCompileError(
                 f"Edge '{name}': unhandled node {type(node).__name__} during "
                 f"source collection."
             )
 
-        records = []
-        for i, alt in enumerate(walk(body, {}, ())):
-            # Strict = the derivation uses no indeterminate anywhere: none
-            # among its own sites, and none inside the subarguments it applies.
-            strict = (not any(s.kind in ("obligation", "presumption") for s in alt.sources)
-                      and not alt.defeasible)
-            records.append(Edge(name=name if i == 0 else f"{name}#{i + 1}",
-                                target_key=target_key, target_side=side,
-                                sources=alt.sources, strict=strict, role=role,
-                                captures=alt.captures, absorbed=alt.absorbed, term=body))
-        return records
+        acc = walk(body, {}, ())
+        # Strict = the derivation uses no indeterminate anywhere: none among
+        # its own sites, and none inside the subarguments it applies.
+        strict = (not any(s.kind in ("obligation", "presumption") for s in acc.sources)
+                  and not acc.defeasible)
+        return Edge(name=name, target_key=target_key, target_side=side,
+                    sources=acc.sources, strict=strict, role=role, term=body)
 
     def _root_statement(self, body, name):
         if isinstance(body, Mu):
@@ -1015,8 +932,7 @@ def _peel_eta(body):
 def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     """For the evaluator: compile a scaffold's scion against the binders in
     scope (``env``: name -> (prop, side)) exactly as the compiler does and
-    return its alternative records.  Records with captures are absorbed
-    into the host and are not a choice sigma makes."""
+    return its record(s) - a list, one edge."""
     role, site_side, prop, orig, scion_raw, alt, scion_kind = match
     compiler = _Compiler(strict_names, strict_kinds)
     if role == "attacker":
@@ -1032,8 +948,8 @@ def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
         target_side = site_side
         alt_side = "context" if site_side == "term" else "term"   # mu alt on a term site, mu' alt on a context site
         outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
-    return compiler.compile_body(scion, _scion_name(scion, "scion"), role, outer,
-                                 expect_side=target_side, expect_prop=prop)
+    return [compiler.compile_body(scion, _scion_name(scion, "scion"), role, outer,
+                                  expect_side=target_side, expect_prop=prop)]
 
 
 def compile_debate(body: ProofTerm, name: str, *, strict_names=None,

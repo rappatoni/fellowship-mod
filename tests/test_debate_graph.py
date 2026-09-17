@@ -369,15 +369,15 @@ class TestHostEdgeNaming:
         assert g.edges[0].name == "solo"
 
 
-class TestCapturedScionsAreAbsorbed:
-    """A scion that refers to a binder of its host has captured it while
-    grafting: it is not closed, so it is absorbed into the subargument
-    that binds the variable and kept as a record there; the site it
-    filled is no source any more, its own open sites are.  Lambdas are
-    subarguments of their own (an implication under a hypothesis), so a
-    scion that captured only the lambda's hypothesis is absorbed into
-    the lambda edge, and the enclosing edge sees a closed implication
-    subargument.  Before the cyclic fragment this was refused."""
+class TestCapturedObligationsAreSources:
+    """A scion that refers to a binder of an enclosing subargument has
+    captured it while grafting.  The framework records the captured
+    variable as a source of the scion's own edge at the binder's
+    statement - an obligation source for a captured demand, a presumption
+    source for a captured default - so a cycle a capture closes is a cycle
+    here.  Whether the demand was met inside its scope is not the
+    framework's business: strictness is read off the term
+    (core/dc/strict.py)."""
 
     def host_with(self, scion):
         # P from  lambda h:P . <site Q>  facing an open refutation of P->Q
@@ -395,51 +395,39 @@ class TestCapturedScionsAreAbsorbed:
         scion = eta_term("p3", "Q", Mu(ID("g", "Q"), "Q", DI("h", "P"), Laog("9", "P")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
         by_name = {e.name: e for e in g.edges}
-        assert set(by_name) == {"s2", "s2.\u03bb1"}
-        lam = by_name["s2.\u03bb1"]
-        # p3 captured h, the lambda's hypothesis: absorbed into the lambda
-        # edge, whose sources are p3's remaining site.
-        assert g.nodes[lam.target_key] == "P->Q" and lam.role == "subargument"
-        assert self.shape(g, lam) == {("P", "context", "obligation")}
-        assert [(r.name, [(c.name, g.nodes[c.key], c.side, c.owner) for c in r.captures])
-                for r in lam.absorbed] == [("p3", [("h", "P", "term", "s2.\u03bb1")])]
-        assert self.shape(g, by_name["s2"]) == {("P->Q", "term", "subargument"),
-                                                ("P->Q", "context", "obligation")}
-        assert not g.is_acyclic()          # P->Q[t] <- P[c] ~ P[t] <- P->Q[t]
+        assert set(by_name) == {"s2", "s2.\u03bb1", "p3"}
+        assert self.shape(g, by_name["p3"]) == {("P", "term", "obligation"), ("P", "context", "obligation")}
+        assert self.shape(g, by_name["s2.\u03bb1"]) == {("Q", "term", "obligation")}
+        assert not g.is_acyclic()          # P[t] <- P->Q[t] <- Q[t] <- P[t]: the trap, as a cycle
 
     def test_mu_continuation_captured(self):
-        # The scion also reaches the host's own mu binder for P (its
-        # continuation), which the lambda does not bind: the lambda edge is
-        # absorbed into s2 in turn.
         scion = eta_term("y", "Q", Mu(ID("g", "Q"), "Q", Goal("8", "P"), ID("beta", "P")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
-        assert [e.name for e in g.edges] == ["s2"]
-        s2 = g.edges[0]
-        assert self.shape(g, s2) == {("P", "term", "obligation"), ("P->Q", "context", "obligation")}
-        assert [r.name for r in s2.absorbed] == ["s2.\u03bb1"]
-        assert [r.name for r in s2.absorbed[0].absorbed] == ["y"]
-        assert [(c.name, c.owner) for c in s2.absorbed[0].captures] == [("beta", "s2")]
+        y = next(e for e in g.edges if e.name == "y")
+        assert self.shape(g, y) == {("P", "term", "obligation"), ("P", "context", "obligation")}
 
-    def test_closed_scion_stays_its_own_edge(self):
+    def test_closed_scion_is_an_ordinary_edge(self):
         scion = eta_term("y", "Q", Mu(ID("g", "Q"), "Q", Goal("8", "R"), ID("g", "Q")))
         g = compile_debate(self.host_with(scion), "d", strict_names=STRICT)
         assert {e.name for e in g.edges} == {"s2", "s2.\u03bb1", "y"}
-        assert not any(e.absorbed for e in g.edges)
 
-    def test_supporter_using_the_catch_variable_is_absorbed(self):
-        # The supporter reaches for the scaffold's own catch variable: it
-        # uses the site's continuation, so it is part of pArg's derivation.
+    def test_supporter_using_the_catch_variable(self):
+        # The supporter reaches for the scaffold's own catch variable, the
+        # site's continuation: an obligation source at Q[c].
         scion = Mu(ID("k", "Q"), "Q", Deleg("2", "Q"), ID("alt", "Q"))
         body = parg_body(t_sup("Q", Goal("1", "Q"), scion))
         g = compile_debate(body, "d", strict_names=STRICT)
-        assert [e.name for e in g.edges] == ["pArg"]
-        assert [(s.side, s.kind) for s in g.edges[0].sources] == [("term", "presumption")]
-        assert [(r.name, [c.name for c in r.captures]) for r in g.edges[0].absorbed] == [("pArg.supporter1", ["alt"])]
+        sup = next(e for e in g.edges if e.role == "supporter")
+        assert self.shape(g, sup) == {("Q", "term", "presumption"), ("Q", "context", "obligation")}
 
-    def test_peirce_shape_absorbs_everything(self):
+    def test_peirce_shape_is_a_cycle_plus_a_strict_edge(self):
         # lambda f. mu alpha.< f || (lambda h. mu _.< h || alpha >) * alpha >
-        # built as supports that capture f and alpha: one strict edge, with
-        # the whole loop on record.
+        # built as supports that capture f and alpha.  The framework: a
+        # cycle of obligation edges, all OUT.  The term: closed once its
+        # scaffolds are decided by strictness, so the issue graph carries a
+        # strict edge for the thesis and labels it IN.
+        from core.dc.strict import compile_issue
+        from core.comp.adf_label import grounded_labels
         inner = Mu(ID("g2", "Q"), "Q", DI("h", "P"), ID("alpha", "P"))
         pq = Lamda(Hyp(DI("h", "P"), "P"), t_sup("Q", Goal("1", "Q"), eta_term("p3", "Q", inner)))
         body = eta_term("s1", "((P->Q)->P)->P",
@@ -447,12 +435,15 @@ class TestCapturedScionsAreAbsorbed:
                               Mu(ID("alpha", "P"), "P", DI("f", "(P->Q)->P"),
                                  Cons(t_sup("P->Q", Goal("2", "P->Q"), eta_term("s2", "P->Q", pq)),
                                       ID("alpha", "P")))))
-        g = compile_debate(body, "peirce", strict_names=STRICT)
-        assert [(e.name, e.strict, e.sources) for e in g.edges] == [("s1", True, ())]
-        s1 = g.edges[0]
-        assert [r.name for r in s1.absorbed] == ["s2"]
-        assert [r.name for r in s1.absorbed[0].absorbed] == ["p3"]
-        assert [(c.name, c.owner) for c in s1.absorbed[0].absorbed[0].captures] == [("h", "s2"), ("alpha", "s1")]
+        framework = compile_debate(body, "peirce", strict_names=STRICT)
+        assert {e.name for e in framework.edges} == {"s1", "s2", "p3"}
+        assert not framework.edges and False or all(not e.strict for e in framework.edges)
+        T = canonical_prop("((P->Q)->P)->P")
+        assert grounded_labels(framework)[(T, "term")] == "OUT"
+        issue = compile_issue(body, "peirce", strict_names=STRICT)
+        strict = [e for e in issue.edges if e.strict]
+        assert [(e.name, e.target_key, e.sources) for e in strict] == [("s1*", T, ())]
+        assert grounded_labels(issue)[(T, "term")] == "IN"
 
     def test_truly_free_variable_still_refused(self):
         with pytest.raises(DebateCompileError, match="mystery"):

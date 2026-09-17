@@ -834,7 +834,8 @@ the acyclic fragment. Decision (author, 2026-09-16): accept that; the
 acyclic fragment is only the initial one, and the next fragment admits
 cycles. Carried forward in =aida-cyclic-fragment=.
 
-*** BACKLOG Decide how the graph records the alternative an absorbed supporter replaces
+*** DROPPED Decide how the graph records the alternative an absorbed supporter replaces
+CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
 :ID:             aida-absorbed-alternatives
 :AREA:           phd
@@ -861,6 +862,9 @@ DOT graph were removed the same day as ad hoc. The principled options:
 one edge per closed alternative (the product over absorbed scaffolds
 of scion-route and ORIG-route), or none. Absorbed records with their
 captures stay on Edge.absorbed and in the text listing only.
+
+Dropped 2026-09-17 with aida-strictness-on-the-term: nothing is
+absorbed any more, every route is an edge of the framework.
 
 *** DONE Extend the fragment to admit derivation cycles
 CLOSED: [2026-09-16 Wed]
@@ -1292,6 +1296,51 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
 - The compiler must recognise the named partial application as a
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
+
+*** DONE Read strictness off the debate term, not the framework
+CLOSED: [2026-09-17 Wed]
+:PROPERTIES:
+:ID:             aida-strictness-on-the-term
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        The compiler no longer absorbs a scion that captured a binder: a captured obligation is an obligation source of the scion's own edge at the binder's statement (a captured presumption a presumption source), so the argumentation framework of an unfolded term shows a sprung trap as a cycle and labels it OUT; strictness is evaluated on the unfolded term (core/dc/strict.py) - the paper's strict redundancy and strict defeat decide a scaffold when one wing is strict in the debate (no site, no captured presumption) and the other is not - and every closed subterm that results contributes a strict, source-less edge to the issue graph; evaluation runs the strict phase before sigma; Peirce's thesis is IN by its strict edge while P, Q and P->Q stay OUT as claims, and every other fixture verdict is unchanged.
+:VERIFY:         tests/test_strict.py (the six decision rules, the both-strict delay, the wiring regression, strict edges and compile_issue); tests/test_debate_graph.py::TestCapturedObligationsAreSources (captures as sources, the Peirce shape a cycle in the framework and IN in the issue graph); tests/test_evaluate.py::TestCaptureIsDecidedByStrictness; tests/test_unfold.py::test_peirce_is_a_theorem (framework OUT and cyclic, exactly one strict edge, issue graph IN); the six-fixture probe shows identical verdicts to the absorption version; the suite passes.
+:END:
+
+Decided by the author 2026-09-17 after the reassessment of obligation
+absorption: "you can only apply the strictness test once you have
+unfolded the term and in doing so applied the substitutions. Doing it
+beforehand is mixing two semantical levels. Capturing is a debate
+phenomenon: it is posing a trap for your opponent. In the argumentation
+framework, a cycle is fine, but in a debate it is 'begging the
+question' ... strictness ought to be evaluated on the concrete debate
+term, not the abstract argumentation framework." Consequences, all
+applied: (1) compiler: no absorption, captures are sources of the kind
+the site had (Capture, Edge.captures, Edge.absorbed, the records and
+the alternatives product removed); (2) core/dc/strict.py: the strict
+phase - top-down identification of scaffolds (their wiring must never
+be matched as a scaffold: the paper attack's inner context has the
+legacy C-SUP shape, which a bottom-up walk decided wrongly),
+bottom-up decision, strict edges named NAME* for closed eta-wrapped
+subterms containing a decision; "strict in the debate" = no site and no
+captured presumption (a captured default is still an assumption -
+without that clause self_attack came out a strict proof of P); (3)
+evaluate_debate and the CLI compile the issue graph as framework plus
+strict edges and resolve the strict phase before sigma; the wing helpers
+moved to strict.py. Peirce's issue graph: p3: Q[t] <- P[t]:obli,
+P[c]:obli; s3: P->Q[c] <- (P->Q)->P[t]:obli, P[c]:obli; s2: P[t] <-
+P->Q[t]:suba, P->Q[c]:obli; s1: T <- P[t]:obli; s1*: T <- - (strict);
+cyclic; grounded: everything OUT but T IN; the classical proof term.
+Strict decisions on Peirce, in order: s3 defeats P->Q? (attacker
+strict), p3 supports Q, s3 supports P->Q[c], P->Q original strict, s2
+supports P, P[c] original strict, s1 supports T.
 
 *** DONE Capture presumptions: the cycle representation
 CLOSED: [2026-09-17 Wed]

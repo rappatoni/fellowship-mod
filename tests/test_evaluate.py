@@ -160,37 +160,38 @@ class TestContested:
         assert contains(nf_s, lambda n: isinstance(n, Geled))
 
 
-class TestAbsorbedScaffolds:
-    """A wing that captured a host binder used to be refused ("a capture
-    pattern, outside the acyclic fragment").  Since aida-cyclic-fragment
-    the compiler absorbs such a scion into the host's derivation, and the
-    evaluator keeps it unconditionally - it is part of the argument sigma
-    judges, not a choice sigma makes."""
+class TestCaptureIsDecidedByStrictness:
+    """A wing that captured a binder is no longer refused, nor absorbed: the
+    framework records the capture as a source and the strict phase decides
+    the scaffold if strictness can (core/dc/strict.py)."""
 
     def body(self):
+        # the supporter uses the site's continuation, on a presumption
         scion = Mu(ID("k", "Q"), "Q", Deleg("2", "Q"), ID("alt", "Q"))
         return parg(t_sup("Q", Goal("1", "Q"), scion))
 
-    def test_compiles_labels_and_evaluates(self):
+    def test_a_defeasible_capturing_supporter_is_judged_by_sigma(self):
+        # Q[c] is an obligation nobody meets: the supporter is OUT and the
+        # site stays an open obligation.
         nf, cls, sigma, g = evaluate_debate(self.body(), "d", strict_names=STRICT, mode="credulous")
-        assert sigma[(Q, "term")] == "IN" and cls == "value"
+        assert sigma[(Q, "context")] == "OUT" and cls == "open"
+        assert contains(nf, lambda n: isinstance(n, Goal) and n.prop == "Q")
 
-    def test_kept_wing_retains_its_binder(self):
-        from core.comp.evaluate import resolve_scaffolds
+    def test_a_strict_capturing_supporter_is_kept_regardless_of_sigma(self):
+        # The supporter meets the demand for Q by throwing the site's own
+        # continuation an axiom: closed in the debate, so the strict phase
+        # keeps it whatever the labelling of Q[c] says.
+        from core.dc.strict import strict_resolve
         from core.comp.oracle_terms import _occurs
-        labels = {(Q, "term"): "IN", (P, "term"): "IN"}
-        resolved = resolve_scaffolds(self.body(), labels, "credulous")
-        site = resolved.term.context.term          # the Q site of pArg
-        assert isinstance(site, Mu) and site.id.name == "alt"
-        assert _occurs(site.term, ID, "alt")
-
-    def test_absorbed_wing_is_kept_whatever_sigma_says(self):
-        from core.comp.evaluate import resolve_scaffolds
+        scion = Mu(ID("k", "Q"), "Q", DI("qAx", "Q"), ID("alt", "Q"))
+        body = parg(t_sup("Q", Goal("1", "Q"), scion))
         trace = []
-        labels = {(Q, "term"): "OUT", (P, "term"): "OUT"}
-        resolved = resolve_scaffolds(self.body(), labels, "credulous", trace=trace)
-        assert trace == [((Q, "term"), "absorbed")]
-        assert not contains(resolved, lambda n: isinstance(n, Goal))
+        resolved, edges = strict_resolve(body, STRICT | {"qAx"}, trace=trace)
+        assert trace == [((Q, "term"), "supporter strict")]
+        site = resolved.term.context.term
+        assert isinstance(site, Mu) and _occurs(site.term, ID, site.id.name)   # binder kept: captured
+        nf, cls, sigma, _ = evaluate_debate(body, "d", strict_names=STRICT | {"qAx"}, mode="skeptical")
+        assert cls == "value"
 
 
 class TestRefusals:

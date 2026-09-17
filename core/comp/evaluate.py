@@ -21,6 +21,14 @@ skeptical uniformly CBV; the context side is the mirror.  The outer pair
 so no scaffold residue reaches the base strategy.  The legacy M3 shapes
 the term-level verbs still build are recognised too (debate_graph.py).
 
+Evaluation has two phases, as the paper's call-by-onus: first the
+strict phase on the term (core/dc/strict.py: a scaffold whose one wing
+is strict in the debate and the other is not is decided by strictness;
+this is where a sprung trap - Peirce's law - becomes a closed proof),
+then sigma for every scaffold strictness delayed.  The issue graph the
+labelling runs on is the framework of the term plus the strict edges
+the term contributes, so sigma never contradicts a strict decision.
+
 ``resolve_scaffolds`` applies the choice sigma dictates at every scaffold
 (the discarded wing's binder is affine by construction - the M8 side
 condition of the critique - and the eta step afterwards is valid exactly
@@ -93,6 +101,11 @@ from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
     DebateCompileError, binder_statements, scion_record,
 )
+from core.dc.strict import (
+    strict_resolve, compile_issue,
+    keep_orig as _keep_orig, keep_scion_support as _keep_scion_support,
+    keep_attack_wing as _keep_attack_wing,
+)
 
 
 class EvaluationRefused(DebateCompileError):
@@ -117,61 +130,6 @@ def _wing_choice(role: str, label: str, mode: str) -> str:
             return "orig"
         return "orig" if mode == "credulous" else "scion"
     raise EvaluationRefused(f"Unknown scaffold role {role!r}")
-
-
-def _eta(node_is_term, wing, alt, prop):
-    """The kept wing with the scaffold's outer binder, eta-reduced away
-    when the wing does not use it (a wing that captured alt keeps it)."""
-    if node_is_term:
-        if not _occurs(wing, ID, alt):
-            return deepcopy(wing)
-        return Mu(ID(alt, prop), prop, deepcopy(wing), ID(alt, prop))
-    if not _occurs(wing, DI, alt):
-        return deepcopy(wing)
-    return Mutilde(DI(alt, prop), prop, DI(alt, prop), deepcopy(wing))
-
-
-def _keep_orig(node, orig, alt):
-    """The original wins.  Paper shapes: inner pair resolved towards
-    <beta||alpha> (mu< at a support, >mu at an attack), then >mu at the
-    outer pair binds beta := original: mu alpha.<orig || alpha> -> orig.
-    Legacy shapes: (mu<) then eta."""
-    return _eta(isinstance(node, Mu), orig, alt, node.prop)
-
-
-def _keep_scion_support(node, scion, alt):
-    """The supporter wins: inner pair to <t2||alpha>, outer pair discards
-    the original: mu alpha.<t2 || alpha> -> t2."""
-    return _eta(isinstance(node, Mu), scion, alt, node.prop)
-
-
-def _keep_attack_wing(node, match):
-    """The attacker wins: the site holds the real clash.
-
-    Paper shapes: inner pair to <beta||e2> (term side) / <t2||beta>
-    (context side), outer pair binds beta := original, leaving
-    mu alpha.< orig || e2 >  /  mu'x.< t2 || orig >  - the paper's abort,
-    an affine binder over a closed contradiction when the original does
-    not use alpha.  Legacy M3 shapes: (>mu) only, leaving
-    mu alt.< ?g || SCION_CTX > with the scion still catching alt.
-    """
-    result = deepcopy(node)
-    if match.legacy:
-        if isinstance(node, Mu):
-            wing = node.context  # Mutilde(_, A, goal, scion_ctx)
-        else:
-            wing = node.term     # Mu(_, A, scion_t, laog)
-        result.term = deepcopy(wing.term)
-        result.context = deepcopy(wing.context)
-        return result
-    orig, scion = match[3], match[4]
-    if isinstance(node, Mu):
-        result.term = deepcopy(orig)
-        result.context = deepcopy(scion)
-    else:
-        result.term = deepcopy(scion)
-        result.context = deepcopy(orig)
-    return result
 
 
 def derivation_status(records, labels) -> str:
@@ -233,23 +191,13 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
             records = scion_record(match, env, strict_names)
-            closed = [r for r in records if not r.captures]
-            if len(closed) < len(records):
-                # Absorbed into the host's derivation (see the compiler):
-                # the scion is part of the argument, not a choice sigma
-                # makes.  Keep it; sigma judges the enclosing edge.
-                if trace is not None:
-                    trace.append(((canonical_prop(prop), site_side), "absorbed"))
-                kept = (_keep_scion_support(node, scion_raw, alt) if role == "supporter"
-                        else _keep_attack_wing(node, match))
-                return walk(kept, env)
-            statement = (closed[0].target_key, closed[0].target_side)
+            statement = (records[0].target_key, records[0].target_side)
             if labels.get(statement) is None:
                 raise EvaluationRefused(
                     f"No label for scaffold issue {statement}; the labelling "
                     f"and the term disagree about the debate's shape."
                 )
-            status = derivation_status(closed, labels)
+            status = derivation_status(records, labels)
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)
@@ -387,15 +335,19 @@ def evaluate_witnesses(
 
 
 def _compile_for_evaluation(body, name, strict_names, strict_kinds):
+    """The issue graph: the framework plus the strict edges the term
+    contributes (core/dc/strict.py)."""
     found = first_order_node(body)
     if found is not None:
         raise FirstOrderNotSupported("Debate evaluation", found)
-    return compile_debate(body, name, strict_names=strict_names,
-                          strict_kinds=strict_kinds)
+    return compile_issue(body, name, strict_names=strict_names, strict_kinds=strict_kinds)
 
 
 def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
-    resolved = resolve_scaffolds(body, sigma, tiebreak, strict_names=strict_names)
+    """The paper's two phases: strictness on the term first (strict
+    redundancy and defeat), sigma for what it delays."""
+    strict_body, _ = strict_resolve(body, strict_names or ())
+    resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names)
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
     return normal_form
