@@ -241,7 +241,13 @@ hypothesis, a demand for a refutation of P inside a proof of P is the
 continuation - under `lj` only hypotheses are captured), compile that
 term into the issue's debate graph, label it by an ADF semantics and
 evaluate it under a witness labelling. `graph document` and `label
-document` show the document graph itself. Derivation cycles are
+document` show the document graph itself. Every unfolded term is
+replayed through Fellowship first - the type oracle: if the arguments
+type-check, so must their unfolding - and refused with a one-line
+message if the prover rejects it; `typecheck off` (or `FSP_TYPECHECK=0`)
+skips the replay for production runs. Under `lj` the term-side
+scaffolds are not LJ terms, so debates with contested proofs cannot be
+unfolded into typed terms yet (see tasks.org, aida-lj-unfolding). Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate
 is in. They cover
 the quantifier-free fragment and refuse first-order terms with a

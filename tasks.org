@@ -284,6 +284,36 @@ determinism, stability and fuel exhaustion. The contested fixture's
 skeptical evaluation now prints the fully reduced residue
 mu b1:Q.<?Q || !Q>. Suite 727 passed / 1 deliberate xfail.
 
+*** NEXT Unfold lj debates into LJ terms: choose term-side alternatives by sigma
+:PROPERTIES:
+:ID:             aida-lj-unfolding
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        Under lj, unfolding produces a term Fellowship accepts for every issue of even_loop, self_attack and naf_olon: term-side alternatives (a proof site with supporters or attackers) are not encoded as the classical scaffold mu alt.<mu _.<ORIG||alt> || mu'_.<SCION||alt>>, which needs a second conclusion, but resolved before the term is built - the spec's "choose edges per the labelling" - so that only the chosen wing appears; the type-check tests in tests/test_unfold.py lose their lj xfails.
+:VERIFY:         tests/test_unfold.py::test_unfolded_terms_typecheck passes for the lj fixtures without xfail; the lj fixtures drop their `typecheck off`; evaluation verdicts on even_loop and self_attack are unchanged; contested lk fixtures still unfold with scaffolds and type-check.
+:END:
+
+Found 2026-09-17 while making Fellowship replay the ground truth for
+unfolding. Verified on the prover: T-SUP and T-ATT are rejected in lj
+("alt is neither in your hypothesis nor in your conclusion") - the
+affine mu_ wing uses the catch continuation while a second conclusion
+is active, which LJ forbids; C-SUP and C-ATT (hypothesis-side
+alternatives) are accepted in both logics, and every lk fixture's
+unfolded terms replay. So a term-side critical pair is an LK device.
+For lj the unfolder must decide term-side alternatives from a
+labelling before writing the term; that needs sigma before the issue
+graph exists - use the document labelling, or iterate: unfold with
+scaffolds for the graph only, label, then unfold again choosing wings.
+Until then the lj fixtures run with `typecheck off` and the tests
+carry strict xfails.
+
 *** DONE Switch to graph-first: operators build the graph, terms by unfolding
 CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
@@ -349,8 +379,17 @@ the verbs (name + assert, no edge). Done:
   mu _.< h || a >) * a > (test_peirce_is_a_theorem). The even loop under
   lj is symmetric (grounded UNDEC, skeptical OPEN, credulous VALUE for
   each side).
-- Fellowship replay of unfolded terms: not done; the unfolded term is
-  checked by compilation, labelling and evaluation only. Left for E.
+- Fellowship replay of unfolded terms (author, 2026-09-17: "type
+  checking is a must ... a crucial ground truth"): core/dc/typecheck.py
+  regenerates instructions from the unfolded term, replays them as a
+  fresh theorem, and compares the reconstructed proof term with ours up
+  to alpha, site numbering and prop spelling; every fixture test
+  unfolds through it and the CLI refuses an unfolded term the prover
+  rejects (`typecheck off` / FSP_TYPECHECK=0 for production). Every
+  unfolded statement of the lk fixtures replays, Peirce's classical
+  capture included. Binder names are freshened per unfolded copy, which
+  the replay required ("A symbol named h is already defined"). The lj
+  fixtures fail on term-side scaffolds: aida-lj-unfolding.
 Found: splitting the lambda off weakens the *grounded* label on
 negation-as-implication - self_attack's P[t] is UNDEC (was OUT when the
 edge was fused), because the ADF no longer sees that (P->false)[t] is

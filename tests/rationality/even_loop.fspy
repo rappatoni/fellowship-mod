@@ -42,6 +42,12 @@ end argument
 % both, which compile_document now compiles instead of refusing
 % (tests/test_debate_graph_integration.py): grounded all UNDEC, three
 % stable labellings (the refutations are presumptions, so "both stand" is one).
+% Under lj the term-side scaffolds unfolding builds are not LJ proof
+% terms (they throw to a second conclusion), so the Fellowship replay
+% that guards graph/label/evaluate refuses them.  Switched off here so
+% the graph and labels can still be shown; tests/test_unfold.py carries
+% the strict xfail (task aida-lj-unfolding).
+typecheck off
 graph Pdefault
 label Pdefault
 graph Qdefault

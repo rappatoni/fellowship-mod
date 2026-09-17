@@ -78,7 +78,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """
         stripped = command.strip().rstrip(".").strip()
         if stripped in ("lj", "lk"):
+            # Fellowship starts a new theory here; so does the document
+            # (the type-check switch is a session setting and survives).
+            typecheck = store.document.get("typecheck")
+            store.document.clear()
             store.document["logic"] = stripped
+            if typecheck is not None:
+                store.document["typecheck"] = typecheck
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -498,6 +504,16 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @property
     def document(self) -> DebateGraph:
         return store.document.setdefault("graph", DebateGraph())
+
+    @property
+    def typecheck_enabled(self) -> bool:
+        """Whether unfolded terms are replayed through Fellowship before
+        use (default on; FSP_TYPECHECK=0 or `typecheck off` disables)."""
+        return store.document.get("typecheck", os.getenv("FSP_TYPECHECK", "1") != "0")
+
+    @typecheck_enabled.setter
+    def typecheck_enabled(self, value: bool) -> None:
+        store.document["typecheck"] = bool(value)
 
     @property
     def logic(self) -> str:

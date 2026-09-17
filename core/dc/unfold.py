@@ -36,7 +36,7 @@ from itertools import count
 
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
-    Goal, Laog, Deleg, Geled, ID, DI,
+    Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
 )
 from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta
 
@@ -56,6 +56,7 @@ class Unfolder:
         self.classical = classical
         self._sites = count(1)
         self._alts = count(1)
+        self._used = set()
         self._by_target = {}
         for edge in graph.edges:
             if edge.role == "subargument":
@@ -175,41 +176,68 @@ class Unfolder:
         if not isinstance(root_lambda, Lamda):
             root_lambda = None
 
-        def walk(node, env):
+        # A binder name is kept the first time it appears in the unfolded
+        # term and suffixed on reuse: the same body may be unfolded several
+        # times, and Fellowship's replay (the type check) refuses a
+        # hypothesis introduced twice.  ``names`` maps the body's binder
+        # names to their names in this copy; references follow it.
+        def fresh(name):
+            if name == "_":
+                return name
+            candidate, n = name, 1
+            while candidate in self._used:
+                n += 1
+                candidate = f"{name}_{n}"
+            self._used.add(candidate)
+            return candidate
+
+        def walk(node, env, names):
             if isinstance(node, (Goal, Deleg)):
                 return self.statement((canonical_prop(node.prop), "term"), env, spine)
             if isinstance(node, (Laog, Geled)):
                 return self.statement((canonical_prop(node.prop), "context"), env, spine)
-            if isinstance(node, (ID, DI)):
-                return deepcopy(node)
+            if isinstance(node, ID):
+                return ID(names.get(("context", node.name), node.name), node.prop)
+            if isinstance(node, DI):
+                return DI(names.get(("term", node.name), node.name), node.prop)
             if isinstance(node, Lamda):
+                new = fresh(node.di.di.name)
                 scope = env if self.classical else {s: v for s, v in env.items() if s[1] == "term"}
-                inner = {**scope, (canonical_prop(node.di.prop), "term"): node.di.di.name}
-                body = Lamda(deepcopy(node.di), walk(node.term, inner))
+                inner = {**scope, (canonical_prop(node.di.prop), "term"): new}
+                hyp = Hyp(DI(new, node.di.di.prop), node.di.prop)
+                body = Lamda(hyp, walk(node.term, inner, {**names, ("term", node.di.di.name): new}))
                 body.prop = node.prop
                 return body
             if isinstance(node, Mu):
-                inner = {**env, (canonical_prop(node.prop), "context"): node.id.name}
-                return Mu(deepcopy(node.id), node.prop, walk(node.term, inner), walk(node.context, inner))
+                new = fresh(node.id.name)
+                inner = {**env, (canonical_prop(node.prop), "context"): new}
+                names2 = {**names, ("context", node.id.name): new}
+                return Mu(ID(new, node.id.prop), node.prop,
+                          walk(node.term, inner, names2), walk(node.context, inner, names2))
             if isinstance(node, Mutilde):
-                inner = {**env, (canonical_prop(node.prop), "term"): node.di.name}
-                return Mutilde(deepcopy(node.di), node.prop, walk(node.term, inner), walk(node.context, inner))
+                new = fresh(node.di.name)
+                inner = {**env, (canonical_prop(node.prop), "term"): new}
+                names2 = {**names, ("term", node.di.name): new}
+                return Mutilde(DI(new, node.di.prop), node.prop,
+                               walk(node.term, inner, names2), walk(node.context, inner, names2))
             if isinstance(node, Admal):
-                inner = {**env, (canonical_prop(node.id.prop), "context"): node.id.id.name}
-                out = Admal(deepcopy(node.id), walk(node.context, inner))
+                new = fresh(node.id.id.name)
+                inner = {**env, (canonical_prop(node.id.prop), "context"): new}
+                pyh = Pyh(ID(new, node.id.id.prop), node.id.prop)
+                out = Admal(pyh, walk(node.context, inner, {**names, ("context", node.id.id.name): new}))
                 out.prop = node.prop
                 return out
             if isinstance(node, Cons):
-                out = Cons(walk(node.term, env), walk(node.context, env))
+                out = Cons(walk(node.term, env, names), walk(node.context, env, names))
                 out.prop = node.prop
                 return out
             if isinstance(node, Sonc):
-                out = Sonc(walk(node.context, env), walk(node.term, env))
+                out = Sonc(walk(node.context, env, names), walk(node.term, env, names))
                 out.prop = node.prop
                 return out
             raise UnfoldError(f"Edge '{edge.name}': cannot unfold node {type(node).__name__}.")
 
-        return walk(edge.term, env)
+        return walk(edge.term, env, {})
 
 
 def unfold(graph: DebateGraph, issue, *, classical: bool = True) -> ProofTerm:

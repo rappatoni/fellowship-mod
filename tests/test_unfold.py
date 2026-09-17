@@ -31,6 +31,7 @@ from core.dc.debate_graph import (
     DebateGraph, Edge, Source, _match_scaffold,
 )
 from core.dc.unfold import unfold, Unfolder, contrary
+from core.dc.typecheck import typecheck, TypeCheckFailed
 from wrap.cli import setup_prover, execute_script
 
 K = canonical_prop
@@ -157,6 +158,9 @@ def prover():
     p.close()
 
 
+LJ_FIXTURES = {s for s in FIXTURES if "lj." in Path(s).read_text()}
+
+
 def load(prover, script):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -170,10 +174,33 @@ def load(prover, script):
     return doc, issue, sn, sk, classical
 
 
+def unfold_checked(prover, doc, statement, classical):
+    """Unfold and replay through Fellowship - the type oracle.  Under lj
+    a term-side scaffold is not an LJ term (aida-lj-unfolding); those
+    are the only failures tolerated, and only for lj fixtures."""
+    term = unfold(doc, statement, classical=classical)
+    try:
+        typecheck(prover, term, "check", doc.nodes[statement[0]], statement[1] == "context")
+    except TypeCheckFailed:
+        if classical:
+            raise
+        pytest.xfail("lj: term-side scaffolds are LK terms (aida-lj-unfolding)")
+    return term
+
+
+@pytest.mark.parametrize("script", list(FIXTURES))
+def test_unfolded_terms_typecheck(prover, script):
+    """Every statement of every fixture document unfolds to a term
+    Fellowship accepts and reconstructs (lj term-side cases xfail)."""
+    doc, issue, sn, sk, classical = load(prover, script)
+    for statement in sorted(set(doc.statements())):
+        unfold_checked(prover, doc, statement, classical)
+
+
 @pytest.mark.parametrize("script", list(FIXTURES))
 def test_unfolding_terminates_and_compiles(prover, script):
     doc, issue, sn, sk, classical = load(prover, script)
-    term = unfold(doc, issue, classical=classical)                   # T6
+    term = unfold_checked(prover, doc, issue, classical)             # T6, typed
     g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
     assert g.edges or g.defaults
 
@@ -183,10 +210,10 @@ def test_adequacy_restated(prover, script):
     """IN -> value, OUT -> not a value, for every issue of every fixture,
     with unfolding as the bridge (B4)."""
     doc, issue, sn, sk, classical = load(prover, script)
-    for statement in set(doc.statements()):
+    for statement in sorted(set(doc.statements())):
         if statement[1] == "context":
             continue                          # term-side issues suffice here
-        term = unfold(doc, statement, classical=classical)
+        term = unfold(doc, statement, classical=classical)   # typed in test_unfolded_terms_typecheck
         nf, cls, sigma, g = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk,
                                             mode="skeptical", semantics="grounded")
         label = sigma.get(statement)
@@ -199,7 +226,7 @@ def test_adequacy_restated(prover, script):
 def test_peirce_is_a_theorem(prover):
     doc, issue, sn, sk, classical = load(prover, "tests/peirces_law.fspy")
     assert not doc.is_acyclic()                                     # the document shows the loop
-    term = unfold(doc, issue, classical=classical)
+    term = unfold_checked(prover, doc, issue, classical)
     g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
     assert grounded_labels(g)[issue] == "IN"
     # nothing else is established
@@ -240,7 +267,7 @@ def test_cyclic_undercut_issue_is_its_presumption(prover):
     # A is IN by cR's presumption; unfolding puts that presumption at the
     # root, so the value is the presumption of A (gap 2 of D0 closed).
     doc, issue, sn, sk, classical = load(prover, "tests/rationality/cyclic_undercut.fspy")
-    term = unfold(doc, issue, classical=classical)
+    term = unfold_checked(prover, doc, issue, classical)
     nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="credulous")
     assert sigma[issue] == "IN" and cls == "value"
     assert _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "A")

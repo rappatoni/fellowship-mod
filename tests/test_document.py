@@ -10,6 +10,7 @@ from wrap.prover import ProverError
 from core.dc.argument import Argument
 from core.dc.debate_graph import canonical_prop, compile_debate, declaration_kinds
 from core.dc.unfold import unfold
+from core.dc.typecheck import typecheck
 from core.comp.adf_label import grounded_labels
 
 K = canonical_prop
@@ -25,6 +26,7 @@ def prover():
 def issue_graph(prover, name):
     arg = prover.get_argument(name)
     term = unfold(prover.document, prover.issue_of(arg), classical=prover.logic != "lj")
+    typecheck(prover, term, name, arg.conclusion, arg.is_anti)     # the type oracle
     return compile_debate(term, name, strict_names=prover.declarations.keys(),
                           strict_kinds=declaration_kinds(prover.declarations))
 

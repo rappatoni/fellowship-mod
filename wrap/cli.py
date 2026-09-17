@@ -300,6 +300,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         show = "show" in opts
                         dot_path = next((o for o in opts if o != "show"), None)
                         graph_argument_cmd(prover, parts[1], dot_path, show=show)
+                    elif command in ("typecheck on", "typecheck off"):
+                        prover.typecheck_enabled = command.endswith("on")
+                        logger.info("Type checking of unfolded terms: %s", "on" if prover.typecheck_enabled else "off")
                     elif command.startswith("label "):
                         _dispatch_label(prover, command)
                     elif command.startswith("evaluate "):
@@ -781,6 +784,9 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 show = "show" in opts
                 dot_path = next((o for o in opts if o != "show"), None)
                 graph_argument_cmd(prover, parts[1], dot_path, show=show)
+            elif command in ("typecheck on", "typecheck off"):
+                prover.typecheck_enabled = command.endswith("on")
+                logger.info("Type checking of unfolded terms: %s", "on" if prover.typecheck_enabled else "off")
             elif command.startswith("label "):
                 _dispatch_label(prover, command)
             elif command.startswith("evaluate "):
@@ -1465,6 +1471,17 @@ def _issue_term(prover: ProverWrapper, name: str):
         print(f"graph: refused: {e}")
         logger.warning("Unfolding refused for '%s': %s", name, e)
         return arg, issue, None
+    if prover.typecheck_enabled:
+        # The type oracle: the unfolded term must replay through Fellowship
+        # (core/dc/typecheck.py).  `typecheck off` skips it.
+        from core.dc.typecheck import typecheck, TypeCheckFailed
+        try:
+            typecheck(prover, term, name, document.nodes.get(issue[0], arg.conclusion),
+                      issue[1] == "context")
+        except TypeCheckFailed as e:
+            print(f"graph: refused: {e}")
+            logger.warning("Type check failed for '%s': %s", name, e)
+            return arg, issue, None
     return arg, issue, term
 
 

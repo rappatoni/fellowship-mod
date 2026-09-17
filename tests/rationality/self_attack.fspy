@@ -26,6 +26,12 @@ end argument
 % The evaluation is a value polynomial in the presumption: the defeat
 % comes from the contrariness guard, not from a scaffold, so nothing in
 % the term reflects it (recorded under aida-cyclic-fragment).
+% Under lj the term-side scaffolds unfolding builds are not LJ proof
+% terms (they throw to a second conclusion), so the Fellowship replay
+% that guards graph/label/evaluate refuses them.  Switched off here so
+% the graph and labels can still be shown; tests/test_unfold.py carries
+% the strict xfail (task aida-lj-unfolding).
+typecheck off
 graph SelfAttack
 label SelfAttack preferred
 evaluate SelfAttack credulous
