@@ -54,9 +54,11 @@ def carg(a_site, b_site):
 
 
 def t_att(prop, orig, scion_ctx):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx))
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 # --- Lesson 1 ---------------------------------------------------------

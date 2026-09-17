@@ -114,15 +114,19 @@ def qarg_body():
 
 
 def t_sup(prop, orig, scion):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, scion, ID("alt", prop)))
+    # paper T-SUP: mu alt.< orig || mu'b.< mu_.<b||alt> || mu'_.<scion||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), ID("alt", prop)),
+                      Mutilde(DI("_", prop), prop, scion, ID("alt", prop))))
 
 
-def t_att(prop, orig, scion_ctx_with_alt):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx_with_alt))
+def t_att(prop, orig, scion_ctx):
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 STRICT = {"pRule", "qRule"}
@@ -205,7 +209,7 @@ class TestScaffoldDecomposition:
     def test_term_attack(self):
         # Attacker against Q: mu'qAtt:Q.< qAtt:Q || alt:Q > with the open
         # Laog tail rerouted to alt (as Argument.attack produces).
-        scion_ctx = Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), ID("alt", "Q"))
+        scion_ctx = Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), Laog("c", "Q"))
         body = parg_body(t_att("Q", Goal("1", "Q"), scion_ctx))
         g = compile_debate(body, "datt", strict_names=STRICT)
         by_role = {e.role: e for e in g.edges}

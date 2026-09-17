@@ -33,14 +33,20 @@ def parg(site):
                                  Cons(site, ID("rule", "P"))))
 
 
-def t_sup(p, o, s):
-    return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
-              Mutilde(DI("_", p), p, s, ID("alt", p)))
+def t_sup(prop, orig, scion):
+    # paper T-SUP: mu alt.< orig || mu'b.< mu_.<b||alt> || mu'_.<scion||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), ID("alt", prop)),
+                      Mutilde(DI("_", prop), prop, scion, ID("alt", prop))))
 
 
-def t_att(p, o, sc):
-    return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
-              Mutilde(DI("_", p), p, Goal("g", p), sc))
+def t_att(prop, orig, scion_ctx):
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 def contested():

@@ -1296,6 +1296,65 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
 
+*** DONE Adopt the paper's support and attack shapes, mirrored, with the site exposure
+CLOSED: [2026-09-17 Wed]
+:PROPERTIES:
+:ID:             aida-paper-attack-shape
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        Scaffolds are the COMMA 2026 paper's support and attack shapes (Definitions Support and Attack) with the context side the exact mirror, built on the exposure t -> mu alpha:A.< t || [A:] > (E -> mu'x:A.< [:A] || E >) with the slot filled by mu'beta.<mu_.<beta||alpha> || mu'_.<t2||alpha>> (support) or mu'beta.<mu_.<beta||e2> || mu'_.<beta||alpha>> (attack); the unfolder emits them, the compiler matches them, the evaluator resolves both critical pairs of a scaffold at once, a defeated site holds the clash mu alpha.< t || E >, and classify_nf reports a term containing an uncatchable clash as an exception; the site (an obligation unless presumed) is the innermost original everywhere, the root included, and supporters/attackers nest in registration order.
+:VERIFY:         Fellowship replays all four shapes on both sides with an argument or a bare site as original; every statement of every fixture document unfolds to a term Fellowship accepts (tests/test_unfold.py::test_unfolded_terms_typecheck); on the term side a uniform cbv normalisation of an attack yields the clash and of a support the original, cbn the reverse; contested.fspy's issue evaluates OPEN skeptically and VALUE credulously, Peirce's law to the classical proof term, the even loop symmetrically; the legacy M3 shapes still compile for terms the verbs build; the suite passes.
+:END:
+
+Decided by the author 2026-09-17 after the paper reading (findings in
+the session): the implemented M3 shapes were the paper's first
+commented-out attack variant with the duplicated original replaced by a
+fresh obligation - an artifact of implementing attack as
+theta-expansion (the enthymemes paper's bureaucratic *redex* form
+mu alpha.<mu_.<t||alpha> || [A:]>) plus grafting - with the attack
+wings swapped relative to the paper. Consequences the author asked for:
+the paper's shapes, full CBN/CBV symmetry across sides ("keep the
+symmetry for support"), the simpler exposure mu alpha.< t || [A:] >,
+registration order for nesting, the site as the original at the root.
+
+Evidence: core/dc/debate_graph.py scaffold catalogue and
+_match_paper_scaffold (the M3 matcher kept as _match_legacy_scaffold,
+Match.legacy); core/comp/evaluate.py _keep_orig / _keep_scion_support /
+_keep_attack_wing resolve inner and outer pair together (no scaffold
+residue reaches the base strategy - under cbv an aborting original
+would otherwise override a winning supporter); core/dc/unfold.py emits
+the shapes and treats the root as a site; core/comp/oracle_terms.py
+contains_uncatchable_clash (an affine mu/mu' none of whose free
+variables is bound by an enclosing mu/mu'; lambda- and Admal-bound
+variables and declared names do not catch; an affine mu of type false
+- the negation introduction - is exempt). Fellowship accepted all ten
+probe shapes (term/context, argument/bare-site originals); every
+fixture statement replays; verdicts: contested P skeptical OPEN /
+credulous VALUE, Q skeptical EXCEPTION; two_witnesses P VALUE both;
+self_attack P OPEN both; cyclic_undercut A VALUE (the presumption);
+even_loop symmetric (P, Q: skeptical OPEN, credulous VALUE); Peirce
+VALUE, the classical proof term. Test helpers t_sup/t_att in seven
+files build the paper shapes; challenges are open refutation sites,
+not rerouted ports; the V3 square substitutes mu_.< ?1 || E > (the
+site's own obligation facing E). Lessons 6-8 rewritten; the modes are
+uniform strategies on each side (lesson 7). The theta-expander's
+selection role is gone by the option-1 decision and its shape role is
+the exposure the unfolder performs; ThetaExpander itself stays with
+the legacy verbs. Suite 1029 passed, 2 skipped, 3 xfailed, 2 xpassed.
+
+Open, recorded: paper2's obligation-eta-long form is phrased via the
+redex exposure and would need restating for the simpler one (author's
+manuscript); the COMMA paper's own context-side support is not the
+mirror of its term-side support, the implementation mirrors (AI note
+for the author, not applied to the manuscript).
+
 *** BACKLOG Design: propagation of an abort through axioms and moxias
 :PROPERTIES:
 :ID:             aida-abort-propagation
@@ -1311,6 +1370,13 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
 :OUTCOME:        It is decided, with a soundness argument recorded, whether and how an affine throw sitting inside an elimination spine (under a Cons whose head is an axiom or moxia that cannot be further decomposed) propagates to the root, so that a defeated debate's normal form is itself an exception; or, if propagation is rejected, the adequacy statement is fixed at OUT-implies-not-a-value and classify_nf is given a spine-aware notion of "aborted".
 :VERIFY:         A written note in call-by-onus.org states the additional reduction rules (or the decision not to add them) and their soundness argument; if rules are added, the in-attacker case of tests/test_evaluate.py asserts class exception and subject reduction is checked by replaying the normal form through Fellowship; if not, classify_nf's spine-aware definition is tested on the defeated fixture.
 :END:
+
+Note 2026-09-17 (aida-paper-attack-shape): a defeated site now holds
+the real clash mu alpha.< t || E >, and classify_nf finds an
+uncatchable clash wherever it sits, so a lost debate reports as an
+exception without propagation. What this task still asks is whether
+*reduction* should carry the abort to the root; the verdict no longer
+depends on it.
 
 Design issue, not a bug (author, 2026-09-16). Once the abort term sits
 at a defeated site (=aida-fragment-verification-residues=), a defeated
@@ -1470,7 +1536,8 @@ design, and now the whole of this task's residue: the reducer itself
 core/comp/legacy_shape.py, which go together when graph-first unfolding
 (aida-graph-first) supplies the normal forms.
 
-*** BACKLOG Make presumption ports capturable like obligation ports
+*** DROPPED Make presumption ports capturable like obligation ports
+CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
 :ID:             aida-attack-geled-reroute
 :AREA:           phd
@@ -1508,6 +1575,15 @@ into variables, so a presumption stays a Geled leaf and a source; once
 presumptions are rerouted the same way they would be absorbed too -
 the wiring would swallow the presumption that the labelling currently
 sees. Decide whether that is wanted before implementing.
+
+Dropped 2026-09-17 with aida-paper-attack-shape: the paper's attack
+shape does not reroute the attacker's port to the catch at all - the
+attacker keeps its own sites, and a challenge with an open refutation
+site is simply an attacker whose source is an obligation, discarded by
+the labelling. The asymmetry existed only in the terms the legacy verbs
+graft. Unfolding never captures a presumption (a default is not a
+demand a hypothesis could meet), which is the same rule from the other
+side.
 
 Observed 2026-08-31 while building tests/rationality/contested.fspy: a
 challenge ending in a Laog gets its tail rerouted to alt, a by-default

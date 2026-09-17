@@ -275,6 +275,11 @@ one-line message.
     grounded labelling, resolved skeptically); skeptical against the
     intersection of all of them; the base strategy resolves only
     critical pairs that labelling leaves open
+  - scaffolds are the COMMA 2026 paper's support and attack shapes (the
+    context side mirrored), so on the proponent's side credulous is
+    call-by-name and skeptical call-by-value; a defeated site holds the
+    clash `mu alpha.< t || E >`, the paper's abort, and a normal form
+    containing an uncatchable clash is an `EXCEPTION`
 
 ### Debate commands
 

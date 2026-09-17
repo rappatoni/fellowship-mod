@@ -6,12 +6,20 @@ The pipeline is the corrected Layer-4 picture: the debate term is compiled
 the witness labelling sigma resolving exactly the critical pairs that the
 support/attack scaffolds are.
 
-A scaffold  mu alt:A.< mu _:A.<ORIG || alt> || mu'_:A.<... SCION ...> >
-(mirrored on the context side) holds the critical pair
-< Mu(affine) || Mutilde(affine) >:
+A scaffold is the exposure  mu alpha:A.< t || [A:] >  with the slot
+filled by an alternative between two contexts (COMMA 2026, Definitions
+Support and Attack; mirrored on the context side):
 
-- (mu<) discards the scion wing and keeps ORIG - the CBV choice;
-- (>mu) discards the ORIG wing and keeps the scion - the CBN choice.
+    support:  mu alpha.< t || mu'beta.< mu _.<beta||alpha> || mu'_.<t2||alpha> > >
+    attack:   mu alpha.< t || mu'beta.< mu _.<beta||e2>    || mu'_.<beta||alpha> > >
+
+The inner command is the critical pair < Mu(affine) || Mutilde(affine) >:
+on the term side (mu<) keeps the original at a support and defeats it at
+an attack, (>mu) the reverse - credulous is uniformly CBN there and
+skeptical uniformly CBV; the context side is the mirror.  The outer pair
+< t || mu'beta.c > is resolved together with the inner one (beta := t),
+so no scaffold residue reaches the base strategy.  The legacy M3 shapes
+the term-level verbs still build are recognised too (debate_graph.py).
 
 ``resolve_scaffolds`` applies the choice sigma dictates at every scaffold
 (the discarded wing's binder is affine by construction - the M8 side
@@ -60,15 +68,13 @@ undecided:
     supporter UNDEC         -> credulous: scion  attacker UNDEC-> credulous: ORIG
                                skeptical: ORIG                    skeptical: attack wing
 
-What a defeated site holds: when an attacker wins, the kept attack wing
-is mu b.< ?g:A || ATTACKER > with b unused - the winning refutation
-facing the site's own indeterminate under an affine binder.  That is
-the correct term, not a limitation (see debate-graph-spec.org, Semantics
-subsection, corrected 2026-09-16): the site is not instantiated, and a
-defeated presumption has no value to put in the slot.  Consequently the
-adequacy claim on the OUT side is "not a value"; "a closed exception at
-the root" would need the throw to propagate through axiom-headed spines
-(task aida-abort-propagation), which the standard rules do not do.
+What a defeated site holds: mu alpha.< t || e2 > - the original facing
+the winning refutation under an affine binder, the paper's abort
+("uncatchable exception").  When the original was a bare obligation this
+is the clash < ?g || e2 > the legacy shapes always left.  classify_nf
+reports a term containing an uncatchable clash as an exception; a clash
+nested under an axiom head is not propagated by the standard rules
+(task aida-abort-propagation), the classifier sees it anyway.
 """
 
 from copy import deepcopy
@@ -113,19 +119,10 @@ def _wing_choice(role: str, label: str, mode: str) -> str:
     raise EvaluationRefused(f"Unknown scaffold role {role!r}")
 
 
-def _keep_wing(node, wing, alt):
-    """(mu<) or (>mu) discarding the other wing, then eta if possible.
-
-    The kept wing is  mu alt.< WING || alt >  (mirrored on the context
-    side).  When ``alt`` does not occur in WING the binder is eta-reduced
-    away; when it does - the wing *captured* the catch variable, the
-    term-level shadow of a derivation cycle - the binder stays, since the
-    cyclic fragment (aida-cyclic-fragment) follows sigma's choice like any
-    other and no longer refuses.  Which wing is kept is sigma's decision;
-    a caught wing is discarded exactly when sigma says so.
-    """
-    prop = node.prop
-    if isinstance(node, Mu):
+def _eta(node_is_term, wing, alt, prop):
+    """The kept wing with the scaffold's outer binder, eta-reduced away
+    when the wing does not use it (a wing that captured alt keeps it)."""
+    if node_is_term:
         if not _occurs(wing, ID, alt):
             return deepcopy(wing)
         return Mu(ID(alt, prop), prop, deepcopy(wing), ID(alt, prop))
@@ -135,28 +132,45 @@ def _keep_wing(node, wing, alt):
 
 
 def _keep_orig(node, orig, alt):
-    return _keep_wing(node, orig, alt)
+    """The original wins.  Paper shapes: inner pair resolved towards
+    <beta||alpha> (mu< at a support, >mu at an attack), then >mu at the
+    outer pair binds beta := original: mu alpha.<orig || alpha> -> orig.
+    Legacy shapes: (mu<) then eta."""
+    return _eta(isinstance(node, Mu), orig, alt, node.prop)
 
 
 def _keep_scion_support(node, scion, alt):
-    return _keep_wing(node, scion, alt)
+    """The supporter wins: inner pair to <t2||alpha>, outer pair discards
+    the original: mu alpha.<t2 || alpha> -> t2."""
+    return _eta(isinstance(node, Mu), scion, alt, node.prop)
 
 
-def _keep_attack_wing(node):
-    """(>mu) only: the attack wing catches alt, so the binder stays.
+def _keep_attack_wing(node, match):
+    """The attacker wins: the site holds the real clash.
 
-    For a term-side scaffold mu alt.<W1 || mu'_.<g || CTX>> this yields
-    mu alt.< g || CTX >; dually for the context side.
+    Paper shapes: inner pair to <beta||e2> (term side) / <t2||beta>
+    (context side), outer pair binds beta := original, leaving
+    mu alpha.< orig || e2 >  /  mu'x.< t2 || orig >  - the paper's abort,
+    an affine binder over a closed contradiction when the original does
+    not use alpha.  Legacy M3 shapes: (>mu) only, leaving
+    mu alt.< ?g || SCION_CTX > with the scion still catching alt.
     """
     result = deepcopy(node)
+    if match.legacy:
+        if isinstance(node, Mu):
+            wing = node.context  # Mutilde(_, A, goal, scion_ctx)
+        else:
+            wing = node.term     # Mu(_, A, scion_t, laog)
+        result.term = deepcopy(wing.term)
+        result.context = deepcopy(wing.context)
+        return result
+    orig, scion = match[3], match[4]
     if isinstance(node, Mu):
-        wing = node.context  # Mutilde(_, A, goal, scion_ctx)
-        result.term = deepcopy(wing.term)
-        result.context = deepcopy(wing.context)
+        result.term = deepcopy(orig)
+        result.context = deepcopy(scion)
     else:
-        wing = node.term  # Mu(_, A, scion_t, laog)
-        result.term = deepcopy(wing.term)
-        result.context = deepcopy(wing.context)
+        result.term = deepcopy(scion)
+        result.context = deepcopy(orig)
     return result
 
 
@@ -227,7 +241,7 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 if trace is not None:
                     trace.append(((canonical_prop(prop), site_side), "absorbed"))
                 kept = (_keep_scion_support(node, scion_raw, alt) if role == "supporter"
-                        else _keep_attack_wing(node))
+                        else _keep_attack_wing(node, match))
                 return walk(kept, env)
             statement = (closed[0].target_key, closed[0].target_side)
             if labels.get(statement) is None:
@@ -243,7 +257,7 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 return walk(_keep_orig(node, orig, alt), env)
             if role == "supporter":
                 return walk(_keep_scion_support(node, scion_raw, alt), env)
-            return walk(_keep_attack_wing(node), env)
+            return walk(_keep_attack_wing(node, match), env)
         inner = {**env, **binder_statements(node)}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)

@@ -11,13 +11,12 @@
 % Grounded: A IN (by the presumption inside cR), everything else UNDEC;
 % three preferred labellings.
 %
-% Note the adequacy gap this shows (recorded under aida-cyclic-fragment):
-% A[t] is IN in every labelling because cR PRESUMES A, but that
-% presumption sits inside the attacker, not on the composed term's own
-% spine; argA's derivation of A goes through Q, which the witness
-% defeats, so `evaluate d credulous` is OPEN although sigma says A is
-% IN.  Only unfolding a term from the graph (aida-graph-first) can
-% produce the witness term the label promises.
+% A[t] is IN in every labelling because cR PRESUMES A.  Since Phase B
+% the debate term is unfolded from the document graph, so that
+% presumption is the issue's own site and `evaluate d credulous` is the
+% value !A (before Phase B the composed term had it buried inside the
+% attacker and the evaluation was OPEN - the gap that motivated
+% graph-first).
 lk.
 declare A,B,Q,R:bool.
 declare qa : (Q->A).

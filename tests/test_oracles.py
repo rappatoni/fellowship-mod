@@ -430,12 +430,14 @@ class TestCongruenceOrderIrrelevant:
         def parg(site):
             return eta("pArg", "P", Mu(ID("rule", "P"), "P", DI("pRule", "Q->P"),
                                          Cons(site, ID("rule", "P"))))
-        def t_sup(p, o, s):
-            return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
-                      Mutilde(DI("_", p), p, s, ID("alt", p)))
-        def t_att(p, o, sc):
-            return Mu(ID("alt", p), p, Mu(ID("_", p), p, o, ID("alt", p)),
-                      Mutilde(DI("_", p), p, Goal("g", p), sc))
+        def t_sup(p, o, s):   # paper T-SUP
+            return Mu(ID("alt", p), p, o,
+                      Mutilde(DI("b", p), p, Mu(ID("_", p), p, DI("b", p), ID("alt", p)),
+                              Mutilde(DI("_", p), p, s, ID("alt", p))))
+        def t_att(p, o, sc):  # paper T-ATT
+            return Mu(ID("alt", p), p, o,
+                      Mutilde(DI("b", p), p, Mu(ID("_", p), p, DI("b", p), sc),
+                              Mutilde(DI("_", p), p, DI("b", p), ID("alt", p))))
         chal = Mutilde(DI("x", "Q"), "Q", DI("x", "Q"), Geled("d", "Q"))
         nested_pair = Mu(ID("root", "A"), "A",
                          Mu(ID("a", "A"), "A", DI("t1", "A"), ID("beta", "A")),

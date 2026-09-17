@@ -8,6 +8,14 @@ an attack scaffold, and expand each edge's body with its own sites
 unfolded the same way.  Rational closure is reachability: whatever the
 graph connects to the issue ends up in the term.
 
+Order is registration order (author, 2026-09-17): the first-registered
+supporter is innermost, attackers are outside all supporters (an attack
+contests the statement after all its alternatives), and the site itself
+- an obligation unless the statement is presumed somewhere in the
+document - is the innermost original everywhere, the root included.
+The scaffolds are the paper's shapes (COMMA 2026), see the catalogue in
+core/dc/debate_graph.py.
+
 Cycles are broken by capture.  While expanding, the binders of the
 enclosing edge bodies are in scope - a lambda's hypothesis, a mu's
 continuation - each standing for a statement; an OBLIGATION site for a
@@ -92,40 +100,45 @@ class Unfolder:
 
     # -- scaffolds ----------------------------------------------------------
 
+    # The paper's shapes (debate_graph.py, scaffold catalogue): the
+    # exposure  t -> mu alpha.< t || [A:] >  with the slot filled.
     def _support(self, statement, orig, scion, alt):
         key, side = statement
         prop = self._prop(key)
+        beta = f"b{next(self._sites)}"
         if side == "term":
-            return Mu(ID(alt, prop), prop,
-                      Mu(ID("_", prop), prop, orig, ID(alt, prop)),
-                      Mutilde(DI("_", prop), prop, scion, ID(alt, prop)))
+            return Mu(ID(alt, prop), prop, orig,
+                      Mutilde(DI(beta, prop), prop,
+                              Mu(ID("_", prop), prop, DI(beta, prop), ID(alt, prop)),
+                              Mutilde(DI("_", prop), prop, scion, ID(alt, prop))))
         return Mutilde(DI(alt, prop), prop,
-                       Mu(ID("_", prop), prop, DI(alt, prop), scion),
-                       Mutilde(DI("_", prop), prop, DI(alt, prop), orig))
+                       Mu(ID(beta, prop), prop,
+                          Mu(ID("_", prop), prop, DI(alt, prop), scion),
+                          Mutilde(DI("_", prop), prop, DI(alt, prop), ID(beta, prop))),
+                       orig)
 
     def _attack(self, statement, orig, scion, alt):
         key, side = statement
         prop = self._prop(key)
-        stolen = f"g{next(self._sites)}"
+        beta = f"b{next(self._sites)}"
         if side == "term":
-            return Mu(ID(alt, prop), prop,
-                      Mu(ID("_", prop), prop, orig, ID(alt, prop)),
-                      Mutilde(DI("_", prop), prop, Goal(stolen, prop), scion))
+            return Mu(ID(alt, prop), prop, orig,
+                      Mutilde(DI(beta, prop), prop,
+                              Mu(ID("_", prop), prop, DI(beta, prop), scion),
+                              Mutilde(DI("_", prop), prop, DI(beta, prop), ID(alt, prop))))
         return Mutilde(DI(alt, prop), prop,
-                       Mu(ID("_", prop), prop, scion, Laog(stolen, prop)),
-                       Mutilde(DI("_", prop), prop, DI(alt, prop), orig))
+                       Mu(ID(beta, prop), prop,
+                          Mu(ID("_", prop), prop, DI(alt, prop), ID(beta, prop)),
+                          Mutilde(DI("_", prop), prop, scion, ID(beta, prop))),
+                       orig)
 
     # -- unfolding ----------------------------------------------------------
 
     def unfold(self, issue):
-        """The debate term for ``issue``.  At the root a lone derivation is
-        the term itself rather than a scaffold around an open site."""
-        edges = self._by_target.get(issue, [])
-        if edges and not self.graph.defaults.get(issue):
-            base = self._edge(edges[0], {}, frozenset({issue}))
-            term = self._wrap(issue, base, edges[1:], {}, frozenset({issue}))
-        else:
-            term = self.statement(issue, {}, frozenset())
+        """The debate term for ``issue``: the issue is a statement like any
+        other - its own site (an obligation unless presumed somewhere),
+        wrapped by its supporters and attackers in registration order."""
+        term = self.statement(issue, {}, frozenset())
         if isinstance(term, (Goal, Laog, Deleg, Geled)):
             # a bare site: give it the eta wrapper every argument has, so
             # the term-first pipeline can read the issue off the root

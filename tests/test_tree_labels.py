@@ -12,7 +12,7 @@ import re
 
 import pytest
 
-from core.ac.ast import Mu, Mutilde, Cons, Goal, Deleg, ID, DI
+from core.ac.ast import Mu, Mutilde, Cons, Goal, Laog, Deleg, ID, DI
 from core.comp.adf_label import grounded_labels
 from core.dc.debate_graph import compile_debate, canonical_prop
 from pres.tree import render_acceptance_tree_dot, AcceptanceTreeRenderer, LABEL_FILL
@@ -35,15 +35,19 @@ def qarg(site):
 
 
 def t_sup(prop, orig, scion):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, scion, ID("alt", prop)))
+    # paper T-SUP: mu alt.< orig || mu'b.< mu_.<b||alt> || mu'_.<scion||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), ID("alt", prop)),
+                      Mutilde(DI("_", prop), prop, scion, ID("alt", prop))))
 
 
 def t_att(prop, orig, scion_ctx):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx))
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 STRICT = {"pRule", "qRule"}
@@ -58,7 +62,7 @@ CORPUS = [
      lambda: parg(t_sup("Q", Goal("1", "Q"), qarg(Goal("2", "R->false")))), "P", "OUT"),
     ("attacked-site",
      lambda: parg(t_att("Q", Goal("1", "Q"),
-                        Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), ID("alt", "Q")))),
+                        Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), Laog("c", "Q")))),
      "P", "OUT"),
 ]
 

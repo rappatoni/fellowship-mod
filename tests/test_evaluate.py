@@ -10,7 +10,7 @@ same minimal normalizer.
 
 import pytest
 
-from core.ac.ast import Mu, Mutilde, Cons, Goal, Deleg, Geled, ID, DI
+from core.ac.ast import Mu, Mutilde, Cons, Goal, Laog, Deleg, Geled, ID, DI
 from core.comp.evaluate import evaluate_debate, EvaluationRefused
 from core.comp.oracle_terms import (
     instantiate_sites, normalize_strong, alpha_equal, classify_nf,
@@ -35,15 +35,19 @@ def qarg(site):
 
 
 def t_sup(prop, orig, scion):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, scion, ID("alt", prop)))
+    # paper T-SUP: mu alt.< orig || mu'b.< mu_.<b||alt> || mu'_.<scion||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), ID("alt", prop)),
+                      Mutilde(DI("_", prop), prop, scion, ID("alt", prop))))
 
 
 def t_att(prop, orig, scion_ctx):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx))
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 STRICT = {"pRule", "qRule"}
@@ -98,8 +102,10 @@ class TestSupport:
 
 class TestAttack:
     def trivial_challenge(self):
-        # mu'qAtt:Q.< qAtt || alt > - the rerouted bare challenge, OUT.
-        return Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), ID("alt", "Q"))
+        # mu'qAtt:Q.< qAtt || c:Q? > - a bare challenge: an open refutation
+        # site, nothing behind it; OUT.  (The paper's attack shape does not
+        # reroute the challenger's port to the catch.)
+        return Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), Laog("c", "Q"))
 
     def grounded_challenge(self):
         # mu'x:Q.< x || ?d:Q gel > - a challenge resting on a context-side

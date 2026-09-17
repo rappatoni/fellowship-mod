@@ -225,9 +225,11 @@ def parg(site):
 
 
 def t_att(prop, orig, scion_ctx):
-    return Mu(ID("alt", prop), prop,
-              Mu(ID("_", prop), prop, orig, ID("alt", prop)),
-              Mutilde(DI("_", prop), prop, Goal("g2", prop), scion_ctx))
+    # paper T-ATT: mu alt.< orig || mu'b.< mu_.<b||scion> || mu'_.<b||alt> > >
+    return Mu(ID("alt", prop), prop, orig,
+              Mutilde(DI("b", prop), prop,
+                      Mu(ID("_", prop), prop, DI("b", prop), scion_ctx),
+                      Mutilde(DI("_", prop), prop, DI("b", prop), ID("alt", prop))))
 
 
 def grounded_challenge():
@@ -241,9 +243,9 @@ class TestV3OutRowSquare:
         nf, cls, sigma, _ = evaluate_debate(body, "d", strict_names={"pRule"}, mode=mode)
         assert sigma[(Q, "context")] == "IN" and sigma[(P, "term")] == "OUT"
         assert cls != "value"
-        # nf = mu pArg:P.< pRule || SITE * pArg >: the site of Q holds an
-        # affine mu whose term is an open site and whose context is the
-        # winning refutation.
+        # nf = mu pArg:P.< pRule || SITE * pArg >: the site of Q holds the
+        # clash mu alt.< original || E > under an affine binder - here the
+        # original is the site's own obligation, E the winning refutation.
         assert isinstance(nf.context, Cons)
         site = nf.context.term
         assert isinstance(site, Mu) and site.prop == "Q"
@@ -255,12 +257,13 @@ class TestV3OutRowSquare:
 
     @pytest.mark.parametrize("mode", ["skeptical", "credulous"])
     def test_square_commutes_on_the_out_row(self, mode):
-        """ev_m by hand: substitute the clash mu _:Q.<?g2 || E> for the
-        defeated site of the ORIGINAL (unattacked) term and normalise; the
-        evaluator's normal form is alpha-equal to it."""
+        """ev_m by hand: substitute the clash mu _:Q.< t || E > - the site's
+        original t facing the winning refutation E - for the defeated site
+        of the ORIGINAL (unattacked) term and normalise; the evaluator's
+        normal form is alpha-equal to it."""
         body = parg(t_att("Q", Goal("1", "Q"), grounded_challenge()))
         nf, _, _, _ = evaluate_debate(body, "d", strict_names={"pRule"}, mode=mode)
-        clash = Mu(ID("_", "Q"), "Q", Goal("g2", "Q"), grounded_challenge())
+        clash = Mu(ID("_", "Q"), "Q", Goal("1", "Q"), grounded_challenge())
         by_hand = normalize_strong(instantiate_sites(parg(Goal("1", "Q")), {"1": clash}))
         assert alpha_equal(nf, by_hand)
         assert classify_nf(by_hand) == classify_nf(nf) == "open"

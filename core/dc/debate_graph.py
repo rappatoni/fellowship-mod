@@ -449,44 +449,132 @@ class DebateGraph:
         return "\n".join(lines)
 
 # ---------------------------------------------------------------------------
-# M3: scaffold shapes
+# Scaffold shapes (COMMA 2026 paper, Definitions Support and Attack; the
+# context side mirrored so that CBN/CBV are dual across sides - author,
+# 2026-09-17).  A = the issue proposition, alpha/x = the site's own
+# continuation/value binder, beta = the binder for the original, "_" = an
+# affine binder.  Every scaffold is the exposure  t -> mu alpha:A.< t || [A:] >
+# (context side: E -> mu'x:A.< [:A] || E >) with the slot filled:
 #
-# The four support/attack shapes, locked against terms produced by
-# Argument.support / Argument.attack (2026-08-31; see the M3 log in
-# propositional-fragment-plan.org).  A = the issue proposition, alt = the
-# catch binder, "_" = an affine binder:
+#   T-SUP:  mu alpha:A.< t || mu'beta:A.< mu _:A.<beta || alpha> || mu'_:A.<t2 || alpha> > >
+#   T-ATT:  mu alpha:A.< t || mu'beta:A.< mu _:A.<beta || e2>    || mu'_:A.<beta || alpha> > >
+#   C-SUP:  mu'x:A.< mu beta:A.< mu _:A.<x || e2>    || mu'_:A.<x || beta> > || e >
+#   C-ATT:  mu'x:A.< mu beta:A.< mu _:A.<x || beta>  || mu'_:A.<t2 || beta> > || e >
 #
-#   T-SUP:  mu alt:A.< mu _:A.<ORIG_T || alt>  ||  mu'_:A.<SCION_T || alt> >
-#   T-ATT:  mu alt:A.< mu _:A.<ORIG_T || alt>  ||  mu'_:A.<?g:A || SCION_CTX> >
-#           where SCION_CTX contains alt free (the scion's own open context
-#           tail was rerouted to the catch)
-#   C-SUP:  mu'alt:A.< mu _:A.<alt || SCION_CTX> || mu'_:A.<alt || ORIG_CTX> >
-#   C-ATT:  mu'alt:A.< mu _:A.<SCION_T || ?l:A>  || mu'_:A.<alt || ORIG_CTX> >
-#           where SCION_T contains alt free (the scion's open term site was
-#           rerouted to the catch)
+# Polarity (inner critical pair): term side, mu< keeps the original at a
+# support and defeats it at an attack, >mu the reverse - so on the term
+# side credulous is uniformly CBN and skeptical uniformly CBV; the context
+# side is the mirror.  A defeated site holds the real clash
+# mu alpha.< t || e2 >  /  mu'x.< t2 || e >  under an affine binder: the
+# paper's abort.
 #
-# Reconstruction: ORIG goes back in the host's place; attack scions get
-# their rerouted alt occurrence replaced by a fresh open site of A.
+# LEGACY (M3, 2026-08-31): the shapes Argument.support / Argument.attack
+# still build by theta-expansion and grafting, recognised only for terms
+# the legacy verbs produced; the attack scion's open port is rerouted to
+# the catch and needs _restore_scion:
+#
+#   M3 T-SUP:  mu alt:A.< mu _:A.<ORIG || alt>  ||  mu'_:A.<SCION || alt> >
+#   M3 T-ATT:  mu alt:A.< mu _:A.<ORIG || alt>  ||  mu'_:A.<?g:A || SCION_CTX> >
+#   M3 C-SUP:  mu'alt:A.< mu _:A.<alt || SCION_CTX> || mu'_:A.<alt || ORIG_CTX> >
+#   M3 C-ATT:  mu'alt:A.< mu _:A.<SCION_T || ?l:A>  || mu'_:A.<alt || ORIG_CTX> >
 # ---------------------------------------------------------------------------
 
 def _is_affine_binder(name: str) -> bool:
     return name == "_"
 
 
+class Match(tuple):
+    """A matched scaffold: the 7-tuple (role, site_side, prop, orig, scion,
+    alt, scion_kind), with ``legacy`` True for an M3 shape (whose attack
+    scion carries the alt reroute and needs _restore_scion)."""
+
+    def __new__(cls, role, site_side, prop, orig, scion, alt, scion_kind):
+        return super().__new__(cls, (role, site_side, prop, orig, scion, alt, scion_kind))
+
+    legacy = False
+
+
+def _tag(m, legacy):
+    m.legacy = legacy
+    return m
+
+
+def _affine_mu(n, prop):
+    return isinstance(n, Mu) and _is_affine_binder(n.id.name) and n.prop == prop
+
+
+def _affine_mutilde(n, prop):
+    return isinstance(n, Mutilde) and _is_affine_binder(n.di.name) and n.prop == prop
+
+
+def _is_id(n, name):
+    return isinstance(n, ID) and n.name == name
+
+
+def _is_di(n, name):
+    return isinstance(n, DI) and n.name == name
+
+
+def _match_paper_scaffold(n):
+    """The four paper shapes (see the catalogue above)."""
+    if isinstance(n, Mu):
+        alpha, prop, t, ctx = n.id.name, n.prop, n.term, n.context
+        if not (isinstance(ctx, Mutilde) and ctx.prop == prop
+                and not _is_affine_binder(ctx.di.name)):
+            return None
+        beta, w1, w2 = ctx.di.name, ctx.term, ctx.context
+        if not (_affine_mu(w1, prop) and _affine_mutilde(w2, prop)):
+            return None
+        # T-SUP: < mu_.<beta||alpha> || mu'_.<t2||alpha> >
+        if (_is_di(w1.term, beta) and _is_id(w1.context, alpha)
+                and _is_id(w2.context, alpha) and not _is_di(w2.term, beta)):
+            return _tag(Match("supporter", "term", prop, t, w2.term, alpha, "term"), False)
+        # T-ATT: < mu_.<beta||e2> || mu'_.<beta||alpha> >
+        if (_is_di(w1.term, beta) and _is_di(w2.term, beta) and _is_id(w2.context, alpha)
+                and not _is_id(w1.context, alpha)):
+            return _tag(Match("attacker", "term", prop, t, w1.context, alpha, "context"), False)
+        return None
+    if isinstance(n, Mutilde):
+        x, prop, tm, e = n.di.name, n.prop, n.term, n.context
+        if not (isinstance(tm, Mu) and tm.prop == prop
+                and not _is_affine_binder(tm.id.name)):
+            return None
+        beta, w1, w2 = tm.id.name, tm.term, tm.context
+        if not (_affine_mu(w1, prop) and _affine_mutilde(w2, prop)):
+            return None
+        # C-SUP: < mu_.<x||e2> || mu'_.<x||beta> >
+        if (_is_di(w1.term, x) and _is_di(w2.term, x) and _is_id(w2.context, beta)
+                and not _is_id(w1.context, beta)):
+            return _tag(Match("supporter", "context", prop, e, w1.context, x, "context"), False)
+        # C-ATT: < mu_.<x||beta> || mu'_.<t2||beta> >
+        if (_is_di(w1.term, x) and _is_id(w1.context, beta) and _is_id(w2.context, beta)
+                and not _is_di(w2.term, x)):
+            return _tag(Match("attacker", "context", prop, e, w2.term, x, "term"), False)
+    return None
+
+
 def _match_scaffold(n, strict_names=()):
-    """Match one of the four shapes at this node.
+    """Match a scaffold at this node: the paper shapes first, then the
+    legacy M3 shapes.
 
-    Returns (role, site_side, prop, orig, scion_raw, alt_name, scion_kind)
-    or None.  ``scion_kind`` is "term"/"context" (what the scion body is);
-    attack scions still contain the alt reroute and need
-    ``_restore_scion``.
+    Returns a 7-tuple (role, site_side, prop, orig, scion, alt_name,
+    scion_kind) with a ``legacy`` attribute, or None.  ``scion_kind`` is
+    "term"/"context" (what the scion body is).  Legacy attack scions still
+    contain the alt reroute and need ``_restore_scion``.
 
-    The stolen-value slot of an attack shape normally holds an open site
-    (the debate operators put a fresh Goal/Laog there).  It may also hold
-    a *declared* name: that is the primitive contrariness term
-    mu att.<mu _.<t || att> || mu'_.<t || t'>>, a strict proof confronting a
-    strict refutation.  ``strict_names`` says which names are declared.
+    The stolen-value slot of a legacy attack shape normally holds an open
+    site (the debate operators put a fresh Goal/Laog there).  It may also
+    hold a *declared* name: the primitive contrariness term
+    mu att.<mu _.<t || att> || mu'_.<t || t'>>.  ``strict_names`` says which
+    names are declared.
     """
+    found = _match_paper_scaffold(n)
+    if found is not None:
+        return found
+    return _match_legacy_scaffold(n, strict_names)
+
+
+def _match_legacy_scaffold(n, strict_names=()):
     if isinstance(n, Mu):
         alt, prop = n.id.name, n.prop
         w1, w2 = n.term, n.context
@@ -502,11 +590,11 @@ def _match_scaffold(n, strict_names=()):
         ):
             return None
         if isinstance(w2.context, ID) and w2.context.name == alt:
-            return ("supporter", "term", prop, w1.term, w2.term, alt, "term")
+            return _tag(Match("supporter", "term", prop, w1.term, w2.term, alt, "term"), True)
         if isinstance(w2.term, (Goal, Deleg)) or (
             isinstance(w2.term, DI) and w2.term.name in strict_names
         ):
-            return ("attacker", "term", prop, w1.term, w2.context, alt, "context")
+            return _tag(Match("attacker", "term", prop, w1.term, w2.context, alt, "context"), True)
         return None
     if isinstance(n, Mutilde):
         alt, prop = n.di.name, n.prop
@@ -523,11 +611,11 @@ def _match_scaffold(n, strict_names=()):
         ):
             return None
         if isinstance(w1.term, DI) and w1.term.name == alt:
-            return ("supporter", "context", prop, w2.context, w1.context, alt, "context")
+            return _tag(Match("supporter", "context", prop, w2.context, w1.context, alt, "context"), True)
         if isinstance(w1.context, (Laog, Geled)) or (
             isinstance(w1.context, ID) and w1.context.name in strict_names
         ):
-            return ("attacker", "context", prop, w2.context, w1.term, alt, "term")
+            return _tag(Match("attacker", "context", prop, w2.context, w1.term, alt, "term"), True)
         return None
     return None
 
@@ -780,9 +868,15 @@ class _Compiler:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match
                 alt_side = "context" if isinstance(node, Mu) else "term"
                 if srole == "attacker":
-                    scion = _restore_scion(scion_raw, scion_kind, alt, sprop, f"r{next(self._fresh)}")
+                    scion = (_restore_scion(scion_raw, scion_kind, alt, sprop, f"r{next(self._fresh)}")
+                             if match.legacy else scion_raw)
                     target_side = "context" if site_side == "term" else "term"
-                    sub_outer = {**outer, **{k: (*v, name) for k, v in env.items() if k != alt}}
+                    if match.legacy:
+                        # the reroute is wiring, not capture
+                        sub_outer = {**outer, **{k: (*v, name) for k, v in env.items() if k != alt}}
+                    else:
+                        sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
+                                     alt: (sprop, alt_side, name)}
                 else:
                     scion = scion_raw
                     target_side = site_side
@@ -801,13 +895,19 @@ class _Compiler:
                         self.graph.add_edge(rec)
                     alts += walk(orig, env, spine)
                 # An absorbed scion is part of this derivation: a supporter
-                # fills its site, an attacked site stays open beside it.
+                # fills its site, an attacked site stays beside the attacker
+                # (paper shapes: the original itself; legacy shapes: the
+                # fresh obligation in the stolen-value slot).
                 inner = bind(env, {alt: (sprop, alt_side)})
                 for rec in absorbed:
                     child = [absorbed_alt(rec, inner)]
                     if srole == "attacker":
-                        wing = node.context if isinstance(node, Mu) else node.term
-                        child = product(child, walk(wing.term if isinstance(node, Mu) else wing.context, env, spine))
+                        if match.legacy:
+                            wing = node.context if isinstance(node, Mu) else node.term
+                            beside = wing.term if isinstance(node, Mu) else wing.context
+                        else:
+                            beside = orig
+                        child = product(child, walk(beside, env, spine))
                     alts += child
                 return alts
             if isinstance(node, Lamda) and node is not root_lambda:
@@ -913,9 +1013,13 @@ def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     role, site_side, prop, orig, scion_raw, alt, scion_kind = match
     compiler = _Compiler(strict_names, strict_kinds)
     if role == "attacker":
-        scion = _restore_scion(scion_raw, scion_kind, alt, prop, "r0")
+        scion = _restore_scion(scion_raw, scion_kind, alt, prop, "r0") if match.legacy else scion_raw
         target_side = "context" if site_side == "term" else "term"
-        outer = {k: (*v, owner) for k, v in env.items() if k != alt}
+        if match.legacy:
+            outer = {k: (*v, owner) for k, v in env.items() if k != alt}
+        else:
+            alt_side = "context" if site_side == "term" else "term"
+            outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
     else:
         scion = scion_raw
         target_side = site_side

@@ -389,13 +389,98 @@ def _contains(node, kinds) -> bool:
     return False
 
 
+def _is_falsum(prop) -> bool:
+    return isinstance(prop, str) and prop.strip() in ("false", "\u22a5", "_F_")
+
+
+def _is_verum(prop) -> bool:
+    return isinstance(prop, str) and prop.strip() in ("true", "\u22a4", "_T_")
+
+
+def _is_affine_node(n) -> bool:
+    """An affine mu/mu' that could have returned and does not.  A mu of
+    type false (dually a mu' of type true) is exempt: there is nothing a
+    continuation for false could be given, so leaving it unused is how
+    false is inhabited - lambda h. mu _:false.< h || E > is the negation
+    introduction, not an abort."""
+    if isinstance(n, Mu):
+        if _is_falsum(n.prop):
+            return False
+        name = n.id.name
+        return name == "_" or not (_occurs(n.term, ID, name) or _occurs(n.context, ID, name))
+    if isinstance(n, Mutilde):
+        if _is_verum(n.prop):
+            return False
+        name = n.di.name
+        return name == "_" or not (_occurs(n.term, DI, name) or _occurs(n.context, DI, name))
+    return False
+
+
+def _free_names(n, bound_ids=frozenset(), bound_dis=frozenset()):
+    """{("id"|"di", name)} free in n, shadowing-aware."""
+    out = set()
+    if isinstance(n, ID):
+        if n.name not in bound_ids:
+            out.add(("id", n.name))
+    elif isinstance(n, DI):
+        if n.name not in bound_dis:
+            out.add(("di", n.name))
+    elif isinstance(n, Mu):
+        out |= _free_names(n.term, bound_ids | {n.id.name}, bound_dis)
+        out |= _free_names(n.context, bound_ids | {n.id.name}, bound_dis)
+    elif isinstance(n, Mutilde):
+        out |= _free_names(n.term, bound_ids, bound_dis | {n.di.name})
+        out |= _free_names(n.context, bound_ids, bound_dis | {n.di.name})
+    elif isinstance(n, Lamda):
+        out |= _free_names(n.term, bound_ids, bound_dis | {n.di.di.name})
+    elif isinstance(n, Admal):
+        out |= _free_names(n.context, bound_ids | {n.id.id.name}, bound_dis)
+    else:
+        for slot in ("term", "context"):
+            child = getattr(n, slot, None)
+            if isinstance(child, ProofTerm):
+                out |= _free_names(child, bound_ids, bound_dis)
+    return out
+
+
+def contains_uncatchable_clash(v, catchers_ids=frozenset(), catchers_dis=frozenset()) -> bool:
+    """An *uncatchable clash* is an affine mu/mu' whose command no
+    enclosing mu/mu' binder can catch: none of the command's free
+    variables is bound by an enclosing Mu (for an ID) or Mutilde (for a
+    DI).  Lambda- and Admal-bound variables cannot catch (COMMA 2026:
+    "any mu-abstracted term or context binding a variable free in the
+    thrown command can serve as a catch"), nor can declared names, which
+    are constants.  Such a clash is the paper's abort - "an uncatchable
+    exception that will consume any context to which it is passed" - and
+    a term containing one is an exception whatever surrounds it."""
+    if _is_affine_node(v):
+        free = _free_names(v)
+        caught = any((kind == "id" and name in catchers_ids) or (kind == "di" and name in catchers_dis)
+                     for kind, name in free)
+        if not caught:
+            return True
+    if isinstance(v, Mu):
+        ids, dis = catchers_ids | {v.id.name}, catchers_dis
+    elif isinstance(v, Mutilde):
+        ids, dis = catchers_ids, catchers_dis | {v.di.name}
+    else:
+        ids, dis = catchers_ids, catchers_dis
+    for slot in ("term", "context"):
+        child = getattr(v, slot, None)
+        if isinstance(child, ProofTerm) and contains_uncatchable_clash(child, ids, dis):
+            return True
+    return False
+
+
 def classify_nf(v) -> str:
     """Classify a (root-normal) expression per the spec grammar:
 
     - "open":      contains an unfilled obligation (Goal/Laog).
-    - "exception": root is an affine Mu/Mutilde — a throw shape mu _.c
-      (binder does not occur in its command), the abort of the paper's
-      Example "Contradictory Proof terms".
+    - "exception": contains an uncatchable clash - an affine Mu/Mutilde
+      (binder does not occur in its command) that no enclosing mu/mu'
+      binder can catch: the abort of the paper's Example "Contradictory
+      Proof terms", which a defeated site holds as mu alpha.< t || e >.
+      The root being such a node is the special case.
     - "value":     anything else.  Presumptions (Deleg/Geled) may occur in
       a value: an IN-by-default site stays indeterminate and the value is
       polynomial in it (debate-graph-spec.org, Semantics subsection).
@@ -403,14 +488,8 @@ def classify_nf(v) -> str:
     _check_propositional(v, "Oracle NF classification")
     if _contains(v, (Goal, Laog)):
         return "open"
-    if isinstance(v, Mu):
-        name = v.id.name
-        if name == "_" or not (_occurs(v.term, ID, name) or _occurs(v.context, ID, name)):
-            return "exception"
-    if isinstance(v, Mutilde):
-        name = v.di.name
-        if name == "_" or not (_occurs(v.term, DI, name) or _occurs(v.context, DI, name)):
-            return "exception"
+    if contains_uncatchable_clash(v):
+        return "exception"
     return "value"
 
 
@@ -450,10 +529,10 @@ def make_abort_term(prop: str, inner_term, inner_context):
     """The throw term mu _:prop.< inner_term :: inner_context >.
 
     An affine mu discarding the demand for ``prop``: the COMMA paper's
-    throw shape.  At a defeated site the intended ``inner_context`` is
-    the winning refutation and ``inner_term`` is the site's own
-    indeterminate (an open site), so the result is the *clash*
-    mu _.<[:A] || E> - not a closed witness.  This constructor accepts
+    throw shape.  At a defeated site ``inner_context`` is the winning
+    refutation and ``inner_term`` the site's original - its derivation,
+    or its bare indeterminate - so the result is the *clash*
+    mu alpha.< t || E >, the paper's abort.  This constructor accepts
     any well-typed pair; it does not conjure a payload, and a caller
     passing a free variable as ``inner_term`` gets a term with a free
     variable.  (An earlier docstring called this "the vacuous affine

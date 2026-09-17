@@ -53,21 +53,29 @@ def document(*named):
 
 
 class TestShapes:
-    def test_lone_argument_unfolds_to_itself(self):
+    def test_lone_argument_supports_the_issue_site(self):
+        # The root is a statement like any other: its own site (an
+        # obligation, P being presumed nowhere) supported by pArg.
         doc = document(("pArg", parg(Goal("1", "Q"))))
         term = unfold(doc, (K("P"), "term"))
-        # the root is the argument itself; its Q site is a fresh obligation
-        assert isinstance(term, Mu) and term.id.name == "pArg"
-        assert _contains(term, lambda n: isinstance(n, Goal) and n.prop == "Q")
+        match = _match_scaffold(term, STRICT)
+        assert match is not None and match[0] == "supporter" and not match.legacy
+        assert isinstance(match[3], Goal) and match[3].prop == "P"
+        assert isinstance(match[4], Mu) and match[4].id.name == "pArg"
         g = compile_debate(term, "u", strict_names=STRICT)
-        assert [(e.name, [(g.nodes[s.key], s.side, s.kind) for s in e.sources]) for e in g.edges] == [
-            ("pArg", [("Q", "term", "obligation")])]
+        assert [(e.name, e.role, [(g.nodes[s.key], s.side, s.kind) for s in e.sources]) for e in g.edges] == [
+            ("pArg", "supporter", [("Q", "term", "obligation")])]
+        assert g.defaults[(K("P"), "term")] == {"obligation"}
+        # and it evaluates to pArg once pArg's derivation is judged
+        nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=STRICT, mode="credulous")
+        assert cls == "open"           # Q is an obligation nobody meets
 
     def test_supporter_becomes_a_support_scaffold(self):
         qarg = eta("qArg", "Q", Mu(ID("r", "Q"), "Q", DI("qRule", "R->Q"), Cons(Goal("2", "R"), ID("r", "Q"))))
         doc = document(("pArg", parg(Goal("1", "Q"))), ("qArg", qarg))
         term = unfold(doc, (K("P"), "term"))
-        site = term.term.context.term            # pArg's Q site
+        parg_copy = _match_scaffold(term, STRICT)[4]     # the root's supporter
+        site = parg_copy.term.context.term               # pArg's Q site
         match = _match_scaffold(site, STRICT)
         assert match is not None and match[0] == "supporter" and match[2] == "Q"
         g = compile_debate(term, "u", strict_names=STRICT)
@@ -77,9 +85,10 @@ class TestShapes:
         doc = document(("pArg", parg(Deleg("1", "Q"))),
                        ("qAtt", Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), Geled("1", "Q"))))
         term = unfold(doc, (K("P"), "term"))
-        site = term.term.context.term
+        parg_copy = _match_scaffold(term, STRICT)[4]
+        site = parg_copy.term.context.term
         match = _match_scaffold(site, STRICT)
-        assert match is not None and match[0] == "attacker"
+        assert match is not None and match[0] == "attacker" and not match.legacy
         g = compile_debate(term, "u", strict_names=STRICT)
         labels = grounded_labels(g)
         assert labels[(K("Q"), "term")] == "UNDEC" and labels[(K("Q"), "context")] == "UNDEC"
@@ -118,7 +127,7 @@ class TestShapes:
         # the only demand for P left is the issue's own root site
         goals_for_p = []
         _contains(term, lambda n: goals_for_p.append(n) if isinstance(n, Goal) and n.prop == "P" else False)
-        assert len(goals_for_p) == 1 and goals_for_p[0] is term.term.term
+        assert len(goals_for_p) == 1 and goals_for_p[0] is term.term   # the root's own site
 
     def test_continuation_captures_an_obligation(self):
         # A demand for a refutation of P under a lambda inside a proof of
