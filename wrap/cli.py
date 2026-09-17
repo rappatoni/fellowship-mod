@@ -1872,20 +1872,22 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mod
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return
     out_base = f"{name}_tree"
+    image = _render_graph_image(dot, out_base, fmt)        # graphviz package, else the dot binary
+    if image:
+        if _open_file(image):
+            logger.info("Acceptance tree written to %s and opened.", image)
+        else:
+            logger.info("Acceptance tree written to %s.", image)
+        return
+    dot_path = f"{out_base}.dot"
     try:
-        import graphviz  # type: ignore
-        src = graphviz.Source(dot)
-        path = src.render(filename=out_base, format=fmt, cleanup=True)
-        logger.info("Acceptance tree written to %s", path)
-    except Exception as e:
-        # Fallback: write .dot file
-        dot_path = f"{out_base}.dot"
-        try:
-            with open(dot_path, "w", encoding="utf-8") as f:
-                f.write(dot)
-            logger.warning("Graphviz not available (%s). Wrote DOT to %s", e, dot_path)
-        except Exception as e2:
-            logger.error("Failed to write DOT file: %s", e2)
+        with open(dot_path, "w", encoding="utf-8") as f:
+            f.write(dot)
+        logger.warning("Graphviz not available. Wrote DOT to %s (render: dot -T%s %s -o %s.%s)",
+                       dot_path, fmt, dot_path, out_base, fmt)
+    except Exception as e2:
+        logger.error("Failed to write DOT file: %s", e2)
+
 
 def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) -> None:
     """Handle `--import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]`."""
