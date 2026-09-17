@@ -319,14 +319,11 @@ graph/label/evaluate while the file is in lj ("debates are classical");
 the lj fixtures even_loop.fspy and self_attack.fspy are back to the
 author's content and have lk copies (even_loop_lk.fspy,
 self_attack_lk.fspy) for the debate commands and tests; no xfails
-remain. And one rule fixed alongside: a *presumption* site is never
-captured - it is a default the arguer takes, not a demand a hypothesis
-could meet - so the opponent's presumed refutation of P inside the
-debate about P stays a presumption rather than becoming the
-proponent's classical hypothesis; that is what keeps the even loop
-symmetric under lk (each side: grounded UNDEC, skeptical OPEN,
-credulous VALUE) and self_attack OPEN. Every statement of every
-fixture document now replays through Fellowship without exception.
+remain. A rule added here the same day - "a presumption site is never
+captured" - was wrong and is superseded by aida-presumption-capture:
+the asymmetry it papered over came from absorbing a scion that
+captured a presumption, not from the capture. Every statement of every
+fixture document replays through Fellowship without exception.
 
 *** DONE Switch to graph-first: operators build the graph, terms by unfolding
 CLOSED: [2026-09-17 Wed]
@@ -1296,6 +1293,43 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
 
+*** DONE Capture presumptions: the cycle representation
+CLOSED: [2026-09-17 Wed]
+:PROPERTIES:
+:ID:             aida-presumption-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Unfolding captures a presumption site for a statement bound in scope by that binder, like an obligation, so a cycle closes in the term (the even loop from P: Qdefault's presumed refutation of P is Pdefault's own continuation; one copy of each argument, no bare cut); the captured variable is marked and the compiler records it as a presumption source of the scion's own edge rather than absorbing the scion, so the issue graph is the loop and the labelling decides: under grounded neither model is accepted, under credulous preferred each is from its own entry point, under skeptical neither.
+:VERIFY:         tests/test_unfold.py: test_presumption_is_captured_as_a_presumption_source (variable marked, p3's edge closed with source P[c]:presumption), test_even_loop_is_symmetric (each argument once per unfolded term, a captured presumption present, grounded credulous not a value, preferred credulous a value, skeptical not); every fixture statement still replays through Fellowship; Peirce and self_attack unchanged.
+:END:
+
+Found by the author 2026-09-17 stepping through the even loop's
+unfolded term: "Pdefault_2 would not be needed if you'd just let
+Pdefault's binder capture the geled P in Qdefault. This corresponds to
+one of the two models in this document. The other one results from
+choosing Q as an entrypoint. Whether you accept neither, one or both
+of the resulting terms depends on the semantics you choose and the
+credulous/skeptical mode decision." Two defects: the unfolder cut the
+cycle with a copy and a bare site, and the "never capture a
+presumption" rule of the same morning hid that a captured presumption
+was being *absorbed* into the host (right for a discharged obligation
+- Peirce - wrong for a presumption, which must stay a source so the
+labelling sees the loop). Fixed in core/dc/unfold.py (capture, mark)
+and core/dc/debate_graph.py (a marked capture is a presumption source,
+not a Capture). Evidence: unfolded P is
+mu Pdefault.< pRule || (lambda h:Q. mu _:false.< h || ATT(Q!, Qdefault') >) * rule >
+with Qdefault' = mu Qdefault.< qRule || (lambda h2:P. mu _:false.< h2 || rule >) * rule_2 >;
+issue graph = the document loop; grounded all UNDEC, three preferred;
+skeptical OPEN, credulous/preferred VALUE (the P-model), credulous/
+grounded OPEN; the term from Q is the mirror. Suite 1029 passed.
+
 *** DONE Adopt the paper's support and attack shapes, mirrored, with the site exposure
 CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
@@ -1581,9 +1615,9 @@ shape does not reroute the attacker's port to the catch at all - the
 attacker keeps its own sites, and a challenge with an open refutation
 site is simply an attacker whose source is an obligation, discarded by
 the labelling. The asymmetry existed only in the terms the legacy verbs
-graft. Unfolding never captures a presumption (a default is not a
-demand a hypothesis could meet), which is the same rule from the other
-side.
+graft. Unfolding captures presumptions as the cycle representation
+(aida-presumption-capture), which is the graph-first form of what this
+task asked for.
 
 Observed 2026-08-31 while building tests/rationality/contested.fspy: a
 challenge ending in a Laog gets its tail rerouted to alt, a by-default

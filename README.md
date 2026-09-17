@@ -238,7 +238,7 @@ edge. `graph`, `label` and `evaluate` take a name, read its issue,
 **unfold** the document graph from that issue into a debate term
 (cycles broken by capture: a demand for P inside a proof of P->Q is the
 hypothesis, a demand for a refutation of P inside a proof of P is the
-continuation; a presumption is never captured), compile that
+continuation; a captured presumption stays a presumption source of its edge, which is how a cycle is represented), compile that
 term into the issue's debate graph, label it by an ADF semantics and
 evaluate it under a witness labelling. `graph document` and `label
 document` show the document graph itself. Every unfolded term is

@@ -18,19 +18,29 @@ core/dc/debate_graph.py.
 
 Cycles are broken by capture.  While expanding, the binders of the
 enclosing edge bodies are in scope - a lambda's hypothesis, a mu's
-continuation - each standing for a statement; an OBLIGATION site for a
+continuation - each standing for a statement, and a site for a
 statement that is bound in scope becomes that variable (the
-mu/mu'-capture of the spec: a demand for P inside a proof of P->Q is
-the hypothesis h, a demand for a refutation of P inside a proof of P is
-the continuation).  A PRESUMPTION site is never captured: it is not a
-demand that a hypothesis could meet but a default the arguer takes, and
-binding it to the proponent's continuation would turn the opponent's
-default into a classical hypothesis and change the argument (author,
-2026-09-17; the even loop stays symmetric this way).  Scaffold catch
-variables are wiring, not scope.  A statement that is already being
-expanded on the current path but has no binder in scope is left as a
-bare site: the route through it is circular and stays open.  Each
-statement is therefore expanded at most once per path (T6).
+mu/mu'-capture of the spec).  Two kinds of site, two meanings:
+
+- an OBLIGATION captured is a demand met by a hypothesis or
+  continuation in scope (a demand for P inside a proof of P->Q is h, a
+  demand for a refutation of P inside a proof of P is the
+  continuation): the scion is part of that derivation - Peirce's law -
+  and the compiler absorbs it;
+- a PRESUMPTION captured is the cycle representation (author,
+  2026-09-17): the opponent's default "P fails" inside the debate about
+  P is P's own continuation, so the loop closes in the term instead of
+  being cut with a copy, and the term for the issue is one "model" of
+  the loop - the even loop unfolded from P and from Q are the two.  The
+  captured variable is marked (``captured_presumption``) and the
+  compiler records it as a presumption source of the scion's own edge,
+  so the labelling still sees the loop and semantics and mode decide
+  whether neither, one or both models are accepted.
+
+Scaffold catch variables are wiring, not scope.  A statement that is
+already being expanded on the current path but has no binder in scope
+is left as a bare site: the route through it is circular and stays
+open.  Each statement is therefore expanded at most once per path (T6).
 
 Debates are classical: the scaffolds throw to a second conclusion,
 which LJ forbids, so there are no lj debates (author, 2026-09-17) and
@@ -151,10 +161,14 @@ class Unfolder:
 
     def statement(self, statement, env, spine, presumed=False):
         """The term (or context) for a statement in scope ``env``.  A
-        presumed site (``presumed``: the edge body had a Deleg/Geled
-        there) stays a presumption and is not captured."""
-        if statement in env and not presumed:
-            return self._variable(statement, env[statement])
+        captured presumption (``presumed``: the edge body had a
+        Deleg/Geled there) is marked so the compiler keeps it a
+        presumption source."""
+        if statement in env:
+            var = self._variable(statement, env[statement])
+            if presumed:
+                var.captured_presumption = True
+            return var
         if statement in spine:
             return self._site(statement)        # circular: stays open
         spine = spine | {statement}

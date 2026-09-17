@@ -856,6 +856,13 @@ class _Compiler:
                     return [_EMPTY]
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:
+                    if getattr(node, "captured_presumption", False):
+                        # A presumption the unfolder bound to an enclosing
+                        # continuation (the cycle representation): still a
+                        # presumption source of THIS edge, so the loop stays
+                        # visible to the labelling; not a discharge.
+                        return [_Alt((Source(self.graph.add_node(enclosing[0]), vside,
+                                             "presumption", node.name, spine),))]
                     return [_Alt((), (Capture(node.name, self.graph.add_node(enclosing[0]),
                                               vside, enclosing[2]),))]
                 raise DebateCompileError(

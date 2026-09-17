@@ -146,16 +146,37 @@ class TestShapes:
         assert not _contains(term, lambda n: isinstance(n, Mu) and n.id.name == "g"
                              and _contains(n, lambda m: isinstance(m, Laog)))
 
-    def test_presumption_is_never_captured(self):
-        # The same shape with the refutation of P PRESUMED: the presumption
-        # stays a presumption inside the proof of P; the opponent's default
-        # is not turned into the proponent's hypothesis.
+    def test_presumption_is_captured_as_a_presumption_source(self):
+        # The cycle representation.  p3 derives Q from a PRESUMED refutation
+        # of P (via pq : (P->false)->Q) and supports the Q site inside the
+        # proof of P: the presumption is captured by that proof's own
+        # continuation (no copy, no bare site), and the compiler keeps it a
+        # presumption source of p3's lambda edge - not a discharge - so the
+        # labelling still sees the loop P[t] <- Q[t] <- P->false[t] <- P[c].
         host = eta("s2", "P", Mu(ID("beta", "P"), "P",
                                  Lamda(Hyp(DI("h", "P"), "P"), Goal("1", "Q")), Laog("2", "P->Q")))
-        p3 = eta("p3", "Q", Mu(ID("g", "Q"), "Q", Goal("9", "P"), Geled("8", "P")))
-        doc = document(("s2", host), ("p3", p3))
+        p3 = eta("p3", "Q", Mu(ID("g", "Q"), "Q", DI("pq", "(P->false)->Q"),
+                                Cons(Lamda(Hyp(DI("x", "P"), "P"),
+                                           Mu(ID("_", "false"), "false", DI("x", "P"), Geled("8", "P"))),
+                                     ID("g", "Q"))))
+        doc = compile_document([("s2", host), ("p3", p3)], strict_names=STRICT | {"pq"})
         term = unfold(doc, (K("P"), "term"))
-        assert _contains(term, lambda n: isinstance(n, Geled) and n.prop == "P")
+        # root = ATT(P!, SUP(site, s2)): inside the copy of s2 the presumed
+        # refutation of P is gone, captured; the bare P! at the root is the
+        # contrary's own default attacking the issue.
+        root_attack = _match_scaffold(term, STRICT)
+        s2_copy = _match_scaffold(root_attack[3], STRICT)[4]
+        assert not _contains(s2_copy, lambda n: isinstance(n, Geled) and n.prop == "P")
+        captured = []
+        _contains(term, lambda n: captured.append(n) if isinstance(n, ID) and n.name == "beta" else False)
+        assert captured and all(getattr(v, "captured_presumption", False) for v in captured)
+        g = compile_debate(term, "u", strict_names=STRICT | {"pq"})
+        assert not any(e.captures or e.absorbed for e in g.edges)          # nothing discharged
+        by_name = {e.name: e for e in g.edges}
+        assert "p3" in by_name
+        lam = [e for e in g.edges if e.name.startswith("p3.")]
+        assert lam and ("P", "context", "presumption") in {(g.nodes[s.key], s.side, s.kind) for s in lam[0].sources}
+        assert not g.is_acyclic()
 
 
 # ---------------------------------------------------------------------------
@@ -258,12 +279,22 @@ def test_peirce_is_a_theorem(prover):
 
 
 def test_even_loop_is_symmetric(prover):
-    # Presumptions are never captured, so neither side's presumed
-    # refutation becomes the other side's hypothesis.
+    # The cycle representation: from either side, the other argument's
+    # presumed refutation is captured by this side's continuation - one
+    # copy of each argument, no bare cut - and the issue graph is the loop
+    # itself.  Neither model is accepted under grounded, each is under
+    # credulous preferred from its own entry point.
     doc, issue, sn, sk = load(prover, "tests/rationality/even_loop_lk.fspy")
     for name in ("Pdefault", "Qdefault"):
         arg = prover.get_argument(name)
         term = unfold_checked(prover, doc, (K(arg.conclusion), "term"))
+        rules = []
+        _contains(term, lambda n: rules.append(n) if isinstance(n, DI) and n.name in ("pRule", "qRule") else False)
+        assert sorted(r.name for r in rules) == ["pRule", "qRule"]        # each argument once
+        assert _contains(term, lambda n: getattr(n, "captured_presumption", False))
+        _, cred_grounded, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk,
+                                                 mode="credulous", semantics="grounded")
+        assert cred_grounded != "value"
         g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
         assert set(grounded_labels(g).values()) == {"UNDEC"}
         _, skeptical, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="skeptical")
