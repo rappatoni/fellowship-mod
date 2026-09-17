@@ -12,6 +12,15 @@ phase only: strict redundancy and strict defeat decide a scaffold when
 one wing is strict *in the debate* and the other is not; everything else
 is delayed for the labelling.
 
+EXPERIMENTAL (tasks.org, aida-strict-phase-experimental): the definition
+of "strict in the debate" below carries two rules added on 2026-09-17
+without the author's approval - a captured presumption is an assumption,
+and a subterm holding an uncatchable clash is not strict - and the
+author objects to both (a self-attacking argument classically derives
+its conclusion; an uncatchable clash is a strict proof of contradiction
+that should bubble up).  The tests pin the current behaviour, not a
+decision.
+
 Two notions of strictness:
 
 - *strict in the debate* (the paper's "strict in d"): a subterm with no

@@ -1297,6 +1297,72 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
 
+*** NEXT Settle the strict phase: self-attack, clashes, and what "strict in the debate" means
+:PROPERTIES:
+:ID:             aida-strict-phase-experimental
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The strict phase of core/dc/strict.py (the paper's strict redundancy and strict defeat, read off the unfolded term) rests on a stated definition of "strict in the debate" that the author has approved, in particular for (a) a self-attacking argument, (b) a closed clash inside a derivation, and (c) which enclosing binders catch a throw; the two implementation rules added on 2026-09-17 without that approval are either confirmed with an argument or replaced, and the tests that pin them (tests/test_strict.py::TestPredicates, TestDefeatIsNotStrict, TestDecisions::test_attack_by_a_bare_presumption_is_delayed) follow the decision.
+:VERIFY:         A note in call-by-onus.org or debate-graph-spec.org states the definition and its consequences on self_attack_lk.fspy, even_loop_lk.fspy, contested.fspy and peirces_law.fspy; the fixture verdicts match the note; the six-fixture replay through Fellowship still passes.
+:END:
+
+Recorded 2026-09-17 at the author's request: the strict phase is
+*experimental*. It was built the same day as three implementation
+lessons and two objections by the author that there was no time to
+settle.
+
+The three lessons, each now pinned by a test:
+1. "Strict in the debate" was first defined as "no open site". With
+   that, a captured *presumption* (a bare variable after unfolding, see
+   aida-presumption-capture) no longer counted as an assumption, and the
+   self-attacking argument self_attack_lk.fspy came out a strict proof
+   of P (grounded IN). The rule added: a variable marked
+   captured_presumption is an assumption, so a term resting on it is not
+   strict.
+2. A closed subterm holding a defeat clash mu alpha.< t || e > counted
+   as strict, so at an outer support scaffold an original that had been
+   defeated inside beat a live supporter by "original strict". The rule
+   added: a subterm containing an uncatchable clash is not strict, and
+   contributes no strict edge; a throw to an enclosing mu/mu' binder is
+   caught (Peirce's p3 throwing to s2's continuation stays strict), so
+   the enclosing catchers are threaded through the walk.
+3. Scaffolds must be identified top-down: the paper attack's inner
+   wiring mu'beta.< mu_.<beta||e2> || mu'_.<beta||alpha> > has the legacy
+   C-SUP shape, and a bottom-up walk decided it as "original strict"
+   (alpha has no sites) and threw the attack away - contested.fspy's
+   clash became a value. The fix recurses through scaffold_parts only.
+
+The author's objections (2026-09-17, verbatim in substance):
+- On lesson 1: "classically -P -> P is equivalent to P. A self
+  attacking argument just derives its conclusion. That is totally
+  valid." I.e. the term mu rule.< pRule || (lambda h. mu _:false.< h ||
+  rule >) * rule > IS a classical proof of P, and refusing to call it
+  strict because its refutation site was a presumption may be wrong:
+  the presumption was discharged by the capture exactly as an
+  obligation is. Open: whether a captured presumption is an assumption
+  (the cycle representation, the labelling decides) or a discharge (the
+  term is strict); today the code says assumption, which is what keeps
+  even_loop symmetric and self_attack OPEN.
+- On lesson 2: "An uncatchable clash is a strict proof of contradiction.
+  That should always bubble up, it means the term can only be accepted
+  given an inconsistency." I.e. a closed clash is not "not strict"; it
+  is a strict refutation-of-everything, and the right behaviour is
+  propagation to the root (aida-abort-propagation), not exclusion from
+  strictness. Today the code excludes it from strictness and from
+  strict edges, and the classifier reports it as an exception wherever
+  it sits.
+
+Until settled, the strict phase's verdicts on the fixtures are the ones
+of the absorption design it replaced (identical on all six), and the
+tests pin the current rules as *behaviour*, not as decisions.
+
 *** DONE Read strictness off the debate term, not the framework
 CLOSED: [2026-09-17 Wed]
 :PROPERTIES:
