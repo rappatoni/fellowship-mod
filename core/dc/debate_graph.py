@@ -384,23 +384,46 @@ class DebateGraph:
                     # Term side drives the fill; it is the proponent's status.
                     colour = f', fillcolor="{fill.get(decided[0], "white")}"'
             lines.append(f'  {ids[key]} [label="{label}{suffix}"{colour}];')
-        for edge in self.edges:
-            style = {
-                "supporter": "color=darkgreen",
-                "attacker": "color=red",
-                "subargument": "color=gray40",
-                "strict": "color=black penwidth=2",
-            }.get(edge.role, "color=black")
+        # Hyperedges.  A single-source edge is one labelled arrow.  An edge
+        # with several sources (or none: a strict edge) is drawn through a
+        # junction box carrying its name, one unlabelled arrow per source
+        # into it and one out to the target - otherwise every source
+        # becomes a parallel arrow with the same label, and since nodes are
+        # propositions two sources on P[t] and P[c] look like a duplicated
+        # edge.  Context-side sources are dashed; the arrowhead at the
+        # target is filled for a proof, empty for a refutation.
+        for i, edge in enumerate(self.edges):
+            colour = {
+                "supporter": "darkgreen",
+                "attacker": "red",
+                "subargument": "gray40",
+                "strict": "black",
+            }.get(edge.role, "black")
+            width = " penwidth=2" if edge.strict else ""
             head = "normal" if edge.target_side == "term" else "empty"
-            for source in edge.sources:
+            if len(edge.sources) == 1:
+                source = edge.sources[0]
+                dashed = " style=dashed" if source.side == "context" else ""
                 lines.append(
                     f"  {ids[source.key]} -> {ids[edge.target_key]} "
-                    f'[{style} arrowhead={head} label="{edge.name}"];'
+                    f'[color={colour}{width}{dashed} arrowhead={head} label="{edge.name}"];'
                 )
-            if not edge.sources:
+                continue
+            junction = f"e{i}"
+            lines.append(
+                f'  {junction} [shape=box, style="rounded", fontsize=9, color={colour}, '
+                f'label="{edge.name}"];'
+            )
+            for source in edge.sources:
+                dashed = " style=dashed" if source.side == "context" else ""
                 lines.append(
-                    f'  {ids[edge.target_key]} [peripheries=2];'
+                    f"  {ids[source.key]} -> {junction} [color={colour}{width}{dashed} arrowhead=none];"
                 )
+            lines.append(
+                f"  {junction} -> {ids[edge.target_key]} [color={colour}{width} arrowhead={head}];"
+            )
+            if not edge.sources:
+                lines.append(f"  {ids[edge.target_key]} [peripheries=2];")
         lines.append("}")
         return "\n".join(lines)
 

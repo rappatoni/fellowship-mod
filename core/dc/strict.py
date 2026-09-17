@@ -52,6 +52,7 @@ labelling (CONTR); the paper says proofs can be strictly defeated there.
 
 import re
 from copy import deepcopy
+from dataclasses import replace
 
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Goal, Laog, Deleg, Geled, ID, DI,
@@ -278,8 +279,8 @@ def fold_occurrences(graph: DebateGraph) -> None:
     """Unfolding copies a document edge into every site of its statement,
     and the compiler makes one edge per copy (s3 and s3_2 on Peirce).
     Fold copies - same name stem, target, sources and strictness - into
-    one, keeping the first name and role; a duplicate disjunct changes no
-    label, so this is presentation only."""
+    one under the stem name, keeping the first role; a duplicate disjunct
+    changes no label, so this is presentation only."""
     seen = {}
     kept = []
     for edge in graph.edges:
@@ -289,5 +290,5 @@ def fold_occurrences(graph: DebateGraph) -> None:
         if key in seen:
             continue
         seen[key] = edge
-        kept.append(edge)
+        kept.append(replace(edge, name=stem) if edge.name != stem else edge)
     graph.edges[:] = kept
