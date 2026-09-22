@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AIDA — Editor MVP</title>
+<title>AIDA - Editor MVP</title>
 <style>
   :root {
     --bg: #1e1e1e;
@@ -146,7 +146,7 @@
 <body>
 
 <header>
-  <h1>AIDA — Editor MVP</h1>
+  <h1>AIDA - Editor MVP</h1>
   <input id="apiBase" type="text" value="http://127.0.0.1:8000" title="API base URL">
   <button id="newSessionBtn">New Session</button>
   <span class="session-status" id="sessionStatus">no session</span>
@@ -180,7 +180,14 @@ end argument
 start argument arg2
   conclusion: EfficientMetro
   is_anti: true
-  axiom StrikeMetro
+  cut (~EfficientMetro) x
+  cut (StrikeMetro -> ~EfficientMetro) th
+  axiom r2
+  elim
+  next
+  axiom
+  elim
+  axiom
 end argument
 
 start compile
