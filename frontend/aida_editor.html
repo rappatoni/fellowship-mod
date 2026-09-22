@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AIDA — Editor MVP</title>
+<style>
+  :root {
+    --bg: #1e1e1e;
+    --panel: #252526;
+    --border: #3c3c3c;
+    --text: #d4d4d4;
+    --accent: #569cd6;
+    --green: #4caf50;
+    --red: #e05555;
+    --yellow: #d7ba7d;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+  }
+  header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 600;
+    color: #fff;
+  }
+  header input[type=text] {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 240px;
+  }
+  header button {
+    background: #333;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  header button:hover { background: #3a3d41; }
+  header .session-status {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #9cdcfe;
+  }
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+  }
+  .pane {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    border-right: 1px solid var(--border);
+  }
+  .pane:last-child { border-right: none; }
+  .pane-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pane-header span { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #888; }
+  .pane-header .actions { display: flex; gap: 8px; }
+  .pane-header button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pane-header button.secondary {
+    background: #333;
+    border: 1px solid var(--border);
+  }
+  .pane-header button:disabled { opacity: 0.4; cursor: not-allowed; }
+  textarea {
+    width: 100%;
+    height: 100%;
+    resize: none;
+    border: none;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px;
+    line-height: 1.5;
+    outline: none;
+  }
+  .right-pane { display: grid; grid-template-rows: 1fr 1fr; min-height: 0; }
+  .results, .log {
+    overflow-y: auto;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .results { border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  th { color: #888; font-weight: 500; font-size: 11px; text-transform: uppercase; }
+  .status-pill {
+    display: inline-block;
+    padding: 1px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #111;
+  }
+  .status-ACCEPTED { background: var(--green); }
+  .status-DEFEATED { background: var(--red); }
+  .status-OPEN { background: var(--yellow); }
+  .status-ERROR { background: #888; }
+  .log-line { margin-bottom: 3px; white-space: pre-wrap; }
+  .log-line.error { color: var(--red); }
+  .log-line.ok { color: var(--green); }
+  .log-line.info { color: #888; }
+  .placeholder { color: #666; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AIDA — Editor MVP</h1>
+  <input id="apiBase" type="text" value="http://127.0.0.1:8000" title="API base URL">
+  <button id="newSessionBtn">New Session</button>
+  <span class="session-status" id="sessionStatus">no session</span>
+</header>
+
+<main>
+  <div class="pane">
+    <div class="pane-header">
+      <span>Source</span>
+      <div class="actions">
+        <button class="secondary" id="parseBtn">Parse</button>
+        <button id="evaluateBtn" disabled>Evaluate</button>
+      </div>
+    </div>
+    <textarea id="source" spellcheck="false">start declare
+  EfficientMetro, StrikeMetro, UseMetro : bool
+  r1: (EfficientMetro -> UseMetro)
+  r2: (StrikeMetro -> ~EfficientMetro)
+end declare
+
+start argument arg1
+  conclusion: UseMetro
+  is_anti: false
+  cut (EfficientMetro -> UseMetro) th
+  axiom r1
+  elim
+  next
+  axiom
+end argument
+
+start argument arg2
+  conclusion: EfficientMetro
+  is_anti: true
+  axiom StrikeMetro
+end argument
+
+start compile
+  attack arg2 arg1
+end compile</textarea>
+  </div>
+
+  <div class="right-pane">
+    <div class="results" id="results">
+      <div class="placeholder">Parse a document to see arguments here.</div>
+    </div>
+    <div class="log" id="log">
+      <div class="log-line info">Ready. Create a session, then Parse.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const apiBaseEl = $('apiBase');
+const sessionStatusEl = $('sessionStatus');
+const resultsEl = $('results');
+const logEl = $('log');
+const evaluateBtn = $('evaluateBtn');
+
+let sessionId = null;
+let parsedArguments = []; // [{name, conclusion, is_anti, instructions}]
+let parsedRelations = []; // [{action, source, target, on, result_name}]
+let parsedDeclarations = []; // ["declare X : bool.", ...]
+
+function log(msg, cls = 'info') {
+  const line = document.createElement('div');
+  line.className = 'log-line ' + cls;
+  const ts = new Date().toLocaleTimeString();
+  line.textContent = `[${ts}] ${msg}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function apiBase() {
+  return apiBaseEl.value.replace(/\/+$/, '');
+}
+
+// ---------- Parsing ----------
+// Format (assumed — confirm against real .fspy grammar):
+//
+//   start declare
+//     <raw Fellowship declare line, without leading "declare " needed>
+//     ...
+//   end declare
+//
+//   start argument <name>
+//     conclusion: <text>
+//     is_anti: true|false        (optional, defaults to false)
+//     <instruction line>
+//     <instruction line>
+//     ...
+//   end argument
+//
+//   start compile
+//     <action> <source> <target> [on <label>] [as <result_name>]
+//     ...
+//   end compile
+//
+// A "start declare" block is required before any argument that references
+// undeclared propositions or rules — Fellowship does NOT auto-declare names
+// on first use. Each line inside gets sent as its own /declare command
+// (a trailing "." is added automatically if missing).
+// Everything inside an argument block that isn't a "conclusion:" or
+// "is_anti:" line becomes one entry in the instructions[] list, in order,
+// matching Argument(prover, name=, conclusion=, instructions=[...], is_anti=).
+//
+// Each line inside a compile block maps directly onto CompileRequest
+// {action, source, target, on, result_name} from server.py — action must be
+// one of attack/undercut/rebut/support/undergird/reinforce. "on" and "as"
+// are optional; "on" targets a specific premise/instruction (exact meaning
+// unconfirmed — pass through as-is), "as" names the resulting argument.
+const COMPILE_ACTIONS = ['attack', 'undercut', 'rebut', 'support', 'undergird', 'reinforce'];
+
+function parseSource(text) {
+  const lines = text.split('\n');
+  const args = [];
+  const relations = [];
+  const declarations = [];
+  const errors = [];
+  let current = null;
+  let inCompile = false;
+  let inDeclare = false;
+  let lineNo = 0;
+
+  for (const raw of lines) {
+    lineNo++;
+    const line = raw.trim();
+    if (line === '' || line.startsWith('#')) continue;
+
+    const startArgMatch = line.match(/^start\s+argument\s+(\S+)\s*$/i);
+    const endArgMatch = line.match(/^end\s+argument\s*$/i);
+    const startCompileMatch = line.match(/^start\s+compile\s*$/i);
+    const endCompileMatch = line.match(/^end\s+compile\s*$/i);
+    const startDeclareMatch = line.match(/^start\s+declare\s*$/i);
+    const endDeclareMatch = line.match(/^end\s+declare\s*$/i);
+
+    if (startDeclareMatch) {
+      if (current || inCompile) { errors.push(`line ${lineNo}: "start declare" inside another open block`); continue; }
+      if (inDeclare) { errors.push(`line ${lineNo}: nested "start declare"`); continue; }
+      inDeclare = true;
+      continue;
+    }
+    if (endDeclareMatch) {
+      if (!inDeclare) { errors.push(`line ${lineNo}: "end declare" with no open block`); continue; }
+      inDeclare = false;
+      continue;
+    }
+    if (inDeclare) {
+      const body = line.replace(/\.?\s*$/, '.');
+      declarations.push(/^declare\s/i.test(body) ? body : `declare ${body}`);
+      continue;
+    }
+
+    if (startCompileMatch) {
+      if (current) { errors.push(`line ${lineNo}: "start compile" inside an open argument block`); continue; }
+      if (inCompile) { errors.push(`line ${lineNo}: nested "start compile"`); continue; }
+      inCompile = true;
+      continue;
+    }
+    if (endCompileMatch) {
+      if (!inCompile) { errors.push(`line ${lineNo}: "end compile" with no open block`); continue; }
+      inCompile = false;
+      continue;
+    }
+    if (inCompile) {
+      // <action> <source> <target> [on <label>] [as <result_name>]
+      const parts = line.split(/\s+/);
+      const [action, source, target, ...rest] = parts;
+      if (!action || !source || !target) {
+        errors.push(`line ${lineNo}: malformed compile line "${line}" — expected "<action> <source> <target>"`);
+        continue;
+      }
+      if (!COMPILE_ACTIONS.includes(action.toLowerCase())) {
+        errors.push(`line ${lineNo}: unknown compile action "${action}" — must be one of ${COMPILE_ACTIONS.join(', ')}`);
+        continue;
+      }
+      let on = null, resultName = null;
+      for (let i = 0; i < rest.length; i++) {
+        if (rest[i] === 'on' && rest[i + 1]) { on = rest[++i]; }
+        else if (rest[i] === 'as' && rest[i + 1]) { resultName = rest[++i]; }
+      }
+      relations.push({ action: action.toLowerCase(), source, target, on, result_name: resultName });
+      continue;
+    }
+
+    if (startArgMatch) {
+      if (current) {
+        errors.push(`line ${lineNo}: nested "start argument" before closing "${current.name}"`);
+        continue;
+      }
+      current = { name: startArgMatch[1], conclusion: null, is_anti: false, instructions: [] };
+      continue;
+    }
+
+    if (endArgMatch) {
+      if (!current) {
+        errors.push(`line ${lineNo}: "end argument" with no open block`);
+        continue;
+      }
+      if (!current.conclusion) {
+        errors.push(`argument "${current.name}": missing "conclusion:" line`);
+      }
+      if (current.instructions.length === 0) {
+        errors.push(`argument "${current.name}": no instructions given`);
+      }
+      args.push(current);
+      current = null;
+      continue;
+    }
+
+    if (!current) {
+      errors.push(`line ${lineNo}: content outside any argument/compile block: "${line}"`);
+      continue;
+    }
+
+    const concMatch = line.match(/^conclusion:\s*(.+)$/i);
+    const antiMatch = line.match(/^is_anti:\s*(true|false)\s*$/i);
+
+    if (concMatch) {
+      current.conclusion = concMatch[1].trim();
+    } else if (antiMatch) {
+      current.is_anti = antiMatch[1].toLowerCase() === 'true';
+    } else {
+      current.instructions.push(line);
+    }
+  }
+
+  if (current) {
+    errors.push(`unclosed "start argument ${current.name}" — missing "end argument"`);
+  }
+  if (inCompile) {
+    errors.push('unclosed "start compile" — missing "end compile"');
+  }
+  if (inDeclare) {
+    errors.push('unclosed "start declare" — missing "end declare"');
+  }
+  // relations referencing unknown arguments get caught at registration time,
+  // not here, since forward references (compile block before both args
+  // exist) are legal in this format.
+
+  return { args, relations, declarations, errors };
+}
+
+function renderParsePreview(args, relations, declarations, errors) {
+  if (args.length === 0 && relations.length === 0 && declarations.length === 0 && errors.length === 0) {
+    resultsEl.innerHTML = '<div class="placeholder">Nothing parsed.</div>';
+    return;
+  }
+  let html = '';
+
+  if (declarations.length > 0) {
+    html += '<div style="margin-bottom:4px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.04em">Declarations</div>';
+    html += '<div style="font-size:12px;margin-bottom:14px;line-height:1.6">' +
+      declarations.map(d => `<div>${d}</div>`).join('') + '</div>';
+  }
+
+  html += '<table><thead><tr><th>Name</th><th>Conclusion</th><th>Anti</th><th>Instructions</th><th>Status</th></tr></thead><tbody>';
+  for (const a of args) {
+    html += `<tr data-arg="${a.name}">
+      <td>${a.name}</td>
+      <td>${a.conclusion ?? '<span class="placeholder">missing</span>'}</td>
+      <td>${a.is_anti}</td>
+      <td>${a.instructions.length} step(s)</td>
+      <td class="status-cell">—</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+
+  if (relations.length > 0) {
+    html += '<div style="margin-top:14px;margin-bottom:4px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.04em">Relations</div>';
+    html += '<table><thead><tr><th>Action</th><th>Source</th><th>Target</th><th>Result</th></tr></thead><tbody>';
+    for (const r of relations) {
+      html += `<tr data-relation="${r.source}-${r.action}-${r.target}">
+        <td>${r.action}</td>
+        <td>${r.source}</td>
+        <td>${r.target}</td>
+        <td class="relation-result-cell">—</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+  }
+
+  if (errors.length > 0) {
+    html += '<div style="margin-top:10px;color:var(--red)">' +
+      errors.map(e => `⚠ ${e}`).join('<br>') + '</div>';
+  }
+  resultsEl.innerHTML = html;
+}
+
+$('parseBtn').addEventListener('click', () => {
+  const { args, relations, declarations, errors } = parseSource($('source').value);
+  parsedArguments = args;
+  parsedRelations = relations;
+  parsedDeclarations = declarations;
+  renderParsePreview(args, relations, declarations, errors);
+  if (errors.length > 0) {
+    log(`Parsed with ${errors.length} error(s) — see preview.`, 'error');
+  } else {
+    log(`Parsed ${declarations.length} declaration(s), ${args.length} argument(s), ${relations.length} relation(s): ${args.map(a => a.name).join(', ')}`, 'ok');
+  }
+  evaluateBtn.disabled = !(sessionId && args.length > 0 && errors.length === 0);
+});
+
+// ---------- Session ----------
+$('newSessionBtn').addEventListener('click', async () => {
+  try {
+    log('Creating session...');
+    const res = await fetch(`${apiBase()}/sessions`, { method: 'POST' });
+    if (!res.ok) throw new Error(`POST /sessions -> ${res.status}`);
+    const data = await res.json();
+    sessionId = data.session_id;
+    sessionStatusEl.textContent = `session: ${sessionId}`;
+    log(`Session created: ${sessionId}`, 'ok');
+    evaluateBtn.disabled = parsedArguments.length === 0;
+  } catch (err) {
+    log(`Failed to create session: ${err.message}`, 'error');
+  }
+});
+
+// ---------- Evaluate: register each parsed argument, then fetch graph for status ----------
+evaluateBtn.addEventListener('click', async () => {
+  if (!sessionId) { log('No active session.', 'error'); return; }
+  if (parsedArguments.length === 0) { log('Nothing parsed yet.', 'error'); return; }
+
+  evaluateBtn.disabled = true;
+  let registeredOk = 0;
+
+  if (parsedDeclarations.length > 0) {
+    try {
+      log(`Declaring ${parsedDeclarations.length} item(s)...`);
+      const res = await fetch(`${apiBase()}/sessions/${sessionId}/declare`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ declarations: parsedDeclarations }),
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`${res.status}: ${errBody}`);
+      }
+      log('Declarations sent.', 'ok');
+    } catch (err) {
+      log(`Failed to send declarations: ${err.message}`, 'error');
+      log('Aborting — arguments will likely fail to prove without these.', 'error');
+      evaluateBtn.disabled = false;
+      return;
+    }
+  }
+
+  for (const arg of parsedArguments) {
+    const row = document.querySelector(`tr[data-arg="${arg.name}"] .status-cell`);
+    try {
+      const res = await fetch(`${apiBase()}/sessions/${sessionId}/arguments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: arg.name,
+          conclusion: arg.conclusion,
+          instructions: arg.instructions,
+          is_anti: arg.is_anti,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`${res.status}: ${errBody}`);
+      }
+      registeredOk++;
+      log(`Registered "${arg.name}"`, 'ok');
+    } catch (err) {
+      log(`Failed to register "${arg.name}": ${err.message}`, 'error');
+      if (row) {
+        row.innerHTML = `<span class="status-pill status-ERROR">ERROR</span>`;
+      }
+    }
+  }
+
+  if (registeredOk === 0) {
+    log('No arguments registered successfully — skipping status fetch.', 'error');
+    evaluateBtn.disabled = false;
+    return;
+  }
+
+  for (const rel of parsedRelations) {
+    const row = document.querySelector(`tr[data-relation="${rel.source}-${rel.action}-${rel.target}"] .relation-result-cell`);
+    try {
+      const res = await fetch(`${apiBase()}/sessions/${sessionId}/compile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: rel.action,
+          source: rel.source,
+          target: rel.target,
+          on: rel.on,
+          result_name: rel.result_name,
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`${res.status}: ${errBody}`);
+      }
+      const data = await res.json();
+      log(`Compiled: ${rel.source} ${rel.action} ${rel.target} -> "${data.name}" (${data.status})`, 'ok');
+      if (row) row.textContent = data.name;
+    } catch (err) {
+      log(`Failed to compile "${rel.source} ${rel.action} ${rel.target}": ${err.message}`, 'error');
+      if (row) row.innerHTML = `<span class="status-pill status-ERROR">ERROR</span>`;
+    }
+  }
+
+  try {
+    log('Fetching status via GET /graph...');
+    const res = await fetch(`${apiBase()}/sessions/${sessionId}/graph`);
+    if (!res.ok) throw new Error(`GET /graph -> ${res.status}`);
+    const graph = await res.json();
+    const statusByName = {};
+    for (const node of graph.nodes || []) {
+      statusByName[node.name] = node.status;
+    }
+    for (const arg of parsedArguments) {
+      const row = document.querySelector(`tr[data-arg="${arg.name}"] .status-cell`);
+      if (!row) continue;
+      const status = (statusByName[arg.name] || 'unknown').toUpperCase();
+      row.innerHTML = `<span class="status-pill status-${status}">${status}</span>`;
+    }
+    log('Evaluation complete.', 'ok');
+  } catch (err) {
+    log(`Failed to fetch status: ${err.message}`, 'error');
+  } finally {
+    evaluateBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
