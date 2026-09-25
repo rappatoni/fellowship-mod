@@ -318,12 +318,15 @@ def test_self_attack_is_not_a_value(prover):
         assert cls != "value"
 
 
-def test_cyclic_undercut_issue_is_its_presumption(prover):
-    # A is IN by cR's presumption; unfolding puts that presumption at the
-    # root, so the value is the presumption of A (gap 2 of D0 closed).
+def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
+    # Since the asymmetric guard the cycle resolves two-valued: the undercut
+    # of Q fails because its premise B rests on an R that cR refutes, so the
+    # value is argA applied to the presumption of Q, not the bare
+    # presumption of A that cR supplies (gap 2 of D0 closed).
     doc, issue, sn, sk = load(prover, "tests/rationality/cyclic_undercut.fspy")
     term = unfold_checked(prover, doc, issue)
     nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="credulous")
     assert sigma[issue] == "IN" and cls == "value"
-    assert _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "A")
-    assert not _contains(nf, lambda n: isinstance(n, DI) and n.name == "qa")   # argA dropped
+    assert _contains(nf, lambda n: isinstance(n, DI) and n.name == "qa")       # argA carries it
+    assert _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "Q")     # from presumed Q
+    assert not _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "A")

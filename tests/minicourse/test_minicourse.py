@@ -292,12 +292,32 @@ class TestLesson4GuardSideConditions:
         )
         assert self.conditions(g)["Q[t]"] == "false"
 
-    def test_guard_present_when_defeasible_part_is_non_empty(self):
+    def test_guard_present_when_the_contrary_is_derived(self):
+        g = self.build(
+            [("e", "Q", "term", [("R", "term", "presumption")], False, "argument"),
+             ("c", "Q", "context", [("R", "term", "presumption")], False, "attacker")],
+            [],
+        )
+        assert self.conditions(g)["Q[t]"] == "(R[t] & not Q[c])"
+
+    def test_guard_dropped_when_the_contrary_is_a_bare_default(self):
+        """The asymmetric guard (2026-09-25): a side that is nothing but a
+        default marker has delegated the onus and does not guard back."""
         g = self.build(
             [("e", "Q", "term", [("R", "term", "presumption")], False, "argument")],
             [("Q", "context", "presumption")],
         )
-        assert self.conditions(g)["Q[t]"] == "(R[t] & not Q[c])"
+        assert self.conditions(g)["Q[t]"] == "R[t]"
+        assert self.conditions(g)["Q[c]"] == "(true & not Q[t])"
+
+    def test_a_presumption_keeps_its_guard_next_to_a_dropped_one(self):
+        """The drop is per disjunct: Q[t] is presumed AND argued, so its
+        presumption stays guarded while its derivation does not."""
+        g = self.build(
+            [("e", "Q", "term", [("R", "term", "obligation")], False, "argument")],
+            [("Q", "term", "presumption"), ("Q", "context", "presumption")],
+        )
+        assert self.conditions(g)["Q[t]"] == "(R[t] | (true & not Q[c]))"
 
     def test_no_guard_when_the_contrary_is_not_materialised(self):
         g = self.build(

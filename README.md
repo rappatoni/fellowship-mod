@@ -277,6 +277,13 @@ one-line message.
   - print the labelling(s) of the chosen semantics (default grounded):
     one `IN` / `OUT` / `UNDEC` per proposition and side; several
     labellings are numbered
+  - a presumption delegates the onus of refutation to the other side, so
+    a side carrying only a default marker does not contest a side that is
+    actually derived: an argument for the contrary defeats a bare
+    presumption outright, while two derivations still contest each other
+    and a presumption's own default stays guarded
+  - presuming *both* sides of one proposition means neither side holds
+    the onus; that is reported as a warning and will become an error
 - `evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]`
   - label-guided evaluation; options in any order, defaults skeptical,
     preferred, cbn; prints the normal-form class (`VALUE`, `EXCEPTION`,

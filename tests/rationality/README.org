@@ -39,7 +39,13 @@ Even loop of length 2: P rests on default absence of Q and vice versa.
 Expected: grounded P UNDEC, Q UNDEC; preferred labellings {P IN, Q OUT}
 and {P OUT, Q IN}; stable the same. Evaluation of issue P: credulous mode
 picks the witness labelling with P IN and returns a value; skeptical mode
-yields a suspended focus. This is the key fixture for issue M4 of the
+yields a suspended focus.
+
+The two-labelling expectation only became true of the implementation on
+2026-09-25 (=aida-asymmetric-contrariness-guard=). Before then the
+document graph had a third stable labelling, "both refutations stand,
+neither proof", because the refutations are bare presumptions and the
+symmetric guard let them survive against an accepted derivation. This is the key fixture for issue M4 of the
 critique: a per-critical-pair strategy can mix the two preferred
 labellings and accept both P and Q - the two-stage discipline of
 call-by-onus.org Layer 4 must not.

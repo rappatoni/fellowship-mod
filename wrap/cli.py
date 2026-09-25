@@ -39,6 +39,13 @@ def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[s
       - Stream to stdout
       - Avoid duplicate handlers if already configured
     """
+    # The CLI reports onus conflicts itself, in _report_onus_conflicts, with
+    # a message aimed at the person at the prompt; the library warning would
+    # only duplicate it on stderr.
+    import warnings as _warnings
+    from core.comp.adf_label import OpposingPresumptions as _OpposingPresumptions
+    _warnings.filterwarnings("ignore", category=_OpposingPresumptions)
+
     level_name = (level_name or os.getenv("FSP_LOGLEVEL", "INFO")).upper()
     level = getattr(logging, level_name, None)
     if level is None:
@@ -1573,6 +1580,7 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     from core.ac.ast import FirstOrderNotSupported
 
     if name == "document":
+        _report_onus_conflicts(prover.document)
         return None, prover.document, None
     arg, issue, term = _issue_term(prover, name)
     if term is None:
@@ -1584,7 +1592,25 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
         print(f"graph: refused: {e}")
         logger.warning("Debate graph compilation refused for '%s': %s", name, e)
         return arg, None, term
+    _report_onus_conflicts(graph)
     return arg, graph, term
+
+
+def _report_onus_conflicts(graph) -> None:
+    """Warn about propositions presumed on BOTH sides.
+
+    A presumption delegates the burden of refutation to the other side, so
+    both sides presuming means neither holds it.  The compiler still
+    labels such a graph; task aida-onus-delegation-polarity makes it an
+    error at registration time.
+    """
+    from core.comp.adf_label import opposing_presumptions
+
+    clash = opposing_presumptions(graph)
+    if clash:
+        names = ", ".join(graph.nodes.get(key, key) for key in clash)
+        logger.warning("Opposing presumptions on %s: both sides delegate the onus "
+                       "of refutation, so neither side holds it.", names)
 
 
 def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Optional[str]:

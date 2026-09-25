@@ -5,11 +5,11 @@ The compilation maps every referenced (proposition, side) pair of a
 DebateGraph to an ADF statement and builds its acceptance condition:
 
     AC(K, side) =   [OR over strict edges deriving (K, side): AND sources]
-                  OR (
-                        ( [OR over defeasible edges: AND sources]
-                          OR true-if-presumption-marker )
-                        AND NOT (K, contrary side)
-                     )
+                  OR ( [OR over defeasible edges: AND sources]
+                       AND NOT (K, contrary side)   <- only if the contrary
+                                                       side is itself derived )
+                  OR ( true-if-presumption-marker
+                       AND NOT (K, contrary side) )
 
 - An obligation marker contributes nothing: the side stays OUT unless an
   edge derives it (default OUT).
@@ -19,6 +19,32 @@ DebateGraph to an ADF statement and builds its acceptance condition:
   defeats the challenge to K and vice versa.  Strict derivations bypass
   the guard - per the spec, strict edges are only countered by strict
   contradiction, which ``strict_contradictions`` reports.
+
+The guard is asymmetric (author's decision, 2026-09-25): *a derivation is
+contested only by a derivation*.  A presumption delegates the onus to the
+other side, so a side that is nothing but a default marker never guards
+back against an argument for the contrary; the argument defeats it
+outright.  A presumption keeps its own guard, so a bare default is still
+defeated by whatever the other side accepts, and two contrary derivations
+still attack each other.  Consequences:
+
+- An undercut of a presumed premise is decisive: in
+  tests/multiple_undercuts.fspy the document grounds two-valued instead
+  of leaving the whole contest UNDEC.
+- The guard is dropped per DISJUNCT, not per statement.  A statement that
+  is presumed *and* carries an argument keeps the guard on its
+  presumption disjunct, so a failed argument cannot decide a contest
+  between two defaults by merely being present.
+- A defeasible argument now defeats a bare presumption exactly as a
+  strict one does.  Strictness still matters between two derivations.
+
+Contrariness with a default marker on BOTH sides is an onus conflict:
+each side delegates the burden to the other, and neither can discharge
+it.  ``opposing_presumptions`` reports the propositions where that
+happens and ``compile_conditions`` warns (OpposingPresumptions).  Making
+it an error and tracking the onus properly is task
+aida-onus-delegation-polarity; until then those graphs still compile, and
+both sides keep their guards, which is the old mutual-rebut behaviour.
 
 Consequence worth stating (recorded as a plan correction): the guard makes
 contested nodes - grounds on both sides - a two-statement negation cycle
@@ -39,8 +65,11 @@ author, 2026-09-16, task aida-adf-bdd-primary):
   with one polarity per condition); it asserts unipolarity and raises
   NonUnipolarConditions otherwise instead of answering.  The compiler can
   produce a non-unipolar condition in exactly one way - an edge whose
-  source is the contrary of its own target, Q[t] <- Q[c] - and on that
-  shape Kleene is wrong (UNDEC where the definition says OUT).
+  source is the contrary of its own target, Q[t] <- Q[c], *while the
+  contrary side is itself derived*, so that the guard survives and
+  Q[t] = (Q[c] & ~Q[c]).  On that shape Kleene is wrong (UNDEC where the
+  definition says OUT).  With a bare default on the contrary side the
+  guard is now dropped and the shape is unipolar.
 - ``grounded_labels_via_oracle``: the naive enumeration oracle, correct
   by construction and limited to 14 statements; the second cross-check.
 
@@ -54,6 +83,8 @@ staying IN where modus tollens requires OUT.  Design decision recorded
 in that task: every implication contraposes, delegated (defeasible) ones
 included; strictness affects default status only, never closure.
 """
+
+import warnings
 
 from core.comp.oracle import (
     ADF, const, var, neg, conj, disj,
@@ -98,10 +129,45 @@ def referenced_statements(graph: DebateGraph):
     return seen
 
 
+class OpposingPresumptions(UserWarning):
+    """Both sides of one proposition carry a default marker.  Each side
+    delegates the onus of refutation to the other, so neither holds it;
+    see ``opposing_presumptions`` and task aida-onus-delegation-polarity."""
+
+
+def opposing_presumptions(graph: DebateGraph):
+    """Propositions presumed on the term side AND on the context side.
+
+    A presumption delegates the burden of refutation to the other side.
+    Both sides delegating is an onus conflict and should eventually be
+    refused when the presentation is built, not merely warned about here.
+    """
+    return sorted(
+        key for (key, side), kinds in graph.defaults.items()
+        if side == "term" and "presumption" in kinds
+        and "presumption" in graph.defaults.get((key, "context"), ())
+    )
+
+
+def _warn_opposing_presumptions(graph: DebateGraph):
+    clash = opposing_presumptions(graph)
+    if not clash:
+        return
+    names = ", ".join(graph.nodes.get(key, key) for key in clash)
+    warnings.warn(
+        f"opposing presumptions on {names}: both sides delegate the onus of "
+        f"refutation, so neither side holds it; the contest is decided by "
+        f"the contrariness guard alone",
+        OpposingPresumptions, stacklevel=3,
+    )
+
+
 def compile_conditions(graph: DebateGraph):
     """Acceptance conditions for every referenced statement."""
+    _warn_opposing_presumptions(graph)
     statements = referenced_statements(graph)
     materialized = {(k, s) for (k, s) in statements}
+    derived = {(e.target_key, e.target_side) for e in graph.edges}
     conditions = {}
     for key, side in statements:
         strict_disjuncts = []
@@ -112,12 +178,28 @@ def compile_conditions(graph: DebateGraph):
             body = conj(*[var(_stmt(s.key, s.side)) for s in edge.sources])
             (strict_disjuncts if edge.strict else defeasible_disjuncts).append(body)
         kinds = graph.defaults.get((key, side), ())
-        if "presumption" in kinds:
-            defeasible_disjuncts.append(const(True))
-        core = disj(*defeasible_disjuncts)
+        presumed = "presumption" in kinds
         contrary = (key, _contrary(side))
-        if contrary in materialized and defeasible_disjuncts:
-            core = conj(core, neg(var(_stmt(*contrary))))
+        guarded = contrary in materialized
+        # A derivation is contested only by a derivation: a contrary side
+        # that is nothing but a default marker has delegated the onus and
+        # does not guard back.  bool(), because `and` returns the list and
+        # the list is mutated below.
+        unguarded_derivations = bool(
+            guarded and defeasible_disjuncts and contrary not in derived
+        )
+        if unguarded_derivations and presumed:
+            # The presumption disjunct keeps its guard even though the
+            # derivations lose theirs, so a dead argument cannot decide a
+            # contest between two defaults.
+            core = disj(disj(*defeasible_disjuncts),
+                        conj(const(True), neg(var(_stmt(*contrary)))))
+        else:
+            if presumed:
+                defeasible_disjuncts.append(const(True))
+            core = disj(*defeasible_disjuncts)
+            if guarded and defeasible_disjuncts and not unguarded_derivations:
+                core = conj(core, neg(var(_stmt(*contrary))))
         condition = disj(*strict_disjuncts, core) if strict_disjuncts else core
         conditions[_stmt(key, side)] = condition
     return conditions

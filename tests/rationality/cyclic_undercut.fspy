@@ -8,14 +8,21 @@
 %
 % linked through contrariness at Q and at R: a cycle through A, which
 % the compiler used to refuse and now classifies ("fragment: cyclic").
-% Grounded: A IN (by the presumption inside cR), everything else UNDEC;
-% three preferred labellings.
 %
-% A[t] is IN in every labelling because cR PRESUMES A.  Since Phase B
-% the debate term is unfolded from the document graph, so that
-% presumption is the issue's own site and `evaluate d credulous` is the
-% value !A (before Phase B the composed term had it buried inside the
-% attacker and the evaluation was OPEN - the gap that motivated
+% Since the asymmetric guard (2026-09-25) the cycle RESOLVES: cQ derives
+% Q[c] from the obligation B, B rests on the presumed R, and R is refuted
+% by cR from the presumed A.  A bare presumption does not guard back
+% against a derivation, so R[c] is IN, R[t] and hence B[t] are OUT, cQ
+% fails, Q[t] stands, and argA carries A.  One labelling, two-valued:
+%
+%   A[t] IN   Q[t] IN   Q[c] OUT   R[c] IN   R[t] OUT   B[t] OUT
+%
+% `evaluate d credulous` is therefore argA applied to the presumption of
+% Q, not the bare presumption of A that cR supplies.  Before the guard
+% change every statement but A was UNDEC and there were three preferred
+% labellings.  Since Phase B the debate term is unfolded from the
+% document graph (before Phase B the composed term buried the site inside
+% the attacker and the evaluation was OPEN - the gap that motivated
 % graph-first).
 lk.
 declare A,B,Q,R:bool.

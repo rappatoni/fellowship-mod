@@ -1307,6 +1307,137 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
 
+*** NEXT Refuse opposing presumptions: track which side holds the onus
+:PROPERTIES:
+:ID:             aida-onus-delegation-polarity
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         5:00
+:DEFERRALS:      0
+:OUTCOME:        A presumption is recognised as a DELEGATION of the onus of refutation, and a presentation in which both sides of one proposition are presumed is refused where it is built, not merely warned about at labelling time: the prover or the wrapper tracks which side currently holds the burden for each proposition, and `by default.` on a proposition whose contrary is already presumed is rejected with a message naming the two arguments.
+:VERIFY:         A fixture registering a presumption for Q and then a presumption for the contrary of Q is refused with a message naming both arguments; tests/rationality/contested.fspy, tests/rationality/document_attack.fspy, tests/rationality/two_witnesses.fspy and tests/demo/03_contested.fspy are re-expressed so that exactly one side delegates, and their documented verdicts are restated from an actual run; core/comp/adf_label.opposing_presumptions returns empty on every fixture in the suite and its warning never fires; the six-fixture replay through Fellowship still passes.
+:END:
+
+Raised and decided by the author 2026-09-25, while settling the
+asymmetric contrariness guard (see below).
+
+*The rule.* "Presumption" is the implementation's word; *delegation* is
+the author's, and it is the accurate one. Writing =!1:P= does not just
+assert P by default - it hands the burden of refuting P to the opposing
+side. The skeptic now owes a context witness. So the onus always sits on
+exactly one side of a proposition, and a presentation in which BOTH sides
+delegate is ill-formed: each has passed the burden to the other and
+neither can discharge it. Obligations are the dual and pose no problem -
+nobody delegated, both sides simply stay OUT until an argument arrives -
+and the normal pairing is a presumption on one side against an obligation
+on the other, which is the same delegation seen from both ends.
+
+*Why it is a separate task.* Enforcing it needs the onus to be *tracked*:
+at registration time the wrapper (or the prover) must know, per
+proposition, which side currently holds the burden, and reject a
+`by default.` that would take it from a side that has already delegated.
+That is a front-end change, independent of the acceptance-condition
+compiler, and the author asked to keep the two apart.
+
+*What was done instead, 2026-09-25* (task complete except for the
+refusal): =core/comp/adf_label.opposing_presumptions= reports the
+propositions presumed on both sides; =compile_conditions= raises the
+=OpposingPresumptions= warning; the CLI logs a line for any graph it
+compiles. Nothing is refused, and such graphs keep BOTH guards, i.e. the
+old mutual-rebut behaviour, so no verdict changed for them.
+
+*Fixtures that are currently ill-formed under the rule.* Scanned
+2026-09-25 over every .fspy in tests/: exactly four documents presume
+both sides - =tests/rationality/contested.fspy= (Q),
+=tests/rationality/document_attack.fspy= (Q),
+=tests/rationality/two_witnesses.fspy= (S) and =tests/olon.fspy= (B) -
+plus the hand-built =graph_contested_presumptions= in
+tests/test_adf_label.py. The demo fixtures are all clean, 03_contested
+included: its Nixon diamond argues both sides. Re-expressing the four is
+part of this task, and it is not cosmetic: the minimal contested debate
+of minicourse lesson 5 - one proposition presumed on both sides, no edges
+at all - is exactly the illegal shape, so lesson 5 needs a new minimal
+example whose challenge is *argued*.
+
+*** DONE Make the contrariness guard asymmetric: a derivation is contested only by a derivation
+CLOSED: [2026-09-25 Thu]
+:PROPERTIES:
+:ID:             aida-asymmetric-contrariness-guard
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        compile_conditions adds the NOT-contrary guard to a side's DERIVED disjuncts only when the contrary side is itself derived, so an argument defeats a bare default outright; a presumption disjunct keeps its own guard, so a failed argument cannot decide a contest of defaults; two derivations still attack each other.
+:VERIFY:         Documented test suite green; tests/test_adf_label.py::TestAsymmetricGuard pins the four configurations and the multiple-undercut case; the even-loop document has exactly two stable labellings; the minicourse pins and lesson 4 text are restated from actual runs.
+:END:
+
+Raised by the author 2026-09-25 on the document graph of
+=tests/multiple_undercuts.fspy=: three undercutters attack the presumed
+premise A of arg1, one of them stands, and yet the whole contest ground
+to UNDEC. The symmetric guard let the bare presumption of A guard back
+against the accepted refutation.
+
+*The decision.* A derivation is contested only by a derivation. The
+author's reason is the onus: a presumption delegates the burden of
+refutation to the other side, so a side that is nothing but a default
+marker has no standing to guard back against an argument for the
+contrary. The guard is dropped from that argument's disjuncts.
+
+*The correction made during the work.* The rule as first stated - "guard
+only if the contrary also has a supporter" - is wrong on defaults against
+defaults: neither side is derived, both lose the guard, and both label IN,
+an accepted contradiction. Two further formulations were tried and
+measured. Guarding a derivation against the contrary's *body* rather than
+against the contrary *statement* is also wrong: on two contrary
+derivations it turns the negation cycle into mutual annihilation and both
+sides go OUT (demo 2, tests/demo/02_support_attack.fspy). What is
+implemented drops the guard per DISJUNCT and keeps it on the presumption,
+which passes both cases. The remaining hole - two bare defaults, where the
+old symmetric behaviour is kept - is the onus conflict of
+=aida-onus-delegation-polarity=.
+
+*Verdicts that changed* (all restated from actual runs):
+
+- =tests/multiple_undercuts.fspy=: the document grounds two-valued
+  (A[c] IN, A[t] and B[t] OUT) instead of UNDEC; one stable labelling
+  instead of two. Pinned as TestAsymmetricGuard::test_undercut_of_a_
+  presumed_premise_is_decisive.
+- even-loop document: three stable labellings become two. The third was
+  "both refutations stand, neither proof", which existed only because the
+  refutations are bare presumptions. The test had said "two" in its name
+  and asserted three since 2026-09-16.
+- =tests/rationality/cyclic_undercut.fspy=: the cycle now RESOLVES to a
+  single two-valued labelling, and the credulous value is argA applied to
+  the presumed Q rather than the bare presumption of A.
+- a defeasible challenge now defeats a bare presumption exactly as a
+  strict one does. Strictness still separates the two when both sides are
+  derived; recorded because it narrows what strictness buys.
+- the reductio shape Q[t] <- Q[c] with a bare default on the contrary
+  side becomes UNIPOLAR and grounds UNDEC on both sides instead of
+  Q[t] OUT, Q[c] IN. The Kleene cross-check no longer refuses it. The
+  non-unipolar shape still exists when the contrary side is derived, and
+  TestNonUnipolarShape was rebuilt on that graph.
+- =tests/rationality/self_attack_lk.fspy= loses its only stable
+  labelling: the odd loop through the contrariness link now has none.
+  Grounded is unchanged (all UNDEC) and the fixture's test asserts only
+  "not a value", so nothing was restated. This touches the author's
+  standing objection under =aida-strict-phase-experimental= that a
+  self-attacking argument classically derives its conclusion; the guard
+  change does not settle it, it relocates it.
+
+Not changed: the rationality postulates, every Fellowship replay, and the
+agreement of adf-bdd with the enumeration oracle on every fixture.
+
 *** NEXT Settle the strict phase: self-attack, clashes, and what "strict in the debate" means
 :PROPERTIES:
 :ID:             aida-strict-phase-experimental

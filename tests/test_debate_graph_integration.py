@@ -121,16 +121,18 @@ def test_even_loop_document_is_cyclic_and_has_two_stable_labellings(even_loop_pr
     assert not g.is_acyclic()                      # P[t] <- Q[c] ~ Q[t] <- P[c] ~ P[t]
     assert set(grounded_labels(g).values()) == {"UNDEC"}
     assert grounded_labels(g) == grounded_labels_via_oracle(g)
-    # Not the two-labelling Dung even loop: the fixture's refutations are
-    # PRESUMPTIONS with their own default, so "both refutations stand,
-    # neither proof" is a third stable labelling.  P and Q are never both
-    # accepted, and each is credulously acceptable.
+    # The Dung even loop, two labellings.  The fixture's refutations are
+    # bare PRESUMPTIONS, and since the asymmetric guard (2026-09-25) a bare
+    # default does not guard back against a derivation, so "both
+    # refutations stand, neither proof" is no longer stable: each proof is
+    # derived and would have to be IN.  P and Q are never both accepted,
+    # and each is credulously acceptable.
     stable = labellings(g, "stable")
-    assert len(stable) == 3
+    assert len(stable) == 2
     P, Q = canonical_prop("P"), canonical_prop("Q")
     verdicts = {(l[(P, "term")], l[(Q, "term")]) for l in stable}
-    assert verdicts == {("IN", "OUT"), ("OUT", "IN"), ("OUT", "OUT")}
-    assert len(labellings(g, "preferred")) == 3
+    assert verdicts == {("IN", "OUT"), ("OUT", "IN")}
+    assert len(labellings(g, "preferred")) == 2
 
 
 def test_each_even_loop_argument_alone_is_acyclic(even_loop_prover):

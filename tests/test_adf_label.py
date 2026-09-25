@@ -6,13 +6,16 @@ checked against the naive M0 oracle on every graph, and against the
 third-party adf-bdd solver where installed.
 """
 
+import warnings
+
 import pytest
 
 from core.ac.ast import Mu, Mutilde, Cons, Goal, Deleg, ID, DI
 from core.comp.adf_label import (
     grounded_labels, grounded_labels_kleene, grounded_labels_via_oracle,
     graph_to_adf, strict_contradictions, compile_conditions,
-    NonUnipolarConditions,
+    NonUnipolarConditions, OpposingPresumptions, opposing_presumptions,
+    _stmt,
 )
 from core.comp.oracle import find_adf_bdd, run_adf_bdd, grounded_interpretation
 from core.dc.debate_graph import (
@@ -43,7 +46,13 @@ def graph_support_chain(leaf_kind):
 
 
 def graph_contested_presumptions():
-    """Presumption for Q on both sides: mutual defeasible rebut."""
+    """Presumption for Q on both sides: mutual defeasible rebut.
+
+    This is the onus conflict of aida-onus-delegation-polarity - both
+    sides delegate the burden of refutation - so compiling it warns.  It
+    is kept as a fixture because the warning, not a refusal, is what the
+    compiler does today.
+    """
     g = DebateGraph()
     g.add_node("Q")
     g.mark_default(Q, "term", "presumption")
@@ -106,11 +115,15 @@ class TestHandWorkedLabels:
         assert labels[(Q, "context")] == "IN"
         assert labels[(Q, "term")] == "OUT"
 
-    def test_defeasible_challenge_yields_mutual_undec(self):
+    def test_defeasible_challenge_defeats_a_bare_presumption(self):
+        # Q[term] is a bare default: it delegated the onus, so it does not
+        # guard back against the challenge, and the challenge decides.
+        # Same verdict as the strict challenge above; strictness separates
+        # the two only when both sides are derived.
         labels = grounded_labels(graph_defeasible_challenge_vs_presumption())
         assert labels[(canonical_prop("S"), "term")] == "IN"
-        assert labels[(Q, "term")] == "UNDEC"
-        assert labels[(Q, "context")] == "UNDEC"
+        assert labels[(Q, "context")] == "IN"
+        assert labels[(Q, "term")] == "OUT"
 
 
 class TestProductionAgainstOracle:
@@ -214,13 +227,21 @@ class TestNonUnipolarShape:
     says OUT); adf-bdd, the primary labeller, and the oracle are right and
     agree, and the Kleene cross-check refuses the shape (lesson 8 item 15,
     decided 2026-09-16).
+
+    Since the asymmetric guard (2026-09-25) the shape needs the contrary
+    side to be DERIVED as well, otherwise the guard is dropped and the
+    condition is unipolar - see ``test_bare_contrary_makes_the_shape_unipolar``.
     """
 
     def _graph(self):
         g = DebateGraph()
         g.add_node("Q")
+        g.add_node("S")
         g.add_edge(edge("byContra", Q, "term",
-                        [src(Q, "context", "presumption")]))
+                        [src(Q, "context", "obligation")]))
+        g.add_edge(edge("nQ", Q, "context",
+                        [src(canonical_prop("S"), "term", "presumption")],
+                        role="attacker"))
         return g
 
     def test_primary_path_is_right_and_kleene_refuses(self):
@@ -237,6 +258,155 @@ class TestNonUnipolarShape:
         theirs = run_adf_bdd(adf, "grounded")
         assert len(theirs) == 1
         assert theirs[0] == grounded_interpretation(adf)
+
+    def test_bare_contrary_makes_the_shape_unipolar(self):
+        """Q[t] <- Q[c] with Q[c] a bare presumption: the guard is dropped,
+        so Q[t] = Q[c] and all three labellers agree.  The reductio is then
+        an odd loop through the contrariness link and grounds UNDEC."""
+        g = DebateGraph()
+        g.add_node("Q")
+        g.add_edge(edge("byContra", Q, "term",
+                        [src(Q, "context", "presumption")]))
+        rendered = {s: c for s, c in compile_conditions(g).items()}
+        assert rendered[_stmt(Q, "term")] == ("or", (("and", (("var", _stmt(Q, "context")),)),))
+        labels = grounded_labels(g)
+        assert labels[(Q, "term")] == "UNDEC" and labels[(Q, "context")] == "UNDEC"
+        assert grounded_labels_via_oracle(g) == labels
+        assert grounded_labels_kleene(g) == labels        # no longer refuses
+
+
+class TestAsymmetricGuard:
+    """A derivation is contested only by a derivation (2026-09-25).
+
+    A presumption delegates the onus of refutation to the other side, so a
+    side that is nothing but a default marker does not guard back against
+    an argument for the contrary.
+    """
+
+    def _presumed_vs_argued(self, dead_premise=False, presume_term=True):
+        """Q presumed on the term side; an argument for Q[context] from S.
+        With dead_premise, Q[term] additionally carries an argument whose
+        own premise is an undischarged obligation."""
+        g = DebateGraph()
+        for text in ("Q", "S", "D"):
+            g.add_node(text)
+        if presume_term:
+            g.mark_default(Q, "term", "presumption")
+        g.add_edge(edge("nQ", Q, "context",
+                        [src(canonical_prop("S"), "term", "presumption")],
+                        role="attacker"))
+        if dead_premise:
+            g.add_edge(edge("weak", Q, "term",
+                            [src(canonical_prop("D"), "term", "obligation")]))
+        return g
+
+    def test_argument_beats_a_bare_presumption(self):
+        labels = grounded_labels(self._presumed_vs_argued())
+        assert labels[(Q, "context")] == "IN"
+        assert labels[(Q, "term")] == "OUT"
+
+    def test_the_presumption_keeps_its_guard(self):
+        """The dropped guard is on the DERIVATIONS of a side, not on the
+        side.  A dead argument must not decide a contest between two bare
+        defaults, so Q[term]'s presumption disjunct stays guarded."""
+        g = self._presumed_vs_argued()
+        g.defaults.pop((canonical_prop("S"), "term"), None)   # S now unsupported
+        g.mark_default(canonical_prop("S"), "term", "obligation")
+        labels = grounded_labels(g)
+        assert labels[(canonical_prop("S"), "term")] == "OUT"
+        assert labels[(Q, "context")] == "OUT"      # the challenge fails
+        assert labels[(Q, "term")] == "IN"          # so the presumption stands
+
+    def test_a_failed_argument_does_not_decide_a_contest_of_defaults(self):
+        """Q presumed on both sides, plus a dead argument for Q[term].  The
+        dead argument must change nothing: without the per-disjunct guard
+        it would silently win the contest."""
+        g = self._presumed_vs_argued(dead_premise=True)
+        g.defaults.pop((canonical_prop("S"), "term"), None)
+        g.mark_default(canonical_prop("S"), "term", "obligation")
+        g.mark_default(Q, "context", "presumption")
+        with pytest.warns(OpposingPresumptions):
+            labels = grounded_labels(g)
+        assert labels[(canonical_prop("D"), "term")] == "OUT"
+        assert labels[(Q, "term")] == "UNDEC" and labels[(Q, "context")] == "UNDEC"
+
+    def test_two_derivations_still_attack_each_other(self):
+        """Both sides derived: the guard survives on both, so the mutual
+        rebut is preserved and grounds UNDEC."""
+        g = self._presumed_vs_argued(presume_term=False)
+        g.add_edge(edge("qArg", Q, "term",
+                        [src(canonical_prop("D"), "term", "presumption")]))
+        labels = grounded_labels(g)
+        assert labels[(Q, "term")] == "UNDEC" and labels[(Q, "context")] == "UNDEC"
+        assert grounded_labels_via_oracle(g) == labels
+
+    def test_undercut_of_a_presumed_premise_is_decisive(self):
+        """The motivating case (tests/multiple_undercuts.fspy): B argued
+        from a presumed A, three counterarguments to A of which one stands.
+        The document grounds two-valued instead of leaving the whole
+        contest UNDEC, and the derivation cycle A[t] -> B[t] -> A[c] ~ A[t]
+        stops mattering for the labels."""
+        g = DebateGraph()
+        for text in ("A", "B", "C", "D"):
+            g.add_node(text)
+        C_, D_ = canonical_prop("C"), canonical_prop("D")
+        g.add_edge(edge("arg1", canonical_prop("B"), "term",
+                        [src(canonical_prop("A"), "term", "presumption")]))
+        g.add_edge(edge("counter1", canonical_prop("A"), "context",
+                        [src(canonical_prop("B"), "term", "obligation")], role="attacker"))
+        g.add_edge(edge("counter2", canonical_prop("A"), "context",
+                        [src(C_, "term", "presumption")], role="attacker"))
+        g.add_edge(edge("counter3", canonical_prop("A"), "context",
+                        [src(D_, "term", "obligation")], role="attacker"))
+        assert not g.is_acyclic()
+        labels = grounded_labels(g)
+        assert labels == {
+            (canonical_prop("B"), "term"): "OUT",
+            (canonical_prop("A"), "term"): "OUT",
+            (canonical_prop("A"), "context"): "IN",
+            (C_, "term"): "IN",
+            (D_, "term"): "OUT",
+        }
+        assert grounded_labels_via_oracle(g) == labels
+
+    def test_strict_derivation_counts_as_a_derivation(self):
+        """The contrary side is 'derived' if it has ANY edge, strict edges
+        included; a strict refutation is not weakened by the new rule."""
+        labels = grounded_labels(graph_strict_challenge_vs_presumption())
+        assert labels[(Q, "context")] == "IN" and labels[(Q, "term")] == "OUT"
+
+
+class TestOpposingPresumptions:
+    """Both sides delegating the onus is an onus conflict; the compiler
+    warns and still labels (task aida-onus-delegation-polarity)."""
+
+    def test_reported_and_warned(self):
+        g = graph_contested_presumptions()
+        assert opposing_presumptions(g) == [Q]
+        with pytest.warns(OpposingPresumptions, match="delegate the onus"):
+            compile_conditions(g)
+
+    def test_no_warning_when_the_onus_sits_on_one_side(self):
+        for g in (graph_strict_challenge_vs_presumption(),
+                  graph_defeasible_challenge_vs_presumption(),
+                  graph_support_chain("presumption")):
+            assert opposing_presumptions(g) == []
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", OpposingPresumptions)
+                compile_conditions(g)
+
+    def test_opposing_obligations_are_not_a_conflict(self):
+        """Nobody delegated, so there is no onus clash: both sides simply
+        stay OUT until an argument arrives."""
+        g = DebateGraph()
+        g.add_node("Q")
+        g.mark_default(Q, "term", "obligation")
+        g.mark_default(Q, "context", "obligation")
+        assert opposing_presumptions(g) == []
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", OpposingPresumptions)
+            labels = grounded_labels(g)
+        assert labels[(Q, "term")] == "OUT" and labels[(Q, "context")] == "OUT"
 
 
 class TestNoFallback:
