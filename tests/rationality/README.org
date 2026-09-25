@@ -28,10 +28,20 @@ design decision noted inline.
 * self_attack.fspy [runnable]
 
 Odd loop of length 1: one argument for P resting on the NAF default for P
-itself. Expected grounded labelling: P UNDEC (both sides). Postulate
-exercised: none directly; baseline for loop handling. Skeptical and
-credulous evaluation must both yield a suspended focus (no labelling makes
-P IN).
+itself. Postulate exercised: none directly; baseline for loop handling.
+
+Expected labelling, *revised 2026-09-25* (=aida-strict-phase-experimental=):
+the ARGUMENTATION FRAMEWORK grounds P UNDEC on both sides, as before, and
+that is what the earlier entry recorded. The ISSUE GRAPH is the framework
+plus the strict edges read off the unfolded term, and unfolding captures
+the default with P's own continuation. A captured presumption is now a
+commitment the debate made rather than an assumption, so the remaining
+term is the classical proof of P from =(P->false)->P=: it contributes the
+strict edge =SelfAttack*= and P[term] is IN. Both modes evaluate to a
+value. Before the revision both yielded a suspended focus.
+
+This is the classical reading the author asked for: =~P -> P= is
+equivalent to P, so a self-attacking argument derives its conclusion.
 
 * even_loop.fspy [runnable]
 

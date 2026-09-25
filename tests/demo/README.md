@@ -30,7 +30,8 @@ Graphviz for `graph ... show` (without it, a text tree is printed instead).
 Every unfolded term is replayed through Fellowship, which is the slow part;
 `typecheck off` disables it for a session.
 
-Caveat for 06: the strict phase that turns the trap into a strict edge is
-marked experimental in `tasks.org` (`aida-strict-phase-experimental`).
+Note for 06: the strict phase is what turns the sprung trap into a strict
+edge. Strict in the debate means the subterm rests on nothing, that is, it
+has no open site; see the note in `call-by-onus.org`.
 
 `tests/demo/test_demo.py` runs every file end to end so the demo cannot rot.

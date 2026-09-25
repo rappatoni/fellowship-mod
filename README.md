@@ -271,6 +271,13 @@ one-line message.
     at that binder's statement, so the framework shows a sprung trap as a
     cycle; strictness is then read off the unfolded term and adds a strict
     edge (`NAME*`) for every closed derivation the framework missed
+  - strict in the debate means the subterm rests on nothing, that is, it
+    has no open site. A captured variable is a commitment the debate
+    already made, whichever kind of site it replaced, so a self-attacking
+    argument derives its conclusion. A clash rests on nothing either, so
+    it decides a scaffold, but it derives its statement only from an
+    inconsistency, so it claims no strict edge and surfaces as an
+    `EXCEPTION` instead
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
 - `label ARG|document [grounded|complete|preferred|stable]`

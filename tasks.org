@@ -114,9 +114,9 @@ Peirce) with a README and tests/demo/test_demo.py running each end to
 end; the REPL got readline, paste splitting, '#'/'%' handling, `load
 FILE` and the `%stop` convention for `--load`; the interactive echo no
 longer shows the machine payload; unfolding copies are folded in the
-issue graph. Not rehearsed. Open for the demo: the strict phase is
-experimental (aida-strict-phase-experimental), so demo 6 carries a
-caveat; `graph ... show` needs Graphviz.
+issue graph. Not rehearsed. Open for the demo: `graph ... show` needs
+Graphviz. (The strict phase was still experimental when this was
+written; it was settled 2026-09-25, so demo 6's caveat can go.)
 
 ** BACKLOG Integrate AIDA into the DIREGA demonstrator
 :PROPERTIES:
@@ -1429,16 +1429,19 @@ old symmetric behaviour is kept - is the onus conflict of
   TestNonUnipolarShape was rebuilt on that graph.
 - =tests/rationality/self_attack_lk.fspy= loses its only stable
   labelling: the odd loop through the contrariness link now has none.
-  Grounded is unchanged (all UNDEC) and the fixture's test asserts only
-  "not a value", so nothing was restated. This touches the author's
+  Grounded is unchanged (all UNDEC) and the fixture's test asserted only
+  "not a value", so nothing was restated here. This touched the author's
   standing objection under =aida-strict-phase-experimental= that a
   self-attacking argument classically derives its conclusion; the guard
-  change does not settle it, it relocates it.
+  change did not settle it, it relocated it. Settled later the same day
+  in that task: the issue graph now labels P[t] IN through a strict edge,
+  while the framework alone still grounds it UNDEC as recorded here.
 
 Not changed: the rationality postulates, every Fellowship replay, and the
 agreement of adf-bdd with the enumeration oracle on every fixture.
 
-*** NEXT Settle the strict phase: self-attack, clashes, and what "strict in the debate" means
+*** DONE Settle the strict phase: self-attack, clashes, and what "strict in the debate" means
+CLOSED: [2026-09-25 Thu]
 :PROPERTIES:
 :ID:             aida-strict-phase-experimental
 :AREA:           phd
@@ -1500,9 +1503,57 @@ The author's objections (2026-09-17, verbatim in substance):
   strict edges, and the classifier reports it as an exception wherever
   it sits.
 
-Until settled, the strict phase's verdicts on the fixtures are the ones
-of the absorption design it replaced (identical on all six), and the
-tests pin the current rules as *behaviour*, not as decisions.
+*Settled 2026-09-25: both rules removed, both objections upheld.*
+
+The definition adopted, written up in call-by-onus.org ("The strict
+phase: what 'strict in the debate' means"): a subterm is strict in the
+debate iff it contains NO OPEN SITE, and nothing else. The reason for
+"nothing else" is that strictness asks what a term RESTS ON. Neither
+removed clause answers that question:
+
+- a free variable is not something a subterm rests on. The unfolded term
+  is closed as a whole (Fellowship replays it), so every variable free in
+  a subterm is bound by an enclosing binder of the debate, and a binder
+  is a commitment the debate already made. That was already the reason a
+  captured OBLIGATION counts as met; a captured PRESUMPTION is the same
+  situation. The marker keeps its other job - the compiler still records
+  the capture as a presumption source, which is how the framework shows
+  the cycle;
+- a clash is not something a subterm rests on; it is what the subterm
+  PRODUCES. A closed clash rests on nothing, so it is strict and decides
+  a scaffold like any other strict wing. What it must not do is claim a
+  strict edge, since it derives its statement only from an
+  inconsistency - and that test already lived in the edge collector,
+  where it belongs, so removing it from the predicate lost nothing.
+
+Three edits (core/dc/strict.py): =_is_assumption= drops the
+=captured_presumption= clause; =strict_in_debate= drops the clash
+conjunct (its =catchers_*= arguments are now accepted and ignored); the
+edge collector required a decision strictly BELOW a node, which silently
+skipped the case where the decision produces the whole term, and now
+emits one edge per OUTERMOST eta-wrapped subterm that is closed,
+clash-free and owes its closedness to a decision at or below it. Without
+that third edit self-attack evaluates to a value while its graph still
+says UNDEC.
+
+Verdicts, all from actual runs (the table is in call-by-onus.org):
+self_attack_lk.fspy is the one that changed - framework UNDEC as before,
+issue graph IN through the strict edge =SelfAttack*=, a value in both
+modes where it used to be OPEN. even_loop_lk.fspy (still symmetric),
+contested.fspy and peirces_law.fspy are unchanged. Suite: 1068 passed,
+and every unfolded fixture still replays through Fellowship.
+
+Tests now pin the decision rather than the behaviour:
+=TestPredicates::test_a_captured_presumption_is_not_an_assumption=,
+=TestPredicates::test_a_clash_is_strict_but_produces_an_exception=,
+=TestClashesDecideButClaimNoEdge= (renamed from TestDefeatIsNotStrict,
+with the site-bearing case kept and a new site-free clash case), and
+=tests/test_unfold.py::test_self_attack_derives_its_conclusion=.
+
+Left open, as before: the exception reaches the root through
+normalisation and the classifier, but does not propagate through
+axiom-headed spines. That is =aida-abort-propagation=, unchanged by this
+decision.
 
 *** DONE Read strictness off the debate term, not the framework
 CLOSED: [2026-09-17 Wed]

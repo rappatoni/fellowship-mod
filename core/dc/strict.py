@@ -12,32 +12,43 @@ phase only: strict redundancy and strict defeat decide a scaffold when
 one wing is strict *in the debate* and the other is not; everything else
 is delayed for the labelling.
 
-EXPERIMENTAL (tasks.org, aida-strict-phase-experimental): the definition
-of "strict in the debate" below carries two rules added on 2026-09-17
-without the author's approval - a captured presumption is an assumption,
-and a subterm holding an uncatchable clash is not strict - and the
-author objects to both (a self-attacking argument classically derives
-its conclusion; an uncatchable clash is a strict proof of contradiction
-that should bubble up).  The tests pin the current behaviour, not a
-decision.
+Strictness asks what a term RESTS ON, and only that (author,
+2026-09-25, tasks.org aida-strict-phase-experimental).  What a term
+PRODUCES - a value or an exception - is a separate question, answered by
+the normal form's class and by the strict-edge rule below.  Two rules
+that confused the two were removed on that date: "a captured presumption
+is an assumption" and "a subterm holding an uncatchable clash is not
+strict".
+
+- A free variable is not something a subterm rests on.  The unfolded
+  term is closed as a whole (Fellowship replays it), so every variable
+  free in a subterm is bound by an enclosing binder of the debate, and a
+  binder is a commitment the debate has already made.  That is why a
+  captured obligation counts as met; a captured presumption is the same
+  situation, so the ``captured_presumption`` marker is not consulted
+  here.  Classically ~P -> P gives P: a self-attacking argument derives
+  its conclusion, and now does.
+- A clash is not something a subterm rests on; it is what the subterm
+  produces.  A closed clash is a strict proof of contradiction, so it
+  decides a scaffold like any other strict wing, and it then bubbles up:
+  ``classify_nf`` reports the exception at the root, which says the term
+  is acceptable only given an inconsistency.  What it must NOT do is
+  claim a strict edge, since it derives its statement only from that
+  inconsistency - see ``strict_resolve``'s collector, which applies the
+  clash test there, where it belongs.
 
 Two notions of strictness:
 
 - *strict in the debate* (the paper's "strict in d"): a subterm with no
-  assumption - no open site and no captured presumption (a default the
-  unfolder bound to a continuation is still the arguer's assumption).
-  The unfolded term is closed as a whole (Fellowship replays it), so a
-  variable free in a subterm is always bound by an enclosing binder of
-  the debate; a captured obligation is therefore met, a captured
-  presumption is not.  This is what decides a scaffold.
+  open site.  This is what decides a scaffold.
 - *closed*: no open site and no free variable but declared names.  A
-  closed subterm that proves (refutes) a statement and contains a
-  strictly decided scaffold is a strict derivation the framework did not
-  have; it becomes a strict, source-less edge of the issue graph, so the
-  labelling agrees with the term.  Peirce's law: the whole term is
-  closed after its scaffolds are decided, while the inner proof of P is
-  not (it uses the hypothesis f), so exactly the thesis gets a strict
-  edge and P stays a claim nobody established.
+  closed subterm that proves (refutes) a statement and owes its
+  closedness to a strictly decided scaffold is a strict derivation the
+  framework did not have; it becomes a strict, source-less edge of the
+  issue graph, so the labelling agrees with the term.  Peirce's law: the
+  whole term is closed after its scaffolds are decided, while the inner
+  proof of P is not (it uses the hypothesis f), so exactly the thesis
+  gets a strict edge and P stays a claim nobody established.
 
 Decision rules at a scaffold (orig t, supporter t2 / attacker e2; S =
 strict in the debate):
@@ -68,10 +79,11 @@ _SITES = (Goal, Laog, Deleg, Geled)
 
 
 def _is_assumption(n) -> bool:
-    """A site, or a variable that stands for a captured presumption: the
-    default is still the arguer's assumption after the binder gave it a
-    place to throw (core/dc/unfold.py)."""
-    return isinstance(n, _SITES) or getattr(n, "captured_presumption", False)
+    """An open site, and nothing else.  A captured variable is not an
+    assumption of the subterm: the binder that caught it is a commitment
+    the debate already made, whether the site was an obligation or a
+    presumption (author, 2026-09-25)."""
+    return isinstance(n, _SITES)
 
 
 def _contains_assumption(node) -> bool:
@@ -85,15 +97,14 @@ def _contains_assumption(node) -> bool:
 
 
 def strict_in_debate(node, catchers_ids=frozenset(), catchers_dis=frozenset()) -> bool:
-    """A strict proof or refutation in the debate: no assumption anywhere
-    in the subterm - no open site, no captured presumption - and no
-    uncatchable clash either: a defeated derivation is an exception, not
-    a strict argument, whatever it rests on.  ``catchers_*`` are the
-    mu/mu' binders enclosing the subterm in the debate: a throw to one of
-    them is caught, so a scion that throws to its host's continuation
-    (Peirce's p3) is strict, while a closed clash is not."""
-    return (not _contains_assumption(node)
-            and not contains_uncatchable_clash(node, catchers_ids, catchers_dis))
+    """A strict proof or refutation in the debate: no open site anywhere
+    in the subterm.  Nothing else - strictness is what the term rests on
+    (module docstring).  A defeated derivation is still strict; it is an
+    exception, which the normal form's class reports and which bars the
+    strict EDGE, not the decision.  ``catchers_*`` are accepted and
+    ignored: they belonged to the clash test, which now lives in
+    ``strict_resolve``'s collector."""
+    return not _contains_assumption(node)
 
 
 def is_closed(node, strict_names=()) -> bool:
@@ -226,29 +237,36 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
 
     term = walk(deepcopy(term))
 
-    def collect(node, seen_decision):
-        """Closed eta-wrapped subterms that became closed through a
-        decision below them -> strict edges.  The kept wing itself is not
-        one (it has its own edge in the framework), nor is a subterm
-        holding a clash (an exception, not a proof)."""
+    def has_decision(node):
         if not isinstance(node, ProofTerm):
             return False
-        here = getattr(node, "_strict_decision", False)
-        below = False
-        for slot in ("term", "context"):
-            child = getattr(node, slot, None)
-            if isinstance(child, ProofTerm):
-                below = collect(child, seen_decision) or below
+        if getattr(node, "_strict_decision", False):
+            return True
+        return any(has_decision(getattr(node, slot, None)) for slot in ("term", "context"))
+
+    def collect(node):
+        """The OUTERMOST closed eta-wrapped subterms that owe their
+        closedness to a decision -> one strict edge each.  A subterm
+        holding an uncatchable clash contributes none: it derives its
+        statement only from an inconsistency, which the classifier
+        reports as an exception instead."""
+        if not isinstance(node, ProofTerm):
+            return
         statement = _eta_statement(node)
-        if (below and statement is not None and is_closed(node, strict_names)
+        if (statement is not None and has_decision(node)
+                and is_closed(node, strict_names)
                 and not contains_uncatchable_clash(node)):
             key, side = statement
             name = node.id.name if isinstance(node, Mu) else node.di.name
             edges.append(Edge(name=f"{name}*", target_key=key, target_side=side,
                               sources=(), strict=True, role="strict", term=deepcopy(node)))
-        return here or below
+            return                       # maximal: do not descend into it
+        for slot in ("term", "context"):
+            child = getattr(node, slot, None)
+            if isinstance(child, ProofTerm):
+                collect(child)
 
-    collect(term, False)
+    collect(term)
     return term, edges
 
 

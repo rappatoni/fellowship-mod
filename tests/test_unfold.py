@@ -310,12 +310,19 @@ def test_even_loop_is_symmetric(prover):
         assert skeptical != "value" and credulous == "value"
 
 
-def test_self_attack_is_not_a_value(prover):
+def test_self_attack_derives_its_conclusion(prover):
+    # 2026-09-25: a captured presumption is a commitment the debate made,
+    # not an assumption, so the self-attacking argument is the classical
+    # proof of P from (P->false)->P.  It is a value in both modes, and the
+    # issue graph agrees through the strict edge it contributes.
     doc, issue, sn, sk = load(prover, "tests/rationality/self_attack_lk.fspy")
     term = unfold_checked(prover, doc, issue)
     for mode in ("skeptical", "credulous"):
         _, cls, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode=mode)
-        assert cls != "value"
+        assert cls == "value"
+    g = compile_issue(term, "u", strict_names=sn, strict_kinds=sk)
+    assert [e.name for e in g.edges if e.strict and e.name.endswith("*")] == ["SelfAttack*"]
+    assert grounded_labels(g)[issue] == "IN"
 
 
 def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
