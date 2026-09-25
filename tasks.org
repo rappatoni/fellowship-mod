@@ -1364,6 +1364,69 @@ of minicourse lesson 5 - one proposition presumed on both sides, no edges
 at all - is exactly the illegal shape, so lesson 5 needs a new minimal
 example whose challenge is *argued*.
 
+*** NEXT Review the two semantics decisions of 2026-09-25
+:PROPERTIES:
+:ID:             aida-review-guard-and-strict-decisions
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author has reviewed both semantics changes of 2026-09-25 - the asymmetric contrariness guard (=aida-asymmetric-contrariness-guard=, commit 9820d4e) and the removal of the two strict-phase rules (=aida-strict-phase-experimental=, commit 1a81650) - and recorded a verdict on each of the review points below; anything rejected has its own follow-up task and the code follows the verdict.
+:VERIFY:         Each point below carries an explicit accept/reject with a one-line reason, written into this entry; for every reject there is a new task with its own OUTCOME; the suite is green afterwards and the fixture verdicts in call-by-onus.org and tests/rationality/README.org match an actual run.
+:END:
+
+Both changes were implemented in one session, on the author's
+instruction, and both move verdicts on fixtures. They were agreed in
+conversation but not reviewed against the code. Points where an
+independent look is worth most:
+
+On the guard (=core/comp/adf_label.compile_conditions=):
+
+1. Against a bare default, a DEFEASIBLE argument now defeats exactly as a
+   STRICT one does. Strictness still separates the two when both sides
+   are derived. Is that narrowing of what strictness buys acceptable?
+2. The guard is dropped per DISJUNCT: a side that is presumed and argued
+   keeps the guard on its presumption. Without that, a dead argument
+   decides a contest between two defaults. Check the split is drawn in
+   the right place.
+3. Opposing presumptions keep the OLD symmetric behaviour and only warn,
+   pending =aida-onus-delegation-polarity=. Confirm that interim is right
+   rather than, say, refusing to label at all.
+4. Verdicts that moved: multiple_undercuts grounds two-valued; the
+   even-loop document drops its third stable labelling; cyclic_undercut
+   resolves to one labelling and its credulous value becomes argA;
+   the reductio shape Q[t] <- Q[c] with a bare contrary becomes unipolar
+   and grounds UNDEC/UNDEC instead of OUT/IN.
+
+On the strict phase (=core/dc/strict.py=):
+
+5. A captured presumption is now a discharge, so self-attack is a strict
+   proof of P. Check the even loop stays symmetric for the RIGHT reason -
+   neither side's presumption is discharged by the other - and not by
+   accident of shape.
+6. A site-free clash is strict and therefore wins a support scaffold by
+   strict redundancy, silencing a live supporter. The exception then
+   bubbles up. Confirm that is the wanted reading of "an uncatchable
+   clash should always bubble up", rather than preferring a clash-free
+   strict wing when one exists.
+7. The edge collector was widened from "a decision strictly below" to "at
+   or below", emitting at the OUTERMOST qualifying subterm. Check it
+   neither double-counts nor swallows an inner derivation that deserves
+   its own edge.
+8. =strict_in_debate= still accepts =catchers_ids= / =catchers_dis= and
+   ignores them. Decide whether to drop the parameters or keep them for
+   the abort-propagation work.
+
+Reading order: call-by-onus.org "The strict phase: what 'strict in the
+debate' means" for the definition and the fixture table; the two DONE
+entries below for what changed and what was rejected on the way;
+=git show 9820d4e= and =git show 1a81650= for the diffs.
+
 *** DONE Make the contrariness guard asymmetric: a derivation is contested only by a derivation
 CLOSED: [2026-09-25 Thu]
 :PROPERTIES:
