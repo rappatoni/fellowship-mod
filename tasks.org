@@ -2142,6 +2142,71 @@ yet be expressed as a compiled term.
 :VERIFY:         Written proofs reviewed against debate-graph-spec.org targets T1 and T6, plus property-based tests comparing graft-then-label with label-then-graft on generated debates.
 :END:
 
+*** BACKLOG Lemma: strictness is invariant under the residual choices
+:PROPERTIES:
+:ID:             aida-strictness-invariant-under-sigma
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         5:00
+:DEFERRALS:      0
+:OUTCOME:        A written proof of: let d be an unfolded debate term after strict-phase resolution, and let sigma be a witness labelling the mode admits. If SOME reduction sequence from d reaches a term with no open site, then sigma-guided reduction from d reaches a term with no open site. Equivalently, the residual choices - the ones the strict phase left to sigma - can neither create nor destroy strictness, so the implemented strategy loses no strict result that another strategy would find.
+:VERIFY:         Written proof reviewed against debate-graph-spec.org target T1, stating the invariant up to affine discard and naming the demandedness condition it needs; a property-based test over generated debates checking that every residual resolution agrees with the sigma-guided one on whether the normal form has an open site; the tests/rationality/ fixtures agree.
+:END:
+
+Raised by the author 2026-09-25 while framing soundness and completeness
+with respect to classical logic, and filed here rather than as its own
+target because T1 already owns the well-definedness of the strategy.
+
+*Why it is not free.* It does not follow from confluence. The calculus is
+deliberately NOT confluent at the critical pair between a mu and a
+mu-tilde, and resolving that pair by the labelling is the whole design
+(Layer 4, call-by-onus.org). Different strategies therefore disagree in
+general; the lemma says they cannot disagree about STRICTNESS.
+
+*Proof sketch to try.* The strict phase runs before sigma and decides
+every scaffold at which one wing is strict in the debate. So every
+scaffold sigma still sees has both wings non-strict, i.e. both carry an
+open site. At a support scaffold either choice keeps one wing, so a site
+survives. At an attack, keeping the original keeps its sites, and defeat
+builds the clash mu alpha.< t || e > from both wings, so a site survives
+there too. Hence no residual choice creates or destroys strictness.
+
+*The hazard.* Affine discard removes an undemanded site, and Layer 0
+records that as an EQUATION, so a term carrying a site can reduce to one
+without. "A site survives" therefore has to be stated up to discard, and
+the induction has to track which sites are demanded. That is the same
+side condition as T3's discard clause, so the two proofs share it.
+
+*Two things to pin before the statement is well-posed.*
+
+1. WHICH sigma. The implemented reduction is guided by a witness
+   labelling, and credulous and skeptical resolve differently, so the
+   lemma must fix the sigma the mode selects or quantify over the
+   admissible ones.
+2. What "strict term" means. Per the definition settled 2026-09-25
+   (=aida-strict-phase-experimental=, written up in call-by-onus.org): no
+   open site, and nothing else. Clash-freedom is a SEPARATE conjunct,
+   needed for the strict EDGE and not for the term, so the lemma is about
+   sites only.
+
+*Where it sits in the larger claim.* This is the no-loss half of what the
+author called soundness. The half that deserves that name runs the other
+way - every statement the system labels IN through a strict edge is
+classically derivable from the declarations - and is close to free
+already: a strict edge is emitted only for a closed subterm, every free
+name of it is declared, and the type oracle replays every unfolded term
+through Fellowship, so the edge carries a typed closed proof term. Note
+also that with inconsistent declarations everything is derivable, so the
+clash exclusion is a RELEVANCE condition, not a soundness one. On the
+other side, completeness via Peirce's law needs closure of the debate
+layer under modus ponens and substitution, which is T1's grafting
+stability, so Peirce is the critical witness rather than the proof.
+
 ** BACKLOG Establish the polarized categorical semantics (T2)
 :PROPERTIES:
 :ID:             aida-spec-polarized-semantics
