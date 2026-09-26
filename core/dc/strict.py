@@ -74,7 +74,7 @@ from core.dc.debate_graph import (
     DebateGraph, Edge, canonical_prop, compile_debate, _match_scaffold, _restore_scion,
     scaffold_parts, BUILTIN_LEAVES,
 )
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +193,10 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
     strict_names = set(strict_names or ())
     decided = []      # nodes produced by a decision (identity)
     edges = []
+    verbose = logger.isEnabledFor(logging.DEBUG)
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "strict: the term going in", pres_str(term))
 
     def binders_of(node):
         if isinstance(node, Mu):
@@ -308,6 +312,13 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
                 collect(child)
 
     collect(term)
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "strict: the term coming out (scaffolds strictness decided are gone)",
+                 pres_str(term))
+        artifact(logger, "strict: the strict edges it contributes",
+                 "\n".join(f"{e.name}: {e.target_key}[{e.target_side[0]}] <- - (source-less, strict)"
+                            for e in edges) or "none")
     return term, edges
 
 

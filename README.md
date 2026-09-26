@@ -183,19 +183,80 @@ You can also set the default log level with:
 export FSP_LOGLEVEL=DEBUG
 ```
 
+### What the pipeline's phases are
+
+`evaluate ARG` runs eight phases. Each hands one artifact to the next, and at
+`DEBUG` each prints the artifact it produced.
+
+1. **issue** — read the argument's own registered proof term and its issue, a
+   (proposition, side) pair.
+2. **unfold** — build the debate term for that issue out of the *document*
+   graph: the issue's own site, wrapped in a support scaffold per deriving
+   edge and an attack scaffold per edge deriving the contrary, with each
+   edge's body expanded the same way. A statement already being expanded on
+   the current path is left as a bare site, which is what makes this
+   terminate. Out: one proof term standing for the whole debate.
+3. **typecheck** — replay that term through Fellowship as a throwaway theorem
+   and compare what Fellowship rebuilds with what was sent, up to
+   alpha-equivalence, site numbering and proposition spelling. This is the
+   ground truth for the unfolder: if the registered arguments type-check, so
+   must their unfolding. On a mismatch the log names the position in the term
+   where the two shapes first differ.
+4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
+   propositions, hyperedges carry a name, a target statement and sources with
+   their kinds, and statements get default markers. It is a separate data
+   structure, not a marked-up term. The compiler finds the sub-arguments by
+   matching *scaffold shapes*: specific term shapes that the debate operations
+   produce. "Paper" shapes are the four of the COMMA 2026 paper; "legacy"
+   ones are what the older debate operators emitted, still recognised. A match
+   says "here is a scion and here is the original", so the scion becomes an
+   edge of its own and the walk continues into the original. Out: the
+   argumentation framework, printed as an indented tree.
+5. **strict** — read strictness off the term. A subterm is strict in the
+   debate if it rests on nothing, that is, it has no open site. Where one wing
+   of a scaffold is strict and the other is not, the scaffold is decided here
+   and the losing wing is dropped; everything else is delayed. In: the
+   unfolded term. Out: a rewritten, usually smaller term, plus a strict,
+   source-less edge for every closed derivation the framework did not have.
+   The issue graph is the framework of phase 4 plus those edges.
+6. **label** — compile one acceptance condition per statement and ask the
+   adf-bdd solver for the labellings of the chosen semantics. In: the issue
+   graph. Out: conditions, and a numbered list of labellings, each mapping
+   every statement to IN, OUT or UNDEC.
+7. **witness** — pick the single labelling σ that will guide evaluation.
+   Credulous picks the first labelling in which the issue is IN, the one that
+   *witnesses* its acceptability; skeptical takes the statement-wise
+   intersection of them all. Choosing σ once and resolving everything against
+   it is the point: resolving each scaffold against whichever extension suits
+   it would mix incompatible positions.
+8. **sigma, normalise, classify** — resolve every scaffold σ decides, keeping
+   one wing each, then reduce the result to a normal form and classify it as a
+   value, an exception or open.
+
+Two things the log makes visible that are worth knowing. The strict phase runs
+**twice** per evaluation: once inside the issue-graph compilation to collect
+the strict edges, which throws the rewritten term away, and once in evaluation
+to get the rewritten term, which throws the edges away. And if the issue is not
+in the document graph, the argument is evaluated as registered, skipping both
+the unfolding and the type check.
+
 What each level shows for the compilation–evaluation pipeline:
 
 - `INFO` (default): the verdict of each command, and any decision that
   contradicts what you asked for. In particular, when no labelling of the
   chosen semantics accepts the issue, credulous evaluation falls back to the
   grounded labelling resolved *skeptically*, and says so.
-- `DEBUG`: the stage-by-stage account. Which statements the unfolder
-  expanded, captured or left open; the type-check replay; every edge the
-  compiler built; every scaffold the strict phase decided or delayed, with
-  the reason; the acceptance conditions and the solver run; the witness
-  chosen and why; the wing kept at each scaffold and whether the mode's
-  tiebreak decided it; the step count and the normal-form class. The
-  Fellowship replay's own chatter is silenced so it cannot drown this.
+- `DEBUG`: the stage-by-stage account, and **the artifact each phase
+  produced**: the registered term, the unfolded term, both terms the type
+  check compared, the compiled framework as a tree, the term going into and
+  coming out of the strict phase with the strict edges it contributed, the
+  acceptance conditions, every labelling in the canonical numbering, the
+  chosen σ in full, the term entering normalisation and the normal form.
+  Alongside them the decisions: which statements the unfolder expanded,
+  captured or left open; every edge the compiler built; every scaffold the
+  strict phase decided or delayed, with the reason; the witness chosen and
+  why; the wing kept at each scaffold and whether the tiebreak decided it.
+  The Fellowship replay's own chatter is silenced so it cannot drown this.
 - `TRACE`: per-reduction-step lines with the rule that fired, the unfolder's
   scope and spine at each decision, the compiled conditions, the exported
   ADF and the solver's raw output.

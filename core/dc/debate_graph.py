@@ -29,7 +29,7 @@ from core.ac.ast import (
 from core.ac.prop import (
     Prop, PTrue, PFalse, PSym, PApp, PNeg, PBin, PQuant, BinOp, PropError,
 )
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
 
@@ -1036,6 +1036,9 @@ def compile_debate(body: ProofTerm, name: str, *, strict_names=None,
     graph = compiler.graph
     logger.debug("compile: '%s' gave %d edge(s) over %d node(s), %d default marker(s)",
                  name, len(graph.edges), len(graph.nodes), len(graph.defaults))
+    if logger.isEnabledFor(logging.DEBUG):
+        artifact(logger, "compile: the argumentation framework of '%s'" % name,
+                 graph.to_text())
     return graph
 
 

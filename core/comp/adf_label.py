@@ -92,7 +92,7 @@ from core.comp.oracle import (
     eval_formula, grounded_interpretation, run_adf_bdd,
 )
 from core.dc.debate_graph import DebateGraph
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,7 @@ def compile_conditions(graph: DebateGraph):
     materialized = {(k, s) for (k, s) in statements}
     derived = {(e.target_key, e.target_side) for e in graph.edges}
     conditions = {}
+    rendered = []
     logger.debug("label: %d referenced statement(s) over %d edge(s)",
                  len(statements), len(graph.edges))
     for key, side in statements:
@@ -209,17 +210,16 @@ def compile_conditions(graph: DebateGraph):
                 core = conj(core, neg(var(_stmt(*contrary))))
         condition = disj(*strict_disjuncts, core) if strict_disjuncts else core
         conditions[_stmt(key, side)] = condition
-        if logger.isEnabledFor(TRACE):
-            logger.log(TRACE, "  label: %s := %s   [%s]",
-                       _show(graph, key, side), _render(graph, condition),
-                       ", ".join(filter(None, [
-                           "presumed" if presumed else "",
-                           "contrary materialised" if guarded else "",
-                           "guard dropped: the contrary is a bare default"
-                           if unguarded_derivations else "",
-                           "%d strict disjunct(s)" % len(strict_disjuncts)
-                           if strict_disjuncts else "",
-                       ])) or "-")
+        rendered.append("%s := %s   [%s]" % (
+            _show(graph, key, side), _render(graph, condition),
+            ", ".join(filter(None, [
+                "presumed" if presumed else "",
+                "contrary materialised" if guarded else "",
+                "guard dropped: the contrary is a bare default" if unguarded_derivations else "",
+                "%d strict disjunct(s)" % len(strict_disjuncts) if strict_disjuncts else "",
+            ])) or "-"))
+    if rendered:
+        artifact(logger, "label: the acceptance conditions", "\n".join(rendered))
     return conditions
 
 
@@ -366,10 +366,12 @@ def labellings(graph: DebateGraph, semantics: str = "grounded"):
         logger.debug("label: %d complete labelling(s) -> %d preferred", before, len(found))
     found = sorted(found, key=labelling_key)
     logger.debug("label: %s gives %d labelling(s)", semantics, len(found))
-    if logger.isEnabledFor(TRACE):
-        for i, labels in enumerate(found, 1):
-            logger.log(TRACE, "  label: [%d] %s", i,
-                       ", ".join(f"{_show(graph, k, sd)}={v}" for (k, sd), v in labels.items()))
+    if logger.isEnabledFor(logging.DEBUG) and found:
+        artifact(logger, "label: the %s labelling(s), in the canonical numbering" % semantics,
+                 "\n".join(
+                     "[%d] %s" % (i, "  ".join(f"{_show(graph, k, sd)}={v}"
+                                               for (k, sd), v in labels.items()))
+                     for i, labels in enumerate(found, 1)))
     contradictions = strict_contradictions(graph)
     if contradictions:
         logger.debug("label: strictly contradictory on %s (both sides strictly derived)",

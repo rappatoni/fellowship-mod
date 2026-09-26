@@ -113,6 +113,57 @@ class TestDecisionsAreVisible:
         assert "VALUE" in said or "OPEN" in said or "EXCEPTION" in said
 
 
+class TestArtifactsAreReported:
+    """Each phase prints what it PRODUCED, not only what it decided.  That is
+    what an implementation is verified against (author, 2026-09-26)."""
+
+    def artifacts(self, caplog):
+        """The label lines: a phase's artifact header ends in a colon."""
+        return [m for m in messages(caplog) if m.rstrip().endswith(":")]
+
+    def test_every_phase_hands_over_its_artifact(self, fresh, caplog):
+        caplog.set_level(logging.DEBUG)
+        execute_script(fresh, "tests/rationality/cyclic_undercut.fspy",
+                       strict=False, stop_on_error=False, isolate=False)
+        caplog.clear()
+        from wrap.cli import evaluate_argument_cmd
+        evaluate_argument_cmd(fresh, "d", mode="credulous")
+        labels = " | ".join(self.artifacts(caplog))
+        for expected in (
+            "registered with",                  # 1. the term before unfolding
+            "unfolded from the document",       # 2. the debate term
+            "the term sent", "Fellowship rebuilt",   # 3. both sides of the check
+            "argumentation framework",          # 4. the compiled graph
+            "the term going in", "the term coming out",   # 5. strict, in and out
+            "strict edges it contributes",
+            "acceptance conditions",            # 6. labelling input
+            "labelling(s), in the canonical numbering",   # 6. labelling output
+            "witness labelling sigma",          # 7. the chosen sigma
+            "going into normalisation",         # 8. what is reduced
+            "the normal form",
+        ):
+            assert expected in labels, f"no artifact labelled {expected!r}"
+
+    def test_the_unfolded_term_is_printed_in_full(self, fresh, caplog):
+        caplog.set_level(logging.DEBUG)
+        evaluate_fixture(fresh, "tests/rationality/cyclic_undercut.fspy", "argA",
+                         mode="credulous")
+        said = messages(caplog, "core.dc.unfold")
+        i = next(i for i, m in enumerate(said) if m.endswith("document:"))
+        term = said[i + 1].strip()
+        assert term.startswith("\u03bc") and "argA" in term and len(term) > 100
+
+    def test_a_shape_mismatch_names_its_locus(self):
+        """On a type-check failure the reviewer needs the position, not just
+        the fact that the two differ."""
+        from core.dc.typecheck import shape_mismatch
+        sent = ("mu", "A", ("di", 0), ("id", 1))
+        rebuilt = ("mu", "A", ("di", 0), ("id", 2))
+        path, mine, theirs = shape_mismatch(sent, rebuilt)
+        assert path == ("mu", 3, "id", 1) and (mine, theirs) == (1, 2)
+        assert shape_mismatch(sent, sent) is None
+
+
 class TestNarrationIsFree:
     def test_no_pretty_printing_at_info(self, fresh, caplog, monkeypatch):
         """pres_str deep-copies, so every message needing it is guarded.  The

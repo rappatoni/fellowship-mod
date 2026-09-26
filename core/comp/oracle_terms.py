@@ -41,7 +41,7 @@ from core.ac.ast import (
 # by Admal through Pyh).
 # ---------------------------------------------------------------------------
 
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
 
@@ -367,6 +367,9 @@ def normalize_strong(v, strategy: str = "cbn", fuel: int = 2000):
         stepped = _step_anywhere(v, strategy, fired)
         if stepped is None:
             logger.debug("normalise: normal form after %d step(s) under %s", step - 1, strategy)
+            if logger.isEnabledFor(logging.DEBUG):
+                from pres.gen import pres_str
+                artifact(logger, "normalise: the normal form", pres_str(v))
             return v
         if tracing:
             logger.log(TRACE, "  normalise: [%d] %s", step, fired[-1] if fired else "?")

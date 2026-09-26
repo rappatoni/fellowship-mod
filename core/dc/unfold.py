@@ -66,7 +66,7 @@ from core.ac.ast import (
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
 )
 from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
 
@@ -323,4 +323,8 @@ class Unfolder:
 
 def unfold(graph: DebateGraph, issue) -> ProofTerm:
     """The debate term for ``issue`` = (canonical key, side)."""
-    return Unfolder(graph).unfold(issue)
+    term = Unfolder(graph).unfold(issue)
+    if logger.isEnabledFor(logging.DEBUG):
+        from pres.gen import pres_str
+        artifact(logger, "unfold: the debate term unfolded from the document", pres_str(term))
+    return term

@@ -25,7 +25,7 @@ from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.dc.argument import Argument
 from core.dc.debate_graph import canonical_prop, _peel_eta
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 from wrap.prover import ProverError
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,32 @@ def shape(node) -> tuple:
     return walk(node, {}, {})
 
 
+def shape_mismatch(sent, rebuilt, path=()):
+    """Where two shapes first differ: (path, sent-subshape, rebuilt-subshape).
+
+    ``path`` is the sequence of constructor slots walked to get there, e.g.
+    ("mu", 2, "cons", 1), so a failure names a position in the term rather
+    than only saying the two are different.  None when they agree.
+    """
+    if sent == rebuilt:
+        return None
+    if not (isinstance(sent, tuple) and isinstance(rebuilt, tuple)):
+        return path, sent, rebuilt
+    if not sent or not rebuilt or sent[0] != rebuilt[0]:
+        return path, sent, rebuilt
+    if len(sent) != len(rebuilt):
+        return path, sent, rebuilt
+    for i in range(1, len(sent)):
+        found = shape_mismatch(sent[i], rebuilt[i], path + (sent[0], i))
+        if found is not None:
+            return found
+    return path, sent, rebuilt
+
+
+def _path_text(path) -> str:
+    return "/".join(str(p) for p in path) or "the root"
+
+
 def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool) -> ProofTerm:
     """Replay ``term`` through Fellowship as a theorem (antitheorem if
     ``is_anti``) for ``conclusion``.  Returns the proof term Fellowship
@@ -125,15 +151,29 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
     finally:
         for lg, level in zip(quiet, levels):
             lg.setLevel(level)
-    if shape(_peel_eta(check.body)) != shape(_peel_eta(term)):
+    sent_shape, rebuilt_shape = shape(_peel_eta(term)), shape(_peel_eta(check.body))
+    if sent_shape != rebuilt_shape:
+        where = shape_mismatch(sent_shape, rebuilt_shape)
         if logger.isEnabledFor(logging.DEBUG):
             from pres.gen import pres_str
-            logger.debug("typecheck: '%s' reconstructed differently", name)
-            logger.debug("  typecheck: sent        %s", pres_str(term))
-            logger.debug("  typecheck: reconstructed %s", pres_str(check.body))
+            logger.debug("typecheck: '%s' was reconstructed differently", name)
+            artifact(logger, "typecheck: the term sent", pres_str(term))
+            artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(check.body))
+            if where is not None:
+                path, mine, theirs = where
+                artifact(logger, "typecheck: first difference at %s" % _path_text(path),
+                         "sent:     %s\nrebuilt:  %s" % (mine, theirs))
+        detail = ""
+        if where is not None:
+            detail = f" The shapes first differ at {_path_text(where[0])}."
         raise TypeCheckFailed(
             f"Fellowship reconstructed a different term for '{name}' than the one unfolded; "
-            f"the instructions do not encode the term."
+            f"the instructions do not encode the term.{detail}"
         )
-    logger.debug("typecheck: '%s' replayed, shape matches", name)
+    logger.debug("typecheck: '%s' replayed through Fellowship, the two terms agree "
+                 "up to alpha, site numbering and proposition spelling", name)
+    if logger.isEnabledFor(logging.DEBUG):
+        from pres.gen import pres_str
+        artifact(logger, "typecheck: the term sent", pres_str(term))
+        artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(check.body))
     return check.body

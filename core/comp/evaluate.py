@@ -102,7 +102,7 @@ from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
     DebateCompileError, binder_statements, scion_record,
 )
-from core.logging_util import TRACE
+from core.logging_util import TRACE, artifact
 from core.dc.strict import (
     strict_resolve, compile_issue,
     keep_orig as _keep_orig, keep_scion_support as _keep_scion_support,
@@ -381,14 +381,28 @@ def _compile_for_evaluation(body, name, strict_names, strict_kinds):
 def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     """The paper's two phases: strictness on the term first (strict
     redundancy and defeat), sigma for what it delays."""
+    verbose = logger.isEnabledFor(logging.DEBUG)
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "evaluate: the term going in", pres_str(body))
+        artifact(logger, "evaluate: the witness labelling sigma",
+                 "  ".join(f"{_show(st)}={v}" for st, v in sigma.items()) or "empty")
+    # Phase 1: strictness on the term.  NOTE this is the SECOND strict_resolve
+    # of an evaluation - compile_issue ran one to collect the strict edges and
+    # threw the rewritten term away (tasks.org, aida-pipeline-logging).
     strict_trace = []
     strict_body, _ = strict_resolve(body, strict_names or (), trace=strict_trace)
+    # Phase 2: sigma decides what strictness delayed.
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
                                  trace=sigma_trace)
     logger.debug("evaluate: '%s' - %d scaffold(s) decided by strictness, %d by sigma "
                  "(%s tiebreak, base %s)",
                  name, len(strict_trace), len(sigma_trace), tiebreak, base)
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "evaluate: the term after both phases, going into normalisation",
+                 pres_str(resolved))
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
     return normal_form

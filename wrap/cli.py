@@ -25,7 +25,11 @@ logger.propagate = True
 
 # The TRACE level (below DEBUG) and Logger.trace() live in core.logging_util,
 # so that core modules can log at TRACE without importing the CLI.
-from core.logging_util import TRACE  # noqa: E402  (re-exported: callers import it from here)
+from core.logging_util import TRACE, artifact  # noqa: E402  (re-exported: callers import them from here)
+
+#: The CLI's own slot in the pipeline's account: what it hands to the
+#: unfolder, under a name `explain` groups with the rest.
+_pipeline_logger = logging.getLogger("core.dc.issue")
 
 def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[str] = None) -> None:
     """
@@ -1573,8 +1577,17 @@ def _issue_term(prover: ProverWrapper, name: str):
               "conclusion, which LJ forbids); select lk for graph, label and evaluate.")
         logger.warning("Debate commands refused in lj for '%s'.", name)
         return arg, issue, None
+    if _pipeline_logger.isEnabledFor(logging.DEBUG):
+        from pres.gen import pres_str
+        _pipeline_logger.debug("issue: '%s' is about %s; the document has %d edge(s)",
+                               name, f"{document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]",
+                               len(document.edges))
+        artifact(_pipeline_logger, "issue: the term '%s' was registered with (before unfolding)" % name,
+                 pres_str(arg.body))
     if issue not in set(document.statements()):
         logger.warning("'%s' is not in the document graph; using its own term.", name)
+        _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
+                               "the document, so '%s' is evaluated as it was registered", name)
         return arg, issue, arg.body
     try:
         term = unfold(document, issue)
@@ -1726,6 +1739,7 @@ def _dispatch_explain(prover: ProverWrapper, command: str) -> None:
 #: The pipeline's loggers, in the order the stages run.  ``explain`` groups
 #: its account by these, and the stage label is the last dotted component.
 _PIPELINE_LOGGERS = (
+    "core.dc.issue",
     "core.dc.unfold",
     "core.dc.typecheck",
     "core.dc.debate_graph",
@@ -1789,6 +1803,7 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
         logger.info("")
         logger.info("How '%s' was evaluated, stage by stage:", name)
         logger.info("")
+        last_stage = ""
         for record in stages:
             message = record.getMessage()
             stripped = message.lstrip()
@@ -1799,8 +1814,11 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
             head, sep, rest = stripped.partition(": ")
             if sep and " " not in head:
                 stage, stripped = head, rest
+            elif indent and last_stage:
+                stage = last_stage         # a continuation line of an artifact
             else:
                 stage = record.name.rsplit(".", 1)[-1]
+            last_stage = stage
             logger.info("  %-14s %s%s", stage, indent, stripped)
         logger.info("")
     for record in verdict:

@@ -1436,8 +1436,34 @@ sets it session-wide. With rendering off, `graph ... show` logs the indented
 text view that already existed for the no-Graphviz case, so a suppressed run
 is more informative in a log, not less.
 
-Evidence: 1081 passed, 2 skipped, 3 xfailed, 2 xpassed (13 new tests); a full
-run leaves no artifacts in the working directory.
+*Artifacts, added the same day after the author's review of the first
+attempt.* The first round narrated DECISIONS but not the data, and the
+author's verdict was that it "does not really include the information needed
+to verify the implementation". Each phase now also prints what it produced,
+at DEBUG: the registered term before unfolding; the unfolded debate term;
+both terms the type check compared, and on a mismatch the POSITION in the
+term where the two shapes first differ (=typecheck.shape_mismatch=, new); the
+compiled framework rendered as an indented tree; the term going into and
+coming out of the strict phase plus the strict edges it contributed; the
+acceptance conditions; every labelling in the canonical numbering; the chosen
+sigma in full; the term entering normalisation; the normal form.
+=core/logging_util.artifact= renders these as indented blocks, and `explain`
+keeps a block under its phase's column.
+
+The same review asked what several phases actually DO. README.md now has
+"What the pipeline's phases are", eight numbered paragraphs: in particular
+that the compile phase produces a DebateGraph and not a marked-up term, that
+it finds sub-arguments by matching scaffold SHAPES ("paper" = the four COMMA
+2026 shapes, "legacy" = what the older debate operators emitted), and that a
+WITNESS labelling is the single sigma chosen to guide the whole evaluation -
+credulous takes the first labelling accepting the issue, skeptical the
+intersection - so that scaffolds are not resolved against mutually
+incompatible extensions.
+
+Evidence: 1084 passed, 2 skipped, 3 xfailed, 2 xpassed (16 new tests); a full
+run leaves no artifacts in the working directory. Cost: an evaluation is
+50.9 ms at INFO, unchanged, and 85.7 ms at DEBUG, the difference being the
+term rendering.
 
 *** NEXT Review the two semantics decisions of 2026-09-25
 :PROPERTIES:
