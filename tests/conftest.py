@@ -80,6 +80,15 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 @pytest.fixture(scope="session", autouse=True)
+def no_graph_files():
+    """Ten fixtures under tests/ carry `graph ... show` or `tree`.  Without
+    this the suite writes a PNG per fixture into the working directory and
+    opens a viewer for each.  ACDC_NO_RENDER stops the writing; the commands
+    log an indented text view of the graph instead."""
+    os.environ.setdefault("ACDC_NO_RENDER", "1")
+
+
+@pytest.fixture(scope="session", autouse=True)
 def require_adf_bdd():
     """The debate labeller is adf-bdd, with no fallback (tasks.org,
     aida-adf-bdd-primary).  Fail the session up front, once and clearly,

@@ -183,6 +183,49 @@ You can also set the default log level with:
 export FSP_LOGLEVEL=DEBUG
 ```
 
+What each level shows for the compilation–evaluation pipeline:
+
+- `INFO` (default): the verdict of each command, and any decision that
+  contradicts what you asked for. In particular, when no labelling of the
+  chosen semantics accepts the issue, credulous evaluation falls back to the
+  grounded labelling resolved *skeptically*, and says so.
+- `DEBUG`: the stage-by-stage account. Which statements the unfolder
+  expanded, captured or left open; the type-check replay; every edge the
+  compiler built; every scaffold the strict phase decided or delayed, with
+  the reason; the acceptance conditions and the solver run; the witness
+  chosen and why; the wing kept at each scaffold and whether the mode's
+  tiebreak decided it; the step count and the normal-form class. The
+  Fellowship replay's own chatter is silenced so it cannot drown this.
+- `TRACE`: per-reduction-step lines with the rule that fired, the unfolder's
+  scope and spine at each decision, the compiled conditions, the exported
+  ADF and the solver's raw output.
+
+### Explaining one evaluation
+
+`explain ARG [MODE] [SEMANTICS] [BASE] [N|all]` takes the same options as
+`evaluate`, runs it once, and prints that account grouped by stage without
+changing the global log level, with the verdict last:
+
+```
+  unfold         A[t] expanded, site u1 (Deleg), 1 deriving edge(s)
+  unfold           A[t] +support 'argA' (alt alt1)
+  compile        edge 'argA' (supporter, defeasible) A[t] <- Q[t]:pres@u2
+  strict         A[t] delayed for the labelling (neither wing is strict)
+  label          preferred gives 1 labelling(s)
+  witness        [1] of 1 chosen, the first preferred labelling accepting A[t]
+  sigma          supporter A[t] is IN -> keep the supporter
+  classify       VALUE
+```
+
+### Graph files
+
+`graph ARG show` and `tree ARG` write an image into the working directory and
+open it. `ACDC_NO_OPEN=1` keeps the viewer shut; `ACDC_NO_RENDER=1` also stops
+the writing, and `graph ... show` then logs an indented text view of the graph
+instead, which is the more useful thing to have in a log. `execute_script` takes
+`render_files=False` for the same effect on one script; the test suite sets the
+environment variable for the whole session so a run leaves no files behind.
+
 ## Workflow overview
 
 A typical wrapper workflow is:
@@ -291,6 +334,9 @@ one-line message.
     and a presumption's own default stays guarded
   - presuming *both* sides of one proposition means neither side holds
     the onus; that is reported as a warning and will become an error
+- `explain ARG [same options as evaluate]`
+  - run one evaluation and print the pipeline's own stage-by-stage account of
+    it, then the verdict; needs no change to the log level
 - `evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]`
   - label-guided evaluation; options in any order, defaults skeptical,
     preferred, cbn; prints the normal-form class (`VALUE`, `EXCEPTION`,

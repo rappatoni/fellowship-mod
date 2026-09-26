@@ -16,6 +16,7 @@ This module is being built along propositional-fragment-plan.org:
   than guessing.
 """
 
+import logging
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import count
@@ -28,6 +29,9 @@ from core.ac.ast import (
 from core.ac.prop import (
     Prop, PTrue, PFalse, PSym, PApp, PNeg, PBin, PQuant, BinOp, PropError,
 )
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
 
 
 def _unfold_neg(p: Prop) -> Prop:
@@ -184,8 +188,30 @@ class DebateGraph:
             and edge.sources[0].key == edge.target_key
             and edge.sources[0].side == edge.target_side
         ):
+            if not getattr(self, "quiet", False):
+                logger.debug("compile: '%s' is an identity edge on %s; kept as a default marker only",
+                             edge.name, self._show_edge_target(edge))
             return  # identity edge: default marker only
+        if not getattr(self, "quiet", False):
+            logger.debug("compile: edge '%s' (%s, %s) %s <- %s", edge.name, edge.role,
+                         "strict" if edge.strict else "defeasible",
+                         self._show_edge_target(edge), self._show_sources(edge))
         self.edges.append(edge)
+
+    # -- rendering for log messages ----------------------------------------
+
+    def _show(self, key, side) -> str:
+        return f"{self.nodes.get(key, key)}[{side[0]}]"
+
+    def _show_edge_target(self, edge: Edge) -> str:
+        return self._show(edge.target_key, edge.target_side)
+
+    def _show_sources(self, edge: Edge) -> str:
+        return ", ".join(
+            f"{self._show(s.key, s.side)}:{s.kind[:4]}"
+            + (f"@{s.site}" if getattr(s, "site", None) else "")
+            for s in edge.sources
+        ) or "-"
 
     def merge(self, other: "DebateGraph") -> None:
         for key, display in other.nodes.items():
@@ -248,7 +274,10 @@ class DebateGraph:
             color[k] = BLACK
             return True
 
-        return all(visit(k) for k in self.nodes if color[k] == WHITE)
+        acyclic = all(visit(k) for k in self.nodes if color[k] == WHITE)
+        logger.debug("compile: fragment is %s (%d node(s), %d edge(s))",
+                     "acyclic" if acyclic else "cyclic", len(self.nodes), len(self.edges))
+        return acyclic
 
     def assert_acyclic(self) -> None:
         """Only for callers that want the initial fragment's guard."""
@@ -570,8 +599,19 @@ def _match_scaffold(n, strict_names=()):
     """
     found = _match_paper_scaffold(n)
     if found is not None:
+        logger.log(TRACE, "  compile: paper %s scaffold on %s (alt '%s')",
+                   found[0], found[2], found[5])
         return found
-    return _match_legacy_scaffold(n, strict_names)
+    found = _match_legacy_scaffold(n, strict_names)
+    if found is not None:
+        logger.log(TRACE, "  compile: legacy %s scaffold on %s (alt '%s')",
+                   found[0], found[2], found[5])
+    elif isinstance(n, (Mu, Mutilde)):
+        # A near-miss is worth a line: "why was my term not recognised" is
+        # answered by which shape it failed to be.
+        logger.log(TRACE, "  compile: %s on %s matched no scaffold shape",
+                   type(n).__name__, getattr(n, "prop", "?"))
+    return found
 
 
 def _match_legacy_scaffold(n, strict_names=()):
@@ -837,8 +877,11 @@ class _Compiler:
                     # Captured from an enclosing subargument: a source at
                     # that binder's statement, of the kind the site had.
                     kind = "presumption" if getattr(node, "captured_presumption", False) else "obligation"
-                    return _Acc((Source(self.graph.add_node(enclosing[0]), vside, kind,
-                                        node.name, spine),))
+                    captured_key = self.graph.add_node(enclosing[0])
+                    logger.debug("  compile: '%s' captured '%s' -> %s source at %s "
+                                 "(the sprung trap, shown as a cycle)",
+                                 name, node.name, kind, self.graph._show(captured_key, vside))
+                    return _Acc((Source(captured_key, vside, kind, node.name, spine),))
                 raise DebateCompileError(
                     f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
                     f"variable '{node.name}' is neither bound nor a declared axiom; "
@@ -958,6 +1001,7 @@ def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     return its record(s) - a list, one edge."""
     role, site_side, prop, orig, scion_raw, alt, scion_kind = match
     compiler = _Compiler(strict_names, strict_kinds)
+    compiler.graph.quiet = True          # a probe, not a graph being built
     if role == "attacker":
         scion = _restore_scion(scion_raw, scion_kind, alt, prop, "r0") if match.legacy else scion_raw
         target_side = "context" if site_side == "term" else "term"
@@ -986,9 +1030,13 @@ def compile_debate(body: ProofTerm, name: str, *, strict_names=None,
     Derivation cycles are admitted (the cyclic fragment); ``is_acyclic``
     on the result says which fragment the debate is in.
     """
+    logger.debug("compile: framework of '%s'", name)
     compiler = _Compiler(strict_names, strict_kinds)
     compiler.compile(body, name)
-    return compiler.graph
+    graph = compiler.graph
+    logger.debug("compile: '%s' gave %d edge(s) over %d node(s), %d default marker(s)",
+                 name, len(graph.edges), len(graph.nodes), len(graph.defaults))
+    return graph
 
 
 def compile_document(named_bodies, *, strict_names=None, strict_kinds=None) -> DebateGraph:

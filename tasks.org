@@ -1364,6 +1364,81 @@ of minicourse lesson 5 - one proposition presumed on both sides, no edges
 at all - is exactly the illegal shape, so lesson 5 needs a new minimal
 example whose challenge is *argued*.
 
+*** DONE Make the compilation-evaluation pipeline narrate itself
+CLOSED: [2026-09-26 Fri]
+:PROPERTIES:
+:ID:             aida-pipeline-logging
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            1
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        Every stage of the new pipeline logs its decisions at DEBUG and the reduction at TRACE; `explain ARG` prints that account for one evaluation, grouped by stage, without changing the global log level; and script execution can stop `graph ... show` and `tree` writing image files.
+:VERIFY:         tests/test_pipeline_logging.py (every stage speaks, the decisions are visible, narration is free at INFO, TRACE needs no CLI import, explain restores the levels, file output can be switched off); the documented suite is green; a full suite run leaves no *.png or *.dot in the working directory; `acdc --script tests/rationality/cyclic_undercut.fspy --log-level DEBUG` shows the narrative with no enrichment chatter.
+:END:
+
+Asked for by the author 2026-09-26, before reviewing the evaluation system
+(=aida-review-guard-and-strict-decisions=), on finding it had no logging at
+all. Of the eight modules the pipeline runs through, only
+core/dc/typecheck.py touched logging, and only to SILENCE two loggers. All
+narration was two =logger.info= lines in =evaluate_argument_cmd=. At DEBUG
+the ~40 lines between an `evaluate` command and its result were enrichment
+chatter from the Fellowship replay. The legacy path, by contrast, has 85
+debug/trace calls in reduce.py, 40 in argument.py, 12 in graft.py.
+
+*Decisions (author, 2026-09-26).* Log levels PLUS an `explain` command, not
+one or the other. Per reduction step: the rule and a step counter, not the
+whole term - measured 0-15 steps per evaluation on the fixtures, so the
+volume is trivial, but printing a term costs ~1.05 ms against a ~53 ms
+evaluation. Quiet the replay chatter by adding =core.comp.enrich= to the
+list typecheck.py already saves and restores.
+
+*Infrastructure.* =core/logging_util.py= now owns TRACE, so =core= no longer
+depends on =wrap= for it (the monkey-patch lived in cli.py, which meant a
+=logger.trace= in a core module only worked if the CLI had been imported).
+=pres.gen.pres_str= is the one pretty-printer for messages, replacing a
+helper pasted into four modules under three names; it deep-copies, so every
+message needing it is guarded by =isEnabledFor= - a test pins that nothing
+pretty-prints at INFO, which the legacy reducer does not manage.
+
+*What each stage says* is in README.md; the short version is that the
+unfolder reports its three-way choice per statement, the compiler every edge
+and the fragment, the strict phase every decision AND every delay (the delay
+branches were previously untraced) with the reason an edge was vetoed, the
+labeller the conditions and the solver run (binary, exit, wall time - the
+adf-bdd subprocess was entirely invisible), the evaluator the witness and
+each wing kept, and the normaliser the step count and the class.
+
+*Three things that were silent and now are not*, all found while doing this:
+
+1. When no labelling accepts the issue, credulous evaluation falls back to
+   grounded resolved SKEPTICALLY. That contradicts the mode asked for and
+   changes the answer, so it logs at INFO, not DEBUG.
+2. =_issue_term= falls back to the argument's own body when the issue is not
+   in the document, and that early return SKIPS the type check. Logged;
+   whether the skip is right is a separate question and not touched here.
+3. =strict_resolve= runs TWICE per evaluation, once in =compile_issue= and
+   once in =_evaluate_under=. Now visible in the account. Not fixed here.
+
+Also wired: the two =trace= hooks in =strict_resolve= and
+=resolve_scaffolds= were dead in production (test affordances only) and now
+feed the DEBUG lines.
+
+*File output.* Ten fixtures carry `graph ... show` or `tree`, so a suite run
+wrote a PNG per fixture into the working directory and opened a viewer for
+each; =ACDC_NO_OPEN= only ever stopped the viewer. =execute_script= takes
+=render_files=, =ProverWrapper= reads =ACDC_NO_RENDER=, and tests/conftest.py
+sets it session-wide. With rendering off, `graph ... show` logs the indented
+text view that already existed for the no-Graphviz case, so a suppressed run
+is more informative in a log, not less.
+
+Evidence: 1081 passed, 2 skipped, 3 xfailed, 2 xpassed (13 new tests); a full
+run leaves no artifacts in the working directory.
+
 *** NEXT Review the two semantics decisions of 2026-09-25
 :PROPERTIES:
 :ID:             aida-review-guard-and-strict-decisions
@@ -1426,6 +1501,11 @@ Reading order: call-by-onus.org "The strict phase: what 'strict in the
 debate' means" for the definition and the fixture table; the two DONE
 entries below for what changed and what was rejected on the way;
 =git show 9820d4e= and =git show 1a81650= for the diffs.
+
+Since =aida-pipeline-logging= (2026-09-26) the machinery narrates itself:
+=explain ARG= replays one evaluation and prints the unfolding, the strict
+decisions with their reasons, the witness choice and the wing kept at each
+scaffold. That is the fastest way to check points 5 to 7 on a fixture.
 
 *** DONE Make the contrariness guard asymmetric: a derivation is contested only by a derivation
 CLOSED: [2026-09-25 Thu]

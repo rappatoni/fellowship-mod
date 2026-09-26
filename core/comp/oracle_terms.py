@@ -21,6 +21,7 @@ in the paper.  Normalization is root-first and fuel-bounded; running out
 of fuel raises instead of silently returning.
 """
 
+import logging
 from copy import deepcopy
 from itertools import count
 
@@ -39,6 +40,10 @@ from core.ac.ast import (
 # by Lamda through Hyp) and context variables (ID leaves; bound by Mu and
 # by Admal through Pyh).
 # ---------------------------------------------------------------------------
+
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
 
 def _check_propositional(node: ProofTerm, operation: str) -> None:
     found = first_order_node(node)
@@ -232,11 +237,15 @@ class OracleFuelExhausted(RuntimeError):
     """Normalization did not reach a root normal form within the fuel bound."""
 
 
-def _step_command(term, context, strategy: str):
+def _step_command(term, context, strategy: str, fired=None):
     """One root reduction of the command <term :: context>, or None.
 
     The critical pair (Mu vs Mutilde) is resolved by ``strategy``:
     "cbv" -> (mu<) first, "cbn" -> (>mu) first, per the COMMA paper.
+
+    ``fired``, if a list, receives the name of the rule applied - the only
+    way the rule reaches a caller, since the return value is the rewritten
+    command.
     """
     is_mu = isinstance(term, Mu)
     is_mutilde = isinstance(context, Mutilde)
@@ -251,6 +260,8 @@ def _step_command(term, context, strategy: str):
         order = ()
 
     for rule in order:
+        if fired is not None:
+            fired.append(rule)
         if rule == "mu<":
             # < mu a.c :: E >  -->  c[a <- E]
             new_term = substitute(term.term, ID, term.id.name, context)
@@ -264,6 +275,8 @@ def _step_command(term, context, strategy: str):
 
     if isinstance(term, Lamda) and isinstance(context, Cons):
         # < lam x.v1 :: v2 * E >  -->  < v2 :: (< v1 :: E >).x mu' >
+        if fired is not None:
+            fired.append("(->)")
         x = term.di.di.name
         prop = term.di.prop
         inner = Mutilde(DI(x, prop), prop, term.term, context.context)
@@ -271,6 +284,8 @@ def _step_command(term, context, strategy: str):
 
     if isinstance(term, Sonc) and isinstance(context, Admal):
         # < E1 * v :: E2 .a lam >  -->  < mu a.< v :: E2 > :: E1 >
+        if fired is not None:
+            fired.append("(-)")
         a = context.id.id.name
         prop = context.id.prop
         inner = Mu(ID(a, prop), prop, term.term, context.context)
@@ -309,21 +324,21 @@ def normalize_term(v, strategy: str = "cbn", fuel: int = 500):
     return v
 
 
-def _step_anywhere(node, strategy: str):
+def _step_anywhere(node, strategy: str, fired=None):
     """Fire ONE reduction at the leftmost-outermost command with a root
     redex.  Command positions are exactly the (term, context) pairs of
     Mu/Mutilde binders.  Returns the rewritten node, or None if the whole
     tree is in normal form.
     """
     if isinstance(node, (Mu, Mutilde)):
-        step = _step_command(node.term, node.context, strategy)
+        step = _step_command(node.term, node.context, strategy, fired)
         if step is not None:
             node.term, node.context = step
             return node
     for slot in ("term", "context"):
         child = getattr(node, slot, None)
         if isinstance(child, ProofTerm):
-            stepped = _step_anywhere(child, strategy)
+            stepped = _step_anywhere(child, strategy, fired)
             if stepped is not None:
                 setattr(node, slot, stepped)
                 return node
@@ -346,10 +361,15 @@ def normalize_strong(v, strategy: str = "cbn", fuel: int = 2000):
         raise ValueError(f"strategy must be 'cbn' or 'cbv', got {strategy!r}")
     _check_propositional(v, "Oracle normalization")
     v = deepcopy(v)
-    for _ in range(fuel):
-        stepped = _step_anywhere(v, strategy)
+    tracing = logger.isEnabledFor(TRACE)
+    for step in range(1, fuel + 1):
+        fired = [] if tracing else None
+        stepped = _step_anywhere(v, strategy, fired)
         if stepped is None:
+            logger.debug("normalise: normal form after %d step(s) under %s", step - 1, strategy)
             return v
+        if tracing:
+            logger.log(TRACE, "  normalise: [%d] %s", step, fired[-1] if fired else "?")
         v = stepped
     raise OracleFuelExhausted(
         f"No full normal form after {fuel} steps under {strategy}"
@@ -487,10 +507,28 @@ def classify_nf(v) -> str:
     """
     _check_propositional(v, "Oracle NF classification")
     if _contains(v, (Goal, Laog)):
+        logger.debug("classify: OPEN%s", _because_open(v))
         return "open"
     if contains_uncatchable_clash(v):
+        logger.debug("classify: EXCEPTION (an uncatchable clash: the debate is "
+                     "acceptable only given an inconsistency)")
         return "exception"
+    logger.debug("classify: VALUE")
     return "value"
+
+
+def _because_open(node) -> str:
+    """The first unfilled obligation, for the classifier's log line."""
+    if isinstance(node, (Goal, Laog)):
+        return " (obligation %s:%s undischarged)" % (
+            getattr(node, "number", "?"), getattr(node, "prop", "?"))
+    for slot in ("term", "context"):
+        child = getattr(node, slot, None)
+        if isinstance(child, ProofTerm):
+            found = _because_open(child)
+            if found:
+                return found
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -514,11 +552,15 @@ def check_conservativity(before, after, *, operation: str = "normalisation"):
     of a strict argument can never manufacture an obligation.  Inputs that
     already carry a site are exempt (their normal form may legitimately
     keep it, see classify_nf).  Raises ConservativityViolation."""
-    if is_strict_closed(before) and _contains(after, (Goal, Laog)):
+    if not is_strict_closed(before):
+        logger.debug("conservativity: not checked (%s already carried a site)", operation)
+        return
+    if _contains(after, (Goal, Laog)):
         raise ConservativityViolation(
             f"{operation} of a strict, closed term produced an open obligation: "
             f"reduction is not conservative over the strict fragment here."
         )
+    logger.debug("conservativity: %s held (a strict, closed input stayed closed)", operation)
 
 
 # ---------------------------------------------------------------------------

@@ -61,6 +61,7 @@ Both wings strict at an attack is the inconsistent case, delayed for the
 labelling (CONTR); the paper says proofs can be strictly defeated there.
 """
 
+import logging
 import re
 from copy import deepcopy
 from dataclasses import replace
@@ -73,6 +74,20 @@ from core.dc.debate_graph import (
     DebateGraph, Edge, canonical_prop, compile_debate, _match_scaffold, _restore_scion,
     scaffold_parts, BUILTIN_LEAVES,
 )
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
+
+
+def _show(statement, prop=None) -> str:
+    """``Prop[t]`` / ``Prop[c]`` for a log line.  ``prop`` is the surface
+    spelling when the caller has it; the canonical key is the fallback."""
+    key, side = statement
+    return f"{prop or key}[{side[0]}]"
+
+
+def key_of(statement):
+    return statement[0]
 
 
 _SITES = (Goal, Laog, Deleg, Geled)
@@ -216,12 +231,21 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
         s_scion = strict_in_debate(effective, part_ids, part_dis)
         statement = (canonical_prop(prop), site_side if role == "supporter"
                      else ("context" if site_side == "term" else "term"))
+        logger.log(TRACE, "  strict: %s scaffold on %s: original %s, %s %s",
+                   role, _show(statement, prop),
+                   "strict" if s_orig else "not strict",
+                   "supporter" if role == "supporter" else "attacker",
+                   "strict" if s_scion else "not strict")
         if role == "supporter":
             if s_orig:
                 kept, what = keep_orig(node, orig, alt), "original strict"
             elif s_scion:
                 kept, what = keep_scion_support(node, scion, alt), "supporter strict"
             else:
+                # Neither wing rests on nothing: the labelling decides.
+                logger.debug("strict: %s delayed for the labelling "
+                             "(neither the original nor the supporter is strict)",
+                             _show(statement, prop))
                 return node
         else:
             if s_scion and not s_orig:
@@ -229,9 +253,13 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
             elif s_orig and not s_scion:
                 kept, what = keep_orig(node, orig, alt), "original strict"
             else:
+                logger.debug("strict: %s delayed for the labelling (%s)", _show(statement, prop),
+                             "both wings strict, the inconsistent case"
+                             if s_orig else "neither wing is strict")
                 return node
         if trace is not None:
             trace.append((statement, what))
+        logger.debug("strict: %s %s", _show(statement, prop), what)
         kept._strict_decision = True
         return kept
 
@@ -253,14 +281,27 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
         if not isinstance(node, ProofTerm):
             return
         statement = _eta_statement(node)
-        if (statement is not None and has_decision(node)
-                and is_closed(node, strict_names)
-                and not contains_uncatchable_clash(node)):
-            key, side = statement
+        if statement is not None and has_decision(node):
+            # It owes its closedness to a decision.  Three conditions gate the
+            # edge, and which one vetoed it is the interesting part.
             name = node.id.name if isinstance(node, Mu) else node.di.name
-            edges.append(Edge(name=f"{name}*", target_key=key, target_side=side,
-                              sources=(), strict=True, role="strict", term=deepcopy(node)))
-            return                       # maximal: do not descend into it
+            if not is_closed(node, strict_names):
+                free = sorted({n for _kind, n in _free_names(node)}
+                              - set(strict_names or ()) - set(BUILTIN_LEAVES))
+                logger.debug("strict: no edge for '%s' on %s: not closed%s",
+                             name, _show(statement, getattr(node, "prop", None)),
+                             " (free: %s)" % ", ".join(free) if free else " (an open site remains)")
+            elif contains_uncatchable_clash(node):
+                logger.debug("strict: no edge for '%s' on %s: it holds an uncatchable clash, "
+                             "so it derives its statement only from an inconsistency",
+                             name, _show(statement, getattr(node, "prop", None)))
+            else:
+                edges.append(Edge(name=f"{name}*", target_key=key_of(statement),
+                                  target_side=statement[1],
+                                  sources=(), strict=True, role="strict", term=deepcopy(node)))
+                logger.debug("strict: edge '%s*' on %s (a closed derivation the framework missed)",
+                             name, _show(statement, getattr(node, "prop", None)))
+                return                   # maximal: do not descend into it
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
             if isinstance(child, ProofTerm):
@@ -285,7 +326,10 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     (compile_debate, cycles through captured obligations included) plus
     the strict edges strictness on the term contributes."""
     graph = compile_debate(term, name, strict_names=strict_names, strict_kinds=strict_kinds)
-    _, edges = strict_resolve(term, strict_names or ())
+    trace = []
+    _, edges = strict_resolve(term, strict_names or (), trace=trace)
+    logger.debug("strict: %d decision(s), %d strict edge(s) for '%s'",
+                 len(trace), len(edges), name)
     for edge in edges:
         graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
@@ -306,7 +350,10 @@ def fold_occurrences(graph: DebateGraph) -> None:
         key = (stem, edge.target_key, edge.target_side, edge.strict,
                tuple((s.key, s.side, s.kind) for s in edge.sources))
         if key in seen:
+            logger.debug("strict: folded the occurrence copy '%s' into '%s'", edge.name, stem)
             continue
         seen[key] = edge
+        if edge.name != stem:
+            logger.debug("strict: renamed the occurrence copy '%s' to '%s'", edge.name, stem)
         kept.append(replace(edge, name=stem) if edge.name != stem else edge)
     graph.edges[:] = kept

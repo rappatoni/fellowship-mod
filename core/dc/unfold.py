@@ -57,6 +57,7 @@ The term this produces is evaluated by the term-first pipeline
 (core/comp/evaluate.py): compiled, labelled, resolved by sigma.
 """
 
+import logging
 from copy import deepcopy
 from itertools import count
 
@@ -65,6 +66,9 @@ from core.ac.ast import (
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
 )
 from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
 
 
 class UnfoldError(ValueError):
@@ -92,6 +96,14 @@ class Unfolder:
 
     def _prop(self, key):
         return self.graph.nodes.get(key, key)
+
+    def _show(self, statement):
+        """A statement for a log message: ``Prop[t]`` / ``Prop[c]``."""
+        key, side = statement
+        return f"{self._prop(key)}[{side[0]}]"
+
+    def _show_all(self, statements):
+        return ", ".join(self._show(s) for s in statements) or "-"
 
     def _site(self, statement):
         key, side = statement
@@ -150,8 +162,11 @@ class Unfolder:
         """The debate term for ``issue``: the issue is a statement like any
         other - its own site (an obligation unless presumed somewhere),
         wrapped by its supporters and attackers in registration order."""
+        logger.debug("unfold: issue %s from a document of %d edge(s), %d node(s)",
+                     self._show(issue), len(self.graph.edges), len(self.graph.nodes))
         term = self.statement(issue, {}, frozenset())
         if isinstance(term, (Goal, Laog, Deleg, Geled)):
+            logger.debug("unfold: the issue is a bare site; adding the eta wrapper")
             # a bare site: give it the eta wrapper every argument has, so
             # the term-first pipeline can read the issue off the root
             key, side = issue
@@ -166,29 +181,55 @@ class Unfolder:
         captured presumption (``presumed``: the edge body had a
         Deleg/Geled there) is marked so the compiler keeps it a
         presumption source."""
+        if logger.isEnabledFor(TRACE):
+            logger.log(TRACE, "  unfold: at %s  env={%s}  spine={%s}",
+                       self._show(statement),
+                       ", ".join(f"{self._show(k)}:{v}" for k, v in env.items()) or "-",
+                       self._show_all(spine))
         if statement in env:
             var = self._variable(statement, env[statement])
             if presumed:
                 var.captured_presumption = True
+            logger.debug("unfold: %s captured as '%s'%s", self._show(statement),
+                         env[statement], " (presumption)" if presumed else "")
             return var
         if statement in spine:
-            return self._site(statement)        # circular: stays open
+            # circular: the route through it stays open (T6)
+            site = self._site(statement)
+            logger.debug("unfold: %s already on the spine, left as the bare site %s",
+                         self._show(statement), getattr(site, "number", "?"))
+            return site
         spine = spine | {statement}
-        return self._wrap(statement, self._site(statement),
-                          self._by_target.get(statement, []), env, spine)
+        edges = self._by_target.get(statement, [])
+        site = self._site(statement)
+        logger.debug("unfold: %s expanded, site %s (%s), %d deriving edge(s)",
+                     self._show(statement), getattr(site, "number", "?"),
+                     type(site).__name__, len(edges))
+        return self._wrap(statement, site, edges, env, spine)
 
     def _wrap(self, statement, base, supporters, env, spine):
         """Wrap ``base`` in a support scaffold per deriving edge and an
         attack scaffold per edge (or default marker) of the contrary."""
         term = base
         contra = contrary(statement)
+        # Registration order is the nesting order: supporters innermost, then
+        # attackers, each wrapping what came before (author, 2026-09-17).
         for edge in supporters:
-            term = self._support(statement, term, self._edge(edge, env, spine), self._fresh_alt())
+            alt = self._fresh_alt()
+            logger.debug("  unfold: %s +support '%s' (alt %s)", self._show(statement), edge.name, alt)
+            term = self._support(statement, term, self._edge(edge, env, spine), alt)
         for edge in self._by_target.get(contra, []):
-            term = self._attack(statement, term, self._edge(edge, env, spine | {contra}), self._fresh_alt())
+            alt = self._fresh_alt()
+            logger.debug("  unfold: %s +attack '%s' via %s (alt %s)",
+                         self._show(statement), edge.name, self._show(contra), alt)
+            term = self._attack(statement, term, self._edge(edge, env, spine | {contra}), alt)
         if self.graph.defaults.get(contra):
             # somebody presumes or demands the contrary outright
-            term = self._attack(statement, term, self.statement_site_only(contra), self._fresh_alt())
+            alt = self._fresh_alt()
+            logger.debug("  unfold: %s +attack by the bare %s (%s) (alt %s)",
+                         self._show(statement), self._show(contra),
+                         "/".join(sorted(self.graph.defaults.get(contra))), alt)
+            term = self._attack(statement, term, self.statement_site_only(contra), alt)
         return term
 
     def statement_site_only(self, statement):
@@ -225,6 +266,9 @@ class Unfolder:
                 n += 1
                 candidate = f"{name}_{n}"
             self._used.add(candidate)
+            if candidate != name:
+                logger.log(TRACE, "  unfold: edge '%s' binder '%s' renamed to '%s' (reused body)",
+                           edge.name, name, candidate)
             return candidate
 
         def walk(node, env, names):

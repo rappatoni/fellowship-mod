@@ -23,13 +23,9 @@ from pres.decorations import parse_decorate_command
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
 
-# Install TRACE level (below DEBUG) and a Logger.trace() method
-TRACE = 5
-logging.addLevelName(TRACE, "TRACE")
-def _trace(self, msg, *args, **kwargs):
-    if self.isEnabledFor(TRACE):
-        self._log(TRACE, msg, args, **kwargs)
-logging.Logger.trace = _trace
+# The TRACE level (below DEBUG) and Logger.trace() live in core.logging_util,
+# so that core modules can log at TRACE without importing the CLI.
+from core.logging_util import TRACE  # noqa: E402  (re-exported: callers import it from here)
 
 def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[str] = None) -> None:
     """
@@ -118,7 +114,7 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -131,7 +127,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
-            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
+            the pipeline's stage-by-stage account of one evaluation;
+            "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine NEW attacker target
                         undercut  NEW attacker target   (backward compatible alias)
                         undergird NEW supporter target [on PROP]
@@ -158,6 +156,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         prover = setup_prover()
     prev_echo = getattr(prover, "echo_notes", False)
     prover.echo_notes = echo_notes
+    # render_files=None keeps whatever the session has (ACDC_NO_RENDER); False
+    # stops `graph ... show` and `tree` writing images and opening a viewer.
+    prev_render = getattr(prover, "render_files", True)
+    if render_files is not None:
+        prover.render_files = render_files
 
     recording = False
     current_argument = None
@@ -268,6 +271,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Decorate failed: %s", e)
@@ -286,6 +290,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 if isinstance(e, MachinePayloadError):
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
@@ -321,6 +326,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         _dispatch_label(prover, command)
                     elif command.startswith("evaluate "):
                         _dispatch_evaluate(prover, command)
+                    elif command.startswith("explain "):
+                        _dispatch_explain(prover, command)
                     elif command.startswith("tree "):
                         parts = command.split()
                         # Usage:
@@ -357,6 +364,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("%s failed: %s", command.split()[0].capitalize(), e)
@@ -390,6 +398,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during undermine: %s", e)
@@ -404,6 +413,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during undermine: %s", e)
@@ -420,6 +430,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Undermine failed: missing arguments")
                             if stop_on_error:
@@ -467,6 +478,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during %s: %s", verb, e)
@@ -481,6 +493,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during %s: %s", verb, e)
@@ -497,6 +510,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {verb.capitalize()} failed: missing arguments")
                             if stop_on_error:
@@ -527,6 +541,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during attack: %s", e)
@@ -541,6 +556,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during attack: %s", e)
@@ -557,6 +573,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Attack failed: missing arguments")
                             if stop_on_error:
@@ -596,6 +613,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during rebut: %s", e)
@@ -610,6 +628,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during rebut: %s", e)
@@ -625,6 +644,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Rebut precondition failed: %s", e)
@@ -641,6 +661,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Rebut failed: missing arguments")
                             if stop_on_error:
@@ -679,6 +700,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error: %s", e)
@@ -693,6 +715,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error (no machine payload): %s", e)
@@ -707,6 +730,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             pass
     else:
         prover.echo_notes = prev_echo
+        prover.render_files = prev_render
     logger.info("Finished script %s", script_path)
 
 
@@ -789,7 +813,9 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
-            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
+            the pipeline's stage-by-stage account of one evaluation;
+            "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
           - Scripts: "load FILE" runs a .fspy file in this session.
@@ -869,6 +895,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 _dispatch_label(prover, command)
             elif command.startswith("evaluate "):
                 _dispatch_evaluate(prover, command)
+            elif command.startswith("explain "):
+                _dispatch_explain(prover, command)
             elif command.startswith("tree "):
                 parts = command.split()
                 if len(parts) == 2:
@@ -1678,6 +1706,107 @@ def _dispatch_evaluate(prover: ProverWrapper, command: str) -> None:
                           semantics or "preferred", witness)
 
 
+def _dispatch_explain(prover: ProverWrapper, command: str) -> None:
+    parts = command.split()
+    if len(parts) < 2:
+        logger.error("explain: needs an argument name. Use: explain ARG [MODE] [SEMANTICS] [BASE] [N|all]")
+        return
+    try:
+        mode, semantics, base, witness = _split_eval_tokens(parts[2:])
+    except ValueError as e:
+        logger.error("explain: %s", e)
+        return
+    if witness is not None and (mode or "skeptical") != "credulous":
+        logger.error("explain: a witness number or 'all' requires credulous mode")
+        return
+    explain_argument_cmd(prover, parts[1], mode or "skeptical", base or "cbn",
+                         semantics or "preferred", witness)
+
+
+#: The pipeline's loggers, in the order the stages run.  ``explain`` groups
+#: its account by these, and the stage label is the last dotted component.
+_PIPELINE_LOGGERS = (
+    "core.dc.unfold",
+    "core.dc.typecheck",
+    "core.dc.debate_graph",
+    "core.comp.adf_label",
+    "core.comp.oracle",
+    "core.comp.evaluate",
+    "core.comp.oracle_terms",
+    "core.dc.strict",
+)
+
+
+class _StageRecorder(logging.Handler):
+    """Collect the pipeline's records for one evaluation, in order."""
+
+    def __init__(self):
+        super().__init__(level=logging.DEBUG)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
+                         base: str = "cbn", semantics: str = "preferred",
+                         witness=None) -> None:
+    """CLI: evaluate ARG and print the pipeline's own account of the run.
+
+    Syntax:
+        explain ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all]
+
+    Same options as `evaluate`.  The account is the DEBUG narrative each
+    stage already emits, captured for this one run and grouped by stage,
+    so it needs no change to the global log level and stays correct as the
+    instrumentation grows.  The verdict is printed last, after the account
+    that led to it.
+    """
+    recorder = _StageRecorder()
+    captured = [logging.getLogger(n) for n in _PIPELINE_LOGGERS]
+    verdict_logger = logging.getLogger("fsp.wrapper")
+    saved = [(lg, lg.level, lg.propagate) for lg in captured + [verdict_logger]]
+    for lg in captured:
+        lg.addHandler(recorder)
+        lg.propagate = False              # no second copy on stdout at DEBUG
+        if lg.level == logging.NOTSET or lg.level > logging.DEBUG:
+            lg.setLevel(logging.DEBUG)
+    verdict_logger.addHandler(recorder)
+    verdict_logger.propagate = False      # hold the verdict back until the end
+    try:
+        evaluate_argument_cmd(prover, name, mode, base, semantics, witness)
+    finally:
+        for lg in captured + [verdict_logger]:
+            lg.removeHandler(recorder)
+        for lg, level, propagate in saved:
+            lg.setLevel(level)
+            lg.propagate = propagate
+    stages = [r for r in recorder.records if r.name in _PIPELINE_LOGGERS]
+    verdict = [r for r in recorder.records if r.name == "fsp.wrapper"]
+    if not stages:
+        logger.info("explain: nothing to report for '%s' (it was refused before the pipeline ran).", name)
+    else:
+        logger.info("")
+        logger.info("How '%s' was evaluated, stage by stage:", name)
+        logger.info("")
+        for record in stages:
+            message = record.getMessage()
+            stripped = message.lstrip()
+            indent = "  " if len(message) != len(stripped) else ""
+            # Each message opens with its own stage word - "unfold", "solver",
+            # "sigma", "classify" - which names the step better than the module
+            # does (one module runs several steps).  Lift it into the column.
+            head, sep, rest = stripped.partition(": ")
+            if sep and " " not in head:
+                stage, stripped = head, rest
+            else:
+                stage = record.name.rsplit(".", 1)[-1]
+            logger.info("  %-14s %s%s", stage, indent, stripped)
+        logger.info("")
+    for record in verdict:
+        logger.info("%s", record.getMessage())
+
+
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
                        show: bool = False) -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT.
@@ -1720,17 +1849,31 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
         # say loudly why they are missing - there is no fallback labeller.
         print(f"graph: labels unavailable: {e}")
         logger.warning("Labels unavailable for the graph view: %s", e)
+    may_render = getattr(prover, "render_files", True)
     if dot_path:
-        with open(dot_path, "w") as fh:
-            fh.write(graph.to_dot(labels=labels))
-        logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
+        if may_render:
+            with open(dot_path, "w") as fh:
+                fh.write(graph.to_dot(labels=labels))
+            logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
+        else:
+            logger.info("File output is off (ACDC_NO_RENDER): not writing %s.", dot_path)
     if show:
-        image = _render_graph_image(graph.to_dot(labels=labels), f"{name}_graph")
+        image = _render_graph_image(graph.to_dot(labels=labels), f"{name}_graph") if may_render else None
         if image and _open_file(image):
             logger.info("Graph rendered to %s and opened.", image)
             return
         if image:
             logger.info("Graph rendered to %s (open it manually).", image)
+            return
+        # No picture: either Graphviz is missing or file output is off.  Either
+        # way the text view is the better thing to have in a log.
+        if not may_render:
+            logger.info("")
+            logger.info("Debate graph '%s' (file output is off, ACDC_NO_RENDER):", name)
+            logger.info("")
+            for line in graph.to_text(labels=labels).splitlines():
+                logger.info("  %s", line)
+            logger.info("")
             return
         logger.info("")
         logger.info("Debate graph '%s' (install graphviz for a rendered picture):", name)
@@ -1898,6 +2041,10 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mod
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return
     out_base = f"{name}_tree"
+    if not getattr(prover, "render_files", True):
+        logger.info("File output is off (ACDC_NO_RENDER): not writing %s.%s for '%s'.",
+                    out_base, fmt, name)
+        return
     image = _render_graph_image(dot, out_base, fmt)        # graphviz package, else the dot binary
     if image:
         if _open_file(image):

@@ -84,6 +84,7 @@ in that task: every implication contraposes, delegated (defeasible) ones
 included; strictness affects default status only, never closure.
 """
 
+import logging
 import warnings
 
 from core.comp.oracle import (
@@ -91,6 +92,9 @@ from core.comp.oracle import (
     eval_formula, grounded_interpretation, run_adf_bdd,
 )
 from core.dc.debate_graph import DebateGraph
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
 
 #: Separator between the canonical proposition key and the side in an ADF
 #: statement name.  \x01 cannot occur in canonical renderings.
@@ -154,6 +158,7 @@ def _warn_opposing_presumptions(graph: DebateGraph):
     if not clash:
         return
     names = ", ".join(graph.nodes.get(key, key) for key in clash)
+    logger.debug("label: opposing presumptions on %s (an onus conflict)", names)
     warnings.warn(
         f"opposing presumptions on {names}: both sides delegate the onus of "
         f"refutation, so neither side holds it; the contest is decided by "
@@ -169,6 +174,8 @@ def compile_conditions(graph: DebateGraph):
     materialized = {(k, s) for (k, s) in statements}
     derived = {(e.target_key, e.target_side) for e in graph.edges}
     conditions = {}
+    logger.debug("label: %d referenced statement(s) over %d edge(s)",
+                 len(statements), len(graph.edges))
     for key, side in statements:
         strict_disjuncts = []
         defeasible_disjuncts = []
@@ -202,7 +209,40 @@ def compile_conditions(graph: DebateGraph):
                 core = conj(core, neg(var(_stmt(*contrary))))
         condition = disj(*strict_disjuncts, core) if strict_disjuncts else core
         conditions[_stmt(key, side)] = condition
+        if logger.isEnabledFor(TRACE):
+            logger.log(TRACE, "  label: %s := %s   [%s]",
+                       _show(graph, key, side), _render(graph, condition),
+                       ", ".join(filter(None, [
+                           "presumed" if presumed else "",
+                           "contrary materialised" if guarded else "",
+                           "guard dropped: the contrary is a bare default"
+                           if unguarded_derivations else "",
+                           "%d strict disjunct(s)" % len(strict_disjuncts)
+                           if strict_disjuncts else "",
+                       ])) or "-")
     return conditions
+
+
+def _show(graph: DebateGraph, key: str, side: str) -> str:
+    return f"{graph.nodes.get(key, key)}[{side[0]}]"
+
+
+def _render(graph: DebateGraph, f) -> str:
+    """An acceptance condition in the course's notation, for a log line."""
+    tag = f[0]
+    if tag == "const":
+        return "true" if f[1] else "false"
+    if tag == "var":
+        return _show(graph, *split_statement(f[1]))
+    if tag == "not":
+        return f"not {_render(graph, f[1])}"
+    parts = f[1]
+    if not parts:
+        return "false" if tag == "or" else "true"
+    if len(parts) == 1:
+        return _render(graph, parts[0])
+    glue = " and " if tag == "and" else " or "
+    return "(" + glue.join(_render(graph, p) for p in parts) + ")"
 
 
 def graph_to_adf(graph: DebateGraph, *, guard: bool = True) -> ADF:
@@ -321,8 +361,20 @@ def labellings(graph: DebateGraph, semantics: str = "grounded"):
             f"adf-bdd returned {len(found)} grounded interpretations; expected exactly one"
         )
     if semantics == "preferred":
+        before = len(found)
         found = [v for v in found if not any(w != v and _leq_information(v, w) for w in found)]
-    return sorted(found, key=labelling_key)
+        logger.debug("label: %d complete labelling(s) -> %d preferred", before, len(found))
+    found = sorted(found, key=labelling_key)
+    logger.debug("label: %s gives %d labelling(s)", semantics, len(found))
+    if logger.isEnabledFor(TRACE):
+        for i, labels in enumerate(found, 1):
+            logger.log(TRACE, "  label: [%d] %s", i,
+                       ", ".join(f"{_show(graph, k, sd)}={v}" for (k, sd), v in labels.items()))
+    contradictions = strict_contradictions(graph)
+    if contradictions:
+        logger.debug("label: strictly contradictory on %s (both sides strictly derived)",
+                     ", ".join(sorted(graph.nodes.get(k, k) for k in contradictions)))
+    return found
 
 
 _LABEL_RANK = {"IN": 0, "OUT": 1, "UNDEC": 2}
@@ -344,9 +396,17 @@ def intersection_labelling(labels_list):
     if not labels_list:
         raise ValueError("no labellings to intersect")
     out = {}
+    disputed = []
     for statement in labels_list[0]:
         values = {lab[statement] for lab in labels_list}
-        out[statement] = values.pop() if len(values) == 1 else "UNDEC"
+        if len(values) == 1:
+            out[statement] = values.pop()
+        else:
+            out[statement] = "UNDEC"
+            disputed.append(statement)
+    logger.debug("witness: skeptical intersection of %d labelling(s); %d statement(s) disputed%s",
+                 len(labels_list), len(disputed),
+                 ": " + ", ".join(f"{k}[{sd[0]}]" for k, sd in disputed) if disputed else "")
     return out
 
 

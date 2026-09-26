@@ -85,6 +85,7 @@ nested under an axiom head is not propagated by the standard rules
 (task aida-abort-propagation), the classifier sees it anyway.
 """
 
+import logging
 from copy import deepcopy
 
 from core.ac.ast import (
@@ -101,11 +102,22 @@ from core.dc.debate_graph import (
     DebateGraph, canonical_prop, compile_debate, _match_scaffold,
     DebateCompileError, binder_statements, scion_record,
 )
+from core.logging_util import TRACE
 from core.dc.strict import (
     strict_resolve, compile_issue,
     keep_orig as _keep_orig, keep_scion_support as _keep_scion_support,
     keep_attack_wing as _keep_attack_wing,
 )
+
+
+logger = logging.getLogger(__name__)
+
+
+def _show(statement, prop=None) -> str:
+    """``Prop[t]`` / ``Prop[c]`` for a log line; the canonical key is the
+    fallback when the caller has no surface spelling."""
+    key, side = statement
+    return f"{prop or key}[{side[0]}]"
 
 
 class EvaluationRefused(DebateCompileError):
@@ -201,6 +213,13 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)
+            # The tiebreak only ever fires on UNDEC; say so when it does,
+            # because that is where the mode changes the answer.
+            logger.debug("sigma: %s %s is %s -> keep the %s%s",
+                         role, _show(statement, prop), status,
+                         "original" if choice == "orig"
+                         else ("supporter" if role == "supporter" else "attacker (the clash)"),
+                         " (%s tiebreak)" % mode if status == "UNDEC" else "")
             if choice == "orig":
                 return walk(_keep_orig(node, orig, alt), env)
             if role == "supporter":
@@ -254,6 +273,7 @@ def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
     labelling in the canonical numbering (credulous mode only)."""
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
+    shown = _show(issue, graph.nodes.get(issue[0]))
     candidates = _candidates(graph, semantics)
     if mode == "skeptical":
         if witness is not None:
@@ -261,6 +281,7 @@ def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
                 "A witness number only applies to credulous evaluation; "
                 "skeptical evaluation uses the intersection of all labellings."
             )
+        logger.debug("witness: skeptical over %d %s labelling(s)", len(candidates), semantics)
         return intersection_labelling(candidates), "skeptical"
     if witness is not None:
         if not 1 <= witness <= len(candidates):
@@ -274,13 +295,21 @@ def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
                 f"Labelling {witness} does not accept the issue "
                 f"({sigma.get(issue)}); a credulous witness must label it IN."
             )
+        logger.debug("witness: [%d] of %d chosen explicitly (credulous, issue %s IN)",
+                     witness, len(candidates), shown)
         return sigma, "credulous"
-    for sigma in candidates:
+    for number, sigma in enumerate(candidates, 1):
         if sigma.get(issue) == "IN":
+            logger.debug("witness: [%d] of %d chosen, the first %s labelling accepting %s",
+                         number, len(candidates), semantics, shown)
             return sigma, "credulous"
     # Credulously rejected: no extension accepts the issue.  Fall back to
     # the grounded labelling and resolve the residue skeptically - never
     # with the credulous tiebreak, which would manufacture acceptance.
+    # INFO, not DEBUG: this contradicts the mode the caller asked for and
+    # changes the answer, so it must be visible without raising the level.
+    logger.info("No %s labelling accepts %s; evaluating against the grounded "
+                "labelling, resolved skeptically.", semantics, shown)
     return grounded_labels(graph), "skeptical"
 
 
@@ -304,9 +333,15 @@ def evaluate_debate(
     the credulous witness to use (default: the first accepting one).
     """
     graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
-    sigma, tiebreak = witness_labelling(graph, issue_of(body), mode, semantics, witness)
+    issue = issue_of(body)
+    logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
+                 name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
+    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
     normal_form = _evaluate_under(body, name, sigma, tiebreak, strict_names, base)
-    return normal_form, classify_nf(normal_form), sigma, graph
+    nf_class = classify_nf(normal_form)
+    logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
+                 _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
+    return normal_form, nf_class, sigma, graph
 
 
 def evaluate_witnesses(
@@ -346,8 +381,14 @@ def _compile_for_evaluation(body, name, strict_names, strict_kinds):
 def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     """The paper's two phases: strictness on the term first (strict
     redundancy and defeat), sigma for what it delays."""
-    strict_body, _ = strict_resolve(body, strict_names or ())
-    resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names)
+    strict_trace = []
+    strict_body, _ = strict_resolve(body, strict_names or (), trace=strict_trace)
+    sigma_trace = []
+    resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
+                                 trace=sigma_trace)
+    logger.debug("evaluate: '%s' - %d scaffold(s) decided by strictness, %d by sigma "
+                 "(%s tiebreak, base %s)",
+                 name, len(strict_trace), len(sigma_trace), tiebreak, base)
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
     return normal_form

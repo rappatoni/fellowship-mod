@@ -54,6 +54,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.last_output_text: str = ""
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
+        # Whether `graph ... show` and `tree` may write image/DOT files and open
+        # a viewer.  ACDC_NO_RENDER=1 turns both off for a whole session (test
+        # runs, headless CI); ACDC_NO_OPEN is the narrower "write but do not
+        # open".  execute_script can override it per script.
+        self.render_files = os.getenv("ACDC_NO_RENDER", "").lower() in {"", "0", "false", "no"}
         self.declarations: Dict[str, Declaration] = {}
         self.decorations: Dict[str, str] = {}
  

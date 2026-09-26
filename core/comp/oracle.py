@@ -16,13 +16,19 @@ the third-party solvers (adf-bdd, DIAMOND, YADF) used as the independent
 cross-check.
 """
 
+import logging
 import os
 import re
 import shutil
 import subprocess
 import tempfile
+import time
 from itertools import product
 from typing import Mapping, Optional
+
+from core.logging_util import TRACE
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Formulas
@@ -356,6 +362,13 @@ def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
     with tempfile.NamedTemporaryFile("w", suffix=".adf", delete=False) as fh:
         fh.write(text)
         path = fh.name
+    if logger.isEnabledFor(TRACE):
+        logger.log(TRACE, "  solver: %d statement(s) written to %s", len(adf.statements), path)
+        for original, atom in name_map.items():
+            logger.log(TRACE, "    solver: %s = %s", atom, original)
+        for line in text.splitlines():
+            logger.log(TRACE, "    solver: %s", line)
+    started = time.perf_counter()
     try:
         proc = subprocess.run(
             # --lib naive: measured 2026-09-16, the default hybrid backend
@@ -366,6 +379,12 @@ def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
         )
     finally:
         os.unlink(path)
+    elapsed = 1000 * (time.perf_counter() - started)
+    logger.debug("solver: adf-bdd %s on %d statement(s), exit %d, %.0f ms (%s)",
+                 mode, len(adf.statements), proc.returncode, elapsed, binary)
+    if logger.isEnabledFor(TRACE):
+        for line in proc.stdout.splitlines():
+            logger.log(TRACE, "  solver: %s", line)
     if proc.returncode != 0:
         raise RuntimeError(f"adf-bdd failed ({proc.returncode}): {proc.stderr.strip()}")
     interpretations = []

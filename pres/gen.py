@@ -9,6 +9,27 @@ from core.ac.ast import (
 )
 from core.comp.visitor import ProofTermVisitor
 
+
+def pres_str(node) -> str:
+    """Render a proof term for a message, never raising.
+
+    ``ProofTermGenerationVisitor`` MUTATES what it visits (it hangs a ``.pres``
+    string on every node), so this deep-copies first.  That makes it expensive:
+    one full copy plus one full traversal per call.  Callers that build log
+    messages must therefore guard with ``logger.isEnabledFor(...)`` - the cost
+    is paid as soon as the arguments are evaluated, whatever the level.
+
+    This is the one copy of a helper that was pasted into four modules under
+    three names (``_pres_str``, ``_present``, ``_node_pres``); new code uses
+    this one.
+    """
+    try:
+        copy = ProofTermGenerationVisitor().visit(deepcopy(node))
+        return getattr(copy, "pres", repr(node))
+    except Exception:
+        return repr(node)
+
+
 class ProofTermGenerationVisitor(ProofTermVisitor):
     """Generate a proof term from an (enriched or rewritten) argument body.
 

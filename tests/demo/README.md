@@ -34,4 +34,9 @@ Note for 06: the strict phase is what turns the sprung trap into a strict
 edge. Strict in the debate means the subterm rests on nothing, that is, it
 has no open site; see the note in `call-by-onus.org`.
 
+To show the machinery rather than just its verdict, run `explain ARG` in place
+of `evaluate ARG`: it prints the same evaluation stage by stage, from the
+unfolding through the strict decisions and the witness choice to the normal
+form. It changes no global setting, so it can be dropped into any demo file.
+
 `tests/demo/test_demo.py` runs every file end to end so the demo cannot rot.
