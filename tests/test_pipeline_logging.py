@@ -153,6 +153,17 @@ class TestArtifactsAreReported:
         term = said[i + 1].strip()
         assert term.startswith("\u03bc") and "argA" in term and len(term) > 100
 
+    def test_a_dropped_wing_says_what_went_with_it(self, fresh, caplog):
+        """Resolution recurses only into the wing it keeps, so one decision at
+        the root can collapse a whole debate to a single site.  The account has
+        to say so, or the jump from the strict phase's term to the term entering
+        normalisation looks like magic (author, 2026-09-26)."""
+        caplog.set_level(logging.DEBUG)
+        evaluate_fixture(fresh, "tests/rationality/cyclic_undercut.fspy", "argB")
+        said = " ".join(messages(caplog, "core.comp.evaluate"))
+        assert "dropping the" in said
+        assert "scaffold(s) inside it" in said
+
     def test_a_shape_mismatch_names_its_locus(self):
         """On a type-check failure the reviewer needs the position, not just
         the fact that the two differ."""

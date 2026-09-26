@@ -213,13 +213,26 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)
-            # The tiebreak only ever fires on UNDEC; say so when it does,
-            # because that is where the mode changes the answer.
-            logger.debug("sigma: %s %s is %s -> keep the %s%s",
-                         role, _show(statement, prop), status,
-                         "original" if choice == "orig"
-                         else ("supporter" if role == "supporter" else "attacker (the clash)"),
-                         " (%s tiebreak)" % mode if status == "UNDEC" else "")
+            if logger.isEnabledFor(logging.DEBUG):
+                kept = ("original" if choice == "orig"
+                        else ("supporter" if role == "supporter" else "attacker (the clash)"))
+                # Which wing is thrown away, and what goes with it.  Resolution
+                # recurses only into the wing it keeps, so every scaffold inside
+                # the other one is never consulted - that is how a whole debate
+                # can collapse to a single site in one decision.
+                dropped = None
+                if role == "supporter":
+                    dropped = ("supporter", scion_raw) if choice == "orig" else ("original", orig)
+                elif choice == "orig":
+                    dropped = ("attacker", scion_raw)   # attacker wins -> the clash keeps both
+                inside = _count_scaffolds(dropped[1], strict_names) if dropped else 0
+                logger.debug("sigma: %s %s is %s -> keep the %s%s%s",
+                             role, _show(statement, prop), status, kept,
+                             " (%s tiebreak)" % mode if status == "UNDEC" else "",
+                             "" if dropped is None else
+                             ", dropping the %s%s" % (
+                                 dropped[0],
+                                 " and the %d scaffold(s) inside it" % inside if inside else ""))
             if choice == "orig":
                 return walk(_keep_orig(node, orig, alt), env)
             if role == "supporter":
@@ -233,6 +246,16 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
         return node
 
     return walk(deepcopy(body), {})
+
+
+def _count_scaffolds(node, strict_names) -> int:
+    """Scaffolds in a subterm: what a dropped wing takes with it."""
+    if not isinstance(node, ProofTerm):
+        return 0
+    found = 1 if _match_scaffold(node, strict_names) is not None else 0
+    for slot in ("term", "context"):
+        found += _count_scaffolds(getattr(node, slot, None), strict_names)
+    return found
 
 
 def issue_of(body: ProofTerm):
