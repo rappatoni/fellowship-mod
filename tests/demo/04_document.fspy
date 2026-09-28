@@ -21,7 +21,7 @@ label tweety
 # Now the fact comes in: Tweety is a penguin.  Register the counterargument.
 # No verb, no composition - just another argument in the file.
 declare penguin : (Penguin).
-start counterargument penguin Flies
+start counterargument grounded_penguin Flies
 cut (Penguin -> ~Flies) rule.
 axiom penguins_dont_fly.
 elim.

@@ -94,16 +94,41 @@ def test_register_argument_cmd_replays_and_discards_by_default():
     assert prover.commands[-1] == "discard theorem."
 
 
-def test_register_argument_cmd_strict_replays_and_qeds():
-    prover = _FakeProver()
+class _ClosedFakeProver(_FakeProver):
+    """Replays end with no open goal: the term is strict."""
 
-    arg = register_argument_cmd(prover, "register demo strict : A := μthesis:A.<?1:A||1:A?>")
+    def send_command(self, cmd, *args, **kwargs):
+        self.commands.append(cmd)
+        return {"proof-term": '"μthesis:A.<ax:A||thesis:A>"', "goals": []}
+
+
+def test_register_argument_cmd_strict_replays_and_qeds():
+    prover = _ClosedFakeProver()
+
+    arg = register_argument_cmd(prover, "register demo strict : A := μthesis:A.<ax:A||thesis:A>")
 
     assert arg.name == "demo"
     assert arg.conclusion == "A"
     assert prover.arguments["demo"] is arg
     assert prover.commands[0] == "theorem demo : (A)."
     assert prover.commands[-1] == "qed."
+    assert arg.citable
+
+
+def test_register_strict_refuses_an_open_term_before_qed():
+    """Fellowship holds only strict proofs (tasks.org,
+    aida-statements-and-witnesses).  An open term registered `strict` is
+    refused by the wrapper, which discards the theorem instead of sending a
+    `qed` that Fellowship would reject anyway."""
+    import pytest
+    from wrap.prover import StrictnessRefused
+    prover = _FakeProver()
+
+    with pytest.raises(StrictnessRefused, match="obligation"):
+        register_argument_cmd(prover, "register demo strict : A := μthesis:A.<?1:A||1:A?>")
+    assert "qed." not in prover.commands
+    assert prover.commands[-1] == "discard theorem."
+    assert "demo" not in prover.arguments
 
 
 def test_register_argument_cmd_preserves_input_body_after_replay():

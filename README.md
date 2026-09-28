@@ -321,7 +321,49 @@ detects a machine-mode desynchronization.
 - `start antitheorem NAME CONCLUSION`
   - begin recording a counterargument / antitheorem-backed argument
 - `end argument`
-  - finish recording, execute the proof against Fellowship, and register it
+  - finish recording, execute the proof against Fellowship, and register it;
+    if its body is closed, Fellowship also keeps it as a theorem, so
+    `axiom NAME` cites it
+- `theorem NAME : (PROP).` / `antitheorem NAME : (PROP).`
+  - state a claim and begin its proof (see below)
+- `qed.`
+  - end the recording and demand a strict witness; refused, and nothing
+    registered, while an obligation, a presumption or a defeasible citation
+    remains open
+- `adopt EDGE* as NAME`
+  - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
+    (see below)
+
+### Statements, witnesses and citations
+
+The wrapper owns the registry of every statement and argument, and Fellowship
+keeps exactly the strict proofs. A name Fellowship knows is a strict axiom
+everywhere, so it never holds a defeasible argument.
+
+- **A theorem is a statement.** `theorem foo : (A).` registers the claim at
+  once, as the maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an
+  obligation marker on A: A is claimed and owes a proof. The tactics that
+  follow refine it into a witness, and `qed.` demands that the witness be
+  strict. A strict witness replaces the enthymeme under the same name and
+  Fellowship holds it. An open one is refused; the claim stays, and a second
+  `theorem foo` reopens it.
+- **Citing an argument.** Inside a recording, `axiom foo` (or `moxia foo` for a
+  counterargument) cites a registered argument. A strict `foo` is simply a
+  lemma Fellowship knows. A defeasible `foo` is grafted: the citing argument's
+  term contains foo's body at that site, capture-free, with clashing binders
+  renamed. Its contribution to the document graph is its *atomic* body, with
+  that site left as an obligation, because foo's contribution is already in
+  the document under foo's name. The cited argument must conclude the goal's
+  proposition, on the same side.
+- **Adopting a discovered strict edge.** `graph ARG` can show strict edges,
+  named with a trailing star, that the strict phase found in the unfolded
+  term. Showing them changes nothing. `adopt s1* as peirce` replays the closed
+  term stored on the edge with `qed.`, so Fellowship checks it again, and
+  registers it as the theorem `peirce`.
+- **Names are unique per document.** Sorts, declared axioms, statements and
+  arguments share one namespace, checked before anything reaches the prover;
+  `lk.` or `lj.` starts a new one. Names starting with `typecheck_` or
+  `theta_expand_` are reserved for the names the wrapper sends to Fellowship.
 
 ### Stored-argument commands
 
@@ -515,12 +557,11 @@ theorem argA : (A).
 antitheorem notA : (A).
 ```
 
-The wrapper-level recording commands:
-- `start argument ...`
-- `start counterargument ...`
-- `start antitheorem ...`
-
-are convenience front-ends for those prover workflows.
+The wrapper intercepts these: a `theorem` states a claim and opens a
+recording, and its `qed.` is checked by replaying the recorded witness
+(see "Statements, witnesses and citations"). The recording commands
+`start argument ...`, `start counterargument ...` and `start antitheorem ...`
+open the same kind of recording without stating a claim.
 
 ### `deny`
 

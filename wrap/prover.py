@@ -7,6 +7,7 @@ from core.ac.signature import Declaration
 from mod import store
 from core.dc.debate_graph import (
     DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
+    SYNTHETIC_PREFIX,
 )
 from core.ac.ast import FirstOrderNotSupported
 
@@ -24,6 +25,31 @@ class ProverNeedsMoreInput(ProverError):
 
 class MachinePayloadError(ProverError):
     pass
+
+
+class NameClash(ProverError):
+    """A name is already taken in this document (tasks.org,
+    aida-statements-and-witnesses).  Refused before the prover sees it."""
+
+
+class CitationRefused(ProverError):
+    """`axiom NAME` cited a registered argument that does not fit the goal:
+    the wrong side or the wrong proposition."""
+
+
+class StrictnessRefused(ProverError):
+    """`qed` demanded a strict witness and the witness still has open
+    obligations or presumptions.  Nothing reaches Fellowship's theorems."""
+
+
+#: Prefixes of the names the wrapper itself sends to Fellowship (the type
+#: oracle's replay, the theta-expansion names).  A user name with one of
+#: them could collide with a wrapper-generated theorem, so it is refused.
+RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX)
+
+#: What may refine what: a recording becomes the argument it records, a
+#: statement's enthymeme becomes its witness.  Anything else is a clash.
+_REFINABLE = {"recording", "statement"}
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 
@@ -492,6 +518,47 @@ TODO: Mechanism to declare a scenario of default assumptions.
         else:
             return f"Error: Tactic '{tactic_name}' is not defined."
 
+    # -- names ---------------------------------------------------------------
+
+    @property
+    def names(self) -> Dict[str, str]:
+        """Every name taken in this document, with what took it:
+        "declaration", "statement", "recording" or "argument".  Scoped like
+        the document itself: `lk.`/`lj.` start a new theory in Fellowship
+        and a new, empty table here."""
+        return store.document.setdefault("names", {})
+
+    def claim_name(self, name: str, kind: str, *, refine: bool = False, dry_run: bool = False) -> None:
+        """Take ``name`` for ``kind`` or raise NameClash.
+
+        One namespace for sorts, declared axioms, statements and arguments,
+        checked here because only the wrapper sees every name: defeasible
+        arguments never reach Fellowship, which silently replaces an
+        existing theorem of the same name.  ``refine`` lets a recording
+        become its argument and a statement become its witness."""
+        if any(name.startswith(p) for p in RESERVED_PREFIXES):
+            raise NameClash(
+                f"'{name}' starts with a prefix the wrapper reserves for the names it "
+                f"sends to Fellowship itself ({', '.join(RESERVED_PREFIXES)}); choose another name."
+            )
+        held = self.names.get(name)
+        if held is not None and not (refine and held in _REFINABLE):
+            raise NameClash(
+                f"'{name}' is already a {held} in this document; names are unique "
+                f"per document (lk. or lj. starts a new one)."
+            )
+        if not dry_run:
+            self.names[name] = kind
+
+    def claim_declared_names(self, command: str) -> None:
+        """The names a `declare N1, N2 : TYPE.` command introduces."""
+        match = re.match(r"\s*declare\s+(.+?)\s*:", command)
+        if not match:
+            return
+        for name in (n.strip() for n in match.group(1).split(",")):
+            if name:
+                self.claim_name(name, "declaration")
+
     def register_argument(self, argument: Any) -> None:
         """ Register a new argument (i.e. a partial Fellowship proof.)
 
@@ -499,7 +566,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
         contributes its hyperedges to the document graph; a composed one
         is a *debate*, named for its issue, and adds nothing - the
         conflicts it names are already in the document (option (i)+(ii)
-        of the aida-document-graph decision)."""
+        of the aida-document-graph decision).
+
+        The name must be free, or held by the recording or statement this
+        argument refines; otherwise NameClash, and nothing is registered."""
+        self.claim_name(argument.name, "argument", refine=True)
         self.arguments[argument.name] = argument
         if not getattr(argument, "composed", False):
             self.document_add(argument)
@@ -531,8 +602,12 @@ TODO: Mechanism to declare a scenario of default assumptions.
         still registered for the term-level commands."""
         if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
             return
+        # A citing argument contributes its ATOMIC body: its own derivation,
+        # with the cited sites open.  The cited argument's contribution is
+        # already in the document under its own name (core/dc/cite.py).
+        body = getattr(argument, "atomic_body", None) or argument.body
         try:
-            graph = compile_debate(argument.body, argument.name,
+            graph = compile_debate(body, argument.name,
                                    strict_names=self.declarations.keys(),
                                    strict_kinds=declaration_kinds(self.declarations))
         except (DebateCompileError, FirstOrderNotSupported) as e:

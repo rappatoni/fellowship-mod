@@ -1364,6 +1364,88 @@ of minicourse lesson 5 - one proposition presumed on both sides, no edges
 at all - is exactly the illegal shape, so lesson 5 needs a new minimal
 example whose challenge is *argued*.
 
+*** DONE Statements, witnesses and citations: one registry, Fellowship as the kernel
+CLOSED: [2026-09-28 Mon]
+:PROPERTIES:
+:ID:             aida-statements-and-witnesses
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The wrapper owns the registry of every statement and argument and Fellowship keeps exactly the strict proofs: `theorem foo : A` states a claim (the maximally enthymemic argument) and `qed` demands a strict witness; a closed `end argument` becomes citable; `axiom foo` on a defeasible argument grafts it capture-free while the citing argument contributes its atomic body to the document; `adopt EDGE* as NAME` promotes a strict edge found by unfolding; names are unique per document.
+:VERIFY:         tests/test_statements_and_citations.py (20 tests) with tests/statements_and_citations.fspy; tests/test1.fspy registers its three proofs with bodies and three strict edges; the documented suite is green; a REPL session exercises statement, live citation and qed.
+:END:
+
+Raised by the author 2026-09-28 after fixing `graph document show` on
+tests/test1.fspy. Theorems and arguments lived in disjoint worlds: a
+`theorem ... qed.` was passthrough to Fellowship, which the wrapper mirrored
+only as a name and a proposition, so it had no body and no edge and could not
+support or attack; an argument was replayed and always discarded, so `axiom`
+could not cite it; `qed` inside an argument destroyed the body (Fellowship
+resets its proof term to ?1 at `qed`, and the wrapper read the term after the
+replay); and names clashed silently, Fellowship replacing, the wrapper's
+declarations keeping the first, the argument store overwriting.
+
+*Options weighed with the author.* (1) Background Fellowship's theorems
+entirely: every replay, the type oracle's included, needs Fellowship to know
+the names it cites, and a `declare` substitute would give it an unchecked
+axiom where it held a checked theorem. (2) Keep both worlds and let the prover
+register incomplete proofs: unsound, since a registered name is a strict axiom
+to `axiom`. (3) Move recording into the prover: the argument machinery stays in
+Python, so it would still be mirrored, with the same soundness problem, in
+OCaml. Adopted: the wrapper owns the registry; Fellowship checks every proof
+and keeps exactly the strict ones.
+
+*Refinements from the author during design.*
+- A theorem is a statement, not a witness: `theorem foo : A` registers
+  mu foo:A.< ?1:A || foo >, which in the graph is exactly an obligation marker
+  on A[t]. The tactics refine it; the name belongs to the claim and the witness
+  refines it in place.
+- Citation is semantically annotation, since unfolding reaches the cited
+  argument by proposition identity anyway, but concretely it is an operation:
+  the citing argument IS the term with the cited one grafted in
+  intuitionistically, as the debate verbs are concrete operations over a
+  timeless framework. Hence two bodies: the concrete one, and the atomic one
+  the document compiles.
+- Discovered strict edges are promoted only by an explicit command. A closed
+  term needs no normalisation to be replayed, and it rests only on
+  declarations, so adopting it is permanently sound.
+
+*Implementation.* core/dc/cite.py (graft, rename only on clash, the shared
+citation test); wrap/registry.py (statement, recording and qed helpers that
+both CLI paths call); Argument.execute takes declare=True|"auto"|False,
+refuses `qed` on an open witness before Fellowship sees it, intercepts
+citations of defeasible arguments at replay time (flush, note the focused goal
+from the payload's current-goal-index, skip it with `next.`, graft after the
+replay) and only for RECORDED instructions, since regenerated ones can carry
+binders named after arguments; ProverWrapper.claim_name keeps one namespace
+per document, reset by `lk.`/`lj.`; register and the `argument` one-liner go
+through the same path; `adopt` replays the term stored on the strict edge.
+
+*Found on the way.*
+- tests/demo/04_document.fspy declared the axiom `penguin` and then named a
+  counterargument `penguin`. Harmless while arguments were always discarded,
+  but once a closed one is qed'd Fellowship would replace the axiom with it.
+  The namespace refused it; the counterargument is now `grounded_penguin`.
+- tests/test_register_proof_term_cmd.py registered an OPEN term as strict and
+  expected `qed`, which real Fellowship refuses. Split into a closed term that
+  qeds and an open one refused before `qed`.
+- A strict derivation of false, as in tests/test1.fspy's `inconsistency`, is
+  now an ordinary strict edge on false[t]. The graph does not treat it as
+  explosive; that is the relevance question noted under
+  aida-strictness-invariant-under-sigma, not a new defect.
+- The metro example's `~EfficientMetro` and the context side of
+  `EfficientMetro` are different statements in the graph, so a strict
+  refutation stated as a negation does not contest a presumption of the
+  proposition. That is the negation bridge of aida-strict-layer.
+
+Evidence: 1112 passed, 2 skipped, 3 xfailed, 2 xpassed (20 new tests).
+
 *** DONE Make the compilation-evaluation pipeline narrate itself
 CLOSED: [2026-09-26 Fri]
 :PROPERTIES:

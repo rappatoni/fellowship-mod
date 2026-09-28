@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os, sys
+import copy
 import atexit
 import collections
 import shlex
@@ -12,8 +13,13 @@ import argparse
 import logging
 from typing import Any, Optional
 from pres.tree import render_acceptance_tree_dot
+from mod import store
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
+from wrap.registry import (
+    parse_statement, start_statement, start_recording, finish_recording, is_qed,
+)
+from core.dc.cite import cited_defeasible_argument
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
@@ -118,6 +124,16 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
+def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: int) -> None:
+    """Log-and-refuse for the registry's refusals (a clashing name, a `qed`
+    on a witness that is not strict): print and log, and in strict mode stop
+    the script like any other prover error.  Scripts narrate through the
+    logger only, so there is no separate print here."""
+    logger.warning("Refused (%s:%d): %s", script_path, lineno, error)
+    if strict:
+        raise ProverError(f"{script_path}:{lineno}: {error}") from error
+
+
 def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
@@ -187,6 +203,32 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            statement = None if recording else parse_statement(command)
+            if statement is not None:
+                # `theorem NAME : (P).` states a claim and opens its proof.
+                is_anti, name, conclusion = statement
+                try:
+                    start_statement(prover, is_anti, name, conclusion)
+                except ProverError as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                    continue
+                current_argument = {'name': name, 'conclusion': conclusion,
+                                    'instructions': [], 'is_anti': is_anti, 'statement': True}
+                recording = True
+                continue
+            if recording and is_qed(command):
+                # `qed` ends the recording and demands a strict witness.
+                current = current_argument
+                recording = False
+                current_argument = None
+                try:
+                    arg = finish_recording(prover, current, demand_strict=True)
+                    logger.info("'%s' proved: %s.", arg.name, arg.conclusion)
+                except ProverError as e:
+                    if not current.get('statement'):
+                        prover.names.pop(current['name'], None)
+                    _refuse_in_script(e, strict, script_path, lineno)
+                continue
             if command.startswith('start counterargument ') or command.startswith('start antitheorem '):
                     if recording:
                         logger.warning("Already recording an argument. Please end the current recording first.")
@@ -197,6 +239,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         continue
                     name = parts[2]
                     conclusion = parts[3].strip()
+                    try:
+                        start_recording(prover, name, True)
+                    except ProverError as e:
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
                     current_argument = {
                         'name': name,
                         'conclusion': conclusion,
@@ -216,6 +263,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         continue
                     name = parts[2]
                     conclusion = parts[3].strip()
+                    try:
+                        start_recording(prover, name, False)
+                    except ProverError as e:
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
                     current_argument = {
                         'name': name,
                         'conclusion': conclusion,
@@ -227,22 +279,18 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     if not recording:
                         logger.warning("Not currently recording an argument.")
                         continue
-                    # Create and execute the argument
+                    # Create, execute and register the argument
                     logger.info("Finished recording argument. Constructing and executing argument '%s'.", current_argument['name'])
-                    arg = Argument(
-                        prover,
-                        name=current_argument['name'],
-                        conclusion=current_argument['conclusion'],
-                        instructions=current_argument['instructions'],
-                        is_anti=current_argument.get('is_anti', False)
-                    )
-                    arg.execute()
-                    # Store the argument for later use
-                    prover.register_argument(arg)
-                    logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
-                    # Reset recording state
+                    current = current_argument
                     recording = False
                     current_argument = None
+                    try:
+                        arg = finish_recording(prover, current, demand_strict=False)
+                    except ProverError as e:
+                        prover.names.pop(current['name'], None)
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
+                    logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
             elif recording:
                     # Record-only during scripts: do not execute lines now.
                     if command.startswith('tactic '):
@@ -282,6 +330,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             if stop_on_error:
                                 break
 
+                    elif command.startswith("adopt "):
+                        adopt_strict_edge_cmd(prover, command)
                     elif command.startswith("register "):
                         try:
                             register_argument_cmd(prover, command)
@@ -692,8 +742,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         else:
                             logger.error("One or both arguments not found.")
                     else:
-                        # Execute other commands
+                        # Execute other commands.  A `declare` takes its names
+                        # first: NameClash is a ProverError, handled below.
                         try:
+                            claim = getattr(prover, "claim_declared_names", None)
+                            if claim is not None:
+                                claim(command)
                             output = prover.send_command(command)
                         except ProverError as e:
                             if strict:
@@ -862,6 +916,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 except Exception as e:
                     print(f"Decorate failed: {e}")
                     logger.error("Decorate failed: %s", e)
+            elif command.startswith("adopt "):
+                arg = adopt_strict_edge_cmd(prover, command)
+                if arg is not None:
+                    print(f"Adopted as '{arg.name}' : {arg.conclusion}; `axiom {arg.name}` cites it.")
             elif command.startswith("register "):
                 try:
                     arg = register_argument_cmd(prover, command)
@@ -1059,6 +1117,49 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
                                  attacker_name, target_name)
 
+            elif not recording and parse_statement(command) is not None:
+                # `theorem NAME : (P).` states a claim and opens its proof.
+                is_anti, name, conclusion = parse_statement(command)
+                try:
+                    prover.claim_name(name, "statement", dry_run=True,
+                                      refine=prover.names.get(name) == "statement")
+                    output = prover.send_command(command, include_ui=True)
+                    _print_ui(output)
+                    start_statement(prover, is_anti, name, conclusion)
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error starting '%s': %s", name, e)
+                    break
+                except ProverError as e:
+                    print(f"refused: {e}")
+                    logger.warning("Statement '%s' refused: %s", name, e)
+                    continue
+                current_argument = {'name': name, 'conclusion': conclusion,
+                                    'instructions': [], 'is_anti': is_anti, 'statement': True}
+                recording = True
+                print(f"Stated '{name}' : {conclusion}; prove it, then `qed.`")
+                continue
+            elif recording and is_qed(command):
+                # `qed` ends the recording and demands a strict witness.  The
+                # live proof is discarded and the recording replayed, so the
+                # witness is extracted before Fellowship sees `qed`.
+                current = current_argument
+                recording = False
+                current_argument = None
+                try:
+                    prover.send_command('discard theorem.')
+                    arg = finish_recording(prover, current, demand_strict=True)
+                    print(f"'{arg.name}' proved: {arg.conclusion}.")
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error at qed: %s", e)
+                    break
+                except ProverError as e:
+                    if not current.get('statement'):
+                        prover.names.pop(current['name'], None)
+                    print(f"refused: {e}")
+                    logger.warning("qed refused for '%s': %s", current['name'], e)
+                continue
             elif command.startswith("start counterargument ") or command.startswith("start antitheorem "):
                 if recording:
                     print("Already recording an argument. Please end the current recording first.")
@@ -1079,11 +1180,14 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 print(f"Started recording counterargument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording counterargument '%s' with conclusion '%s'.", name, conclusion)
                 try:
+                    start_recording(prover, name, True)
                     output = prover.send_command(f'antitheorem {name} : ({conclusion}).', include_ui=True)
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
                     logger.error("Prover error starting counterargument: %s", e)
+                    if prover.names.get(name) == "recording":
+                        prover.names.pop(name)          # release only our own claim
                     recording = False
                     current_argument = None
                 except MachinePayloadError as e:
@@ -1111,11 +1215,14 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 print(f"Started recording argument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
                 try:
+                    start_recording(prover, name, False)
                     output = prover.send_command(f'theorem {name} : ({conclusion}).', include_ui=True)
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
                     logger.error("Prover error starting argument: %s", e)
+                    if prover.names.get(name) == "recording":
+                        prover.names.pop(name)          # release only our own claim
                     recording = False
                     current_argument = None
                 except MachinePayloadError as e:
@@ -1138,22 +1245,19 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"acdc: fatal prover communication error: {e}")
                     logger.error("Fatal prover communication error discarding theorem: %s", e)
                     break
-                # Create and execute the argument
-                arg = Argument(
-                    prover,
-                    name=current_argument['name'],
-                    conclusion=current_argument['conclusion'],
-                    instructions=current_argument['instructions'],
-                    is_anti=current_argument.get('is_anti', False)
-                )
-                arg.execute()
-                # Store the argument for later use
-                prover.register_argument(arg)
-                print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
-                logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
-                # Reset recording state
+                # Create, execute and register the argument
+                current = current_argument
                 recording = False
                 current_argument = None
+                try:
+                    arg = finish_recording(prover, current, demand_strict=False)
+                except ProverError as e:
+                    prover.names.pop(current['name'], None)
+                    print(f"refused: {e}")
+                    logger.warning("Argument '%s' refused: %s", current['name'], e)
+                    continue
+                print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
+                logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
             elif recording:
                 # Record the command as part of the argument
                 if command:
@@ -1168,8 +1272,19 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         current_argument['instructions'].append(command)
                     else:
                         # Execute the command and record it
+                        cited = cited_defeasible_argument(prover, command)
                         try:
-                            output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                            try:
+                                output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                            except ProverError:
+                                if cited is None or isinstance(sys.exc_info()[1], MachinePayloadError):
+                                    raise
+                                # Fellowship does not know a defeasible
+                                # argument: skip the goal, record the citation;
+                                # the replay at the end grafts and checks it.
+                                output = prover.send_command('next.', include_ui=True)
+                                print(f"cites '{cited.name}' (defeasible): the goal stays open here and "
+                                      f"'{cited.name}' is grafted in when the argument ends.")
                             _print_ui(output)
                             while isinstance(output, dict) and output.get('_need_more_input'):
                                 more = _read_line('... ')
@@ -1203,8 +1318,16 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         conclusion_part, instructions_part = rest.split('"', 2)[1], rest.split('"', 2)[2]
                         conclusion = conclusion_part.strip()
                         instructions = [instr.strip() for instr in instructions_part.strip().split(';') if instr.strip()]
-                        arg = Argument(prover, name, conclusion, instructions)
-                        arg.execute()
+                        # One line, same path as a recording: the name is
+                        # claimed, and the argument is registered.
+                        start_recording(prover, name, False)
+                        try:
+                            finish_recording(prover, {'name': name, 'conclusion': conclusion,
+                                                      'instructions': instructions},
+                                             demand_strict=False)
+                        except ProverError:
+                            prover.names.pop(name, None)
+                            raise
                         print(f"Argument '{name}' defined with conclusion '{conclusion}'.")
                         logger.info("Argument '%s' defined with conclusion '%s'.", name, conclusion)
                     except Exception as e:
@@ -1241,8 +1364,12 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         print("One or both arguments not found.")
                         logger.error("One or both arguments not found in interactive mode")
                 else:
-                    # Execute the command normally
+                    # Execute the command normally.  A `declare` takes its
+                    # names first; NameClash is a ProverError, handled below.
                     try:
+                        claim = getattr(prover, "claim_declared_names", None)
+                        if claim is not None:
+                            claim(command)
                         output = prover.send_command(command, include_ui=True, allow_incomplete=True)
                         _print_ui(output)
                         while isinstance(output, dict) and output.get('_need_more_input'):
@@ -1427,7 +1554,14 @@ def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
         is_anti=isinstance(body, Mutilde),
     )
     arg.body = body
-    arg.execute(declare=declare_theorem, preserve_input_body=True)
+    # The name is checked before the replay: a strict one ends in `qed`,
+    # which would otherwise let Fellowship silently replace a clashing name.
+    claim = getattr(prover, "claim_name", None)
+    if claim is not None:
+        claim(name, "argument", dry_run=True)
+    # Not `strict`: registered either way, and held by Fellowship if it
+    # turns out closed - the same rule as `end argument`.
+    arg.execute(declare=True if declare_theorem else "auto", preserve_input_body=True)
     prover.register_argument(arg)
 
     logger.info(
@@ -1634,7 +1768,55 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
         logger.warning("Debate graph compilation refused for '%s': %s", name, e)
         return arg, None, term
     _report_onus_conflicts(graph)
+    _remember_strict_edges(graph, name)
     return arg, graph, term
+
+
+def _remember_strict_edges(graph, issue_name: str) -> None:
+    """Keep the strict edges an issue graph showed, by name, so `adopt` can
+    promote one the user has seen.  Scoped to the document: `lk.` forgets."""
+    seen = store.document.setdefault("strict_edges", {})
+    for edge in graph.edges:
+        if edge.strict and edge.name.endswith("*") and getattr(edge, "term", None) is not None:
+            seen[edge.name] = (issue_name, edge, graph.nodes.get(edge.target_key, edge.target_key))
+
+
+def adopt_strict_edge_cmd(prover: ProverWrapper, command: str):
+    """CLI: `adopt EDGE* as NAME` - promote a strict edge that unfolding
+    discovered (Peirce's thesis, say) to a theorem Fellowship holds.
+
+    Queries never change the registry, so a strict edge shown by `graph` or
+    `evaluate` stays a fact about that issue graph until adopted.  Adopting
+    replays the closed term stored on the edge with `qed`: Fellowship checks
+    it again rather than trusting it, and needs no normalisation, since the
+    strict phase already produced a closed term.  A closed term rests only on
+    declarations, so later changes to the document cannot invalidate it.
+    """
+    parts = command.split()
+    if len(parts) != 4 or parts[0] != "adopt" or parts[2] != "as":
+        print("adopt: use `adopt EDGE* as NAME`, with an edge name shown by `graph ARG`.")
+        return None
+    edge_name, name = parts[1], parts[3]
+    seen = store.document.get("strict_edges", {})
+    if edge_name not in seen:
+        print(f"adopt: no strict edge '{edge_name}' has been shown in this document; "
+              f"run `graph ARG` for the argument whose graph has it.")
+        return None
+    issue_name, edge, conclusion = seen[edge_name]
+    try:
+        prover.claim_name(name, "argument", dry_run=True)
+        arg = Argument(prover, name=name, conclusion=conclusion,
+                       is_anti=edge.target_side == "context")
+        arg.body = copy.deepcopy(edge.term)
+        arg.execute(declare=True, preserve_input_body=True)
+        prover.register_argument(arg)
+    except ProverError as e:
+        print(f"adopt: refused: {e}")
+        logger.warning("Adopting '%s' as '%s' refused: %s", edge_name, name, e)
+        return None
+    logger.info("Adopted '%s' (from the issue graph of '%s') as the theorem '%s' : %s.",
+                edge_name, issue_name, name, conclusion)
+    return arg
 
 
 def _report_onus_conflicts(graph) -> None:
@@ -2013,6 +2195,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
             return
         nf, nf_class, sigma, graph = evaluate_debate(
             term, name, mode=mode, witness=witness, **common)
+        _remember_strict_edges(graph, name)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)

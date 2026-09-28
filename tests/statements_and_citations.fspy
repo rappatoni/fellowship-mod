@@ -1,0 +1,37 @@
+% Statements, witnesses and citations (tasks.org, aida-statements-and-witnesses).
+lk.
+declare EfficientMetro, StrikeMetro, UseMetro: bool.
+declare r1: (EfficientMetro -> UseMetro).
+declare r2: (StrikeMetro -> ~EfficientMetro).
+declare a2: (StrikeMetro).
+
+# A theorem is a statement; the tactics refine it into a strict witness.
+theorem metro_down: (~EfficientMetro).
+cut (StrikeMetro -> ~EfficientMetro) th.
+axiom r2.
+elim.
+axiom a2.
+axiom.
+qed.
+
+# A defeasible argument: the metro is efficient, by default.
+start argument efficient EfficientMetro
+by default.
+end argument
+
+# It is cited: its body is grafted into the site, its own edge stays its own.
+start argument use UseMetro
+cut (EfficientMetro -> UseMetro) th.
+axiom r1.
+elim.
+axiom efficient.
+axiom.
+end argument
+
+# The theorem is cited like an axiom: Fellowship holds it.
+theorem clash: (false).
+cut (~EfficientMetro) th.
+axiom metro_down.
+elim.
+by default.
+qed.

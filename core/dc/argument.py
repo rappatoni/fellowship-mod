@@ -25,7 +25,8 @@ from pres.nl import (
     natural_language_argumentative_rendering,
     pruefschema_rendering,
 )
-from wrap.prover import ProverError
+from wrap.prover import ProverError, StrictnessRefused, CitationRefused
+from core.dc.cite import graft_citation, CitationError, cited_defeasible_argument
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +81,16 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - We need to persist and replay the choice across sessions (render/normalize/
         #   chain), and transient machine state is not available beforehand.
         self.is_anti = is_anti
+        # Citations of registered defeasible arguments made while recording
+        # (core/dc/cite.py): [(site, cited name)], filled at replay.
+        self.citations = []
+        # The argument's own contribution to the document graph when it cites
+        # something: its body with the cited sites left open.  None means the
+        # body itself is atomic.
+        self.atomic_body = None
+        # Fellowship holds it as a theorem (qed'd), so `axiom NAME` cites it
+        # as a strict name.  Only ever true of a strict argument.
+        self.citable = False
 
     @staticmethod
     def _rename_outer_binder(node: ProofTerm, new_name: str) -> ProofTerm:
@@ -349,6 +360,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if self.executed:
             logger.warning("Argument '%s' has already been executed.", self.name)
             return
+        # Citation is a recording-time act: only instructions the user
+        # recorded can cite an argument.  Instructions regenerated from a
+        # body name its binders and declared leaves, never a registered
+        # argument, even when a binder happens to carry an argument's name.
+        recorded = self.instructions is not None
         if self.instructions == None:
             if self.body == None:
                 raise Exception("Argument instructions and body missing.")
@@ -401,6 +417,23 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             pending_commands.clear()
 
         for i, instr in enumerate(instr_list):
+            cited = self._cited_argument(instr) if recorded else None
+            if cited is not None:
+                flush_pending()
+                try:
+                    site = self._cite_site(last_output, cited, instr)
+                except CitationError as e:
+                    self.prover.send_command('discard theorem.')   # leave the prover clean
+                    raise CitationRefused(str(e)) from e
+                if site is not None:
+                    # Fellowship does not know a defeasible argument: leave
+                    # the focused goal open, note its site, graft later.
+                    last_output = self.prover.send_command('next.')
+                    self.citations.append((site, cited.name))
+                    continue
+                # The name is a hypothesis or conclusion of the goal itself
+                # (a theorem's conclusion is named after the theorem): an
+                # ordinary step, sent below.
             if instr.startswith('tactic '):
                 flush_pending()
                 # Handle custom tactic invocation within argument execution
@@ -448,6 +481,16 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
                 self.conclusion = self.body.prop
                 self._rename_outer_binder(self.body, self.name)
+        if self.citations:
+            self.atomic_body = copy.deepcopy(self.body)
+            for site, cited_name in self.citations:
+                cited = self.prover.get_argument(cited_name)
+                try:
+                    self.body = graft_citation(self.body, site, cited.body, cited_name)
+                except CitationError as e:
+                    self.prover.send_command('discard theorem.')
+                    raise CitationRefused(str(e)) from e
+                logger.info("Argument '%s' cites '%s' at site %s.", self.name, cited_name, site)
         #Generate natural language representation
         render_context = {
             "declarations": getattr(self.prover, "declarations", {}),
@@ -461,7 +504,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         elif self.rendering == "pruefschema":
             self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
-        if declare:
+        open_sites = self.open_sites()
+        if declare is True and open_sites:
+            self.prover.send_command('discard theorem.')
+            raise StrictnessRefused(
+                f"'{self.name}' is not strict, so it cannot be a theorem: "
+                + "; ".join(open_sites)
+                + ". Discharge them, or end with `end argument` to keep it as a defeasible argument."
+            )
+        if declare is True or (declare == "auto" and not open_sites):
             try:
                 self.prover.send_command('qed.')
             except Exception:
@@ -470,6 +521,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 except Exception:
                     pass
                 raise
+            self.citable = True
+            logger.info("'%s' is strict; Fellowship now holds it as a theorem.", self.name)
         else:
             self.prover.send_command('discard theorem.')
         logger.info("Argument '%s' executed.", self.name)
@@ -510,6 +563,66 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
             return atom[1:-1]
         return atom
+
+    def open_sites(self) -> list:
+        """What keeps this argument from being strict, in words: its open
+        obligations, its presumptions, and the defeasible arguments it
+        cites.  Empty for a strict argument."""
+        cited = {site for site, _ in self.citations}
+        found = []
+        for meta, info in self.assumptions.items():
+            if meta in cited:
+                continue
+            found.append(f"obligation ?{meta}:{info.get('prop')}")
+        for meta, info in self.delegations.items():
+            found.append(f"presumption !{meta}:{info.get('prop')}")
+        for site, name in self.citations:
+            found.append(f"cited defeasible argument '{name}' at {site}")
+        return found
+
+    def _cited_argument(self, instr: str):
+        """See core/dc/cite.cited_defeasible_argument."""
+        return cited_defeasible_argument(self.prover, instr)
+
+    def _cite_site(self, state, cited, instr: str) -> str:
+        """The focused goal a citation fills, checked against the cited
+        argument: same side, same proposition.  None when the name is bound
+        in the goal's own context, so the step is not a citation at all."""
+        from core.dc.debate_graph import canonical_prop
+        goals = state.get("goals") if isinstance(state, dict) else None
+        if isinstance(goals, list) and goals and goals[0] == "goal":
+            goals = [goals]
+        if not goals:
+            raise CitationError(f"`{instr}`: no open goal to cite '{cited.name}' for.")
+        try:
+            index = int(state.get("current-goal-index", 1)) - 1
+        except (TypeError, ValueError):
+            index = 0
+        goal = goals[index] if 0 <= index < len(goals) else goals[0]
+        bound = set()
+        for item in goal[1:]:
+            if isinstance(item, list) and item and item[0] in ("hyps", "ccls"):
+                for entry in item[1:]:
+                    for pair in entry if isinstance(entry, list) else ():
+                        if isinstance(pair, list) and len(pair) == 2 and pair[0] == "name":
+                            bound.add(self._unquote(pair[1]))
+        if cited.name in bound:
+            return None
+        fields = {item[0]: self._unquote(item[1]) for item in goal[1:]
+                  if isinstance(item, list) and len(item) == 2}
+        site, prop, side = fields.get("meta"), fields.get("active-prop"), fields.get("side")
+        cited_anti = isinstance(cited.body, Mutilde) or getattr(cited, "is_anti", False)
+        wants_anti = side == "lhs"
+        if cited_anti != wants_anti:
+            raise CitationError(
+                f"`{instr}`: '{cited.name}' is {'a counterargument' if cited_anti else 'an argument'}, "
+                f"but the goal {site} needs {'a refutation' if wants_anti else 'a proof'} of {prop}."
+            )
+        if canonical_prop(prop) != canonical_prop(cited.conclusion):
+            raise CitationError(
+                f"`{instr}`: '{cited.name}' concludes {cited.conclusion}, but the goal {site} is {prop}."
+            )
+        return site
 
     def _parse_proof_state(self, proof_state: Dict[str, Any]) -> None:
         """
@@ -648,6 +761,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                                         axiom_props=self.prover.declarations,
                                         delegations=self.delegations)
         self.body = visitor.visit(self.body)
+        if self.atomic_body is not None:
+            # The atomic body is what the document compiles, so it needs its
+            # propositions as much as the concrete one; the cited sites are
+            # among this argument's own open goals.
+            self.atomic_body = PropEnrichmentVisitor(
+                assumptions=self.assumptions, axiom_props=self.prover.declarations,
+                delegations=self.delegations).visit(self.atomic_body)
         logger.info("Argument '%s' enriched.", self.name)
         return
 
