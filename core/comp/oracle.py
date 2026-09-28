@@ -354,6 +354,14 @@ def run_adf_bdd(adf: ADF, mode: str = "grounded", binary: Optional[str] = None):
     """
     if mode not in _ADF_BDD_MODES:
         raise ValueError(f"mode must be one of {sorted(_ADF_BDD_MODES)}, got {mode!r}")
+    if not adf.statements:
+        # adf-bdd panics on an empty input file (exit 101, "Parsing Error").
+        # The answer needs no solver: an ADF with no statements has exactly
+        # one interpretation, the empty one, and it is grounded, complete and
+        # stable alike.  Reached by `graph document` on a file that records
+        # no AIDA arguments, e.g. plain Fellowship theorems.
+        logger.debug("solver: no statements; the empty interpretation, adf-bdd not run")
+        return [{}]
     binary = binary or resolve_adf_bdd()
     if not (os.path.isfile(binary) and os.access(binary, os.X_OK)):
         raise AdfBddNotFound(f"adf-bdd binary is not executable: {binary}")

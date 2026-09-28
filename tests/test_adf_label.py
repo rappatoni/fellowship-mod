@@ -422,3 +422,27 @@ class TestNoFallback:
         where the two disagree; see TestNonUnipolarShape."""
         from core.comp import adf_label
         assert adf_label.grounded_labels is not adf_label.grounded_labels_kleene
+
+
+class TestEmptyGraph:
+    """An empty document graph - a fresh session, or right after `lk.` resets
+    the document - makes adf-bdd panic on the empty input it would receive
+    (exit 101, parsing error).  The solver boundary answers itself: one
+    labelling, the empty one, under every semantics."""
+
+    @pytest.mark.parametrize("semantics", ["grounded", "complete", "preferred", "stable"])
+    def test_one_empty_labelling(self, semantics):
+        from core.comp.adf_label import labellings
+        assert labellings(DebateGraph(), semantics) == [{}]
+
+    def test_grounded_labels_of_nothing(self):
+        assert grounded_labels(DebateGraph()) == {}
+
+    def test_graph_document_show_on_an_empty_document(self, prover, caplog):
+        """`graph document show` before anything is registered.  The autouse
+        store reset leaves this test's document empty."""
+        import logging
+        from wrap.cli import graph_argument_cmd
+        caplog.set_level(logging.INFO)
+        graph_argument_cmd(prover, "document", show=True)
+        assert any("0 nodes, 0 edges" in r.getMessage() for r in caplog.records)
