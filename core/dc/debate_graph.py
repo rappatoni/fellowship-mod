@@ -872,6 +872,17 @@ class _Compiler:
                 if node.name in self.strict_names:
                     self._check_kind(node.name, vside, name)
                     return _EMPTY
+                if getattr(node, "cites", None):
+                    # A citation of a registered argument Fellowship does not
+                    # hold, i.e. a defeasible one: an obligation on the cited
+                    # conclusion, which the cited argument's own edge derives
+                    # (core/dc/cite.py).  A strict citation took the branch above.
+                    if not node.prop:
+                        raise DebateCompileError(
+                            f"Edge '{name}': the citation of '{node.name}' has no proposition."
+                        )
+                    return _Acc((Source(self.graph.add_node(node.prop), vside, "obligation",
+                                        node.name, spine),))
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:
                     # Captured from an enclosing subargument: a source at

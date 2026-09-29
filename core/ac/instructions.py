@@ -286,6 +286,9 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
                 return node
+            elif getattr(node, "cites", None):
+                # A citation regenerates as one (core/dc/cite.py).
+                self.instructions.appendleft(f'cite {node.cites}.')
             else:
                 self.instructions.appendleft(f'moxia {node.name}.')
         else:
@@ -300,6 +303,9 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
                 return node
+            elif getattr(node, "cites", None):
+                # A citation regenerates as one (core/dc/cite.py).
+                self.instructions.appendleft(f'cite {node.cites}.')
             else:
                 self.instructions.appendleft(f'axiom {node.name}.')
         else:

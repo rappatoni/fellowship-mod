@@ -1,11 +1,11 @@
-"""Statements, witnesses and citations (tasks.org, aida-statements-and-witnesses).
+"""Statements, refinement and citation (tasks.org, aida-statements-and-witnesses).
 
 The wrapper owns the registry of every statement and argument; Fellowship is
-the kernel for strict proofs only.  A theorem is a statement - an enthymeme
-the tactics refine - and `qed` demands its witness be strict.  Citing a
-registered defeasible argument grafts its body, while the citing argument
-contributes its own atomic derivation to the document.  Names are unique per
-document.
+the kernel for strict proofs only.  A statement only records a claim, as the
+maximally enthymemic argument; `prove` (a synonym of `refine`) reopens it,
+and `qed` demands a strict witness.  `cite NAME` uses a registered argument
+by name - the term shows the name, as an axiom would - while `axiom` stays
+reserved for what Fellowship holds.  Names are unique per document.
 """
 
 import logging
@@ -14,7 +14,10 @@ from pathlib import Path
 import pytest
 
 from core.ac.ast import Goal, ProofTerm
-from core.dc.cite import graft_citation, rename_clashing_binders, CitationError
+from core.dc.cite import (
+    graft_citation, rename_clashing_binders, CitationError, cited_names, expand_citations,
+    mark_citations,
+)
 from core.dc.unfold import unfold
 from core.ac.ast import Mu, ID, DI, Deleg
 from mod import store
@@ -81,9 +84,32 @@ class TestStatements:
         assert "clash" not in fresh.declarations
         assert fresh.names["clash"] == "statement"
 
-    def test_a_refused_statement_can_be_reopened(self, fresh, tmp_path):
-        run(fresh, HEADER + "theorem foo : (A).\nby default.\nqed.\n"
-                   "theorem foo : (A).\naxiom ax.\nqed.\n", tmp_path)
+    def test_a_statement_opens_nothing(self, fresh, tmp_path, caplog):
+        """A statement records a claim; the next tactic is an ordinary prover
+        command, which fails for want of an open proof."""
+        caplog.set_level(logging.ERROR)
+        run(fresh, HEADER + "theorem foo : (A).\naxiom ax.\n", tmp_path)
+        assert isinstance(fresh.get_argument("foo").body.term, Goal)
+        assert fresh.names["foo"] == "statement"
+
+    @pytest.mark.parametrize("keyword", ["theorem", "lemma", "proposition", "claim", "Lemma"])
+    def test_statement_keywords(self, fresh, tmp_path, keyword):
+        run(fresh, HEADER + f"{keyword} foo : (A).\nprove foo\naxiom ax.\nqed.\n", tmp_path)
+        foo = fresh.get_argument("foo")
+        assert foo.citable and foo.statement_kind == keyword.lower()
+
+    @pytest.mark.parametrize("keyword,verb", [("antitheorem", "refute"), ("antilemma", "dispute"),
+                                              ("antiproposition", "prove"), ("anticlaim", "argue")])
+    def test_anti_keywords_and_verbs(self, fresh, tmp_path, keyword, verb):
+        """Any refinement verb works on either side: the side is the claim's."""
+        run(fresh, "lk.\ndeclare A : bool.\ndeclare na : (A -> false).\n"
+                   f"{keyword} foo : (A).\n{verb} foo\nmoxia na.\nqed.\n", tmp_path)
+        foo = fresh.get_argument("foo")
+        assert foo.is_anti and foo.statement_kind == keyword
+
+    def test_a_refused_proof_can_be_retried(self, fresh, tmp_path):
+        run(fresh, HEADER + "theorem foo : (A).\nprove foo\nby default.\nqed.\n"
+                   "prove foo\naxiom ax.\nqed.\n", tmp_path)
         assert fresh.get_argument("foo").citable
 
     def test_qed_in_an_argument_keeps_the_body(self, fresh, tmp_path):
@@ -103,36 +129,79 @@ class TestStatements:
 
 
 class TestCitation:
-    def test_a_defeasible_citation_is_grafted(self, fresh):
+    def test_a_citation_shows_the_name(self, fresh):
         execute_script(fresh, FIXTURE, strict=False, stop_on_error=False, isolate=False)
         use = fresh.get_argument("use")
-        assert use.citations == [("1.2.1", "efficient")]
+        assert [(site, name, strict) for site, name, strict, _ in use.citations] == \
+            [("1.2.1", "efficient", False)]
         assert not use.citable
-        # the concrete term has efficient inside it ...
-        assert contains(use.body, lambda n: isinstance(n, Deleg))
-        assert contains(use.body, lambda n: isinstance(n, Mu) and n.id.name == "efficient")
-        # ... the atomic one has the site open
-        assert contains(use.atomic_body, lambda n: isinstance(n, Goal) and n.number == "1.2.1")
+        assert cited_names(use.body) == {"efficient"}
+        leaf = next(n for n in _walk(use.body) if getattr(n, "cites", None))
+        assert leaf.name == "efficient" and leaf.prop == "EfficientMetro"
+        assert not contains(use.body, lambda n: isinstance(n, Deleg))     # not grafted
 
-    def test_the_citing_argument_contributes_its_atomic_edge(self, fresh):
+    def test_expand_grafts_on_demand(self, fresh):
+        execute_script(fresh, FIXTURE, strict=False, stop_on_error=False, isolate=False)
+        full = expand_citations(fresh.get_argument("use").body, fresh.get_argument)
+        assert contains(full, lambda n: isinstance(n, Deleg))
+        assert contains(full, lambda n: isinstance(n, Mu) and n.id.name == "efficient")
+
+    def test_the_citing_edge_has_an_obligation_the_cited_edge_meets(self, fresh):
         execute_script(fresh, FIXTURE, strict=False, stop_on_error=False, isolate=False)
         g = fresh.document
         edge = next(e for e in g.edges if e.name == "use")
         assert [(g.nodes[s.key], s.kind) for s in edge.sources] == [("EfficientMetro", "obligation")]
-        # and unfolding reaches the cited argument's statement
         term = unfold(g, fresh.issue_of(fresh.get_argument("use")))
         assert contains(term, lambda n: isinstance(n, Deleg) and n.prop == "EfficientMetro")
+        assert not contains(term, lambda n: getattr(n, "cites", None))   # expanded
+
+    def test_axiom_is_reserved_for_strict_content(self, fresh, tmp_path, caplog):
+        caplog.set_level(logging.ERROR)
+        run(fresh, HEADER + "claim guess : (A).\n"
+                   "start argument wrong A\naxiom guess.\nend argument\n", tmp_path)
+        assert fresh.get_argument("wrong") is None           # Fellowship refused it
 
     def test_a_misfit_citation_is_refused_cleanly(self, fresh, tmp_path, caplog):
         caplog.set_level(logging.WARNING)
-        run(fresh, HEADER + "start argument guess A\nby default.\nend argument\n"
-                   "start argument wrong B\naxiom guess.\nend argument\n", tmp_path)
+        run(fresh, HEADER + "claim guess : (A).\n"
+                   "start argument wrong B\ncite guess.\nend argument\n", tmp_path)
         assert fresh.get_argument("wrong") is None
-        assert "wrong" not in fresh.names                    # the name is free again
+        assert "wrong" not in fresh.names
         assert any("concludes A" in r.getMessage() for r in caplog.records)
-        # and the prover was left clean: a new proof starts normally
         run(fresh, "start argument after A\naxiom ax.\nend argument\n", tmp_path, "more.fspy")
-        assert fresh.get_argument("after").citable
+        assert fresh.get_argument("after").citable            # the prover was left clean
+
+    def test_citing_the_sole_goal(self, fresh, tmp_path):
+        """`next.` cannot leave a sole goal, so the citation just records it."""
+        run(fresh, HEADER + "claim guess : (A).\n"
+                   "start argument whole A\ncite guess.\nend argument\n", tmp_path)
+        whole = fresh.get_argument("whole")
+        assert cited_names(whole.body) == {"guess"} and not whole.citable
+
+    def test_a_cited_site_cannot_be_worked_on(self, fresh, tmp_path, caplog):
+        """The reported bug: a later tactic reached the cited site and turned
+        it into a presumption.  A cited site is closed as far as the author is
+        concerned."""
+        caplog.set_level(logging.WARNING)
+        run(fresh, HEADER + "claim guess : (A).\n"
+                   "start argument whole A\ncite guess.\nby default.\nend argument\n", tmp_path)
+        assert fresh.get_argument("whole") is None
+        assert any("cited goal" in r.getMessage() for r in caplog.records)
+
+    def test_citing_a_strict_argument(self, fresh, tmp_path):
+        run(fresh, HEADER + "start argument lem A\naxiom ax.\nend argument\n"
+                   "start argument user A\ncite lem.\nend argument\n", tmp_path)
+        user = fresh.get_argument("user")
+        assert user.citable and cited_names(user.body) == {"lem"}
+
+    def test_parsed_terms_get_their_marks_back(self):
+        """Free leaves naming arguments are citations; bound ones never are,
+        whatever their name (the even-loop fixture has binders named after
+        arguments)."""
+        body = Mu(ID("guess", "A"), "A", DI("guess", "A"), ID("guess", "A"))
+        mark_citations(body, lambda n: n == "guess")
+        assert body.term.cites == "guess"
+        assert not getattr(body.context, "cites", None)
 
     def test_graft_renames_only_clashing_binders(self):
         cited = Mu(ID("th", "A"), "A", DI("ax", "A"), ID("th", "A"))
@@ -195,7 +264,7 @@ class TestAdopt:
 
     def test_adopt_makes_the_thesis_citable(self, fresh, tmp_path):
         self.peirce(fresh, tmp_path, "adopt s1* as peirce\n"
-                    "theorem again : (((P -> Q)->P)->P).\naxiom peirce.\nqed.\n")
+                    "theorem again : (((P -> Q)->P)->P).\nprove again\naxiom peirce.\nqed.\n")
         assert fresh.get_argument("peirce").citable
         assert "peirce" in fresh.declarations
         assert fresh.get_argument("again").citable
@@ -206,3 +275,58 @@ class TestAdopt:
         assert "no strict edge 'nothing*'" in out
         assert "adopt: refused" in out and "already" in out
         assert fresh.get_argument("x") is None
+
+
+class TestRefinement:
+    def test_refining_a_presumption_away_rebuilds_the_document(self, fresh, tmp_path):
+        run(fresh, HEADER + "start argument y A\nby default.\nend argument\n"
+                   "refine y\naxiom ax.\nend argument\n", tmp_path)
+        y = fresh.get_argument("y")
+        assert y.citable
+        g = fresh.document
+        key = next(k for k, v in g.nodes.items() if v == "A")
+        assert "presumption" not in g.defaults.get((key, "term"), set())   # the old marker is gone
+        assert any(e.name == "y" and e.strict for e in g.edges)
+
+    def test_refinement_keeps_the_registration_order(self, fresh, tmp_path):
+        run(fresh, HEADER + "claim first : (A).\nclaim second : (B).\n"
+                   "prove first\naxiom ax.\nqed.\n", tmp_path)
+        assert list(fresh.arguments)[:2] == ["first", "second"]
+
+    def test_strictness_propagates_to_citers(self, fresh, tmp_path):
+        run(fresh, HEADER + "claim guess : (A).\n"
+                   "start argument uses B\ncut (A -> B) th.\naxiom r.\nelim.\ncite guess.\naxiom.\n"
+                   "end argument\n", tmp_path)
+        assert not fresh.get_argument("uses").citable
+        run(fresh, "prove guess\naxiom ax.\nqed.\n", tmp_path, "later.fspy")
+        uses = fresh.get_argument("uses")
+        assert uses.citable and "uses" in fresh.declarations
+
+    def test_refine_refuses_what_cannot_be_reopened(self, fresh, tmp_path, caplog):
+        caplog.set_level(logging.WARNING)
+        run(fresh, HEADER + "start argument done A\naxiom ax.\nend argument\n"
+                   "refine done\nrefine nothing\n", tmp_path)
+        said = " ".join(r.getMessage() for r in caplog.records)
+        assert "already strict" in said and "no argument or statement 'nothing'" in said
+
+
+class TestLogicDefault:
+    def test_a_debate_type_checks_without_lk(self, fresh, tmp_path, caplog):
+        """Fellowship starts in LJ; the wrapper assumed LK and the type oracle
+        replayed classical scaffolds in LJ ("alt1 is neither in your
+        hypothesis nor in your conclusion").  Sessions now start in LK."""
+        caplog.set_level(logging.WARNING)
+        run(fresh, "declare A, B : bool.\ndeclare rule : (A -> B).\n"
+                   "claim test : (A).\n"
+                   "start argument testing B\ncut (A -> B) x.\naxiom rule.\nelim.\ncite test.\n"
+                   "axiom.\nend argument\nclaim another : (B).\ngraph another\n", tmp_path)
+        assert not any("Type check failed" in r.getMessage() for r in caplog.records)
+        assert fresh.logic == "lk"
+
+
+def _walk(node):
+    if not isinstance(node, ProofTerm):
+        return
+    yield node
+    for slot in ("term", "context"):
+        yield from _walk(getattr(node, slot, None))

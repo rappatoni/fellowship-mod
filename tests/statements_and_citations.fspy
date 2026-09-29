@@ -5,8 +5,10 @@ declare r1: (EfficientMetro -> UseMetro).
 declare r2: (StrikeMetro -> ~EfficientMetro).
 declare a2: (StrikeMetro).
 
-# A theorem is a statement; the tactics refine it into a strict witness.
+# A theorem is a statement: it records the claim.  `prove` opens its proof,
+# and `qed.` demands a strict witness.
 theorem metro_down: (~EfficientMetro).
+prove metro_down
 cut (StrikeMetro -> ~EfficientMetro) th.
 axiom r2.
 elim.
@@ -19,17 +21,20 @@ start argument efficient EfficientMetro
 by default.
 end argument
 
-# It is cited: its body is grafted into the site, its own edge stays its own.
+# It is cited by name: the term shows `efficient` at the site, and the
+# document edge of `use` has an obligation there that efficient's edge meets.
 start argument use UseMetro
 cut (EfficientMetro -> UseMetro) th.
 axiom r1.
 elim.
-axiom efficient.
+cite efficient.
 axiom.
 end argument
 
-# The theorem is cited like an axiom: Fellowship holds it.
+# The theorem is used by `axiom`, since Fellowship holds it; the default
+# makes the witness open, so `qed.` is refused and the claim stays.
 theorem clash: (false).
+prove clash
 cut (~EfficientMetro) th.
 axiom metro_down.
 elim.

@@ -99,7 +99,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return atom[1:-1]
         return atom
 
-    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
+    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False, keep_document: bool = False) -> Dict[str, Any]:
         """Send a single command to Fellowship.
 
         command -- The command string
@@ -108,7 +108,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         Returns a preparsed (sexp) proof state.
         """
         stripped = command.strip().rstrip(".").strip()
-        if stripped in ("lj", "lk"):
+        if stripped in ("lj", "lk") and not keep_document:
             # Fellowship starts a new theory here; so does the document
             # (the type-check switch is a session setting and survives).
             typecheck = store.document.get("typecheck")
@@ -559,7 +559,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             if name:
                 self.claim_name(name, "declaration")
 
-    def register_argument(self, argument: Any) -> None:
+    def register_argument(self, argument: Any, *, replace: bool = False) -> None:
         """ Register a new argument (i.e. a partial Fellowship proof.)
 
         An atomic argument (not one the debate operators composed) also
@@ -570,10 +570,27 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         The name must be free, or held by the recording or statement this
         argument refines; otherwise NameClash, and nothing is registered."""
-        self.claim_name(argument.name, "argument", refine=True)
+        if not (replace and argument.name in self.arguments):
+            self.claim_name(argument.name, "argument", refine=True)
+        else:
+            self.names[argument.name] = "argument"
+        # A replacement (a refinement, or a citer replayed after its citation
+        # became strict) keeps its position: dict assignment to an existing
+        # key does, and registration order is the order unfolding nests
+        # scaffolds in.
         self.arguments[argument.name] = argument
         if not getattr(argument, "composed", False):
             self.document_add(argument)
+
+    def rebuild_document(self) -> None:
+        """Recompile the document graph from the atomic arguments, in
+        registration order.  Needed after a replacement: merging cannot take
+        an old edge back out, and default markers are not tracked per edge."""
+        store.document["graph"] = DebateGraph()
+        for argument in self.arguments.values():
+            if not getattr(argument, "composed", False):
+                self.document_add(argument)
+        logger.debug("Document graph rebuilt: %d edge(s)", len(self.document.edges))
 
     # -- the document graph (Phase C) --------------------------------------
 
@@ -602,10 +619,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
         still registered for the term-level commands."""
         if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
             return
-        # A citing argument contributes its ATOMIC body: its own derivation,
-        # with the cited sites open.  The cited argument's contribution is
-        # already in the document under its own name (core/dc/cite.py).
-        body = getattr(argument, "atomic_body", None) or argument.body
+        # A citation is a name leaf in the body; the compiler reads it as an
+        # obligation on the cited conclusion, or a strict leaf if Fellowship
+        # holds the cited argument (core/dc/cite.py).
+        body = argument.body
         try:
             graph = compile_debate(body, argument.name,
                                    strict_names=self.declarations.keys(),

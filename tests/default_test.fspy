@@ -7,6 +7,7 @@ deny mox: (C).
 
 # Should succeed:
 theorem delegation_test : (B).
+prove delegation_test
 cut (A->B) alpha.
 axiom rule.
 elim.
@@ -17,6 +18,7 @@ qed.
 
 #Should succeed:
 antitheorem delegation_test : (A).
+refute delegation_test
 cut (A-C) x.
 elim.
 by default.
@@ -50,6 +52,7 @@ render delegation_counter_test vanilla
 
 # Should fail:
 theorem delegation_test_2 : (B).
+prove delegation_test_2
 cut (A->B) alpha.
 axiom rule.
 elim.

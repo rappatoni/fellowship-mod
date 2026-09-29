@@ -278,6 +278,14 @@ class Unfolder:
             if isinstance(node, (Laog, Geled)):
                 return self.statement((canonical_prop(node.prop), "context"), env, spine,
                                       presumed=isinstance(node, Geled))
+            if isinstance(node, (ID, DI)) and getattr(node, "cites", None):
+                # A citation (core/dc/cite.py) unfolds exactly like an
+                # obligation site: the cited argument's edge derives that
+                # statement, so the debate brings it in, strict or not.
+                side = "context" if isinstance(node, ID) else "term"
+                logger.debug("unfold: '%s' cites '%s'; expanded as its statement",
+                             edge.name, node.cites)
+                return self.statement((canonical_prop(node.prop), side), env, spine)
             if isinstance(node, ID):
                 return ID(names.get(("context", node.name), node.name), node.prop)
             if isinstance(node, DI):

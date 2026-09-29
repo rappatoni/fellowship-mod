@@ -324,37 +324,56 @@ detects a machine-mode desynchronization.
   - finish recording, execute the proof against Fellowship, and register it;
     if its body is closed, Fellowship also keeps it as a theorem, so
     `axiom NAME` cites it
-- `theorem NAME : (PROP).` / `antitheorem NAME : (PROP).`
-  - state a claim and begin its proof (see below)
+- `theorem NAME : (PROP).`, also `lemma`, `proposition`, `claim`, and
+  `antitheorem`, `antilemma`, `antiproposition`, `anticlaim`
+  - record a claim, and nothing more (see below)
+- `prove NAME`, also `refine`, `argue`, `refute`, `dispute`
+  - reopen a registered argument or claim where it left off; all five are
+    synonyms and work for claims and counterclaims alike
+- `cite NAME.` (inside a recording)
+  - use the registered argument NAME at the focused goal; the term shows the
+    name, as an axiom would
 - `qed.`
-  - end the recording and demand a strict witness; refused, and nothing
-    registered, while an obligation, a presumption or a defeasible citation
-    remains open
+  - end the recording and demand a strict witness; refused, leaving the
+    argument as it was, while an obligation, a presumption or a defeasible
+    citation remains open
 - `adopt EDGE* as NAME`
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
-    (see below)
+- `expand ARG`
+  - print ARG's full term, with every cited argument's term grafted in
 
-### Statements, witnesses and citations
+### Statements, refinement and citation
 
 The wrapper owns the registry of every statement and argument, and Fellowship
 keeps exactly the strict proofs. A name Fellowship knows is a strict axiom
 everywhere, so it never holds a defeasible argument.
 
-- **A theorem is a statement.** `theorem foo : (A).` registers the claim at
-  once, as the maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an
-  obligation marker on A: A is claimed and owes a proof. The tactics that
-  follow refine it into a witness, and `qed.` demands that the witness be
-  strict. A strict witness replaces the enthymeme under the same name and
-  Fellowship holds it. An open one is refused; the claim stays, and a second
-  `theorem foo` reopens it.
-- **Citing an argument.** Inside a recording, `axiom foo` (or `moxia foo` for a
-  counterargument) cites a registered argument. A strict `foo` is simply a
-  lemma Fellowship knows. A defeasible `foo` is grafted: the citing argument's
-  term contains foo's body at that site, capture-free, with clashing binders
-  renamed. Its contribution to the document graph is its *atomic* body, with
-  that site left as an obligation, because foo's contribution is already in
-  the document under foo's name. The cited argument must conclude the goal's
-  proposition, on the same side.
+- **A statement only states.** `lemma foo : (A).` registers the claim as the
+  maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an obligation
+  marker on A: A is claimed and owes a proof. It opens nothing, so claims can
+  be collected first and proved later.
+- **Refinement.** `prove foo` reopens foo, replaying what it has so far, so the
+  proof continues from its open goals, presumptions included. It ends with
+  `qed.`, which demands a strict witness, or `end argument`, which registers
+  the result either way. Proving a claim is refining its enthymeme; any
+  defeasible argument can be refined the same way. The result replaces the
+  argument in place, keeping its position in registration order, and the
+  document graph is rebuilt. When a refinement makes an argument strict, the
+  arguments that cite it are replayed, and those that became closed are held
+  by Fellowship too.
+- **`axiom` is for strict content, `cite` for arguments.** `axiom NAME` always
+  goes to Fellowship, which refuses a defeasible NAME. `cite NAME` uses any
+  registered argument. A strict one Fellowship closes itself; a defeasible one
+  closes the goal for the author and leaves Fellowship's goal open. Either
+  way the term shows the name at that site, like an axiom, so terms stay
+  readable as the library grows. The cited argument must conclude the goal's
+  proposition, on the same side. A cited site is done: a later tactic that
+  would land on it is refused.
+- **Citation by name is late binding.** A citer means "the argument NAME as it
+  now stands". The document edge of a citer has an obligation at the cited
+  conclusion, which the cited argument's own edge meets; unfolding expands the
+  citation like any obligation. Refine the cited argument and every citer
+  follows. `expand ARG` computes the full term on demand.
 - **Adopting a discovered strict edge.** `graph ARG` can show strict edges,
   named with a trailing star, that the strict phase found in the unfolded
   term. Showing them changes nothing. `adopt s1* as peirce` replays the closed
@@ -364,6 +383,9 @@ everywhere, so it never holds a defeasible argument.
   arguments share one namespace, checked before anything reaches the prover;
   `lk.` or `lj.` starts a new one. Names starting with `typecheck_` or
   `theta_expand_` are reserved for the names the wrapper sends to Fellowship.
+- **Sessions start in LK.** Debates are classical, and the prover is switched
+  to LK when it starts, so the type check of a debate never runs in LJ by
+  accident.
 
 ### Stored-argument commands
 
@@ -557,9 +579,11 @@ theorem argA : (A).
 antitheorem notA : (A).
 ```
 
-The wrapper intercepts these: a `theorem` states a claim and opens a
-recording, and its `qed.` is checked by replaying the recorded witness
-(see "Statements, witnesses and citations"). The recording commands
+The wrapper intercepts these: `theorem NAME : (P).` only states a claim, and
+`prove NAME` opens its proof, which the wrapper replays and checks at `qed.`
+(see "Statements, refinement and citation"). Scripts written in Fellowship's
+own idiom, `theorem X : (A).` followed directly by tactics and `qed.`, need a
+`prove X` line after the statement. The recording commands
 `start argument ...`, `start counterargument ...` and `start antitheorem ...`
 open the same kind of recording without stating a claim.
 

@@ -17,9 +17,10 @@ from mod import store
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 from wrap.registry import (
-    parse_statement, start_statement, start_recording, finish_recording, is_qed,
+    parse_statement, state, parse_refine, reopen, abandon, start_recording,
+    finish_recording, is_qed,
 )
-from core.dc.cite import cited_defeasible_argument
+from core.dc.cite import citation_target, CitationError, is_strict_citation, parse_cite
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
@@ -205,16 +206,24 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
             statement = None if recording else parse_statement(command)
             if statement is not None:
-                # `theorem NAME : (P).` states a claim and opens its proof.
-                is_anti, name, conclusion = statement
+                # A statement records a claim, and nothing more: `prove NAME`
+                # opens its proof.
+                is_anti, name, conclusion, keyword = statement
                 try:
-                    start_statement(prover, is_anti, name, conclusion)
+                    state(prover, is_anti, name, conclusion, keyword)
+                except ProverError as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                continue
+            refined = None if recording else parse_refine(command)
+            if refined is not None:
+                # `refine NAME` (prove, argue, refute, dispute) reopens NAME.
+                try:
+                    current_argument = reopen(prover, refined)
                 except ProverError as e:
                     _refuse_in_script(e, strict, script_path, lineno)
                     continue
-                current_argument = {'name': name, 'conclusion': conclusion,
-                                    'instructions': [], 'is_anti': is_anti, 'statement': True}
                 recording = True
+                logger.info("Refining '%s' : %s.", refined, current_argument['conclusion'])
                 continue
             if recording and is_qed(command):
                 # `qed` ends the recording and demands a strict witness.
@@ -225,8 +234,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     arg = finish_recording(prover, current, demand_strict=True)
                     logger.info("'%s' proved: %s.", arg.name, arg.conclusion)
                 except ProverError as e:
-                    if not current.get('statement'):
-                        prover.names.pop(current['name'], None)
+                    abandon(prover, current)
                     _refuse_in_script(e, strict, script_path, lineno)
                 continue
             if command.startswith('start counterargument ') or command.startswith('start antitheorem '):
@@ -287,7 +295,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     try:
                         arg = finish_recording(prover, current, demand_strict=False)
                     except ProverError as e:
-                        prover.names.pop(current['name'], None)
+                        abandon(prover, current)
                         _refuse_in_script(e, strict, script_path, lineno)
                         continue
                     logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
@@ -354,6 +362,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 break
                     elif command.startswith("reduce "):
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+                    elif command.startswith("expand "):
+                        expand_argument_cmd(prover, command.split()[1])
                     elif command.startswith("render-nf "):
                         # Usage: render-nf ARG [style]
                         parts = command.split()
@@ -852,6 +862,77 @@ def _read_line(prompt: str) -> str:
     return _pending_lines.popleft().strip()
 
 
+def _live_goal_metas(state) -> list:
+    probe = Argument.__new__(Argument)
+    return Argument._goal_metas(probe, state)
+
+
+def _live_step(prover: ProverWrapper, current: dict, command: str, *, record: bool = True) -> str:
+    """Run one recorded line live in the REPL: "ok", "refused" or "fatal".
+
+    `cite NAME` uses a registered argument at the focused goal: a strict one
+    Fellowship closes itself, a defeasible one leaves the site open and moves
+    on.  A cited site is closed as far as the author is concerned, so no
+    later step may land on it: the focus is moved off first, and a step with
+    only cited sites left is refused.
+    """
+    probe = Argument(prover, name=current['name'], conclusion=current['conclusion'])
+    state = current.get('_state')
+    cited_sites = current.setdefault('_cited_sites', set())
+    try:
+        cited = citation_target(prover, command)
+        if cited is not None:
+            site, side, _prop = probe._cite_site(state, cited, command)
+            if is_strict_citation(prover, cited.name):
+                output = prover.send_command(
+                    f"{'axiom' if side == 'rhs' else 'moxia'} {cited.name}.", include_ui=True)
+                print(f"cites '{cited.name}' (strict): Fellowship closes the goal.")
+            else:
+                cited_sites.add(site)
+                output = state
+                if len(_live_goal_metas(state)) > 1:
+                    output = prover.send_command('next.', include_ui=True)
+                print(f"cites '{cited.name}' (defeasible): goal {site} is done; "
+                      f"the term will show the name '{cited.name}' there.")
+            _print_ui(output)
+        else:
+            if cited_sites and not command.startswith('tactic '):
+                for _ in range(len(_live_goal_metas(state)) + 1):
+                    focused = probe._focused_goal(state)
+                    if focused is None or focused[0] not in cited_sites:
+                        break
+                    if set(_live_goal_metas(state)) <= cited_sites:
+                        print(f"refused: goal {focused[0]} is cited and no other goal is open; "
+                              f"end the recording with `end argument` or `qed.`")
+                        return "refused"
+                    state = prover.send_command('next.', include_ui=True)
+            if command.startswith('tactic '):
+                parts = command.split()
+                output = prover.execute_tactic(parts[1], *parts[2:])
+            else:
+                output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                _print_ui(output)
+                while isinstance(output, dict) and output.get('_need_more_input'):
+                    more = _read_line('... ')
+                    output = prover.send_command(more, include_ui=True, allow_incomplete=True)
+                    _print_ui(output)
+                if isinstance(output, dict) and output.get('_need_more_input'):
+                    return "refused"
+    except MachinePayloadError as e:
+        print(f"acdc: fatal prover communication error: {e}")
+        logger.error("Fatal prover communication error during recording: %s", e)
+        return "fatal"
+    except (ProverError, CitationError) as e:
+        print(f"acdc: ignored command due to prover error: {e}")
+        logger.error("Prover error during recording: %s", e)
+        return "refused"
+    if isinstance(output, dict):
+        current['_state'] = output
+    if record:
+        current['instructions'].append(command)
+    return "ok"
+
+
 def interactive_mode(prover: ProverWrapper) -> None:
     """Enables command line interaction with the wrapper.
 
@@ -933,6 +1014,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     logger.error("Register failed: %s", e)
             elif command.startswith("reduce "):
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+            elif command.startswith("expand "):
+                expand_argument_cmd(prover, command.split()[1])
             elif command.startswith("render-nf "):
                     parts = command.split()
                     name = parts[1] if len(parts) >= 2 else ""
@@ -1118,26 +1201,48 @@ def interactive_mode(prover: ProverWrapper) -> None:
                                  attacker_name, target_name)
 
             elif not recording and parse_statement(command) is not None:
-                # `theorem NAME : (P).` states a claim and opens its proof.
-                is_anti, name, conclusion = parse_statement(command)
+                # A statement records a claim, and nothing more.
+                is_anti, name, conclusion, keyword = parse_statement(command)
                 try:
-                    prover.claim_name(name, "statement", dry_run=True,
-                                      refine=prover.names.get(name) == "statement")
-                    output = prover.send_command(command, include_ui=True)
-                    _print_ui(output)
-                    start_statement(prover, is_anti, name, conclusion)
-                except MachinePayloadError as e:
-                    print(f"acdc: fatal prover communication error: {e}")
-                    logger.error("Fatal prover communication error starting '%s': %s", name, e)
-                    break
+                    state(prover, is_anti, name, conclusion, keyword)
+                    print(f"Stated {keyword} '{name}' : {conclusion}; `prove {name}` opens its proof.")
                 except ProverError as e:
                     print(f"refused: {e}")
                     logger.warning("Statement '%s' refused: %s", name, e)
+                continue
+            elif not recording and parse_refine(command) is not None:
+                # `refine NAME` (prove, argue, refute, dispute): reopen NAME and
+                # replay what it has so far, so the proof continues from there.
+                name = parse_refine(command)
+                try:
+                    current = reopen(prover, name)
+                except ProverError as e:
+                    print(f"refused: {e}")
                     continue
-                current_argument = {'name': name, 'conclusion': conclusion,
-                                    'instructions': [], 'is_anti': is_anti, 'statement': True}
+                opener = 'antitheorem' if current['is_anti'] else 'theorem'
+                try:
+                    current['_state'] = prover.send_command(
+                        f"{opener} {name} : ({current['conclusion']}).", include_ui=True)
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    break
+                except ProverError as e:
+                    abandon(prover, current)
+                    print(f"refused: {e}")
+                    continue
+                replayed = [_live_step(prover, current, instr, record=False)
+                            for instr in current['instructions']]
+                if "fatal" in replayed:
+                    break
+                if "refused" in replayed:
+                    abandon(prover, current)
+                    prover.send_command('discard theorem.')
+                    print(f"refused: '{name}' could not be replayed to continue it.")
+                    continue
+                _print_ui(current.get('_state'))
+                current_argument = current
                 recording = True
-                print(f"Stated '{name}' : {conclusion}; prove it, then `qed.`")
+                print(f"Refining '{name}' : {current['conclusion']}; end with `qed.` or `end argument`.")
                 continue
             elif recording and is_qed(command):
                 # `qed` ends the recording and demands a strict witness.  The
@@ -1155,8 +1260,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     logger.error("Fatal prover communication error at qed: %s", e)
                     break
                 except ProverError as e:
-                    if not current.get('statement'):
-                        prover.names.pop(current['name'], None)
+                    abandon(prover, current)
                     print(f"refused: {e}")
                     logger.warning("qed refused for '%s': %s", current['name'], e)
                 continue
@@ -1182,6 +1286,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 try:
                     start_recording(prover, name, True)
                     output = prover.send_command(f'antitheorem {name} : ({conclusion}).', include_ui=True)
+                    current_argument['_state'] = output
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
@@ -1217,6 +1322,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 try:
                     start_recording(prover, name, False)
                     output = prover.send_command(f'theorem {name} : ({conclusion}).', include_ui=True)
+                    current_argument['_state'] = output
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
@@ -1252,7 +1358,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 try:
                     arg = finish_recording(prover, current, demand_strict=False)
                 except ProverError as e:
-                    prover.names.pop(current['name'], None)
+                    abandon(prover, current)
                     print(f"refused: {e}")
                     logger.warning("Argument '%s' refused: %s", current['name'], e)
                     continue
@@ -1271,35 +1377,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         # Record the tactic command as part of the instructions
                         current_argument['instructions'].append(command)
                     else:
-                        # Execute the command and record it
-                        cited = cited_defeasible_argument(prover, command)
-                        try:
-                            try:
-                                output = prover.send_command(command, include_ui=True, allow_incomplete=True)
-                            except ProverError:
-                                if cited is None or isinstance(sys.exc_info()[1], MachinePayloadError):
-                                    raise
-                                # Fellowship does not know a defeasible
-                                # argument: skip the goal, record the citation;
-                                # the replay at the end grafts and checks it.
-                                output = prover.send_command('next.', include_ui=True)
-                                print(f"cites '{cited.name}' (defeasible): the goal stays open here and "
-                                      f"'{cited.name}' is grafted in when the argument ends.")
-                            _print_ui(output)
-                            while isinstance(output, dict) and output.get('_need_more_input'):
-                                more = _read_line('... ')
-                                output = prover.send_command(more, include_ui=True, allow_incomplete=True)
-                                _print_ui(output)
-                            if isinstance(output, dict) and output.get('_need_more_input'):
-                                continue
-                            current_argument['instructions'].append(command)
-                        except ProverError as e:
-                            print(f"acdc: ignored command due to prover error: {e}")
-                            logger.error("Prover error during recording: %s", e)
-                            # do not record failing instruction
-                        except MachinePayloadError as e:
-                            print(f"acdc: fatal prover communication error: {e}")
-                            logger.error("Fatal prover communication error during recording: %s", e)
+                        if _live_step(prover, current_argument, command) == "fatal":
                             break
             else:
                 # Normal command execution
@@ -1546,6 +1624,11 @@ def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
 
     parsed = Grammar().parser.parse(proof_term)
     body = ProofTermTransformer().transform(parsed)
+    # A term typed as a string has lost its citation marks: a free leaf
+    # naming a registered argument is a citation (core/dc/cite.py).
+    from core.dc.cite import mark_citations
+    registered = getattr(prover, "arguments", {})
+    mark_citations(body, lambda n: n in registered and n != name)
 
     arg = Argument(
         prover,
@@ -1606,8 +1689,13 @@ def setup_prover() -> ProverWrapper:
     fsp_path = resolve_fsp_path()
     prover = ProverWrapper(str(fsp_path), env=env)
     prover.register_custom_tactic('pop', pop)
-    # Switch to classical logic
-    #prover.send_command('lk.')
+    # Fellowship starts a session in LJ, but the wrapper's `logic` defaults to
+    # "lk" and debates are classical.  Make the default real: otherwise the
+    # "debates are classical" guard never fires and the type oracle replays
+    # classical scaffolds in LJ ("alt1 is neither in your hypothesis nor in
+    # your conclusion").  Starting a prover is not a new document, so the
+    # document store is left alone.
+    prover.send_command('lk.', keep_document=True)
     # Declare some booleans to work with.
     #prover.send_command('declare A,B,C,D:bool.')
     #logger.info("Prover decls %r", prover.declarations)
@@ -1622,6 +1710,28 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str) -> None:
         return
     logger.info(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
     arg.reduce()
+
+def expand_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI: `expand ARG` - the full term a citing argument stands for, with
+    every cited argument's own term grafted in, recursively.
+
+    Terms show citations by name, as an axiom would appear, so they stay
+    readable as the library grows and follow any refinement of what they
+    cite (core/dc/cite.py).  This computes the expansion on demand.
+    """
+    from core.dc.cite import expand_citations, cited_names
+    from pres.gen import pres_str
+    arg = prover.get_argument(name)
+    if arg is None or getattr(arg, "body", None) is None:
+        logger.error("expand: no argument '%s'.", name)
+        return
+    cites = sorted(cited_names(arg.body))
+    if not cites:
+        logger.info("'%s' cites nothing; its term is already complete.", name)
+    else:
+        logger.info("'%s' cites %s; expanded:", name, ", ".join(f"'{c}'" for c in cites))
+    logger.info("  %s", pres_str(expand_citations(arg.body, prover.get_argument)))
+
 
 def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None) -> None:
     """CLI for Argument Rendering.

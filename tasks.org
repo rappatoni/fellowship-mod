@@ -1378,7 +1378,7 @@ CLOSED: [2026-09-28 Mon]
 :EFFORT:         8:00
 :DEFERRALS:      0
 :OUTCOME:        The wrapper owns the registry of every statement and argument and Fellowship keeps exactly the strict proofs: `theorem foo : A` states a claim (the maximally enthymemic argument) and `qed` demands a strict witness; a closed `end argument` becomes citable; `axiom foo` on a defeasible argument grafts it capture-free while the citing argument contributes its atomic body to the document; `adopt EDGE* as NAME` promotes a strict edge found by unfolding; names are unique per document.
-:VERIFY:         tests/test_statements_and_citations.py (20 tests) with tests/statements_and_citations.fspy; tests/test1.fspy registers its three proofs with bodies and three strict edges; the documented suite is green; a REPL session exercises statement, live citation and qed.
+:VERIFY:         tests/test_statements_and_citations.py (41 tests) with tests/statements_and_citations.fspy; tests/test1.fspy registers its three proofs with bodies and three strict edges; the documented suite is green; a REPL session exercises statement, live citation and qed.
 :END:
 
 Raised by the author 2026-09-28 after fixing `graph document show` on
@@ -1445,6 +1445,47 @@ through the same path; `adopt` replays the term stored on the strict edge.
   proposition. That is the negation bridge of aida-strict-layer.
 
 Evidence: 1112 passed, 2 skipped, 3 xfailed, 2 xpassed (20 new tests).
+
+*Revised by the author 2026-09-29.*
+- A statement only states: `theorem`, `lemma`, `proposition`, `claim` and
+  their `anti` forms register the enthymeme and open nothing, so claims can be
+  collected first.  `refine NAME`, with synonyms `prove`, `argue`, `refute`,
+  `dispute`, reopens any registered argument where it left off; proving a
+  claim is the special case of refining its enthymeme.  A refinement replaces
+  in place, keeping registration order, and rebuilds the document graph;
+  when it makes an argument strict, its citers are replayed and those that
+  became closed are held by Fellowship too.
+- `axiom` is reserved for strict content and always goes to Fellowship, which
+  refuses a defeasible name.  `cite NAME` uses any registered argument.
+- A citation shows the NAME at the site, as an axiom would: a leaf marked
+  `cites`, read as strict or as an obligation on the cited conclusion at use
+  time.  This is late binding - refine the cited argument and every citer
+  follows - and keeps terms readable as the library grows.  It removes the
+  two-bodies machinery: the body with the name leaf is what the user sees and
+  what the document compiles.  `expand ARG` grafts on demand.
+- Fixtures in Fellowship's idiom gained a `prove X` line: default_test,
+  error_warning_test, fo_forall, fo_exists_forall, moxia_smart,
+  moxia_antitheorem, statements_and_citations.  The author's own
+  tests/test1.fspy was left for the author.
+
+*Bugs found in that round, from the author's REPL history.*
+1. Citing the sole goal failed: skipping it with `next.` is refused by
+   Fellowship ("only one goal, impossible to switch").  A sole cited goal is
+   now just recorded.
+2. A later tactic could land on a cited site and turn it into a presumption,
+   after which the graft found no site.  A cited site is now done: the REPL
+   refuses a tactic that would land on it, and the replay steps one
+   instruction at a time once something is cited, moving off cited sites.
+3. "alt1 is neither in your hypothesis nor in your conclusion" on `graph`:
+   independent of citation.  Fellowship starts a session in LJ, while the
+   wrapper assumed LK when no `lk.`/`lj.` had been sent, so the "debates are
+   classical" guard never fired and the type oracle replayed a classical
+   scaffold in LJ.  `setup_prover` now sends `lk.` (without resetting the
+   document store, since starting a prover is not a new document).
+   Regression: TestLogicDefault.
+
+Evidence after the revision: 1133 passed, 2 skipped, 3 xfailed, 2 xpassed;
+tests/test_statements_and_citations.py has 41 tests.
 
 *** DONE Make the compilation-evaluation pipeline narrate itself
 CLOSED: [2026-09-26 Fri]
