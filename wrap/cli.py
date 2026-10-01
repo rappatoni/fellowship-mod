@@ -385,9 +385,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         show = "show" in opts
                         dot_path = next((o for o in opts if o != "show"), None)
                         graph_argument_cmd(prover, parts[1], dot_path, show=show)
-                    elif command in ("typecheck on", "typecheck off"):
-                        prover.typecheck_enabled = command.endswith("on")
-                        logger.info("Type checking of unfolded terms: %s", "on" if prover.typecheck_enabled else "off")
+                    elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
+                        set_typecheck_cmd(prover, command)
                     elif command.startswith("label "):
                         _dispatch_label(prover, command)
                     elif command.startswith("evaluate "):
@@ -1037,9 +1036,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 show = "show" in opts
                 dot_path = next((o for o in opts if o != "show"), None)
                 graph_argument_cmd(prover, parts[1], dot_path, show=show)
-            elif command in ("typecheck on", "typecheck off"):
-                prover.typecheck_enabled = command.endswith("on")
-                logger.info("Type checking of unfolded terms: %s", "on" if prover.typecheck_enabled else "off")
+            elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
+                set_typecheck_cmd(prover, command)
             elif command.startswith("label "):
                 _dispatch_label(prover, command)
             elif command.startswith("evaluate "):
@@ -1737,6 +1735,17 @@ def expand_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info("  %s", pres_str(expand_citations(arg.body, prover.get_argument)))
 
 
+def set_typecheck_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: `typecheck on | off | expanded`.  `on` replays each sub-debate
+    once (core/dc/typecheck.py, typecheck_shared); `expanded` replays the
+    whole unfolded term, the older and far larger check; `off` skips it."""
+    mode = command.split()[1]
+    prover.typecheck_enabled = mode != "off"
+    prover.typecheck_expanded = mode == "expanded"
+    logger.info("Type checking of unfolded terms: %s",
+                {"on": "on", "off": "off", "expanded": "on (the expanded term)"}[mode])
+
+
 def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
     """CLI: `debate ARG` - the debate about ARG's issue as named
     sub-debates: the issue's term, then one `NAME[open sites] := term`
@@ -1893,10 +1902,23 @@ def _issue_term(prover: ProverWrapper, name: str):
     if prover.typecheck_enabled:
         # The type oracle: the unfolded term must replay through Fellowship
         # (core/dc/typecheck.py).  `typecheck off` skips it.
-        from core.dc.typecheck import typecheck, TypeCheckFailed
+        from core.dc.typecheck import typecheck, typecheck_shared, TypeCheckFailed
         try:
-            typecheck(prover, term, name, document.nodes.get(issue[0], arg.conclusion),
-                      issue[1] == "context")
+            shared = None if prover.typecheck_expanded else prover.shared_debate(issue)
+            clashes = shared.spelling_clashes() if shared is not None else {}
+            if clashes:
+                # A statement spelled two ways (~A and A -> false): the join
+                # is only visible in the expanded term, so check that one.
+                _pipeline_logger.debug(
+                    "typecheck: the expanded term is replayed, since the debate spells %s "
+                    "in more than one way", ", ".join(sorted(clashes)))
+            if shared is None or clashes:
+                typecheck(prover, term, name, document.nodes.get(issue[0], arg.conclusion),
+                          issue[1] == "context")
+            else:
+                # One replay per sub-debate instead of one of the whole
+                # unfolded term (tasks.org, aida-shared-subarguments, stage 2).
+                typecheck_shared(prover, shared, name, prover.typechecked())
         except TypeCheckFailed as e:
             print(f"graph: refused: {e}")
             logger.warning("Type check failed for '%s': %s", name, e)

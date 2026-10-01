@@ -308,3 +308,131 @@ class TestDebateCommand:
                   if r.getMessage().strip().endswith((" IN", " OUT", " UNDEC"))]
         # three statements, labelled before and after the debate command
         assert len(labels) == 6 and labels[:3] == labels[3:]
+
+
+# -- stage 2: the type check, one definition at a time ----------------------------
+
+from core.dc.typecheck import typecheck, typecheck_shared, TypeCheckFailed   # noqa: E402
+
+SPELLINGS = """lk.
+declare P, Q, S : bool.
+declare r : (~Q -> P).
+declare n : (S -> (Q -> false)).
+start argument s S
+by default.
+end argument
+start argument nq (Q -> false)
+cut (S -> (Q -> false)) th.
+axiom n.
+elim.
+next.
+axiom.
+end argument
+start argument p P
+cut (~Q -> P) th.
+axiom r.
+elim.
+next.
+axiom.
+end argument
+"""
+
+
+def outcome(check):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            check()
+            return True
+        except TypeCheckFailed:
+            return False
+
+
+def both_checks(prover, doc, statement):
+    """(expanded, per definition) verdicts, the second as the CLI runs it:
+    falling back to the expanded term where a statement is spelled twice."""
+    prop, anti = doc.nodes[statement[0]], statement[1] == "context"
+    term = unfold(doc, statement)
+    shared = share(doc, statement)
+    expanded = outcome(lambda: typecheck(prover, term, "x", prop, anti))
+    if shared.spelling_clashes():
+        return expanded, outcome(lambda: typecheck(prover, term, "y", prop, anti))
+    return expanded, outcome(lambda: typecheck_shared(prover, shared, "y"))
+
+
+class TestTypeCheckPerDefinition:
+    @pytest.mark.parametrize("script", SCRIPTS)
+    def test_both_checks_agree_on_fixtures(self, fresh, script, capsys):
+        run(fresh, script, stop_marker=False)
+        try:
+            fresh.send_command("discard theorem.")     # a fixture may end inside a proof
+        except Exception:
+            pass
+        doc = fresh.document
+        for statement in doc.statements():
+            expanded, per_definition = both_checks(fresh, doc, statement)
+            assert expanded == per_definition, statement
+
+    def test_one_replay_per_definition_and_none_the_second_time(self, fresh, tmp_path, capsys):
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(3))
+        run(fresh, script)
+        shared = fresh.shared_debate((K("P3"), "term"))
+        checked = {}
+        # P3, P2 and P1 have debates; P0 is a bare presumption
+        assert typecheck_shared(fresh, shared, "a3_0", checked) == 3
+        assert typecheck_shared(fresh, shared, "a3_0", checked) == 0
+        # a smaller debate of the same document is already covered
+        assert typecheck_shared(fresh, fresh.shared_debate((K("P2"), "term")), "a2_0", checked) == 0
+
+    def test_an_ill_typed_argument_is_rejected_by_both(self, fresh, tmp_path, capsys):
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(2))
+        run(fresh, script)
+        doc = fresh.document
+        edge = next(e for e in doc.edges if e.name == "a1_0")
+        rule = next(leaf for leaf in _leaves(edge.term) if getattr(leaf, "name", "") == "r1_0")
+        rule.name = "r2_0"                       # P1->P2 where P0->P1 is needed
+        issue = (K("P2"), "term")
+        assert both_checks(fresh, doc, issue) == (False, False)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with pytest.raises(TypeCheckFailed, match=r"in the debate about P1\[t\]"):
+                typecheck_shared(fresh, share(doc, issue), "a2_0")
+
+    def test_two_spellings_of_a_statement_fall_back_to_the_expanded_check(self, fresh, tmp_path, capsys):
+        # ~Q and Q -> false are one statement for the graph and two
+        # propositions for Fellowship.  The join is in no skeleton, so the
+        # per-definition check alone would accept what the replay of the
+        # expanded term refuses; spelling_clashes makes the CLI replay that.
+        script = tmp_path / "spellings.fspy"
+        script.write_text(SPELLINGS + "label p\n")
+        run(fresh, script)
+        out = capsys.readouterr().out
+        doc = fresh.document
+        issue = (K("P"), "term")
+        shared = share(doc, issue)
+        assert list(shared.spelling_clashes()) == ["Q->false"]
+        term = unfold(doc, issue)
+        assert outcome(lambda: typecheck_shared(fresh, shared, "y"))            # the gap
+        assert not outcome(lambda: typecheck(fresh, term, "x", "P", False))    # the reference
+        assert both_checks(fresh, doc, issue) == (False, False)
+        assert "graph: refused" in out                                         # and so the CLI
+
+    def test_the_naf_fixture_spells_each_statement_once(self, fresh, capsys):
+        run(fresh, "tests/naf_olon.fspy", stop_marker=False)
+        doc = fresh.document
+        for statement in doc.statements():
+            assert share(doc, statement).spelling_clashes() == {}
+
+    def test_the_typecheck_command_selects_the_mode(self, fresh, tmp_path, capsys):
+        script = tmp_path / "modes.fspy"
+        script.write_text("lk.\ntypecheck expanded\n")
+        run(fresh, script)
+        assert fresh.typecheck_enabled and fresh.typecheck_expanded
+        script.write_text("typecheck on\n")
+        run(fresh, script)
+        assert fresh.typecheck_enabled and not fresh.typecheck_expanded
+        script.write_text("typecheck off\nlk.\n")
+        run(fresh, script)
+        assert not fresh.typecheck_enabled        # the switch survives a new document

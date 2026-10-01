@@ -113,11 +113,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if stripped in ("lj", "lk") and not keep_document:
             # Fellowship starts a new theory here; so does the document
             # (the type-check switch is a session setting and survives).
-            typecheck = store.document.get("typecheck")
+            kept = {key: store.document[key] for key in ("typecheck", "typecheck_expanded")
+                    if key in store.document}
             store.document.clear()
             store.document["logic"] = stripped
-            if typecheck is not None:
-                store.document["typecheck"] = typecheck
+            store.document.update(kept)
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -609,6 +609,25 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @typecheck_enabled.setter
     def typecheck_enabled(self, value: bool) -> None:
         store.document["typecheck"] = bool(value)
+
+    @property
+    def typecheck_expanded(self) -> bool:
+        """Whether the type check replays the whole unfolded term instead of
+        one definition at a time (default off; FSP_TYPECHECK=expanded or
+        `typecheck expanded` selects it).  The expanded replay is the older,
+        exponentially larger check; it is kept as the reference the
+        per-definition check is tested against (core/dc/typecheck.py)."""
+        return store.document.get("typecheck_expanded",
+                                  os.getenv("FSP_TYPECHECK", "1") == "expanded")
+
+    @typecheck_expanded.setter
+    def typecheck_expanded(self, value: bool) -> None:
+        store.document["typecheck_expanded"] = bool(value)
+
+    def typechecked(self) -> dict:
+        """The definitions that already replayed in this document, with the
+        term Fellowship rebuilt for each (``typecheck_shared``)."""
+        return store.document.setdefault("typechecked", {})
 
     @property
     def logic(self) -> str:

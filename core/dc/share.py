@@ -42,6 +42,7 @@ from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
 )
+from core.ac.prop import Prop
 from core.dc.debate_graph import DebateGraph, canonical_prop
 from core.dc.unfold import Unfolder, UnfoldError, contrary
 
@@ -252,6 +253,42 @@ class SharedDebate:
 
         return walk(definition.body, {})
 
+    def skeleton(self, statement) -> ProofTerm:
+        """The definition of ``statement`` on its own: its body with every
+        citation left as the open site of the cited statement.  This is the
+        unit the type check replays (core/dc/typecheck.py): a citation's
+        expansion, and a variable that captures it, have the type of that
+        site, so well-typed skeletons make every expansion well-typed -
+        provided each statement has one spelling (``spelling_clashes``)."""
+        return self._instantiate(statement, {}, frozenset(self.defs), frozenset(), set(), count(1))
+
+    def spelling_clashes(self) -> dict:
+        """{display proposition: spellings} for the statements of this
+        debate that its arguments spell in more than one way.
+
+        A statement is a proposition up to ``canonical_prop``, which
+        identifies ``~A`` with ``A -> false``.  Fellowship does not: where
+        a debate spelled one way is written into a site spelled the other,
+        its replay refuses the join.  A skeleton never contains that join -
+        the site is open there - so the per-definition type check is only
+        as strong as the expanded one when no statement is spelled two
+        ways.  The caller falls back to the expanded check otherwise.
+        """
+        keys = {key for key, _side in self.defs}
+        targets = set(self.defs) | {contrary(s) for s in self.defs}
+        spelled = {key: {_strict_spelling(self._prop(key))} for key in keys}
+        for edge in self.graph.edges:
+            if edge.term is None or (edge.target_key, edge.target_side) not in targets:
+                continue
+            for text in _props(edge.term):
+                try:
+                    key = canonical_prop(text)
+                except Exception:
+                    continue
+                if key in spelled:
+                    spelled[key].add(_strict_spelling(text))
+        return {self._prop(key): sorted(found) for key, found in spelled.items() if len(found) > 1}
+
     def expand(self) -> ProofTerm:
         """The debate term with every definition written back in: what
         ``unfold(graph, issue)`` returns, up to alpha-equivalence and site
@@ -416,6 +453,36 @@ def _leaves(node):
         return
     for child in children:
         yield from _leaves(child)
+
+
+_SPELLINGS = {}
+
+
+def _strict_spelling(text: str) -> str:
+    """A proposition up to layout and bound names only: unlike
+    ``canonical_prop`` it keeps ``~A`` and ``A -> false`` apart, as
+    Fellowship does.  Unparsable text is its own spelling."""
+    found = _SPELLINGS.get(text)
+    if found is None:
+        try:
+            found = Prop.parse(text).canonical()
+        except Exception:
+            found = f"unparsed:{text}"
+        _SPELLINGS[text] = found
+    return found
+
+
+def _props(node):
+    """Every proposition written anywhere in a term: on binders, sites,
+    leaves and hypotheses."""
+    if not isinstance(node, ProofTerm):
+        return
+    for holder in (node, getattr(node, "di", None), getattr(node, "id", None)):
+        text = getattr(holder, "prop", None)
+        if isinstance(text, str) and text:
+            yield text
+    for slot in ("term", "context"):
+        yield from _props(getattr(node, slot, None))
 
 
 def _author_citations(graph: DebateGraph) -> dict:

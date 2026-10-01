@@ -201,7 +201,14 @@ export FSP_LOGLEVEL=DEBUG
    alpha-equivalence, site numbering and proposition spelling. This is the
    ground truth for the unfolder: if the registered arguments type-check, so
    must their unfolding. On a mismatch the log names the position in the term
-   where the two shapes first differ.
+   where the two shapes first differ. The replay is done one sub-debate at a
+   time: each statement's debate is replayed once, with the sub-debates it
+   cites left as open sites, and not again in the same document. That is as
+   strong as replaying the whole term - what goes into a site has the site's
+   type - unless the debate spells a statement in two ways (`~A` and
+   `A -> false` are one statement but two propositions for Fellowship); then
+   the whole term is replayed. `typecheck expanded` always replays the whole
+   term, whose size grows with the number of paths through the graph.
 4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
    propositions, hyperedges carry a name, a target statement and sources with
    their kinds, and statements get default markers. It is a separate data
@@ -395,8 +402,8 @@ everywhere, so it never holds a defeasible argument.
   registers it as the theorem `peirce`.
 - **Names are unique per document.** Sorts, declared axioms, statements and
   arguments share one namespace, checked before anything reaches the prover;
-  `lk.` or `lj.` starts a new one. Names starting with `typecheck_` or
-  `theta_expand_` are reserved for the names the wrapper sends to Fellowship.
+  `lk.` or `lj.` starts a new one. Names starting with `typecheck_`,
+  `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
 - **Sessions start in LK.** Debates are classical, and the prover is switched
   to LK when it starts, so the type check of a debate never runs in LJ by
   accident.
@@ -436,7 +443,9 @@ document` show the document graph itself. Every unfolded term is
 replayed through Fellowship first - the type oracle: if the arguments
 type-check, so must their unfolding - and refused with a one-line
 message if the prover rejects it; `typecheck off` (or `FSP_TYPECHECK=0`)
-skips the replay for production runs. Debates are classical: their
+skips the replay for production runs, and `typecheck expanded` (or
+`FSP_TYPECHECK=expanded`) replays the whole unfolded term instead of one
+sub-debate at a time. Debates are classical: their
 scaffolds throw to a second conclusion, which LJ forbids, so the debate
 commands are refused while the file is in `lj`. Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate
