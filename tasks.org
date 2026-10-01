@@ -2539,6 +2539,194 @@ stability, so Peirce is the critical witness rather than the proof.
   DAGs or certificates, cache checks by term and environment hash, and verify
   only the new composition boundary where the calculus permits it.
 
+** BACKLOG Share subarguments by name instead of repeating them
+:PROPERTIES:
+:ID:             aida-shared-subarguments
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Unfolding builds the debate for each statement once and cites it by name wherever the statement recurs, so the debate term of an acyclic document is linear in the size of the document graph and reads as named sub-debates; label and evaluate give the same results as the fully inlined term.
+:VERIFY:         On the doubled-chain fixture (two supporters per level) the term size and label time grow linearly in the number of levels up to at least 30 levels; expanding every citation reproduces today's inlined term up to alpha-equivalence on every label/evaluate fixture; the whole test suite passes unchanged.
+:END:
+
+Found by the complexity analysis of 2026-09-30 (scaling-benchmarks below).
+=Unfolder.statement= (core/dc/unfold.py) breaks cycles on the current
+path only and memoises nothing across paths, so a statement reachable by
+k routes is unfolded k times: the term is as large as the number of paths
+in the graph. Measured with two alternative supporters per level: label
+takes 3.3 s at 6 levels, 16.6 s at 8, 105 s at 10 (20 arguments), and
+from 9 levels the final Fellowship snapshot exceeds the 5 s pexpect
+timeout. The type check then replays the blown-up term (67% of label
+time), and the compiler compiles it again. =DebateGraph.to_text= has the
+same defect (it expands shared subgraphs; only runs at DEBUG).
+
+Author, 2026-10-01: wherever possible subarguments should be named and
+cited instead of repeated - also for legibility. Design open; questions
+for the discussion:
+
+- the unit of sharing: one named debate per statement (key, side), whose
+  supporter and attacker bodies cite the debates of their own sites, so
+  the shared form is the document graph written as mutually citing terms;
+- transparent (delta-unfoldable) names versus a let-cut =<t || mu~x.c>=,
+  which is the calculus's own sharing construct but adds a critical pair
+  whose resolution is the CBN/CBV choice;
+- capture: a sub-debate under a binder that captures one of its reachable
+  statements differs from the same statement elsewhere, so the sharing key
+  is the statement plus the captures and spine entries it can reach;
+- whether compilation of a citation (an obligation source on the cited
+  conclusion) already yields the same graph, and how the type check,
+  resolve_scaffolds and normalisation treat a citation of a defeasible
+  sub-debate: per definition and memoised, or by expansion.
+
+** BACKLOG Commit scaling fixtures and a benchmark harness
+:PROPERTIES:
+:ID:             aida-scaling-benchmarks
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A generator for synthetic documents (chains, stated chains, doubled chains, declaration-only files, layered graphs, independent even loops) and a harness that times load, label and evaluate with repeated runs live in the repository.
+:VERIFY:         One make target runs the harness and writes a table of median wall times over at least five runs per size, with the labelling result of each run recorded for equivalence checks.
+:END:
+
+The 2026-09-30 analysis used throwaway scripts (single runs except the
+parser micro-benchmarks, best of 3). Measured shapes to re-establish:
+
+| family                          | sizes        | result                         |
+|---------------------------------+--------------+--------------------------------|
+| chain, load only                | 80 -> 160    | 1.6 s -> 4.1 s (~quadratic)    |
+| stated chain (=claim=, =prove=) | 80 -> 160    | 3.5 s -> 12.3 s (quadratic)    |
+| declarations only               | 800 -> 3200  | 5.7 s -> 89.6 s (> quadratic)  |
+| chain, label                    | 40 / 50      | 2.9 s / RecursionError         |
+| doubled chain, label            | 6 / 8 / 10   | 3.3 / 16.6 / 105 s (exponential) |
+| layered graph, adf-bdd grounded | 6400 -> 25600 statements | 0.56 s -> 9.6 s (quadratic) |
+| even loops, complete semantics  | 4 / 6 loops  | 15-24 s / timeout (all backends) |
+
+Prerequisite for the evidence of [[id:aida-shared-subarguments]] and the
+tasks below.
+
+** BACKLOG Remove the quadratic hot spots of the pipeline
+:PROPERTIES:
+:ID:             aida-quadratic-hotspots
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Loading, compiling and labelling a document grow near-linearly with its number of arguments, declarations and statements.
+:VERIFY:         The scaling harness shows at most n log n growth for chain load, stated-chain load, declaration-only load and graph compilation up to 4x the 2026-09-30 sizes, with identical labellings.
+:END:
+
+Out of scope until a library is in sight (author, 2026-10-01). Each item
+is independent:
+
+- [ ] /Graph utilities./ =statements()= and =referenced_statements= test
+  membership in a list; =compile_conditions=, =parents=, =reachable= and
+  =is_acyclic= scan every edge per statement. Use sets and an
+  edges-by-target index (19 s for =compile_conditions= at 25600 statements).
+- [ ] /canonical_prop is uncached./ Every graph node, scion check and
+  unfolded site re-parses its proposition with Earley (1007 calls, 0.5 s,
+  in one 40-step label). Memoise on the text.
+- [ ] /Refinement rebuilds the document./ =finish_recording= calls
+  =rebuild_document= for every replacement, so the =claim=/=prove=
+  workflow recompiles all arguments per proof; =propagate_strictness=
+  rescans all arguments and rebuilds once per step of a citation chain.
+  Record which argument contributed each edge and default marker, remove
+  only those, and keep a reverse citation index.
+- [ ] /Declaration snapshots./ Every full machine snapshot serialises the
+  whole signature and theory and the wrapper re-parses it, so D
+  declarations cost O(D^2) (90 s for 3200). Send declaration deltas.
+  Overlaps [[id:aida-certificate-checking-architecture]].
+- [ ] /Earley parsing./ Right-nested implications parse in quadratic time
+  (203 ms at 2.4 kB); proof terms parse linearly but at ~35 us/char.
+  Consider an unambiguous LALR grammar for the category-neutral identifier.
+- [ ] /Reduction./ =_subst= (core/comp/reduce.py) deep-copies each node
+  and then recurses into the copy, O(n x depth) per substitution;
+  =normalize_strong= rescans from the root every step under a fixed fuel
+  of 2000 steps, which caps the size of debate it can evaluate.
+- [ ] /Global labelling./ One adf-bdd call over the whole graph is
+  quadratic on the measured graphs and times out after 120 s (~90k
+  statements extrapolated). Label the reachable subgraph of the issue;
+  later, SCC by SCC using directionality.
+- [ ] /pexpect polling./ =time.sleep= and =select= account for ~2.4 s of
+  the profiled load of a 160-step chain, and grow with output size.
+
+** BACKLOG Make the multi-extension semantics usable beyond toy graphs
+:PROPERTIES:
+:ID:             aida-multi-extension-labelling-cost
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Complete, preferred and stable labellings (and so credulous and skeptical evaluation) are computed for graphs of at least 100 statements, or the CLI explains the limit before starting the solver.
+:VERIFY:         Ten independent even loops (40 statements) yield their 3^10 complete and 2^10 stable labellings within the solver timeout, or are refused with a message naming the limit; results agree with the oracle on the fixture suite.
+:END:
+
+Measured 2026-09-30 on k independent two-node even loops: 4 loops (16
+statements, 81 complete labellings) take 15-24 s for =--com= with every
+adf-bdd backend (naive, hybrid, biodivine); 6 loops time out, stable
+included. Grounded stays instant. The cost is far above the output size,
+so first check whether our export (statement naming, the guard
+disjuncts) or adf-bdd's enumeration is responsible; then consider
+enumerating per SCC, which the independent-loop case decomposes into, and
+computing preferred without the k^2 filter over complete labellings.
+
+** BACKLOG Design a module system for libraries
+:PROPERTIES:
+:ID:             aida-module-system
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A written design for importing theories into a document that fixes namespaces, what an import contributes to the document graph, how compiled artefacts are cached and invalidated, and when imported labels may be reused.
+:VERIFY:         The design note answers each question listed below with a decision and a fixture sketch, and is reviewed by the author.
+:END:
+
+Not urgent: needs a mature system first (author, 2026-10-01). Starting
+point recorded by the author: imported theories are strict by default,
+which enables incremental compilation - a held theorem is already an
+opaque leaf of constant size, compilation is per argument, merging is
+additive. Questions the design has to answer:
+
+- namespaces: one flat namespace per document today (=claim_name=);
+  proposition identity (=canonical_prop=) is global, so a debate about P
+  reaches every imported argument about P;
+- labels are not modular: an importing document can attack an imported
+  statement; reuse of imported labels is sound only where no edge enters
+  the imported part (directionality of grounded semantics);
+- separate checking: today every load replays every proof; cache checked
+  theories by content hash;
+- invalidation: citations are late-bound ("the argument as it now
+  stands"), so a change in an imported theory can change the strictness
+  of its citers;
+- size: a library the size of the AFP (~10^5-10^6 names) is far beyond
+  the measured declaration curve, see [[id:aida-quadratic-hotspots]].
+
 * Correctness and maintenance
 
 ** BACKLOG Emit the closing elimination for falsum-typed applications
@@ -2615,3 +2803,142 @@ read =<ES||S O*1.2.1?>=. Left unchanged deliberately: this is inherited CeCILL
 documentation, and the session cannot currently be replayed to verify
 regenerated output, so the excerpts were not hand-derived. Blocked by
 [[id:aida-fellowship-focus-firstorder-crash]].
+
+** BACKLOG Release a name when its declaration fails in Fellowship
+:PROPERTIES:
+:ID:             aida-declaration-name-leak
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A =declare= that Fellowship rejects leaves the wrapper's name table unchanged, so the name can be declared again; a declaration that Fellowship accepts claims exactly the names Fellowship reports.
+:VERIFY:         A test runs =declare f : (Q -> P).= (Q undefined) followed by =declare f : bool.= in script and in interactive mode and the second succeeds; =declare f : bool.= twice still raises NameClash; the minicourse and statements tests pass.
+:END:
+
+Reported by the author while testing higher-order declarations, reproduced
+2026-10-01 in both CLI paths:
+
+#+begin_example
+lk.
+declare f : (Q -> P).    # Fellowship: "Symbol Q undefined"
+declare f : bool.        # refused: 'f' is already a declaration in this document
+#+end_example
+
+Cause: both paths claim the names before sending the command
+(=claim_declared_names= then =send_command=, wrap/cli.py:758 and
+wrap/cli.py:1448), and nothing releases the claim when the command fails.
+Releasing on exception is not enough: Fellowship reports an undefined
+symbol as a /note/, not an error, so =send_command= returns normally.
+Suggested fix: check the names with =claim_name(..., dry_run=True)= before
+sending (keeps the NameClash refusal before anything reaches the prover),
+and after sending claim only the names that appear in the returned
+declarations (=prover.declarations=). A multi-name =declare g, h : S.=
+that fails must claim none of them; check whether Fellowship can accept
+some names of such a command and reject others.
+
+** BACKLOG Parse lambda binders of sort bool and of arrow sorts
+:PROPERTIES:
+:ID:             aida-parse-higher-order-binders
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Proof terms whose first-order lambda binds a variable of sort bool or of an arrow sort parse into the AST, so recording an argument for a statement quantifying over such a variable registers it instead of raising a traceback.
+:VERIFY:         An argument for =theorem t : (forall X : bool, X -> X).= registers both when closed (=qed=) and when left open (=end argument=); parser tests cover =λX:bool.=, =λP:nat->bool.= and their mu'-side counterparts.
+:END:
+
+Found 2026-10-01: =prove t= with =elim. elim.= (then a failed =axiom.=)
+and =qed.= replays the argument, and parsing the replayed term raises
+=SyntaxErrorInSource: cannot parse
+'μthesis:forall X:bool,X->X.<λX:bool.?1.1||thesis>' as a term: Unexpected
+token Token('_BOOL', 'bool')= - an uncaught traceback in the REPL. The
+grammar in core/ac/syntax.py accepts a sort after a quantifier but not
+after a first-order lambda binder.
+
+** BACKLOG Fix instantiation of propositional and predicate variables in Fellowship
+:PROPERTIES:
+:ID:             aida-fellowship-higher-order-instantiation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Eliminating =forall X : bool= or =forall P : s -> bool= with a witness of that sort substitutes the witness instead of aborting the prover, and substitution respects a quantifier that rebinds the same name.
+:VERIFY:         =elim [B].= on =forall X : bool, X -> X= (B : bool) yields the goal for =B -> B= and the proof reaches =qed=; a predicate-variable instance does the same; a test with a shadowing inner quantifier keeps the inner occurrence bound; fsp is rebuilt.
+:END:
+
+Found 2026-10-01. Fellowship's type checker admits quantification over any
+sort, including =bool= and arrow sorts, but =prop_subst=
+(wrap/fellowship/core.ml:301) handles a bound variable that occurs as a
+proposition with =assert(name <> name')=: the instantiation aborts the
+prover (=Fatal error: exception ... core.ml, line 305 ... Assertion
+failed=), and the wrapper loses the session with an I/O error. Substituting
+a term for a propositional symbol needs terms of sort bool to become
+propositions, which the AST (=term= is applicative symbols only) cannot
+express; so either witnesses for bool and predicate variables are
+restricted to symbols and substituted as =PSym=, or the term language grows.
+Compound witnesses such as =[A -> B]= are not terms at all and cannot be
+written. Separately, the =Quant= case substitutes under a binder that
+rebinds the substituted name.
+
+** BACKLOG Remove the recursion-depth limit from term traversals
+:PROPERTIES:
+:ID:             aida-deep-term-recursion
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Parsing, compiling, unfolding, type checking and labelling a debate do not fail with RecursionError for terms of nesting depth up to at least 5000.
+:VERIFY:         The 200-step chain fixture of the scaling harness labels and evaluates; a parser test parses a 5000-deep mu nesting.
+:END:
+
+Measured 2026-09-30: =label= on a chain of 40 arguments works, on 50 it
+raises RecursionError in =copy.deepcopy= under =_issue_term= (type check
+path). The Lark transformer fails between mu-nesting depth 200 and 400.
+Every visitor (compile =walk=, unfold =walk=, =_subst=, =_restore_scion=,
+the presentation visitors) recurses in Python. Options: iterative
+traversals and copying, or running the pipeline in a thread with a large
+stack and a raised recursion limit as a stopgap.
+
+** BACKLOG Lift the prover transport's line-length and timeout limits
+:PROPERTIES:
+:ID:             aida-transport-limits
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Commands of any length reach Fellowship, and a long-running command is not mistaken for a hung prover.
+:VERIFY:         A =declare= of 400 names in one line and a =theorem= whose proposition exceeds 2 kB succeed through the wrapper; a test fixes the timeout behaviour.
+:END:
+
+Measured 2026-09-30: the wrapper talks to fsp through a pty, whose
+canonical-mode line limit (1024 bytes on macOS) makes any longer command
+hang until pexpect's 5 s timeout (985 bytes works, 1105 times out). fsp
+itself takes 0.02 s for a 400-name declare. The 5 s per-command timeout
+also fails the final full snapshot of large debates (doubled chain from 9
+levels). Use pipes or a framed protocol; overlaps
+[[id:aida-certificate-checking-architecture]].
