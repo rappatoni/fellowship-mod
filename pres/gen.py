@@ -130,14 +130,20 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
         node.pres = self._open_context(node.number, node.prop, '!')
         return node
 
+    @staticmethod
+    def _leaf_name(node) -> str:
+        """A leaf's name; a citation of a sub-debate (core/dc/share.py)
+        adds what its site captures and cuts: ``d[alpha -> !:A, B:?]``."""
+        return f'{node.name}{getattr(node, "bracket", "")}'
+
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
-        node.pres = self._typed_leaf(node.name, node.prop)
+        node.pres = self._typed_leaf(self._leaf_name(node), node.prop)
         return node
 
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
-        node.pres = self._typed_leaf(node.name, node.prop)
+        node.pres = self._typed_leaf(self._leaf_name(node), node.prop)
         return node
 
     # -- first-order nodes -------------------------------------------------

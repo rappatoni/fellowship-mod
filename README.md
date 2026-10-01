@@ -341,6 +341,9 @@ detects a machine-mode desynchronization.
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
 - `expand ARG`
   - print ARG's full term, with every cited argument's term grafted in
+- `debate ARG`
+  - print the debate about ARG's issue as named sub-debates: the issue's
+    term, then one `NAME[open sites] := term` line per sub-debate it cites
 
 ### Statements, refinement and citation
 
@@ -374,6 +377,17 @@ everywhere, so it never holds a defeasible argument.
   conclusion, which the cited argument's own edge meets; unfolding expands the
   citation like any obligation. Refine the cited argument and every citer
   follows. `expand ARG` computes the full term on demand.
+- **Sub-debates are shared by name.** The debate about an issue brings in the
+  debate of every statement it reaches. `debate ARG` writes a sub-debate that
+  is needed in two or more places once and cites it by name - the author's
+  name where one argument or debate is about that statement, `anon_1`,
+  `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in
+  place. A citation shows what its site does to the cited debate:
+  `d[alpha -> !:A, B:?]` reads "d, with alpha capturing its delegation of A
+  and its obligation B left open"; the header `d[...] :=` lists the sites the
+  sub-debate rests on. Names are transparent: writing every definition back
+  in gives the term `graph`, `label` and `evaluate` work on, which for now is
+  still what they compute.
 - **Adopting a discovered strict edge.** `graph ARG` can show strict edges,
   named with a trailing star, that the strict phase found in the unfolded
   term. Showing them changes nothing. `adopt s1* as peirce` replays the closed

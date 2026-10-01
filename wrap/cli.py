@@ -364,6 +364,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("expand "):
                         expand_argument_cmd(prover, command.split()[1])
+                    elif command.startswith("debate "):
+                        debate_argument_cmd(prover, command.split()[1])
                     elif command.startswith("render-nf "):
                         # Usage: render-nf ARG [style]
                         parts = command.split()
@@ -1016,6 +1018,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("expand "):
                 expand_argument_cmd(prover, command.split()[1])
+            elif command.startswith("debate "):
+                debate_argument_cmd(prover, command.split()[1])
             elif command.startswith("render-nf "):
                     parts = command.split()
                     name = parts[1] if len(parts) >= 2 else ""
@@ -1733,6 +1737,44 @@ def expand_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info("  %s", pres_str(expand_citations(arg.body, prover.get_argument)))
 
 
+def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI: `debate ARG` - the debate about ARG's issue as named
+    sub-debates: the issue's term, then one `NAME[open sites] := term`
+    line per sub-debate it cites.
+
+    A sub-debate needed in two or more places is written once and cited by
+    name; one needed once stays in place.  A citation shows what its site
+    does to the cited debate, `d[alpha -> !:A, B:?]`: alpha captures its
+    delegation of A, its obligation B is left open (core/dc/share.py).
+    Names are transparent: `graph`, `label` and `evaluate` work on the
+    expansion.
+    """
+    from core.dc.unfold import UnfoldError
+    arg = prover.get_argument(name)
+    if arg is None:
+        logger.error("debate: no argument '%s'.", name)
+        return
+    if not arg.executed:
+        arg.execute()
+    issue = prover.issue_of(arg)
+    document = prover.document
+    if issue not in set(document.statements()):
+        print(f"debate: '{name}' is not in the document graph; it has no debate to share.")
+        return
+    try:
+        shared = prover.shared_debate(issue)
+        text = shared.to_text()
+    except UnfoldError as e:
+        print(f"debate: refused: {e}")
+        logger.warning("Sharing refused for '%s': %s", name, e)
+        return
+    named = shared.named()
+    print(f"Debate about '{name}' ({document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]), "
+          f"{len(named)} sub-debate(s) cited by name:")
+    for line in text.splitlines():
+        print(f"  {line}")
+
+
 def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None) -> None:
     """CLI for Argument Rendering.
 
@@ -1839,6 +1881,15 @@ def _issue_term(prover: ProverWrapper, name: str):
         print(f"graph: refused: {e}")
         logger.warning("Unfolding refused for '%s': %s", name, e)
         return arg, issue, None
+    if _pipeline_logger.isEnabledFor(logging.DEBUG):
+        # The same debate with repeated sub-debates named (core/dc/share.py).
+        # Presentation only for now: the pipeline below runs on the unfolded
+        # term (tasks.org, aida-shared-subarguments, stage 1).
+        try:
+            artifact(_pipeline_logger, "issue: the debate as named sub-debates",
+                     prover.shared_debate(issue).to_text())
+        except Exception as e:      # never let the presentation break the pipeline
+            _pipeline_logger.debug("issue: the shared form could not be built: %s", e)
     if prover.typecheck_enabled:
         # The type oracle: the unfolded term must replay through Fellowship
         # (core/dc/typecheck.py).  `typecheck off` skips it.

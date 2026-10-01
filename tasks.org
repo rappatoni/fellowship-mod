@@ -2539,7 +2539,7 @@ stability, so Peirce is the critical witness rather than the proof.
   DAGs or certificates, cache checks by term and environment hash, and verify
   only the new composition boundary where the calculus permits it.
 
-** BACKLOG Share subarguments by name instead of repeating them
+** DOING Share subarguments by name instead of repeating them
 :PROPERTIES:
 :ID:             aida-shared-subarguments
 :AREA:           phd
@@ -2567,22 +2567,77 @@ time), and the compiler compiles it again. =DebateGraph.to_text= has the
 same defect (it expands shared subgraphs; only runs at DEBUG).
 
 Author, 2026-10-01: wherever possible subarguments should be named and
-cited instead of repeated - also for legibility. Design open; questions
-for the discussion:
+cited instead of repeated - also for legibility. Decisions of that date:
 
-- the unit of sharing: one named debate per statement (key, side), whose
-  supporter and attacker bodies cite the debates of their own sites, so
-  the shared form is the document graph written as mutually citing terms;
-- transparent (delta-unfoldable) names versus a let-cut =<t || mu~x.c>=,
-  which is the calculus's own sharing construct but adds a critical pair
-  whose resolution is the CBN/CBV choice;
-- capture: a sub-debate under a binder that captures one of its reachable
-  statements differs from the same statement elsewhere, so the sharing key
-  is the statement plus the captures and spine entries it can reach;
-- whether compilation of a citation (an obligation source on the cited
-  conclusion) already yields the same graph, and how the type check,
-  resolve_scaffolds and normalisation treat a citation of a defeasible
-  sub-debate: per definition and memoised, or by expansion.
+1. /Transparent names./ A named sub-debate means its expansion; nothing new
+   enters the calculus. A let-cut =<t || mu~x.c>= was rejected: it is a
+   critical pair between a mu-headed debate and mu~, so CBN duplicates
+   again at the first step and CBV makes the sub-debate's scaffolds throw
+   to the whole host.
+2. /One debate per statement/ (canonical proposition and side).
+3. /A name is shown from the second occurrence only;/ a sub-debate used
+   once stays inline.
+4. /Capture does not force inlining./ A citation carries what the citing
+   context does to the cited debate: =d[alpha -> !:A, B:?]= reads "d, with
+   alpha capturing its delegation of A and its obligation B left open".
+   Markers as the printer has them (=?:A= / =!:A= term side, =A:?= / =A:!=
+   context side). A capture can hit any statement the sub-debate reaches,
+   not only a leaf site (the even loop: "P fails" inside Qdefault becomes
+   =rule=).
+5. /No per-definition evaluation./ "Normalise the definition, then plug in"
+   is false: strictness is read off the concrete term (core/dc/strict.py -
+   a wing is strict iff it has no open site, and a captured site is a
+   variable), so one sub-debate is decided differently under different
+   captures. What may be memoised is an /instance/: a statement with the
+   set of statements captured and cut in it.
+6. /Names:/ the registered argument or debate whose issue is the statement
+   if there is exactly one, else =anon_1 ... anon_n= (prefix reserved); the
+   proposition is not repeated in the name. To be revisited; see
+   [[id:aida-cli-inventory-and-naming]].
+
+Stages, each gated by a differential test against the untouched =unfold=
+(plan approved 2026-10-01):
+
+- [X] 1. Shared form, expansion, display (=core/dc/share.py=, =debate NAME=):
+  =expand(shared)= is alpha-equal to =unfold=. Legibility only; the
+  pipeline still runs on =unfold=. Done 2026-10-01: tests/test_share.py
+  (92 tests) - hand-built doubled chains and the even loop, 60 random
+  documents with cycles and captures, every statement of 15 fixtures; a
+  sweep over all 52 loadable .fspy scripts compared 568 statements with
+  0 mismatches. On the doubled chain the shared form grows by two
+  definitions per level while the term doubles. Suite 1224 passed.
+  Deviation from the plan: the pipeline keeps calling =unfold= rather
+  than =expand=, because the two choose fresh binder names in a different
+  order and tests pin printed normal forms; the switch belongs to the
+  stages that consume the shared form.
+- [ ] 2. Type check once per definition.
+- [ ] 3. Issue graph and strict phase per instance, without expansion;
+  =graph= and =label= stop expanding.
+- [ ] 4. Evaluation expands a citation only inside a wing it keeps.
+- [ ] 5. Benchmarks before and after, recorded here.
+
+** BACKLOG List what a document holds and name anonymous sub-debates from the CLI
+:PROPERTIES:
+:ID:             aida-cli-inventory-and-naming
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The CLI lists everything a document has recorded - declarations with their kinds, statements with whether they are proved, arguments and debates with their conclusions and strictness, and the named and anonymous sub-debates of the shared form - and a command gives an anonymous sub-debate a name that later output uses.
+:VERIFY:         On tests/statements_and_citations.fspy the listing commands print every declaration, statement and argument of the file, in script and in interactive mode; after =name anon_1 as NAME= the =debate= output cites NAME; naming to a taken name raises NameClash; tests cover both paths.
+:END:
+
+Asked for by the author, 2026-10-01, with [[id:aida-shared-subarguments]]:
+the wrapper holds one registry (=prover.names=, =prover.arguments=,
+=prover.declarations=) and nothing shows it. Anonymous names (=anon_k=)
+are a stopgap the author expects to change, so the naming command should
+go through =claim_name= and keep the statement-to-name table in
+=store.document=.
 
 ** BACKLOG Commit scaling fixtures and a benchmark harness
 :PROPERTIES:

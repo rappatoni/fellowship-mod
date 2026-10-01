@@ -9,6 +9,7 @@ from core.dc.debate_graph import (
     DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
     SYNTHETIC_PREFIX,
 )
+from core.dc.share import ANON_PREFIX, SharedDebate, share
 from core.ac.ast import FirstOrderNotSupported
 
 logger = logging.getLogger('fsp.wrapper')
@@ -42,10 +43,11 @@ class StrictnessRefused(ProverError):
     obligations or presumptions.  Nothing reaches Fellowship's theorems."""
 
 
-#: Prefixes of the names the wrapper itself sends to Fellowship (the type
-#: oracle's replay, the theta-expansion names).  A user name with one of
-#: them could collide with a wrapper-generated theorem, so it is refused.
-RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX)
+#: Prefixes of the names the wrapper generates itself: the ones it sends to
+#: Fellowship (the type oracle's replay, the theta-expansion names) and the
+#: ones it gives to sub-debates nobody named (core/dc/share.py).  A user name
+#: with one of them could collide with a generated one, so it is refused.
+RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX, ANON_PREFIX)
 
 #: What may refine what: a recording becomes the argument it records, a
 #: statement's enthymeme becomes its witness.  Anything else is a clash.
@@ -539,7 +541,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if any(name.startswith(p) for p in RESERVED_PREFIXES):
             raise NameClash(
                 f"'{name}' starts with a prefix the wrapper reserves for the names it "
-                f"sends to Fellowship itself ({', '.join(RESERVED_PREFIXES)}); choose another name."
+                f"generates itself ({', '.join(RESERVED_PREFIXES)}); choose another name."
             )
         held = self.names.get(name)
         if held is not None and not (refine and held in _REFINABLE):
@@ -638,6 +640,34 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """The statement an argument (or debate) is about."""
         side = "context" if getattr(argument, "is_anti", False) else "term"
         return (canonical_prop(argument.conclusion), side)
+
+    def anon_name(self, statement) -> str:
+        """The ``anon_k`` name of a statement's debate, allocated on first
+        use and kept with the document so the numbers do not shift between
+        commands (tasks.org, aida-shared-subarguments, decision 6)."""
+        table = store.document.setdefault("anon", {})
+        if statement not in table:
+            table[statement] = f"{ANON_PREFIX}{len(table) + 1}"
+        return table[statement]
+
+    def debate_names(self) -> Dict[Any, str]:
+        """{statement: name} for the statements exactly one registered
+        argument or debate is about: the name the author gave its debate.
+        Where several arguments conclude one statement no single name
+        denotes the whole debate, and it is left to ``anon_name``."""
+        about: Dict[Any, List[str]] = {}
+        for name, argument in self.arguments.items():
+            if not getattr(argument, "conclusion", None):
+                continue
+            try:
+                about.setdefault(self.issue_of(argument), []).append(name)
+            except ValueError:          # a conclusion the graph has no node for
+                continue
+        return {statement: names[0] for statement, names in about.items() if len(names) == 1}
+
+    def shared_debate(self, issue) -> SharedDebate:
+        """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
+        return share(self.document, issue, self.debate_names(), self.anon_name)
 
     def check_reachable(self, host: Any, scion: Any, kind: str) -> None:
         """The debate verbs' assertion (aida-document-graph decision): an
