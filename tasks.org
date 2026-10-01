@@ -2958,3 +2958,107 @@ itself takes 0.02 s for a 400-name declare. The 5 s per-command timeout
 also fails the final full snapshot of large debates (doubled chain from 9
 levels). Use pipes or a framed protocol; overlaps
 [[id:aida-certificate-checking-architecture]].
+
+** BACKLOG Restrict arguments to the intuitionistic fragment
+:PROPERTIES:
+:ID:             aida-argument-lj-restriction
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        An argument whose proof term is classical is refused when it is constructed, with a message naming the argument and the conclusion that is used more than once; debates remain classical. An argument against a proposition is held to the dual restriction.
+:VERIFY:         The proof in lib/fol_em.fspy (object-level excluded middle, conclusion =th= used twice) is refused as an argument in a default session; the three proofs in lib/fol.fspy and tests/fo_forall.fspy are accepted; a debate fixture for Peirce's law (tests/peirces_law.fspy) still evaluates as before; every fixture that the new check refuses is listed with the reason; the documented test suite passes.
+:END:
+
+Requested by the author 2026-10-01. The COMMA paper defines an argument for
+sigma as a /linear/ term and a counterargument as a /dual-linear/ context
+(=papers/comma2026/main.tex:308=), and identifies the linear fragment with
+intuitionistic logic (=main.tex:111-118=); classicality is recovered only on
+the debate level (=main.tex:530-550=). The implementation has never enforced
+this: a session starts in lk, so a single =theorem= or =start argument= can
+be classical with no debate involved.
+
+*Why it matters beyond conformance.* An object logic encoded with
+hypothetical rules, as in =lib/fol.fspy= (=implfi : (truef p -> truef q) ->
+truef (implf p q)=), is intuitionistic only while the meta-level proof is.
+Checked 2026-10-01: =truef (orf Q (implf Q botf))= is proved under
+=minimal. lk.= by the term
+
+: μth.<orfi2||Q*implf Q botf*μb.<implfi||Q*botf*λHQ.μd.<orfi1||Q*implf Q botf*HQ*th>*b>*th>
+
+in which =th= occurs twice, and the same script is refused under
+=minimal. lj.= at the first =axiom th= ("th is neither in your hypothesis
+nor in your conclusion").
+
+*How to detect it.* The author's starting point is the prover's own message
+for a classical proof. What was found in the source on 2026-10-01:
+
+- The message is ="!!! The proof is classical; converted to the following
+  LJ + EM proof"= (=wrap/fellowship/print.ml:161-168=). It is printed by
+  =pretty_natural=, which runs only when a finished proof is exported in
+  natural language (=instructions.ml:301-306=), and only under lk. It is not
+  emitted during proof construction or at =qed=.
+- The test behind it is =lk_to_lj_plus_em pt <> pt=, built on the
+  =linear_term= / =linear_context= / =linear_command= functions in
+  =interpreter_proof_terms.ml:267-307=. That is the linearity check the
+  paper's definition asks for, already in the prover.
+- So the wrapper cannot catch the message as things stand. Two routes:
+  expose the check (for instance a field in the machine payload at =qed=, or
+  a note on the tactic that makes the term non-linear), which needs an fsp
+  rebuild; or run the same check in the wrapper on the parsed proof term.
+
+*Alternative route, proposed by the author 2026-10-01: switch the calculus
+per argument.* Enable logic switching in the prover and have the wrapper
+select lj for each argument and lk for debates. Read in the source the same
+day, not implemented or tested:
+
+- Today the switch is refused after the first instructions ("Only the first
+  instructions can be used to specify a logical setting"). The guard is the
+  single =too_late= flag in =logic_switch= (=instructions.ml:111-116=); the
+  calculus itself is the two global refs =lj= and =minimal=, which the
+  tactics read at each step (12 sites in =tactics.ml=). Allowing the switch
+  whenever the prover is =Idle=, and never inside an open proof, looks like
+  a small change. =fsp= must be rebuilt.
+- Gain over a linearity check: the refusal comes from the calculus, at the
+  tactic that makes the step classical, and nothing depends on the
+  =linear_*= functions agreeing with the paper. The "exactly once or at most
+  once" question below is answered by lj itself.
+- The export code assumes one logic per session: the Coq header is chosen
+  from =!lj= when the file is started (=interpreter.ml:157-160=) and a
+  finished proof is converted according to =!lj= at export time, not at
+  proof time (=interpreter_proof_terms.ml:415=, =print.ml:162=). With
+  switching, the logic would have to be recorded per theorem, or export
+  restricted.
+- =prop_of_csq= asserts on the shape of the conclusion list under lj
+  (=core.ml:619-622=); that is safe only if a switch cannot happen while
+  goals exist.
+- A theorem proved under lk stays usable by =axiom= in a later lj argument.
+  Whether an argument may cite a debate's result strictly is a design
+  decision, not a prover matter.
+- The wrapper replays arguments (the type oracle, scaffolds) and already
+  tracks the session logic (=wrap/prover.py:613=, the "debates are
+  classical" guard in =wrap/cli.py=); every replay path has to switch too.
+- The refusal text is the prover's ("th is neither in your hypothesis nor in
+  your conclusion"); the wrapper would have to say that the argument left
+  the intuitionistic fragment.
+- Counterarguments need a dual-intuitionistic mode (at most one hypothesis),
+  which the prover does not have; it would be a third setting next to =lj=
+  in the same tactic sites.
+
+*Open points.*
+
+- Whether the prover's =linear_*= functions agree with the paper's
+  definition of a linearly bound variable (exactly one occurrence, no
+  intervening binder of the same kind) has not been checked.
+- The prover has no dual-intuitionistic mode and no dual-linearity check
+  was found, so the counterargument half has no existing test to reuse.
+- Affine binders (a conclusion never used) are ordinary in the fixtures;
+  whether "linear" is meant strictly or as "at most once" must be settled
+  against the paper before fixtures are refused.
+- Fixtures that are classical as single arguments today have not been
+  surveyed.
