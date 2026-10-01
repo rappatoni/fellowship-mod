@@ -2635,8 +2635,37 @@ Stages, each gated by a differential test against the untouched =unfold=
   expanded term, as before. No fixture needs the fallback.
   tests/test_share.py::TestTypeCheckPerDefinition (20 tests); suite 1244
   passed.
-- [ ] 3. Issue graph and strict phase per instance, without expansion;
-  =graph= and =label= stop expanding.
+- [X] 3. Issue graph and strict phase per instance, without expansion;
+  =graph= and =label= stop expanding. Done 2026-10-01:
+  =core/dc/instances.py=. An instance is (statement, captured statements,
+  cut statements), restricted to what the statement reaches; each is
+  compiled once (a citation leaf is a source of the cited statement, and
+  meeting it compiles the cited instance in place, so edges keep the order
+  of the unfolded term) and strictness-resolved once by the unchanged
+  =strict_resolve=, on a term in which a cited instance is a stub of
+  leaves - an open site if one remains, the captured variables still free,
+  the decision flag. Strict edges are collected across stubs; only a
+  closed, decided subterm is written out (=adopt= replays it). Changes to
+  existing code: a hook and a source kind on the compiler's citation
+  branch, =edges=False= for =strict_resolve=.
+  /Evidence:/ against =compile_issue(unfold(...))= on all 226 statements
+  of the 52 loadable scripts: edges (up to names), default markers, nodes
+  and labellings equal on 226; edge names and order identical on 215, the
+  other 11 being renamed copies only the unfolded term has (=attack_arg_2*=
+  beside =attack_arg*=, fallback names with later numbers). Same on 60
+  random documents with cycles and captures under grounded and complete,
+  and on Peirce's strict edges including their closed terms.
+  tests/test_share.py (197 tests in all); suite 1329 passed. A test makes
+  =unfold= raise and runs =label= and =graph= on a 12-level doubled chain.
+  =label=, single runs, type check per definition: doubled chain 10 levels
+  1.2 s (105 s at the start, 5.8 s after stage 2), 20 levels 1.7 s, 30
+  levels 2.4 s; plain chain 50 arguments 2.2 s and 100 arguments 5.0 s
+  (RecursionError from 50 before). At 150 the compiler's own recursion
+  along the chain hits the limit and the command is refused with one line
+  ([[id:aida-deep-term-recursion]]). On the small fixtures the instance
+  path is slightly slower than compiling the unfolded term (3.3 s vs 2.7 s
+  over the sweep). If the instance compiler raises anything unexpected the
+  CLI warns and compiles the unfolded term.
 - [ ] 4. Evaluation expands a citation only inside a wing it keeps.
 - [ ] 5. Benchmarks before and after, recorded here.
 
@@ -3013,6 +3042,13 @@ Every visitor (compile =walk=, unfold =walk=, =_subst=, =_restore_scion=,
 the presentation visitors) recurses in Python. Options: iterative
 traversals and copying, or running the pipeline in a thread with a large
 stack and a raised recursion limit as a stopgap.
+
+2026-10-01, after [[id:aida-shared-subarguments]] stage 3: =label= and
+=graph= no longer build the unfolded term, so a chain of 100 arguments
+labels (5.0 s); at 150 =core/dc/instances.py= itself runs out of stack,
+since compiling an instance compiles the instances it cites by recursion,
+and the command is refused with one line instead of a traceback.
+=evaluate= still unfolds and keeps the old limit.
 
 ** BACKLOG Lift the prover transport's line-length and timeout limits
 :PROPERTIES:

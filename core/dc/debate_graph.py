@@ -806,6 +806,10 @@ class _Compiler:
         self.strict_kinds = {**BUILTIN_LEAVES, **dict(strict_kinds or {})}
         self.graph = DebateGraph()
         self._fresh = count(1)
+        #: Called with a citation leaf and the name of the body it stands in,
+        #: before its source is recorded; the issue compiler uses it to
+        #: compile the cited instance in place.
+        self.on_citation = None
 
     def _check_kind(self, declared: str, side: str, edge_name: str) -> None:
         """A declared name on a side must have the kind that side needs."""
@@ -881,7 +885,14 @@ class _Compiler:
                         raise DebateCompileError(
                             f"Edge '{name}': the citation of '{node.name}' has no proposition."
                         )
-                    return _Acc((Source(self.graph.add_node(node.prop), vside, "obligation",
+                    # A citation of a statement's debate (core/dc/instances.py)
+                    # stands where unfolding puts that debate: the cited
+                    # instance's own edges come first (``on_citation``), and
+                    # the source has the kind the site there would have.
+                    if self.on_citation is not None:
+                        self.on_citation(node, name)
+                    return _Acc((Source(self.graph.add_node(node.prop), vside,
+                                        getattr(node, "source_kind", "obligation"),
                                         node.name, spine),))
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:

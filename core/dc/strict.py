@@ -182,17 +182,20 @@ def keep_attack_wing(node, match):
 
 # -- the strict phase ------------------------------------------------------
 
-def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
+def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     """Decide every scaffold strictness decides, bottom-up, and return
     (term', strict_edges): the rewritten term and the strict edges the
     closed subterms containing a decision contribute.  ``trace``, if a
-    list, receives (statement, decision) per decided scaffold.
+    list, receives (statement, decision) per decided scaffold.  With
+    ``edges=False`` only the decisions are made and no edge is collected:
+    the caller resolves one instance of a shared debate and collects
+    across instances itself (core/dc/instances.py).
 
     Works on a copy; the input is not modified.
     """
     strict_names = set(strict_names or ())
     decided = []      # nodes produced by a decision (identity)
-    edges = []
+    collect_edges, edges = edges, []
     verbose = logger.isEnabledFor(logging.DEBUG)
     if verbose:
         from pres.gen import pres_str
@@ -311,7 +314,8 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None):
             if isinstance(child, ProofTerm):
                 collect(child)
 
-    collect(term)
+    if collect_edges:
+        collect(term)
     if verbose:
         from pres.gen import pres_str
         artifact(logger, "strict: the term coming out (scaffolds strictness decided are gone)",

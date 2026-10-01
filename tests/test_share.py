@@ -436,3 +436,154 @@ class TestTypeCheckPerDefinition:
         script.write_text("typecheck off\nlk.\n")
         run(fresh, script)
         assert not fresh.typecheck_enabled        # the switch survives a new document
+
+
+# -- stage 3: the issue graph, one instance of a sub-debate at a time ------------
+
+import re                                                                    # noqa: E402
+
+from core.comp.adf_label import labellings, referenced_statements            # noqa: E402
+from core.dc.debate_graph import declaration_kinds                           # noqa: E402
+from core.dc.instances import IssueResolver, compile_issue_shared            # noqa: E402
+from core.dc.strict import compile_issue                                     # noqa: E402
+
+
+def edge_key(edge):
+    """An edge up to its name: the unfolded term names copies apart
+    (a1_0_2, x.supporter4.attacker19, s3_2*), the shared debate has each
+    edge once."""
+    return (edge.target_key, edge.target_side, edge.strict, edge.role,
+            tuple(sorted((s.key, s.side, s.kind) for s in edge.sources)))
+
+
+def same_graph(doc, statement, strict_names=(), strict_kinds=None, semantics=("grounded",)):
+    """The issue graph from the shared debate against the reference, the
+    graph of the unfolded term: edges, default markers, nodes, labellings."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        reference = compile_issue(unfold(doc, statement), "x", strict_names=strict_names,
+                                  strict_kinds=strict_kinds)
+        shared = compile_issue_shared(share(doc, statement), "x", strict_names=strict_names,
+                                      strict_kinds=strict_kinds)
+        assert {edge_key(e) for e in shared.edges} == {edge_key(e) for e in reference.edges}
+        assert shared.defaults == reference.defaults
+        assert set(shared.nodes) == set(reference.nodes)
+        if len(referenced_statements(reference)) > 10:
+            semantics = ("grounded",)          # the multi-extension solver is slow beyond that
+        for chosen in semantics:
+            assert labellings(shared, chosen) == labellings(reference, chosen), chosen
+    return shared, reference
+
+
+ALL = ("grounded", "complete", "preferred", "stable")
+
+
+class TestIssueGraphFromInstances:
+    @pytest.mark.parametrize("levels", [1, 2, 3, 5])
+    def test_doubled_chain(self, levels):
+        doc, issue = doubled_chain(levels)
+        strict = {f"r{i}_{a}" for i in range(1, levels + 1) for a in range(2)}
+        same_graph(doc, issue, strict, semantics=ALL)
+
+    def test_even_loop(self):
+        strict = {"pRule", "qRule"}
+        doc = compile_document(
+            [("pDef", from_failure("pDef", "P", "pRule", "Q")),
+             ("qDef", from_failure("qDef", "Q", "qRule", "P"))], strict_names=strict)
+        for statement in doc.statements():
+            same_graph(doc, statement, strict, semantics=ALL)
+
+    @pytest.mark.parametrize("seed", range(60))
+    def test_random_documents(self, seed):
+        doc = random_document(seed)
+        strict = {f"ax{n}" for n in range(1, 40)}
+        for statement in doc.statements():
+            same_graph(doc, statement, strict, semantics=("grounded", "complete"))
+
+    @pytest.mark.parametrize("script", SCRIPTS)
+    def test_fixtures(self, fresh, script, capsys):
+        run(fresh, script, stop_marker=False)
+        doc = fresh.document
+        names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+        for statement in doc.statements():
+            same_graph(doc, statement, names, kinds, semantics=("grounded", "complete", "stable"))
+
+    def test_peirce_gets_the_same_strict_edges_with_closed_terms(self, fresh, capsys):
+        run(fresh, "tests/peirces_law.fspy", stop_marker=False)
+        doc = fresh.document
+        names = list(fresh.declarations.keys())
+        found = 0
+        for statement in doc.statements():
+            shared, reference = same_graph(doc, statement, names)
+
+            def strict(graph):
+                return {(re.sub(r"_\d+\*$", "*", e.name), e.target_key, e.target_side,
+                         shape(e.term)) for e in graph.edges if e.role == "strict"}
+
+            assert strict(shared) == strict(reference)
+            found += len(strict(shared))
+        assert found, "Peirce's law has a strict edge the framework misses"
+
+    def test_one_instance_per_statement_where_nothing_is_captured(self):
+        doc, issue = doubled_chain(12)
+        strict = {f"r{i}_{a}" for i in range(1, 13) for a in range(2)}
+        resolver = IssueResolver(share(doc, issue), strict)
+        resolver.compile("x")
+        resolver.strict_edges()
+        # P12 .. P1 have debates; P0 is cited as an instance too (a bare site)
+        assert len(resolver.instances) == 13
+        assert all(not i.captured for i in resolver.instances.values())
+
+    def test_a_capture_makes_its_own_instance(self):
+        # "Q fails" is needed under the hypothesis and continuation of p1
+        # and of p2; what it reaches is captured there, so the instance is
+        # the statement together with those captures - and both sites
+        # share it, the binders' names being parameters.
+        strict = {"ax1", "ax2", "ax3"}
+        doc = compile_document(
+            [("p1", from_failure("p1", "P", "ax1", "Q")),
+             ("p2", from_failure("p2", "P", "ax2", "Q")),
+             ("q", from_failure("q", "Q", "ax3", "P"))], strict_names=strict)
+        issue = (K("P"), "term")
+        resolver = IssueResolver(share(doc, issue), strict)
+        resolver.compile("x")
+        q_fails = [i for i in resolver.instances.values() if i.statement == (K("Q"), "context")]
+        assert len(q_fails) == 1
+        assert q_fails[0].captured == {(K("P"), "context"), (K("Q"), "term")}
+        same_graph(doc, issue, strict, semantics=ALL)
+
+
+class TestLabelDoesNotUnfold:
+    def test_label_and_graph_never_call_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
+        import core.dc.unfold
+
+        def refuse(*_args, **_kwargs):
+            raise AssertionError("label and graph must not unfold the debate")
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(12))
+        run(fresh, script)
+        monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
+        script.write_text("label a12_0\ngraph a12_0\n")
+        with caplog.at_level(logging.INFO):
+            run(fresh, script)
+        labels = [r.getMessage() for r in caplog.records if r.getMessage().strip().endswith(" IN")]
+        assert len(labels) == 13                     # P0 .. P12, all accepted
+
+    def test_a_failure_of_the_instance_compiler_falls_back_to_the_unfolded_term(
+            self, fresh, tmp_path, capsys, caplog, monkeypatch):
+        import core.dc.instances
+
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("no instances today")
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(2))
+        run(fresh, script)
+        monkeypatch.setattr(core.dc.instances, "compile_issue_shared", broken)
+        script.write_text("label a2_0\n")
+        with caplog.at_level(logging.INFO):
+            run(fresh, script)
+        said = [r.getMessage() for r in caplog.records]
+        assert any("compiling the unfolded term instead" in m for m in said)
+        assert len([m for m in said if m.strip().endswith(" IN")]) == 3

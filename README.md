@@ -226,6 +226,18 @@ export FSP_LOGLEVEL=DEBUG
    unfolded term. Out: a rewritten, usually smaller term, plus a strict,
    source-less edge for every closed derivation the framework did not have.
    The issue graph is the framework of phase 4 plus those edges.
+
+   `graph ARG` and `label ARG` need only the issue graph, and get it without
+   building the unfolded term. The debate is kept as one definition per
+   statement (see `debate ARG`), and phases 4 and 5 run on one *instance* of
+   a sub-debate at a time: a statement together with the statements captured
+   and cut in it, which is all that the copy of that sub-debate at a site
+   depends on. Each instance is compiled and strictness-resolved once; a
+   cited instance shows the scaffolds around it only whether a site is still
+   open in it, which captured variables are still free in it, and whether a
+   decision was made inside. The result is the graph the unfolded term gives
+   (edges, default markers, labellings), with each edge once where the term
+   has a copy per path. `evaluate ARG` still builds the unfolded term.
 6. **label** — compile one acceptance condition per statement and ask the
    adf-bdd solver for the labellings of the chosen semantics. In: the issue
    graph. Out: conditions, and a numbered list of labellings, each mapping
