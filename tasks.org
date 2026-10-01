@@ -2655,10 +2655,26 @@ is independent:
 - [ ] /Earley parsing./ Right-nested implications parse in quadratic time
   (203 ms at 2.4 kB); proof terms parse linearly but at ~35 us/char.
   Consider an unambiguous LALR grammar for the category-neutral identifier.
+- [ ] /Scion recompilation in evaluation./ =resolve_scaffolds=
+  (core/comp/evaluate.py) calls =scion_record= once per scaffold, and each
+  call recompiles the whole nested scion with a fresh =_Compiler=, so a
+  chain of n scaffolds does about n^2/2 body compilations, each re-parsing
+  its propositions. Measured 2026-10-01 with =evaluate ... skeptical= on
+  chains of 10 / 20 / 30 arguments: =resolve_scaffolds= takes 0.20 / 0.74 /
+  1.72 s of 1.4 / 2.8 / 5.2 s; at 30 arguments that is 527 =compile_body=
+  calls for 30 scaffolds, and 3.4 s of the run is Earley parsing (4367
+  parses). Compute each scion's record once - bottom-up in one pass, or
+  memoised on the scion node and the binders in scope - and reuse the
+  records the compiler already produced for the issue's graph.
 - [ ] /Reduction./ =_subst= (core/comp/reduce.py) deep-copies each node
   and then recurses into the copy, O(n x depth) per substitution;
   =normalize_strong= rescans from the root every step under a fixed fuel
-  of 2000 steps, which caps the size of debate it can evaluate.
+  of 2000 steps, which caps the size of debate it can evaluate. Low
+  priority as measured 2026-10-01: normalisation is about 1% of
+  =evaluate= on chains (0.07 s of 5.2 s at 30 arguments). If it comes to
+  matter, the techniques of Ebner's LKt normaliser apply (free-variable
+  sets on terms so affine binders are skipped, big-step evaluation); see
+  [[file:pure-and-fellowship-notes.org]].
 - [ ] /Global labelling./ One adf-bdd call over the whole graph is
   quadratic on the measured graphs and times out after 120 s (~90k
   statements extrapolated). Label the reachable subgraph of the issue;
