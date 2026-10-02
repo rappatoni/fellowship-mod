@@ -3279,3 +3279,44 @@ first is the smallest and removes =spelling_clashes= as a concept.
 
 Distinct from the negation bridge of [[id:aida-strict-layer]], which
 links the node =~K= to the contrary side of the node K.
+
+** DONE Keep the unfolder's own binder names apart from the arguments'
+CLOSED: [2026-10-02 Fri]
+:PROPERTIES:
+:ID:             aida-unfold-wiring-names
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        A debate in which an argument has a binder named like one the unfolder generates (alt1, b2, x3) unfolds to a term with distinct binder names, which Fellowship replays.
+:VERIFY:         tests/test_unfold.py::TestWiringNamesDoNotClash passes and fails on the unfolder before the change; the suite passes with no other test changed.
+:END:
+
+Found 2026-10-02 when the sharing work was merged. =Unfolder= renamed an
+argument's binders on reuse (=fresh=, against =_used=) but took the names
+of its scaffold binders - =alt{n}=, =b{n}=, =x{n}= - straight from
+counters. An argument with a binder of such a name gave a term with that
+name twice, nested, and the replay was refused: "A symbol named alt1 is
+already defined". The author's working copy of
+tests/rationality/even_loop_lk.fspy registers a term pasted from an
+earlier unfolding, which has exactly those binders. The term is
+well-typed; only the names clash.
+
+It surfaced as a disagreement between the two type checks
+([[id:aida-shared-subarguments]], stage 2): the per-definition check
+accepted the debate, the expanded one refused it, because the two =alt1=
+sit in different definitions and the shared route's own expansion renames
+every binder on reuse.
+
+Fix: =Unfolder._wiring= takes the next name of the series that =_used=
+does not hold and records it, so =fresh= renames the argument's binder
+when its body is walked. Output is unchanged where nothing clashed.
+Evidence: the two new tests fail before (=['alt1', 'b3', 'pArg',
+'alt1']=) and pass after; suite 1388 passed, no existing test touched.
+This is the one change to =unfold= since it became the reference for the
+shared route; the differential tests of that task still pass against it.

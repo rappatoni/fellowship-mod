@@ -337,3 +337,62 @@ def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
     assert _contains(nf, lambda n: isinstance(n, DI) and n.name == "qa")       # argA carries it
     assert _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "Q")     # from presumed Q
     assert not _contains(nf, lambda n: isinstance(n, Deleg) and n.prop == "A")
+
+
+# ---------------------------------------------------------------------------
+# The unfolder's own binders against the arguments' binders
+# ---------------------------------------------------------------------------
+
+def binder_list(node):
+    """Every binder name of a term, with repetitions, affine ones left out."""
+    out = []
+
+    def walk(n):
+        if n is None or not hasattr(n, "__dict__"):
+            return
+        if isinstance(n, Mu):
+            out.append(n.id.name)
+        elif isinstance(n, Mutilde):
+            out.append(n.di.name)
+        elif isinstance(n, Lamda):
+            out.append(n.di.di.name)
+        for slot in ("term", "context"):
+            walk(getattr(n, slot, None))
+
+    walk(node)
+    return [name for name in out if name != "_"]
+
+
+class TestWiringNamesDoNotClash:
+    """The unfolder names its scaffold binders alt1, b2, x3, ... .  An
+    argument can have a binder of the same name - one whose term was pasted
+    from an earlier unfolding has - and Fellowship's replay refuses a name
+    introduced twice (found 2026-10-02 on a working copy of
+    tests/rationality/even_loop_lk.fspy that registered such a term)."""
+
+    def test_an_argument_binder_named_like_a_scaffold_binder_is_renamed(self):
+        body = eta("pArg", "P", Mu(ID("alt1", "P"), "P", DI("pRule", "Q->P"),
+                                   Cons(Goal("1", "Q"), ID("alt1", "P"))))
+        doc = document(("pArg", body))
+        term = unfold(doc, (K("P"), "term"))
+        names = binder_list(term)
+        assert len(names) == len(set(names)), names
+        # the scaffold keeps its name, the argument's binder gives way
+        assert names[0] == "alt1" and "alt1_2" in names
+
+    def test_such_a_debate_replays_through_fellowship(self, prover, tmp_path):
+        script = tmp_path / "wiring.fspy"
+        script.write_text("\n".join([
+            "lk.", "declare P, Q : bool.", "declare r : (Q -> P).",
+            "start argument p P", "cut (Q -> P) alt1.", "axiom r.", "elim.", "next.", "axiom.",
+            "end argument", ""]))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            execute_script(prover, str(script), strict=True, stop_on_error=True, isolate=False)
+        doc = prover.document
+        issue = (K("P"), "term")
+        term = unfold(doc, issue)
+        assert "alt1" in binder_list(prover.get_argument("p").body)
+        names = binder_list(term)
+        assert len(names) == len(set(names)), names
+        typecheck(prover, term, "check", "P", False)          # refused before the fix

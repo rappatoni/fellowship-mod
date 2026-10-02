@@ -119,8 +119,23 @@ class Unfolder:
         prop = self._prop(key)
         return DI(name, prop) if side == "term" else ID(name, prop)
 
+    def _wiring(self, stem, counter):
+        """A name for a binder the unfolder itself introduces (a scaffold's
+        catch variable, its inner binder, an eta wrapper): the next one of
+        its series that no binder of the term has, recorded like the names
+        of the arguments' own binders.  An argument may well have a binder
+        called ``alt1`` - a term pasted from an earlier unfolding has - and
+        Fellowship's replay refuses a name introduced twice; taking the
+        name here makes ``fresh`` rename that binder when its body is
+        walked."""
+        while True:
+            name = f"{stem}{next(counter)}"
+            if name not in self._used:
+                self._used.add(name)
+                return name
+
     def _fresh_alt(self):
-        return f"alt{next(self._alts)}"
+        return self._wiring("alt", self._alts)
 
     # -- scaffolds ----------------------------------------------------------
 
@@ -129,7 +144,7 @@ class Unfolder:
     def _support(self, statement, orig, scion, alt):
         key, side = statement
         prop = self._prop(key)
-        beta = f"b{next(self._sites)}"
+        beta = self._wiring("b", self._sites)
         if side == "term":
             return Mu(ID(alt, prop), prop, orig,
                       Mutilde(DI(beta, prop), prop,
@@ -144,7 +159,7 @@ class Unfolder:
     def _attack(self, statement, orig, scion, alt):
         key, side = statement
         prop = self._prop(key)
-        beta = f"b{next(self._sites)}"
+        beta = self._wiring("b", self._sites)
         if side == "term":
             return Mu(ID(alt, prop), prop, orig,
                       Mutilde(DI(beta, prop), prop,
@@ -171,7 +186,7 @@ class Unfolder:
             # the term-first pipeline can read the issue off the root
             key, side = issue
             prop = self._prop(key)
-            name = f"x{next(self._sites)}"
+            name = self._wiring("x", self._sites)
             term = (Mu(ID(name, prop), prop, term, ID(name, prop)) if side == "term"
                     else Mutilde(DI(name, prop), prop, DI(name, prop), term))
         return term
@@ -240,7 +255,7 @@ class Unfolder:
         key, side = statement
         prop = self._prop(key)
         inner = self._site(statement)
-        name = f"x{next(self._sites)}"
+        name = self._wiring("x", self._sites)
         if side == "term":
             return Mu(ID(name, prop), prop, inner, ID(name, prop))
         return Mutilde(DI(name, prop), prop, DI(name, prop), inner)
