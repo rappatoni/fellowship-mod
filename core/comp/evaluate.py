@@ -99,9 +99,11 @@ from core.comp.oracle_terms import (
     normalize_strong, classify_nf, _occurs, check_conservativity,
 )
 from core.dc.debate_graph import (
-    DebateGraph, canonical_prop, compile_debate, _match_scaffold,
+    DebateGraph, canonical_prop, compile_debate, _match_scaffold, Match,
     DebateCompileError, binder_statements, scion_record,
 )
+from core.dc.cite import binder_names
+from core.dc.instances import IssueResolver, Stub, issue_graph
 from core.logging_util import TRACE, artifact
 from core.dc.strict import (
     strict_resolve, compile_issue,
@@ -183,7 +185,7 @@ def derivation_status(records, labels) -> str:
 
 
 def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
-                      trace=None) -> ProofTerm:
+                      trace=None, stubs=None) -> ProofTerm:
     """Replace every scaffold by its sigma-chosen wing, innermost-last.
 
     ``mode`` is the TIEBREAK for statements ``labels`` leaves UNDEC; the
@@ -191,18 +193,33 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
     ``strict_names`` lets the matcher recognise the primitive contrariness
     term.  ``trace``, if a list, receives (statement, label) for every
     scaffold consulted - tests use it to check that under a two-valued
-    witness no tiebreak was needed."""
+    witness no tiebreak was needed.
+
+    ``stubs`` (an ``IssueResolver``, core/dc/instances.py) makes this work
+    on the strict-resolved root of a shared debate: a stub stands for a
+    resolved instance of a sub-debate and is written out, one level, only
+    when the walk reaches it - that is, only inside a wing it keeps.  To
+    decide a scaffold the scion is read as the compiler reads it, a stub
+    being a source of its statement (``IssueResolver.for_record``)."""
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     strict_names = set(strict_names or ())
+    used = binder_names(body) if stubs is not None else None
 
     def walk(node, env):
+        if stubs is not None and isinstance(node, Stub):
+            return walk(stubs.open(node, used), env)
         if not isinstance(node, ProofTerm):
             return node
         match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
-            records = scion_record(match, env, strict_names)
+            if stubs is not None:
+                read = Match(role, site_side, prop, orig, stubs.for_record(scion_raw), alt, scion_kind)
+                read.legacy = match.legacy
+                records = scion_record(read, env, strict_names)
+            else:
+                records = scion_record(match, env, strict_names)
             statement = (records[0].target_key, records[0].target_side)
             if labels.get(statement) is None:
                 raise EvaluationRefused(
@@ -428,4 +445,121 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
                  pres_str(resolved))
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
+    return normal_form
+
+
+# ---------------------------------------------------------------------------
+# Evaluation from the shared debate (tasks.org, aida-shared-subarguments,
+# stage 4): the same pipeline without unfolding the debate first.
+# ---------------------------------------------------------------------------
+
+def evaluate_shared(
+    shared,
+    name: str,
+    *,
+    strict_names=None,
+    strict_kinds=None,
+    mode: str = "skeptical",
+    base: str = "cbn",
+    semantics: str = "preferred",
+    witness=None,
+):
+    """``evaluate_debate`` for a ``SharedDebate`` (core/dc/share.py): what
+    ``evaluate_debate(shared.expand(), ...)`` returns, up to the names of
+    binders and sites, without building the expanded term.
+
+    The issue graph and the strict phase are computed one instance of a
+    sub-debate at a time (core/dc/instances.py); sigma then decides the
+    scaffolds strictness delayed, top-down from the issue, and a cited
+    sub-debate is written out only inside a wing that is kept.  What is
+    normalised is therefore the resolved term, whose size is that of the
+    answer, not of the debate.  ``evaluate_debate`` on the unfolded term is
+    the reference this is tested against.
+    """
+    resolver = IssueResolver(shared, strict_names, strict_kinds)
+    graph = issue_graph(resolver, name)
+    issue = shared.issue
+    logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
+                 name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
+    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
+    normal_form = _evaluate_shared_under(resolver, name, sigma, tiebreak, base)
+    nf_class = classify_nf(normal_form)
+    logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
+                 _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
+    return normal_form, nf_class, sigma, graph
+
+
+def evaluate_witnesses_shared(
+    shared,
+    name: str,
+    *,
+    strict_names=None,
+    strict_kinds=None,
+    base: str = "cbn",
+    semantics: str = "preferred",
+):
+    """``evaluate_witnesses`` for a ``SharedDebate``: credulous evaluation
+    under every accepting witness.  The instances are resolved by
+    strictness once and shared by all witnesses."""
+    resolver = IssueResolver(shared, strict_names, strict_kinds)
+    graph = issue_graph(resolver, name)
+    results = []
+    for number, sigma in accepting_witnesses(graph, shared.issue, semantics):
+        nf = _evaluate_shared_under(resolver, name, sigma, "credulous", base)
+        results.append((number, nf, classify_nf(nf), sigma))
+    return results, graph
+
+
+def _renumber_sites(node, numbers=None):
+    """Give the open sites of a term distinct numbers, in reading order: a
+    sub-debate written out in two places brings the same sites twice."""
+    numbers = iter(range(1, 1 << 30)) if numbers is None else numbers
+    if not isinstance(node, ProofTerm):
+        return node
+    if hasattr(node, "number") and not hasattr(node, "term"):
+        node.number = f"u{next(numbers)}"
+        return node
+    for slot in ("term", "context"):
+        _renumber_sites(getattr(node, slot, None), numbers)
+    return node
+
+
+def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
+    """The paper's two phases on the shared debate: strictness has decided
+    each instance (``IssueResolver.resolve``), sigma decides what it
+    delayed, opening a cited instance only where it is kept."""
+    shared, strict_names = resolver.shared, resolver.strict_names
+    verbose = logger.isEnabledFor(logging.DEBUG)
+    if verbose:
+        artifact(logger, "evaluate: the term going in", shared.to_text())
+        artifact(logger, "evaluate: the witness labelling sigma",
+                 "  ".join(f"{_show(st)}={v}" for st, v in sigma.items()) or "empty")
+    # Phase 1: strictness, per instance and memoised (the issue graph above
+    # already needed it, so nothing is resolved twice).
+    strict_body = resolver.resolve(resolver.root()).resolved
+    if not isinstance(strict_body, (Mu, Mutilde)) and hasattr(strict_body, "number"):
+        # A bare site: the eta wrapper every argument has, as unfolding
+        # gives the issue (core/dc/unfold.py), so the issue reads off the root.
+        key, side = shared.issue
+        prop = shared.graph.nodes.get(key, key)
+        strict_body = (Mu(ID("x1", prop), prop, strict_body, ID("x1", prop)) if side == "term"
+                       else Mutilde(DI("x1", prop), prop, DI("x1", prop), strict_body))
+    # Phase 2: sigma decides what strictness delayed.
+    sigma_trace = []
+    resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
+                                 trace=sigma_trace, stubs=resolver)
+    resolved = _renumber_sites(resolved)
+    logger.debug("evaluate: '%s' - %d scaffold(s) decided by strictness over %d instance(s), "
+                 "%d by sigma (%s tiebreak, base %s)",
+                 name, len(resolver.decisions()), len(resolver.instances), len(sigma_trace),
+                 tiebreak, base)
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "evaluate: the term after both phases, going into normalisation",
+                 pres_str(resolved))
+    normal_form = normalize_strong(resolved, strategy=base)
+    # The debate of an issue always holds the issue's own site, so the
+    # postcondition is vacuous here, as it is for the unfolded term.
+    check_conservativity(shared.skeleton(shared.issue), normal_form,
+                         operation=f"evaluate_shared('{name}')")
     return normal_form

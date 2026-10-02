@@ -1178,6 +1178,10 @@ is in what the conditions omit). The strict derivations relating a
 refutation of K to a proof of K->false exist in the calculus; the bridge
 edges are an instance of the same strict-layer work.
 
+Not covered here: the one node that =~K= and =K->false= share has two
+spellings in the /term/, and Fellowship tells them apart when an unfolded
+debate is replayed. See [[id:aida-negation-spelling-in-unfolding]].
+
 The married-bachelor fixture passes only because its strict bridge is
 built by hand with =kind="assumption"= sources, which no compiled term
 can produce. Related: =aida-strict-refutation-edges= (declared
@@ -2539,7 +2543,7 @@ stability, so Peirce is the critical witness rather than the proof.
   DAGs or certificates, cache checks by term and environment hash, and verify
   only the new composition boundary where the calculus permits it.
 
-** BACKLOG Share subarguments by name instead of repeating them
+** REVIEW Share subarguments by name instead of repeating them
 :PROPERTIES:
 :ID:             aida-shared-subarguments
 :AREA:           phd
@@ -2567,22 +2571,178 @@ time), and the compiler compiles it again. =DebateGraph.to_text= has the
 same defect (it expands shared subgraphs; only runs at DEBUG).
 
 Author, 2026-10-01: wherever possible subarguments should be named and
-cited instead of repeated - also for legibility. Design open; questions
-for the discussion:
+cited instead of repeated - also for legibility. Decisions of that date:
 
-- the unit of sharing: one named debate per statement (key, side), whose
-  supporter and attacker bodies cite the debates of their own sites, so
-  the shared form is the document graph written as mutually citing terms;
-- transparent (delta-unfoldable) names versus a let-cut =<t || mu~x.c>=,
-  which is the calculus's own sharing construct but adds a critical pair
-  whose resolution is the CBN/CBV choice;
-- capture: a sub-debate under a binder that captures one of its reachable
-  statements differs from the same statement elsewhere, so the sharing key
-  is the statement plus the captures and spine entries it can reach;
-- whether compilation of a citation (an obligation source on the cited
-  conclusion) already yields the same graph, and how the type check,
-  resolve_scaffolds and normalisation treat a citation of a defeasible
-  sub-debate: per definition and memoised, or by expansion.
+1. /Transparent names./ A named sub-debate means its expansion; nothing new
+   enters the calculus. A let-cut =<t || mu~x.c>= was rejected: it is a
+   critical pair between a mu-headed debate and mu~, so CBN duplicates
+   again at the first step and CBV makes the sub-debate's scaffolds throw
+   to the whole host.
+2. /One debate per statement/ (canonical proposition and side).
+3. /A name is shown from the second occurrence only;/ a sub-debate used
+   once stays inline.
+4. /Capture does not force inlining./ A citation carries what the citing
+   context does to the cited debate: =d[alpha -> !:A, B:?]= reads "d, with
+   alpha capturing its delegation of A and its obligation B left open".
+   Markers as the printer has them (=?:A= / =!:A= term side, =A:?= / =A:!=
+   context side). A capture can hit any statement the sub-debate reaches,
+   not only a leaf site (the even loop: "P fails" inside Qdefault becomes
+   =rule=).
+5. /No per-definition evaluation./ "Normalise the definition, then plug in"
+   is false: strictness is read off the concrete term (core/dc/strict.py -
+   a wing is strict iff it has no open site, and a captured site is a
+   variable), so one sub-debate is decided differently under different
+   captures. What may be memoised is an /instance/: a statement with the
+   set of statements captured and cut in it.
+6. /Names:/ the registered argument or debate whose issue is the statement
+   if there is exactly one, else =anon_1 ... anon_n= (prefix reserved); the
+   proposition is not repeated in the name. To be revisited; see
+   [[id:aida-cli-inventory-and-naming]].
+
+Stages, each gated by a differential test against the untouched =unfold=
+(plan approved 2026-10-01):
+
+- [X] 1. Shared form, expansion, display (=core/dc/share.py=, =debate NAME=):
+  =expand(shared)= is alpha-equal to =unfold=. Legibility only; the
+  pipeline still runs on =unfold=. Done 2026-10-01: tests/test_share.py
+  (92 tests) - hand-built doubled chains and the even loop, 60 random
+  documents with cycles and captures, every statement of 15 fixtures; a
+  sweep over all 52 loadable .fspy scripts compared 568 statements with
+  0 mismatches. On the doubled chain the shared form grows by two
+  definitions per level while the term doubles. Suite 1224 passed.
+  Deviation from the plan: the pipeline keeps calling =unfold= rather
+  than =expand=, because the two choose fresh binder names in a different
+  order and tests pin printed normal forms; the switch belongs to the
+  stages that consume the shared form.
+- [X] 2. Type check once per definition. Done 2026-10-01:
+  =typecheck_shared= replays each definition's skeleton (citations as open
+  sites) and remembers what replayed in the document; =typecheck expanded=
+  / =FSP_TYPECHECK=expanded= keeps the old check. Both checks agree on all
+  215 statements of the 47 loadable lk scripts (185 accepted, 30 rejected
+  by both) and on a deliberately ill-typed argument. =label= on the doubled
+  chain, single runs: 6 levels 1.0 s vs 3.4 s expanded, 8 levels 2.0 s vs
+  18.8 s, 10 levels 5.8 s vs 165 s (expanded then refused: pexpect
+  timeout); labels identical where both complete. The per-definition time
+  equals the time with the check off, so what remains is unfold, compile
+  and the strict phase on the unfolded term (stage 3). Without the memo
+  the per-definition check is slightly slower on small fixtures (13.1 s vs
+  10.4 s over the sweep): several small replays instead of one.
+  /Soundness gap found and closed:/ the graph identifies =~A= with
+  =A -> false=, Fellowship does not, and the join of two spellings at a
+  citation is in no skeleton - the per-definition check alone accepted a
+  debate the expanded replay refuses. =SharedDebate.spelling_clashes=
+  detects a statement spelled two ways and the CLI then replays the
+  expanded term, as before. No fixture needs the fallback.
+  tests/test_share.py::TestTypeCheckPerDefinition (20 tests); suite 1244
+  passed.
+- [X] 3. Issue graph and strict phase per instance, without expansion;
+  =graph= and =label= stop expanding. Done 2026-10-01:
+  =core/dc/instances.py=. An instance is (statement, captured statements,
+  cut statements), restricted to what the statement reaches; each is
+  compiled once (a citation leaf is a source of the cited statement, and
+  meeting it compiles the cited instance in place, so edges keep the order
+  of the unfolded term) and strictness-resolved once by the unchanged
+  =strict_resolve=, on a term in which a cited instance is a stub of
+  leaves - an open site if one remains, the captured variables still free,
+  the decision flag. Strict edges are collected across stubs; only a
+  closed, decided subterm is written out (=adopt= replays it). Changes to
+  existing code: a hook and a source kind on the compiler's citation
+  branch, =edges=False= for =strict_resolve=.
+  /Evidence:/ against =compile_issue(unfold(...))= on all 226 statements
+  of the 52 loadable scripts: edges (up to names), default markers, nodes
+  and labellings equal on 226; edge names and order identical on 215, the
+  other 11 being renamed copies only the unfolded term has (=attack_arg_2*=
+  beside =attack_arg*=, fallback names with later numbers). Same on 60
+  random documents with cycles and captures under grounded and complete,
+  and on Peirce's strict edges including their closed terms.
+  tests/test_share.py (197 tests in all); suite 1329 passed. A test makes
+  =unfold= raise and runs =label= and =graph= on a 12-level doubled chain.
+  =label=, single runs, type check per definition: doubled chain 10 levels
+  1.2 s (105 s at the start, 5.8 s after stage 2), 20 levels 1.7 s, 30
+  levels 2.4 s; plain chain 50 arguments 2.2 s and 100 arguments 5.0 s
+  (RecursionError from 50 before). At 150 the compiler's own recursion
+  along the chain hits the limit and the command is refused with one line
+  ([[id:aida-deep-term-recursion]]). On the small fixtures the instance
+  path is slightly slower than compiling the unfolded term (3.3 s vs 2.7 s
+  over the sweep). If the instance compiler raises anything unexpected the
+  CLI warns and compiles the unfolded term.
+- [X] 4. Evaluation expands a citation only inside a wing it keeps. Done
+  2026-10-01: =evaluate_shared= / =evaluate_witnesses_shared=
+  (core/comp/evaluate.py). The strict phase is the per-instance one of
+  stage 3; =resolve_scaffolds= gained =stubs==: it opens a stub one level
+  when the walk reaches it, and to decide a scaffold reads the scion as
+  the compiler does - a stub is a source of its statement where the
+  resolved instance still has its own site as innermost original
+  (=IssueResolver.reads_as_its_site=), and is opened otherwise. Sites are
+  renumbered afterwards, since a sub-debate kept twice brings its sites
+  twice. =evaluate= in the CLI uses it; =evaluate_debate= is unchanged.
+  /Evidence:/ against =evaluate_debate(unfold(...))= on every statement of
+  the 52 loadable scripts, both modes, both base strategies, grounded and
+  (up to 10 statements) preferred and stable: 2640 evaluations, 2640
+  agree in class, normal form up to names and site numbers, and sigma (20
+  refused by both). Same on 30 random documents, the even loop, and all
+  accepting witnesses. A test makes =unfold= raise and runs =evaluate= on
+  a 12-level doubled chain. Suite 1386 passed (253 in tests/test_share.py).
+  One existing expectation changed: tests/test_pipeline_logging.py asked
+  for an artifact "unfolded from the document"; phase 2 now hands over
+  "the debate as named sub-debates", and a new test checks that =pipeline
+  unfolded= still hands over the unfolded term.
+- [X] 5. Benchmarks before and after, recorded here. Single runs, type
+  check per definition, =evaluate ARG skeptical grounded= and =label ARG=:
+
+  | document                 | at the start       | now, shared | now, =pipeline unfolded= |
+  |--------------------------+--------------------+-------------+--------------------------|
+  | doubled chain 8, label   | 16.6 s             | 0.9 s       | -                        |
+  | doubled chain 10, label  | 105 s              | 1.2 s       | -                        |
+  | doubled chain 30, label  | -                  | 2.4 s       | -                        |
+  | doubled chain 8, eval    | -                  | 0.9 s       | 2.9 s                    |
+  | doubled chain 10, eval   | -                  | 1.1 s       | 9.0 s                    |
+  | doubled chain 12, eval   | -                  | 1.2 s       | 40.9 s                   |
+  | doubled chain 30, eval   | -                  | 2.8 s       | -                        |
+  | chain 40, eval           | -                  | 2.0 s       | 3.0 s                    |
+  | chain 50, label          | RecursionError     | 2.2 s       | -                        |
+  | chain 100, label         | RecursionError     | 5.0 s       | -                        |
+  | chain 80, eval           | -                  | 4.2 s       | -                        |
+
+  Verdicts and labels are identical wherever both routes ran. Growth on
+  the doubled chain is linear in the number of levels up to 30, the task's
+  VERIFY. Limits that remain: =label= is refused at a chain of 150 and
+  =evaluate= at 90, by recursion depth ([[id:aida-deep-term-recursion]]);
+  the multi-extension semantics are as slow as before
+  ([[id:aida-multi-extension-labelling-cost]]), which is why the timings
+  use grounded; on small debates the shared route is on a par with the
+  unfolded one, not faster. The scripts are throwaway
+  ([[id:aida-scaling-benchmarks]]).
+
+=pipeline unfolded= / =FSP_PIPELINE=unfolded= runs graph, label and evaluate
+on the unfolded term, the reference; =typecheck expanded= does the same
+for the type check. Open after this task: naming and listing from the CLI
+([[id:aida-cli-inventory-and-naming]]), and the shared route falls back to
+the unfolded one with a warning if it ever raises unexpectedly, which
+should be removed once it has seen real documents.
+
+** BACKLOG List what a document holds and name anonymous sub-debates from the CLI
+:PROPERTIES:
+:ID:             aida-cli-inventory-and-naming
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The CLI lists everything a document has recorded - declarations with their kinds, statements with whether they are proved, arguments and debates with their conclusions and strictness, and the named and anonymous sub-debates of the shared form - and a command gives an anonymous sub-debate a name that later output uses.
+:VERIFY:         On tests/statements_and_citations.fspy the listing commands print every declaration, statement and argument of the file, in script and in interactive mode; after =name anon_1 as NAME= the =debate= output cites NAME; naming to a taken name raises NameClash; tests cover both paths.
+:END:
+
+Asked for by the author, 2026-10-01, with [[id:aida-shared-subarguments]]:
+the wrapper holds one registry (=prover.names=, =prover.arguments=,
+=prover.declarations=) and nothing shows it. Anonymous names (=anon_k=)
+are a stopgap the author expects to change, so the naming command should
+go through =claim_name= and keep the statement-to-name table in
+=store.document=.
 
 ** BACKLOG Commit scaling fixtures and a benchmark harness
 :PROPERTIES:
@@ -2935,6 +3095,15 @@ the presentation visitors) recurses in Python. Options: iterative
 traversals and copying, or running the pipeline in a thread with a large
 stack and a raised recursion limit as a stopgap.
 
+2026-10-01, after [[id:aida-shared-subarguments]] stage 3: =label= and
+=graph= no longer build the unfolded term, so a chain of 100 arguments
+labels (5.0 s); at 150 =core/dc/instances.py= itself runs out of stack,
+since compiling an instance compiles the instances it cites by recursion,
+and the command is refused with one line instead of a traceback.
+After stage 4 =evaluate= does not unfold either: it evaluates a chain of
+80 arguments (4.2 s) and is refused, again with one line, at 90, where
+the answer itself is too deep for the recursive walks.
+
 ** BACKLOG Lift the prover transport's line-length and timeout limits
 :PROPERTIES:
 :ID:             aida-transport-limits
@@ -3062,3 +3231,51 @@ day, not implemented or tested:
   against the paper before fixtures are refused.
 - Fixtures that are classical as single arguments today have not been
   surveyed.
+
+** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
+:PROPERTIES:
+:ID:             aida-negation-spelling-in-unfolding
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A debate in which one argument needs =~Q= and another derives =Q -> false= (or the reverse) unfolds to a term Fellowship accepts, so =graph=, =label= and =evaluate= are not refused for it; the per-definition type check no longer needs its fallback to the expanded term.
+:VERIFY:         The fixture of tests/test_share.py::TestTypeCheckPerDefinition::test_two_spellings_of_a_statement_fall_back_to_the_expanded_check labels instead of printing "graph: refused"; =SharedDebate.spelling_clashes= is empty for it or the expanded replay accepts it; the same with the spellings swapped and with =-Q=; the suite passes.
+:END:
+
+Found 2026-10-01 while moving the type check to one replay per sub-debate
+([[id:aida-shared-subarguments]], stage 2); the refusal itself is older.
+=canonical_prop= gives =~Q=, =-Q= and =Q->false= one graph node, so the
+debate of that statement is plugged into every site of it. Fellowship
+matches propositions syntactically. With =p= proving P from =r : ~Q -> P=
+and =nq= proving =Q -> false=, the unfolded term holds
+
+: ...<r:~Q->P || mu alt2:Q->false.<?u2:Q->false || ... nq ... || alt2:Q->false> * th:P>...
+
+and the replay goes
+
+: [11] elim                    goal: ~Q
+: [12] cut (Q -> false) alt2   goal: Q->false, conclusions: alt2 : ~Q
+: [17] moxia alt2              REFUSED: This is not trivial. Work some more.
+
+The =cut= succeeds - it takes any formula - but Fellowship names the
+pending goal =alt2 : ~Q=, and the scaffold's throw back to =alt2= with
+=Q->false= active is refused. The scaffold is spelled as the graph node is
+displayed (=Unfolder._support= uses the first-registered spelling);
+spelling it =~Q= only moves the mismatch to where =nq= is plugged in. A
+proof of =Q -> false= stands where a proof of =~Q= is required, with no
+conversion between them.
+
+Options: normalise the spelling when a statement, declaration or
+proposition is registered, so a node has one spelling; have the unfolder
+insert the conversion (an eta-expansion through =elim=) where the
+spellings differ; or make Fellowship match =~A= and =A -> false=. The
+first is the smallest and removes =spelling_clashes= as a concept.
+
+Distinct from the negation bridge of [[id:aida-strict-layer]], which
+links the node =~K= to the contrary side of the node K.

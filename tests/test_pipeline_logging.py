@@ -131,7 +131,7 @@ class TestArtifactsAreReported:
         labels = " | ".join(self.artifacts(caplog))
         for expected in (
             "registered with",                  # 1. the term before unfolding
-            "unfolded from the document",       # 2. the debate term
+            "the debate as named sub-debates",  # 2. the debate, each sub-debate once
             "the term sent", "Fellowship rebuilt",   # 3. both sides of the check
             "argumentation framework",          # 4. the compiled graph
             "the term going in", "the term coming out",   # 5. strict, in and out
@@ -142,6 +142,23 @@ class TestArtifactsAreReported:
             "going into normalisation",         # 8. what is reduced
             "the normal form",
         ):
+            assert expected in labels, f"no artifact labelled {expected!r}"
+
+    def test_the_unfolded_pipeline_hands_over_the_unfolded_term(self, fresh, caplog):
+        # `pipeline unfolded` selects the reference route (tasks.org,
+        # aida-shared-subarguments): phase 2 is then the term unfolded from
+        # the document, and the later phases work on it.
+        caplog.set_level(logging.DEBUG)
+        execute_script(fresh, "tests/rationality/cyclic_undercut.fspy",
+                       strict=False, stop_on_error=False, isolate=False)
+        fresh.pipeline_unfolded = True
+        caplog.clear()
+        from wrap.cli import evaluate_argument_cmd
+        evaluate_argument_cmd(fresh, "d", mode="credulous")
+        labels = " | ".join(self.artifacts(caplog))
+        for expected in ("unfolded from the document", "the term going in",
+                         "the term coming out", "strict edges it contributes",
+                         "going into normalisation", "the normal form"):
             assert expected in labels, f"no artifact labelled {expected!r}"
 
     def test_the_unfolded_term_is_printed_in_full(self, fresh, caplog):

@@ -188,6 +188,16 @@ export FSP_LOGLEVEL=DEBUG
 `evaluate ARG` runs eight phases. Each hands one artifact to the next, and at
 `DEBUG` each prints the artifact it produced.
 
+The phases are described below as they act on the *unfolded* debate term,
+which is what defines them. By default they do not build that term: the
+debate is kept as named sub-debates and each phase works on those (see the
+note after phase 5 and `debate ARG`). `pipeline unfolded` (or
+`FSP_PIPELINE=unfolded`) runs `graph`, `label` and `evaluate` on the unfolded
+term instead, and `pipeline shared` switches back. Both give the same graph,
+labels and normal form, up to the names of binders and the numbers of sites;
+the unfolded route is the reference the shared one is tested against, and
+its cost grows with the number of paths through the document graph.
+
 1. **issue** — read the argument's own registered proof term and its issue, a
    (proposition, side) pair.
 2. **unfold** — build the debate term for that issue out of the *document*
@@ -201,7 +211,14 @@ export FSP_LOGLEVEL=DEBUG
    alpha-equivalence, site numbering and proposition spelling. This is the
    ground truth for the unfolder: if the registered arguments type-check, so
    must their unfolding. On a mismatch the log names the position in the term
-   where the two shapes first differ.
+   where the two shapes first differ. The replay is done one sub-debate at a
+   time: each statement's debate is replayed once, with the sub-debates it
+   cites left as open sites, and not again in the same document. That is as
+   strong as replaying the whole term - what goes into a site has the site's
+   type - unless the debate spells a statement in two ways (`~A` and
+   `A -> false` are one statement but two propositions for Fellowship); then
+   the whole term is replayed. `typecheck expanded` always replays the whole
+   term, whose size grows with the number of paths through the graph.
 4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
    propositions, hyperedges carry a name, a target statement and sources with
    their kinds, and statements get default markers. It is a separate data
@@ -219,6 +236,25 @@ export FSP_LOGLEVEL=DEBUG
    unfolded term. Out: a rewritten, usually smaller term, plus a strict,
    source-less edge for every closed derivation the framework did not have.
    The issue graph is the framework of phase 4 plus those edges.
+
+   `graph ARG` and `label ARG` need only the issue graph, and get it without
+   building the unfolded term. The debate is kept as one definition per
+   statement (see `debate ARG`), and phases 4 and 5 run on one *instance* of
+   a sub-debate at a time: a statement together with the statements captured
+   and cut in it, which is all that the copy of that sub-debate at a site
+   depends on. Each instance is compiled and strictness-resolved once; a
+   cited instance shows the scaffolds around it only whether a site is still
+   open in it, which captured variables are still free in it, and whether a
+   decision was made inside. The result is the graph the unfolded term gives
+   (edges, default markers, labellings), with each edge once where the term
+   has a copy per path.
+
+   `evaluate ARG` goes on from there without unfolding either. In phase 8
+   the witness labelling decides the scaffolds strictness delayed, top-down
+   from the issue, and a cited sub-debate is written out only inside a wing
+   that is kept; a wing that is dropped is never built. What is normalised
+   has the size of the answer, not of the debate. Phase 2's artifact is then
+   the debate as named sub-debates rather than one unfolded term.
 6. **label** — compile one acceptance condition per statement and ask the
    adf-bdd solver for the labellings of the chosen semantics. In: the issue
    graph. Out: conditions, and a numbered list of labellings, each mapping
@@ -341,6 +377,9 @@ detects a machine-mode desynchronization.
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
 - `expand ARG`
   - print ARG's full term, with every cited argument's term grafted in
+- `debate ARG`
+  - print the debate about ARG's issue as named sub-debates: the issue's
+    term, then one `NAME[open sites] := term` line per sub-debate it cites
 
 ### Statements, refinement and citation
 
@@ -374,6 +413,17 @@ everywhere, so it never holds a defeasible argument.
   conclusion, which the cited argument's own edge meets; unfolding expands the
   citation like any obligation. Refine the cited argument and every citer
   follows. `expand ARG` computes the full term on demand.
+- **Sub-debates are shared by name.** The debate about an issue brings in the
+  debate of every statement it reaches. `debate ARG` writes a sub-debate that
+  is needed in two or more places once and cites it by name - the author's
+  name where one argument or debate is about that statement, `anon_1`,
+  `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in
+  place. A citation shows what its site does to the cited debate:
+  `d[alpha -> !:A, B:?]` reads "d, with alpha capturing its delegation of A
+  and its obligation B left open"; the header `d[...] :=` lists the sites the
+  sub-debate rests on. Names are transparent: writing every definition back
+  in gives the term `graph`, `label` and `evaluate` work on, which for now is
+  still what they compute.
 - **Adopting a discovered strict edge.** `graph ARG` can show strict edges,
   named with a trailing star, that the strict phase found in the unfolded
   term. Showing them changes nothing. `adopt s1* as peirce` replays the closed
@@ -381,8 +431,8 @@ everywhere, so it never holds a defeasible argument.
   registers it as the theorem `peirce`.
 - **Names are unique per document.** Sorts, declared axioms, statements and
   arguments share one namespace, checked before anything reaches the prover;
-  `lk.` or `lj.` starts a new one. Names starting with `typecheck_` or
-  `theta_expand_` are reserved for the names the wrapper sends to Fellowship.
+  `lk.` or `lj.` starts a new one. Names starting with `typecheck_`,
+  `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
 - **Sessions start in LK.** Debates are classical, and the prover is switched
   to LK when it starts, so the type check of a debate never runs in LJ by
   accident.
@@ -422,7 +472,9 @@ document` show the document graph itself. Every unfolded term is
 replayed through Fellowship first - the type oracle: if the arguments
 type-check, so must their unfolding - and refused with a one-line
 message if the prover rejects it; `typecheck off` (or `FSP_TYPECHECK=0`)
-skips the replay for production runs. Debates are classical: their
+skips the replay for production runs, and `typecheck expanded` (or
+`FSP_TYPECHECK=expanded`) replays the whole unfolded term instead of one
+sub-debate at a time. Debates are classical: their
 scaffolds throw to a second conclusion, which LJ forbids, so the debate
 commands are refused while the file is in `lj`. Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate

@@ -177,3 +177,58 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
         artifact(logger, "typecheck: the term sent", pres_str(term))
         artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(check.body))
     return check.body
+
+
+def typecheck_shared(prover, shared, name: str, checked=None) -> int:
+    """Type-check a shared debate (core/dc/share.py) one definition at a
+    time: replay each definition's skeleton - its body with every citation
+    left as the open site of the cited statement - instead of the expanded
+    term.  Returns the number of replays.
+
+    Sound because names are transparent and typing is preserved by what
+    expansion does at a citation: it puts there the cited definition's body
+    (a term or context of the statement's type), a variable bound for that
+    statement, or the statement's bare site.  So if every skeleton is
+    well-typed, every expansion is.  The cost is the size of the document
+    graph, not of the unfolded term.
+
+    Precondition: no statement of the debate is spelled in two ways
+    (``shared.spelling_clashes()`` is empty).  The graph identifies ``~A``
+    with ``A -> false``, Fellowship does not, and the join of two spellings
+    at a citation is in no skeleton; the caller replays the expanded term
+    in that case.
+
+    ``checked``, if a dict, maps the skeletons that already replayed in
+    this document to the term Fellowship rebuilt for them, and is updated:
+    declarations only grow, so a skeleton that type-checked once still
+    does.  A skeleton found there is not replayed, but at DEBUG it is still
+    reported with what Fellowship rebuilt then - the phase hands over its
+    artifact either way.
+    """
+    replays = 0
+    for statement, definition in shared.defs.items():
+        if definition.trivial:
+            continue                       # a bare site: nothing to check
+        term = shared.skeleton(statement)
+        key = (statement, shape(term))
+        shown = f"{shared.graph.nodes.get(statement[0], statement[0])}[{statement[1][0]}]"
+        if checked is not None and key in checked:
+            if logger.isEnabledFor(logging.DEBUG):
+                from pres.gen import pres_str
+                logger.debug("typecheck: the debate about %s was replayed earlier in this "
+                             "document; not replayed again", shown)
+                artifact(logger, "typecheck: the term sent", pres_str(term))
+                artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(checked[key]))
+            continue
+        try:
+            rebuilt = typecheck(prover, term, f"{name}_{replays + 1}",
+                                shared.graph.nodes.get(statement[0], statement[0]),
+                                statement[1] == "context")
+        except TypeCheckFailed as e:
+            raise TypeCheckFailed(f"in the debate about {shown}, which '{name}' reaches: {e}") from e
+        replays += 1
+        if checked is not None:
+            checked[key] = rebuilt
+    logger.debug("typecheck: '%s' - %d definition(s) replayed, %d already checked or bare",
+                 name, replays, len(shared.defs) - replays)
+    return replays
