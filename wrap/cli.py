@@ -387,6 +387,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         graph_argument_cmd(prover, parts[1], dot_path, show=show)
                     elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                         set_typecheck_cmd(prover, command)
+                    elif command in ("pipeline shared", "pipeline unfolded"):
+                        set_pipeline_cmd(prover, command)
                     elif command.startswith("label "):
                         _dispatch_label(prover, command)
                     elif command.startswith("evaluate "):
@@ -1038,6 +1040,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 graph_argument_cmd(prover, parts[1], dot_path, show=show)
             elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                 set_typecheck_cmd(prover, command)
+            elif command in ("pipeline shared", "pipeline unfolded"):
+                set_pipeline_cmd(prover, command)
             elif command.startswith("label "):
                 _dispatch_label(prover, command)
             elif command.startswith("evaluate "):
@@ -1746,6 +1750,17 @@ def set_typecheck_cmd(prover: ProverWrapper, command: str) -> None:
                 {"on": "on", "off": "off", "expanded": "on (the expanded term)"}[mode])
 
 
+def set_pipeline_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: `pipeline shared | unfolded`.  `shared` (the default) runs
+    graph, label and evaluate on the debate as named sub-debates, one
+    instance at a time; `unfolded` runs them on the term unfolded from the
+    document graph, the reference the shared pipeline is tested against.
+    Both give the same graph, labels and normal form up to the names of
+    binders and sites."""
+    prover.pipeline_unfolded = command.split()[1] == "unfolded"
+    logger.info("Pipeline: %s", "unfolded term" if prover.pipeline_unfolded else "shared debate")
+
+
 def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
     """CLI: `debate ARG` - the debate about ARG's issue as named
     sub-debates: the issue's term, then one `NAME[open sites] := term`
@@ -1958,9 +1973,11 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     if name == "document":
         _report_onus_conflicts(prover.document)
         return None, prover.document, None
-    arg, issue, term, shared = _issue(prover, name, want_term=False)
+    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
     if term is None and shared is None:
         return arg, None, None
+    if prover.pipeline_unfolded:
+        shared = None                      # `pipeline unfolded`: the reference path
     options = dict(strict_names=prover.declarations.keys(),
                    strict_kinds=declaration_kinds(prover.declarations))
     try:
@@ -2394,15 +2411,40 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     if name == "document":
         logger.error("evaluate needs an argument or debate name; 'document' has no issue.")
         return
-    arg, issue, term = _issue_term(prover, name)
-    if term is None:
+    from core.comp.evaluate import evaluate_shared, evaluate_witnesses_shared
+    from core.dc.unfold import unfold
+
+    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
+    if term is None and shared is None:
         return
+    if prover.pipeline_unfolded:
+        shared = None                      # `pipeline unfolded`: the reference path
     common = dict(strict_names=prover.declarations.keys(),
                   strict_kinds=declaration_kinds(prover.declarations),
                   base=base, semantics=semantics)
+
+    def run(on_shared, on_term, **options):
+        """Evaluate from the shared debate, one instance of a sub-debate at
+        a time (core/dc/instances.py); should that route ever fail other
+        than by a refusal, say so and evaluate the unfolded term, the
+        reference it is tested against."""
+        nonlocal term
+        if shared is not None:
+            try:
+                return on_shared(shared, name, **options)
+            except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported,
+                    AdfBddNotFound, RecursionError):
+                raise
+            except Exception as e:
+                logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
+                               "evaluating the unfolded term instead.", name, type(e).__name__, e)
+        if term is None:
+            term = unfold(prover.document, issue)
+        return on_term(term, name, **options)
+
     try:
         if witness == "all":
-            results, _ = evaluate_witnesses(term, name, **common)
+            results, _ = run(evaluate_witnesses_shared, evaluate_witnesses, **common)
             if not results:
                 logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
                             name, semantics, base)
@@ -2415,12 +2457,18 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 logger.info("      normal form: %s", pretty)
                 arg.labelled_nf = nf
             return
-        nf, nf_class, sigma, graph = evaluate_debate(
-            term, name, mode=mode, witness=witness, **common)
+        nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate,
+                                         mode=mode, witness=witness, **common)
         _remember_strict_edges(graph, name)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)
+        return
+    except RecursionError:
+        # tasks.org, aida-deep-term-recursion: the term walks recurse.
+        print(f"evaluate: refused: the debate about '{name}' is nested too deeply for the "
+              f"evaluator, which follows a chain of sub-debates by recursion.")
+        logger.warning("Evaluation refused for '%s': recursion depth exceeded.", name)
         return
     arg.labelled_nf = nf
     pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres

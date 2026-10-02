@@ -2543,7 +2543,7 @@ stability, so Peirce is the critical witness rather than the proof.
   DAGs or certificates, cache checks by term and environment hash, and verify
   only the new composition boundary where the calculus permits it.
 
-** DOING Share subarguments by name instead of repeating them
+** REVIEW Share subarguments by name instead of repeating them
 :PROPERTIES:
 :ID:             aida-shared-subarguments
 :AREA:           phd
@@ -2666,8 +2666,60 @@ Stages, each gated by a differential test against the untouched =unfold=
   path is slightly slower than compiling the unfolded term (3.3 s vs 2.7 s
   over the sweep). If the instance compiler raises anything unexpected the
   CLI warns and compiles the unfolded term.
-- [ ] 4. Evaluation expands a citation only inside a wing it keeps.
-- [ ] 5. Benchmarks before and after, recorded here.
+- [X] 4. Evaluation expands a citation only inside a wing it keeps. Done
+  2026-10-01: =evaluate_shared= / =evaluate_witnesses_shared=
+  (core/comp/evaluate.py). The strict phase is the per-instance one of
+  stage 3; =resolve_scaffolds= gained =stubs==: it opens a stub one level
+  when the walk reaches it, and to decide a scaffold reads the scion as
+  the compiler does - a stub is a source of its statement where the
+  resolved instance still has its own site as innermost original
+  (=IssueResolver.reads_as_its_site=), and is opened otherwise. Sites are
+  renumbered afterwards, since a sub-debate kept twice brings its sites
+  twice. =evaluate= in the CLI uses it; =evaluate_debate= is unchanged.
+  /Evidence:/ against =evaluate_debate(unfold(...))= on every statement of
+  the 52 loadable scripts, both modes, both base strategies, grounded and
+  (up to 10 statements) preferred and stable: 2640 evaluations, 2640
+  agree in class, normal form up to names and site numbers, and sigma (20
+  refused by both). Same on 30 random documents, the even loop, and all
+  accepting witnesses. A test makes =unfold= raise and runs =evaluate= on
+  a 12-level doubled chain. Suite 1386 passed (253 in tests/test_share.py).
+  One existing expectation changed: tests/test_pipeline_logging.py asked
+  for an artifact "unfolded from the document"; phase 2 now hands over
+  "the debate as named sub-debates", and a new test checks that =pipeline
+  unfolded= still hands over the unfolded term.
+- [X] 5. Benchmarks before and after, recorded here. Single runs, type
+  check per definition, =evaluate ARG skeptical grounded= and =label ARG=:
+
+  | document                 | at the start       | now, shared | now, =pipeline unfolded= |
+  |--------------------------+--------------------+-------------+--------------------------|
+  | doubled chain 8, label   | 16.6 s             | 0.9 s       | -                        |
+  | doubled chain 10, label  | 105 s              | 1.2 s       | -                        |
+  | doubled chain 30, label  | -                  | 2.4 s       | -                        |
+  | doubled chain 8, eval    | -                  | 0.9 s       | 2.9 s                    |
+  | doubled chain 10, eval   | -                  | 1.1 s       | 9.0 s                    |
+  | doubled chain 12, eval   | -                  | 1.2 s       | 40.9 s                   |
+  | doubled chain 30, eval   | -                  | 2.8 s       | -                        |
+  | chain 40, eval           | -                  | 2.0 s       | 3.0 s                    |
+  | chain 50, label          | RecursionError     | 2.2 s       | -                        |
+  | chain 100, label         | RecursionError     | 5.0 s       | -                        |
+  | chain 80, eval           | -                  | 4.2 s       | -                        |
+
+  Verdicts and labels are identical wherever both routes ran. Growth on
+  the doubled chain is linear in the number of levels up to 30, the task's
+  VERIFY. Limits that remain: =label= is refused at a chain of 150 and
+  =evaluate= at 90, by recursion depth ([[id:aida-deep-term-recursion]]);
+  the multi-extension semantics are as slow as before
+  ([[id:aida-multi-extension-labelling-cost]]), which is why the timings
+  use grounded; on small debates the shared route is on a par with the
+  unfolded one, not faster. The scripts are throwaway
+  ([[id:aida-scaling-benchmarks]]).
+
+=pipeline unfolded= / =FSP_PIPELINE=unfolded= runs graph, label and evaluate
+on the unfolded term, the reference; =typecheck expanded= does the same
+for the type check. Open after this task: naming and listing from the CLI
+([[id:aida-cli-inventory-and-naming]]), and the shared route falls back to
+the unfolded one with a warning if it ever raises unexpectedly, which
+should be removed once it has seen real documents.
 
 ** BACKLOG List what a document holds and name anonymous sub-debates from the CLI
 :PROPERTIES:
@@ -3048,7 +3100,9 @@ stack and a raised recursion limit as a stopgap.
 labels (5.0 s); at 150 =core/dc/instances.py= itself runs out of stack,
 since compiling an instance compiles the instances it cites by recursion,
 and the command is refused with one line instead of a traceback.
-=evaluate= still unfolds and keeps the old limit.
+After stage 4 =evaluate= does not unfold either: it evaluates a chain of
+80 arguments (4.2 s) and is refused, again with one line, at 90, where
+the answer itself is too deep for the recursive walks.
 
 ** BACKLOG Lift the prover transport's line-length and timeout limits
 :PROPERTIES:

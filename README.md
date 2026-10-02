@@ -188,6 +188,16 @@ export FSP_LOGLEVEL=DEBUG
 `evaluate ARG` runs eight phases. Each hands one artifact to the next, and at
 `DEBUG` each prints the artifact it produced.
 
+The phases are described below as they act on the *unfolded* debate term,
+which is what defines them. By default they do not build that term: the
+debate is kept as named sub-debates and each phase works on those (see the
+note after phase 5 and `debate ARG`). `pipeline unfolded` (or
+`FSP_PIPELINE=unfolded`) runs `graph`, `label` and `evaluate` on the unfolded
+term instead, and `pipeline shared` switches back. Both give the same graph,
+labels and normal form, up to the names of binders and the numbers of sites;
+the unfolded route is the reference the shared one is tested against, and
+its cost grows with the number of paths through the document graph.
+
 1. **issue** — read the argument's own registered proof term and its issue, a
    (proposition, side) pair.
 2. **unfold** — build the debate term for that issue out of the *document*
@@ -237,7 +247,14 @@ export FSP_LOGLEVEL=DEBUG
    open in it, which captured variables are still free in it, and whether a
    decision was made inside. The result is the graph the unfolded term gives
    (edges, default markers, labellings), with each edge once where the term
-   has a copy per path. `evaluate ARG` still builds the unfolded term.
+   has a copy per path.
+
+   `evaluate ARG` goes on from there without unfolding either. In phase 8
+   the witness labelling decides the scaffolds strictness delayed, top-down
+   from the issue, and a cited sub-debate is written out only inside a wing
+   that is kept; a wing that is dropped is never built. What is normalised
+   has the size of the answer, not of the debate. Phase 2's artifact is then
+   the debate as named sub-debates rather than one unfolded term.
 6. **label** — compile one acceptance condition per statement and ask the
    adf-bdd solver for the labellings of the chosen semantics. In: the issue
    graph. Out: conditions, and a numbered list of labellings, each mapping

@@ -113,7 +113,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if stripped in ("lj", "lk") and not keep_document:
             # Fellowship starts a new theory here; so does the document
             # (the type-check switch is a session setting and survives).
-            kept = {key: store.document[key] for key in ("typecheck", "typecheck_expanded")
+            kept = {key: store.document[key]
+                    for key in ("typecheck", "typecheck_expanded", "pipeline_unfolded")
                     if key in store.document}
             store.document.clear()
             store.document["logic"] = stripped
@@ -623,6 +624,22 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @typecheck_expanded.setter
     def typecheck_expanded(self, value: bool) -> None:
         store.document["typecheck_expanded"] = bool(value)
+
+    @property
+    def pipeline_unfolded(self) -> bool:
+        """Whether graph, label and evaluate work on the term unfolded from
+        the document graph - the older pipeline, whose cost grows with the
+        number of paths through the graph - instead of on the shared debate
+        (default off; FSP_PIPELINE=unfolded or `pipeline unfolded` selects
+        it).  The unfolded pipeline is the reference the shared one is
+        tested against (tasks.org, aida-shared-subarguments); the switch is
+        for comparing the two on a document."""
+        return store.document.get("pipeline_unfolded",
+                                  os.getenv("FSP_PIPELINE", "shared") == "unfolded")
+
+    @pipeline_unfolded.setter
+    def pipeline_unfolded(self, value: bool) -> None:
+        store.document["pipeline_unfolded"] = bool(value)
 
     def typechecked(self) -> dict:
         """The definitions that already replayed in this document, with the

@@ -320,9 +320,10 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         from pres.gen import pres_str
         artifact(logger, "strict: the term coming out (scaffolds strictness decided are gone)",
                  pres_str(term))
-        artifact(logger, "strict: the strict edges it contributes",
-                 "\n".join(f"{e.name}: {e.target_key}[{e.target_side[0]}] <- - (source-less, strict)"
-                            for e in edges) or "none")
+        if collect_edges:
+            artifact(logger, "strict: the strict edges it contributes",
+                     "\n".join(f"{e.name}: {e.target_key}[{e.target_side[0]}] <- - (source-less, strict)"
+                                for e in edges) or "none")
     return term, edges
 
 

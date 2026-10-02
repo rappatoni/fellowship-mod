@@ -587,3 +587,190 @@ class TestLabelDoesNotUnfold:
         said = [r.getMessage() for r in caplog.records]
         assert any("compiling the unfolded term instead" in m for m in said)
         assert len([m for m in said if m.strip().endswith(" IN")]) == 3
+
+
+# -- stage 4: evaluation, opening a sub-debate only where it is kept ----------------
+
+from core.ac.ast import Laog, Geled                                           # noqa: E402
+from core.comp.evaluate import (                                              # noqa: E402
+    evaluate_debate, evaluate_shared, evaluate_witnesses, evaluate_witnesses_shared,
+)
+
+
+def verdict(evaluate, subject, **options):
+    """(class, normal form up to names and site numbers, sigma), or what
+    was raised."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            nf, nf_class, sigma, _graph = evaluate(subject, "x", **options)
+        except Exception as e:
+            return ("raised", type(e).__name__)
+    return nf_class, shape(nf), tuple(sorted(sigma.items()))
+
+
+def same_evaluation(doc, statement, strict_names=(), strict_kinds=None,
+                    semantics=("grounded", "preferred"), bases=("cbn", "cbv")):
+    """``evaluate_shared`` against the reference, ``evaluate_debate`` on the
+    unfolded term, in both modes."""
+    term = unfold(doc, statement)
+    for mode in ("skeptical", "credulous"):
+        for chosen in semantics:
+            for base in bases:
+                options = dict(strict_names=strict_names, strict_kinds=strict_kinds,
+                               mode=mode, semantics=chosen, base=base)
+                reference = verdict(evaluate_debate, term, **options)
+                shared = verdict(evaluate_shared, share(doc, statement), **options)
+                assert shared == reference, (statement, mode, chosen, base)
+
+
+def sites(node):
+    return [leaf.number for leaf in _leaves(node) if isinstance(leaf, (Goal, Deleg, Laog, Geled))]
+
+
+class TestEvaluateFromTheSharedDebate:
+    @pytest.mark.parametrize("levels", [1, 2, 3, 5])
+    def test_doubled_chain(self, levels):
+        doc, issue = doubled_chain(levels)
+        strict = {f"r{i}_{a}" for i in range(1, levels + 1) for a in range(2)}
+        same_evaluation(doc, issue, strict)
+
+    def test_even_loop(self):
+        strict = {"pRule", "qRule"}
+        doc = compile_document(
+            [("pDef", from_failure("pDef", "P", "pRule", "Q")),
+             ("qDef", from_failure("qDef", "Q", "qRule", "P"))], strict_names=strict)
+        for statement in doc.statements():
+            same_evaluation(doc, statement, strict, semantics=("grounded", "preferred", "stable"))
+
+    @pytest.mark.parametrize("seed", range(30))
+    def test_random_documents(self, seed):
+        doc = random_document(seed)
+        strict = {f"ax{n}" for n in range(1, 40)}
+        for statement in doc.statements():
+            same_evaluation(doc, statement, strict, semantics=("grounded", "complete"), bases=("cbn",))
+
+    @pytest.mark.parametrize("script", SCRIPTS)
+    def test_fixtures(self, fresh, script, capsys):
+        run(fresh, script, stop_marker=False)
+        doc = fresh.document
+        names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+        for statement in doc.statements():
+            small = len(referenced_statements(
+                compile_issue(unfold(doc, statement), "x", strict_names=names, strict_kinds=kinds))) <= 10
+            same_evaluation(doc, statement, names, kinds,
+                            semantics=("grounded", "preferred") if small else ("grounded",),
+                            bases=("cbn",))
+
+    def test_every_accepting_witness(self):
+        strict = {"pRule", "qRule"}
+        doc = compile_document(
+            [("pDef", from_failure("pDef", "P", "pRule", "Q")),
+             ("qDef", from_failure("qDef", "Q", "qRule", "P"))], strict_names=strict)
+        issue = (K("P"), "term")
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reference, _ = evaluate_witnesses(unfold(doc, issue), "x", strict_names=strict)
+            shared, _ = evaluate_witnesses_shared(share(doc, issue), "x", strict_names=strict)
+        assert reference, "the even loop has a labelling that accepts P"
+        assert [(n, c, shape(nf), s) for n, nf, c, s in shared] == \
+               [(n, c, shape(nf), s) for n, nf, c, s in reference]
+
+    def test_only_the_kept_wings_are_written_out(self):
+        # 16 levels: the unfolded term has 2^16 copies of the bottom debate.
+        # Evaluation keeps one supporter per level, so the answer is a
+        # chain of 16 arguments, and nothing else is ever built.
+        doc, issue = doubled_chain(16)
+        strict = {f"r{i}_{a}" for i in range(1, 17) for a in range(2)}
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            nf, nf_class, sigma, _graph = evaluate_shared(share(doc, issue), "x", strict_names=strict)
+        assert nf_class == "value" and sigma[issue] == "IN"
+        assert size(nf) < 200
+        assert sites(nf) == ["u1"]                    # the presumption of P0, once
+
+    def test_sites_of_a_sub_debate_kept_twice_get_distinct_numbers(self):
+        # P needs Q twice (two premises of one rule); the debate about Q is
+        # written out in both places, and its sites must not share a number.
+        body = eta("p", "P", Mu(ID("rule", "P"), "P", DI("ax", "Q->Q->P"),
+                                Cons(Goal("1", "Q"), Cons(Goal("2", "Q"), ID("rule", "P")))))
+        doc = compile_document(
+            [("q", from_site("q", "Q", "axq", "R", Deleg("1", "R"))), ("p", body)],
+            strict_names={"ax", "axq"})
+        issue = (K("P"), "term")
+        assert share(doc, issue).named() == {(K("Q"), "term"): f"{ANON_PREFIX}1"}
+        same_evaluation(doc, issue, {"ax", "axq"})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            nf, _class, _sigma, _graph = evaluate_shared(share(doc, issue), "x",
+                                                        strict_names={"ax", "axq"})
+        numbers = sites(nf)
+        assert len(numbers) == 2 and len(set(numbers)) == 2
+
+
+class TestEvaluateCommand:
+    def test_evaluate_never_calls_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
+        import core.dc.unfold
+
+        def refuse(*_args, **_kwargs):
+            raise AssertionError("evaluate must not unfold the debate")
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(12))
+        run(fresh, script)
+        monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
+        script.write_text("evaluate a12_0 skeptical grounded\n")
+        with caplog.at_level(logging.INFO):
+            run(fresh, script)
+        said = [r.getMessage() for r in caplog.records]
+        assert any("Evaluated 'a12_0'" in m and m.endswith("VALUE") for m in said)
+
+    def test_the_pipeline_switch_selects_the_unfolded_term(self, fresh, tmp_path, capsys, caplog,
+                                                           monkeypatch):
+        import core.dc.unfold
+        calls = []
+        real = core.dc.unfold.unfold
+
+        def counting(graph, issue):
+            calls.append(issue)
+            return real(graph, issue)
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(2))
+        run(fresh, script)
+        monkeypatch.setattr(core.dc.unfold, "unfold", counting)
+
+        def evaluated(command):
+            caplog.clear()
+            script.write_text(command)
+            with caplog.at_level(logging.INFO):
+                run(fresh, script)
+            return [r.getMessage() for r in caplog.records
+                    if "Evaluated 'a2_0'" in r.getMessage() or r.getMessage().strip().endswith(" IN")]
+
+        shared = evaluated("evaluate a2_0\nlabel a2_0\n")
+        assert calls == []
+        unfolded = evaluated("pipeline unfolded\nevaluate a2_0\nlabel a2_0\n")
+        assert len(calls) == 2                       # once for evaluate, once for label
+        assert fresh.pipeline_unfolded
+        assert shared == unfolded and len(shared) == 4      # the verdict and three labels
+        evaluated("pipeline shared\nevaluate a2_0\n")
+        assert len(calls) == 2 and not fresh.pipeline_unfolded
+
+    def test_a_failure_of_the_shared_evaluator_falls_back_to_the_unfolded_term(
+            self, fresh, tmp_path, capsys, caplog, monkeypatch):
+        import core.comp.evaluate
+
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("no instances today")
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(2))
+        run(fresh, script)
+        monkeypatch.setattr(core.comp.evaluate, "evaluate_shared", broken)
+        script.write_text("evaluate a2_0\n")
+        with caplog.at_level(logging.INFO):
+            run(fresh, script)
+        said = [r.getMessage() for r in caplog.records]
+        assert any("evaluating the unfolded term instead" in m for m in said)
+        assert any("Evaluated 'a2_0'" in m and m.endswith("VALUE") for m in said)
