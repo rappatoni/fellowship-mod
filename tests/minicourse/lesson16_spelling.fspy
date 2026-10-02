@@ -1,0 +1,35 @@
+% Lesson 16 (minicourse-sharing.org) - one statement, two spellings.
+%
+% p needs ~Q; nq derives Q -> false.  The graph gives both spellings one
+% node, so the debate about that node is the debate p's open site needs.
+% Fellowship tells the spellings apart.  The per-definition type check
+% sees each definition alone and accepts; replaying the expanded term, in
+% which a proof of Q -> false stands where ~Q is required, is refused.
+% The wrapper detects the two spellings and replays the expanded term.
+% (tasks.org, aida-negation-spelling-in-unfolding)
+lk.
+declare P, Q, S : bool.
+declare r : (~Q -> P).
+declare n : (S -> (Q -> false)).
+
+start argument s S
+by default.
+end argument
+
+start argument nq (Q -> false)
+cut (S -> (Q -> false)) th.
+axiom n.
+elim.
+next.
+axiom.
+end argument
+
+start argument p P
+cut (~Q -> P) th.
+axiom r.
+elim.
+next.
+axiom.
+end argument
+
+label p

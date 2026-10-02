@@ -1,0 +1,53 @@
+% Lesson 15 (minicourse-sharing.org) - a shared sub-debate under capture.
+%
+% p1 and p2 both derive P from "Q fails", presumed; q derives Q from
+% "P fails", presumed.  Unfolded for P, the debate about "Q fails" is
+% needed inside p1 and inside p2, each time under that argument's own
+% hypothesis h for Q and its continuation rule for P - and inside q the
+% site "P fails" is that continuation.  Shared, the debate about "Q fails"
+% is written once; each citation records what captures it.
+% (The even loop of tests/rationality/even_loop_lk.fspy, with P argued twice.)
+lk.
+declare P, Q : bool.
+declare pRule1 : ((Q -> false) -> P).
+declare pRule2 : ((Q -> false) -> P).
+declare qRule : ((P -> false) -> Q).
+
+start argument p1 P
+cut ((Q -> false) -> P) rule.
+axiom pRule1.
+elim.
+elim h.
+cut (Q) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+start argument p2 P
+cut ((Q -> false) -> P) rule.
+axiom pRule2.
+elim.
+elim h.
+cut (Q) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+start argument q Q
+cut ((P -> false) -> Q) rule.
+axiom qRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+debate p1
+label p1
