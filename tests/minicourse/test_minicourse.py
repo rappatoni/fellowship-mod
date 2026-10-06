@@ -224,6 +224,7 @@ class TestLesson7Evaluation:
 
 @pytest.mark.parametrize("script", [
     "lesson2_graph.fspy", "lesson5_labels.fspy", "lesson7_evaluate.fspy",
+    "lesson9_evaluation.fspy",
 ])
 def test_lesson_fixture_replays(script, tmp_path, monkeypatch):
     """The course's .fspy fixtures run end to end.

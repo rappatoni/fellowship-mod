@@ -61,16 +61,24 @@ def is_cite(node) -> bool:
     return isinstance(node, (ID, DI)) and getattr(node, "debate", None) is not None
 
 
-def _cite(statement, prop, presumed, captures, cuts):
+def _cite(statement, prop, presumed, captures, cuts, bare=False):
     """The citation leaf for ``statement``: a term-side or context-side
     name leaf carrying the site's captures (statement -> binder name) and
-    cuts (statements on the path)."""
+    cuts (statements on the path).  A *bare* citation stands for the bare
+    contrary of an attack scaffold (``Unfolder._bare``): where it is
+    written out it is the capturing variable or a bare site, never the
+    statement's debate."""
     leaf = DI("§", prop) if statement[1] == "term" else ID("§", prop)
     leaf.debate = statement
     leaf.presumed = presumed
     leaf.captures = dict(captures)
     leaf.cuts = frozenset(cuts)
+    leaf.bare = bare
     return leaf
+
+
+def is_bare(node) -> bool:
+    return is_cite(node) and getattr(node, "bare", False)
 
 
 @dataclass
@@ -98,6 +106,10 @@ class _Builder(Unfolder):
     the only difference is that a statement no binder in scope captures is
     not unfolded in place but cited."""
 
+    #: The shared route keeps the legacy shape until
+    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``).
+    stacked = False
+
     def __init__(self, graph: DebateGraph):
         super().__init__(graph)
         self.defs = {}
@@ -108,6 +120,15 @@ class _Builder(Unfolder):
             return super().statement(statement, env, spine, presumed)
         self._todo.append(statement)
         return _cite(statement, self._prop(statement[0]), presumed, env, spine)
+
+    def _bare(self, statement, env):
+        # A definition is built without the scope of its citing sites, so
+        # whether the bare contrary is captured is decided where it is
+        # written out.
+        if statement in env:
+            return super()._bare(statement, env)
+        presumed = "presumption" in self.graph.defaults.get(statement, ())
+        return _cite(statement, self._prop(statement[0]), presumed, env, (), bare=True)
 
     def build(self, issue):
         self._todo = [issue]
@@ -195,7 +216,7 @@ class SharedDebate:
                 if node.presumed:
                     var.captured_presumption = True
                 return var
-            if target in spine2:
+            if target in spine2 or is_bare(node):
                 return self._site(target, f"u{next(sites)}")
             if target in stop:
                 relevant = self.reach(target)
@@ -357,7 +378,7 @@ class SharedDebate:
         while todo:
             statement, env, spine = todo.pop()
             for leaf in _leaves(self.defs[statement].body):
-                if not is_cite(leaf):
+                if not is_cite(leaf) or is_bare(leaf):
                     continue
                 target = leaf.debate
                 env2 = {**env, **leaf.captures}
@@ -421,7 +442,7 @@ class SharedDebate:
                     if found not in captured and found not in out:
                         out.append(found)
                 elif is_cite(leaf):
-                    if leaf.debate in leaf.cuts:
+                    if is_bare(leaf) or leaf.debate in leaf.cuts:
                         if leaf.debate not in captured and leaf.debate not in out:
                             out.append(leaf.debate)
                     else:
@@ -519,4 +540,4 @@ def share(graph: DebateGraph, issue, user_names=None, anon=None) -> SharedDebate
     return shared
 
 
-__all__ = ["ANON_PREFIX", "Definition", "SharedDebate", "share", "is_cite", "contrary"]
+__all__ = ["ANON_PREFIX", "Definition", "SharedDebate", "share", "is_cite", "is_bare", "contrary"]

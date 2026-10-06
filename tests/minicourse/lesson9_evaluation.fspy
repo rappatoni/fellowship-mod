@@ -1,0 +1,55 @@
+% Lessons 9-13 (minicourse-evaluation.org) - evaluating a labelled
+% debate term, step by step.
+%
+% Three arguments, one scaffold each once the document is unfolded for B:
+%   pro   : B from r1 and a presumption of A       (supports B[t])
+%   con   : refutes A from r2 and a presumption of C  (attacks A, inside pro)
+%   killC : refutes C strictly, from the axiom nc    (attacks C, inside con)
+% killC decides its scaffold by strictness; the witness sigma decides the
+% other two; one reduction step is left for normalisation.
+lk.
+declare A,B,C:bool.
+declare r1: (A -> B).
+declare r2: (C -> ~A).
+declare nc: (~C).
+
+start argument pro B
+cut (A -> B) th.
+axiom r1.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start counterargument con A
+cut (~A) x.
+cut (C -> ~A) th.
+axiom r2.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+end argument
+
+start counterargument killC C
+cut (~C) x.
+axiom nc.
+elim.
+axiom.
+end argument
+
+evaluate pro
+declare D : bool.
+declare r3 : (D-> ~(A->B)).
+start counterargument attackrule A->B
+cut (D-> ~(A->B)) th.
+axiom r3.
+elim.
+by default.
+next.
+elim.
+axiom.
+end argument

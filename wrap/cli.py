@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, sys
+import os, re, sys
 import copy
 import atexit
 import collections
@@ -364,6 +364,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
                     elif command.startswith("expand "):
                         expand_argument_cmd(prover, command.split()[1])
+                    elif command.startswith("unfold "):
+                        unfold_cmd(prover, command)
                     elif command.startswith("debate "):
                         debate_argument_cmd(prover, command.split()[1])
                     elif command.startswith("render-nf "):
@@ -373,18 +375,15 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         style = parts[2] if len(parts) >= 3 else None
                         render_argument_cmd(prover, name, True, style=style)
                     elif command.startswith("render "):
-                        # Usage: render ARG [style]
-                        parts = command.split()
-                        name = parts[1] if len(parts) >= 2 else ""
-                        style = parts[2] if len(parts) >= 3 else None
-                        render_argument_cmd(prover, name, False, style=style)
+                        # Usage: render ARG|issue :X|X: [style] [registered|enriched|unfolded|normal|evaluated]
+                        name, style, which = _render_tokens(command)
+                        render_argument_cmd(prover, name, False, style=style, which=which)
                     elif command.startswith("graph "):
-                        # Usage: graph ARG [FILE.dot] [show]
-                        parts = command.split()
-                        opts = parts[2:]
+                        # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                        name, opts = _target(command.split())
                         show = "show" in opts
                         dot_path = next((o for o in opts if o != "show"), None)
-                        graph_argument_cmd(prover, parts[1], dot_path, show=show)
+                        graph_argument_cmd(prover, name, dot_path, show=show)
                     elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                         set_typecheck_cmd(prover, command)
                     elif command in ("pipeline shared", "pipeline unfolded"):
@@ -396,17 +395,19 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     elif command.startswith("explain "):
                         _dispatch_explain(prover, command)
                     elif command.startswith("tree "):
-                        parts = command.split()
+                        # a term selector (render's) may follow: tree ARG ... [unfolded|...]
+                        which = next((tok for tok in command.split()[2:] if tok in TERM_SELECTORS), None)
+                        parts = [tok for tok in command.split() if tok not in TERM_SELECTORS]
                         # Usage:
                         #   tree ARG
                         #   tree ARG nl [argumentation|dialectical|intuitionistic]
                         #   tree ARG pt
                         if len(parts) == 2:
-                            tree_argument_cmd(prover, parts[1])
+                            tree_argument_cmd(prover, parts[1], which=which)
                         elif len(parts) >= 3:
                             mode = parts[2]
                             nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
-                            tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                            tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style, which=which)
                         else:
                             logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
                     elif command.startswith("normalize "):
@@ -1019,6 +1020,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
             elif command.startswith("expand "):
                 expand_argument_cmd(prover, command.split()[1])
+            elif command.startswith("unfold "):
+                unfold_cmd(prover, command)
             elif command.startswith("debate "):
                 debate_argument_cmd(prover, command.split()[1])
             elif command.startswith("render-nf "):
@@ -1027,17 +1030,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     style = parts[2] if len(parts) >= 3 else None
                     render_argument_cmd(prover, name, True, style=style)
             elif command.startswith("render "):
-                    parts = command.split()
-                    name = parts[1] if len(parts) >= 2 else ""
-                    style = parts[2] if len(parts) >= 3 else None
-                    render_argument_cmd(prover, name, False, style=style)
+                    # Usage: render ARG|issue :X|X: [style] [registered|enriched|unfolded|normal|evaluated]
+                    name, style, which = _render_tokens(command)
+                    render_argument_cmd(prover, name, False, style=style, which=which)
             elif command.startswith("graph "):
-                # Usage: graph ARG [FILE.dot] [show]
-                parts = command.split()
-                opts = parts[2:]
+                # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                name, opts = _target(command.split())
                 show = "show" in opts
                 dot_path = next((o for o in opts if o != "show"), None)
-                graph_argument_cmd(prover, parts[1], dot_path, show=show)
+                graph_argument_cmd(prover, name, dot_path, show=show)
             elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                 set_typecheck_cmd(prover, command)
             elif command in ("pipeline shared", "pipeline unfolded"):
@@ -1049,13 +1050,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif command.startswith("explain "):
                 _dispatch_explain(prover, command)
             elif command.startswith("tree "):
-                parts = command.split()
+                # a term selector (render's) may follow: tree ARG ... [unfolded|...]
+                which = next((tok for tok in command.split()[2:] if tok in TERM_SELECTORS), None)
+                parts = [tok for tok in command.split() if tok not in TERM_SELECTORS]
                 if len(parts) == 2:
-                    tree_argument_cmd(prover, parts[1])
+                    tree_argument_cmd(prover, parts[1], which=which)
                 elif len(parts) >= 3:
                     mode = parts[2]
                     nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
-                    tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                    tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style, which=which)
                 else:
                     logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
             elif command.startswith("normalize "):
@@ -1799,12 +1802,137 @@ def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
         print(f"  {line}")
 
 
-def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None) -> None:
+#: Which of an argument's terms `render` and `tree` show
+#: (aida-unfold-entrypoints).
+TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
+
+
+def _select_term(prover: ProverWrapper, name: str, which: str):
+    """(description, term) for one of NAME's terms, or None after a
+    message.  ``registered`` is the term as Fellowship returned it (text
+    only), ``enriched`` the parsed and annotated body, ``unfolded`` the
+    debate term unfolded for it (unfolded again if the document changed),
+    ``normal`` its plain normal form, ``evaluated`` the normal form of its
+    last evaluation - refused if the document changed since.  An issue
+    (``issue :X``) has only its unfolded term."""
+    if name.startswith("issue "):
+        if which not in (None, "unfolded"):
+            logger.error("An issue has only an unfolded term, not '%s'.", which)
+            return None
+        issue = _parse_issue(name)
+        if issue is None:
+            return None
+        return f"the canonical debate term of {name}", prover.issue_term(issue)
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error("Argument '%s' not found.", name)
+        return None
+    if not arg.executed:
+        arg.execute()
+    if which == "registered":
+        return "the term Fellowship returned", arg.proof_term
+    if which == "enriched":
+        return "the enriched term", arg.body
+    if which == "normal":
+        if arg.normal_body is None:
+            arg.normalize()
+        return "the normal form", arg.normal_body
+    if which == "evaluated":
+        if arg.labelled_nf is None or arg.labelled_nf_revision != prover.revision:
+            logger.error("'%s' has no evaluation at the document's current revision; "
+                         "run `evaluate %s` first.", name, name)
+            return None
+        return "the normal form of the last evaluation", arg.labelled_nf
+    term = prover.unfolded_term(arg)
+    if term is None:
+        term = prover.issue_term(prover.issue_of(arg))
+        return f"the canonical term of '{name}''s issue ('{name}' has no edge of its own)", term
+    return f"the debate term unfolded for '{name}'", term
+
+
+def _show_selected(prover: ProverWrapper, name: str, which: str, style: Optional[str]) -> None:
+    from pres.gen import pres_str, pres_tree
+    found = _select_term(prover, name, which)
+    if found is None:
+        return
+    what, term = found
+    logger.info("")
+    logger.info("Rendering %s, %s:", name, what)
+    if isinstance(term, str):
+        logger.info(term)
+    elif style is None:
+        logger.info(pres_str(term))
+        logger.info(pres_tree(term))
+    else:
+        from pres.nl import (pretty_natural, natural_language_argumentative_rendering,
+                             natural_language_dialectical_rendering, natural_language_rendering,
+                             pruefschema_rendering, vanilla_rendering)
+        sem = {"argumentation": natural_language_argumentative_rendering,
+               "dialectical": natural_language_dialectical_rendering,
+               "intuitionistic": natural_language_rendering,
+               "vanilla": vanilla_rendering,
+               "pruefschema": pruefschema_rendering}.get(style.strip().lower())
+        if sem is None:
+            logger.error("Invalid render style '%s'", style)
+            return
+        logger.info(pretty_natural(term, sem, declarations=getattr(prover, "declarations", {}),
+                                   decorations=getattr(prover, "decorations", {})))
+    logger.info("")
+
+
+def _render_tokens(command: str):
+    """(name, style, which) for `render NAME [style] [selector]`."""
+    name, rest = _target(command.split())
+    which = next((tok for tok in rest if tok in TERM_SELECTORS), None)
+    style = next((tok for tok in rest if tok not in TERM_SELECTORS), None)
+    return name, style, which
+
+
+def unfold_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: unfold a debate term and keep it (aida-unfold-entrypoints).
+
+    Syntax:
+        unfold argument NAME      the term biased towards NAME, cached on it
+        unfold issue :X | X:      the canonical term of an issue
+        unfold debate NAME        not yet (aida-unfold-debate-bias)
+
+    The term is kept until the document changes (a new argument or
+    declaration) and is what `evaluate`, `explain`, `render ... unfolded`
+    and `tree ... unfolded` use; nothing is added to the document."""
+    parts = command.split()
+    if len(parts) < 3 or parts[1] not in ("argument", "issue", "debate"):
+        logger.error("Use: unfold argument NAME | unfold issue :X | unfold issue X: | unfold debate NAME")
+        return
+    if parts[1] == "debate":
+        logger.warning("unfold debate: not implemented yet (tasks.org, aida-unfold-debate-bias); "
+                       "nothing done.")
+        return
+    if prover.logic == "lj":
+        print("unfold: refused: debates are classical; select lk.")
+        return
+    name = f"issue {parts[2]}" if parts[1] == "issue" else parts[2]
+    found = _select_term(prover, name, "unfolded")
+    if found is None:
+        return
+    from pres.gen import pres_str, pres_tree
+    what, term = found
+    logger.info("Unfolded %s (document revision %d):", what, prover.revision)
+    logger.info("  %s", pres_str(term))
+    logger.info(pres_tree(term))
+
+
+def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None,
+                        which: Optional[str] = None) -> None:
     """CLI for Argument Rendering.
 
     style can be one of: argumentation|dialectical|intuitionistic|vanilla.
-    If omitted, uses the argument's configured rendering.
+    If omitted, uses the argument's configured rendering.  ``which`` (one
+    of TERM_SELECTORS) renders another of the argument's terms; an issue
+    target (``issue :X``) renders its unfolded term.
     """
+    if which is not None or name.startswith("issue "):
+        _show_selected(prover, name, which or "unfolded", style)
+        return
     arg = prover.get_argument(name)
     if not arg:
         logger.error(f"Argument '{name}' not found.")
@@ -1863,6 +1991,34 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
+def _parse_issue(name: str):
+    """The statement of an issue target: ``issue :X`` is X proved (term
+    side), ``issue X:`` X refuted (context side); X is any proposition.
+    None after an error message."""
+    from core.dc.debate_graph import canonical_prop
+    spec = name[len("issue "):].strip()
+    if spec.startswith(":") and not spec.endswith(":"):
+        prop, side = spec[1:].strip(), "term"
+    elif spec.endswith(":") and not spec.startswith(":"):
+        prop, side = spec[:-1].strip(), "context"
+    else:
+        logger.error("An issue is written ':X' (X proved) or 'X:' (X refuted), not '%s'.", spec)
+        return None
+    try:
+        return (canonical_prop(prop), side)
+    except Exception as e:
+        logger.error("Cannot read the proposition '%s': %s", prop, e)
+        return None
+
+
+def _target(parts):
+    """(name, rest) from a command's tokens after the verb: an argument
+    name, or the two tokens of an issue target joined (``issue :X``)."""
+    if len(parts) >= 3 and parts[1] == "issue":
+        return f"issue {parts[2]}", parts[3:]
+    return (parts[1] if len(parts) >= 2 else ""), parts[2:]
+
+
 def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
     """Resolve NAME to (arg, issue, term, shared): the debate about the
     argument's issue, as named sub-debates (``shared``, core/dc/share.py)
@@ -1874,41 +2030,63 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
     refused at registration falls back to its own term, with a notice, and
     has no shared form.  Returns (arg, issue, None, None) after printing a
     refusal.
-    """
-    from core.dc.unfold import unfold, UnfoldError
 
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error("Argument '%s' not found.", name)
-        return None, None, None, None
-    if not arg.executed:
-        arg.execute()
-    issue = prover.issue_of(arg)
+    On the unfolded route the term is the one unfolded for the argument -
+    the canonical shape with the argument on top of its supporter stack
+    (aida-unfold-entrypoints) - cached on the argument until the document
+    changes.  NAME may also be an issue, ``issue :X`` (X proved) or ``issue
+    X:`` (X refuted); then ``arg`` is None and the term is the canonical one.
+    """
+    from core.dc.unfold import unfold_legacy, UnfoldError
+
+    if name.startswith("issue "):
+        arg, issue = None, _parse_issue(name)
+        if issue is None:
+            return None, None, None, None
+    else:
+        arg = prover.get_argument(name)
+        if not arg:
+            logger.error("Argument '%s' not found.", name)
+            return None, None, None, None
+        if not arg.executed:
+            arg.execute()
+        issue = prover.issue_of(arg)
     document = prover.document
     if prover.logic == "lj":
         print("graph: refused: debates are classical (their scaffolds throw to a second "
               "conclusion, which LJ forbids); select lk for graph, label and evaluate.")
         logger.warning("Debate commands refused in lj for '%s'.", name)
         return arg, issue, None, None
-    if _pipeline_logger.isEnabledFor(logging.DEBUG):
+    if _pipeline_logger.isEnabledFor(logging.DEBUG) and arg is not None:
         from pres.gen import pres_tree
         _pipeline_logger.debug("issue: '%s' is about %s; the document has %d edge(s)",
                                name, f"{document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]",
                                len(document.edges))
         artifact(_pipeline_logger, "issue: the term '%s' was registered with (before unfolding)" % name,
                  pres_tree(arg.body))
-    if issue not in set(document.statements()):
+    if arg is not None and issue not in set(document.statements()):
         logger.warning("'%s' is not in the document graph; using its own term.", name)
         _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
                                "the document, so '%s' is evaluated as it was registered", name)
         return arg, issue, arg.body, None
     try:
-        shared = prover.shared_debate(issue)
+        if prover.pipeline_unfolded:
+            # Built for the per-definition type check only; it is the legacy
+            # shape (aida-shared-route-stack-shape), not the term evaluated,
+            # so it must not narrate itself as the unfolding.
+            unfold_log = logging.getLogger("core.dc.unfold")
+            was_disabled, unfold_log.disabled = unfold_log.disabled, True
+            try:
+                shared = prover.shared_debate(issue)
+            finally:
+                unfold_log.disabled = was_disabled
+        else:
+            shared = prover.shared_debate(issue)
     except UnfoldError as e:
         print(f"graph: refused: {e}")
         logger.warning("Unfolding refused for '%s': %s", name, e)
         return arg, issue, None, None
-    if _pipeline_logger.isEnabledFor(logging.DEBUG):
+    if _pipeline_logger.isEnabledFor(logging.DEBUG) and not prover.pipeline_unfolded:
         artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text(tree=True))
     # A statement spelled two ways (~A and A -> false) joins two spellings
     # only in the expanded term, so that is the one to type-check then
@@ -1918,7 +2096,12 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
     term = None
     if want_term or expanded_check:
         try:
-            term = unfold(document, issue)
+            if want_term:
+                term = prover.unfolded_term(arg) if arg is not None else None
+                if term is None:            # an issue, or a composed debate
+                    term = prover.issue_term(issue)
+            else:
+                term = unfold_legacy(document, issue)    # the shared route's reference
         except UnfoldError as e:
             print(f"graph: refused: {e}")
             logger.warning("Unfolding refused for '%s': %s", name, e)
@@ -1927,18 +2110,21 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
         # The type oracle: the debate must replay through Fellowship
         # (core/dc/typecheck.py).  `typecheck off` skips it.
         from core.dc.typecheck import typecheck, typecheck_shared, TypeCheckFailed
+        # Fellowship names the replayed theorems after the target, and an
+        # issue target ("issue B:") is no identifier.
+        check_name = re.sub(r"\W+", "_", name).strip("_") if arg is None else name
         try:
             if clashes:
                 _pipeline_logger.debug(
                     "typecheck: the expanded term is replayed, since the debate spells %s "
                     "in more than one way", ", ".join(sorted(clashes)))
             if expanded_check:
-                typecheck(prover, term, name, document.nodes.get(issue[0], arg.conclusion),
+                typecheck(prover, term, check_name, document.nodes.get(issue[0], issue[0]),
                           issue[1] == "context")
             else:
                 # One replay per sub-debate instead of one of the whole
                 # unfolded term (tasks.org, aida-shared-subarguments, stage 2).
-                typecheck_shared(prover, shared, name, prover.typechecked())
+                typecheck_shared(prover, shared, check_name, prover.typechecked())
         except TypeCheckFailed as e:
             print(f"graph: refused: {e}")
             logger.warning("Type check failed for '%s': %s", name, e)
@@ -1967,7 +2153,7 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     from core.dc.debate_graph import DebateCompileError, declaration_kinds
     from core.dc.instances import compile_issue_shared
     from core.dc.strict import compile_issue
-    from core.dc.unfold import unfold
+    from core.dc.unfold import unfold_legacy
     from core.ac.ast import FirstOrderNotSupported
 
     if name == "document":
@@ -1993,7 +2179,7 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
                 # the reference rather than refuse a sound debate.
                 logger.warning("Compiling '%s' from its shared debate failed (%s: %s); "
                                "compiling the unfolded term instead.", name, type(e).__name__, e)
-                term = term if term is not None else unfold(prover.document, issue)
+                term = term if term is not None else unfold_legacy(prover.document, issue)
         if graph is None:
             graph = compile_issue(term, name, **options)
     except (DebateCompileError, FirstOrderNotSupported) as e:
@@ -2117,44 +2303,48 @@ def _open_file(path: str) -> bool:
 
 
 def _dispatch_label(prover: ProverWrapper, command: str) -> None:
-    parts = command.split()
+    name, rest = _target(command.split())
     try:
-        _, semantics, _, _ = _split_eval_tokens(parts[2:])
+        _, semantics, _, _ = _split_eval_tokens(rest)
     except ValueError as e:
         logger.error("label: %s", e)
         return
-    label_argument_cmd(prover, parts[1], semantics or "grounded")
+    label_argument_cmd(prover, name, semantics or "grounded")
+
+
+def _eval_options(verb: str, command: str):
+    """(name, mode, semantics, base, witness, favour) for evaluate and
+    explain, or None after an error message."""
+    name, rest = _target(command.split())
+    if not name:
+        logger.error("%s: needs an argument or an issue. Use: %s ARG|issue :X|X: "
+                     "[MODE] [SEMANTICS] [BASE] [N|all] [favour]", verb, verb)
+        return None
+    favour = "favour" in rest
+    rest = [tok for tok in rest if tok != "favour"]
+    try:
+        mode, semantics, base, witness = _split_eval_tokens(rest)
+    except ValueError as e:
+        logger.error("%s: %s", verb, e)
+        return None
+    if witness is not None and (mode or "skeptical") != "credulous":
+        logger.error("%s: a witness number or 'all' requires credulous mode", verb)
+        return None
+    return name, mode or "skeptical", semantics or "preferred", base or "cbn", witness, favour
 
 
 def _dispatch_evaluate(prover: ProverWrapper, command: str) -> None:
-    parts = command.split()
-    try:
-        mode, semantics, base, witness = _split_eval_tokens(parts[2:])
-    except ValueError as e:
-        logger.error("evaluate: %s", e)
-        return
-    if witness is not None and (mode or "skeptical") != "credulous":
-        logger.error("evaluate: a witness number or 'all' requires credulous mode")
-        return
-    evaluate_argument_cmd(prover, parts[1], mode or "skeptical", base or "cbn",
-                          semantics or "preferred", witness)
+    found = _eval_options("evaluate", command)
+    if found is not None:
+        name, mode, semantics, base, witness, favour = found
+        evaluate_argument_cmd(prover, name, mode, base, semantics, witness, favour)
 
 
 def _dispatch_explain(prover: ProverWrapper, command: str) -> None:
-    parts = command.split()
-    if len(parts) < 2:
-        logger.error("explain: needs an argument name. Use: explain ARG [MODE] [SEMANTICS] [BASE] [N|all]")
-        return
-    try:
-        mode, semantics, base, witness = _split_eval_tokens(parts[2:])
-    except ValueError as e:
-        logger.error("explain: %s", e)
-        return
-    if witness is not None and (mode or "skeptical") != "credulous":
-        logger.error("explain: a witness number or 'all' requires credulous mode")
-        return
-    explain_argument_cmd(prover, parts[1], mode or "skeptical", base or "cbn",
-                         semantics or "preferred", witness)
+    found = _eval_options("explain", command)
+    if found is not None:
+        name, mode, semantics, base, witness, favour = found
+        explain_argument_cmd(prover, name, mode, base, semantics, witness, favour)
 
 
 #: The pipeline's loggers, in the order the stages run.  ``explain`` groups
@@ -2185,7 +2375,7 @@ class _StageRecorder(logging.Handler):
 
 def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
                          base: str = "cbn", semantics: str = "preferred",
-                         witness=None) -> None:
+                         witness=None, favour: bool = False) -> None:
     """CLI: evaluate ARG and print the pipeline's own account of the run.
 
     Syntax:
@@ -2209,7 +2399,7 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
     verdict_logger.addHandler(recorder)
     verdict_logger.propagate = False      # hold the verdict back until the end
     try:
-        evaluate_argument_cmd(prover, name, mode, base, semantics, witness)
+        evaluate_argument_cmd(prover, name, mode, base, semantics, witness, favour)
     finally:
         for lg in captured + [verdict_logger]:
             lg.removeHandler(recorder)
@@ -2264,7 +2454,10 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     arg, graph, _term = _compile_argument_graph(prover, name)
     if graph is None:
         return
-    if arg is None:
+    if name.startswith("issue "):
+        logger.info("Debate graph for %s (unfolded from the document): %d nodes, %d edges",
+                    name, len(graph.nodes), len(graph.edges))
+    elif arg is None:
         logger.info("Document graph: %d nodes, %d edges (every registered atomic argument)",
                     len(graph.nodes), len(graph.edges))
     else:
@@ -2390,13 +2583,27 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
         for (key, side), label in labels.items():
             logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
 
+def _remember_evaluation(prover: ProverWrapper, arg, nf) -> None:
+    """Cache an evaluated normal form on its argument, with the revision it
+    belongs to (an issue has no argument to cache it on)."""
+    if arg is not None:
+        arg.labelled_nf = nf
+        arg.labelled_nf_revision = prover.revision
+
+
 def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
                           base: str = "cbn", semantics: str = "preferred",
-                          witness=None) -> None:
+                          witness=None, favour: bool = False) -> None:
     """CLI: label-guided evaluation of an argument's debate term.
 
     Syntax:
-        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all]
+        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all] [favour]
+        evaluate issue :X|X: [same options, no favour]
+
+    On the unfolded route (the default) ARG's term is the one unfolded for
+    it, biased towards it; an issue gets the canonical term.  ``favour``
+    (credulous, an argument, the unfolded route) prefers a witness
+    labelling in which the argument's own derivation is IN.
 
     Options may appear in any order.  The mode ranges over the chosen
     semantics (default preferred); the base strategy resolves only critical
@@ -2416,13 +2623,21 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
         logger.error("evaluate needs an argument or debate name; 'document' has no issue.")
         return
     from core.comp.evaluate import evaluate_shared, evaluate_witnesses_shared
-    from core.dc.unfold import unfold
+    from core.dc.unfold import unfold_legacy
 
     arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
     if term is None and shared is None:
         return
     if prover.pipeline_unfolded:
         shared = None                      # `pipeline unfolded`: the reference path
+    favoured = None
+    if favour:
+        from core.dc.unfold import argument_edge
+        favoured = argument_edge(prover.document, arg.name) if arg is not None else None
+        if mode != "credulous" or witness is not None or shared is not None or favoured is None:
+            print("evaluate: refused: 'favour' needs credulous mode without a witness number, "
+                  "an argument with its own edge in the document, and the unfolded pipeline.")
+            return
     common = dict(strict_names=prover.declarations.keys(),
                   strict_kinds=declaration_kinds(prover.declarations),
                   base=base, semantics=semantics)
@@ -2443,7 +2658,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
                                "evaluating the unfolded term instead.", name, type(e).__name__, e)
         if term is None:
-            term = unfold(prover.document, issue)
+            term = unfold_legacy(prover.document, issue)   # the shared route's reference
         return on_term(term, name, **options)
 
     try:
@@ -2459,10 +2674,12 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
                 logger.info("  [%d] %s", number, nf_class.upper())
                 logger.info("      normal form: %s", pretty)
-                arg.labelled_nf = nf
+                _remember_evaluation(prover, arg, nf)
             return
-        nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate,
-                                         mode=mode, witness=witness, **common)
+        options = dict(mode=mode, witness=witness, **common)
+        if favoured is not None:
+            options["favour"] = favoured
+        nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate, **options)
         _remember_strict_edges(graph, name)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
@@ -2474,17 +2691,19 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
               f"evaluator, which follows a chain of sub-debates by recursion.")
         logger.warning("Evaluation refused for '%s': recursion depth exceeded.", name)
         return
-    arg.labelled_nf = nf
+    _remember_evaluation(prover, arg, nf)
     pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
-    chosen = f", witness {witness}" if witness is not None else ""
+    chosen = (f", witness {witness}" if witness is not None else "") + (", favoured" if favour else "")
     logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
     logger.info("  normal form: %s", pretty)
 
-def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
+def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mode: str = "pt",
+                      nl_style: str = "argumentation", which: Optional[str] = None) -> None:
     """CLI: render the acceptance tree (proof terms or NL), coloured by the
     grounded ADF labels of the argument's debate graph, and save it as a
     file.  If the graph is refused or adf-bdd is missing the tree is
-    written uncoloured with a one-line notice."""
+    written uncoloured with a one-line notice.  ``which`` (TERM_SELECTORS)
+    draws another of the argument's terms than its normal form."""
     from core.comp.adf_label import grounded_labels
 
     arg, graph, _term = _compile_argument_graph(prover, name)
@@ -2499,12 +2718,21 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mod
             logger.warning("Tree for '%s' drawn without labels: %s", name, e)
     else:
         logger.warning("Tree for '%s' drawn without labels: debate graph refused.", name)
-    if arg.normal_body is None:
-        arg.normalize()
+    if which is not None:
+        found = _select_term(prover, name, which)
+        if found is None or isinstance(found[1], str):
+            if found is not None:
+                logger.error("tree: the registered term is text only; choose another term.")
+            return
+        drawn = found[1]
+    else:
+        if arg.normal_body is None:
+            arg.normalize()
+        drawn = arg.normal_body
     try:
         label_mode = "proof" if mode != "nl" else "nl"
         dot = render_acceptance_tree_dot(
-            arg.normal_body,
+            drawn,
             verbose=False,
             label_mode=label_mode,
             nl_style=nl_style,

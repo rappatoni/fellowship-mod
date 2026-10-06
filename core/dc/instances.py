@@ -173,7 +173,7 @@ class IssueResolver:
         if target in names:
             return "captured", names[target], names
         path = instance.cut | {instance.statement} | citation.cuts
-        if target in path:
+        if target in path or getattr(citation, "bare", False):
             return "cut", None, names
         return "instance", self.instance(target, names, path), names
 

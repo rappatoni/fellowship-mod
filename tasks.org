@@ -2359,6 +2359,543 @@ closure is vacuous in the current fragment; see the transposal note in
 core/comp/adf_label.py) - the strict bridge of married-bachelor cannot
 yet be expressed as a compiled term.
 
+** BACKLOG Review the unfolder's design choices raised by lesson 8a
+:PROPERTIES:
+:ID:             aida-unfold-design-review
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Every unfolder design question the author raised while working through minicourse-evaluation.org lesson 8a (2026-10-05) has a recorded decision, and each decision that changes behaviour has its own implementation task.
+:VERIFY:         Each child below is DONE or DROPPED with a decision written into it; lesson 8a states the decided behaviour and tests/minicourse/test_evaluation_course.py passes.
+:END:
+
+The author's comments on lesson 8a (2026-10-05). One was fixed outright
+(the bare contrary); the others need discussion first. All concern
+=core/dc/unfold.py= and its mirror in the shared route
+(=core/dc/share.py=, =core/dc/instances.py=), which must stay equal to
+=unfold= up to alpha and site numbering.
+
+*** DONE Capture the bare contrary like any site
+CLOSED: [2026-10-05 Mon]
+:PROPERTIES:
+:ID:             aida-unfold-bare-contrary-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The attack scaffold that =_wrap= adds when the contrary of a statement carries a default marker has as its scion the binder in scope for that contrary, if there is one, instead of always a fresh bare site; the shared route gives the same term, issue graph and labels.
+:VERIFY:         tests/test_unfold.py::TestShapes::test_the_bare_contrary_is_captured_like_any_site fails before the change and passes after; tests/test_share.py::TestExpansionIsUnfolding::test_a_captured_bare_contrary and TestIssueGraphFromInstances::test_a_captured_bare_contrary pass; the suite passes apart from the failures recorded below.
+:END:
+
+The author, 2026-10-05: =statement_site_only= did not consult =env=,
+"seems wrong". A bare contrary is a default somebody holds, and a
+default meets a binder in scope exactly as a site in an edge body does
+(see the author's reading of capture in lesson 8a).
+
+Fix: =Unfolder._bare= returns the variable of the binder in scope for
+the contrary (marked =captured_presumption= if the contrary carries a
+presumption marker) or a fresh site; never an expansion, so no cut case.
+Shared route: =_Builder._bare= leaves a *bare citation* (=_cite(...,
+bare=True)=) in the definition, since a definition is built without
+its citing sites' scope. A bare citation is the capturing variable or
+a bare site where it is written out (=_instantiate=, =IssueResolver._at=),
+is never an occurrence of the cited debate (=_count_occurrences=) and
+counts as an open site (=open_sites=).
+
+Evidence: the fixture document =bare_contrary_document= in
+tests/test_unfold.py exercises both sides - P[t] expanded under a
+continuation =mu s:P= with "P fails" presumed (scion =μ'x:P.<x||s>=),
+and P[c] expanded under a hypothesis =h:P= with P demanded elsewhere
+(scion =μx:P.<h||x>=). Both captured scions have no open site, so the
+strict phase decides each attack as a defeat. The committed fixtures
+are unchanged. The only visible change there is in the shared route's
+binder numbers: a bare citation draws no site number when a definition
+is built, so lesson 15's printed shared form reads =b5=, =x4=, =b7=
+... where it read =b6=, =x5=, =b8=; minicourse-sharing.org and
+tests/minicourse/test_sharing_course.py were updated.
+
+Suite after the change: 1444 passed, 3 failed, 2 skipped. All three
+failures come from documents in the author's working copy; the
+committed fixtures pass:
+- tests/rationality/even_loop_lk.fspy (the author's uncommitted copy,
+  with a pasted unfolded term registered as =test=) fails in
+  test_share.py's two fixture tests: =Edge 'x15': free term variable
+  'alt1_3' is neither bound nor a declared axiom=. The pasted term
+  has scaffold-shaped subterms; the unfolder treats their =alt=
+  binders as the argument's own (provenance), so they are in scope
+  and now capture a bare contrary, while the compiler recognises them
+  as scaffold wiring by shape and does not count them as binding. The
+  committed fixture passes. Recorded under
+  [[id:aida-discuss-scaffold-binder-scope]].
+- tests/minicourse/test_evaluation_course.py::TestLesson8aUnfold::test_document_graph
+  fails because the author extended lesson9_evaluation.fspy with
+  =attackrule=; unrelated to this change, see
+  [[id:aida-discuss-non-site-attack-points]].
+
+*** DONE Discuss: a site's kind comes from the document, not the body
+CLOSED: [2026-10-06 Tue]
+:PROPERTIES:
+:ID:             aida-discuss-site-kind-onus
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A decision on whether the kind (obligation or presumption) of an unfolded site is a property of the statement across the document or of the argument whose body has the site, with the captured and expanded cases treated consistently.
+:VERIFY:         The decision is written here; if it changes behaviour, an implementation task exists with a fixture in which one argument demands A and another presumes A, and lesson 8a exercise 3 states the decided behaviour.
+:END:
+
+=Unfolder._site= reads the kind off the default markers of the whole
+document: if any edge presumes S, every expanded site for S is a
+presumption, so an argument that demanded A gets a presumption because
+another argument presumes A (lesson 8a, exercise 3(b)). The body's own
+kind is used only when the site is captured (=presumed=isinstance(node,
+Deleg)=), which is inconsistent with the expanded case. Related:
+[[id:aida-onus-delegation-polarity]] (onus tracked per side).
+
+Questions: is onus per statement (as the labeller's default markers
+have it) or a commitment of the argument that wrote the site? Which
+kind should a captured site record?
+
+Superseded 2026-10-06 by [[id:aida-unfold-entrypoints]]. Decision (author):
+a debate's ROOT is a presumption if some argument presumes the statement,
+an obligation otherwise, canonical all the way down; only the sites
+directly in an argument entrypoint's own body keep the kind the argument
+wrote, and where it demands a statement presumed elsewhere the presumption
+becomes the bottom of that statement's supporter stack.
+
+*** BACKLOG Discuss: what can be attacked and supported besides sites
+:PROPERTIES:
+:ID:             aida-discuss-non-site-attack-points
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A decision on which subterms of an argument other than its sites are attack and support points in an unfolded debate - declared axioms, lambda subarguments, intermediate conclusions - and on what happens to an argument whose conclusion contradicts a declared axiom.
+:VERIFY:         The decision is written here; the extended tests/minicourse/lesson9_evaluation.fspy (=attackrule= refuting A->B, which pro applies as the declared axiom r1) has a stated expected issue graph and verdict, and implementation tasks exist for the unfolder side of whatever is decided.
+:END:
+
+Today the unfolder expands only sites (and =cite NAME= leaves), so only
+statements that occur as sites can be attacked or supported inside a
+body. Not attackable: declared axioms (strict leaves), lambda
+subarguments (their edges are in the document with role
+=subargument= but =_by_target= skips them, so they are never scions
+either), intermediate conclusions of curried applications.
+
+The author's example (2026-10-05): lesson9_evaluation.fspy extended by
+=attackrule=, a refutation of A->B from a presumption of D. The
+document graph has the node A->B, but only its context side; pro's edge
+is =B[t] <- A[t]:pres=, since r1 is a declared name and no source; so
+attackrule is not reachable from pro's issue and silently takes no
+part. Nothing reports that.
+
+Points: in ASPIC+ terms a declared axiom is strict and cannot be
+attacked, but it can rebut (attackrule OUT); the workaround today is to
+take the implication as a premise (=cut (A -> B) th. by default.=).
+Graph-side work exists: [[id:aida-strict-layer]] (an edge for every
+applied implication, declared or not) and
+[[id:aida-curried-intermediate-conclusions]]. Even with those edges the
+unfolder has no site to wrap at =r1=; it would need to wrap a leaf or a
+lambda as the original of a statement's scaffolds.
+
+*** BACKLOG Discuss: take the issue graph from the document graph, not from the term
+:PROPERTIES:
+:ID:             aida-discuss-issue-graph-from-document
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A decision on whether the issue graph is the part of the document graph reachable from the issue plus the strict edges read off the term, instead of a recompilation of the unfolded term, and with it whether the =captured_presumption= mark is still needed.
+:VERIFY:         The decision is written here; if adopted, a differential check over every fixture and the random documents of tests/test_share.py compares the reachable-subgraph construction with =compile_issue= (edges up to copy names, default markers, labellings) before anything is switched.
+:END:
+
+The author, 2026-10-05: "why would the labelling need the information
+from the term, does it not get it from the graph?" On both routes the
+issue graph is compiled from the debate term (=compile_issue=,
+=IssueResolver.compile=). A captured site is a bare variable there and
+has lost its onus, so the unfolder marks it (=captured_presumption=)
+and the compiler reads the mark back. The document graph already holds
+the source (=Qdefault: Q[t] <- P[c]:pres=). This is a remnant of the
+term-first design. Not checked: whether the reachable subgraph plus
+strict edges equals today's issue graph on every fixture (copies,
+lambda edges, cut sites).
+
+*** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
+:PROPERTIES:
+:ID:             aida-discuss-capture-source-vs-strict
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A decision reconciling the two readings of a captured site: a live source in the framework ([[id:aida-presumption-capture]], 2026-09-17) and a discharged commitment that is not an assumption in the strict phase (2026-09-25, [[id:aida-review-guard-and-strict-decisions]]).
+:VERIFY:         The decision is written here with its effect on the self-attack, the even loop and Peirce's law stated and checked by a run; lesson 8a's "Why capture" and lesson 10 agree with it.
+:END:
+
+The author's reading (lesson 8a, 2026-10-05): capture lets a default
+continuation make way for the real one, and is the same for
+obligations and presumptions. That reading sides with the strict
+phase: the hole is discharged. The framework still records the captured
+presumption as a source, so the labelling sees the loop (the even loop's
+two models). In the self-attack the strict edge =SelfAttack*= overrides
+the framework; in the even loop an uncaptured site keeps it defeasible.
+Decide whether the source should remain, and if so what it means.
+
+*** BACKLOG Discuss: should the scaffold binders alt and b capture?
+:PROPERTIES:
+:ID:             aida-discuss-scaffold-binder-scope
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A decision on whether a scaffold's alpha and beta binders are in the unfolder's scope (and so capture), applied consistently by the unfolder, the compiler and the strict phase, including for argument bodies that contain scaffold-shaped subterms.
+:VERIFY:         The decision is written here; lesson 8a states it with its rationale; the author's even_loop_lk.fspy with a pasted unfolded term compiles on both routes, or is refused with a message that names the reason.
+:END:
+
+The author's view (2026-10-05): they should capture. Today they are
+"wiring, not scope" (=aida-graph-first= B3). Points raised in the
+session against capture:
+
+- beta holds the contested original and alpha its continuation. If they
+  captured, a supporter of A that rests on A (the cycle fixture
+  tests/minicourse/lesson8a_cycle.fspy) would have no open site and so
+  count as strict, and the scaffold would be decided by strictness. The
+  arguments' own wrappers (=mu pro:B=, =mu' con:A=) already provide the
+  legitimate self-reference (reductio, Peirce).
+- =keep_orig=, =keep_scion_support= and =keep_attack_wing= copy wings
+  without substituting beta (lesson 13, point 4); beta free in a scion
+  would be left unbound.
+
+For capture: a cut gives a fresh site where capture by beta would
+reuse the original (sharing; labels are per statement, so only term
+identity changes).
+
+New evidence (2026-10-05, from [[id:aida-unfold-bare-contrary-capture]]):
+the unfolder decides scope by provenance (an argument's own binder is
+scope, even when it is called =alt1= and stands in a scaffold shape),
+the compiler by shape (a binder in a recognised scaffold position is
+wiring). The two disagree on a body that contains a pasted unfolded
+term: in the author's working copy of even_loop_lk.fspy a bare
+contrary is captured by such a binder (=alt1_3=), and the compiler then
+refuses the edge as having a free variable.
+
+Discussion 2026-10-06 (the even loop, tests/demo/05_even_loop.fspy,
+=evaluate Pdefault=), simulated by replacing the root's bare "P fails"
+(=u5:P!=) with the root attack scaffold's own continuation alpha,
+marked as a captured presumption; old and new implementation alike:
+
+- credulous: VALUE, Pdefault's proof, as now and captured (the wrapper
+  is named alpha instead of Pdefault when captured);
+- skeptical: OPEN either way - as now =mu a.< ?u1:P || u5:P! >=,
+  captured =mu a.< ?u1:P || a >=, eta-equal to =?u1:P=.
+
+- Captured, the attack scion has no open site, so the strict phase
+  decides the root attack ("attacker strict: defeat") before sigma, and
+  the defeat is benign: =mu a.< ORIG || mu'x.< x || a > >= hands ORIG to
+  its own continuation. The default makes way for the real continuation
+  (the author's reading of capture, lesson 8a). Sigma then decides only
+  the support. No verdict changes; the issue graph is unchanged (the
+  captured variable stays a presumption source).
+- In the stacked shape the lone contrary root is a bare site, and once
+  captured the attack scaffold degenerates: both wings are =<beta||alpha>=
+  and the matcher (correctly) no longer recognises a scaffold. If
+  capture by alpha is adopted, the clean form is to drop that attack
+  scaffold and keep only the presumption source in the graph.
+- Withdrawn (author): an onus conflict (the issue presumed by one
+  argument, its contrary by another) makes a captured attack yield a
+  value although sigma may say OUT. An onus conflict is pathological;
+  breaking there is expected and is no argument against capture.
+- Still open: the two points against capture listed above (a circular
+  support captured by beta would count as strict; the scaffold rewrites
+  copy wings without substituting beta), and the provenance-vs-shape
+  disagreement between unfolder and compiler.
+
+*** DONE Show unfolded terms in the CLI, renderable, and in explanations
+CLOSED: [2026-10-06 Tue]
+:PROPERTIES:
+:ID:             aida-cli-show-unfolded-term
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The term unfolded for an argument's issue can be obtained from the CLI as an object the rendering commands accept (render, tree, ...), and =explain= and the debug log print the debate terms they show in the vanilla rendering as well as in the term syntax.
+:VERIFY:         In the CLI, the unfolded term for =pro= in tests/minicourse/lesson9_evaluation.fspy can be rendered with =render ... vanilla= and the result matches the term =explain pro= prints under =pipeline unfolded=; =explain= shows the vanilla rendering of the unfolded term; a test pins both.
+:END:
+
+Requested by the author 2026-10-05 as the prerequisite for discussing
+the nesting order ([[id:aida-discuss-scaffold-nesting-order]]): the
+unfolded term is only visible as a one-line string in =explain= under
+=pipeline unfolded=. Today the author pastes it into a =register= line
+to render it (see the working copy of
+tests/rationality/even_loop_lk.fspy), which also feeds it back into
+the document as an argument - see
+[[id:aida-discuss-scaffold-binder-scope]] for what that does.
+
+Superseded 2026-10-06 by [[id:aida-unfold-entrypoints]]: unfolded terms
+become attributes of the argument (and an issue cache), with an `unfold`
+command and term selectors for the rendering commands. The vanilla
+rendering in `explain` landed in 760eb45.
+
+*** DONE Discuss: the nesting order of a statement's scaffolds
+CLOSED: [2026-10-06 Tue]
+:PROPERTIES:
+:ID:             aida-discuss-scaffold-nesting-order
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-cli-show-unfolded-term
+:OUTCOME:        A decision between the current nesting (the site innermost, each supporter then each attacker wrapping what came before, in registration order) and the alternative of the site as the outermost original with the supporters aggregated in one scion, with its consequences for wing choice stated.
+:VERIFY:         The decision is written here, made by comparing rendered unfolded terms of at least the lesson-14 doubled chain and tests/multiple_undercuts.fspy under both orders; if the order changes, an implementation task covers =_wrap=, the shared route and the evaluator's wing choice.
+:END:
+
+The author's alternative (2026-10-05): the bare site outermost,
+supported by the aggregate of all supporters (the first scaffold
+wrapping the second, and so on). Neither form copies the site or a
+supporter; both pass the original through beta. Points from the
+session: wing choice computes a scion's derivation status by compiling
+the scion to one edge (=scion_record=), so an aggregate scion needs a
+disjunctive status (IN if some supporter is IN), which is closer to the
+acceptance conditions, where supporters are disjuncts. The current
+order is the author's decision of 2026-09-17
+([[id:aida-paper-attack-shape]]).
+
+Superseded 2026-10-06 by [[id:aida-unfold-entrypoints]]. Decision (author):
+the root on top, SUP(ROOT, STACK) with STACK = SUP(SUP(P1,P2),P3) (last
+registered outermost, judged first), one attack scaffold whose scion is
+the contrary's debate SUP~(ROOT_S̄, STACK_S̄); an argument entrypoint moves
+itself to the top of its stack. The strict phase checks the supporter
+first, so the stack order holds under strictness and sigma alike (the
+a1/a2 asymmetry of lesson 8a goes away).
+
+*** BACKLOG Do not accept an unfounded loop as a credulous witness
+:PROPERTIES:
+:ID:             aida-unfounded-credulous-witness
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Credulous evaluation never picks a witness labelling that accepts a statement only through an unfounded positive loop, so IN implies a value on every fixture.
+:VERIFY:         tests/minicourse/lesson8a_cycle.fspy: =evaluate pro credulous= (preferred) no longer returns OPEN under a witness with B IN; a check over all fixtures finds no (credulous, IN, open) case; the chosen approach is recorded here.
+:END:
+
+Found 2026-10-06 checking adequacy on the new terms (the same holds for
+the legacy term). lesson8a_cycle: =pro: B <- A[obli]=, =back: A <- B[obli]=,
+conditions =A := B=, =B := A=. Complete gives IN/IN, OUT/OUT and UNDEC;
+preferred IN/IN and OUT/OUT; stable only OUT/OUT; grounded UNDEC. ADF
+complete/preferred semantics do not require what is IN to be founded;
+the unfolder does (the circular demand for B is cut, =?u3:B=), so the
+term behaves like stable semantics. Credulous preferred picks IN/IN and
+the term stays OPEN although sigma says IN. Skeptical is fine (UNDEC,
+OPEN). Starting point (session): exclude unfounded acceptance from the
+witness choice - accept a credulous witness only if every IN statement
+has a founded derivation in the issue graph - rather than switching the
+semantics to stable, which need not exist.
+
+*** BACKLOG Find strict edges directly, not through "contains a decision"
+:PROPERTIES:
+:ID:             aida-strict-edge-collector-condition
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The strict phase contributes a strict edge for every closed (strict in the debate, no uncaught clash) argument whose framework edge is defeasible, whether or not a scaffold around or inside it was decided by strictness, so the issue graph no longer depends on where in the term the argument stands.
+:VERIFY:         The self-attack (tests/rationality/self_attack_lk.fspy) gets =SelfAttack*= from P[t] and from P[c] in the legacy shape too; the strict edges on every fixture are recorded before and after and any change is listed here; the suite passes.
+:END:
+
+Found 2026-10-06 (aida-unfold-entrypoints). The collector in
+=strict_resolve= adds =n*= only for an outermost closed eta-wrapped
+subterm that *contains a strict decision* - a proxy for "a strict
+derivation the framework could not see". SelfAttack is strict wherever
+it stands (its presumption is captured by its own continuation), but in
+the legacy term for P[c] it is the attacker itself: the decision is made
+at the attack scaffold, the clash it leaves still holds =u1:P!= and is
+not closed, and SelfAttack's own wrapper carries no decision, so no
+edge - grounded all UNDEC from P[c], P[t] IN from P[t]. The stacked shape
+happens to restore the edge (the attacker wing is P's debate, whose
+support scaffold strictness decides), but the condition stays indirect.
+
+*** DONE Unfold from an entrypoint: canonical issue terms and argument terms
+CLOSED: [2026-10-06 Tue]
+:PROPERTIES:
+:ID:             aida-unfold-entrypoints
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The unfolded route builds a canonical term for an issue and a biased term for an argument: the root (a presumption if some argument presumes the statement, else an obligation) on top of one support scaffold whose scion is the supporter stack (last registered outermost), one attack scaffold whose scion is the contrary's debate, and for an argument entrypoint the argument itself on top of its stack; sigma reads a stack disjunctively, the strict phase checks the supporter first, credulous evaluation can favour the argument's derivation, unfolded terms are attributes of their argument (or an issue cache) that go stale with the document, and the CLI can unfold, render and evaluate them.
+:VERIFY:         tests/test_unfold_entrypoints.py passes (shapes of issue and argument terms, the sigma table of the design session, strict stack order, counterargument entrypoints, a demanded-and-presumed statement inside the argument's body, uniform contrary roots, favour, staleness after an argument and after a declaration, the CLI); on every fixture the issue graph and labellings of the new terms equal those of the legacy term; the verdict differences between legacy and new are listed here and accepted by the author; lessons 8a-13 and their test are regenerated; the suite passes apart from documented working-copy failures.
+:END:
+
+Designed with the author 2026-10-05/06 (session on lesson 8a). Plan:
+~/.claude/plans/1-yes-that-s-right-memoized-stearns.md. The shared route
+keeps the legacy shape (=Unfolder(stacked=False)=) until
+[[id:aida-shared-route-stack-shape]]; the CLI default pipeline becomes
+=unfolded= meanwhile.
+
+Shapes, for a statement S with contrary S̄:
+
+: issue term     ATT( SUP(ROOT_S, STACK_S), SUP~(ROOT_S̄, STACK_S̄) )
+: STACK          SUP( SUP(P1, P2), P3 )      last registered outermost
+: argument P1    SUP( ROOT_S, SUP( SUP(P2, P3), P1 ) )
+
+Implemented 2026-10-06 (evidence):
+- core/dc/unfold.py: =_debate=, =_supported=, =_stack=, =_wing=;
+  =unfold_issue=, =unfold_argument=, =unfold_legacy=, =argument_edge=;
+  =Unfolder(stacked=False)= kept for share.py.
+- core/dc/debate_graph.py: =stack_elements=; a stacked scion compiles
+  to one edge per element, =scion_record= returns one record each.
+- core/dc/strict.py: the supporter first at a support scaffold; an
+  uncaught strict contradiction in the supported term still wins (the
+  author: its own piece of semantics).
+- core/comp/evaluate.py: =witness_labelling(favour=edge)=.
+- wrap/prover.py: =revision= (arguments, rebuilds, declarations,
+  monotonic across a logic switch), =unfolded_term=, =issue_term=;
+  default pipeline =unfolded=. core/dc/argument.py: =unfolded_body=,
+  =unfolded_revision=, =labelled_nf_revision=.
+- wrap/cli.py: =unfold argument|issue|debate=; =issue :X= / =issue X:=
+  for evaluate, explain, label, graph, render; =evaluate ... favour=;
+  =render= / =tree= term selectors; the shared builder is quiet on the
+  unfolded route.
+- Tests: tests/test_unfold_entrypoints.py (30, fixture
+  tests/entrypoints.fspy, including a Fellowship replay of every
+  argument term and the CLI); the framework of the new terms equals the
+  legacy one on 17 fixtures, strict edges only grow. Shared-route tests
+  select =pipeline shared= and compare with =unfold_legacy=.
+- Verdicts against the legacy term (19 fixtures, modulo site numbers):
+  the bias (an argument returns its own proof: experiments pro,
+  lesson 14 a1_0/a2_0, lesson 15 p1); favour (two_witnesses yQ); 4 rows
+  EXCEPTION -> OPEN and 9 OPEN rows with another normal form, all
+  skeptical, where the attacker wing is now the contrary's whole debate
+  (accepted by the author); the self-attack seen from P[c] gains
+  SelfAttack* and the labels P[t] IN (as from P[t]).
+- Course: minicourse-evaluation.org lessons 8a-13 regenerated
+  (test_evaluation_course.py, 17 pinned values, including attackrule
+  and the limitation it shows); minicourse-sharing.org notes the
+  default and its lesson 18 exercise is re-answered.
+- Full suite: 1484 passed; the two remaining failures are the author's
+  working copy of even_loop_lk.fspy (aida-discuss-scaffold-binder-scope).
+
+*** BACKLOG Unfold composed debates biased towards several arguments
+:PROPERTIES:
+:ID:             aida-unfold-debate-bias
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-unfold-entrypoints
+:OUTCOME:        A design, then an implementation, for the term of a composed debate (=support deb1 arg2 arg1=) as the term biased towards every argument the debate names, and =unfold debate NAME= producing it.
+:VERIFY:         The design is recorded here; =unfold debate deb1= on a fixture with two supporters and an attacker gives the agreed term, and evaluating it agrees with the issue graph's labels.
+:END:
+
+Requested by the author 2026-10-06. Until then =unfold debate= warns and
+does nothing, and a composed debate is evaluated on its issue term.
+
+*** BACKLOG Favour the original argument as far as possible when it cannot be fully accepted
+:PROPERTIES:
+:ID:             aida-credulous-favour-maximal
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-unfold-entrypoints
+:OUTCOME:        When no labelling makes the original argument's derivation IN, credulous `favour` evaluation chooses a labelling that accepts as much of it as possible, under a stated order (for example a maximal set of its sources IN).
+:VERIFY:         The order is written here; a fixture where the argument's two premises cannot both be IN evaluates under a labelling with one of them IN, and the choice is logged.
+:END:
+
+Stretch goal (author, 2026-10-06).
+
+*** BACKLOG Port the shared route to the stacked shape and the entrypoints
+:PROPERTIES:
+:ID:             aida-shared-route-stack-shape
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-unfold-entrypoints
+:OUTCOME:        share.py and instances.py build the stacked shape for issue and argument entrypoints, one definition per statement and root kind, and the CLI default pipeline returns to =shared=.
+:VERIFY:         The differential tests of tests/test_share.py compare the shared route with the stacked =unfold= again (no =unfold_legacy= reference left) and pass; minicourse-sharing.org is regenerated; the default pipeline is =shared=.
+:END:
+
+The author wants the unfolded route understood and fixed first
+(2026-10-06). Expected complication: an argument entrypoint's own body
+keeps the kinds it wrote, so a statement can need a second definition
+(root obligation with a presumption supporter at the bottom).
+
 ** BACKLOG Prove well-definedness of label-guided reduction (T1, T6)
 :PROPERTIES:
 :ID:             aida-spec-labelled-reduction-well-defined
@@ -2905,6 +3442,31 @@ additive. Questions the design has to answer:
 
 * Correctness and maintenance
 
+** BACKLOG Keep argument names that end in _<digits> apart in the issue graph
+:PROPERTIES:
+:ID:             aida-fold-occurrences-names
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        =fold_occurrences= merges only the copies unfolding made of one edge, never two arguments whose names happen to end in an underscore and digits, so every edge of the issue graph keeps its argument's name.
+:VERIFY:         On tests/minicourse/lesson14_sharing.fspy the issue graph of =a1_0= has edges named =a1_0= and =a1_1= (today both =a1=); a test pins it; =label= output on the fixtures is unchanged apart from names.
+:END:
+
+Found 2026-10-06 (aida-unfold-entrypoints). =fold_occurrences=
+(core/dc/strict.py) strips =_\d+$= from an edge name to find the stem of
+an unfolding copy (s3_2 -> s3), so =a1_0= and =a1_1= become =a1=. Labels
+are unaffected (the edges keep their targets and sources), but the
+names are wrong and a lookup by name fails - credulous =favour= was
+switched to take the argument's document edge for that reason. Fix
+idea: let the unfolder record which edge a copy came from (the renamed
+eta binder) instead of guessing it from the name.
+
 ** BACKLOG Emit the closing elimination for falsum-typed applications
 :PROPERTIES:
 :ID:             aida-instructions-falsum-closing-elim
@@ -3279,6 +3841,96 @@ first is the smallest and removes =spelling_clashes= as a concept.
 
 Distinct from the negation bridge of [[id:aida-strict-layer]], which
 links the node =~K= to the contrary side of the node K.
+
+** BACKLOG Name output sites by number so unfolded terms parse back
+:PROPERTIES:
+:ID:             aida-site-names-round-trip
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        Every obligation and delegation site in a term AIDA prints (unfold, shared route, instances, evaluate) carries a name the term grammar accepts, so a printed term parses back to an equal term.
+:VERIFY:         A round-trip test unfolds the suite's fixtures, prints each term and parses it with =parse_proof_term=, comparing the result to the original; it fails before the change on the =?u1= names and passes after; the suite passes.
+:END:
+
+Reported by the author 2026-10-05. The grammar (core/ac/syntax.py)
+accepts only =number: NUMBER ("." NUMBER)*= after =?= / =!= (and before
+them on the context side), but the generators name sites =u<n>=:
+
+- core/dc/unfold.py, =Unfolder._site=
+- core/dc/share.py, the renumbering in =_instantiate= (two places)
+- core/dc/instances.py, the stub sites
+- core/comp/evaluate.py, the site renumbering
+
+Checked 2026-10-05: =?1:P= parses; =?u1:P=, =!u2:P= and =P:u3?= are
+refused with =SyntaxErrorInSource=. A term printed by =unfold=, =tree= or
+=explain= therefore cannot be pasted into a =.fspy= file or fed back to
+the parser - the same use that exposed [[id:aida-unfold-wiring-names]].
+
+Minimal fix: generate bare numbers. Check before changing that nothing
+reads the =u= prefix to tell generated sites from the arguments' own
+(e.g. renumbering, citation grafting in core/dc/cite.py, label lookups
+keyed by site name) and that generated numbers cannot collide with the
+arguments' numbers once the prefix is gone.
+
+Direction proposed by the author: sites should rather become nominals,
+with only one witness per obligation/delegation - a site would be named
+by the statement it demands or presumes, not by its occurrence. That is
+a design change to the term representation (it interacts with sharing,
+[[id:aida-shared-subarguments]], and with capture in the unfolder) and
+should be discussed before it is implemented; the numeric names are the
+stopgap that makes output round-trippable now.
+
+** BACKLOG Make =load= replace the session's document instead of merging into it
+:PROPERTIES:
+:ID:             aida-load-replaces-document
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        In the interactive CLI, =load FILE= leaves the session holding exactly what FILE defines: declarations, arguments, registered terms and the document graph of an earlier load are gone.
+:VERIFY:         A CLI test loads tests/demo/01_arguments.fspy then tests/demo/05_even_loop.fspy in one session and checks that =render tweety= fails while =graph Pdefault= works; it fails before the change; loading the same file twice gives no "already defined" refusal; tests/demo/test_demo.py and the suite pass.
+:END:
+
+Reported by the author 2026-10-05. =interactive_mode= (wrap/cli.py, the
+=load= branch) calls =execute_script(..., isolate=False)=, so the script
+runs against the session's existing =ProverWrapper= and nothing is reset;
+only =isolate=True= starts a fresh prover (=setup_prover=). The second
+file's arguments and declarations are added to the first's.
+
+Reproduced 2026-10-05:
+
+: load tests/demo/01_arguments.fspy
+: load tests/demo/05_even_loop.fspy
+: render tweety      # still renders the argument from the first file
+
+Consequences: the document graph mixes two files (unconnected parts do
+not show in one issue's graph, but they share the registry and the
+graph); a name used in both files collides in Fellowship; and the
+calculus mode of the second file (=lk.= / =lj.=) is applied on top of
+the first file's state.
+
+Not affected: =--load= at start-up (it runs on the fresh prover from
+=main=) and =--script= (isolated by default).
+
+Fix: run =load= on a fresh prover and make it the session's prover -
+=execute_script= currently rebinds =prover= only locally, so it would
+have to return the prover it used, or =interactive_mode= creates one
+before calling it. The README describes =load= as running "a script
+inside the session"; update that sentence. If merging is ever wanted
+(a library of declarations under a document), that is a separate
+command, e.g. =include=, and belongs with the module design of
+[[id:aida-module-system]].
 
 ** DONE Keep the unfolder's own binder names apart from the arguments'
 CLOSED: [2026-10-02 Fri]

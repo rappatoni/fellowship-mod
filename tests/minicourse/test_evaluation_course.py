@@ -1,0 +1,323 @@
+"""Pins every value quoted in minicourse-evaluation.org (lessons 8a-13).
+
+Regenerated 2026-10-06 for the stacked shape and argument entrypoints
+(tasks.org, aida-unfold-entrypoints): the term is the one unfolded for
+the argument `pro`.
+
+The lessons walk one labelled debate term through the evaluator phase by
+phase, and then replay each scaffold decision as single reduction steps
+with the normaliser's own rules.  If the implementation changes, these
+fail and the lesson text must be updated.
+"""
+
+from copy import deepcopy
+from pathlib import Path
+
+import pytest
+
+from core.ac.ast import Deleg
+from core.comp.adf_label import labellings
+from core.comp.evaluate import evaluate_debate, resolve_scaffolds
+from core.comp.oracle_terms import alpha_equal, classify_nf, normalize_strong
+from core.dc.debate_graph import declaration_kinds
+from core.dc.strict import compile_issue, strict_resolve
+from pres.gen import pres_str
+
+from coursekit import debate_term, eta_reduce, eta_step, fire, scaffold_at
+
+HERE = Path(__file__).parent
+
+UNFOLDED = (
+    "μalt1:B.<?u1:B||μ'b10:B.<μ_:B.<b10:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||"
+    "μalt2:A.<!u2:A||μ'b9:A.<μ_:A.<b9:A||μ'alt3:A.<μb8:A.<μ_:A.<alt3:A||μ'con:A.<con:A||"
+    "μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u4:C||μ'b7:C.<μ_:C.<b7:C||μ'alt5:C.<μb6:C.<"
+    "μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||"
+    "μ'_:C.<alt5:C||b6:C>>||u5:C?>>||μ'_:C.<b7:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||"
+    "x:A*_F_>>>>||μ'_:A.<alt3:A||b8:A>>||u3:A?>>||μ'_:A.<b9:A||alt2:A>>>*th:B>||pro:B>||"
+    "alt1:B>>>"
+)
+AFTER_STRICT_C = "μalt4:C.<!u4:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>"
+RESOLVED = "μpro:B.<μth:B.<r1:A->B||!u2:A*th:B>||pro:B>"
+NORMAL_FORM = "μpro:B.<r1:A->B||!u2:A*pro:B>"
+
+
+@pytest.fixture(scope="module")
+def debate():
+    prover, term = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
+    names = set(prover.declarations.keys())
+    kinds = declaration_kinds(prover.declarations)
+    yield term, names, kinds
+    prover.close()
+
+
+def _labels(graph):
+    return {f"{graph.nodes[k]}[{s[0]}]": v for (k, s), v in
+            labellings(graph, "preferred")[0].items()}
+
+
+CYCLE_UNFOLDED = (
+    "μalt1:B.<?u1:B||μ'b5:B.<μ_:B.<b5:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||"
+    "μalt2:A.<?u2:A||μ'b4:A.<μ_:A.<b4:A||alt2:A>||μ'_:A.<μback:A.<μth_2:A.<r3:B->A||"
+    "?u3:B*th_2:A>||back:A>||alt2:A>>>*th:B>||pro:B>||alt1:B>>>"
+)
+SELF_ATTACK_UNFOLDED = (
+    "μalt2:P.<μalt1:P.<?u1:P||μ'b2:P.<μ_:P.<b2:P||alt1:P>||μ'_:P.<μSelfAttack:P.<"
+    "μrule:P.<pRule:(P->false)->P||λh:P.μalpha:false.<h:P||rule:P>*rule:P>||"
+    "SelfAttack:P>||alt1:P>>>||μ'b4:P.<μ_:P.<b4:P||u3:P!>||μ'_:P.<b4:P||alt2:P>>>"
+)
+
+
+def _unfold_trace(prover, name, caplog):
+    """The unfolder's DEBUG lines (what `explain` prints under "unfold") and
+    the term unfolded for the argument NAME (aida-unfold-entrypoints)."""
+    import logging
+    from core.dc.unfold import argument_edge, unfold_argument
+    caplog.clear()
+    with caplog.at_level(logging.DEBUG, logger="core.dc.unfold"):
+        term = unfold_argument(prover.document, argument_edge(prover.document, name))
+    lines = [r.getMessage().strip() for r in caplog.records
+             if r.name == "core.dc.unfold" and r.levelno == logging.DEBUG]
+    skip = ("unfold: argument ", "unfold: the debate term")
+    return [l for l in lines if l.startswith("unfold: ") and not l.startswith(skip)], term
+
+
+class TestLesson8aUnfold:
+    def test_document_graph(self):
+        prover, _ = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
+        try:
+            g = prover.document
+            show = lambda k, s: f"{g.nodes.get(k, k)}[{s[0]}]"
+            assert [(e.name, show(e.target_key, e.target_side), e.strict,
+                     [(show(s.key, s.side), s.kind) for s in e.sources]) for e in g.edges] == [
+                ("pro", "B[t]", False, [("A[t]", "presumption")]),
+                ("con", "A[c]", False, [("C[t]", "presumption")]),
+                ("killC", "C[c]", True, []),
+                ("attackrule", "A->B[c]", False, [("D[t]", "presumption")]),
+            ]
+            assert {show(k, s): kinds for (k, s), kinds in g.defaults.items()} == {
+                "A[t]": {"presumption"}, "C[t]": {"presumption"}, "D[t]": {"presumption"}}
+            assert pres_str(g.edges[0].term) == "μpro:B.<μth:B.<r1:A->B||!1.2.1:A*th:B>||pro:B>"
+        finally:
+            prover.close()
+
+    def test_attackrule_takes_no_part(self):
+        # The limitation the fixture's last argument shows: r1 is a declared
+        # axiom, a leaf of pro's body and no site, so nothing in pro's debate
+        # stands for A->B[t] and the refutation of A->B is never reached.
+        prover, term = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
+        try:
+            assert "attackrule" not in pres_str(term) and "D" not in pres_str(term)
+            assert (prover.document.nodes and
+                    ("B(S:A,->,S:B)", "term") not in set(prover.document.statements()))
+        finally:
+            prover.close()
+
+    def test_trace_and_term(self, caplog):
+        prover, _ = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
+        try:
+            lines, term = _unfold_trace(prover, "pro", caplog)
+            assert lines == [
+                "unfold: B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top",
+                "unfold: B[t] +support 'pro' (the argument unfolded, on top)",
+                "unfold: A[t] expanded, root u2 (Deleg), 0 supporter(s)",
+                "unfold: A[t] attacked by the debate about A[c], 1 supporter(s) (alt alt2)",
+                "unfold: A[c], the attacker wing, root u3 (Laog)",
+                "unfold: A[c] +support 'con'",
+                "unfold: C[t] expanded, root u4 (Deleg), 0 supporter(s)",
+                "unfold: C[t] attacked by the debate about C[c], 1 supporter(s) (alt alt4)",
+                "unfold: C[c], the attacker wing, root u5 (Laog)",
+                "unfold: C[c] +support 'killC'",
+            ]
+            assert pres_str(term) == UNFOLDED
+        finally:
+            prover.close()
+
+    def test_cut(self, caplog):
+        prover, _ = debate_term(HERE / "lesson8a_cycle.fspy", "pro")
+        try:
+            lines, term = _unfold_trace(prover, "pro", caplog)
+            assert lines == [
+                "unfold: B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top",
+                "unfold: B[t] +support 'pro' (the argument unfolded, on top)",
+                "unfold: A[t] expanded, root u2 (Goal), 1 supporter(s)",
+                "unfold: A[t] +support 'back'",
+                "unfold: B[t] already on the spine, left as the bare site u3",
+            ]
+            assert pres_str(term) == CYCLE_UNFOLDED
+        finally:
+            prover.close()
+
+    def test_capture_and_the_contrary_root(self, caplog):
+        prover, _ = debate_term(HERE.parent / "rationality" / "self_attack_lk.fspy",
+                                "SelfAttack")
+        try:
+            lines, term = _unfold_trace(prover, "SelfAttack", caplog)
+            assert lines == [
+                "unfold: P[t] expanded, root u1 (Goal), 1 supporter(s), 'SelfAttack' on top",
+                "unfold: P[t] +support 'SelfAttack' (the argument unfolded, on top)",
+                "unfold: P[c] captured as 'rule' (presumption)",
+                "unfold: P[t] attacked by the debate about P[c], 0 supporter(s) (alt alt2)",
+                "unfold: P[c], the attacker wing, root u3 (Geled)",
+            ]
+            assert pres_str(term) == SELF_ATTACK_UNFOLDED
+            # the lambda's own edge is in the document but never a scion
+            assert [e.name for e in prover.document.edges] == ["SelfAttack.λ1", "SelfAttack"]
+        finally:
+            prover.close()
+
+
+class TestLesson9Input:
+    def test_unfolded_term(self, debate):
+        term, _, _ = debate
+        assert pres_str(term) == UNFOLDED
+
+    def test_sigma(self, debate):
+        term, names, kinds = debate
+        graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
+        assert _labels(graph) == {"C[c]": "IN", "A[c]": "OUT", "C[t]": "OUT",
+                                  "B[t]": "IN", "A[t]": "IN"}
+        assert [e.name for e in graph.edges if e.name.endswith("*")] == ["killC*"]
+
+    def test_the_attack_on_a_is_read_disjunctively(self, debate):
+        from core.dc.debate_graph import _match_scaffold, scion_record
+        term, names, _ = debate
+        match = _match_scaffold(scaffold_at(deepcopy(term), "u2"), names)
+        records = scion_record(match, {}, names)
+        assert [(r.name, r.target_side, [(s.side, s.kind) for s in r.sources]) for r in records] == [
+            ("x", "context", [("context", "obligation")]),       # A[c]'s root, u3
+            ("con", "context", [("term", "presumption")]),       # con: A[c] <- C[t]
+        ]
+
+
+class TestLesson10Strict:
+    def test_two_decisions_in_the_debate_about_c(self, debate):
+        term, names, _ = debate
+        trace = []
+        out, edges = strict_resolve(term, names, trace=trace)
+        assert [(s, what) for (_, s), what in trace] == [
+            ("context", "supporter strict"), ("context", "attacker strict: defeat")]
+        assert [e.name for e in edges] == ["killC*"]
+        assert pres_str(scaffold_at(out, "u4")) == AFTER_STRICT_C
+
+    def test_the_decisions_as_steps(self, debate):
+        from core.ac.ast import Mutilde, ProofTerm
+        term, names, _ = debate
+        t = deepcopy(term)
+
+        def wing(node, parent=None, slot=None):
+            if isinstance(node, Mutilde) and node.di.name == "alt5":
+                return node, parent, slot
+            for s in ("term", "context"):
+                child = getattr(node, s, None)
+                if isinstance(child, ProofTerm):
+                    found = wing(child, node, s)
+                    if found:
+                        return found
+            return None
+
+        w, parent, slot = wing(t)
+        assert fire(w, "mu<") == "mu<"          # W1: outer pair, b6 := u5 (only rule)
+        assert fire(w, "mu<") == "mu<"          # W2: the decided pair: the supporter K
+        setattr(parent, slot, eta_step(w))      # W3: eta removes alt5
+        c = scaffold_at(t, "u4")
+        assert fire(c, ">mu") == ">mu"          # C1: outer pair, b7 := !u4
+        assert fire(c, "mu<") == "mu<"          # C2: the decided pair: defeat
+        macro, _ = strict_resolve(term, names)
+        assert alpha_equal(c, scaffold_at(macro, "u4"))
+
+    def test_substitution_renames_every_binder(self, debate):
+        term, _, _ = debate
+        c = scaffold_at(deepcopy(term), "u4")
+        fire(c, ">mu")
+        assert pres_str(c) == (
+            "μalt4:C.<μb1:C.<!u4:C||μ'b2:C.<μb3:C.<μb4:C.<b2:C||μ'b5:C.<b5:C||μ'b8:C.<nc:~C||"
+            "μ'b9:~C.<b9:~C||b8:C*_F_>>>>||μ'b10:C.<b2:C||b3:C>>||u5:C?>>||μ'b1:C.<!u4:C||"
+            "alt4:C>>")
+
+
+class TestLesson11Sigma:
+    def test_two_decisions_top_down(self, debate):
+        term, names, kinds = debate
+        graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
+        sigma = labellings(graph, "preferred")[0]
+        strict_body, _ = strict_resolve(term, names)
+        trace = []
+        out = resolve_scaffolds(strict_body, sigma, "skeptical", strict_names=names, trace=trace)
+        assert [(graph.nodes[k], s, status) for (k, s), status in trace] == [
+            ("B", "term", "IN"), ("A", "context", "OUT")]
+        assert pres_str(out) == RESOLVED
+
+    def test_the_decisions_as_steps(self, debate):
+        term, names, kinds = debate
+        t, _ = strict_resolve(term, names)
+        assert fire(t, ">mu") == ">mu"          # B1: outer pair, b10 := ?u1
+        assert fire(t, ">mu") == ">mu"          # B2: sigma keeps the supporter
+        t = eta_step(t)                         # B3: mu alt1.<pro-body||alt1> -> pro-body
+        assert t.id.name != "pro"               # renamed by the substitution in B1 (lesson 13)
+        a = scaffold_at(t, "u2")
+        assert fire(a, ">mu") == ">mu"          # A1: outer pair, b9 := !u2
+        assert fire(a, ">mu") == ">mu"          # A2: sigma keeps the original
+        assert isinstance(a.term, Deleg) and a.context.name == a.id.name   # mu alt2.<!u2||alt2>
+        assert not alpha_equal(t, _parse_resolved(term, names, kinds))   # A3 not yet taken
+        assert alpha_equal(eta_reduce(t), eta_reduce(_parse_resolved(term, names, kinds)))
+
+    def test_without_eta_the_normal_forms_differ(self, debate):
+        term, names, kinds = debate
+        t, _ = strict_resolve(term, names)
+        for rule in (">mu", ">mu", "mu<"):      # B1, B2, then mu< instead of eta
+            fire(t, rule)
+        a = scaffold_at(t, "u2")
+        fire(a, ">mu"); fire(a, ">mu")
+        nf = normalize_strong(t, "cbn")
+        assert pres_str(nf) == "μalt1:B.<r1:A->B||μb3:A.<!u2:A||b3:A>*alt1:B>"
+        assert classify_nf(nf) == "value"
+        macro, *_ = evaluate_debate(term, "pro", strict_names=names, strict_kinds=kinds)
+        assert not alpha_equal(nf, macro)
+        assert alpha_equal(eta_reduce(deepcopy(nf)), eta_reduce(deepcopy(macro)))
+
+
+def _parse_resolved(term, names, kinds):
+    graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
+    sigma = labellings(graph, "preferred")[0]
+    strict_body, _ = strict_resolve(term, names)
+    return resolve_scaffolds(strict_body, sigma, "skeptical", strict_names=names)
+
+
+class TestLesson12Normalise:
+    def test_one_step_to_a_value(self, debate):
+        term, names, kinds = debate
+        for mode in ("skeptical", "credulous"):
+            for base in ("cbn", "cbv"):
+                nf, cls, _, _ = evaluate_debate(term, "pro", strict_names=names,
+                                                strict_kinds=kinds, mode=mode, base=base)
+                assert (pres_str(nf), cls) == (NORMAL_FORM, "value")
+
+    def test_plain_strategies_without_sigma(self, debate):
+        term, _, _ = debate
+        assert pres_str(normalize_strong(term, "cbn")) == \
+            "μalt1:B.<r1:A->B||μb6:A.<!u2:A||b6:A>*alt1:B>"
+        cbv = normalize_strong(term, "cbv")
+        assert pres_str(cbv) == "μalt1:B.<?u1:B||alt1:B>"
+        assert classify_nf(cbv) == "open"
+
+
+class TestLesson13Capture:
+    def test_self_attack_captures_and_renames(self):
+        prover, term = debate_term(HERE.parent / "rationality" / "self_attack_lk.fspy",
+                                   "SelfAttack")
+        try:
+            names = set(prover.declarations.keys())
+            text = pres_str(term)
+            assert "λh:P.μalpha:false.<h:P||rule:P>" in text      # the site became 'rule'
+            trace = []
+            out, edges = strict_resolve(term, names, trace=trace)
+            assert [what for _, what in trace] == ["supporter strict", "original strict"]
+            assert [e.name for e in edges] == ["SelfAttack*"]
+            nf, cls, _, _ = evaluate_debate(term, "SelfAttack", strict_names=names,
+                                            strict_kinds=declaration_kinds(prover.declarations),
+                                            mode="credulous")
+            assert (pres_str(nf), cls) == (
+                "μSelfAttack:P.<pRule:(P->false)->P||λb1:P.μb2:false.<b1:P||SelfAttack:P>"
+                "*SelfAttack:P>", "value")
+        finally:
+            prover.close()

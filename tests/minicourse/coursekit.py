@@ -113,6 +113,94 @@ def graph_from_edges(nodes, edges=(), markers=()) -> DebateGraph:
     return graph
 
 
+# --- lessons 9-13: evaluation one step at a time --------------------------
+
+def debate_term(script, name):
+    """(prover, term): run ``script`` quietly and return the debate term
+    unfolded from the document for the argument ``name`` - biased towards
+    it (aida-unfold-entrypoints), the term `explain` prints under
+    "unfold".  Close the prover when done."""
+    import contextlib
+    import io
+    import os
+    os.environ["ACDC_NO_RENDER"] = "1"
+    from wrap.cli import _issue_term, execute_script, setup_prover
+    prover = setup_prover()
+    with contextlib.redirect_stdout(io.StringIO()):
+        execute_script(prover, str(script), isolate=False)
+        _arg, _issue, term = _issue_term(prover, name)
+    return prover, term
+
+
+def scaffold_at(term, site):
+    """The scaffold whose original is the bare site ``site`` ("u2"): the
+    binder whose command has that site on its own side."""
+    from core.ac.ast import Deleg, Geled, Goal, Laog, Mu, Mutilde, ProofTerm
+
+    def walk(n):
+        if not isinstance(n, ProofTerm):
+            return None
+        if isinstance(n, Mu) and isinstance(n.term, (Goal, Deleg)) and n.term.number == site:
+            return n
+        if isinstance(n, Mutilde) and isinstance(n.context, (Laog, Geled)) and n.context.number == site:
+            return n
+        for slot in ("term", "context"):
+            found = walk(getattr(n, slot, None))
+            if found is not None:
+                return found
+        return None
+
+    return walk(term)
+
+
+def fire(binder, rule):
+    """Fire ``rule`` ("mu<" or ">mu") at the command directly under
+    ``binder``, in place, with the normaliser's own rules and substitution.
+    Where only one rule applies it fires whatever ``rule`` says; the rule
+    actually fired is returned."""
+    from core.comp.oracle_terms import _step_command
+    fired = []
+    step = _step_command(binder.term, binder.context,
+                         "cbv" if rule == "mu<" else "cbn", fired)
+    if step is None:
+        raise ValueError("no reduction applies at this command")
+    binder.term, binder.context = step
+    return fired[-1]
+
+
+def eta_step(binder):
+    """One eta step at ``binder`` itself: mu a.< t || a >  ->  t  when a is
+    not free in t (and the mirror).  Not a rule of the normaliser; the
+    scaffold rewrites apply it to a scaffold's outer binder."""
+    from core.ac.ast import DI, ID, Mu, Mutilde
+    from core.comp.oracle_terms import _occurs
+    if (isinstance(binder, Mu) and isinstance(binder.context, ID)
+            and binder.context.name == binder.id.name and not _occurs(binder.term, ID, binder.id.name)):
+        return binder.term
+    if (isinstance(binder, Mutilde) and isinstance(binder.term, DI)
+            and binder.term.name == binder.di.name and not _occurs(binder.context, DI, binder.di.name)):
+        return binder.context
+    raise ValueError("eta does not apply here")
+
+
+def eta_reduce(term):
+    """Eta everywhere, the argument's own wrappers included: for comparing
+    two terms modulo eta, not for replaying a step."""
+    from core.ac.ast import DI, ID, Mu, Mutilde, ProofTerm
+    from core.comp.oracle_terms import _occurs
+    if (isinstance(term, Mu) and isinstance(term.context, ID)
+            and term.context.name == term.id.name and not _occurs(term.term, ID, term.id.name)):
+        return eta_reduce(term.term)
+    if (isinstance(term, Mutilde) and isinstance(term.term, DI)
+            and term.term.name == term.di.name and not _occurs(term.context, DI, term.di.name)):
+        return eta_reduce(term.context)
+    for slot in ("term", "context"):
+        child = getattr(term, slot, None)
+        if isinstance(child, ProofTerm):
+            setattr(term, slot, eta_reduce(child))
+    return term
+
+
 if __name__ == "__main__":
     # Lesson 4, exercise 1: the lesson-2 d2 graph, built directly.
     d2 = graph_from_edges(

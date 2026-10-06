@@ -70,6 +70,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # Normalized proof term.
         self.normal_representation = None  # NL rendering of normal form.
+        # The debate term unfolded for this argument (aida-unfold-entrypoints)
+        # and the evaluated normal form, each with the document revision it
+        # was built at: adding an argument or a declaration makes them stale.
+        self.unfolded_body = None
+        self.unfolded_revision = None
+        self.labelled_nf = None
+        self.labelled_nf_revision = None
         # Explicit flag recording the user's intent to build a counterargument.
         # Why we need this:
         # - In recording mode we only have plain instruction strings; there is no AST

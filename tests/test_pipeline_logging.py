@@ -70,7 +70,9 @@ class TestEveryStageSpeaks:
         said = " ".join(messages(caplog, "core.dc.unfold"))
         assert "expanded" in said
         assert "already on the spine" in said          # the T6 cut
-        assert "+support" in said and "+attack" in said
+        # the stacked shape (aida-unfold-entrypoints): a supporter joins the
+        # stack, the contrary's debate attacks
+        assert "+support" in said and "attacked by the debate about" in said
 
     def test_the_solver_subprocess_is_visible(self, fresh, caplog):
         caplog.set_level(logging.DEBUG)
@@ -131,7 +133,7 @@ class TestArtifactsAreReported:
         labels = " | ".join(self.artifacts(caplog))
         for expected in (
             "registered with",                  # 1. the term before unfolding
-            "the debate as named sub-debates",  # 2. the debate, each sub-debate once
+            "unfolded from the document",       # 2. the debate term (the default, unfolded route)
             "the term sent", "Fellowship rebuilt",   # 3. both sides of the check
             "argumentation framework",          # 4. the compiled graph
             "the term going in", "the term coming out",   # 5. strict, in and out

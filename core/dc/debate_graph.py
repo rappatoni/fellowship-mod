@@ -758,6 +758,27 @@ def _scion_name(body, fallback: str) -> str:
     return fallback
 
 
+def stack_elements(scion, strict_names=()) -> list:
+    """The alternatives a scion stands for (aida-unfold-entrypoints).  In
+    the stacked shape a scion may be a *stack*: support scaffolds on one
+    statement, SUP(SUP(P1, P2), P3), or the contrary's debate
+    SUP~(ROOT, STACK) as an attacker wing.  Its elements, bottom first, are
+    the alternatives sigma reads disjunctively and the compiler records as
+    one edge each.  A scion that is not a support scaffold is its own one
+    element; a bare leaf (a site, a captured variable) is given the eta
+    wrapper an argument has, so it compiles as an identity edge."""
+    match = _match_paper_scaffold(scion)
+    if match is not None and match[0] == "supporter":
+        return stack_elements(match[3], strict_names) + stack_elements(match[4], strict_names)
+    if isinstance(scion, (Goal, Deleg, DI)) and not (isinstance(scion, DI) and scion.name in strict_names):
+        prop = scion.prop
+        return [Mu(ID("x", prop), prop, scion, ID("x", prop))]
+    if isinstance(scion, (Laog, Geled, ID)) and not (isinstance(scion, ID) and scion.name in strict_names):
+        prop = scion.prop
+        return [Mutilde(DI("x", prop), prop, DI("x", prop), scion)]
+    return [scion]
+
+
 #: Which declaration kind a declared name must have to appear on a side:
 #: a ``declare``d proposition is a proof (term side), a ``deny``ed one a
 #: refutation (context side).  Sorts never occur as proof-term leaves.
@@ -928,9 +949,11 @@ class _Compiler:
                     target_side = site_side
                     sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
                                  alt: (sprop, alt_side, name)}
-                label = _scion_name(scion, f"{name}.{srole}{next(self._fresh)}")
-                self.graph.add_edge(self.compile_body(scion, label, srole, sub_outer,
-                                                      expect_side=target_side, expect_prop=sprop))
+                # A stacked scion is one edge per alternative in it.
+                for element in ([scion] if match.legacy else stack_elements(scion, self.strict_names)):
+                    label = _scion_name(element, f"{name}.{srole}{next(self._fresh)}")
+                    self.graph.add_edge(self.compile_body(element, label, srole, sub_outer,
+                                                          expect_side=target_side, expect_prop=sprop))
                 # the site stays a source of this derivation; the scion is
                 # its own edge
                 return walk(orig, env, spine)
@@ -1020,7 +1043,9 @@ def _peel_eta(body):
 def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     """For the evaluator: compile a scaffold's scion against the binders in
     scope (``env``: name -> (prop, side)) exactly as the compiler does and
-    return its record(s) - a list, one edge."""
+    return its record(s) - a list, one edge per alternative of a stacked
+    scion (``stack_elements``), which ``derivation_status`` reads
+    disjunctively."""
     role, site_side, prop, orig, scion_raw, alt, scion_kind = match
     compiler = _Compiler(strict_names, strict_kinds)
     compiler.graph.quiet = True          # a probe, not a graph being built
@@ -1037,8 +1062,10 @@ def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
         target_side = site_side
         alt_side = "context" if site_side == "term" else "term"   # mu alt on a term site, mu' alt on a context site
         outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
-    return [compiler.compile_body(scion, _scion_name(scion, "scion"), role, outer,
-                                  expect_side=target_side, expect_prop=prop)]
+    elements = [scion] if match.legacy else stack_elements(scion, strict_names)
+    return [compiler.compile_body(element, _scion_name(element, "scion"), role, outer,
+                                  expect_side=target_side, expect_prop=prop)
+            for element in elements]
 
 
 def compile_debate(body: ProofTerm, name: str, *, strict_names=None,

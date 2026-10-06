@@ -244,10 +244,24 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
                    "supporter" if role == "supporter" else "attacker",
                    "strict" if s_scion else "not strict")
         if role == "supporter":
-            if s_orig:
+            # The supporter first (aida-unfold-entrypoints): inside a stack
+            # the supported term is a lower supporter, and when both are
+            # strict the one higher in the stack - judged first by sigma
+            # too - wins.  Outside a stack the supported term is a site,
+            # never strict, so the order changes nothing there.
+            # One exception, its own piece of semantics (author, 2026-10-06):
+            # among strict terms an uncaught strict contradiction always wins,
+            # so that it surfaces as an exception wherever it stands in the
+            # stack.
+            if (s_orig and s_scion and not contains_uncatchable_clash(scion, part_ids, part_dis)
+                    and contains_uncatchable_clash(orig, part_ids, part_dis)):
+                logger.debug("strict: %s both wings strict; the original holds an uncaught "
+                             "contradiction, which wins", _show(statement, prop))
                 kept, what = keep_orig(node, orig, alt), "original strict"
             elif s_scion:
                 kept, what = keep_scion_support(node, scion, alt), "supporter strict"
+            elif s_orig:
+                kept, what = keep_orig(node, orig, alt), "original strict"
             else:
                 # Neither wing rests on nothing: the labelling decides.
                 logger.debug("strict: %s delayed for the labelling "

@@ -116,9 +116,12 @@ TODO: Mechanism to declare a scenario of default assumptions.
             kept = {key: store.document[key]
                     for key in ("typecheck", "typecheck_expanded", "pipeline_unfolded")
                     if key in store.document}
+            revision = store.document.get("revision", 0)
             store.document.clear()
             store.document["logic"] = stripped
             store.document.update(kept)
+            # monotonic, so that no term cached before the switch looks fresh
+            store.document["revision"] = revision + 1
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -461,6 +464,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(typ, str):
                         typ = self._unquote(typ)
                     self.declarations[nm] = tagged(typ, 'sort')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  declared.", nm, typ)
                 elif kind == 'prop':
                     # We store the proposition string for axioms/theorems.
@@ -468,6 +472,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
                     self.declarations[nm] = tagged(pr, 'prop')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  declared.", nm, pr)
                 elif kind == 'moxia':
                     # Store the proposition string for refutations (deny).
@@ -475,6 +480,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
                     self.declarations[nm] = tagged(pr, 'moxia')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  denied.", nm, pr)
             
 
@@ -584,6 +590,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.arguments[argument.name] = argument
         if not getattr(argument, "composed", False):
             self.document_add(argument)
+        self.bump_revision()
 
     def rebuild_document(self) -> None:
         """Recompile the document graph from the atomic arguments, in
@@ -593,6 +600,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         for argument in self.arguments.values():
             if not getattr(argument, "composed", False):
                 self.document_add(argument)
+        self.bump_revision()
         logger.debug("Document graph rebuilt: %d edge(s)", len(self.document.edges))
 
     # -- the document graph (Phase C) --------------------------------------
@@ -628,14 +636,14 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @property
     def pipeline_unfolded(self) -> bool:
         """Whether graph, label and evaluate work on the term unfolded from
-        the document graph - the older pipeline, whose cost grows with the
-        number of paths through the graph - instead of on the shared debate
-        (default off; FSP_PIPELINE=unfolded or `pipeline unfolded` selects
-        it).  The unfolded pipeline is the reference the shared one is
-        tested against (tasks.org, aida-shared-subarguments); the switch is
-        for comparing the two on a document."""
+        the document graph - whose cost grows with the number of paths
+        through the graph - instead of on the shared debate.  Default ON
+        since 2026-10-06: only the unfolded route builds the stacked shape
+        and the argument entrypoints (aida-unfold-entrypoints); the shared
+        route keeps the legacy shape until aida-shared-route-stack-shape.
+        FSP_PIPELINE=shared or `pipeline shared` selects the shared route."""
         return store.document.get("pipeline_unfolded",
-                                  os.getenv("FSP_PIPELINE", "shared") == "unfolded")
+                                  os.getenv("FSP_PIPELINE", "unfolded") == "unfolded")
 
     @pipeline_unfolded.setter
     def pipeline_unfolded(self, value: bool) -> None:
@@ -700,6 +708,49 @@ TODO: Mechanism to declare a scenario of default assumptions.
             except ValueError:          # a conclusion the graph has no node for
                 continue
         return {statement: names[0] for statement, names in about.items() if len(names) == 1}
+
+    # -- revisions and unfolded terms (aida-unfold-entrypoints) -----------
+
+    @property
+    def revision(self) -> int:
+        """The document's revision: it changes whenever an argument is
+        registered (or the document rebuilt) or a declaration is added, so
+        a term unfolded or evaluated at an older revision may be stale - a
+        new argument can support or attack, a new declaration can make a
+        presumption strict or refuted."""
+        return store.document.get("revision", 0)
+
+    def bump_revision(self) -> None:
+        store.document["revision"] = self.revision + 1
+
+    def unfolded_term(self, argument: Any):
+        """The debate term unfolded for ``argument`` (biased towards it), from
+        the cache when it is fresh; None if the argument has no edge of its
+        own in the document (a composed debate, or one refused at
+        registration)."""
+        from core.dc.unfold import argument_edge, unfold_argument, report_cached
+        if (getattr(argument, "unfolded_body", None) is not None
+                and argument.unfolded_revision == self.revision):
+            return report_cached(argument.unfolded_body,
+                                 f"the term unfolded for '{argument.name}'", self.revision)
+        edge = argument_edge(self.document, argument.name)
+        if edge is None:
+            return None
+        argument.unfolded_body = unfold_argument(self.document, edge)
+        argument.unfolded_revision = self.revision
+        return argument.unfolded_body
+
+    def issue_term(self, statement):
+        """The canonical debate term of ``statement`` (an issue entrypoint),
+        cached per revision."""
+        from core.dc.unfold import unfold, report_cached
+        cache = store.document.setdefault("issue_terms", {})
+        found = cache.get(statement)
+        if found is not None and found[0] == self.revision:
+            return report_cached(found[1], "the issue's canonical term", self.revision)
+        term = unfold(self.document, statement)
+        cache[statement] = (self.revision, term)
+        return term
 
     def shared_debate(self, issue) -> SharedDebate:
         """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""

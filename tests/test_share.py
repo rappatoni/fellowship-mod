@@ -22,7 +22,9 @@ from core.ac.ast import Mu, Mutilde, Lamda, Hyp, Cons, Goal, Deleg, Geled, ID, D
 from core.dc.debate_graph import compile_document, canonical_prop
 from core.dc.share import share, is_cite, ANON_PREFIX, _leaves
 from core.dc.typecheck import shape
-from core.dc.unfold import unfold
+# The shared route keeps the legacy shape until aida-shared-route-stack-shape,
+# so its reference is the legacy unfolding.
+from core.dc.unfold import unfold_legacy as unfold
 from mod import store
 from wrap.cli import setup_prover, execute_script
 from wrap.prover import NameClash
@@ -115,6 +117,14 @@ class TestExpansionIsUnfolding:
         doc = random_document(seed)
         for statement in doc.statements():
             assert same_term(doc, statement), f"seed {seed}, statement {statement}"
+
+    def test_a_captured_bare_contrary(self):
+        # The bare contrary is a citation in a definition, captured or a
+        # bare site where it is written out - as in unfold.
+        from test_unfold import bare_contrary_document
+        doc, _ = bare_contrary_document()
+        for statement in doc.statements():
+            assert same_term(doc, statement), statement
 
     def test_a_bare_issue_gets_the_eta_wrapper(self):
         doc, _ = doubled_chain(1)
@@ -493,6 +503,12 @@ class TestIssueGraphFromInstances:
         for statement in doc.statements():
             same_graph(doc, statement, strict, semantics=ALL)
 
+    def test_a_captured_bare_contrary(self):
+        from test_unfold import bare_contrary_document
+        doc, strict = bare_contrary_document()
+        for statement in doc.statements():
+            same_graph(doc, statement, strict, semantics=ALL)
+
     @pytest.mark.parametrize("seed", range(60))
     def test_random_documents(self, seed):
         doc = random_document(seed)
@@ -564,7 +580,7 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("label a12_0\ngraph a12_0\n")
+        script.write_text("pipeline shared\nlabel a12_0\ngraph a12_0\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records if r.getMessage().strip().endswith(" IN")]
@@ -581,7 +597,7 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.dc.instances, "compile_issue_shared", broken)
-        script.write_text("label a2_0\n")
+        script.write_text("pipeline shared\nlabel a2_0\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
@@ -719,7 +735,7 @@ class TestEvaluateCommand:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("evaluate a12_0 skeptical grounded\n")
+        script.write_text("pipeline shared\nevaluate a12_0 skeptical grounded\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
@@ -729,16 +745,16 @@ class TestEvaluateCommand:
                                                            monkeypatch):
         import core.dc.unfold
         calls = []
-        real = core.dc.unfold.unfold
+        real = core.dc.unfold.unfold_argument
 
-        def counting(graph, issue):
-            calls.append(issue)
-            return real(graph, issue)
+        def counting(graph, edge):
+            calls.append(edge.name)
+            return real(graph, edge)
 
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))
         run(fresh, script)
-        monkeypatch.setattr(core.dc.unfold, "unfold", counting)
+        monkeypatch.setattr(core.dc.unfold, "unfold_argument", counting)
 
         def evaluated(command):
             caplog.clear()
@@ -748,14 +764,16 @@ class TestEvaluateCommand:
             return [r.getMessage() for r in caplog.records
                     if "Evaluated 'a2_0'" in r.getMessage() or r.getMessage().strip().endswith(" IN")]
 
-        shared = evaluated("evaluate a2_0\nlabel a2_0\n")
+        shared = evaluated("pipeline shared\nevaluate a2_0\nlabel a2_0\n")
         assert calls == []
         unfolded = evaluated("pipeline unfolded\nevaluate a2_0\nlabel a2_0\n")
-        assert len(calls) == 2                       # once for evaluate, once for label
+        # the argument's term is unfolded once and kept: label reuses it
+        # (aida-unfold-entrypoints)
+        assert calls == ["a2_0"]
         assert fresh.pipeline_unfolded
         assert shared == unfolded and len(shared) == 4      # the verdict and three labels
         evaluated("pipeline shared\nevaluate a2_0\n")
-        assert len(calls) == 2 and not fresh.pipeline_unfolded
+        assert calls == ["a2_0"] and not fresh.pipeline_unfolded
 
     def test_a_failure_of_the_shared_evaluator_falls_back_to_the_unfolded_term(
             self, fresh, tmp_path, capsys, caplog, monkeypatch):
@@ -768,7 +786,7 @@ class TestEvaluateCommand:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.comp.evaluate, "evaluate_shared", broken)
-        script.write_text("evaluate a2_0\n")
+        script.write_text("pipeline shared\nevaluate a2_0\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]

@@ -306,11 +306,17 @@ def accepting_witnesses(graph, issue, semantics: str = "preferred"):
 
 
 def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
-                      witness=None):
+                      witness=None, favour=None):
     """Choose sigma per the module docstring.  Returns (sigma, tiebreak).
 
     ``witness``: None for the default choice, or the 1-based number of a
-    labelling in the canonical numbering (credulous mode only)."""
+    labelling in the canonical numbering (credulous mode only).
+    ``favour``: the document edge of the argument a term was unfolded for
+    (aida-unfold-entrypoints).  Credulous mode then prefers the first
+    accepting labelling in which that argument's own derivation is IN (its
+    target and every source), and says so when there is none.  The edge,
+    not its name, because the issue graph may rename it
+    (``fold_occurrences``)."""
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     shown = _show(issue, graph.nodes.get(issue[0]))
@@ -338,6 +344,16 @@ def witness_labelling(graph, issue, mode: str, semantics: str = "preferred",
         logger.debug("witness: [%d] of %d chosen explicitly (credulous, issue %s IN)",
                      witness, len(candidates), shown)
         return sigma, "credulous"
+    if favour is not None:
+        records = [favour]
+        for number, sigma in enumerate(candidates, 1):
+            if sigma.get(issue) == "IN" and derivation_status(records, sigma) == "IN":
+                logger.debug("witness: [%d] of %d chosen, the first %s labelling accepting %s "
+                             "in which '%s' is IN", number, len(candidates), semantics, shown,
+                             favour.name)
+                return sigma, "credulous"
+        logger.info("No %s labelling accepts %s with '%s' IN; choosing as without favour.",
+                    semantics, shown, favour.name)
     for number, sigma in enumerate(candidates, 1):
         if sigma.get(issue) == "IN":
             logger.debug("witness: [%d] of %d chosen, the first %s labelling accepting %s",
@@ -363,6 +379,7 @@ def evaluate_debate(
     base: str = "cbn",
     semantics: str = "preferred",
     witness=None,
+    favour=None,
 ):
     """Compile, label, choose the witness sigma, resolve, normalize,
     classify.
@@ -370,13 +387,15 @@ def evaluate_debate(
     Returns (normal_form, nf_class, sigma, graph).  ``base`` is the
     strategy for critical pairs sigma does not decide; ``semantics`` the
     labelling semantics the modes range over; ``witness`` the number of
-    the credulous witness to use (default: the first accepting one).
+    the credulous witness to use (default: the first accepting one);
+    ``favour`` the argument whose derivation a credulous witness should
+    accept if it can (``witness_labelling``).
     """
     graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
     issue = issue_of(body)
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
-    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
+    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness, favour)
     normal_form = _evaluate_under(body, name, sigma, tiebreak, strict_names, base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),

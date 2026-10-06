@@ -21,7 +21,9 @@ from core.dc.instances import IssueResolver
 from core.dc.share import share, is_cite, _leaves
 from core.dc.strict import strict_resolve
 from core.dc.typecheck import shape, typecheck, typecheck_shared, TypeCheckFailed
-from core.dc.unfold import unfold
+# The shared route keeps the legacy shape until aida-shared-route-stack-shape,
+# so its reference is the legacy unfolding.
+from core.dc.unfold import unfold_legacy as unfold
 from mod import store
 from pres.gen import pres_str
 from wrap.cli import execute_script, setup_prover
@@ -50,9 +52,9 @@ ROOT15 = (
     "pRule1:(Q->false)->P||λh:Q.μalpha:false.<h:Q||anon_1[rule -> P:!, h -> ?:Q, ?:P]:Q>"
     "*rule:P>||p1:P>||alt1:P>>>||μ'b3:P.<μ_:P.<b3:P||alt2:P>||μ'_:P.<μp2:P.<μrule_2:P.<"
     "pRule2:(Q->false)->P||λh_2:Q.μalpha_2:false.<h_2:Q||anon_1[rule_2 -> P:!, h_2 -> ?:Q, ?:P]:Q>"
-    "*rule_2:P>||p2:P>||alt2:P>>>||μ'b6:P.<μ_:P.<b6:P||μ'x5:P.<x5:P||u2:P!>>||μ'_:P.<b6:P||alt3:P>>>"
+    "*rule_2:P>||p2:P>||alt2:P>>>||μ'b5:P.<μ_:P.<b5:P||μ'x4:P.<x4:P||u2:P!>>||μ'_:P.<b5:P||alt3:P>>>"
 )
-DEF15_HEAD = "anon_1[P:!, Q:!] := μ'alt4:Q.<μb8:Q.<μ_:Q.<alt4:Q||b8:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<"
+DEF15_HEAD = "anon_1[P:!, Q:!] := μ'alt4:Q.<μb7:Q.<μ_:Q.<alt4:Q||b7:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<"
 
 DEF17_A0 = (
     "a0[!:P0] := μalt5:P0.<!u3:P0||μ'b8:P0.<μ_:P0.<b8:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||"
@@ -195,7 +197,7 @@ class TestLesson15Captures:
         doc, issue, names, kinds, shared = load(fresh, "lesson15_capture.fspy", "P")
         root, definition = shared.to_text().splitlines()
         assert root == ROOT15
-        assert definition.startswith(DEF15_HEAD) and definition.endswith("||b8:Q>>||u4:Q!>")
+        assert definition.startswith(DEF15_HEAD) and definition.endswith("||b7:Q>>||u4:Q!>")
         assert shared.named() == {(K("Q"), "context"): "anon_1"}
 
     def test_what_the_citations_record(self, fresh):
@@ -327,7 +329,9 @@ class TestLesson18Evaluation:
 
     def test_the_pipeline_switch(self, fresh):
         run(fresh, HERE / "lesson14_sharing.fspy")
-        assert not fresh.pipeline_unfolded
+        # the default is the unfolded route since 2026-10-06, until the shared
+        # route builds the stacked shape (tasks.org, aida-shared-route-stack-shape)
+        assert fresh.pipeline_unfolded
         fresh.pipeline_unfolded = True
         out = run(fresh, HERE / "lesson14_sharing.fspy")
         assert "Debate about 'a2_0'" in out                        # debate always shows the shared form

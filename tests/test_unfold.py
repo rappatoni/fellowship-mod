@@ -30,7 +30,8 @@ from core.dc.debate_graph import (
     compile_debate, compile_document, declaration_kinds, canonical_prop,
     DebateGraph, Edge, Source, _match_scaffold,
 )
-from core.dc.unfold import unfold, Unfolder, contrary
+from core.dc.unfold import unfold, unfold_legacy, Unfolder, contrary
+from pres.gen import pres_str
 from core.dc.strict import compile_issue, strict_resolve
 from core.dc.typecheck import typecheck, TypeCheckFailed
 from wrap.cli import setup_prover, execute_script
@@ -177,6 +178,54 @@ class TestShapes:
         lam = [e for e in g.edges if e.name.startswith("p3.")]
         assert lam and ("P", "context", "presumption") in {(g.nodes[s.key], s.side, s.kind) for s in lam[0].sources}
         assert not g.is_acyclic()
+
+    def test_the_bare_contrary_is_captured_like_any_site(self):
+        # The bare contrary of an attack scaffold is looked up in scope like
+        # a site in an edge body (author, 2026-10-05).  qArg applies P->P
+        # under its own continuation s for P, so P[t] is expanded where
+        # P[c] is bound; rArg presumes "P fails" (under its hypothesis h:P)
+        # and so gives P[c] a presumption marker, and qArg's demand gives
+        # P[t] an obligation marker.  Each bare contrary meets a binder.
+        doc, strict = bare_contrary_document()
+        # legacy shape: the captured contrary in an eta wrapper
+        term = unfold_legacy(doc, (K("Q"), "term"))
+        # P[t] inside qArg: attacked by "P fails", which is s
+        assert _contains(term, lambda n: isinstance(n, Mutilde) and isinstance(n.term, DI)
+                         and n.term.name == n.di.name and isinstance(n.context, ID)
+                         and n.context.name == "s" and n.context.captured_presumption)
+        assert not _contains(term, lambda n: isinstance(n, Geled))
+        term = unfold_legacy(doc, (K("R"), "term"))
+        # P[c] inside rArg's lambda: attacked by the demand for P, which is h
+        assert _contains(term, lambda n: isinstance(n, Mu) and isinstance(n.context, ID)
+                         and n.context.name == n.id.name and isinstance(n.term, DI)
+                         and n.term.name == "h" and not getattr(n.term, "captured_presumption", False))
+        assert not _contains(term, lambda n: isinstance(n, Goal) and n.prop == "P")
+        # the captured scion has no site left: the strict phase decides it
+        trace = []
+        strict_resolve(term, strict, trace=trace)
+        assert [(s, what) for (_, s), what in trace] == [("term", "attacker strict: defeat")]
+        # stacked shape (aida-unfold-entrypoints): the contrary's root is the
+        # attack scion itself, the captured variable with no eta wrapper
+        for issue, wing in (((K("Q"), "term"), "μ_:P.<b3:P||s:P>"),
+                            ((K("R"), "term"), "μ'_:P.<h:P||b3:P>")):
+            term = unfold(doc, issue)
+            assert wing in pres_str(term)
+            trace = []
+            strict_resolve(term, strict, trace=trace)
+            assert [what for _, what in trace] == ["attacker strict: defeat"]
+
+
+def bare_contrary_document():
+    """qArg: Q from P, applying pp : P->P under a continuation s for P;
+    rArg: R from "P fails", presumed, through rRule : (P->false)->R."""
+    under_s = Mu(ID("s", "P"), "P", DI("pp", "P->P"), Cons(Goal("1", "P"), ID("s", "P")))
+    q = eta("qArg", "Q", Mu(ID("r", "Q"), "Q", DI("qRule", "P->Q"), Cons(under_s, ID("r", "Q"))))
+    refuted = Lamda(Hyp(DI("h", "P"), "P"),
+                    Mu(ID("alpha", "false"), "false", DI("h", "P"), Geled("1", "P")))
+    refuted.prop = "P->false"
+    r = eta("rArg", "R", Mu(ID("t", "R"), "R", DI("rRule", "(P->false)->R"), Cons(refuted, ID("t", "R"))))
+    strict = {"pp", "qRule", "rRule"}
+    return compile_document([("qArg", q), ("rArg", r)], strict_names=strict), strict
 
 
 # ---------------------------------------------------------------------------
