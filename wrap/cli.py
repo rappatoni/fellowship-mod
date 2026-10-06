@@ -1891,12 +1891,12 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
         logger.warning("Debate commands refused in lj for '%s'.", name)
         return arg, issue, None, None
     if _pipeline_logger.isEnabledFor(logging.DEBUG):
-        from pres.gen import pres_str
+        from pres.gen import pres_tree
         _pipeline_logger.debug("issue: '%s' is about %s; the document has %d edge(s)",
                                name, f"{document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]",
                                len(document.edges))
         artifact(_pipeline_logger, "issue: the term '%s' was registered with (before unfolding)" % name,
-                 pres_str(arg.body))
+                 pres_tree(arg.body))
     if issue not in set(document.statements()):
         logger.warning("'%s' is not in the document graph; using its own term.", name)
         _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
@@ -1909,7 +1909,7 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
         logger.warning("Unfolding refused for '%s': %s", name, e)
         return arg, issue, None, None
     if _pipeline_logger.isEnabledFor(logging.DEBUG):
-        artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text())
+        artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text(tree=True))
     # A statement spelled two ways (~A and A -> false) joins two spellings
     # only in the expanded term, so that is the one to type-check then
     # (tasks.org, aida-negation-spelling-in-unfolding).
@@ -2227,8 +2227,12 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
         last_stage = ""
         for record in stages:
             message = record.getMessage()
-            stripped = message.lstrip()
-            indent = "  " if len(message) != len(stripped) else ""
+            # Strip only the indentation `artifact` adds: a rendered term's
+            # own leading spaces are its tree layout.
+            if message.startswith("    "):
+                indent, stripped = "  ", message[4:]
+            else:
+                indent, stripped = "", message.lstrip()
             # Each message opens with its own stage word - "unfold", "solver",
             # "sigma", "classify" - which names the step better than the module
             # does (one module runs several steps).  Lift it into the column.

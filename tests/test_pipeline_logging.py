@@ -167,8 +167,14 @@ class TestArtifactsAreReported:
                          mode="credulous")
         said = messages(caplog, "core.dc.unfold")
         i = next(i for i, m in enumerate(said) if m.endswith("document:"))
-        term = said[i + 1].strip()
-        assert term.startswith("\u03bc") and "argA" in term and len(term) > 100
+        # The term is laid out as a tree (pres.gen.pres_tree), one line per node.
+        block = []
+        for m in said[i + 1:]:
+            if not m.startswith("    "):
+                break
+            block.append(m[4:])
+        assert block[0].startswith("\u03bc") and block[-1] == ">"
+        assert "argA" in "\n".join(block) and len(block) > 10
 
     def test_a_dropped_wing_says_what_went_with_it(self, fresh, caplog):
         """Resolution recurses only into the wing it keeps, so one decision at

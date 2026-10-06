@@ -348,6 +348,6 @@ def unfold(graph: DebateGraph, issue) -> ProofTerm:
     """The debate term for ``issue`` = (canonical key, side)."""
     term = Unfolder(graph).unfold(issue)
     if logger.isEnabledFor(logging.DEBUG):
-        from pres.gen import pres_str
-        artifact(logger, "unfold: the debate term unfolded from the document", pres_str(term))
+        from pres.gen import pres_tree
+        artifact(logger, "unfold: the debate term unfolded from the document", pres_tree(term))
     return term

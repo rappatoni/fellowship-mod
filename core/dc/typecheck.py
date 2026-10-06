@@ -155,10 +155,10 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
     if sent_shape != rebuilt_shape:
         where = shape_mismatch(sent_shape, rebuilt_shape)
         if logger.isEnabledFor(logging.DEBUG):
-            from pres.gen import pres_str
+            from pres.gen import pres_tree
             logger.debug("typecheck: '%s' was reconstructed differently", name)
-            artifact(logger, "typecheck: the term sent", pres_str(term))
-            artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(check.body))
+            artifact(logger, "typecheck: the term sent", pres_tree(term))
+            artifact(logger, "typecheck: what Fellowship rebuilt", pres_tree(check.body))
             if where is not None:
                 path, mine, theirs = where
                 artifact(logger, "typecheck: first difference at %s" % _path_text(path),
@@ -173,9 +173,9 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
     logger.debug("typecheck: '%s' replayed through Fellowship, the two terms agree "
                  "up to alpha, site numbering and proposition spelling", name)
     if logger.isEnabledFor(logging.DEBUG):
-        from pres.gen import pres_str
-        artifact(logger, "typecheck: the term sent", pres_str(term))
-        artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(check.body))
+        from pres.gen import pres_tree
+        artifact(logger, "typecheck: the term sent", pres_tree(term))
+        artifact(logger, "typecheck: what Fellowship rebuilt", pres_tree(check.body))
     return check.body
 
 
@@ -214,11 +214,11 @@ def typecheck_shared(prover, shared, name: str, checked=None) -> int:
         shown = f"{shared.graph.nodes.get(statement[0], statement[0])}[{statement[1][0]}]"
         if checked is not None and key in checked:
             if logger.isEnabledFor(logging.DEBUG):
-                from pres.gen import pres_str
+                from pres.gen import pres_tree
                 logger.debug("typecheck: the debate about %s was replayed earlier in this "
                              "document; not replayed again", shown)
-                artifact(logger, "typecheck: the term sent", pres_str(term))
-                artifact(logger, "typecheck: what Fellowship rebuilt", pres_str(checked[key]))
+                artifact(logger, "typecheck: the term sent", pres_tree(term))
+                artifact(logger, "typecheck: what Fellowship rebuilt", pres_tree(checked[key]))
             continue
         try:
             rebuilt = typecheck(prover, term, f"{name}_{replays + 1}",

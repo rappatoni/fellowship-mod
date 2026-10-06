@@ -282,12 +282,19 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_ID(self, node: ID):
-        self._emit(f"{node.name}:{node.prop}" if node.prop else f"{node.name}")
+        self._emit(self._leaf(node))
         return node
 
     def visit_DI(self, node: DI):
-        self._emit(f"{node.name}:{node.prop}" if node.prop else f"{node.name}")
+        self._emit(self._leaf(node))
         return node
+
+    @staticmethod
+    def _leaf(node) -> str:
+        # A citation of a sub-debate (core/dc/share.py) carries what its
+        # site captures and cuts, as ``pres.gen`` prints it.
+        name = f'{node.name}{getattr(node, "bracket", "")}'
+        return f"{name}:{node.prop}" if node.prop else name
 
     # -- first-order nodes -------------------------------------------------
 

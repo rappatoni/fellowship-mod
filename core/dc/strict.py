@@ -198,8 +198,8 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     collect_edges, edges = edges, []
     verbose = logger.isEnabledFor(logging.DEBUG)
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "strict: the term going in", pres_str(term))
+        from pres.gen import pres_tree
+        artifact(logger, "strict: the term going in", pres_tree(term))
 
     def binders_of(node):
         if isinstance(node, Mu):
@@ -317,9 +317,9 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     if collect_edges:
         collect(term)
     if verbose:
-        from pres.gen import pres_str
+        from pres.gen import pres_tree
         artifact(logger, "strict: the term coming out (scaffolds strictness decided are gone)",
-                 pres_str(term))
+                 pres_tree(term))
         if collect_edges:
             artifact(logger, "strict: the strict edges it contributes",
                      "\n".join(f"{e.name}: {e.target_key}[{e.target_side[0]}] <- - (source-less, strict)"

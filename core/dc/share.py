@@ -430,15 +430,24 @@ class SharedDebate:
         visit(statement, frozenset())
         return [self.marker(s) for s in out]
 
-    def to_text(self) -> str:
+    def to_text(self, tree: bool = False) -> str:
         """The printed shared form: the issue's term, then one
-        ``name[open sites] := body`` line per named definition."""
-        from pres.gen import pres_str
+        ``name[open sites] := body`` line per named definition.  With
+        ``tree``, each term is laid out as an indented tree
+        (``pres.gen.pres_tree``) under its ``name[open sites] :=`` line,
+        for the multi-line log artifacts."""
+        from pres.gen import pres_str, pres_tree
 
         root, rows = self.presented()
-        lines = [pres_str(root)]
+        if not tree:
+            lines = [pres_str(root)]
+            for name, sites, body in rows:
+                lines.append(f"{name}[{', '.join(sites)}] := {pres_str(body)}")
+            return "\n".join(lines)
+        lines = [pres_tree(root)]
         for name, sites, body in rows:
-            lines.append(f"{name}[{', '.join(sites)}] := {pres_str(body)}")
+            lines.append(f"{name}[{', '.join(sites)}] :=")
+            lines.extend("   " + line for line in pres_tree(body).splitlines())
         return "\n".join(lines)
 
 

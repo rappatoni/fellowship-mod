@@ -423,8 +423,8 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     redundancy and defeat), sigma for what it delays."""
     verbose = logger.isEnabledFor(logging.DEBUG)
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "evaluate: the term going in", pres_str(body))
+        from pres.gen import pres_tree
+        artifact(logger, "evaluate: the term going in", pres_tree(body))
         artifact(logger, "evaluate: the witness labelling sigma",
                  "  ".join(f"{_show(st)}={v}" for st, v in sigma.items()) or "empty")
     # Phase 1: strictness on the term.  NOTE this is the SECOND strict_resolve
@@ -440,9 +440,9 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
                  "(%s tiebreak, base %s)",
                  name, len(strict_trace), len(sigma_trace), tiebreak, base)
     if verbose:
-        from pres.gen import pres_str
+        from pres.gen import pres_tree
         artifact(logger, "evaluate: the term after both phases, going into normalisation",
-                 pres_str(resolved))
+                 pres_tree(resolved))
     normal_form = normalize_strong(resolved, strategy=base)
     check_conservativity(body, normal_form, operation=f"evaluate_debate('{name}')")
     return normal_form
@@ -531,7 +531,7 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
     shared, strict_names = resolver.shared, resolver.strict_names
     verbose = logger.isEnabledFor(logging.DEBUG)
     if verbose:
-        artifact(logger, "evaluate: the term going in", shared.to_text())
+        artifact(logger, "evaluate: the term going in", shared.to_text(tree=True))
         artifact(logger, "evaluate: the witness labelling sigma",
                  "  ".join(f"{_show(st)}={v}" for st, v in sigma.items()) or "empty")
     # Phase 1: strictness, per instance and memoised (the issue graph above
@@ -554,9 +554,9 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
                  name, len(resolver.decisions()), len(resolver.instances), len(sigma_trace),
                  tiebreak, base)
     if verbose:
-        from pres.gen import pres_str
+        from pres.gen import pres_tree
         artifact(logger, "evaluate: the term after both phases, going into normalisation",
-                 pres_str(resolved))
+                 pres_tree(resolved))
     normal_form = normalize_strong(resolved, strategy=base)
     # The debate of an issue always holds the issue's own site, so the
     # postcondition is vacuous here, as it is for the unfolded term.

@@ -368,8 +368,8 @@ def normalize_strong(v, strategy: str = "cbn", fuel: int = 2000):
         if stepped is None:
             logger.debug("normalise: normal form after %d step(s) under %s", step - 1, strategy)
             if logger.isEnabledFor(logging.DEBUG):
-                from pres.gen import pres_str
-                artifact(logger, "normalise: the normal form", pres_str(v))
+                from pres.gen import pres_tree
+                artifact(logger, "normalise: the normal form", pres_tree(v))
             return v
         if tracing:
             logger.log(TRACE, "  normalise: [%d] %s", step, fired[-1] if fired else "?")
