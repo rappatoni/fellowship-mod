@@ -34,14 +34,16 @@ def pres_tree(node) -> str:
     """Render a proof term as an indented tree, for a multi-line log
     artifact (``core.logging_util.artifact``), never raising.
 
-    The vanilla rendering (``pres.nl.vanilla_rendering``) keeps the full
-    proof-term syntax and only adds line breaks and tree guides.  It does
-    not mutate the term, so unlike ``pres_str`` it needs no copy.  Falls
-    back to ``pres_str`` on anything it cannot render.
+    The dialectical rendering (``pres.nl.dialectical_rendering``): the
+    vanilla one - the full proof-term syntax with line breaks and tree
+    guides - with every support and attack scaffold abbreviated to
+    SUP/ATT (PUS/TTA) and its supporters and attackers.  It does not
+    mutate the term, so unlike ``pres_str`` it needs no copy.  Falls back
+    to ``pres_str`` on anything it cannot render.
     """
-    from pres.nl import pretty_natural, vanilla_rendering
+    from pres.nl import dialectical_rendering, pretty_natural
     try:
-        return pretty_natural(node, vanilla_rendering)
+        return pretty_natural(node, dialectical_rendering)
     except Exception:
         return pres_str(node)
 

@@ -1865,10 +1865,10 @@ def _show_selected(prover: ProverWrapper, name: str, which: str, style: Optional
         logger.info(pres_tree(term))
     else:
         from pres.nl import (pretty_natural, natural_language_argumentative_rendering,
-                             natural_language_dialectical_rendering, natural_language_rendering,
+                             dialectical_rendering, natural_language_rendering,
                              pruefschema_rendering, vanilla_rendering)
         sem = {"argumentation": natural_language_argumentative_rendering,
-               "dialectical": natural_language_dialectical_rendering,
+               "dialectical": dialectical_rendering,
                "intuitionistic": natural_language_rendering,
                "vanilla": vanilla_rendering,
                "pruefschema": pruefschema_rendering}.get(style.strip().lower())
@@ -1953,14 +1953,14 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     from pres.nl import (
         pretty_natural,
         natural_language_argumentative_rendering,
-        natural_language_dialectical_rendering,
+        dialectical_rendering,
         natural_language_rendering,
         pruefschema_rendering,
         vanilla_rendering,
     )
     sem_map = {
         "argumentation": natural_language_argumentative_rendering,
-        "dialectical": natural_language_dialectical_rendering,
+        "dialectical": dialectical_rendering,
         "intuitionistic": natural_language_rendering,
         "vanilla": vanilla_rendering,
         "pruefschema": pruefschema_rendering,

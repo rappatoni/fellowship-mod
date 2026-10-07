@@ -21,7 +21,7 @@ from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
     pretty_natural,
     natural_language_rendering,
-    natural_language_dialectical_rendering,
+    dialectical_rendering,
     natural_language_argumentative_rendering,
     pruefschema_rendering,
 )
@@ -518,7 +518,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if self.rendering == "argumentation":
             self.representation = pretty_natural(self.body, natural_language_argumentative_rendering, **render_context)
         elif self.rendering == "dialectical":
-            self.representation = pretty_natural(self.body, natural_language_dialectical_rendering, **render_context)
+            self.representation = pretty_natural(self.body, dialectical_rendering, **render_context)
         elif self.rendering == "intuitionistic":
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         elif self.rendering == "pruefschema":
@@ -1183,7 +1183,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # 4. natural‑language rendering
         style = {
             "argumentation": natural_language_argumentative_rendering,
-            "dialectical":   natural_language_dialectical_rendering,
+            "dialectical":   dialectical_rendering,
             "intuitionistic": natural_language_rendering,
         }[self.rendering]
         self.normal_representation = pretty_natural(
