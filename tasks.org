@@ -3119,7 +3119,13 @@ task asks for holds; the witness does not: the normal form holds a
 delegation for B, not other's proof. What is left here is which proof
 survives.
 
-*** BACKLOG Do not accept an unfounded loop as a credulous witness
+*** DROPPED Do not accept an unfounded loop as a credulous witness
+CLOSED: [2026-10-07 Wed]
+- State "DROPPED"    from "BACKLOG"    [2026-10-07 Wed] \\
+  Decided by the author: accepting a positive loop is a property of
+  complete and preferred semantics (supported semantics), not a defect;
+  stable semantics is the founded reading. The relation to s(CASP) is
+  [[id:aida-scasp-stable-correspondence]].
 :PROPERTIES:
 :ID:             aida-unfounded-credulous-witness
 :AREA:           phd
@@ -3178,6 +3184,160 @@ decision this task records: accept the coinductive reading of complete
 and preferred, or require founded IN statements of a credulous witness
 (positive loops as in stable and s(CASP), even loops through negation
 unchanged).
+
+*Decision 2026-10-07 (author).* Nothing to change in the witness
+choice: complete and preferred accept the positive loop coinductively,
+stable does not, and the user chooses the semantics. What matters is
+the exact relation to s(CASP), [[id:aida-scasp-stable-correspondence]].
+Checked on the installed s(CASP) the same day: coinduction there is for
+*even* loops through negation (=p :- not q. q :- not p.=, =?- p.= gives
+=p :- not q :- chs(p).=); a positive loop fails (=a :- b. b :- a.=,
+=?- a.=: no models); an odd loop is no coinductive success but a global
+constraint, the NMR check (=p :- not p.=: no models).
+
+*** REVIEW Relate evaluation under stable semantics to s(CASP)
+:PROPERTIES:
+:ID:             aida-scasp-stable-correspondence
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        For propositional normal programs, a recorded and tested statement of how evaluation relates to s(CASP): each program of a fixture set is translated into a document (a rule as a declared implication, an atom premise as an obligation, =not b= as the presumed refutation of b); the stable labellings of its issue graphs are compared with the program's stable models, credulous evaluation under stable semantics with s(CASP) query success, skeptical with truth in every stable model; the difference of complete and preferred (supported semantics: positive loops accepted) is recorded; how the importer treats s(CASP)'s coinductive hypotheses =chs(...)= is checked.
+:VERIFY:         A test over the fixture set (positive loop; positive loop with a founded alternative; even loop; odd loop free and forced by a constraint; a fact; a two-premise rule): the stable models computed by brute force, s(CASP)'s answers (skipped when s(CASP) is not installed), and the verdicts of =evaluate_debate= for every atom agree as stated here, or every disagreement is recorded with its cause; =scasp_import= run on an even-loop justification tree, with its handling of =chs= recorded (fixed, or a follow-up task).
+:END:
+
+Raised by the author 2026-10-07, replacing
+[[id:aida-unfounded-credulous-witness]]. s(CASP) is a goal-directed
+procedure for stable models: a query succeeds iff some stable model
+contains it, answered by a partial stable model and a justification.
+Its three loop rules (checked on the installed s(CASP), same day):
+| loop                        | s(CASP)                                     |
+|-----------------------------+---------------------------------------------|
+| positive (=a :- b. b :- a.=) | the call meeting its ancestor fails         |
+| even through negation       | coinductive success, =chs(p)= in the tree   |
+| odd through negation        | fails; enforced as a global constraint (NMR check) |
+With a founded alternative (=a :- b. b :- a. a :- not c.=, =?- b.=) it
+passes over the loop: =b :- a :- not c.= - the founded witness
+[[id:aida-circular-supporter-judged-in]] asks for.
+
+ADF side (the literature, to be checked against Strass, "Approximating
+operators and semantics for abstract dialectical frameworks", AIJ 2013,
+for the standard translation of a normal program): two-valued models =
+supported models; stable = stable models; grounded = the ultimate
+Kripke-Kleene semantics, not the well-founded one (hence UNDEC, not
+OUT, on a positive loop); complete and preferred = three-valued
+supported semantics. Expected therefore: credulous under stable =
+s(CASP) query success; complete and preferred differ only through
+unfounded positive loops. Open: the debate graph is not the plain
+translation (two sides per statement, defaults from presumptions, the
+contrariness guard), so the correspondence has to be checked, not
+assumed. The importer translates one answer's justification tree, not
+a program, and drops the wrappers =not=, =forall=, =proved= but not
+=chs= (scasp_import/importer.py, =_atom_from_json=).
+
+*Findings 2026-10-07* (tests/test_scasp_correspondence.py, 199 checks;
+8 programs, every atom queried as =a= and =not a=, both modes, stable
+and preferred; s(CASP) rows run when s(CASP) is installed, =SCASP_BIN=
+or =PATH=).
+- Translation: a fact is a declared axiom applied in an argument
+  (strict); a rule =h :- b, not c.= a declared implication
+  =B -> (C->false) -> H= applied to an obligation =?1:B= and to
+  =λx:C.μz:false.<x||2:C!>= (as tests/naf_olon.fspy); every atom gets
+  the presumed refutation =μ'n:A.<n||1:A!>= - the closed-world
+  assumption. Without it a =not a= that no rule body uses is never
+  accepted (=pos=, =pos_even=: OPEN where every stable model has a
+  false).
+- s(CASP) answers a query iff some stable model makes it true, on all
+  38 credulous rows: the brute-force stable models are the right
+  reference.
+- Stable evaluation agrees with the stable models on every row except
+  six, all of one cause, *relevance*: the issue graph holds only what
+  the issue depends on, while the stable models (and s(CASP)'s global
+  NMR check) are constrained by every odd loop. =odd_forced=
+  (=r :- not s. s :- not r. p :- not p, s.=): credulously =s= and
+  =not r= are accepted, skeptically =r= and =not s= are not, as if the
+  constraint on s were absent; =odd_elsewhere= (=q. p :- not p.=): =q=
+  accepted in both modes though the program has no stable model. Where
+  no stable labelling exists (=odd=) evaluation refuses, as s(CASP) has
+  no models.
+- Preferred differs from stable in two ways. Supported semantics: the
+  positive loop is credulously accepted and its refutation skeptically
+  undecided (=pos=); the forced odd loop leaves P UNDEC in a preferred
+  labelling (=odd_forced= =not p=, skeptical). And *capture*: in
+  =p :- not p= the argument's own continuation for P captures its
+  presumption of =not p=, so =λx:P.μz:false.<x||a1_p>= is a closed proof
+  of P->false from that continuation and the argument proves P
+  classically (consequentia mirabilis, (¬P→P)→P). It is strict, the
+  strict phase keeps it, and preferred - P UNDEC, no strict edge
+  reaching the graph ([[id:aida-strict-edge-collector-condition]]) -
+  evaluates =p= to VALUE in both modes (=odd=, =odd_elsewhere=). Under
+  stable it is hidden: no labelling. An ASP reading of =p :- not p= is
+  not the classical implication; whether an argument's own binder may
+  meet its NAF presumption is a question for the author.
+- The importer translates positive justification trees only: a =not=
+  child - and so =chs= under it - is dropped with a warning, and a node
+  left without children becomes a declared axiom. The even loop's
+  answer =p :- not q :- chs(p)= is imported as the strict fact =p:(P)=.
+  Follow-up: [[id:aida-scasp-import-negative-justifications]].
+- The document graph, labelled as a whole, has exactly one stable
+  labelling per stable model on all eight programs: A[t] IN iff a is in
+  the model, A[c] IN iff A[t] is not (an atom no rule derives has no
+  A[t] node). Both programs without a stable model have no stable
+  labelling. So the six disagreements are relevance alone: they arise
+  from labelling the issue's debate instead of the document (test
+  =test_the_documents_stable_labellings_are_the_stable_models=).
+- Not yet done: checking the ADF correspondences cited above against
+  Strass 2013.
+
+Open for the author: (1) the closed-world presumptions as part of the
+translation; (2) relevance as the one difference from s(CASP) - accept
+it (stable model semantics is not relevant, the debate is), or bring
+odd loops that depend on the issue into the issue graph; (3) the
+capture of an argument's own NAF presumption.
+
+*Discussion, the author, 2026-10-07:* The AIDA compiler is not a full
+proof search engine; it builds debates from user-provided arguments.
+There are also fundamental semantic differences, like the admissibility
+of contraposition and the derivability of P from ¬P -> P. However,
+given a correct translation, a language like s(CASP) can be used to
+generate a debate term corresponding to its proof search trace (the
+justification tree). Global constraints are not yet part of the
+translation, but they could be added to the debate by turning them
+into a debate about TRUE (edges from e.g. A to TRUE are trivial
+additions). This would answer the relevance question without
+necessarily forcing the document-wide labelling. Whether in general
+the document labelling should be used for issues is an independent
+question.
+
+*** BACKLOG Translate negative justifications in the s(CASP) importer
+:PROPERTIES:
+:ID:             aida-scasp-import-negative-justifications
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        scasp_import translates the negative parts of a justification tree - =not t= (with the dual rules' =not o_t_i= under it), =chs(...)= and =proved(...)= - as the JTree- case of scasp_import/report.tex, instead of dropping them and declaring the parent an axiom.
+:VERIFY:         Importing the even loop's answer (=p :- not q. q :- not p.=, =?- p.=) gives an argument for P resting on the presumed refutation of Q (not the strict fact =p:(P)= of 2026-10-07), with no "unsupported child" warning; the existing importer tests pass.
+:END:
+
+Found 2026-10-07 ([[id:aida-scasp-stable-correspondence]]).
+=translate_tree= (scasp_import/importer.py) translates positive
+children only: a child whose atom =_atom_from_json= does not read -
+every =not=, =forall=, =proved= and =chs= node - is skipped with
+"Ignoring unsupported child", and an atom with no translated children
+is declared as an axiom. So the negative premises of an answer vanish,
+and an atom whose premises are all negative is imported as strict. report.tex has the translation for
+=o :- [not t]= (JTree-); the importer does not implement it yet.
 
 *** BACKLOG Find strict edges directly, not through "contains a decision"
 :PROPERTIES:
