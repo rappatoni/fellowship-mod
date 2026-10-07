@@ -124,14 +124,10 @@ And identity:
 1. In =mu cArg:C.< mu r:C.< abc:A->B->C || ?1:A * !2:B * r:C > || cArg:C >=,
    list every open site with its kind and side, and then list the
    statements you expect the graph to mention.
-   *Answer*: The open sites are ?1:A, !2:B. The first is an obligation, the second a delegation. They are both on the term side. The graph will contain as its only hyper-edge [('C','term'),('A','term'),('B','term')] assuming that [] demarks hyper-edges. Follow-up question: the graph does not record obligation/delegation status? The graph does not record non-deleg/geled/goal/laog nodes? If this is covered later, no need to answer these now.
-   
 2. Will =canonical_prop= give =forall x:iota, Q x= and
    =forall y:iota, Q y= the same key? What about =Q x= and =Q y=?
-   *Answer*: a) Yes, because they are $\alpha$-equivalent. b) no, because their semantics is context-dependent. E.g. in =forall x:iota, exists y: iota, Q x * Q y = you cannot simply substititute x for y.
 3. Why is it wrong to model Q[term] and Q[context] as two unrelated
    nodes - and also wrong to model them as one node with one label?
-   *Answer*: they are terms of the same proposition, just with different polarity. I.e. there is only one =Q= but two judgments/kinds of terms typed by =Q=. So a statement denotes a typing judgment of one of the two kinds of typing judgments. You cannot have one node with one label because a term witness of =Q= and a context witness may both be present and then labelling/evaluation has to figure out which one ought to be accepted. Moreover both a proof term of =Q= and a refutaion term of it may exist in case of an irresolvably inconsistent knowledge base.
 
 * Lesson 2 - Hyperedges: from terms to a graph
 
@@ -195,20 +191,11 @@ markers record that A and B are obligations wherever they are referenced.
 1. =bArg= concludes B, and B is also a source of =d2=. Sketch the two-edge
    graph. Which statement is the conclusion of the debate (the one no
    other edge consumes)?
-   *Answer*: I am not sure I understand the question. I assume you want me to sketch the debate graph for d2. Here you go:
-
-         - A
-   C -d2|
-         - B <-bArg-
-
-   The name =d2= is apparently used both for the whole argument *and* the top-level edge from A,B to C. B is supported by the argument/supporter/edge bArg which has no source as it is strict (indicated by an arrow without source).
 2. Predict what changes in that printout if =axB= is removed and bArg
    instead rests on an open site =?x:D=. Run it if you like.
-   *Answer*: bArg becomes and edge with source D.
 3. Why must the supporter appear as its own edge rather than being
    substituted into =d2='s source list?
-   *Answer*: That would be type-false. A source is a statement (proposition, side tuple / judgment kind), not an argument term.
-   
+
 * Lesson 3 - Abstract dialectical frameworks
 
 ** Definition
@@ -319,14 +306,11 @@ implementations of the same definition.)
 
 1. Compute Gamma by hand on the *self-attacking* ADF, one statement with
    AC_p = ~p. How many two-valued models are there? What is grounded?
-   *Answer:* there is no two-valued model as AC_p= ~p, so if v(p)=True, then AC_p = False and, vice versa, if v(p)=False then AC_p= True. The grounded extension is {'p':None} as Gamma(v0)(p)=None since AC_p holds if v(p)=False and does not hold if v(p)=True.
 2. For the even loop, grounded says UNDEC but there are two two-valued
    models. In debate terms, what is the difference between "the grounded
    answer" and "the credulous answer" here?
-   *Answer*: We did not yet introduce the credulous/skeptical difference here. But I can answer anyway. There isn't such a thing as "the credulous answer". There is only "The credulous answer under {grounded, complete, two-calued, stable} semantics. Under grounded semantics, the credulous answer is the same as the skeptical, as there is a unique extension: the label the node in question gets under the grounded semantics. Under two-valued semantics, a node credulously gets label X, if there is some extension under two-valued semantics that assigns it label X. It skeptically gets label X if it is so labelled under any two-valued extension. In the even loop example, there are two two-valued extensions assigning opposite truth values, so each node is credulously assigned True or False, respectively. In debate terms this means that a term can be constructed for each node whose conclusion is labelled IN.
 3. The oracle refuses any ADF with more than 14 statements. Why is that a
    feature rather than a limitation, given its role?
-   *Answer*: this is also not covered in the course so far, but I guess the oracle is a naive brute-force algorithm whose runtime will explode with #(Statements) growing.
 
 * Lesson 4 - Acceptance conditions for debates
 
@@ -474,17 +458,14 @@ Q[t] OUT. Under the old symmetric guard all three were UNDEC.
    B[t]; B[t] <- strict, no sources; markers: A[t] and B[t] obligations).
    Then check: =.venv/bin/python tests/minicourse/coursekit.py= builds
    exactly that graph and prints its conditions and labels.
-   *Answer*: C[t]= (A[t] & B[t]), B[t]=(true | false), A[t]=false.
 2. In that graph, is B[t]'s strict edge inside or outside a guard? Why
    does the answer not matter here, and when would it start to matter?
-   *Answer*: It is outside. Here it does not matter, because there is no attacker. If there were one, it would matter because the defeasible block is a conjunction so an attacker would falsely "defeat" the strict supporter.
 3. Suppose someone proposes making support *conjunctive* instead of
    disjunctive - all supporters must hold. There are two disjunctions
    this could mean: the *outer* one, between the strict part and D, and
    the *inner* one, over the defeasible edges within D. Take each in
    turn: what does the condition become, and what breaks? (A strict edge
    can be a supporter too, so both readings are legitimate.)
-   *Answer*: we would have B[t]=(true & false) as this would require that both the strict supporter and the defeasible supporter be true. That would break strict support.
 
 * Lesson 5 - Labelling
 
@@ -709,23 +690,19 @@ Now discharge A with a strict supporter and relabel:
 
 1. Before running anything: in the cArg graph, what would happen to C if
    *both* sites were presumptions? If both were obligations?
-   *Answer*: If both were presumptions C would be IN. If both were obligations it would stay OUT.
 2. =tests/rationality/contested.fspy= grounds everything UNDEC. Identify
    the negation cycle: which two statements, and which clause of lesson 4
    put it there?
-   *Answer*: We have P[t]=Q[t], Q[t]=(true & ~Q[c]), Q[c]=(true & ~Q[t]), causing the cycle on Q as both sides are defaults.
 3. =tests/rationality/even_loop.fspy= has a derivation cycle (P rests on
    the absence of Q and vice versa) and is *refused* by =compile_debate=;
    its labels can only be obtained from the oracle. The contested case is
    admitted and grounds UNDEC. Both are negation cycles at the ADF
    level. State precisely what distinguishes them structurally, and why
    the fragment treats one as in scope and the other as out of scope.
-   *Answer*: skipped, have we discussed this enough.
 4. Take the implication "P gives Q" as the edge Q[t] <- P[t], and add its
    transposal. Write the transposal as an edge, show that the pair is a
    derivation cycle, and say what that means for a debate that uses the
    implication once the strict layer exists.
-   *Answer*: skipped, already discussed in detail.
 
 * Lesson 6 - Scaffolds as critical pairs
 
