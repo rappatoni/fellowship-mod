@@ -42,8 +42,10 @@ DEF14 = (
     "μ'b6:P1.<μ_:P1.<b6:P1||alt4:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<r1_1:P0->P1||!u4:P0*th_4:P1>"
     "||a1_1:P1>||alt4:P1>>>"
 )
-NF14 = "μa2_1:P2.<r2_1:P1->P2||μb1:P1.<r1_1:P0->P1||!u1:P0*b1:P1>*a2_1:P2>"
-NF14_UNFOLDED = "μa2_1:P2.<r2_1:P1->P2||μb1:P1.<r1_1:P0->P1||!u11:P0*b1:P1>*a2_1:P2>"
+# sites are named by their labels (core/comp/labelled.py), so both routes
+# now give the same string; they differed in the site number (u1 / u11)
+NF14 = "μa2_1:P2.<r2_1:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_1:P2>"
+NF14_UNFOLDED = NF14
 SKELETON14_P2 = ROOT14.replace("anon_1:P1*th:P2", "?u2:P1*th:P2").replace(
     "anon_1:P1*th_2:P2", "?u3:P1*th_2:P2")
 
@@ -291,7 +293,7 @@ class TestLesson17Instances:
         doc, issue, names, kinds, shared = load(fresh, "lesson17_instances.fspy", "P2")
         nf, cls, sigma, graph = evaluate_shared(shared, "a2_0", strict_names=names, strict_kinds=kinds)
         assert labels(graph, "preferred") == {"P0[c]": "IN", "P1[t]": "OUT", "P0[t]": "OUT", "P2[t]": "OUT"}
-        assert (pres_str(nf), cls) == ("?u1:P2", "open")
+        assert (pres_str(nf), cls) == ("?OUT:P2", "open")
 
     def test_lesson15_has_two_instances_and_one_decision(self, fresh):   # exercises 1 and 2
         doc, issue, names, kinds, shared = load(fresh, "lesson15_capture.fspy", "P")
@@ -310,7 +312,7 @@ class TestLesson17Instances:
 # -- Lesson 18 ----------------------------------------------------------------------
 
 class TestLesson18Evaluation:
-    def test_both_routes_agree_up_to_site_numbers(self, fresh):
+    def test_both_routes_agree(self, fresh):
         doc, issue, names, kinds, shared = load(fresh, "lesson14_sharing.fspy", "P2")
         nf_shared, cls_s, *_ = evaluate_shared(shared, "a2_0", strict_names=names, strict_kinds=kinds)
         nf_unfolded, cls_u, *_ = evaluate_debate(unfold(doc, issue), "a2_0", strict_names=names,
@@ -324,7 +326,7 @@ class TestLesson18Evaluation:
             warnings.simplefilter("ignore")
             nf, cls, sigma, _graph = evaluate_shared(share(doc, issue), "x", strict_names=strict)
         assert cls == "value" and sigma[issue] == "IN"
-        assert size(nf) == 65 and sites(nf) == ["u1"]
+        assert size(nf) == 65 and sites(nf) == ["IN"]
         assert 2 ** 15 * 56 - 27 == 1834981                        # the unfolded term, by the recurrence
 
     def test_the_pipeline_switch(self, fresh):

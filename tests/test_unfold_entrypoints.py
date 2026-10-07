@@ -249,7 +249,7 @@ def test_favour_prefers_a_witness_accepting_the_argument(fresh):
     edge = argument_edge(doc, "yQ")
     term = unfold_argument(doc, edge)
     nf, cls, *_ = evaluate_debate(copy.deepcopy(term), "x", mode="credulous", **options(fresh))
-    assert (pres_str(nf), cls) == ("!u1:Q", "value")
+    assert (pres_str(nf), cls) == ("!IN:Q", "value")
     nf, cls, *_ = evaluate_debate(copy.deepcopy(term), "x", mode="credulous", favour=edge,
                                   **options(fresh))
     assert cls == "value" and pres_str(nf).startswith("μyQ:Q.<sq:S->Q||")
@@ -296,7 +296,7 @@ def test_the_cli(fresh, tmp_path, caplog):
     assert "Unfolded the canonical debate term of issue :B" in text
     assert "unfold debate: not implemented yet" in text
     assert "Evaluated 'p1' (credulous, preferred, base cbn): VALUE" in text
-    assert "normal form: μp1:B.<r1:A->B||!u2:A*p1:B>" in text
+    assert "normal form: μp1:B.<r1:A->B||!IN:A*p1:B>" in text
     assert "Evaluated 'issue :B' (credulous, preferred, base cbn): VALUE" in text
     assert "normal form: μp3:B.<r3:D->B||" in text
     assert "Evaluated 'issue F:' (skeptical, preferred, base cbn): VALUE" in text

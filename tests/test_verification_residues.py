@@ -28,6 +28,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.graft import graft_single
 from core.dc.debate_graph import canonical_prop
+from core.comp.labelled import label_term, discharge_labels
 
 
 # ---------------------------------------------------------------------------
@@ -259,12 +260,14 @@ class TestV3OutRowSquare:
     def test_square_commutes_on_the_out_row(self, mode):
         """ev_m by hand: substitute the clash mu _:Q.< t || E > - the site's
         original t facing the winning refutation E - for the defeated site
-        of the ORIGINAL (unattacked) term and normalise; the evaluator's
+        of the ORIGINAL (unattacked) term, label and discharge it with the
+        same sigma (core/comp/labelled.py) and normalise; the evaluator's
         normal form is alpha-equal to it."""
         body = parg(t_att("Q", Goal("1", "Q"), grounded_challenge()))
-        nf, _, _, _ = evaluate_debate(body, "d", strict_names={"pRule"}, mode=mode)
+        nf, _, sigma, _ = evaluate_debate(body, "d", strict_names={"pRule"}, mode=mode)
         clash = Mu(ID("_", "Q"), "Q", Goal("1", "Q"), grounded_challenge())
-        by_hand = normalize_strong(instantiate_sites(parg(Goal("1", "Q")), {"1": clash}))
+        by_hand = instantiate_sites(parg(Goal("1", "Q")), {"1": clash})
+        by_hand = normalize_strong(discharge_labels(label_term(by_hand, sigma)))
         assert alpha_equal(nf, by_hand)
         # a defeated obligation is an exception, like a defeated
         # presumption (aida-classify-exception-before-open; open until

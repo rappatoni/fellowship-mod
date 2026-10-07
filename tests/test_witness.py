@@ -316,7 +316,8 @@ class TestTwoAcceptingWitnesses:
         from core.comp.oracle_terms import alpha_equal, normalize_strong
         results, _ = self.results()
         (nf,) = [nf for _, nf, _, sigma in results if sigma[(S, "term")] == "OUT"]
-        expected = normalize_strong(parg(Deleg("1", "Q")))
+        # Q is IN in the witness: its presumption is the delegation !IN:Q
+        expected = normalize_strong(parg(Deleg("IN", "Q")))
         assert alpha_equal(nf, expected)
 
     def test_the_witness_with_s_accepted_yields_a_value(self):

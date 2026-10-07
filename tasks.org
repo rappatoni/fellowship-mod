@@ -2869,7 +2869,8 @@ when obligations remain beside the clash).
 - Suite: 1542 passed; the 2 failures are the author's working copy of
   even_loop_lk.fspy on the shared route, unchanged.
 
-*** BACKLOG Design: labellings in the term; a delegation not IN under sigma is an obligation again
+*** DONE Design: labellings in the term; a delegation not IN under sigma is an obligation again
+CLOSED: [2026-10-07 Wed]
 :PROPERTIES:
 :ID:             aida-labelled-sites-delegation-rewrite
 :AREA:           phd
@@ -2920,6 +2921,86 @@ Where it goes: after normalisation in =_evaluate_under= and
 site's status is that of its statement under sigma, the witness
 labelling actually used. Captured presumptions are variables, not
 sites, and are not touched.
+
+*Design agreed with the author 2026-10-07* (superseding the placement
+above):
+1. Labelling pass, after the strict phase: every statement occurrence
+   carries its label - term-sorted occurrences of A (mu, Goal, Deleg,
+   term variable, lambda) =A{L}=, context-sorted ones (mu', Laog,
+   Geled, continuation) ={L}A=. The label is a function of the
+   statement (proposition and side), so every reduction keeps it
+   right. Stored as an attribute, never in =prop=.
+2. Sigma reads the labelled term: the compiler copies each
+   occurrence's label into the records it builds (the target's from the
+   scion's root, a source's from its site, captured variable or
+   lambda). This covers the attacker's conclusion, whose wing root is
+   the captured =alt=, a continuation ={L}S=.
+3. Discharge before normalisation: a site takes its label as its name
+   and its kind from the label - (IN, ?u:A) and (IN, !u:A) -> =!IN:A=;
+   (OUT or UNDEC, either kind) -> =?OUT:A= / =?UNDEC:A=; the context
+   side mirrored. Every other label is dropped, so the normaliser,
+   alpha-equality, the type checker and the matcher never see one.
+   An obligation labelled IN is a delegation (the onus is on the
+   opponent to bring an argument the labelling did not consider); a
+   delegation not IN is an obligation again.
+4. Classification unchanged; it now reads: exception if an uncaught
+   clash remains, else value iff every remaining site is IN.
+Labelled terms are output only: unnormalised terms (grafting,
+compiling, registering) never carry labels, and site names in a normal
+form need not be unique. Neither grammar changes.
+
+*Done 2026-10-07.*
+- core/comp/labelled.py (new): =statement_of=, =label_term=,
+  =label_in_place=, =discharge_labels=, =UnlabelledSite=.
+- core/dc/debate_graph.py: =Source.label=, =Edge.target_label= (not
+  part of identity); =compile_body= fills them; a bare stack element's
+  eta wrapper takes its leaf's label.
+- core/comp/evaluate.py: =derivation_status= reads record labels
+  (with a labelling only for the witness's favour check, which has no
+  term); =resolve_scaffolds= labels the term, labels stubs as they are
+  written out and every rewrite's new wrappers, and decides from the
+  term; both pipelines discharge before normalising; =_renumber_sites=
+  removed (a site's name is its label); debug artifact "evaluate: the
+  labelled term". The check that every label read agrees with sigma
+  (=record_label_mismatches=, =CHECK_LABELS=) ran on the whole suite
+  (1568 passed) and is off at runtime: sigma consults only the term.
+- pres/gen.py prints =A{L}= / ={L}A=. The lambda node's own label
+  (its statement A->B) is stored and read by sigma, not printed; the
+  tree rendering (pres/nl.py) does not show labels.
+- tests/test_labelled_terms.py (new, 24): sides, idempotence,
+  unlabelled axioms, the twelve discharge rows, an unlabelled site
+  refused, lesson 9's alt2 labelled ={OUT}A=, agreement of every label
+  read with sigma over every issue of the fixtures in both modes, the
+  even loop and lesson 15.
+- Verdicts over the 310 rows of the fixture comparison (every
+  statement and argument, both modes), against a baseline taken before
+  the change:
+  - skeptical VALUE -> OPEN: 05_even_loop and lesson15_capture, issues
+    P: and Q: (=μ'alt1:P.<alt1:P||UNDEC:P?>=); contested Q (both
+    sides) and two_witnesses S (both sides), the onus conflicts;
+  - OPEN -> VALUE, the IN-obligation half: circular_supporter, issue
+    B and argument pro, both modes (=?u1:B= is IN through other:
+    =!IN:B=; see [[id:aida-circular-supporter-judged-in]]);
+    lesson8a_cycle, credulous, issues A and B and arguments pro and
+    back (the unfounded loop accepted coinductively; see
+    [[id:aida-unfounded-credulous-witness]], where the reading is
+    recorded). The author accepted both, and the presumption-elsewhere
+    case of tests/test_evaluate.py (an obligation IN through a
+    presumption of the same statement: VALUE).
+  - every exception unchanged; in 8 of them (lesson 9 C, naf_olon R,
+    cyclic_undercut R, self_attack_lk P[c], both modes) the defeated
+    delegation inside the clash is now an obligation.
+- Pins updated: tests/test_evaluate.py, test_witness.py,
+  test_verification_residues.py (V3: the hand-built side is labelled
+  and discharged with the same sigma; the square commutes),
+  test_scaffold_capture.py, test_share.py, test_unfold_entrypoints.py,
+  tests/minicourse/test_evaluation_course.py (plus the labelled term of
+  lesson 9), test_sharing_course.py (both routes now give the same
+  string).
+- Course: minicourse-evaluation.org lessons 9, 11, 12, 13, the closing
+  section and a lesson 10 solution.
+- Suite 2026-10-07, runtime check off: 1569 passed, 2 skipped, 3 xfailed,
+  2 xpassed (the working copy of even_loop_lk.fspy is stashed).
 
 *** DONE Show unfolded terms in the CLI, renderable, and in explanations
 CLOSED: [2026-10-06 Tue]
@@ -3030,6 +3111,14 @@ so sigma passes over the argument and goes on down the stack. Related
 to [[id:aida-unfounded-credulous-witness]], where the loop is not
 founded at all.
 
+2026-10-07, labelled terms ([[id:aida-labelled-sites-delegation-rewrite]]):
+=?u1:B= is labelled IN (through other) and discharged to the delegation
+=!IN:B=, so with =back= last B is VALUE in both modes,
+=μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>=. The verdict this
+task asks for holds; the witness does not: the normal form holds a
+delegation for B, not other's proof. What is left here is which proof
+survives.
+
 *** BACKLOG Do not accept an unfounded loop as a credulous witness
 :PROPERTIES:
 :ID:             aida-unfounded-credulous-witness
@@ -3042,8 +3131,8 @@ founded at all.
 :ICK:            2
 :EFFORT:         2:00
 :DEFERRALS:      0
-:OUTCOME:        Credulous evaluation never picks a witness labelling that accepts a statement only through an unfounded positive loop, so IN implies a value on every fixture.
-:VERIFY:         tests/minicourse/lesson8a_cycle.fspy: =evaluate pro credulous= (preferred) no longer returns OPEN under a witness with B IN; a check over all fixtures finds no (credulous, IN, open) case; the chosen approach is recorded here.
+:OUTCOME:        Credulous evaluation never picks a witness labelling that accepts a statement only through an unfounded positive loop: a positive loop is read inductively, as in stable semantics and s(CASP), while even loops through negation keep their credulous witnesses.
+:VERIFY:         tests/minicourse/lesson8a_cycle.fspy: =evaluate pro credulous= (preferred) is no longer VALUE under the witness with A and B IN (since aida-labelled-sites-delegation-rewrite, 2026-10-07, it is VALUE =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>=; before, OPEN); a check over all fixtures finds no credulous witness accepting an unfounded positive loop; tests/demo/05_even_loop.fspy keeps its credulous VALUEs; the chosen approach is recorded here.
 :END:
 
 Found 2026-10-06 checking adequacy on the new terms (the same holds for
@@ -3058,6 +3147,37 @@ OPEN). Starting point (session): exclude unfounded acceptance from the
 witness choice - accept a credulous witness only if every IN statement
 has a founded derivation in the issue graph - rather than switching the
 semantics to stable, which need not exist.
+
+2026-10-07, after labelled terms ([[id:aida-labelled-sites-delegation-rewrite]]):
+the verdict now follows the witness, so the inadequacy is no longer
+"IN but OPEN": the leftover =?u1:B= is IN, becomes the delegation
+=!IN:B=, and credulous preferred gives VALUE for a proof that rests only
+on itself. lesson8a_cycle under each semantics (issue B; A alike):
+| semantics | credulous                  | skeptical          |
+|-----------+----------------------------+--------------------|
+| grounded  | UNDEC/UNDEC, OPEN =?UNDEC:B= | same             |
+| complete  | IN/IN, VALUE               | UNDEC, OPEN        |
+| preferred | IN/IN, VALUE               | UNDEC, OPEN        |
+| stable    | none accepts B -> grounded, OPEN | OUT/OUT, OPEN =?OUT:B= |
+Reading discussed with the author: the two two-valued models of
+A := B, B := A are IN/IN, the greatest fixpoint (coinductive), and
+OUT/OUT, the least (inductive, founded; stable semantics). Complete and
+preferred hold both and the credulous witness picks the one accepting
+the issue, i.e. the coinductive one. The normal form is a cyclic proof,
+B from A from B, whose back edge is the delegation =!IN:B= (B's root
+site, captured by =b=): a cycle without a progress condition, sound
+only for a greatest fixpoint - the delegation is the coinductive
+hypothesis. Two qualifications: preferred is maximal in information,
+not in truth, so it does not in general choose the greatest model;
+grounded is least in information and leaves the loop UNDEC, not OUT.
+s(CASP) reads a positive loop inductively (it fails, as in stable
+models) and uses coinduction only for even loops through negation (the
+even loop P/Q). Accepting the positive loop under credulous preferred
+therefore differs from the s(CASP) import's source semantics. The
+decision this task records: accept the coinductive reading of complete
+and preferred, or require founded IN statements of a credulous witness
+(positive loops as in stable and s(CASP), even loops through negation
+unchanged).
 
 *** BACKLOG Find strict edges directly, not through "contains a decision"
 :PROPERTIES:

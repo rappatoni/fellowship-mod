@@ -68,6 +68,11 @@ scion's target statement and all of its sources are IN, OUT iff any of
 them is OUT, UNDEC otherwise.  Consulting the target statement alone was
 unsound: Q[t] IN says some derivation of Q is live, not that this
 supporter's is (aida-supporter-derivation-status, 2026-09-16).  The
+labels are read off the term, not looked up in sigma: sigma is first
+written into the term (core/comp/labelled.py), every statement occurrence
+carrying its label, and the scion's records carry the labels of its root
+and of its sites, captured variables and lambda subarguments - the
+attacker's conclusion included, the captured alt at its wing's root.  The
 UNDEC rows are the tiebreak, reached only when sigma leaves the status
 undecided:
 
@@ -75,6 +80,13 @@ undecided:
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG
     supporter UNDEC         -> credulous: scion  attacker UNDEC-> credulous: ORIG
                                skeptical: ORIG                    skeptical: attack wing
+
+Before normalisation the labels are discharged: every site is named by
+its label and is a delegation iff it is IN (an obligation labelled IN:
+the onus is now on the opponent), an obligation otherwise (a delegation
+not IN was not established under the mode); every other label is
+dropped.  The class then reads: an exception if an uncaught clash
+remains, else a value iff every remaining site is IN.
 
 What a defeated site holds: mu alpha.< t || e2 > - the original facing
 the winning refutation under an affine binder, the paper's abort
@@ -86,7 +98,6 @@ nested under an axiom head is not propagated by the standard rules
 """
 
 import logging
-from copy import deepcopy
 
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, ID, DI,
@@ -95,6 +106,7 @@ from core.ac.ast import (
 from core.comp.adf_label import (
     grounded_labels, labellings, intersection_labelling, SEMANTICS,
 )
+from core.comp.labelled import label_term, label_in_place, discharge_labels
 from core.comp.oracle_terms import (
     normalize_strong, classify_nf, _occurs, check_conservativity,
 )
@@ -128,6 +140,13 @@ class EvaluationRefused(DebateCompileError):
 
 _MODES = ("skeptical", "credulous")
 
+#: Compare every label sigma reads off the term with the labelling it was
+#: written from.  Off: sigma consults only the term.  The comparison ran on
+#: the whole suite when labelled terms came in (tasks.org,
+#: aida-labelled-sites-delegation-rewrite) and stays a test
+#: (tests/test_labelled_terms.py).
+CHECK_LABELS = False
+
 
 def _wing_choice(role: str, label: str, mode: str) -> str:
     """"scion" or "orig" per the table in the module docstring."""
@@ -146,7 +165,7 @@ def _wing_choice(role: str, label: str, mode: str) -> str:
     raise EvaluationRefused(f"Unknown scaffold role {role!r}")
 
 
-def derivation_status(records, labels) -> str:
+def derivation_status(records, labels=None) -> str:
     """The status of a scion's OWN derivation under sigma, read off the
     edge records the compiler builds for it (``scion_record``), one per
     alternative derivation:
@@ -161,11 +180,20 @@ def derivation_status(records, labels) -> str:
     This is the statement-level labelling read at edge level; the target
     label alone says that *some* derivation of the statement is live,
     not that this one is (tasks.org, aida-supporter-derivation-status).
+
+    Without ``labels`` the labels are read off the records, i.e. off the
+    labelled term the records were compiled from (core/comp/labelled.py):
+    that is how sigma decides a scaffold.  With ``labels`` (a labelling)
+    they are looked up there - for a graph's records, which have no term
+    (the witness's favour check).
     """
     statuses = []
     for record in records:
-        found = [labels.get((record.target_key, record.target_side))]
-        found += [labels.get((s.key, s.side)) for s in record.sources]
+        if labels is None:
+            found = [record.target_label] + [s.label for s in record.sources]
+        else:
+            found = [labels.get((record.target_key, record.target_side))]
+            found += [labels.get((s.key, s.side)) for s in record.sources]
         if any(label is None for label in found):
             raise EvaluationRefused(
                 f"No label for a source of the scion '{record.name}'; the "
@@ -185,8 +213,17 @@ def derivation_status(records, labels) -> str:
 
 
 def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
-                      trace=None, stubs=None) -> ProofTerm:
+                      trace=None, stubs=None, check_labels=None) -> ProofTerm:
     """Replace every scaffold by its sigma-chosen wing, innermost-last.
+
+    The body is labelled first (``label_term``, core/comp/labelled.py) and
+    every decision reads the labelled term, not ``labels``: the scion's
+    conclusion is the label of its root, its sources those of its sites,
+    captured variables and lambda subarguments.  The result is the
+    labelled resolved term; ``discharge_labels`` turns its labels into
+    site names and kinds before normalisation.  ``check_labels`` also
+    compares every label read with ``labels`` (``record_label_mismatches``);
+    None means ``CHECK_LABELS``.
 
     ``mode`` is the TIEBREAK for statements ``labels`` leaves UNDEC; the
     choice of ``labels`` itself is ``witness_labelling``'s job.
@@ -204,29 +241,38 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
     if mode not in _MODES:
         raise ValueError(f"mode must be one of {_MODES}, got {mode!r}")
     strict_names = set(strict_names or ())
+    if check_labels is None:
+        check_labels = CHECK_LABELS
     used = binder_names(body) if stubs is not None else None
 
     def walk(node, env):
         if stubs is not None and isinstance(node, Stub):
-            return walk(stubs.open(node, used), env)
+            # the labelling pass reaches a sub-debate when it is written out
+            return walk(label_in_place(stubs.open(node, used), labels), env)
         if not isinstance(node, ProofTerm):
             return node
         match = _match_scaffold(node, strict_names)
         if match is not None:
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
             if stubs is not None:
-                read = Match(role, site_side, prop, orig, stubs.for_record(scion_raw), alt, scion_kind)
+                read = Match(role, site_side, prop, orig,
+                             label_in_place(stubs.for_record(scion_raw), labels), alt, scion_kind)
                 read.legacy, read.beta = match.legacy, match.beta
                 records = scion_record(read, env, strict_names)
             else:
                 records = scion_record(match, env, strict_names)
             statement = (records[0].target_key, records[0].target_side)
-            if labels.get(statement) is None:
+            if records[0].target_label is None:
                 raise EvaluationRefused(
-                    f"No label for scaffold issue {statement}; the labelling "
-                    f"and the term disagree about the debate's shape."
+                    f"No label for scaffold issue {statement} in the term; the "
+                    f"labelling and the term disagree about the debate's shape."
                 )
-            status = derivation_status(records, labels)
+            if check_labels:
+                wrong = record_label_mismatches(records, labels)
+                if wrong:
+                    raise EvaluationRefused(
+                        f"The labelled term disagrees with the labelling at {wrong[:3]}.")
+            status = derivation_status(records)
             if trace is not None:
                 trace.append((statement, status))
             choice = _wing_choice(role, status, mode)
@@ -250,11 +296,12 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                              ", dropping the %s%s" % (
                                  dropped[0],
                                  " and the %d scaffold(s) inside it" % inside if inside else ""))
+            # a rewrite builds new wrappers: label them like the rest
             if choice == "orig":
-                return walk(_keep_orig(node, orig, alt), env)
+                return walk(label_in_place(_keep_orig(node, orig, alt), labels), env)
             if role == "supporter":
-                return walk(_keep_scion_support(node, scion_raw, alt), env)
-            return walk(_keep_attack_wing(node, match), env)
+                return walk(label_in_place(_keep_scion_support(node, scion_raw, alt), labels), env)
+            return walk(label_in_place(_keep_attack_wing(node, match), labels), env)
         inner = {**env, **binder_statements(node)}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
@@ -262,7 +309,21 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 setattr(node, slot, walk(child, inner))
         return node
 
-    return walk(deepcopy(body), {})
+    return walk(label_term(body, labels), {})
+
+
+def record_label_mismatches(records, labels) -> list:
+    """[(statement, label in the term, label in ``labels``)] for every
+    statement of the records whose label in the term differs from the
+    labelling's - empty when the labelled term and the labelling agree."""
+    wrong = []
+    for record in records:
+        pairs = [((record.target_key, record.target_side), record.target_label)]
+        pairs += [((s.key, s.side), s.label) for s in record.sources]
+        for statement, found in pairs:
+            if found != labels.get(statement):
+                wrong.append((statement, found, labels.get(statement)))
+    return wrong
 
 
 def _count_scaffolds(node, strict_names) -> int:
@@ -451,10 +512,15 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     # threw the rewritten term away (tasks.org, aida-pipeline-logging).
     strict_trace = []
     strict_body, _ = strict_resolve(body, strict_names or (), trace=strict_trace)
-    # Phase 2: sigma decides what strictness delayed.
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
+    # Phase 2: sigma decides what strictness delayed, reading the labelled term.
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
                                  trace=sigma_trace)
+    # The labels are discharged into the sites before normalisation.
+    resolved = discharge_labels(resolved)
     logger.debug("evaluate: '%s' - %d scaffold(s) decided by strictness, %d by sigma "
                  "(%s tiebreak, base %s)",
                  name, len(strict_trace), len(sigma_trace), tiebreak, base)
@@ -529,20 +595,6 @@ def evaluate_witnesses_shared(
     return results, graph
 
 
-def _renumber_sites(node, numbers=None):
-    """Give the open sites of a term distinct numbers, in reading order: a
-    sub-debate written out in two places brings the same sites twice."""
-    numbers = iter(range(1, 1 << 30)) if numbers is None else numbers
-    if not isinstance(node, ProofTerm):
-        return node
-    if hasattr(node, "number") and not hasattr(node, "term"):
-        node.number = f"u{next(numbers)}"
-        return node
-    for slot in ("term", "context"):
-        _renumber_sites(getattr(node, slot, None), numbers)
-    return node
-
-
 def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
     """The paper's two phases on the shared debate: strictness has decided
     each instance (``IssueResolver.resolve``), sigma decides what it
@@ -564,10 +616,15 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
         strict_body = (Mu(ID("x1", prop), prop, strict_body, ID("x1", prop)) if side == "term"
                        else Mutilde(DI("x1", prop), prop, DI("x1", prop), strict_body))
     # Phase 2: sigma decides what strictness delayed.
+    if verbose:
+        from pres.gen import pres_str
+        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
                                  trace=sigma_trace, stubs=resolver)
-    resolved = _renumber_sites(resolved)
+    # The labels are discharged into the sites: a site's name is its label,
+    # so a sub-debate written out twice needs no renumbering.
+    resolved = discharge_labels(resolved)
     logger.debug("evaluate: '%s' - %d scaffold(s) decided by strictness over %d instance(s), "
                  "%d by sigma (%s tiebreak, base %s)",
                  name, len(resolver.decisions()), len(resolver.instances), len(sigma_trace),

@@ -18,6 +18,7 @@ import pytest
 
 from core.ac.ast import Deleg
 from core.comp.adf_label import labellings
+from core.comp.labelled import label_term, discharge_labels
 from core.comp.evaluate import evaluate_debate, resolve_scaffolds
 from core.comp.oracle_terms import alpha_equal, classify_nf, normalize_strong
 from core.dc.debate_graph import declaration_kinds
@@ -38,8 +39,17 @@ UNFOLDED = (
     "alt1:B>>>"
 )
 AFTER_STRICT_C = "μalt4:C.<!u3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>"
-RESOLVED = "μpro:B.<μth:B.<r1:A->B||!u2:A*th:B>||pro:B>"
-NORMAL_FORM = "μpro:B.<r1:A->B||!u2:A*pro:B>"
+# sigma resolves the labelled term (core/comp/labelled.py): B[t] and A[t]
+# are IN; B[c] has no node, so pro's continuation is unlabelled
+RESOLVED = "μpro:B{IN}.<μth:B{IN}.<r1:A->B||!u2:A{IN}*th:B>||pro:B>"
+NORMAL_FORM = "μpro:B.<r1:A->B||!IN:A*pro:B>"   # the site named by its label
+# lesson 9: sigma written into the term after phase 1
+LABELLED = ("μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||"
+            "μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<"
+            "alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||"
+            "μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||"
+            "μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||"
+            "μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>")
 
 
 @pytest.fixture(scope="module")
@@ -260,6 +270,13 @@ class TestLesson10Strict:
 
 
 class TestLesson11Sigma:
+    def test_the_labelled_term(self, debate):
+        term, names, kinds = debate
+        graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
+        sigma = labellings(graph, "preferred")[0]
+        strict_body, _ = strict_resolve(term, names)
+        assert pres_str(label_term(strict_body, sigma)) == LABELLED
+
     def test_two_decisions_top_down(self, debate):
         term, names, kinds = debate
         graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
@@ -295,7 +312,9 @@ class TestLesson11Sigma:
         nf = normalize_strong(t, "cbn")
         assert pres_str(nf) == "μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>"
         assert classify_nf(nf) == "value"
-        macro, *_ = evaluate_debate(term, "pro", strict_names=names, strict_kinds=kinds)
+        macro, _, sigma, _ = evaluate_debate(term, "pro", strict_names=names, strict_kinds=kinds)
+        # the steps by hand skip the labels; label and discharge to compare
+        nf = discharge_labels(label_term(nf, sigma))
         assert not alpha_equal(nf, macro)
         assert alpha_equal(eta_reduce(deepcopy(nf)), eta_reduce(deepcopy(macro)))
 

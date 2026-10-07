@@ -87,16 +87,20 @@ def terms_of(prover):
 def test_a_circular_supporter_rests_on_b(fresh):
     # back needs B inside B's own debate: its demand is the b of B's
     # support scaffold, and after the outer step B's root obligation,
-    # shared - no second obligation for B, and still open.
+    # shared - no second obligation for B.  Skeptically B is UNDEC and the
+    # site an obligation; the credulous witness labels the loop IN, so it
+    # is the delegation !IN:B, a value (the coinductive reading, tasks.org
+    # aida-unfounded-credulous-witness).
     run(fresh, CYCLE)
     term = unfold(fresh.document, (K("B"), "term"))
     match = _match_scaffold(term, set(fresh.declarations))
     beta = term.context.di.name
     assert match[0] == "supporter" and "r3:B->A||%s:B*" % beta in pres_str(term)
     assert len(re.findall(r"\?u\d+:B", pres_str(term))) == 1
-    for mode in ("skeptical", "credulous"):
-        nf, cls, *_ = evaluate(fresh, term, mode)
-        assert cls == "open" and "?u1:B" in pres_str(nf)
+    nf, cls, *_ = evaluate(fresh, term, "skeptical")
+    assert cls == "open" and pres_str(nf) == "?UNDEC:B"
+    nf, cls, *_ = evaluate(fresh, term, "credulous")
+    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
 
 
 @pytest.mark.parametrize("script", FIXTURES + [CIRCULAR, "tests/entrypoints.fspy"])
@@ -166,12 +170,16 @@ def test_a_circular_supporter_no_longer_wins_by_strictness(fresh, order, tmp_pat
         assert evaluate(fresh, term, mode)[1] == "value"
 
 
-def test_b_with_back_on_top_stays_open(fresh, tmp_path):
-    # aida-circular-supporter-judged-in, unchanged here: inside B's debate
-    # sigma keeps back (its source B is IN), whose B can only be B's root
-    # obligation.  With other on top, B is a value.
+def test_b_with_back_on_top_is_a_value_through_the_delegation(fresh, tmp_path):
+    # aida-circular-supporter-judged-in: inside B's debate sigma keeps back
+    # (its source B is IN), whose B can only be B's root obligation.  B is
+    # IN (through other), so that obligation is the delegation !IN:B and B
+    # is a value - but other's proof is not in the normal form
+    # (aida-labelled-sites-delegation-rewrite; OPEN before).  With other on
+    # top, B is a value through other.
     run(fresh, CIRCULAR)
-    assert evaluate(fresh, unfold(fresh.document, (K("B"), "term")))[1] == "open"
+    nf, cls, *_ = evaluate(fresh, unfold(fresh.document, (K("B"), "term")))
+    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
     store.arguments.clear()
     store.document.clear()
     run(fresh, reordered(tmp_path))

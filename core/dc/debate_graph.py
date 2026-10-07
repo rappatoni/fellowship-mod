@@ -114,6 +114,9 @@ class Source:
     kind: str
     site: str
     scope: tuple = ()
+    #: The label of the occurrence in a labelled term (core/comp/labelled.py),
+    #: which sigma reads; not part of the source's identity.
+    label: object = field(default=None, compare=False, repr=False)
 
 
 @dataclass(frozen=True)
@@ -136,6 +139,9 @@ class Edge:
     #: The subargument's body, for unfolding (core/dc/unfold.py); not part
     #: of the edge's identity.
     term: object = field(default=None, compare=False, repr=False)
+    #: The label of the body's root in a labelled term; not part of the
+    #: edge's identity.
+    target_label: object = field(default=None, compare=False, repr=False)
 
 
 @dataclass(frozen=True)
@@ -829,11 +835,20 @@ def scoped_stack_elements(scion, strict_names=()) -> list:
                 + [(e, {**scope, **inner}) for e, inner in scoped_stack_elements(match[4], strict_names)])
     if isinstance(scion, (Goal, Deleg, DI)) and not (isinstance(scion, DI) and scion.name in strict_names):
         prop = scion.prop
-        return [(Mu(ID("x", prop), prop, scion, ID("x", prop)), {})]
+        return [(_same_label(Mu(ID("x", prop), prop, scion, ID("x", prop)), scion), {})]
     if isinstance(scion, (Laog, Geled, ID)) and not (isinstance(scion, ID) and scion.name in strict_names):
         prop = scion.prop
-        return [(Mutilde(DI("x", prop), prop, DI("x", prop), scion), {})]
+        return [(_same_label(Mutilde(DI("x", prop), prop, DI("x", prop), scion), scion), {})]
     return [(scion, {})]
+
+
+def _same_label(wrapper, leaf):
+    """An eta wrapper stands for the same statement as the leaf it wraps,
+    so in a labelled term (core/comp/labelled.py) it has the same label."""
+    label = getattr(leaf, "label", None)
+    if label is not None:
+        wrapper.label = label
+    return wrapper
 
 
 #: Which declaration kind a declared name must have to appear on a side:
@@ -945,7 +960,8 @@ class _Compiler:
                             f"proposition; run enrichment first."
                         )
                     return _Acc((Source(self.graph.add_node(node.prop), lside, kind,
-                                        str(node.number), spine),))
+                                        str(node.number), spine,
+                                        getattr(node, "label", None)),))
             if isinstance(node, (ID, DI)):
                 vside = "context" if isinstance(node, ID) else "term"
                 bound = env.get(node.name)
@@ -978,7 +994,7 @@ class _Compiler:
                         self.on_citation(node, name)
                     return _Acc((Source(self.graph.add_node(node.prop), vside,
                                         getattr(node, "source_kind", "obligation"),
-                                        node.name, spine),))
+                                        node.name, spine, getattr(node, "label", None)),))
                 enclosing = outer.get(node.name)
                 if enclosing is not None and enclosing[1] == vside:
                     # Captured from an enclosing subargument: a source at
@@ -988,7 +1004,8 @@ class _Compiler:
                     logger.debug("  compile: '%s' captured '%s' -> %s source at %s "
                                  "(the sprung trap, shown as a cycle)",
                                  name, node.name, kind, self.graph._show(captured_key, vside))
-                    return _Acc((Source(captured_key, vside, kind, node.name, spine),))
+                    return _Acc((Source(captured_key, vside, kind, node.name, spine,
+                                        getattr(node, "label", None)),))
                 raise DebateCompileError(
                     f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
                     f"variable '{node.name}' is neither bound nor a declared axiom; "
@@ -1024,7 +1041,8 @@ class _Compiler:
                 sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
                 rec = self.compile_body(node, lname, "subargument", sub_outer)
                 self.graph.add_edge(rec)
-                return _Acc((Source(rec.target_key, "term", "subargument", lname, spine),),
+                return _Acc((Source(rec.target_key, "term", "subargument", lname, spine,
+                                    rec.target_label),),
                             not rec.strict)
             if isinstance(node, Lamda):
                 return walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
@@ -1051,7 +1069,8 @@ class _Compiler:
         strict = (not any(s.kind in ("obligation", "presumption") for s in acc.sources)
                   and not acc.defeasible)
         return Edge(name=name, target_key=target_key, target_side=side,
-                    sources=acc.sources, strict=strict, role=role, term=body)
+                    sources=acc.sources, strict=strict, role=role, term=body,
+                    target_label=getattr(body, "label", None))
 
     def _root_statement(self, body, name):
         if isinstance(body, Mu):

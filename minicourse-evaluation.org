@@ -21,6 +21,11 @@
 # entrypoints (tasks.org, aida-unfold-entrypoints): every term below is
 # the one unfolded for the argument named, every transcript was taken on
 # the unfolded route, which is the CLI default again since that day.
+#
+# Revised 2026-10-07 for labelled terms (tasks.org,
+# aida-labelled-sites-delegation-rewrite): lessons 9, 11, 12 and 13 and
+# the closing section; the labelled term of lesson 9 was printed by the
+# code, the normal forms are pinned by the test file.
 
 * About this sequel
 
@@ -503,6 +508,17 @@ some leaves are open. What it can contain:
 | =pro=, =con=   | an argument's own eta wrapper =mu pro.< ... ‖ pro >=      | the argument     |
 | =th_2=, =H1_2= | an argument's own binder, suffixed on reuse               | unfold, =fresh=  |
 
+In phase 2 the term also carries sigma, and its normal form has sites
+named by their labels (since 2026-10-07, tasks.org
+aida-labelled-sites-delegation-rewrite):
+
+| printed             | what it is                                                     | who makes it      |
+|---------------------+----------------------------------------------------------------+-------------------|
+| =B{IN}=             | a term-sorted occurrence of B (mu, site, term variable), labelled | =label_term=    |
+| ={OUT}A=            | a context-sorted occurrence of A (mu', site, continuation)     | =label_term=      |
+| =!IN:A=, =IN:A!=    | a site labelled IN: a delegation, whatever it was              | =discharge_labels= |
+| =?OUT:B=, =UNDEC:P?= | a site labelled OUT or UNDEC: an obligation, whatever it was  | =discharge_labels= |
+
 Sites, =alt= and =b= binders each have their own counter. Lesson 8a
 builds this term step by step.
 
@@ -540,9 +556,14 @@ term-level reducer, =core/comp/reduce.py=, which the =support= and
 =attack= verbs use. Evaluation never calls it.
 
 *sigma* maps each statement of the issue graph to IN, OUT or UNDEC.
-Only phase 2 reads it, through a scaffold's derivation status. Phase 1
-reads strictness off the term, and phase 3 reads nothing but the base
-strategy.
+Phase 1 reads strictness off the term and does not use it. Then sigma is
+written into the term (=label_term=, =core/comp/labelled.py=): every
+occurrence of a statement carries its label, =A{L}= on the term side and
+={L}A= on the context side. The label depends only on the proposition
+and the side, so no reduction step can make it wrong. Phase 2 reads the
+labels off this term, through a scaffold's derivation status. Before
+phase 3 they are discharged into the sites (lesson 12), and phase 3
+reads nothing but the base strategy.
 
 ** Example
 
@@ -585,6 +606,18 @@ so on down to killC, which has no site left.
 The witness labelling (preferred; there is exactly one):
 
 : C[c]=IN  A[c]=OUT  C[t]=OUT  B[t]=IN  A[t]=IN
+
+Written into the term after phase 1 (=explain pro= prints it as
+=evaluate: the labelled term=; phase 1 has decided C, lesson 10):
+
+: μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
+
+Three things to read off it. The labels follow the sort, not the
+binder: =alt2= is a continuation for A, so it carries A[c]'s label,
+={OUT}A=, and =b2= stands for a proof of A, so =A{IN}=. AW's root is
+=alt2:{OUT}A=: the attacker's conclusion, A[c], is labelled where the
+captured root stands. Statements the graph has no node for - B[c], ~A,
+the axioms - carry no label.
 
 ** Exercises
 
@@ -784,7 +817,11 @@ still finds:
 2. *Derivation status* under sigma (=derivation_status=): for one edge,
    IN if the target and every source are IN, OUT if any of them is OUT,
    and UNDEC otherwise; for several, IN if some alternative is IN, OUT
-   if all are OUT. So a stack is IN if some supporter in it is.
+   if all are OUT. So a stack is IN if some supporter in it is. The
+   labels are those of the labelled term (lesson 9): the compiler copies
+   each occurrence's label into the edge it builds - the target's from
+   the scion's root, a source's from its site, captured variable or
+   lambda. sigma itself is not consulted again.
 3. *Wing choice* (=_wing_choice=): the table of lesson 7. The mode's
    tiebreak is used only when the status is UNDEC.
 4. *Rewrite* the scaffold to the kept wing - =keep_orig=,
@@ -831,9 +868,9 @@ A[c] is OUT, so both are OUT, and so is AW. Walking top-down, phase 2
 decides B, keeps PRO, walks into it, and decides A. It never reaches
 anything inside AW: the support scaffold there (the "1 scaffold inside
 it") and the debate about C go with it, and phase 1's decisions on C
-were work for nothing. The result:
+were work for nothing. The result, still labelled:
 
-: μpro:B.<μth:B.<r1:A->B||!u2:A*th:B>||pro:B>
+: μpro:B{IN}.<μth:B{IN}.<r1:A->B||!u2:A{IN}*th:B>||pro:B>
 
 *The same two decisions as reduction steps:*
 
@@ -894,6 +931,24 @@ fires (mu<) at the root pair, where cbn would fire (>mu).
 
 ** Definition
 
+*Discharging the labels* comes first (=discharge_labels=,
+=core/comp/labelled.py=). Every site takes its label as its name, and
+its kind from the label, whatever kind it had:
+
+| label        | obligation =?u:A=  | delegation =!u:A=  | (context side: the mirror) |
+|--------------+--------------------+--------------------+----------------------------|
+| IN           | =!IN:A=            | =!IN:A=            | =IN:A!=                    |
+| OUT          | =?OUT:A=           | =?OUT:A=           | =OUT:A?=                   |
+| UNDEC        | =?UNDEC:A=         | =?UNDEC:A=         | =UNDEC:A?=                 |
+
+An obligation labelled IN is a delegation: the onus is now on the
+opponent, who would have to bring an argument the labelling has not
+considered. A delegation not IN is an obligation again: it was not
+established under the mode. All other labels are dropped, so the
+normaliser, alpha-equality and the matcher never see one. A site's
+name no longer says which site it was; in a normal form it does not
+need to.
+
 =normalize_strong= applies the four standard rules of the calculus -
 (->), (-), (mu<), (>mu) - under every congruence. It works one step at a
 time: each step fires at the leftmost-outermost command that has a redex
@@ -923,20 +978,29 @@ change the normal form, but only through those cuts.
   - =value= otherwise. Presumptions may remain; the value is then a
     proof modulo them.
 
+After discharge, the last two read: a value iff every remaining site is
+IN. Issue =P:= of tests/demo/05_even_loop.fspy - the opponent's onus to
+refute P, delegated by a presumption - is UNDEC skeptically, so the
+delegation is the obligation =UNDEC:P?= and the debate is open
+(=μ'alt1:P.<alt1:P||UNDEC:P?>=; a value, =μ'alt1:P.<alt1:P||u1:P!>=,
+before 2026-10-07). Credulously the witness has P[c] IN: =IN:P!=, a
+value.
+
 ** Example
 
 : normalise  normal form after 1 step(s) under cbn
-: N1  (mu<)  < mu th.< r1 || !u2 * th > || pro >  -->  < r1 || !u2 * pro >
+: N1  (mu<)  < mu th.< r1 || !IN * th > || pro >  -->  < r1 || !IN * pro >
 
-The root command has a mu on the term side and the variable =pro= on the
-context side, so only (mu<) applies. Afterwards =< r1 || !u2 * pro >= is
-normal: (->) would need a lambda, and =r1= is a declared name. The
-result, in both modes and under both base strategies:
+Discharge turns =!u2:A{IN}= into =!IN:A=. The root command has a mu on
+the term side and the variable =pro= on the context side, so only (mu<)
+applies. Afterwards =< r1 || !IN * pro >= is normal: (->) would need a
+lambda, and =r1= is a declared name. The result, in both modes and under
+both base strategies:
 
-: μpro:B.<r1:A->B||!u2:A*pro:B>          VALUE
+: μpro:B.<r1:A->B||!IN:A*pro:B>          VALUE
 
-This is a proof of B from =r1=, modulo the presumption !u2. sigma says
-nobody defeated A, so A stays presumed.
+This is a proof of B from =r1=, modulo the presumption of A. sigma says
+nobody defeated A, so A stays presumed, and its label is IN.
 
 ** Exercises
 
@@ -1053,11 +1117,13 @@ of eta at B3:
 : after B1, B2, B3=(mu<), A1, A2, then normalize_strong cbn:
 : μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>
 : the pipeline:
-: μpro:B.<r1:A->B||!u2:A*pro:B>
+: μpro:B.<r1:A->B||!IN:A*pro:B>
 
-The two differ by one eta step (A3) and by the name of the root binder.
-The test checks that they are equal once both are eta-reduced. They are
-not alpha-equal.
+The two differ by one eta step (A3), by the name of the root binder, and
+by the site's name: the steps by hand skip the labels. The test labels
+and discharges the hand-made normal form with the same sigma and then
+checks that the two are equal once both are eta-reduced. They are not
+alpha-equal.
 
 ** Exercises
 
@@ -1101,6 +1167,12 @@ between the implementation and doing them as normalisation steps:
 5. *Phase 1 runs twice*, and it decides scaffolds that phase 2 then
    discards (lesson 10). On the shared route it runs once per
    sub-debate, but still before sigma, so the second half stands.
+6. *sigma is in the term* (since 2026-10-07). Phase 2 reads the labels
+   off the labelled term (lessons 9, 11), and a label depends only on a
+   statement, so every reduction step keeps the labels right. In a
+   single normaliser they are type annotations, and discharging them
+   (lesson 12) is a local pass that commutes with the rules: it can come
+   at any point after the last decision.
 
 * Appendix - Solutions
 
@@ -1171,8 +1243,8 @@ between the implementation and doing them as normalisation steps:
    and con rests on the presumption !u3. Every remaining wing rests on a
    site or on the captured root =alt2=, which counts as open: ?u1, !u2,
    =alt2= or !u3. sigma has C[t] IN, A[c] IN, A[t] OUT and
-   B[t] OUT, so pro's derivation is OUT and the root keeps ?u1. The
-   evaluation returns =?u1:B=, OPEN.
+   B[t] OUT, so pro's derivation is OUT and the root keeps ?u1. B[t] is
+   OUT, so after discharge the evaluation returns =?OUT:B=, OPEN.
 2. Two strict wings that contradict each other are an inconsistency. A
    strict phase that picked one of them would be choosing between two
    proofs. The labelling decides that case (CONTR in call-by-onus.org),

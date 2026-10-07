@@ -77,35 +77,50 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
         """
         return f'({node.pres})' if isinstance(node, (Cons, ConsFO, Sonc)) else node.pres
 
-    def _typed_leaf(self, name, prop):
+    @staticmethod
+    def _labelled(prop, node, context_sorted):
+        """A proposition with the label of a labelled term
+        (core/comp/labelled.py): ``A{L}`` for a term-sorted node, ``{L}A``
+        for a context-sorted one; unchanged without a label."""
+        label = getattr(node, "label", None)
+        if not label or not prop:
+            return prop
+        return f'{{{label}}}{prop}' if context_sorted else f'{prop}{{{label}}}'
+
+    def _typed_leaf(self, name, prop, node=None):
         if self.verbosity < 0:
             return f'{name}'
+        prop = self._labelled(prop, node, isinstance(node, ID))
         return f'{name}:{prop}' if prop else f'{name}'
 
-    def _open_term(self, prefix, number, prop):
+    def _open_term(self, prefix, number, prop, node=None):
+        prop = self._labelled(prop, node, False)
         if prop:
             return f'{prefix}{number}:{prop}'
         return f'{prefix}{number}'
 
-    def _open_context(self, number, prop, suffix):
+    def _open_context(self, number, prop, suffix, node=None):
+        prop = self._labelled(prop, node, True)
         if prop:
             return f'{number}:{prop}{suffix}'
         return f'{number}{suffix}'
 
     def visit_Mu(self, node: Mu):
         node = super().visit_Mu(node)
+        prop = self._labelled(node.prop, node, False)
         if self.verbose:
-            node.pres = f'μ{node.id.name}:{node.prop}.<{node.term.pres}|{node.contr}|{node.context.pres}>'
+            node.pres = f'μ{node.id.name}:{prop}.<{node.term.pres}|{node.contr}|{node.context.pres}>'
         else:
-            node.pres = f'μ{node.id.name}:{node.prop}.<{node.term.pres}||{node.context.pres}>'
+            node.pres = f'μ{node.id.name}:{prop}.<{node.term.pres}||{node.context.pres}>'
         return node
 
     def visit_Mutilde(self, node: Mutilde):
         node = super().visit_Mutilde(node)
+        prop = self._labelled(node.prop, node, True)
         if self.verbose:
-            node.pres = f"μ'{node.di.name}:{node.prop}.<{node.term.pres}|{node.contr}|{node.context.pres}>"
+            node.pres = f"μ'{node.di.name}:{prop}.<{node.term.pres}|{node.contr}|{node.context.pres}>"
         else:
-            node.pres = f"μ'{node.di.name}:{node.prop}.<{node.term.pres}||{node.context.pres}>"
+            node.pres = f"μ'{node.di.name}:{prop}.<{node.term.pres}||{node.context.pres}>"
         return node
 
     def visit_Lamda(self, node: Lamda):
@@ -130,22 +145,22 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Goal(self, node: Goal):
         node = super().visit_Goal(node)
-        node.pres = self._open_term('?', node.number, node.prop)
+        node.pres = self._open_term('?', node.number, node.prop, node)
         return node
 
     def visit_Laog(self, node: Laog):
         node = super().visit_Laog(node)
-        node.pres = self._open_context(node.number, node.prop, '?')
+        node.pres = self._open_context(node.number, node.prop, '?', node)
         return node
 
     def visit_Deleg(self, node: Deleg):
         node = super().visit_Deleg(node)
-        node.pres = self._open_term('!', node.number, node.prop)
+        node.pres = self._open_term('!', node.number, node.prop, node)
         return node
 
     def visit_Geled(self, node: Geled):
         node = super().visit_Geled(node)
-        node.pres = self._open_context(node.number, node.prop, '!')
+        node.pres = self._open_context(node.number, node.prop, '!', node)
         return node
 
     @staticmethod
@@ -156,12 +171,12 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
-        node.pres = self._typed_leaf(self._leaf_name(node), node.prop)
+        node.pres = self._typed_leaf(self._leaf_name(node), node.prop, node)
         return node
 
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
-        node.pres = self._typed_leaf(self._leaf_name(node), node.prop)
+        node.pres = self._typed_leaf(self._leaf_name(node), node.prop, node)
         return node
 
     # -- first-order nodes -------------------------------------------------

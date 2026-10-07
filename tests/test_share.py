@@ -703,11 +703,13 @@ class TestEvaluateFromTheSharedDebate:
             nf, nf_class, sigma, _graph = evaluate_shared(share(doc, issue), "x", strict_names=strict)
         assert nf_class == "value" and sigma[issue] == "IN"
         assert size(nf) < 200
-        assert sites(nf) == ["u1"]                    # the presumption of P0, once
+        assert sites(nf) == ["IN"]                    # the presumption of P0, once
 
-    def test_sites_of_a_sub_debate_kept_twice_get_distinct_numbers(self):
+    def test_sites_of_a_sub_debate_kept_twice_carry_their_label(self):
         # P needs Q twice (two premises of one rule); the debate about Q is
-        # written out in both places, and its sites must not share a number.
+        # written out in both places.  Its sites were renumbered apart; since
+        # labelled terms (aida-labelled-sites-delegation-rewrite) a site's
+        # name is its label, so both are the presumption of R, IN.
         body = eta("p", "P", Mu(ID("rule", "P"), "P", DI("ax", "Q->Q->P"),
                                 Cons(Goal("1", "Q"), Cons(Goal("2", "Q"), ID("rule", "P")))))
         doc = compile_document(
@@ -720,8 +722,7 @@ class TestEvaluateFromTheSharedDebate:
             warnings.simplefilter("ignore")
             nf, _class, _sigma, _graph = evaluate_shared(share(doc, issue), "x",
                                                         strict_names={"ax", "axq"})
-        numbers = sites(nf)
-        assert len(numbers) == 2 and len(set(numbers)) == 2
+        assert sites(nf) == ["IN", "IN"]
 
 
 class TestEvaluateCommand:

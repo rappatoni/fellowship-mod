@@ -16,6 +16,7 @@ from core.comp.oracle_terms import (
     instantiate_sites, normalize_strong, alpha_equal, classify_nf,
 )
 from core.dc.debate_graph import canonical_prop
+from core.comp.labelled import label_term, discharge_labels
 
 
 def eta(name, prop, inner):
@@ -96,7 +97,10 @@ class TestSupport:
         pre_graft = parg(Goal("1", "Q"))
         manual = instantiate_sites(pre_graft, {"1": supporter})
 
-        nf, _, _, _ = evaluate_debate(composed, "d", strict_names=STRICT)
+        nf, _, sigma, _ = evaluate_debate(composed, "d", strict_names=STRICT)
+        # the manual side is labelled and discharged like the evaluator's
+        # term (core/comp/labelled.py): the square commutes on labelled terms
+        manual = discharge_labels(label_term(manual, sigma))
         assert alpha_equal(nf, normalize_strong(manual, strategy="cbn"))
 
 
@@ -155,9 +159,11 @@ class TestContested:
         # Credulous keeps the presumption: the attacker is OUT in the witness.
         assert cls_c == "value"
         assert contains(nf_c, lambda n: isinstance(n, Deleg))
-        # Skeptical discards the UNDEC attacked side: not a value.
+        # Skeptical discards the UNDEC attacked side: not a value.  The
+        # challenger's presumption is UNDEC, so it is an obligation again
+        # (aida-labelled-sites-delegation-rewrite).
         assert cls_s != "value"
-        assert contains(nf_s, lambda n: isinstance(n, Geled))
+        assert contains(nf_s, lambda n: isinstance(n, Laog) and n.number == "UNDEC")
 
 
 class TestCaptureIsDecidedByStrictness:
@@ -172,10 +178,13 @@ class TestCaptureIsDecidedByStrictness:
 
     def test_a_defeasible_capturing_supporter_is_judged_by_sigma(self):
         # Q[c] is an obligation nobody meets: the supporter is OUT and the
-        # site stays an open obligation.
+        # site stays.  But Q is IN, presumed by the supporter's own site,
+        # so the site is a delegation now: the onus to refute Q is on the
+        # opponent (aida-labelled-sites-delegation-rewrite; OPEN before).
         nf, cls, sigma, g = evaluate_debate(self.body(), "d", strict_names=STRICT, mode="credulous")
-        assert sigma[(Q, "context")] == "OUT" and cls == "open"
-        assert contains(nf, lambda n: isinstance(n, Goal) and n.prop == "Q")
+        assert sigma[(Q, "context")] == "OUT" and sigma[(Q, "term")] == "IN"
+        assert cls == "value"
+        assert contains(nf, lambda n: isinstance(n, Deleg) and n.number == "IN" and n.prop == "Q")
 
     def test_a_supporter_throwing_to_the_scaffolds_alt_is_left_to_sigma(self):
         # The supporter meets the demand for "Q fails" with the scaffold's
