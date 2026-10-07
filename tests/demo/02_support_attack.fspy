@@ -1,0 +1,58 @@
+# ================================================================
+#  AC/DC demo 2 - support and attack: Tweety the penguin
+# ================================================================
+lk.
+declare Bird, Penguin, Flies, Wings : bool.
+declare bird : (Bird).
+declare penguins_are_birds : (Penguin -> Bird).
+declare penguins_dont_fly : (Penguin -> ~Flies).
+declare winged_things_fly : (Wings -> Flies).
+# tweety: Tweety flies, being a bird, since birds fly - by default.
+start argument tweety Flies
+cut (Bird -> Flies) birds_fly.
+by default.
+next.
+elim.
+axiom bird.
+axiom birds_fly.
+end argument
+# wings: Tweety flies because it has wings - if it has wings, which is owed.
+start argument wings Flies
+cut (Wings -> Flies) rule.
+axiom winged_things_fly.
+elim.
+next.
+axiom rule.
+end argument
+# penguin: Tweety does not fly - it is a penguin.  Presumed.
+start counterargument penguin Flies
+cut (Penguin -> ~Flies) rule.
+axiom penguins_dont_fly.
+elim.
+by default.
+next.
+elim.
+axiom.
+end counterargument
+# Something unrelated, to show the verbs check their target.
+declare Sings : bool.
+start argument sings Sings
+by default.
+end argument
+%stop
+# ---- paste from here ----------------------------------------------------
+# The document already holds every conflict: proposition identity is global.
+graph document
+# The verbs name a debate and CHECK it: a supporter must conclude a statement
+# reachable from the host's issue, an attacker the contrary of one.
+support dsup wings tweety
+attack datt penguin tweety
+support bad sings tweety
+# The debate about Flies: supported by wings, contested by penguin.
+graph tweety show
+label tweety
+# wings rests on an obligation nobody meets, so it is OUT.  The presumed rule
+# "birds fly" and the presumed "it is a penguin" contest each other: UNDEC.
+# The modes decide the contest.
+evaluate tweety skeptical
+evaluate tweety credulous

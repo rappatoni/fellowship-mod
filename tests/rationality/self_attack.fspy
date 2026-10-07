@@ -1,0 +1,23 @@
+lj.
+
+# Rationality fixture: self-attack (odd loop of length 1).
+# One argument for P resting on the negation-as-failure default for P itself:
+# pRule needs P->false on the term side, derived from a geled for P.
+# Expected grounded labelling (graph labeller, see README.org):
+#   node P: UNDEC on both sides; the argument's presumption site is UNDEC.
+
+declare P:bool.
+declare pRule : ((P->false)->P).
+
+start argument SelfAttack P
+cut ((P->false)->P) rule.
+axiom pRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+

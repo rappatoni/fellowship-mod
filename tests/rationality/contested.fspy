@@ -1,0 +1,39 @@
+% Contested node: presumption for Q versus presumption-backed challenge.
+% The .fspy form of tests/test_evaluate.py::TestContested.
+%
+% pArg argues P via pRule from a DELEGATED Q ("Q by default"); qAtt is a
+% counterargument challenging Q, itself resting on a delegation.  Both
+% sides of Q are presumption-backed, so the grounded labelling is UNDEC
+% on (Q, term), (Q, context) and (P, term) - a contested node needs no
+% propositional cycle (mutual rebut is a two-statement negation cycle;
+% see the V-two correction in propositional-fragment-plan.org).
+%
+% The evaluation modes therefore diverge:
+%   evaluate datt skeptical  -> OPEN  (the UNDEC attacked side is dropped)
+%   evaluate datt credulous  -> VALUE (the UNDEC attacker is dropped; the
+%                                      presumption !Q stands in the term)
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+
+% Argument for P with the Q antecedent taken by default.
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+
+% Challenge to Q, itself delegated.
+start counterargument qAtt Q
+by default.
+end counterargument
+
+attack datt qAtt pArg
+
+graph datt
+label datt
+evaluate datt skeptical
+evaluate datt credulous

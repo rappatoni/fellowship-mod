@@ -1,0 +1,35 @@
+% The self-attacking argument as a classical debate (lk copy of
+% self_attack.fspy).  P from a presumed refutation of P.  Unfolding
+% captures that presumption with P's own continuation, and since
+% 2026-09-25 a captured presumption is a commitment the debate made, not
+% an assumption, so what remains is the classical proof of P from
+% (P->false)->P.  Strict in the debate, hence a strict edge SelfAttack*
+% on the issue graph: P[t] IN, evaluation a VALUE in both modes.
+lk.
+
+# Rationality fixture: self-attack (odd loop of length 1).
+# One argument for P resting on the negation-as-failure default for P itself:
+# pRule needs P->false on the term side, derived from a geled for P.
+# The FRAMEWORK alone still grounds P UNDEC on both sides - it cannot see
+# that the capture discharged the site.  The strict phase can, and the
+# issue graph is framework plus strict edges, so `label SelfAttack` shows
+# P[t] IN.  Before 2026-09-25 the evaluation was OPEN.
+
+declare P:bool.
+declare pRule : ((P->false)->P).
+
+start argument SelfAttack P
+cut ((P->false)->P) rule.
+axiom pRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+graph SelfAttack
+label SelfAttack preferred
+evaluate SelfAttack credulous

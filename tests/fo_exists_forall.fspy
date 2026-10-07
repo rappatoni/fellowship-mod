@@ -32,6 +32,7 @@ declare P: N -> N -> bool.
 
 % Kept on one line: script mode has no continuation handling, unlike the REPL.
 theorem fo_exists_forall : ((exists y:N, forall x:N, P [x] [y]) -> (forall x:N, exists y:N, P [x] [y])).
+prove fo_exists_forall
 elim H.
 elim.
 cut (exists y:N, forall x:N, P [x] [y]) th.

@@ -1,0 +1,59 @@
+% Two accepting witnesses, and the supporter-derivation gap
+% (tasks.org, aida-supporter-derivation-status; found 2026-09-16).
+%
+% pArg argues P via pRule from a DELEGATED Q.  yQ argues Q via sq from a
+% DELEGATED S.  sChal contests S by default.  yQ (attacked at S) then
+% supports pArg at Q.
+%
+% Graph:   P[t] <- Q[t]:pres;  Q[t] <- S[t]:pres (yQ);  S contested.
+%
+% Preferred has two labellings, both with P IN, differing on S:
+%   [1]  P IN  Q IN  S[t] OUT  S[c] IN      (S refuted)
+%   [2]  P IN  Q IN  S[t] IN   S[c] OUT     (S accepted)
+%
+% Expected (rule fixed 2026-09-16):
+%   evaluate d credulous 2  -> VALUE   Q derived from S via yQ
+%   evaluate d credulous 1  -> VALUE   yQ is dropped - its source S[t]
+%                                      is OUT under this witness - and
+%                                      the presumption !Q stands:
+%                                      mu d:P.< pRule:Q->P || !..:Q * d >
+% Before the fix witness 1 was OPEN: the resolver read only Q[t] (IN by
+% presumption) and kept yQ with its S site holding the defeated clash.
+lk.
+declare P,Q,S:bool.
+declare pRule : (Q->P).
+declare sq : (S->Q).
+
+% P from Q, Q taken by default.
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+
+% Q from S, S taken by default.
+start argument yQ Q
+cut (S->Q) r.
+axiom sq.
+elim.
+by default.
+next.
+axiom r.
+end argument
+
+% A by-default challenge to S.
+start counterargument sChal S
+by default.
+end counterargument
+
+attack yAtt sChal yQ
+support d yAtt pArg
+
+graph d show
+label d preferred
+evaluate d credulous 2
+evaluate d credulous 1
+evaluate d credulous all

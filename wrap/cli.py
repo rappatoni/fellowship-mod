@@ -1,32 +1,42 @@
 from __future__ import annotations
-import os, sys
+import os, re, sys
+import copy
+import atexit
+import collections
 import shlex
 import json
 import tempfile
 from pathlib import Path
 import shutil
+import subprocess
 import argparse
 import logging
 from typing import Any, Optional
-from pres.color import pretty_colored_proof_term
 from pres.tree import render_acceptance_tree_dot
+from mod import store
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
+from wrap.registry import (
+    parse_statement, state, parse_refine, reopen, abandon, start_recording,
+    finish_recording, is_qed,
+)
+from core.dc.cite import citation_target, CitationError, is_strict_citation, parse_cite
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
+from core.comp.oracle import AdfBddNotFound
 from scasp_import.importer import ScaspImportError, translate_json
 from pres.decorations import parse_decorate_command
 
 logger = logging.getLogger('fsp.wrapper')
 logger.propagate = True
 
-# Install TRACE level (below DEBUG) and a Logger.trace() method
-TRACE = 5
-logging.addLevelName(TRACE, "TRACE")
-def _trace(self, msg, *args, **kwargs):
-    if self.isEnabledFor(TRACE):
-        self._log(TRACE, msg, args, **kwargs)
-logging.Logger.trace = _trace
+# The TRACE level (below DEBUG) and Logger.trace() live in core.logging_util,
+# so that core modules can log at TRACE without importing the CLI.
+from core.logging_util import TRACE, artifact  # noqa: E402  (re-exported: callers import them from here)
+
+#: The CLI's own slot in the pipeline's account: what it hands to the
+#: unfolder, under a name `explain` groups with the rest.
+_pipeline_logger = logging.getLogger("core.dc.issue")
 
 def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[str] = None) -> None:
     """
@@ -36,6 +46,13 @@ def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[s
       - Stream to stdout
       - Avoid duplicate handlers if already configured
     """
+    # The CLI reports onus conflicts itself, in _report_onus_conflicts, with
+    # a message aimed at the person at the prompt; the library warning would
+    # only duplicate it on stderr.
+    import warnings as _warnings
+    from core.comp.adf_label import OpposingPresumptions as _OpposingPresumptions
+    _warnings.filterwarnings("ignore", category=_OpposingPresumptions)
+
     level_name = (level_name or os.getenv("FSP_LOGLEVEL", "INFO")).upper()
     level = getattr(logging, level_name, None)
     if level is None:
@@ -108,7 +125,17 @@ def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.
 
 # -----------------------------------------Scripts/Interactive Mode -----------------------------
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True) -> None:
+def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: int) -> None:
+    """Log-and-refuse for the registry's refusals (a clashing name, a `qed`
+    on a witness that is not strict): print and log, and in strict mode stop
+    the script like any other prover error.  Scripts narrate through the
+    logger only, so there is no separate print here."""
+    logger.warning("Refused (%s:%d): %s", script_path, lineno, error)
+    if strict:
+        raise ProverError(f"{script_path}:{lineno}: {error}") from error
+
+
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -116,13 +143,22 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - All fellowship commands;
           - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
-          - Executing/Reducing an argument : "reduce <ArgName>"
-          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
+            term-level reducer, not the compiler pipeline; use "evaluate")
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
-            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
-          - Debate ops: undermine NEW attacker target
+            (deprecated, like the debate ops)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
+            "render-nf <Arg>" (render-nf deprecated with reduce).
+          - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
+            the pipeline's stage-by-stage account of one evaluation;
+            "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
+          - Debate ops (DEPRECATED: they build debate terms by grafting scaffolds, or
+            take such terms apart, at term level; they predate the debate compiler and
+            are not wired to it, so they are probably not safe to use.  Register
+            arguments and use graph/label/evaluate/explain instead):
+                        undermine NEW attacker target
                         undercut  NEW attacker target   (backward compatible alias)
                         undergird NEW supporter target [on PROP]
                         reinforce NEW supporter target [on PROP]
@@ -148,6 +184,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         prover = setup_prover()
     prev_echo = getattr(prover, "echo_notes", False)
     prover.echo_notes = echo_notes
+    # render_files=None keeps whatever the session has (ACDC_NO_RENDER); False
+    # stops `graph ... show` and `tree` writing images and opening a viewer.
+    prev_render = getattr(prover, "render_files", True)
+    if render_files is not None:
+        prover.render_files = render_files
 
     recording = False
     current_argument = None
@@ -157,6 +198,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             if not command:
                 continue
             if command.startswith('%'):
+                if stop_marker and command.rstrip('.').strip().lower() == '%stop':
+                    # The demo convention: execution stops here; what follows
+                    # is for the presenter to paste into the session.
+                    logger.info("Stopped at %%stop (%s:%d); the rest of the file is yours to paste.", script_path, lineno)
+                    break
                 # invisible comment, skip silently
                 continue
             if command.startswith('#'):
@@ -165,6 +211,39 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            statement = None if recording else parse_statement(command)
+            if statement is not None:
+                # A statement records a claim, and nothing more: `prove NAME`
+                # opens its proof.
+                is_anti, name, conclusion, keyword = statement
+                try:
+                    state(prover, is_anti, name, conclusion, keyword)
+                except ProverError as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                continue
+            refined = None if recording else parse_refine(command)
+            if refined is not None:
+                # `refine NAME` (prove, argue, refute, dispute) reopens NAME.
+                try:
+                    current_argument = reopen(prover, refined)
+                except ProverError as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                    continue
+                recording = True
+                logger.info("Refining '%s' : %s.", refined, current_argument['conclusion'])
+                continue
+            if recording and is_qed(command):
+                # `qed` ends the recording and demands a strict witness.
+                current = current_argument
+                recording = False
+                current_argument = None
+                try:
+                    arg = finish_recording(prover, current, demand_strict=True)
+                    logger.info("'%s' proved: %s.", arg.name, arg.conclusion)
+                except ProverError as e:
+                    abandon(prover, current)
+                    _refuse_in_script(e, strict, script_path, lineno)
+                continue
             if command.startswith('start counterargument ') or command.startswith('start antitheorem '):
                     if recording:
                         logger.warning("Already recording an argument. Please end the current recording first.")
@@ -175,6 +254,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         continue
                     name = parts[2]
                     conclusion = parts[3].strip()
+                    try:
+                        start_recording(prover, name, True)
+                    except ProverError as e:
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
                     current_argument = {
                         'name': name,
                         'conclusion': conclusion,
@@ -194,6 +278,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         continue
                     name = parts[2]
                     conclusion = parts[3].strip()
+                    try:
+                        start_recording(prover, name, False)
+                    except ProverError as e:
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
                     current_argument = {
                         'name': name,
                         'conclusion': conclusion,
@@ -205,22 +294,18 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     if not recording:
                         logger.warning("Not currently recording an argument.")
                         continue
-                    # Create and execute the argument
+                    # Create, execute and register the argument
                     logger.info("Finished recording argument. Constructing and executing argument '%s'.", current_argument['name'])
-                    arg = Argument(
-                        prover,
-                        name=current_argument['name'],
-                        conclusion=current_argument['conclusion'],
-                        instructions=current_argument['instructions'],
-                        is_anti=current_argument.get('is_anti', False)
-                    )
-                    arg.execute()
-                    # Store the argument for later use
-                    prover.register_argument(arg)
-                    logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
-                    # Reset recording state
+                    current = current_argument
                     recording = False
                     current_argument = None
+                    try:
+                        arg = finish_recording(prover, current, demand_strict=False)
+                    except ProverError as e:
+                        abandon(prover, current)
+                        _refuse_in_script(e, strict, script_path, lineno)
+                        continue
+                    logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
             elif recording:
                     # Record-only during scripts: do not execute lines now.
                     if command.startswith('tactic '):
@@ -253,12 +338,15 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Decorate failed: %s", e)
                             if stop_on_error:
                                 break
 
+                    elif command.startswith("adopt "):
+                        adopt_strict_edge_cmd(prover, command)
                     elif command.startswith("register "):
                         try:
                             register_argument_cmd(prover, command)
@@ -271,6 +359,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 if isinstance(e, MachinePayloadError):
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
@@ -280,6 +369,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                 break
                     elif command.startswith("reduce "):
                         reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+                    elif command.startswith("expand "):
+                        expand_argument_cmd(prover, command.split()[1])
+                    elif command.startswith("unfold "):
+                        unfold_cmd(prover, command)
+                    elif command.startswith("debate "):
+                        debate_argument_cmd(prover, command.split()[1])
                     elif command.startswith("render-nf "):
                         # Usage: render-nf ARG [style]
                         parts = command.split()
@@ -287,27 +382,39 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         style = parts[2] if len(parts) >= 3 else None
                         render_argument_cmd(prover, name, True, style=style)
                     elif command.startswith("render "):
-                        # Usage: render ARG [style]
-                        parts = command.split()
-                        name = parts[1] if len(parts) >= 2 else ""
-                        style = parts[2] if len(parts) >= 3 else None
-                        render_argument_cmd(prover, name, False, style=style)
-                    elif command.startswith("color-nf "):
-                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
-                    elif command.startswith("color "):
-                        color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
+                        # Usage: render ARG|issue :X|X: [style] [registered|enriched|unfolded|normal|evaluated]
+                        name, style, which = _render_tokens(command)
+                        render_argument_cmd(prover, name, False, style=style, which=which)
+                    elif command.startswith("graph "):
+                        # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                        name, opts = _target(command.split())
+                        show = "show" in opts
+                        dot_path = next((o for o in opts if o != "show"), None)
+                        graph_argument_cmd(prover, name, dot_path, show=show)
+                    elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
+                        set_typecheck_cmd(prover, command)
+                    elif command in ("pipeline shared", "pipeline unfolded"):
+                        set_pipeline_cmd(prover, command)
+                    elif command.startswith("label "):
+                        _dispatch_label(prover, command)
+                    elif command.startswith("evaluate "):
+                        _dispatch_evaluate(prover, command)
+                    elif command.startswith("explain "):
+                        _dispatch_explain(prover, command)
                     elif command.startswith("tree "):
-                        parts = command.split()
+                        # a term selector (render's) may follow: tree ARG ... [unfolded|...]
+                        which = next((tok for tok in command.split()[2:] if tok in TERM_SELECTORS), None)
+                        parts = [tok for tok in command.split() if tok not in TERM_SELECTORS]
                         # Usage:
                         #   tree ARG
                         #   tree ARG nl [argumentation|dialectical|intuitionistic]
                         #   tree ARG pt
                         if len(parts) == 2:
-                            tree_argument_cmd(prover, parts[1])
+                            tree_argument_cmd(prover, parts[1], which=which)
                         elif len(parts) >= 3:
                             mode = parts[2]
                             nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
-                            tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                            tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style, which=which)
                         else:
                             logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
                     elif command.startswith("normalize "):
@@ -332,6 +439,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("%s failed: %s", command.split()[0].capitalize(), e)
@@ -365,6 +473,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during undermine: %s", e)
@@ -379,6 +488,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during undermine: %s", e)
@@ -395,6 +505,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Undermine failed: missing arguments")
                             if stop_on_error:
@@ -442,6 +553,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during %s: %s", verb, e)
@@ -456,6 +568,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during %s: %s", verb, e)
@@ -472,6 +585,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {verb.capitalize()} failed: missing arguments")
                             if stop_on_error:
@@ -502,6 +616,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during attack: %s", e)
@@ -516,6 +631,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during attack: %s", e)
@@ -532,6 +648,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Attack failed: missing arguments")
                             if stop_on_error:
@@ -571,6 +688,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error during rebut: %s", e)
@@ -585,6 +703,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Prover error (no machine payload) during rebut: %s", e)
@@ -600,6 +719,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                             pass
                                     else:
                                         prover.echo_notes = prev_echo
+                                        prover.render_files = prev_render
                                     logger.info("Finished script %s", script_path)
                                     raise ProverError(f"{script_path}:{lineno}: {e}") from e
                                 logger.error("Rebut precondition failed: %s", e)
@@ -616,6 +736,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: Rebut failed: missing arguments")
                             if stop_on_error:
@@ -642,8 +763,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         else:
                             logger.error("One or both arguments not found.")
                     else:
-                        # Execute other commands
+                        # Execute other commands.  A `declare` takes its names
+                        # first: NameClash is a ProverError, handled below.
                         try:
+                            claim = getattr(prover, "claim_declared_names", None)
+                            if claim is not None:
+                                claim(command)
                             output = prover.send_command(command)
                         except ProverError as e:
                             if strict:
@@ -654,6 +779,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise ProverError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error: %s", e)
@@ -668,6 +794,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                         pass
                                 else:
                                     prover.echo_notes = prev_echo
+                                    prover.render_files = prev_render
                                 logger.info("Finished script %s", script_path)
                                 raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
                             logger.error("Prover error (no machine payload): %s", e)
@@ -682,6 +809,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             pass
     else:
         prover.echo_notes = prev_echo
+        prover.render_files = prev_render
     logger.info("Finished script %s", script_path)
 
 
@@ -702,39 +830,183 @@ def _print_ui(state: Any) -> None:
                 print(e.strip())
 
 
+def _setup_readline() -> None:
+    """Line editing, history and paste-friendliness for the REPL.
+
+    Emacs bindings (readline's default) so C-a/C-e/C-k/M-b work in a
+    terminal such as vterm; a history file so the arrow keys recall
+    earlier commands across sessions; bracketed paste off (GNU readline
+    8.1+ would otherwise hand a pasted block to input() as one line with
+    embedded newlines - _read_lines splits those anyway).  libedit on
+    macOS ignores the GNU-only settings.
+    """
+    try:
+        import readline
+    except ImportError:
+        return
+    for binding in ("set editing-mode emacs", "set enable-bracketed-paste off"):
+        try:
+            readline.parse_and_bind(binding)
+        except Exception:
+            pass
+    history = os.path.expanduser(os.getenv("ACDC_HISTORY", "~/.acdc_history"))
+    try:
+        readline.read_history_file(history)
+    except (FileNotFoundError, OSError):
+        pass
+    try:
+        readline.set_history_length(2000)
+        atexit.register(readline.write_history_file, history)
+    except Exception:
+        pass
+
+
+_pending_lines: "collections.deque[str]" = collections.deque()
+
+
+def _read_line(prompt: str) -> str:
+    """input() that hands a pasted multi-line block back one line at a
+    time: the first call reads the block, later calls drain it."""
+    while not _pending_lines:
+        raw = input(prompt)
+        _pending_lines.extend(raw.split("\n"))
+    return _pending_lines.popleft().strip()
+
+
+def _live_goal_metas(state) -> list:
+    probe = Argument.__new__(Argument)
+    return Argument._goal_metas(probe, state)
+
+
+def _live_step(prover: ProverWrapper, current: dict, command: str, *, record: bool = True) -> str:
+    """Run one recorded line live in the REPL: "ok", "refused" or "fatal".
+
+    `cite NAME` uses a registered argument at the focused goal: a strict one
+    Fellowship closes itself, a defeasible one leaves the site open and moves
+    on.  A cited site is closed as far as the author is concerned, so no
+    later step may land on it: the focus is moved off first, and a step with
+    only cited sites left is refused.
+    """
+    probe = Argument(prover, name=current['name'], conclusion=current['conclusion'])
+    state = current.get('_state')
+    cited_sites = current.setdefault('_cited_sites', set())
+    try:
+        cited = citation_target(prover, command)
+        if cited is not None:
+            site, side, _prop = probe._cite_site(state, cited, command)
+            if is_strict_citation(prover, cited.name):
+                output = prover.send_command(
+                    f"{'axiom' if side == 'rhs' else 'moxia'} {cited.name}.", include_ui=True)
+                print(f"cites '{cited.name}' (strict): Fellowship closes the goal.")
+            else:
+                cited_sites.add(site)
+                output = state
+                if len(_live_goal_metas(state)) > 1:
+                    output = prover.send_command('next.', include_ui=True)
+                print(f"cites '{cited.name}' (defeasible): goal {site} is done; "
+                      f"the term will show the name '{cited.name}' there.")
+            _print_ui(output)
+        else:
+            if cited_sites and not command.startswith('tactic '):
+                for _ in range(len(_live_goal_metas(state)) + 1):
+                    focused = probe._focused_goal(state)
+                    if focused is None or focused[0] not in cited_sites:
+                        break
+                    if set(_live_goal_metas(state)) <= cited_sites:
+                        print(f"refused: goal {focused[0]} is cited and no other goal is open; "
+                              f"end the recording with `end argument` or `qed.`")
+                        return "refused"
+                    state = prover.send_command('next.', include_ui=True)
+            if command.startswith('tactic '):
+                parts = command.split()
+                output = prover.execute_tactic(parts[1], *parts[2:])
+            else:
+                output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+                _print_ui(output)
+                while isinstance(output, dict) and output.get('_need_more_input'):
+                    more = _read_line('... ')
+                    output = prover.send_command(more, include_ui=True, allow_incomplete=True)
+                    _print_ui(output)
+                if isinstance(output, dict) and output.get('_need_more_input'):
+                    return "refused"
+    except MachinePayloadError as e:
+        print(f"acdc: fatal prover communication error: {e}")
+        logger.error("Fatal prover communication error during recording: %s", e)
+        return "fatal"
+    except (ProverError, CitationError) as e:
+        print(f"acdc: ignored command due to prover error: {e}")
+        logger.error("Prover error during recording: %s", e)
+        return "refused"
+    if isinstance(output, dict):
+        current['_state'] = output
+    if record:
+        current['instructions'].append(command)
+    return "ok"
+
+
 def interactive_mode(prover: ProverWrapper) -> None:
     """Enables command line interaction with the wrapper.
+
+        Paste-friendly: a pasted block is executed line by line; lines
+        starting with '#' are echoed as user-facing comments, lines
+        starting with '%' are ignored, blank lines are skipped - the
+        conventions of .fspy scripts - and `load FILE` runs a script in
+        the current session.  Line editing and history come from
+        readline (emacs bindings).
         
         Syntax for commands: 
           - All fellowship commands;
           - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
-          - Executing/Reducing an argument : "reduce <ArgName>"
-          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
+            term-level reducer, not the compiler pipeline; use "evaluate")
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
-          - Colored proof terms: "color ARG [PROP=COLOR ...]", "color-nf ARG [PROP=COLOR ...]".
-            Quote mappings whose propositions contain spaces, e.g. color a "Bird Tweety=red".
+            (deprecated, like the debate ops)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
+            "render-nf <Arg>" (render-nf deprecated with reduce).
+          - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
+            "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
+            the pipeline's stage-by-stage account of one evaluation;
+            "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
+            DEPRECATED: they build debate terms by grafting scaffolds, or take such terms
+            apart, at term level; they predate the debate compiler and are not wired to it,
+            so they are probably not safe to use.  Register arguments and use
+            graph/label/evaluate/explain instead.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
+          - Scripts: "load FILE" runs a .fspy file in this session.
 
         #TODO: implement human-oriented REPL output.
     """
-    
+    _setup_readline()
     recording = False
     current_argument = None
     try:
         while True:
             try:
-                prompt = 'Enter command (or "exit" to quit): ' if not recording else 'Enter command (recording): '
-                command = input(prompt).strip()
+                prompt = 'acdc> ' if not recording else 'acdc (recording)> '
+                command = _read_line(prompt)
             except EOFError:
                 print("\nEOFError: No input detected. Exiting interactive mode.")
                 break
-            # Remove trailing dots and whitespace
-            #command = command.rstrip('.').strip()
+            if not command or command.startswith('%'):
+                continue
+            if command.startswith('#'):
+                print(command[1:].lstrip())          # user-facing comment, as in scripts
+                continue
             if command.lower() in ['exit', 'quit']:
                 break
+            if command.startswith('load '):
+                path = Path(command.split(maxsplit=1)[1].strip()).expanduser()
+                if not path.is_file():
+                    print(f"load: no such file {path}")
+                    continue
+                try:
+                    execute_script(prover, str(path), strict=False, stop_on_error=False, isolate=False)
+                except (ProverError, MachinePayloadError) as e:
+                    print(f"load: stopped: {e}")
+                continue
             elif command.startswith("decorate "):
                 try:
                     name, template = parse_decorate_command(command)
@@ -743,6 +1015,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 except Exception as e:
                     print(f"Decorate failed: {e}")
                     logger.error("Decorate failed: %s", e)
+            elif command.startswith("adopt "):
+                arg = adopt_strict_edge_cmd(prover, command)
+                if arg is not None:
+                    print(f"Adopted as '{arg.name}' : {arg.conclusion}; `axiom {arg.name}` cites it.")
             elif command.startswith("register "):
                 try:
                     arg = register_argument_cmd(prover, command)
@@ -756,28 +1032,47 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     logger.error("Register failed: %s", e)
             elif command.startswith("reduce "):
                 reduce_argument_cmd(prover, command.split(maxsplit=1)[1])
+            elif command.startswith("expand "):
+                expand_argument_cmd(prover, command.split()[1])
+            elif command.startswith("unfold "):
+                unfold_cmd(prover, command)
+            elif command.startswith("debate "):
+                debate_argument_cmd(prover, command.split()[1])
             elif command.startswith("render-nf "):
                     parts = command.split()
                     name = parts[1] if len(parts) >= 2 else ""
                     style = parts[2] if len(parts) >= 3 else None
                     render_argument_cmd(prover, name, True, style=style)
             elif command.startswith("render "):
-                    parts = command.split()
-                    name = parts[1] if len(parts) >= 2 else ""
-                    style = parts[2] if len(parts) >= 3 else None
-                    render_argument_cmd(prover, name, False, style=style)
-            elif command.startswith("color-nf "):
-                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=True)
-            elif command.startswith("color "):
-                color_argument_cmd(prover, command.split(maxsplit=1)[1], normalized=False)
+                    # Usage: render ARG|issue :X|X: [style] [registered|enriched|unfolded|normal|evaluated]
+                    name, style, which = _render_tokens(command)
+                    render_argument_cmd(prover, name, False, style=style, which=which)
+            elif command.startswith("graph "):
+                # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                name, opts = _target(command.split())
+                show = "show" in opts
+                dot_path = next((o for o in opts if o != "show"), None)
+                graph_argument_cmd(prover, name, dot_path, show=show)
+            elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
+                set_typecheck_cmd(prover, command)
+            elif command in ("pipeline shared", "pipeline unfolded"):
+                set_pipeline_cmd(prover, command)
+            elif command.startswith("label "):
+                _dispatch_label(prover, command)
+            elif command.startswith("evaluate "):
+                _dispatch_evaluate(prover, command)
+            elif command.startswith("explain "):
+                _dispatch_explain(prover, command)
             elif command.startswith("tree "):
-                parts = command.split()
+                # a term selector (render's) may follow: tree ARG ... [unfolded|...]
+                which = next((tok for tok in command.split()[2:] if tok in TERM_SELECTORS), None)
+                parts = [tok for tok in command.split() if tok not in TERM_SELECTORS]
                 if len(parts) == 2:
-                    tree_argument_cmd(prover, parts[1])
+                    tree_argument_cmd(prover, parts[1], which=which)
                 elif len(parts) >= 3:
                     mode = parts[2]
                     nl_style = parts[3] if (mode == "nl" and len(parts) >= 4) else "argumentation"
-                    tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style)
+                    tree_argument_cmd(prover, parts[1], mode=mode, nl_style=nl_style, which=which)
                 else:
                     logger.error("Invalid tree command. Use: tree ARG [nl [argumentation|dialectical|intuitionistic]|pt]")
             elif command.startswith("normalize "):
@@ -928,6 +1223,70 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
                                  attacker_name, target_name)
 
+            elif not recording and parse_statement(command) is not None:
+                # A statement records a claim, and nothing more.
+                is_anti, name, conclusion, keyword = parse_statement(command)
+                try:
+                    state(prover, is_anti, name, conclusion, keyword)
+                    print(f"Stated {keyword} '{name}' : {conclusion}; `prove {name}` opens its proof.")
+                except ProverError as e:
+                    print(f"refused: {e}")
+                    logger.warning("Statement '%s' refused: %s", name, e)
+                continue
+            elif not recording and parse_refine(command) is not None:
+                # `refine NAME` (prove, argue, refute, dispute): reopen NAME and
+                # replay what it has so far, so the proof continues from there.
+                name = parse_refine(command)
+                try:
+                    current = reopen(prover, name)
+                except ProverError as e:
+                    print(f"refused: {e}")
+                    continue
+                opener = 'antitheorem' if current['is_anti'] else 'theorem'
+                try:
+                    current['_state'] = prover.send_command(
+                        f"{opener} {name} : ({current['conclusion']}).", include_ui=True)
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    break
+                except ProverError as e:
+                    abandon(prover, current)
+                    print(f"refused: {e}")
+                    continue
+                replayed = [_live_step(prover, current, instr, record=False)
+                            for instr in current['instructions']]
+                if "fatal" in replayed:
+                    break
+                if "refused" in replayed:
+                    abandon(prover, current)
+                    prover.send_command('discard theorem.')
+                    print(f"refused: '{name}' could not be replayed to continue it.")
+                    continue
+                _print_ui(current.get('_state'))
+                current_argument = current
+                recording = True
+                print(f"Refining '{name}' : {current['conclusion']}; end with `qed.` or `end argument`.")
+                continue
+            elif recording and is_qed(command):
+                # `qed` ends the recording and demands a strict witness.  The
+                # live proof is discarded and the recording replayed, so the
+                # witness is extracted before Fellowship sees `qed`.
+                current = current_argument
+                recording = False
+                current_argument = None
+                try:
+                    prover.send_command('discard theorem.')
+                    arg = finish_recording(prover, current, demand_strict=True)
+                    print(f"'{arg.name}' proved: {arg.conclusion}.")
+                except MachinePayloadError as e:
+                    print(f"acdc: fatal prover communication error: {e}")
+                    logger.error("Fatal prover communication error at qed: %s", e)
+                    break
+                except ProverError as e:
+                    abandon(prover, current)
+                    print(f"refused: {e}")
+                    logger.warning("qed refused for '%s': %s", current['name'], e)
+                continue
             elif command.startswith("start counterargument ") or command.startswith("start antitheorem "):
                 if recording:
                     print("Already recording an argument. Please end the current recording first.")
@@ -948,11 +1307,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 print(f"Started recording counterargument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording counterargument '%s' with conclusion '%s'.", name, conclusion)
                 try:
+                    start_recording(prover, name, True)
                     output = prover.send_command(f'antitheorem {name} : ({conclusion}).', include_ui=True)
+                    current_argument['_state'] = output
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
                     logger.error("Prover error starting counterargument: %s", e)
+                    if prover.names.get(name) == "recording":
+                        prover.names.pop(name)          # release only our own claim
                     recording = False
                     current_argument = None
                 except MachinePayloadError as e:
@@ -980,11 +1343,15 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 print(f"Started recording argument '{name}' with conclusion '{conclusion}'.")
                 logger.info("Started recording argument '%s' with conclusion '%s'.", name, conclusion)
                 try:
+                    start_recording(prover, name, False)
                     output = prover.send_command(f'theorem {name} : ({conclusion}).', include_ui=True)
+                    current_argument['_state'] = output
                     _print_ui(output)
                 except ProverError as e:
                     print(f"acdc: ignored command due to prover error: {e}")
                     logger.error("Prover error starting argument: %s", e)
+                    if prover.names.get(name) == "recording":
+                        prover.names.pop(name)          # release only our own claim
                     recording = False
                     current_argument = None
                 except MachinePayloadError as e:
@@ -1007,22 +1374,19 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"acdc: fatal prover communication error: {e}")
                     logger.error("Fatal prover communication error discarding theorem: %s", e)
                     break
-                # Create and execute the argument
-                arg = Argument(
-                    prover,
-                    name=current_argument['name'],
-                    conclusion=current_argument['conclusion'],
-                    instructions=current_argument['instructions'],
-                    is_anti=current_argument.get('is_anti', False)
-                )
-                arg.execute()
-                # Store the argument for later use
-                prover.register_argument(arg)
-                print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
-                logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
-                # Reset recording state
+                # Create, execute and register the argument
+                current = current_argument
                 recording = False
                 current_argument = None
+                try:
+                    arg = finish_recording(prover, current, demand_strict=False)
+                except ProverError as e:
+                    abandon(prover, current)
+                    print(f"refused: {e}")
+                    logger.warning("Argument '%s' refused: %s", current['name'], e)
+                    continue
+                print(f"Argument '{arg.name}' saved with conclusion '{arg.conclusion}'.")
+                logger.info("Argument '%s' saved with conclusion '%s'.", arg.name, arg.conclusion)
             elif recording:
                 # Record the command as part of the argument
                 if command:
@@ -1036,24 +1400,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         # Record the tactic command as part of the instructions
                         current_argument['instructions'].append(command)
                     else:
-                        # Execute the command and record it
-                        try:
-                            output = prover.send_command(command, include_ui=True, allow_incomplete=True)
-                            _print_ui(output)
-                            while isinstance(output, dict) and output.get('_need_more_input'):
-                                more = input('... ').strip()
-                                output = prover.send_command(more, include_ui=True, allow_incomplete=True)
-                                _print_ui(output)
-                            if isinstance(output, dict) and output.get('_need_more_input'):
-                                continue
-                            current_argument['instructions'].append(command)
-                        except ProverError as e:
-                            print(f"acdc: ignored command due to prover error: {e}")
-                            logger.error("Prover error during recording: %s", e)
-                            # do not record failing instruction
-                        except MachinePayloadError as e:
-                            print(f"acdc: fatal prover communication error: {e}")
-                            logger.error("Fatal prover communication error during recording: %s", e)
+                        if _live_step(prover, current_argument, command) == "fatal":
                             break
             else:
                 # Normal command execution
@@ -1072,8 +1419,16 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         conclusion_part, instructions_part = rest.split('"', 2)[1], rest.split('"', 2)[2]
                         conclusion = conclusion_part.strip()
                         instructions = [instr.strip() for instr in instructions_part.strip().split(';') if instr.strip()]
-                        arg = Argument(prover, name, conclusion, instructions)
-                        arg.execute()
+                        # One line, same path as a recording: the name is
+                        # claimed, and the argument is registered.
+                        start_recording(prover, name, False)
+                        try:
+                            finish_recording(prover, {'name': name, 'conclusion': conclusion,
+                                                      'instructions': instructions},
+                                             demand_strict=False)
+                        except ProverError:
+                            prover.names.pop(name, None)
+                            raise
                         print(f"Argument '{name}' defined with conclusion '{conclusion}'.")
                         logger.info("Argument '%s' defined with conclusion '%s'.", name, conclusion)
                     except Exception as e:
@@ -1110,12 +1465,16 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         print("One or both arguments not found.")
                         logger.error("One or both arguments not found in interactive mode")
                 else:
-                    # Execute the command normally
+                    # Execute the command normally.  A `declare` takes its
+                    # names first; NameClash is a ProverError, handled below.
                     try:
+                        claim = getattr(prover, "claim_declared_names", None)
+                        if claim is not None:
+                            claim(command)
                         output = prover.send_command(command, include_ui=True, allow_incomplete=True)
                         _print_ui(output)
                         while isinstance(output, dict) and output.get('_need_more_input'):
-                            more = input('... ').strip()
+                            more = _read_line('... ')
                             output = prover.send_command(more, include_ui=True, allow_incomplete=True)
                             _print_ui(output)
                     except MachinePayloadError as e:
@@ -1288,6 +1647,11 @@ def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
 
     parsed = Grammar().parser.parse(proof_term)
     body = ProofTermTransformer().transform(parsed)
+    # A term typed as a string has lost its citation marks: a free leaf
+    # naming a registered argument is a citation (core/dc/cite.py).
+    from core.dc.cite import mark_citations
+    registered = getattr(prover, "arguments", {})
+    mark_citations(body, lambda n: n in registered and n != name)
 
     arg = Argument(
         prover,
@@ -1296,7 +1660,14 @@ def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
         is_anti=isinstance(body, Mutilde),
     )
     arg.body = body
-    arg.execute(declare=declare_theorem, preserve_input_body=True)
+    # The name is checked before the replay: a strict one ends in `qed`,
+    # which would otherwise let Fellowship silently replace a clashing name.
+    claim = getattr(prover, "claim_name", None)
+    if claim is not None:
+        claim(name, "argument", dry_run=True)
+    # Not `strict`: registered either way, and held by Fellowship if it
+    # turns out closed - the same rule as `end argument`.
+    arg.execute(declare=True if declare_theorem else "auto", preserve_input_body=True)
     prover.register_argument(arg)
 
     logger.info(
@@ -1341,8 +1712,13 @@ def setup_prover() -> ProverWrapper:
     fsp_path = resolve_fsp_path()
     prover = ProverWrapper(str(fsp_path), env=env)
     prover.register_custom_tactic('pop', pop)
-    # Switch to classical logic
-    #prover.send_command('lk.')
+    # Fellowship starts a session in LJ, but the wrapper's `logic` defaults to
+    # "lk" and debates are classical.  Make the default real: otherwise the
+    # "debates are classical" guard never fires and the type oracle replays
+    # classical scaffolds in LJ ("alt1 is neither in your hypothesis nor in
+    # your conclusion").  Starting a prover is not a new document, so the
+    # document store is left alone.
+    prover.send_command('lk.', keep_document=True)
     # Declare some booleans to work with.
     #prover.send_command('declare A,B,C,D:bool.')
     #logger.info("Prover decls %r", prover.declarations)
@@ -1358,12 +1734,219 @@ def reduce_argument_cmd(prover: ProverWrapper, name: str) -> None:
     logger.info(f"Reducing argument {arg.name} with proof term {arg.proof_term}")
     arg.reduce()
 
-def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None) -> None:
+def expand_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI: `expand ARG` - the full term a citing argument stands for, with
+    every cited argument's own term grafted in, recursively.
+
+    Terms show citations by name, as an axiom would appear, so they stay
+    readable as the library grows and follow any refinement of what they
+    cite (core/dc/cite.py).  This computes the expansion on demand.
+    """
+    from core.dc.cite import expand_citations, cited_names
+    from pres.gen import pres_str
+    arg = prover.get_argument(name)
+    if arg is None or getattr(arg, "body", None) is None:
+        logger.error("expand: no argument '%s'.", name)
+        return
+    cites = sorted(cited_names(arg.body))
+    if not cites:
+        logger.info("'%s' cites nothing; its term is already complete.", name)
+    else:
+        logger.info("'%s' cites %s; expanded:", name, ", ".join(f"'{c}'" for c in cites))
+    logger.info("  %s", pres_str(expand_citations(arg.body, prover.get_argument)))
+
+
+def set_typecheck_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: `typecheck on | off | expanded`.  `on` replays each sub-debate
+    once (core/dc/typecheck.py, typecheck_shared); `expanded` replays the
+    whole unfolded term, the older and far larger check; `off` skips it."""
+    mode = command.split()[1]
+    prover.typecheck_enabled = mode != "off"
+    prover.typecheck_expanded = mode == "expanded"
+    logger.info("Type checking of unfolded terms: %s",
+                {"on": "on", "off": "off", "expanded": "on (the expanded term)"}[mode])
+
+
+def set_pipeline_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: `pipeline shared | unfolded`.  `shared` (the default) runs
+    graph, label and evaluate on the debate as named sub-debates, one
+    instance at a time; `unfolded` runs them on the term unfolded from the
+    document graph, the reference the shared pipeline is tested against.
+    Both give the same graph, labels and normal form up to the names of
+    binders and sites."""
+    prover.pipeline_unfolded = command.split()[1] == "unfolded"
+    logger.info("Pipeline: %s", "unfolded term" if prover.pipeline_unfolded else "shared debate")
+
+
+def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
+    """CLI: `debate ARG` - the debate about ARG's issue as named
+    sub-debates: the issue's term, then one `NAME[open sites] := term`
+    line per sub-debate it cites.
+
+    A sub-debate needed in two or more places is written once and cited by
+    name; one needed once stays in place.  A citation shows what its site
+    does to the cited debate, `d[alpha -> !:A, B:?]`: alpha captures its
+    delegation of A, its obligation B is left open (core/dc/share.py).
+    Names are transparent: `graph`, `label` and `evaluate` work on the
+    expansion.
+    """
+    from core.dc.unfold import UnfoldError
+    arg = prover.get_argument(name)
+    if arg is None:
+        logger.error("debate: no argument '%s'.", name)
+        return
+    if not arg.executed:
+        arg.execute()
+    issue = prover.issue_of(arg)
+    document = prover.document
+    if issue not in set(document.statements()):
+        print(f"debate: '{name}' is not in the document graph; it has no debate to share.")
+        return
+    try:
+        shared = prover.shared_debate(issue)
+        text = shared.to_text()
+    except UnfoldError as e:
+        print(f"debate: refused: {e}")
+        logger.warning("Sharing refused for '%s': %s", name, e)
+        return
+    named = shared.named()
+    print(f"Debate about '{name}' ({document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]), "
+          f"{len(named)} sub-debate(s) cited by name:")
+    for line in text.splitlines():
+        print(f"  {line}")
+
+
+#: Which of an argument's terms `render` and `tree` show
+#: (aida-unfold-entrypoints).
+TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
+
+
+def _select_term(prover: ProverWrapper, name: str, which: str):
+    """(description, term) for one of NAME's terms, or None after a
+    message.  ``registered`` is the term as Fellowship returned it (text
+    only), ``enriched`` the parsed and annotated body, ``unfolded`` the
+    debate term unfolded for it (unfolded again if the document changed),
+    ``normal`` its plain normal form, ``evaluated`` the normal form of its
+    last evaluation - refused if the document changed since.  An issue
+    (``issue :X``) has only its unfolded term."""
+    if name.startswith("issue "):
+        if which not in (None, "unfolded"):
+            logger.error("An issue has only an unfolded term, not '%s'.", which)
+            return None
+        issue = _parse_issue(name)
+        if issue is None:
+            return None
+        return f"the canonical debate term of {name}", prover.issue_term(issue)
+    arg = prover.get_argument(name)
+    if not arg:
+        logger.error("Argument '%s' not found.", name)
+        return None
+    if not arg.executed:
+        arg.execute()
+    if which == "registered":
+        return "the term Fellowship returned", arg.proof_term
+    if which == "enriched":
+        return "the enriched term", arg.body
+    if which == "normal":
+        if arg.normal_body is None:
+            arg.normalize()
+        return "the normal form", arg.normal_body
+    if which == "evaluated":
+        if arg.labelled_nf is None or arg.labelled_nf_revision != prover.revision:
+            logger.error("'%s' has no evaluation at the document's current revision; "
+                         "run `evaluate %s` first.", name, name)
+            return None
+        return "the normal form of the last evaluation", arg.labelled_nf
+    term = prover.unfolded_term(arg)
+    if term is None:
+        term = prover.issue_term(prover.issue_of(arg))
+        return f"the canonical term of '{name}''s issue ('{name}' has no edge of its own)", term
+    return f"the debate term unfolded for '{name}'", term
+
+
+def _show_selected(prover: ProverWrapper, name: str, which: str, style: Optional[str]) -> None:
+    from pres.gen import pres_str, pres_tree
+    found = _select_term(prover, name, which)
+    if found is None:
+        return
+    what, term = found
+    logger.info("")
+    logger.info("Rendering %s, %s:", name, what)
+    if isinstance(term, str):
+        logger.info(term)
+    elif style is None:
+        logger.info(pres_str(term))
+        logger.info(pres_tree(term))
+    else:
+        from pres.nl import (pretty_natural, natural_language_argumentative_rendering,
+                             dialectical_rendering, natural_language_rendering,
+                             pruefschema_rendering, vanilla_rendering)
+        sem = {"argumentation": natural_language_argumentative_rendering,
+               "dialectical": dialectical_rendering,
+               "intuitionistic": natural_language_rendering,
+               "vanilla": vanilla_rendering,
+               "pruefschema": pruefschema_rendering}.get(style.strip().lower())
+        if sem is None:
+            logger.error("Invalid render style '%s'", style)
+            return
+        logger.info(pretty_natural(term, sem, declarations=getattr(prover, "declarations", {}),
+                                   decorations=getattr(prover, "decorations", {})))
+    logger.info("")
+
+
+def _render_tokens(command: str):
+    """(name, style, which) for `render NAME [style] [selector]`."""
+    name, rest = _target(command.split())
+    which = next((tok for tok in rest if tok in TERM_SELECTORS), None)
+    style = next((tok for tok in rest if tok not in TERM_SELECTORS), None)
+    return name, style, which
+
+
+def unfold_cmd(prover: ProverWrapper, command: str) -> None:
+    """CLI: unfold a debate term and keep it (aida-unfold-entrypoints).
+
+    Syntax:
+        unfold argument NAME      the term biased towards NAME, cached on it
+        unfold issue :X | X:      the canonical term of an issue
+        unfold debate NAME        not yet (aida-unfold-debate-bias)
+
+    The term is kept until the document changes (a new argument or
+    declaration) and is what `evaluate`, `explain`, `render ... unfolded`
+    and `tree ... unfolded` use; nothing is added to the document."""
+    parts = command.split()
+    if len(parts) < 3 or parts[1] not in ("argument", "issue", "debate"):
+        logger.error("Use: unfold argument NAME | unfold issue :X | unfold issue X: | unfold debate NAME")
+        return
+    if parts[1] == "debate":
+        logger.warning("unfold debate: not implemented yet (tasks.org, aida-unfold-debate-bias); "
+                       "nothing done.")
+        return
+    if prover.logic == "lj":
+        print("unfold: refused: debates are classical; select lk.")
+        return
+    name = f"issue {parts[2]}" if parts[1] == "issue" else parts[2]
+    found = _select_term(prover, name, "unfolded")
+    if found is None:
+        return
+    from pres.gen import pres_str, pres_tree
+    what, term = found
+    logger.info("Unfolded %s (document revision %d):", what, prover.revision)
+    logger.info("  %s", pres_str(term))
+    logger.info(pres_tree(term))
+
+
+def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = False, *, style: Optional[str] = None,
+                        which: Optional[str] = None) -> None:
     """CLI for Argument Rendering.
 
     style can be one of: argumentation|dialectical|intuitionistic|vanilla.
-    If omitted, uses the argument's configured rendering.
+    If omitted, uses the argument's configured rendering.  ``which`` (one
+    of TERM_SELECTORS) renders another of the argument's terms; an issue
+    target (``issue :X``) renders its unfolded term.
     """
+    if which is not None or name.startswith("issue "):
+        _show_selected(prover, name, which or "unfolded", style)
+        return
     arg = prover.get_argument(name)
     if not arg:
         logger.error(f"Argument '{name}' not found.")
@@ -1384,14 +1967,14 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     from pres.nl import (
         pretty_natural,
         natural_language_argumentative_rendering,
-        natural_language_dialectical_rendering,
+        dialectical_rendering,
         natural_language_rendering,
         pruefschema_rendering,
         vanilla_rendering,
     )
     sem_map = {
         "argumentation": natural_language_argumentative_rendering,
-        "dialectical": natural_language_dialectical_rendering,
+        "dialectical": dialectical_rendering,
         "intuitionistic": natural_language_rendering,
         "vanilla": vanilla_rendering,
         "pruefschema": pruefschema_rendering,
@@ -1422,122 +2005,779 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
-def _parse_color_argument_spec(spec: str) -> tuple[str, list[tuple[str, str]] | None]:
-    """Parse `ARG [PROP=COLOR ...]` for color/color-nf commands.
-
-    Examples:
-      color a A=red B=green
-      color a "Bird Tweety=yellow"
-    """
-    try:
-        parts = shlex.split(spec)
-    except ValueError as e:
-        raise ValueError(f"Invalid color command: {e}") from e
-    if not parts:
-        raise ValueError("Invalid color command. Use: color ARG [PROP=COLOR ...]")
-
-    name = parts[0]
-    prop_colors: list[tuple[str, str]] = []
-    for item in parts[1:]:
-        if "=" not in item:
-            raise ValueError(
-                "Invalid color mapping %r. Use PROP=COLOR; quote propositions with spaces." % item
-            )
-        prop, color = item.rsplit("=", 1)
-        prop = prop.strip()
-        color = color.strip().lower()
-        if not prop or not color:
-            raise ValueError(
-                "Invalid color mapping %r. Both proposition and color are required." % item
-            )
-        prop_colors.append((prop, color))
-
-    return name, prop_colors or None
-
-
-def color_argument_cmd(prover: ProverWrapper, spec: str, normalized: bool = True) -> None:
-    """CLI for coloring the proof term of an argument.
-
-    Syntax:
-        color ARG [PROP=COLOR ...]
-        color-nf ARG [PROP=COLOR ...]
-
-    Quote mappings whose propositions contain spaces, e.g.:
-        color birds "Bird Tweety=red" "Abnormal Tweety=yellow"
-
-    If normalized is True, color the normal form; otherwise color the current
-    executed proof term without normalizing first.
-    """
-    try:
-        name, prop_colors = _parse_color_argument_spec(spec)
-    except ValueError as e:
-        logger.error("%s", e)
-        return
-
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error(f"Argument '{name}' not found.")
-        return
-
-    if normalized:
-        if arg.normal_body is None:
-            arg.normalize()
-        pt = arg.normal_body
-        label = "normalized"
+def _parse_issue(name: str):
+    """The statement of an issue target: ``issue :X`` is X proved (term
+    side), ``issue X:`` X refuted (context side); X is any proposition.
+    None after an error message."""
+    from core.dc.debate_graph import canonical_prop
+    spec = name[len("issue "):].strip()
+    if spec.startswith(":") and not spec.endswith(":"):
+        prop, side = spec[1:].strip(), "term"
+    elif spec.endswith(":") and not spec.startswith(":"):
+        prop, side = spec[:-1].strip(), "context"
     else:
+        logger.error("An issue is written ':X' (X proved) or 'X:' (X refuted), not '%s'.", spec)
+        return None
+    try:
+        return (canonical_prop(prop), side)
+    except Exception as e:
+        logger.error("Cannot read the proposition '%s': %s", prop, e)
+        return None
+
+
+def _target(parts):
+    """(name, rest) from a command's tokens after the verb: an argument
+    name, or the two tokens of an issue target joined (``issue :X``)."""
+    if len(parts) >= 3 and parts[1] == "issue":
+        return f"issue {parts[2]}", parts[3:]
+    return (parts[1] if len(parts) >= 2 else ""), parts[2:]
+
+
+def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
+    """Resolve NAME to (arg, issue, term, shared): the debate about the
+    argument's issue, as named sub-debates (``shared``, core/dc/share.py)
+    and, if ``want_term`` or the type check needs it, as the term unfolded
+    from the document graph (Phase C).
+
+    Every registered atomic argument is in the document; a composed
+    argument (a debate) names its host's issue.  An argument the document
+    refused at registration falls back to its own term, with a notice, and
+    has no shared form.  Returns (arg, issue, None, None) after printing a
+    refusal.
+
+    On the unfolded route the term is the one unfolded for the argument -
+    the canonical shape with the argument on top of its supporter stack
+    (aida-unfold-entrypoints) - cached on the argument until the document
+    changes.  NAME may also be an issue, ``issue :X`` (X proved) or ``issue
+    X:`` (X refuted); then ``arg`` is None and the term is the canonical one.
+    """
+    from core.dc.unfold import unfold_legacy, UnfoldError
+
+    if name.startswith("issue "):
+        arg, issue = None, _parse_issue(name)
+        if issue is None:
+            return None, None, None, None
+    else:
+        arg = prover.get_argument(name)
+        if not arg:
+            logger.error("Argument '%s' not found.", name)
+            return None, None, None, None
         if not arg.executed:
             arg.execute()
-        pt = arg.body
-        label = "unnormalized"
+        issue = prover.issue_of(arg)
+    document = prover.document
+    if prover.logic == "lj":
+        print("graph: refused: debates are classical (their scaffolds throw to a second "
+              "conclusion, which LJ forbids); select lk for graph, label and evaluate.")
+        logger.warning("Debate commands refused in lj for '%s'.", name)
+        return arg, issue, None, None
+    if _pipeline_logger.isEnabledFor(logging.DEBUG) and arg is not None:
+        from pres.gen import pres_tree
+        _pipeline_logger.debug("issue: '%s' is about %s; the document has %d edge(s)",
+                               name, f"{document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]",
+                               len(document.edges))
+        artifact(_pipeline_logger, "issue: the term '%s' was registered with (before unfolding)" % name,
+                 pres_tree(arg.body))
+    if arg is not None and issue not in set(document.statements()):
+        logger.warning("'%s' is not in the document graph; using its own term.", name)
+        _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
+                               "the document, so '%s' is evaluated as it was registered", name)
+        return arg, issue, arg.body, None
+    try:
+        if prover.pipeline_unfolded:
+            # Built for the per-definition type check only; it is the legacy
+            # shape (aida-shared-route-stack-shape), not the term evaluated,
+            # so it must not narrate itself as the unfolding.
+            unfold_log = logging.getLogger("core.dc.unfold")
+            was_disabled, unfold_log.disabled = unfold_log.disabled, True
+            try:
+                shared = prover.shared_debate(issue)
+            finally:
+                unfold_log.disabled = was_disabled
+        else:
+            shared = prover.shared_debate(issue)
+    except UnfoldError as e:
+        print(f"graph: refused: {e}")
+        logger.warning("Unfolding refused for '%s': %s", name, e)
+        return arg, issue, None, None
+    if _pipeline_logger.isEnabledFor(logging.DEBUG) and not prover.pipeline_unfolded:
+        artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text(tree=True))
+    # A statement spelled two ways (~A and A -> false) joins two spellings
+    # only in the expanded term, so that is the one to type-check then
+    # (tasks.org, aida-negation-spelling-in-unfolding).
+    clashes = shared.spelling_clashes() if prover.typecheck_enabled else {}
+    expanded_check = prover.typecheck_enabled and (prover.typecheck_expanded or bool(clashes))
+    term = None
+    if want_term or expanded_check:
+        try:
+            if want_term:
+                term = prover.unfolded_term(arg) if arg is not None else None
+                if term is None:            # an issue, or a composed debate
+                    term = prover.issue_term(issue)
+            else:
+                term = unfold_legacy(document, issue)    # the shared route's reference
+        except UnfoldError as e:
+            print(f"graph: refused: {e}")
+            logger.warning("Unfolding refused for '%s': %s", name, e)
+            return arg, issue, None, None
+    if prover.typecheck_enabled:
+        # The type oracle: the debate must replay through Fellowship
+        # (core/dc/typecheck.py).  `typecheck off` skips it.
+        from core.dc.typecheck import typecheck, typecheck_shared, TypeCheckFailed
+        # Fellowship names the replayed theorems after the target, and an
+        # issue target ("issue B:") is no identifier.
+        check_name = re.sub(r"\W+", "_", name).strip("_") if arg is None else name
+        try:
+            if clashes:
+                _pipeline_logger.debug(
+                    "typecheck: the expanded term is replayed, since the debate spells %s "
+                    "in more than one way", ", ".join(sorted(clashes)))
+            if expanded_check:
+                typecheck(prover, term, check_name, document.nodes.get(issue[0], issue[0]),
+                          issue[1] == "context")
+            else:
+                # One replay per sub-debate instead of one of the whole
+                # unfolded term (tasks.org, aida-shared-subarguments, stage 2).
+                typecheck_shared(prover, shared, check_name, prover.typechecked())
+        except TypeCheckFailed as e:
+            print(f"graph: refused: {e}")
+            logger.warning("Type check failed for '%s': %s", name, e)
+            return arg, issue, None, None
+    return arg, issue, term, shared
+
+
+def _issue_term(prover: ProverWrapper, name: str):
+    """(arg, issue, term): the unfolded debate term for NAME's issue, for
+    the commands that still work on the term (evaluate, explain)."""
+    arg, issue, term, _shared = _issue(prover, name, want_term=True)
+    return arg, issue, term
+
+
+def _compile_argument_graph(prover: ProverWrapper, name: str):
+    """(arg, graph, term) for NAME: the issue's debate graph; or, for the
+    name ``document``, the document graph itself.  (arg, None, None) after
+    printing the refusal - the log-and-refuse convention: compile errors
+    are one-line messages, not tracebacks.
+
+    The issue graph is compiled from the shared debate, one instance of a
+    sub-debate at a time (core/dc/instances.py), so the debate is not unfolded
+    for it; ``term`` is the unfolded term only where something else needed
+    it (the expanded type check) or the argument has no shared form.
+    """
+    from core.dc.debate_graph import DebateCompileError, declaration_kinds
+    from core.dc.instances import compile_issue_shared
+    from core.dc.strict import compile_issue
+    from core.dc.unfold import unfold_legacy
+    from core.ac.ast import FirstOrderNotSupported
+
+    if name == "document":
+        _report_onus_conflicts(prover.document)
+        return None, prover.document, None
+    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
+    if term is None and shared is None:
+        return arg, None, None
+    if prover.pipeline_unfolded:
+        shared = None                      # `pipeline unfolded`: the reference path
+    options = dict(strict_names=prover.declarations.keys(),
+                   strict_kinds=declaration_kinds(prover.declarations))
+    try:
+        graph = None
+        if shared is not None:
+            try:
+                graph = compile_issue_shared(shared, name, **options)
+            except (DebateCompileError, FirstOrderNotSupported, RecursionError):
+                raise                      # the unfolded term is deeper still
+            except Exception as e:
+                # The instance-wise compiler is checked against the unfolded
+                # term on every fixture; should it ever fail, say so and use
+                # the reference rather than refuse a sound debate.
+                logger.warning("Compiling '%s' from its shared debate failed (%s: %s); "
+                               "compiling the unfolded term instead.", name, type(e).__name__, e)
+                term = term if term is not None else unfold_legacy(prover.document, issue)
+        if graph is None:
+            graph = compile_issue(term, name, **options)
+    except (DebateCompileError, FirstOrderNotSupported) as e:
+        print(f"graph: refused: {e}")
+        logger.warning("Debate graph compilation refused for '%s': %s", name, e)
+        return arg, None, term
+    except RecursionError:
+        # tasks.org, aida-deep-term-recursion: the term walks recurse.
+        print(f"graph: refused: the debate about '{name}' is nested too deeply for the "
+              f"compiler, which follows a chain of sub-debates by recursion.")
+        logger.warning("Debate graph compilation refused for '%s': recursion depth exceeded.", name)
+        return arg, None, term
+    _report_onus_conflicts(graph)
+    _remember_strict_edges(graph, name)
+    return arg, graph, term
+
+
+def _remember_strict_edges(graph, issue_name: str) -> None:
+    """Keep the strict edges an issue graph showed, by name, so `adopt` can
+    promote one the user has seen.  Scoped to the document: `lk.` forgets."""
+    seen = store.document.setdefault("strict_edges", {})
+    for edge in graph.edges:
+        if edge.strict and edge.name.endswith("*") and getattr(edge, "term", None) is not None:
+            seen[edge.name] = (issue_name, edge, graph.nodes.get(edge.target_key, edge.target_key))
+
+
+def adopt_strict_edge_cmd(prover: ProverWrapper, command: str):
+    """CLI: `adopt EDGE* as NAME` - promote a strict edge that unfolding
+    discovered (Peirce's thesis, say) to a theorem Fellowship holds.
+
+    Queries never change the registry, so a strict edge shown by `graph` or
+    `evaluate` stays a fact about that issue graph until adopted.  Adopting
+    replays the closed term stored on the edge with `qed`: Fellowship checks
+    it again rather than trusting it, and needs no normalisation, since the
+    strict phase already produced a closed term.  A closed term rests only on
+    declarations, so later changes to the document cannot invalidate it.
+    """
+    parts = command.split()
+    if len(parts) != 4 or parts[0] != "adopt" or parts[2] != "as":
+        print("adopt: use `adopt EDGE* as NAME`, with an edge name shown by `graph ARG`.")
+        return None
+    edge_name, name = parts[1], parts[3]
+    seen = store.document.get("strict_edges", {})
+    if edge_name not in seen:
+        print(f"adopt: no strict edge '{edge_name}' has been shown in this document; "
+              f"run `graph ARG` for the argument whose graph has it.")
+        return None
+    issue_name, edge, conclusion = seen[edge_name]
+    try:
+        prover.claim_name(name, "argument", dry_run=True)
+        arg = Argument(prover, name=name, conclusion=conclusion,
+                       is_anti=edge.target_side == "context")
+        arg.body = copy.deepcopy(edge.term)
+        arg.execute(declare=True, preserve_input_body=True)
+        prover.register_argument(arg)
+    except ProverError as e:
+        print(f"adopt: refused: {e}")
+        logger.warning("Adopting '%s' as '%s' refused: %s", edge_name, name, e)
+        return None
+    logger.info("Adopted '%s' (from the issue graph of '%s') as the theorem '%s' : %s.",
+                edge_name, issue_name, name, conclusion)
+    return arg
+
+
+def _report_onus_conflicts(graph) -> None:
+    """Warn about propositions presumed on BOTH sides.
+
+    A presumption delegates the burden of refutation to the other side, so
+    both sides presuming means neither holds it.  The compiler still
+    labels such a graph; task aida-onus-delegation-polarity makes it an
+    error at registration time.
+    """
+    from core.comp.adf_label import opposing_presumptions
+
+    clash = opposing_presumptions(graph)
+    if clash:
+        names = ", ".join(graph.nodes.get(key, key) for key in clash)
+        logger.warning("Opposing presumptions on %s: both sides delegate the onus "
+                       "of refutation, so neither side holds it.", names)
+
+
+def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Optional[str]:
+    """Render DOT to an image file, or None when Graphviz is unavailable.
+
+    Tries the graphviz Python package first, then the `dot` binary.
+    """
+    try:
+        import graphviz  # type: ignore
+        return graphviz.Source(dot_source).render(filename=out_base, format=fmt, cleanup=True)
+    except Exception as e:
+        logger.debug("graphviz package unavailable or failed: %s", e)
+    dot_binary = shutil.which("dot")
+    if dot_binary:
+        out_path = f"{out_base}.{fmt}"
+        try:
+            subprocess.run([dot_binary, f"-T{fmt}", "-o", out_path],
+                           input=dot_source, text=True, check=True,
+                           capture_output=True, timeout=60)
+            return out_path
+        except Exception as e:
+            logger.debug("dot binary failed: %s", e)
+    return None
+
+
+def _open_file(path: str) -> bool:
+    """Open a file in the platform viewer; True if the opener was launched.
+    ACDC_NO_OPEN=1 (tests, headless runs) skips the viewer."""
+    if os.getenv("ACDC_NO_OPEN"):
+        return False
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", path], check=True, timeout=30)
+        elif sys.platform.startswith("win"):
+            os.startfile(path)  # type: ignore[attr-defined]
+        else:
+            subprocess.run(["xdg-open", path], check=True, timeout=30)
+        return True
+    except Exception as e:
+        logger.debug("Could not open %s: %s", path, e)
+        return False
+
+
+def _dispatch_label(prover: ProverWrapper, command: str) -> None:
+    name, rest = _target(command.split())
+    try:
+        _, semantics, _, _ = _split_eval_tokens(rest)
+    except ValueError as e:
+        logger.error("label: %s", e)
+        return
+    label_argument_cmd(prover, name, semantics or "grounded")
+
+
+def _eval_options(verb: str, command: str):
+    """(name, mode, semantics, base, witness, favour) for evaluate and
+    explain, or None after an error message."""
+    name, rest = _target(command.split())
+    if not name:
+        logger.error("%s: needs an argument or an issue. Use: %s ARG|issue :X|X: "
+                     "[MODE] [SEMANTICS] [BASE] [N|all] [favour]", verb, verb)
+        return None
+    favour = "favour" in rest
+    rest = [tok for tok in rest if tok != "favour"]
+    try:
+        mode, semantics, base, witness = _split_eval_tokens(rest)
+    except ValueError as e:
+        logger.error("%s: %s", verb, e)
+        return None
+    if witness is not None and (mode or "skeptical") != "credulous":
+        logger.error("%s: a witness number or 'all' requires credulous mode", verb)
+        return None
+    return name, mode or "skeptical", semantics or "preferred", base or "cbn", witness, favour
+
+
+def _dispatch_evaluate(prover: ProverWrapper, command: str) -> None:
+    found = _eval_options("evaluate", command)
+    if found is not None:
+        name, mode, semantics, base, witness, favour = found
+        evaluate_argument_cmd(prover, name, mode, base, semantics, witness, favour)
+
+
+def _dispatch_explain(prover: ProverWrapper, command: str) -> None:
+    found = _eval_options("explain", command)
+    if found is not None:
+        name, mode, semantics, base, witness, favour = found
+        explain_argument_cmd(prover, name, mode, base, semantics, witness, favour)
+
+
+#: The pipeline's loggers, in the order the stages run.  ``explain`` groups
+#: its account by these, and the stage label is the last dotted component.
+_PIPELINE_LOGGERS = (
+    "core.dc.issue",
+    "core.dc.unfold",
+    "core.dc.typecheck",
+    "core.dc.debate_graph",
+    "core.comp.adf_label",
+    "core.comp.oracle",
+    "core.comp.evaluate",
+    "core.comp.oracle_terms",
+    "core.dc.strict",
+)
+
+
+class _StageRecorder(logging.Handler):
+    """Collect the pipeline's records for one evaluation, in order."""
+
+    def __init__(self):
+        super().__init__(level=logging.DEBUG)
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
+                         base: str = "cbn", semantics: str = "preferred",
+                         witness=None, favour: bool = False) -> None:
+    """CLI: evaluate ARG and print the pipeline's own account of the run.
+
+    Syntax:
+        explain ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all]
+
+    Same options as `evaluate`.  The account is the DEBUG narrative each
+    stage already emits, captured for this one run and grouped by stage,
+    so it needs no change to the global log level and stays correct as the
+    instrumentation grows.  The verdict is printed last, after the account
+    that led to it.
+    """
+    recorder = _StageRecorder()
+    captured = [logging.getLogger(n) for n in _PIPELINE_LOGGERS]
+    verdict_logger = logging.getLogger("fsp.wrapper")
+    saved = [(lg, lg.level, lg.propagate) for lg in captured + [verdict_logger]]
+    for lg in captured:
+        lg.addHandler(recorder)
+        lg.propagate = False              # no second copy on stdout at DEBUG
+        if lg.level == logging.NOTSET or lg.level > logging.DEBUG:
+            lg.setLevel(logging.DEBUG)
+    verdict_logger.addHandler(recorder)
+    verdict_logger.propagate = False      # hold the verdict back until the end
+    try:
+        evaluate_argument_cmd(prover, name, mode, base, semantics, witness, favour)
+    finally:
+        for lg in captured + [verdict_logger]:
+            lg.removeHandler(recorder)
+        for lg, level, propagate in saved:
+            lg.setLevel(level)
+            lg.propagate = propagate
+    stages = [r for r in recorder.records if r.name in _PIPELINE_LOGGERS]
+    verdict = [r for r in recorder.records if r.name == "fsp.wrapper"]
+    if not stages:
+        logger.info("explain: nothing to report for '%s' (it was refused before the pipeline ran).", name)
+    else:
+        logger.info("")
+        logger.info("How '%s' was evaluated, stage by stage:", name)
+        logger.info("")
+        last_stage = ""
+        for record in stages:
+            message = record.getMessage()
+            # Strip only the indentation `artifact` adds: a rendered term's
+            # own leading spaces are its tree layout.
+            if message.startswith("    "):
+                indent, stripped = "  ", message[4:]
+            else:
+                indent, stripped = "", message.lstrip()
+            # Each message opens with its own stage word - "unfold", "solver",
+            # "sigma", "classify" - which names the step better than the module
+            # does (one module runs several steps).  Lift it into the column.
+            head, sep, rest = stripped.partition(": ")
+            if sep and " " not in head:
+                stage, stripped = head, rest
+            elif indent and last_stage:
+                stage = last_stage         # a continuation line of an artifact
+            else:
+                stage = record.name.rsplit(".", 1)[-1]
+            last_stage = stage
+            logger.info("  %-14s %s%s", stage, indent, stripped)
+        logger.info("")
+    for record in verdict:
+        logger.info("%s", record.getMessage())
+
+
+def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
+                       show: bool = False) -> None:
+    """CLI: compile an argument's debate graph; print a summary, optionally DOT.
+
+    Syntax:
+        graph ARG [FILE.dot] [show]
+
+    With `show`, render the graph and open it in the platform viewer;
+    when Graphviz is not installed, print an indented text view instead
+    (which always works and needs no dependencies).
+    """
+    arg, graph, _term = _compile_argument_graph(prover, name)
+    if graph is None:
+        return
+    if name.startswith("issue "):
+        logger.info("Debate graph for %s (unfolded from the document): %d nodes, %d edges",
+                    name, len(graph.nodes), len(graph.edges))
+    elif arg is None:
+        logger.info("Document graph: %d nodes, %d edges (every registered atomic argument)",
+                    len(graph.nodes), len(graph.edges))
+    else:
+        key, side = prover.issue_of(arg)
+        logger.info("Debate graph for '%s' (issue %s[%s], unfolded from the document): %d nodes, %d edges",
+                    name, graph.nodes.get(key, arg.conclusion), side[0], len(graph.nodes), len(graph.edges))
+    for edge in graph.edges:
+        sources = ", ".join(
+            f"{graph.nodes[s.key]}[{s.side[0]}:{s.kind[:4]}]" for s in edge.sources
+        ) or "-"
+        strictness = "strict" if edge.strict else "defeasible"
+        logger.info("  %s (%s, %s): %s <- %s",
+                    edge.name, edge.role, strictness,
+                    f"{graph.nodes[edge.target_key]}[{edge.target_side[0]}]", sources)
+    for (key, side), kinds in graph.defaults.items():
+        logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
+    logger.info("  fragment: %s",
+                "acyclic" if graph.is_acyclic() else "cyclic (derivation cycle; labelled like any other)")
+    labels = None
+    try:
+        from core.comp.adf_label import grounded_labels
+        labels = grounded_labels(graph)
+    except AdfBddNotFound as e:
+        # The graph itself needs no labeller; labels are an overlay.  But
+        # say loudly why they are missing - there is no fallback labeller.
+        print(f"graph: labels unavailable: {e}")
+        logger.warning("Labels unavailable for the graph view: %s", e)
+    may_render = getattr(prover, "render_files", True)
+    if dot_path:
+        if may_render:
+            with open(dot_path, "w") as fh:
+                fh.write(graph.to_dot(labels=labels))
+            logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
+        else:
+            logger.info("File output is off (ACDC_NO_RENDER): not writing %s.", dot_path)
+    if show:
+        image = _render_graph_image(graph.to_dot(labels=labels), f"{name}_graph") if may_render else None
+        if image and _open_file(image):
+            logger.info("Graph rendered to %s and opened.", image)
+            return
+        if image:
+            logger.info("Graph rendered to %s (open it manually).", image)
+            return
+        # No picture: either Graphviz is missing or file output is off.  Either
+        # way the text view is the better thing to have in a log.
+        if not may_render:
+            logger.info("")
+            logger.info("Debate graph '%s' (file output is off, ACDC_NO_RENDER):", name)
+            logger.info("")
+            for line in graph.to_text(labels=labels).splitlines():
+                logger.info("  %s", line)
+            logger.info("")
+            return
+        logger.info("")
+        logger.info("Debate graph '%s' (install graphviz for a rendered picture):", name)
+        logger.info("")
+        for line in graph.to_text(labels=labels).splitlines():
+            logger.info("  %s", line)
+        logger.info("")
+
+
+_SEMANTICS_TOKENS = ("grounded", "complete", "preferred", "stable")
+_MODE_TOKENS = ("skeptical", "credulous")
+_BASE_TOKENS = ("cbn", "cbv")
+
+
+def _split_eval_tokens(tokens):
+    """Order-free option parsing for label/evaluate: each token is a mode,
+    a semantics, a base strategy, a witness number or "all".  Returns
+    (mode, semantics, base, witness) with witness None, an int or "all";
+    raises ValueError on an unknown token."""
+    mode = semantics = base = witness = None
+    for tok in tokens:
+        if tok in _MODE_TOKENS:
+            mode = tok
+        elif tok in _SEMANTICS_TOKENS:
+            semantics = tok
+        elif tok in _BASE_TOKENS:
+            base = tok
+        elif tok == "all":
+            witness = "all"
+        elif tok.isdigit() and int(tok) >= 1:
+            witness = int(tok)
+        else:
+            raise ValueError(
+                f"unknown option '{tok}' (expected one of {_MODE_TOKENS + _SEMANTICS_TOKENS + _BASE_TOKENS}, "
+                f"a witness number or 'all')"
+            )
+    return mode, semantics, base, witness
+
+
+def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "grounded") -> None:
+    """CLI: ADF labelling(s) of an argument's debate graph.
+
+    Syntax:
+        label ARG [grounded|complete|preferred|stable]
+
+    grounded prints the one grounded labelling; the others print every
+    labelling of that semantics, numbered.
+    """
+    from core.comp.adf_label import labellings
+
+    arg, graph, _term = _compile_argument_graph(prover, name)
+    if graph is None:
+        return
+    try:
+        found = labellings(graph, semantics)
+    except AdfBddNotFound as e:
+        print(f"label: refused: {e}")
+        logger.error("Labelling refused for '%s': %s", name, e)
+        return
+    if not found:
+        logger.info("No %s labelling exists for '%s'.", semantics, name)
+        return
+    if len(found) == 1:
+        logger.info("%s labelling for '%s':", semantics.capitalize(), name)
+        for (key, side), label in found[0].items():
+            logger.info("  %-40s %-8s %s", graph.nodes[key], side, label)
+        return
+    logger.info("%d %s labellings for '%s':", len(found), semantics, name)
+    for i, labels in enumerate(found, 1):
+        logger.info("  [%d]", i)
+        for (key, side), label in labels.items():
+            logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
+
+def _remember_evaluation(prover: ProverWrapper, arg, nf) -> None:
+    """Cache an evaluated normal form on its argument, with the revision it
+    belongs to (an issue has no argument to cache it on)."""
+    if arg is not None:
+        arg.labelled_nf = nf
+        arg.labelled_nf_revision = prover.revision
+
+
+def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
+                          base: str = "cbn", semantics: str = "preferred",
+                          witness=None, favour: bool = False) -> None:
+    """CLI: label-guided evaluation of an argument's debate term.
+
+    Syntax:
+        evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all] [favour]
+        evaluate issue :X|X: [same options, no favour]
+
+    On the unfolded route (the default) ARG's term is the one unfolded for
+    it, biased towards it; an issue gets the canonical term.  ``favour``
+    (credulous, an argument, the unfolded route) prefers a witness
+    labelling in which the argument's own derivation is IN.
+
+    Options may appear in any order.  The mode ranges over the chosen
+    semantics (default preferred); the base strategy resolves only critical
+    pairs the witness labelling leaves open.  In credulous mode N picks
+    labelling N of `label ARG SEMANTICS` as the witness and `all`
+    evaluates under every labelling that accepts the issue.  The normal
+    form (the last one, under `all`) is cached on the argument as
+    .labelled_nf.
+    """
+    from core.comp.evaluate import evaluate_debate, evaluate_witnesses, EvaluationRefused
+    from core.dc.debate_graph import DebateCompileError, declaration_kinds
+    from core.ac.ast import FirstOrderNotSupported
+    from pres.gen import ProofTermGenerationVisitor
+    import copy as _copy
+
+    if name == "document":
+        logger.error("evaluate needs an argument or debate name; 'document' has no issue.")
+        return
+    from core.comp.evaluate import evaluate_shared, evaluate_witnesses_shared
+    from core.dc.unfold import unfold_legacy
+
+    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
+    if term is None and shared is None:
+        return
+    if prover.pipeline_unfolded:
+        shared = None                      # `pipeline unfolded`: the reference path
+    favoured = None
+    if favour:
+        from core.dc.unfold import argument_edge
+        favoured = argument_edge(prover.document, arg.name) if arg is not None else None
+        if mode != "credulous" or witness is not None or shared is not None or favoured is None:
+            print("evaluate: refused: 'favour' needs credulous mode without a witness number, "
+                  "an argument with its own edge in the document, and the unfolded pipeline.")
+            return
+    common = dict(strict_names=prover.declarations.keys(),
+                  strict_kinds=declaration_kinds(prover.declarations),
+                  base=base, semantics=semantics)
+
+    def run(on_shared, on_term, **options):
+        """Evaluate from the shared debate, one instance of a sub-debate at
+        a time (core/dc/instances.py); should that route ever fail other
+        than by a refusal, say so and evaluate the unfolded term, the
+        reference it is tested against."""
+        nonlocal term
+        if shared is not None:
+            try:
+                return on_shared(shared, name, **options)
+            except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported,
+                    AdfBddNotFound, RecursionError):
+                raise
+            except Exception as e:
+                logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
+                               "evaluating the unfolded term instead.", name, type(e).__name__, e)
+        if term is None:
+            term = unfold_legacy(prover.document, issue)   # the shared route's reference
+        return on_term(term, name, **options)
 
     try:
-        colored = pretty_colored_proof_term(pt, verbose=False, prop_colors=prop_colors)
-    except Exception as e:
-        logger.error("Coloring failed for '%s': %s", arg.name, e)
+        if witness == "all":
+            results, _ = run(evaluate_witnesses_shared, evaluate_witnesses, **common)
+            if not results:
+                logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
+                            name, semantics, base)
+                return
+            logger.info("Evaluated '%s' (credulous, %s, base %s) under %d accepting witness(es):",
+                        name, semantics, base, len(results))
+            for number, nf, nf_class, _sigma in results:
+                pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+                logger.info("  [%d] %s", number, nf_class.upper())
+                logger.info("      normal form: %s", pretty)
+                _remember_evaluation(prover, arg, nf)
+            return
+        options = dict(mode=mode, witness=witness, **common)
+        if favoured is not None:
+            options["favour"] = favoured
+        nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate, **options)
+        _remember_strict_edges(graph, name)
+    except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
+        print(f"evaluate: refused: {e}")
+        logger.warning("Evaluation refused for '%s': %s", name, e)
         return
-    logger.info("")  # spacer before colored output
-    logger.info("Colored %s proof term for %s:", label, arg.name)
-    if prop_colors:
-        logger.info("Prop colors: %s", ", ".join(f"{prop}={color}" for prop, color in prop_colors))
-    logger.info(colored)
-    logger.info("")  # spacer after colored output
+    except RecursionError:
+        # tasks.org, aida-deep-term-recursion: the term walks recurse.
+        print(f"evaluate: refused: the debate about '{name}' is nested too deeply for the "
+              f"evaluator, which follows a chain of sub-debates by recursion.")
+        logger.warning("Evaluation refused for '%s': recursion depth exceeded.", name)
+        return
+    _remember_evaluation(prover, arg, nf)
+    pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+    chosen = (f", witness {witness}" if witness is not None else "") + (", favoured" if favour else "")
+    logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
+    logger.info("  normal form: %s", pretty)
 
-def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "svg", *, mode: str = "pt", nl_style: str = "argumentation") -> None:
-    """CLI: render the colored acceptance tree (proof terms or NL) and save it as a file."""
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error("Argument '%s' not found.", name)
+def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mode: str = "pt",
+                      nl_style: str = "argumentation", which: Optional[str] = None) -> None:
+    """CLI: render the acceptance tree (proof terms or NL), coloured by the
+    grounded ADF labels of the argument's debate graph, and save it as a
+    file.  If the graph is refused or adf-bdd is missing the tree is
+    written uncoloured with a one-line notice.  ``which`` (TERM_SELECTORS)
+    draws another of the argument's terms than its normal form."""
+    from core.comp.adf_label import grounded_labels
+
+    arg, graph, _term = _compile_argument_graph(prover, name)
+    if arg is None:
         return
-    if arg.normal_body is None:
-        arg.normalize()
+    labels = None
+    if graph is not None:
+        try:
+            labels = grounded_labels(graph)
+        except AdfBddNotFound as e:
+            print(f"tree: labels unavailable: {e}")
+            logger.warning("Tree for '%s' drawn without labels: %s", name, e)
+    else:
+        logger.warning("Tree for '%s' drawn without labels: debate graph refused.", name)
+    if which is not None:
+        found = _select_term(prover, name, which)
+        if found is None or isinstance(found[1], str):
+            if found is not None:
+                logger.error("tree: the registered term is text only; choose another term.")
+            return
+        drawn = found[1]
+    else:
+        if arg.normal_body is None:
+            arg.normalize()
+        drawn = arg.normal_body
     try:
         label_mode = "proof" if mode != "nl" else "nl"
         dot = render_acceptance_tree_dot(
-            arg.normal_body,
+            drawn,
             verbose=False,
             label_mode=label_mode,
             nl_style=nl_style,
             declarations=getattr(prover, "declarations", {}),
             decorations=getattr(prover, "decorations", {}),
+            labels=labels,
         )
     except Exception as e:
         logger.error("Failed to build acceptance tree for '%s': %s", name, e)
         return
     out_base = f"{name}_tree"
+    if not getattr(prover, "render_files", True):
+        logger.info("File output is off (ACDC_NO_RENDER): not writing %s.%s for '%s'.",
+                    out_base, fmt, name)
+        return
+    image = _render_graph_image(dot, out_base, fmt)        # graphviz package, else the dot binary
+    if image:
+        if _open_file(image):
+            logger.info("Acceptance tree written to %s and opened.", image)
+        else:
+            logger.info("Acceptance tree written to %s.", image)
+        return
+    dot_path = f"{out_base}.dot"
     try:
-        import graphviz  # type: ignore
-        src = graphviz.Source(dot)
-        path = src.render(filename=out_base, format=fmt, cleanup=True)
-        logger.info("Acceptance tree written to %s", path)
-    except Exception as e:
-        # Fallback: write .dot file
-        dot_path = f"{out_base}.dot"
-        try:
-            with open(dot_path, "w", encoding="utf-8") as f:
-                f.write(dot)
-            logger.warning("Graphviz not available (%s). Wrote DOT to %s", e, dot_path)
-        except Exception as e2:
-            logger.error("Failed to write DOT file: %s", e2)
+        with open(dot_path, "w", encoding="utf-8") as f:
+            f.write(dot)
+        logger.warning("Graphviz not available. Wrote DOT to %s (render: dot -T%s %s -o %s.%s)",
+                       dot_path, fmt, dot_path, out_base, fmt)
+    except Exception as e2:
+        logger.error("Failed to write DOT file: %s", e2)
+
 
 def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) -> None:
     """Handle `--import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]`."""

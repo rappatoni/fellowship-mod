@@ -1,0 +1,54 @@
+% Lessons 14-18 (minicourse-sharing.org) - one debate, its sub-debates
+% shared instead of repeated.
+%
+% Two alternative supporters per level: a1_0 and a1_1 both derive P1
+% from the presumption of P0, and a2_0 and a2_1 both derive P2 from P1.
+% Unfolded for P2, the debate about P1 is written out twice, once under
+% each supporter of P2; shared, it is written once and cited twice.
+% (This is the shape bench/gen.py double 2 generates.)
+lk.
+declare P0, P1, P2 : bool.
+declare r1_0 : (P0 -> P1).
+declare r1_1 : (P0 -> P1).
+declare r2_0 : (P1 -> P2).
+declare r2_1 : (P1 -> P2).
+
+start argument a0 P0
+by default.
+end argument
+
+start argument a1_0 P1
+cut (P0 -> P1) th.
+axiom r1_0.
+elim.
+next.
+axiom.
+end argument
+
+start argument a1_1 P1
+cut (P0 -> P1) th.
+axiom r1_1.
+elim.
+next.
+axiom.
+end argument
+
+start argument a2_0 P2
+cut (P1 -> P2) th.
+axiom r2_0.
+elim.
+next.
+axiom.
+end argument
+
+start argument a2_1 P2
+cut (P1 -> P2) th.
+axiom r2_1.
+elim.
+next.
+axiom.
+end argument
+
+debate a2_0
+label a2_0
+evaluate a2_0

@@ -15,7 +15,6 @@ from wrap.cli import (
     setup_prover,
     reduce_argument_cmd,
     render_argument_cmd,
-    color_argument_cmd,
     tree_argument_cmd,
     main,
 )
@@ -45,6 +44,18 @@ DEFAULT_SCRIPTS = [
     # replaying it, which is where the issue above bites.
     "fo_forall.fspy",
     "fo_exists_forall.fspy",
+    # The runnable rationality-postulate fixtures (tests/rationality/).
+    "rationality/self_attack.fspy",
+    "rationality/even_loop.fspy",
+    "rationality/contested.fspy",
+    "rationality/two_witnesses.fspy",
+    "rationality/cyclic_undercut.fspy",
+    "rationality/document_attack.fspy",
+    "rationality/even_loop_lk.fspy",
+    "rationality/self_attack_lk.fspy",
+    "rationality/modus_tollens.fspy",
+    # CLI surface of the fragment pipeline: graph / label / evaluate.
+    "label_evaluate.fspy",
     #"tests/test2.fspy",
     # "tests/negation_expanded.fspy",  # uncomment when ready
 ]
@@ -67,6 +78,24 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Path to a .fspy script to run (can be passed multiple times). "
              "If omitted, the default suite is run."
     )
+
+@pytest.fixture(scope="session", autouse=True)
+def no_graph_files():
+    """Ten fixtures under tests/ carry `graph ... show` or `tree`.  Without
+    this the suite writes a PNG per fixture into the working directory and
+    opens a viewer for each.  ACDC_NO_RENDER stops the writing; the commands
+    log an indented text view of the graph instead."""
+    os.environ.setdefault("ACDC_NO_RENDER", "1")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def require_adf_bdd():
+    """The debate labeller is adf-bdd, with no fallback (tasks.org,
+    aida-adf-bdd-primary).  Fail the session up front, once and clearly,
+    rather than letting every labelling test fail with the same message."""
+    from core.comp.oracle import resolve_adf_bdd
+    resolve_adf_bdd()
+
 
 @pytest.fixture(scope="session")
 def prover():
@@ -139,3 +168,4 @@ def reset_global_store():
     # Keep declarations session-scoped (per ProverWrapper instance).
     # Arguments are global via mod.store; clear between tests to avoid bleed-through.
     store.arguments.clear()
+    store.document.clear()

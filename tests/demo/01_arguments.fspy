@@ -1,0 +1,53 @@
+# ================================================================
+#  AC/DC demo 1 - arguments and counterarguments are proof terms
+# ================================================================
+# An argument for a proposition is a proof term with open sites: obligations
+# (?) the arguer still owes, presumptions (!) the arguer takes by default.
+# A counterargument is the dual: a refutation term, a context.
+#
+# Tweety and Opus.  Propositions are about individuals, propositionally.
+lk.
+declare Bird_Tweety, Flies_Tweety, Penguin_Opus, Flies_Opus : bool.
+declare bird_tweety : (Bird_Tweety).
+declare penguin_opus : (Penguin_Opus).
+declare penguins_dont_fly : (Penguin_Opus -> ~Flies_Opus).
+# tweety: Tweety flies because it is a bird - and birds fly, by default.
+start argument tweety Flies_Tweety
+cut (Bird_Tweety -> Flies_Tweety) birds_fly.
+by default.
+next.
+elim.
+axiom bird_tweety.
+axiom birds_fly.
+end argument
+# opus: Opus does NOT fly - it is a penguin, and penguins don't fly.
+start counterargument opus Flies_Opus
+cut (Penguin_Opus -> ~Flies_Opus) rule.
+axiom penguins_dont_fly.
+elim.
+axiom penguin_opus.
+elim.
+axiom.
+end counterargument
+%stop
+# ---- paste from here ----------------------------------------------------
+# The proof term of tweety, and its natural-language reading.  The rule
+# "birds fly" is a presumption (!), the fact "Tweety is a bird" an axiom.
+render tweety vanilla
+render tweety
+# The refutation term of opus - a context, read from the outside in:
+render opus vanilla
+render opus
+# Every registered argument is a hyperedge of one document graph.  Tweety and
+# Opus share no proposition: two components, no conflict yet.
+graph document show
+# The debate about Flies_Tweety, unfolded from the document, and its grounded
+# labelling: the presumed rule stands, so Tweety flies.
+graph tweety
+label tweety
+# Evaluation reduces the debate term under that labelling: a VALUE, polynomial
+# in the presumed rule.
+evaluate tweety
+# The refutation of Flies_Opus is strict: an axiom applied to a fact.
+label opus
+evaluate opus

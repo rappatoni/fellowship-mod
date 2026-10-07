@@ -25,6 +25,13 @@
 \mathit{Answers} &\mathrel{::=} \mathit{Enum}(\mathit{JTree^+}) \mid \mathit{Enum}(\mathit{JTree^-})
 \end{align*}
 
+Notation:
+
+\begin{itemize}
+\item Abbreviate $JTree^-$ and $JTree^+$ by $t^-$ and $t^+$, respectively.
+ 
+\end{itemize}
+
 Program:
 \begin{align*}
   \llbracket \texttt{a.} \rrbracket = \operatorname{declare}\, \mathit{name} :A\quad \text{where }\mathit{name}\text{ is fresh}
@@ -40,9 +47,10 @@ Program:
   \llbracket x_1+\dots+ x_n\rrbracket &= foldr1 \llbracket x_1,x_2\rrbracket^{ans} x_1+\dots+x_n\\
   \llbracket a\mathbin{\text{:-}}[\,] \rrbracket &= \mu \alpha. \langle a:A||\alpha\rangle \text{   where declare a:A, declare A:bool $\in$ Decls}\\
   \llbracket a\mathbin{\text{:-}}[t] \rrbracket &= \mu \alpha. \langle f_t|| \llbracket t \rrbracket \circ \alpha \rangle \\
-  \llbracket a\mathbin{\text{:-}}[t_1,\dots,t_n] \rrbracket &= \mu \alpha:A.\langle f_{H^A} || \mu alt:H^A.\langle \mu\_.\langle \underline{[:H^A]} ||alt\rangle || \tilde\mu\_.\langle\underline{[:H^A]}||\llbracket t_1,\dots,t_n\rrbracket_-^{H^A} \rangle \rangle \circ \alpha \rangle \\
+  \llbracket a\mathbin{\text{:-}}[t_1^+,\dots,t_n^+] \rrbracket &= \mu \alpha:A.\langle f_{H^A} || \mu alt:H^A.\langle \mu\_.\langle \underline{[:H^A]} ||alt\rangle || \tilde\mu\_.\langle\underline{[:H^A]}||\llbracket t_1,\dots,t_n\rrbracket_-^{H^A} \rangle \rangle \circ \alpha \rangle \\
   \llbracket t_1, t_2 \rrbracket_-^{H^A} &= \tilde\mu alt:H^A.\langle \mu\_.\langle alt || \llbracket \bar t_{1,H^A}\rrbracket\rangle ||\tilde\mu\_.\langle alt ||\llbracket \bar t_{2,H^A}\rrbracket \rangle\rangle \\
-  \llbracket \bar t_{H^A}\rrbracket &= \tilde\mu x:H^A.\langle \tilde\mu att.\langle \mu\_.\langle att || \underline{[T:]}\rangle|| \tilde\mu\_.\langle \llbracket t\rrbracket||\underline{[T:]}\rangle\rangle \circ x||h\rangle\\
+  \llbracket \bar t_{H^A}\rrbracket &= \tilde\mu x:H^A.\langle \tilde\mu att.\langle \mu\_.\langle att || \underline{[T:]}\rangle|| \tilde\mu\_.\langle \llbracket t\rrbracket||\underline{[T:]}\rangle\rangle \circ x||h\rangle \quad \text{If $t$ is of shape $JTree^+$}\\
+   \llbracket \bar t_{H^A}\rrbracket &= \tilde\mu x:H^A.\langle \tilde\mu att.\langle \mu\_.\langle att || \underline{[T:]}\rangle|| \tilde\mu\_.\langle \llbracket t\rrbracket||\underline{[T:]}\rangle\rangle \circ x||h\rangle \quad \text{If $t$ is of shape $JTree^- $}
   \llbracket [t_1,\dots,t_n] \rrbracket_-^{H^A} &= foldr1  \llbracket t_1, t_2 \rrbracket_-^{H^A} [t_1,\dots,t_n]
                                                   %\tilde\mu alt_n:H^A.\langle\mu\_.\langle alt_n||\tilde\mu x:H^A.\langle x \circ \llbracket t_n\rrbracket ||h_n\rangle \rangle ||\tilde\mu\_.\langle alt_n||\llbracket [t_1,\dots,t_{n-1}]\rrbracket_-^{H^A} \rangle \rangle 
 \end{align*}
@@ -53,7 +61,9 @@ Program:
   \mathbf{not}\,o_1^a,
   \dots,
   \mathbf{not}\,o_n^a] \rrbracket &= 
- \llbracket [o_1^a,\dots, o_n^a] \rrbracket^A_+ \\
+                                    \llbracket [o_1^a,\dots, o_n^a] \rrbracket^A_+ \\
+  \llbracket o:-[t]\rrbracket &= \mu \alpha:O.\langle \alpha*\bar{t}_{O^A} || j_{i,O^A}\rangle\\
+  \llbracket o:-[not t]\rrbracket &= \mu \alpha:O.\langle \alpha*\bar{t}_{O^A} || j_{i,O^A}\rangle\\
  \llbracket [o_1^a] \rrbracket_+^A &= \mu\_.\langle \mu \alpha:A.\langle g_{O_1^A} || \llbracket o_1^a \rrbracket \circ \alpha\rangle || alt_2\rangle \\
  \llbracket [o_1^a,\dots, o_n^a] \rrbracket_+^A &=  \mu alt_n:A.\langle \mu\_.\langle\mu \alpha:A.\langle g_{O_n^A} || \llbracket o_n^a \rrbracket \circ \alpha\rangle || alt_n \rangle || \tilde\mu\_.\langle \llbracket [o_1^a,\dots, o_{n-1}^a] \rrbracket^A_+ || alt_n \rangle \rangle \\
  \llbracket o^a \mathbin{\text{:-}} [t_1,\dots,t_n] \rrbracket &= \mu\alpha:O^A.\langle \mu\_. \langle \underline{[:O^A]} || \alpha\rangle || \\

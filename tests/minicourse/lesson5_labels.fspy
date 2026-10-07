@@ -1,0 +1,32 @@
+% Lesson 5 - Labelling.
+%
+% cArg derives C from two sites: A is an OBLIGATION (open, default OUT)
+% and B is a PRESUMPTION (by default, default IN).  The sources of one
+% edge are CONJOINED, so one IN source is not enough: C is OUT.
+%
+% Then aArg discharges A strictly, and the whole chain flips to IN.
+lk.
+declare A,B,C:bool.
+declare abc : (A->(B->C)).
+declare axA : (A).
+
+start argument cArg C
+cut (A->(B->C)) r.
+axiom abc.
+elim.
+next.
+elim.
+by default.
+next.
+axiom r.
+end argument
+
+label cArg
+
+start argument aArg A
+axiom axA.
+end argument
+
+support d5 aArg cArg
+
+label d5

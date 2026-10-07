@@ -1,1 +1,0 @@
-from core.comp.color import AcceptanceColoringVisitor, pretty_colored_proof_term

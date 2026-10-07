@@ -9,7 +9,7 @@ The repository combines:
 - the native Fellowship prover under `wrap/fellowship/`
 - a Python wrapper (`wrap/prover.py`) that talks to Fellowship in machine mode
 - an argument/debate layer (`core/dc/argument.py`)
-- multiple presentation layers (`pres/`) for natural language, coloring, and
+- multiple presentation layers (`pres/`) for natural language and
   acceptance trees
 
 An earlier motivation/theory overview is available
@@ -34,18 +34,56 @@ The current codebase supports:
   - `dialectical`
   - `intuitionistic`
   - `vanilla`
-- acceptance coloring of normalized proof terms
-- acceptance-tree export through Graphviz (with DOT fallback)
+- debate graphs, ADF labelling (via adf-bdd) and label-guided evaluation
+- acceptance-tree export through Graphviz (with DOT fallback), coloured by
+  the grounded labels
 - machine-mode integration with Fellowship, including prover state extraction
 - first-order propositions and proof terms: `forall` / `exists`, sorts, and
   first-order terms, through parsing, type synthesis, replay and rendering
   (see *First-order logic* below for what is and is not supported)
+
+## Status
+
+The debate compiler - unfolding a document into a debate term, compiling
+and labelling it, and evaluating it under a witness labelling - is the
+main line of development. It covers the quantifier-free fragment,
+derivation cycles included, and is still incomplete. Known gaps, each
+tracked in `tasks.org`:
+
+- **Only sites can be attacked or supported.** The specification
+  (`debate-graph-spec.org`, rational closure) lets attacks and supports
+  reach subarguments and intermediate conclusions too.
+- **No transposition closure.** Strict edges are not yet closed under
+  transposition, so there are no premise-attacks through strict edges.
+- **No first-order debates.** Normalisation and the debate operations
+  refuse first-order terms (see *First-order logic*).
+- **The shared route lags behind.** `pipeline shared` still builds the
+  earlier scaffold shape and has not been ported to the stacked shape and
+  the argument entrypoints, so the default route is `unfolded`.
+- **s(CASP) import is partial.** The importer translates the positive
+  parts of a justification tree; negation as failure and global
+  constraints are not translated yet.
+- **The old debate verbs are deprecated.** `attack`, `support`,
+  `undercut`/`undermine`, `rebut`, `undergird`, `reinforce` and `chain`
+  build a debate by grafting scaffolds into a term, and `reduce`,
+  `normalize` and `render-nf` normalise with the legacy term-level
+  reducer. Neither goes through the compiler pipeline, and they are
+  probably not safe to use until they are wired to it (see *Debate
+  commands*). Register arguments and use `graph`, `label`, `evaluate` and
+  `explain` instead.
+
+Smaller design questions are open as well. `minicourse-evaluation.org` and
+`minicourse-sharing.org` explain the pipeline lesson by lesson; they are
+drafted by an AI agent and pinned by tests, and still await the author's
+review.
 
 ## Requirements
 
 - Python 3.11+
 - `make`
 - an OCaml toolchain to build the native Fellowship binary
+- a Rust toolchain (`cargo`) to build the `adf-bdd` solver, which the
+  debate labeller requires
 
 ## Installation
 
@@ -81,6 +119,24 @@ pipx install .
 
 If you do that, make sure `acdc` can still find the native `fsp` binary
 via one of the mechanisms below.
+
+## Locating the adf-bdd binary
+
+Debate labelling (`label`, `evaluate`, `graph ... show`) is computed by
+[adf-bdd](https://github.com/ellmau/adf-obdd), a third-party solver for
+abstract dialectical frameworks. `make install` builds it into
+`.venv/bin/adf-bdd` (pinned version, via `cargo install`). The wrapper
+resolves it in this order:
+
+1. `ADF_BDD_BIN`
+2. the active virtual environment's `bin/adf-bdd`
+3. repo-local `.venv/bin/adf-bdd`
+4. `adf-bdd` found on `PATH`
+5. `~/.cargo/bin/adf-bdd`
+
+There is no fallback: if the binary cannot be found, labelling refuses
+with a message naming this search order. The in-tree labellers exist only
+as cross-checks of adf-bdd, not as substitutes.
 
 ## Locating the Fellowship binary
 
@@ -122,7 +178,16 @@ xattr -d com.apple.quarantine "$ACDC_FSP"
 
 ```bash
 .venv/bin/acdc --interactive
+.venv/bin/acdc --interactive --load tests/demo/01_arguments.fspy
 ```
+
+The prompt has readline line editing (emacs bindings) and a history file
+(`~/.acdc_history`, or `ACDC_HISTORY`). A pasted block runs one line at a
+time; lines starting with `#` are echoed as narration and lines starting
+with `%` are ignored, as in scripts. `load FILE` runs a script inside the
+session. A script loaded with `--load` or `load` stops at a `%stop` line,
+so a demo file can hold its setup above the marker and the commands to
+paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
 
 ### Script mode
 
@@ -179,28 +244,154 @@ You can also set the default log level with:
 export FSP_LOGLEVEL=DEBUG
 ```
 
-### Reduction / normalization controls
+### What the pipeline's phases are
 
-Normalization behavior is controlled by environment variables read by
-`core.dc.argument.Argument.normalize()`:
+`evaluate ARG` runs eight phases. Each hands one artifact to the next, and at
+`DEBUG` each prints the artifact it produced.
 
-- `FSP_EVAL_DISCIPLINE`
-  - `legacy` (default)
-  - `onus`
-  - `onus-parallel`
-- `FSP_ONUS_FALLBACK`
-- `FSP_ONUS_STANCE`
+The phases are described below as they act on the *unfolded* debate term,
+which is what defines them and what the default route builds. `pipeline
+shared` (or `FSP_PIPELINE=shared`) keeps the debate as named sub-debates
+instead, and each phase works on those (see the note after phase 5 and
+`debate ARG`); `pipeline unfolded` switches back. The shared route has not
+yet been ported to the stacked shape the unfolded route builds (see
+*Status*). The unfolded route's cost grows with the number of paths
+through the document graph.
 
-Example:
+1. **issue** — read the argument's own registered proof term and its issue, a
+   (proposition, side) pair.
+2. **unfold** — build the debate term for that issue out of the *document*
+   graph: the issue's own site, wrapped in a support scaffold per deriving
+   edge and an attack scaffold per edge deriving the contrary, with each
+   edge's body expanded the same way. A demand for a statement that a binder
+   in scope already stands for - an argument's own or a scaffold's - is
+   captured by that binder instead of being expanded again, which is what
+   makes this terminate. Out: one proof term standing for the whole debate.
+3. **typecheck** — replay that term through Fellowship as a throwaway theorem
+   and compare what Fellowship rebuilds with what was sent, up to
+   alpha-equivalence, site numbering and proposition spelling. This is the
+   ground truth for the unfolder: if the registered arguments type-check, so
+   must their unfolding. On a mismatch the log names the position in the term
+   where the two shapes first differ. The replay is done one sub-debate at a
+   time: each statement's debate is replayed once, with the sub-debates it
+   cites left as open sites, and not again in the same document. That is as
+   strong as replaying the whole term - what goes into a site has the site's
+   type - unless the debate spells a statement in two ways (`~A` and
+   `A -> false` are one statement but two propositions for Fellowship); then
+   the whole term is replayed. `typecheck expanded` always replays the whole
+   term, whose size grows with the number of paths through the graph.
+4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
+   propositions, hyperedges carry a name, a target statement and sources with
+   their kinds, and statements get default markers. It is a separate data
+   structure, not a marked-up term. The compiler finds the sub-arguments by
+   matching *scaffold shapes*: specific term shapes that the debate operations
+   produce. "Paper" shapes are the four of the COMMA 2026 paper; "legacy"
+   ones are what the older debate operators emitted, still recognised. A match
+   says "here is a scion and here is the original", so the scion becomes an
+   edge of its own and the walk continues into the original. Out: the
+   argumentation framework, printed as an indented tree.
+5. **strict** — read strictness off the term. A subterm is strict in the
+   debate if it rests on nothing, that is, it has no open site. Where one wing
+   of a scaffold is strict and the other is not, the scaffold is decided here
+   and the losing wing is dropped; everything else is delayed. In: the
+   unfolded term. Out: a rewritten, usually smaller term, plus a strict,
+   source-less edge for every closed derivation the framework did not have.
+   The issue graph is the framework of phase 4 plus those edges.
 
-```bash
-FSP_EVAL_DISCIPLINE=onus-parallel .venv/bin/acdc --script tests/counterarguments_and_undercut.fspy
+   `graph ARG` and `label ARG` need only the issue graph, and get it without
+   building the unfolded term. The debate is kept as one definition per
+   statement (see `debate ARG`), and phases 4 and 5 run on one *instance* of
+   a sub-debate at a time: a statement together with the statements captured
+   and cut in it, which is all that the copy of that sub-debate at a site
+   depends on. Each instance is compiled and strictness-resolved once; a
+   cited instance shows the scaffolds around it only whether a site is still
+   open in it, which captured variables are still free in it, and whether a
+   decision was made inside. The result is the graph the unfolded term gives
+   (edges, default markers, labellings), with each edge once where the term
+   has a copy per path.
+
+   `evaluate ARG` goes on from there without unfolding either. In phase 8
+   the witness labelling decides the scaffolds strictness delayed, top-down
+   from the issue, and a cited sub-debate is written out only inside a wing
+   that is kept; a wing that is dropped is never built. What is normalised
+   has the size of the answer, not of the debate. Phase 2's artifact is then
+   the debate as named sub-debates rather than one unfolded term.
+6. **label** — compile one acceptance condition per statement and ask the
+   adf-bdd solver for the labellings of the chosen semantics. In: the issue
+   graph. Out: conditions, and a numbered list of labellings, each mapping
+   every statement to IN, OUT or UNDEC.
+7. **witness** — pick the single labelling σ that will guide evaluation.
+   Credulous picks the first labelling in which the issue is IN, the one that
+   *witnesses* its acceptability; skeptical takes the statement-wise
+   intersection of them all. Choosing σ once and resolving everything against
+   it is the point: resolving each scaffold against whichever extension suits
+   it would mix incompatible positions.
+8. **sigma, normalise, classify** — write σ into the term (every occurrence of
+   a statement carries its label, printed `A{IN}` or `{OUT}A`), resolve every
+   scaffold σ decides by reading those labels, keeping one wing each, then
+   name every site by its label - a site is a delegation if IN, an obligation
+   otherwise - and reduce the result to a normal form, classified as an
+   exception if it holds an uncaught clash, open if an obligation remains,
+   and a value otherwise.
+
+Two things the log makes visible that are worth knowing. The strict phase runs
+**twice** per evaluation: once inside the issue-graph compilation to collect
+the strict edges, which throws the rewritten term away, and once in evaluation
+to get the rewritten term, which throws the edges away. And if the issue is not
+in the document graph, the argument is evaluated as registered, skipping both
+the unfolding and the type check.
+
+What each level shows for the compilation–evaluation pipeline:
+
+- `INFO` (default): the verdict of each command, and any decision that
+  contradicts what you asked for. In particular, when no labelling of the
+  chosen semantics accepts the issue, credulous evaluation falls back to the
+  grounded labelling resolved *skeptically*, and says so.
+- `DEBUG`: the stage-by-stage account, and **the artifact each phase
+  produced**: the registered term, the unfolded term, both terms the type
+  check compared, the compiled framework as a tree, the term going into and
+  coming out of the strict phase with the strict edges it contributed, the
+  acceptance conditions, every labelling in the canonical numbering, the
+  chosen σ in full, the term entering normalisation and the normal form.
+  Alongside them the decisions: which statements the unfolder expanded,
+  captured or left open; every edge the compiler built; every scaffold the
+  strict phase decided or delayed, with the reason; the witness chosen and
+  why; the wing kept at each scaffold and whether the tiebreak decided it.
+  The Fellowship replay's own chatter is silenced so it cannot drown this.
+- `TRACE`: per-reduction-step lines with the rule that fired, the unfolder's
+  scope and spine at each decision, the compiled conditions, the exported
+  ADF and the solver's raw output.
+
+### Explaining one evaluation
+
+`explain ARG [MODE] [SEMANTICS] [BASE] [N|all]` takes the same options as
+`evaluate`, runs it once, and prints that account grouped by stage without
+changing the global log level, with the verdict last:
+
 ```
+  unfold         A[t] expanded, site u1 (Deleg), 1 deriving edge(s)
+  unfold           A[t] +support 'argA' (alt alt1)
+  compile        edge 'argA' (supporter, defeasible) A[t] <- Q[t]:pres@u2
+  strict         A[t] delayed for the labelling (neither wing is strict)
+  label          preferred gives 1 labelling(s)
+  witness        [1] of 1 chosen, the first preferred labelling accepting A[t]
+  sigma          supporter A[t] is IN -> keep the supporter
+  classify       VALUE
+```
+
+### Graph files
+
+`graph ARG show` and `tree ARG` write an image into the working directory and
+open it. `ACDC_NO_OPEN=1` keeps the viewer shut; `ACDC_NO_RENDER=1` also stops
+the writing, and `graph ... show` then logs an indented text view of the graph
+instead, which is the more useful thing to have in a log. `execute_script` takes
+`render_files=False` for the same effect on one script; the test suite sets the
+environment variable for the whole session so a run leaves no files behind.
+
+### Other environment variables
 
 - `FSP_REDUCE_TERM_WIDTH` (default `72`) — column width for the term column
   when `reduce` prints its step-by-step trace.
-
-### Other environment variables
 
 - `FSP_ECHO_NOTES` (default `1`, i.e. on) — set to `0`/`false`/`no` to
   suppress echoing Fellowship's informational notes.
@@ -246,29 +437,189 @@ detects a machine-mode desynchronization.
 - `start antitheorem NAME CONCLUSION`
   - begin recording a counterargument / antitheorem-backed argument
 - `end argument`
-  - finish recording, execute the proof against Fellowship, and register it
+  - finish recording, execute the proof against Fellowship, and register it;
+    if its body is closed, Fellowship also keeps it as a theorem, so
+    `axiom NAME` cites it
+- `theorem NAME : (PROP).`, also `lemma`, `proposition`, `claim`, and
+  `antitheorem`, `antilemma`, `antiproposition`, `anticlaim`
+  - record a claim, and nothing more (see below)
+- `prove NAME`, also `refine`, `argue`, `refute`, `dispute`
+  - reopen a registered argument or claim where it left off; all five are
+    synonyms and work for claims and counterclaims alike
+- `cite NAME.` (inside a recording)
+  - use the registered argument NAME at the focused goal; the term shows the
+    name, as an axiom would
+- `qed.`
+  - end the recording and demand a strict witness; refused, leaving the
+    argument as it was, while an obligation, a presumption or a defeasible
+    citation remains open
+- `adopt EDGE* as NAME`
+  - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
+- `expand ARG`
+  - print ARG's full term, with every cited argument's term grafted in
+- `debate ARG`
+  - print the debate about ARG's issue as named sub-debates: the issue's
+    term, then one `NAME[open sites] := term` line per sub-debate it cites
+
+### Statements, refinement and citation
+
+The wrapper owns the registry of every statement and argument, and Fellowship
+keeps exactly the strict proofs. A name Fellowship knows is a strict axiom
+everywhere, so it never holds a defeasible argument.
+
+- **A statement only states.** `lemma foo : (A).` registers the claim as the
+  maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an obligation
+  marker on A: A is claimed and owes a proof. It opens nothing, so claims can
+  be collected first and proved later.
+- **Refinement.** `prove foo` reopens foo, replaying what it has so far, so the
+  proof continues from its open goals, presumptions included. It ends with
+  `qed.`, which demands a strict witness, or `end argument`, which registers
+  the result either way. Proving a claim is refining its enthymeme; any
+  defeasible argument can be refined the same way. The result replaces the
+  argument in place, keeping its position in registration order, and the
+  document graph is rebuilt. When a refinement makes an argument strict, the
+  arguments that cite it are replayed, and those that became closed are held
+  by Fellowship too.
+- **`axiom` is for strict content, `cite` for arguments.** `axiom NAME` always
+  goes to Fellowship, which refuses a defeasible NAME. `cite NAME` uses any
+  registered argument. A strict one Fellowship closes itself; a defeasible one
+  closes the goal for the author and leaves Fellowship's goal open. Either
+  way the term shows the name at that site, like an axiom, so terms stay
+  readable as the library grows. The cited argument must conclude the goal's
+  proposition, on the same side. A cited site is done: a later tactic that
+  would land on it is refused.
+- **Citation by name is late binding.** A citer means "the argument NAME as it
+  now stands". The document edge of a citer has an obligation at the cited
+  conclusion, which the cited argument's own edge meets; unfolding expands the
+  citation like any obligation. Refine the cited argument and every citer
+  follows. `expand ARG` computes the full term on demand.
+- **Sub-debates are shared by name.** The debate about an issue brings in the
+  debate of every statement it reaches. `debate ARG` writes a sub-debate that
+  is needed in two or more places once and cites it by name - the author's
+  name where one argument or debate is about that statement, `anon_1`,
+  `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in
+  place. A citation shows what its site does to the cited debate:
+  `d[alpha -> !:A, B:?]` reads "d, with alpha capturing its delegation of A
+  and its obligation B left open"; the header `d[...] :=` lists the sites the
+  sub-debate rests on. Names are transparent: writing every definition back
+  in gives the term `graph`, `label` and `evaluate` work on, which for now is
+  still what they compute.
+- **Adopting a discovered strict edge.** `graph ARG` can show strict edges,
+  named with a trailing star, that the strict phase found in the unfolded
+  term. Showing them changes nothing. `adopt s1* as peirce` replays the closed
+  term stored on the edge with `qed.`, so Fellowship checks it again, and
+  registers it as the theorem `peirce`.
+- **Names are unique per document.** Sorts, declared axioms, statements and
+  arguments share one namespace, checked before anything reaches the prover;
+  `lk.` or `lj.` starts a new one. Names starting with `typecheck_`,
+  `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
+- **Sessions start in LK.** Debates are classical, and the prover is switched
+  to LK when it starts, so the type check of a debate never runs in LJ by
+  accident.
 
 ### Stored-argument commands
 
 - `reduce ARG`
-  - normalize and print the normal form
+  - normalize and print the normal form (**deprecated**: the legacy
+    term-level reducer, not label-guided evaluation; use `evaluate`)
 - `normalize ARG`
-  - normalize silently and cache the result
+  - normalize silently and cache the result (**deprecated**, as `reduce`)
 - `render ARG [STYLE]`
 - `render-nf ARG [STYLE]`
-  - render the original or normalized term
-- `color ARG [PROP=COLOR ...]`
-- `color-nf ARG [PROP=COLOR ...]`
-  - show acceptance coloring for the unnormalized (`color`) or normalized
-    (`color-nf`) term; optional `PROP=COLOR` pairs override the default
-    coloring for specific propositions. Quote a pair whose proposition
-    contains spaces, e.g. `color a "Bird Tweety=red"`.
+  - render the original or normalized term (`render-nf` shows the legacy
+    reducer's normal form and is **deprecated** with it)
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
-  - render an acceptance tree
+  - render an acceptance tree coloured by the grounded labels (see
+    Debate-graph commands); drawn uncoloured if the graph is refused
 - `chain ARG1 ARG2`
-  - graft / chain one argument into another
+  - graft / chain one argument into another (**deprecated**, see *Debate
+    commands*)
+
+### Debate-graph commands
+
+Every atomic argument you register (`start argument ... end argument`,
+`register`) adds its hyperedges to one **document graph** for the whole
+file; proposition identity is global to it, so a counterargument to Q
+registered anywhere contests every use of Q. The debate verbs
+(`attack`, `support`, `chain`) name a debate whose issue is the host's
+conclusion and check that the attacker concludes the contrary of (the
+supporter concludes) a statement reachable from that issue; they add no
+edge. `graph`, `label` and `evaluate` take a name, read its issue,
+**unfold** the document graph from that issue into a debate term
+(cycles broken by capture: a demand for P inside a proof of P->Q is the
+hypothesis, a demand for a refutation of P inside a proof of P is the
+continuation; a captured presumption stays a presumption source of its edge, which is how a cycle is represented), compile that
+term into the issue's debate graph, label it by an ADF semantics and
+evaluate it under a witness labelling. `graph document` and `label
+document` show the document graph itself. Every unfolded term is
+replayed through Fellowship first - the type oracle: if the arguments
+type-check, so must their unfolding - and refused with a one-line
+message if the prover rejects it; `typecheck off` (or `FSP_TYPECHECK=0`)
+skips the replay for production runs, and `typecheck expanded` (or
+`FSP_TYPECHECK=expanded`) replays the whole unfolded term instead of one
+sub-debate at a time. Debates are classical: their
+scaffolds throw to a second conclusion, which LJ forbids, so the debate
+commands are refused while the file is in `lj`. Derivation cycles are
+admitted; `graph` reports which fragment (acyclic or cyclic) a debate
+is in. They cover
+the quantifier-free fragment and refuse first-order terms with a
+one-line message.
+
+- `graph ARG|document [FILE.dot] [show]`
+  - print the nodes, hyperedges and default markers of ARG's issue graph
+    (unfolded from the document) or of the document graph; write
+    Graphviz DOT when a filename is given
+  - every lambda is a subargument edge of its own; a subargument that
+    captured a binder of an enclosing one records the capture as a source
+    at that binder's statement, so the framework shows a sprung trap as a
+    cycle; strictness is then read off the unfolded term and adds a strict
+    edge (`NAME*`) for every closed derivation the framework missed
+  - strict in the debate means the subterm rests on nothing, that is, it
+    has no open site. A captured variable is a commitment the debate
+    already made, whichever kind of site it replaced, so a self-attacking
+    argument derives its conclusion. A clash rests on nothing either, so
+    it decides a scaffold, but it derives its statement only from an
+    inconsistency, so it claims no strict edge and surfaces as an
+    `EXCEPTION` instead
+  - `show` renders the graph and opens it in the platform viewer; without
+    Graphviz installed it prints an indented text view instead
+- `label ARG|document [grounded|complete|preferred|stable]`
+  - print the labelling(s) of the chosen semantics (default grounded):
+    one `IN` / `OUT` / `UNDEC` per proposition and side; several
+    labellings are numbered
+  - a presumption delegates the onus of refutation to the other side, so
+    a side carrying only a default marker does not contest a side that is
+    actually derived: an argument for the contrary defeats a bare
+    presumption outright, while two derivations still contest each other
+    and a presumption's own default stays guarded
+  - presuming *both* sides of one proposition means neither side holds
+    the onus; that is reported as a warning and will become an error
+- `explain ARG [same options as evaluate]`
+  - run one evaluation and print the pipeline's own stage-by-stage account of
+    it, then the verdict; needs no change to the log level
+- `evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]`
+  - label-guided evaluation; options in any order, defaults skeptical,
+    preferred, cbn; prints the normal-form class (`VALUE`, `EXCEPTION`,
+    `OPEN`) and the normal form, cached as `.labelled_nf`
+  - credulous evaluates against one labelling of the chosen semantics in
+    which the argument's issue is IN (if none exists, against the
+    grounded labelling, resolved skeptically); skeptical against the
+    intersection of all of them; the base strategy resolves only
+    critical pairs that labelling leaves open
+  - scaffolds are the COMMA 2026 paper's support and attack shapes (the
+    context side mirrored), so on the proponent's side credulous is
+    call-by-name and skeptical call-by-value; a defeated site holds the
+    clash `mu alpha.< t || E >`, the paper's abort, and a normal form
+    containing an uncatchable clash is an `EXCEPTION`
+  - the sites of a normal form are named by their labels: `!IN:A` is a
+    delegation (the opponent must refute A), `?OUT:A` and `?UNDEC:A` are
+    obligations (A was not established under the mode)
 
 ### Projection / extraction commands
+
+> **Deprecated** with the debate commands below: they take apart the
+> term-level debate structures those verbs build, outside the compiler
+> pipeline.
 
 These pull a sub-term back out of an already-recorded argument and register
 it under a new name, projecting the wrapper-side metadata (assumptions,
@@ -325,6 +676,17 @@ worked examples of every shape.
     expected to work; the mechanism otherwise has no bundled tactics.
 
 ### Debate commands
+
+> **Deprecated.** These verbs build a debate term by grafting scaffolds
+> into the target's term, and their results are normalised by the legacy
+> reducer (`reduce`, `normalize`, `render-nf`). They predate the debate
+> compiler and are not wired to it: the term shapes they build are the
+> older ones, the compiler recognises them only as legacy shapes, and
+> neither the labelling nor label-guided evaluation is applied to what
+> they produce. They are probably not safe to use until they are wired to
+> the new pipeline. Register the arguments instead (they join the
+> document graph, where every argument for a statement's contrary
+> attacks it) and use `graph`, `label`, `evaluate` and `explain`.
 
 - `undermine NEW ATTACKER TARGET`
 - `undercut NEW ATTACKER TARGET`
@@ -429,12 +791,13 @@ theorem argA : (A).
 antitheorem notA : (A).
 ```
 
-The wrapper-level recording commands:
-- `start argument ...`
-- `start counterargument ...`
-- `start antitheorem ...`
-
-are convenience front-ends for those prover workflows.
+The wrapper intercepts these: `theorem NAME : (P).` only states a claim, and
+`prove NAME` opens its proof, which the wrapper replays and checks at `qed.`
+(see "Statements, refinement and citation"). Scripts written in Fellowship's
+own idiom, `theorem X : (A).` followed directly by tactics and `qed.`, need a
+`prove X` line after the statement. The recording commands
+`start argument ...`, `start counterargument ...` and `start antitheorem ...`
+open the same kind of recording without stating a claim.
 
 ### `deny`
 
@@ -550,7 +913,7 @@ exercises every first-order proof-term constructor.
 ### What is not supported yet
 
 Normalization and the debate operations — `reduce`, `chain`, `support`,
-`attack` and acceptance colouring — do not handle first-order terms. The
+`attack` and the debate graph — do not handle first-order terms. The
 reduction rules for first-order AC/DC are not settled, so rather than guess,
 those operations raise `FirstOrderNotSupported` naming the construct they
 stopped at.
@@ -577,17 +940,7 @@ render myarg vanilla
 render-nf myarg dialectical
 ```
 
-## Acceptance coloring and trees
-
-### Coloring
-
-```text
-color ARG
-```
-
-This normalizes the argument if needed and prints a colored proof-term view.
-
-### Acceptance trees
+## Acceptance trees
 
 ```text
 tree ARG
@@ -596,7 +949,13 @@ tree ARG nl
 tree ARG nl dialectical
 ```
 
-Tree rendering uses Graphviz when available and otherwise writes a `.dot` file.
+Tree rendering uses Graphviz when available and otherwise writes a `.dot`
+file. Each box on the spine is filled by the grounded ADF label of the
+statement its binder establishes (green IN, red OUT, yellow UNDEC), taken
+from the argument's debate graph; the former `color` / `color-nf`
+commands and their shape-based classification were removed on 2026-09-16
+(they read a supported argument as defeated). Use `label` for the labels
+as text.
 
 ## Examples
 
@@ -631,7 +990,7 @@ This script demonstrates:
 - `start counterargument ...`
 - `undercut`
 - `reduce`
-- `color`
+- `label`
 - `tree ... nl`
 - `deny` / `moxia`
 
@@ -649,7 +1008,7 @@ Demonstrates:
 - `support`
 - `undercut`
 - `render ... vanilla`
-- `color`
+- `label`
 
 ### Antitheorem / moxia example
 
@@ -693,7 +1052,7 @@ make binlink
 ## Repository layout
 
 - `core/` — core ASTs, transformations, reduction, grafting, argument logic
-- `pres/` — presentation layers (proof terms, NL, coloring, trees)
+- `pres/` — presentation layers (proof terms, NL, trees)
 - `wrap/` — Python wrapper code and the native Fellowship subtree
 - `wrap/fellowship/` — native prover sources and `fsp` binary build target
 - `tests/` — pytest tests and `.fspy` / `.fsp` examples
