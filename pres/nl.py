@@ -112,7 +112,7 @@ pruefschema_rendering = Rendering_Semantics(
     ["es liegt vor: ", "Prüfung fehlgeschlagen: "],
     pattern_renderers=[
         AlternativeCasesRenderer(
-            header_template="Die Prüfung, ob @prop gilt, zerfällt in folgende Fallgruppen:",
+            header_template="Die Prüfung @binder, ob @prop gilt, zerfällt in folgende Fallgruppen:",
             first_case_label="Fallgruppe @index:",
             next_case_label="oder Fallgruppe @index:",
         ),
