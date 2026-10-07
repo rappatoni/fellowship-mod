@@ -1,5 +1,9 @@
 a:-b,c.
 a:- not d.
-a:- not e.
+a:- f, not e.
+f.
 d.
+e :- g.
+e :- not h.
+h.
 ?-a.
