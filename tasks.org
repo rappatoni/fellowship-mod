@@ -2819,7 +2819,8 @@ one, once the decision pairs survive substitution.
   tests/test_share.py are on the shared route and unchanged.
 - Suite 2026-10-07: 1541 passed; the 2 failures are those of the working copy above.
 
-*** NEXT Classify an uncaught clash as an exception even when an obligation remains
+*** DONE Classify an uncaught clash as an exception even when an obligation remains
+CLOSED: [2026-10-07 Wed]
 :PROPERTIES:
 :ID:             aida-classify-exception-before-open
 :AREA:           phd
@@ -2847,6 +2848,26 @@ latter (with this order fixed, rewriting an OUT delegation to an
 obligation no longer turns the defeated cases - lesson 9 C,
 multiple_undercuts A, cyclic_undercut R, self_attack P[c] - from
 exception into open).
+
+*Done 2026-10-07.* =classify_nf= checks for an uncatchable clash first,
+then for an obligation (core/comp/oracle_terms.py; the log line says
+when obligations remain beside the clash).
+- Lesson 9 with con's =by default.= commented out: =issue :C= is
+  EXCEPTION in both modes, =μalt1:C.<nc:~C||?u1:C*_F_>= (was OPEN).
+- Verdicts over the 306 rows of the fixture comparison: only
+  tests/demo/04_document.fspy changes, issue Flies and argument tweety,
+  both modes, OPEN -> EXCEPTION (the obligation for Flies strictly
+  refuted by the penguin rule). No test pinned them.
+- One hand-built pin changed: tests/test_verification_residues.py,
+  =test_square_commutes_on_the_out_row= - an obligation defeated by a
+  refutation sigma labels IN is now an exception, like a defeated
+  presumption (the square still commutes). New regression test:
+  tests/test_oracles.py =test_a_clash_is_an_exception_even_with_an_obligation=
+  (the old order gives open on it).
+- Course: minicourse-evaluation.org lesson 12 and minicourse.org (the
+  defeated-site item) updated (both gitignored).
+- Suite: 1542 passed; the 2 failures are the author's working copy of
+  even_loop_lk.fspy on the shared route, unchanged.
 
 *** BACKLOG Design: labellings in the term; a delegation not IN under sigma is an obligation again
 :PROPERTIES:

@@ -266,4 +266,7 @@ class TestV3OutRowSquare:
         clash = Mu(ID("_", "Q"), "Q", Goal("1", "Q"), grounded_challenge())
         by_hand = normalize_strong(instantiate_sites(parg(Goal("1", "Q")), {"1": clash}))
         assert alpha_equal(nf, by_hand)
-        assert classify_nf(by_hand) == classify_nf(nf) == "open"
+        # a defeated obligation is an exception, like a defeated
+        # presumption (aida-classify-exception-before-open; open until
+        # 2026-10-07, when obligations were checked first)
+        assert classify_nf(by_hand) == classify_nf(nf) == "exception"

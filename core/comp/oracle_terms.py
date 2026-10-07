@@ -515,26 +515,33 @@ def contains_uncatchable_clash(v, catchers_ids=frozenset(), catchers_dis=frozens
 
 
 def classify_nf(v) -> str:
-    """Classify a (root-normal) expression per the spec grammar:
+    """Classify a (root-normal) expression per the spec grammar, in this
+    order:
 
-    - "open":      contains an unfilled obligation (Goal/Laog).
     - "exception": contains an uncatchable clash - an affine Mu/Mutilde
       (binder does not occur in its command) that no enclosing mu/mu'
       binder can catch: the abort of the paper's Example "Contradictory
       Proof terms", which a defeated site holds as mu alpha.< t || e >.
-      The root being such a node is the special case.
+      The root being such a node is the special case.  An exception is
+      an exception whether the defeated site is an obligation or a
+      presumption, and whatever obligations remain elsewhere (author,
+      2026-10-07, tasks.org aida-classify-exception-before-open): an
+      obligation strictly defeated is no longer merely open.
+    - "open":      contains an unfilled obligation (Goal/Laog).
     - "value":     anything else.  Presumptions (Deleg/Geled) may occur in
       a value: an IN-by-default site stays indeterminate and the value is
       polynomial in it (debate-graph-spec.org, Semantics subsection).
     """
     _check_propositional(v, "Oracle NF classification")
+    if contains_uncatchable_clash(v):
+        logger.debug("classify: EXCEPTION (an uncatchable clash: the debate is "
+                     "acceptable only given an inconsistency)%s",
+                     "; obligations remain too%s" % _because_open(v)
+                     if _contains(v, (Goal, Laog)) else "")
+        return "exception"
     if _contains(v, (Goal, Laog)):
         logger.debug("classify: OPEN%s", _because_open(v))
         return "open"
-    if contains_uncatchable_clash(v):
-        logger.debug("classify: EXCEPTION (an uncatchable clash: the debate is "
-                     "acceptable only given an inconsistency)")
-        return "exception"
     logger.debug("classify: VALUE")
     return "value"
 

@@ -347,6 +347,19 @@ class TestNFClassifier:
         t = Mu(ID("a", "A"), "A", Goal("1", "A"), ID("a", "A"))
         assert classify_nf(t) == "open"
 
+    def test_a_clash_is_an_exception_even_with_an_obligation(self):
+        # aida-classify-exception-before-open: an obligation strictly
+        # defeated is an exception, not merely open; whether the defeated
+        # site is an obligation or a presumption changes nothing.  Lesson
+        # 9 of minicourse-evaluation.org without con's default:
+        # mu alt1:C.< nc:~C || ?u1:C * _F_ >, alt1 unused.
+        for site in (Goal("1", "C"), Deleg("1", "C")):
+            clash = Mu(ID("alt1", "C"), "C", DI("nc", "~C"),
+                       Cons(site, ID("_F_", "false")))
+            assert classify_nf(clash) == "exception"
+        # the paper's abort with an obligation as the thrown term
+        assert classify_nf(make_abort_term("A", Goal("2", "A"), ID("chi", "A"))) == "exception"
+
     def test_presumption_stays_value(self):
         # An IN-by-default delegation surviving in a normal form does not
         # make it an exception or open: the value is polynomial in it.
