@@ -42,6 +42,41 @@ The current codebase supports:
   first-order terms, through parsing, type synthesis, replay and rendering
   (see *First-order logic* below for what is and is not supported)
 
+## Status
+
+The debate compiler - unfolding a document into a debate term, compiling
+and labelling it, and evaluating it under a witness labelling - is the
+main line of development. It covers the quantifier-free fragment,
+derivation cycles included, and is still incomplete. Known gaps, each
+tracked in `tasks.org`:
+
+- **Only sites can be attacked or supported.** The specification
+  (`debate-graph-spec.org`, rational closure) lets attacks and supports
+  reach subarguments and intermediate conclusions too.
+- **No transposition closure.** Strict edges are not yet closed under
+  transposition, so there are no premise-attacks through strict edges.
+- **No first-order debates.** Normalisation and the debate operations
+  refuse first-order terms (see *First-order logic*).
+- **The shared route lags behind.** `pipeline shared` still builds the
+  earlier scaffold shape and has not been ported to the stacked shape and
+  the argument entrypoints, so the default route is `unfolded`.
+- **s(CASP) import is partial.** The importer translates the positive
+  parts of a justification tree; negation as failure and global
+  constraints are not translated yet.
+- **The old debate verbs are deprecated.** `attack`, `support`,
+  `undercut`/`undermine`, `rebut`, `undergird`, `reinforce` and `chain`
+  build a debate by grafting scaffolds into a term, and `reduce`,
+  `normalize` and `render-nf` normalise with the legacy term-level
+  reducer. Neither goes through the compiler pipeline, and they are
+  probably not safe to use until they are wired to it (see *Debate
+  commands*). Register arguments and use `graph`, `label`, `evaluate` and
+  `explain` instead.
+
+Smaller design questions are open as well. `minicourse-evaluation.org` and
+`minicourse-sharing.org` explain the pipeline lesson by lesson; they are
+drafted by an AI agent and pinned by tests, and still await the author's
+review.
+
 ## Requirements
 
 - Python 3.11+
@@ -189,23 +224,23 @@ export FSP_LOGLEVEL=DEBUG
 `DEBUG` each prints the artifact it produced.
 
 The phases are described below as they act on the *unfolded* debate term,
-which is what defines them. By default they do not build that term: the
-debate is kept as named sub-debates and each phase works on those (see the
-note after phase 5 and `debate ARG`). `pipeline unfolded` (or
-`FSP_PIPELINE=unfolded`) runs `graph`, `label` and `evaluate` on the unfolded
-term instead, and `pipeline shared` switches back. Both give the same graph,
-labels and normal form, up to the names of binders and the numbers of sites;
-the unfolded route is the reference the shared one is tested against, and
-its cost grows with the number of paths through the document graph.
+which is what defines them and what the default route builds. `pipeline
+shared` (or `FSP_PIPELINE=shared`) keeps the debate as named sub-debates
+instead, and each phase works on those (see the note after phase 5 and
+`debate ARG`); `pipeline unfolded` switches back. The shared route has not
+yet been ported to the stacked shape the unfolded route builds (see
+*Status*). The unfolded route's cost grows with the number of paths
+through the document graph.
 
 1. **issue** — read the argument's own registered proof term and its issue, a
    (proposition, side) pair.
 2. **unfold** — build the debate term for that issue out of the *document*
    graph: the issue's own site, wrapped in a support scaffold per deriving
    edge and an attack scaffold per edge deriving the contrary, with each
-   edge's body expanded the same way. A statement already being expanded on
-   the current path is left as a bare site, which is what makes this
-   terminate. Out: one proof term standing for the whole debate.
+   edge's body expanded the same way. A demand for a statement that a binder
+   in scope already stands for - an argument's own or a scaffold's - is
+   captured by that binder instead of being expanded again, which is what
+   makes this terminate. Out: one proof term standing for the whole debate.
 3. **typecheck** — replay that term through Fellowship as a throwaway theorem
    and compare what Fellowship rebuilds with what was sent, up to
    alpha-equivalence, site numbering and proposition spelling. This is the
@@ -265,9 +300,13 @@ its cost grows with the number of paths through the document graph.
    intersection of them all. Choosing σ once and resolving everything against
    it is the point: resolving each scaffold against whichever extension suits
    it would mix incompatible positions.
-8. **sigma, normalise, classify** — resolve every scaffold σ decides, keeping
-   one wing each, then reduce the result to a normal form and classify it as a
-   value, an exception or open.
+8. **sigma, normalise, classify** — write σ into the term (every occurrence of
+   a statement carries its label, printed `A{IN}` or `{OUT}A`), resolve every
+   scaffold σ decides by reading those labels, keeping one wing each, then
+   name every site by its label - a site is a delegation if IN, an obligation
+   otherwise - and reduce the result to a normal form, classified as an
+   exception if it holds an uncaught clash, open if an obligation remains,
+   and a value otherwise.
 
 Two things the log makes visible that are worth knowing. The strict phase runs
 **twice** per evaluation: once inside the issue-graph compilation to collect
@@ -440,17 +479,20 @@ everywhere, so it never holds a defeasible argument.
 ### Stored-argument commands
 
 - `reduce ARG`
-  - normalize and print the normal form
+  - normalize and print the normal form (**deprecated**: the legacy
+    term-level reducer, not label-guided evaluation; use `evaluate`)
 - `normalize ARG`
-  - normalize silently and cache the result
+  - normalize silently and cache the result (**deprecated**, as `reduce`)
 - `render ARG [STYLE]`
 - `render-nf ARG [STYLE]`
-  - render the original or normalized term
+  - render the original or normalized term (`render-nf` shows the legacy
+    reducer's normal form and is **deprecated** with it)
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
   - render an acceptance tree coloured by the grounded labels (see
     Debate-graph commands); drawn uncoloured if the graph is refused
 - `chain ARG1 ARG2`
-  - graft / chain one argument into another
+  - graft / chain one argument into another (**deprecated**, see *Debate
+    commands*)
 
 ### Debate-graph commands
 
@@ -528,8 +570,22 @@ one-line message.
     call-by-name and skeptical call-by-value; a defeated site holds the
     clash `mu alpha.< t || E >`, the paper's abort, and a normal form
     containing an uncatchable clash is an `EXCEPTION`
+  - the sites of a normal form are named by their labels: `!IN:A` is a
+    delegation (the opponent must refute A), `?OUT:A` and `?UNDEC:A` are
+    obligations (A was not established under the mode)
 
 ### Debate commands
+
+> **Deprecated.** These verbs build a debate term by grafting scaffolds
+> into the target's term, and their results are normalised by the legacy
+> reducer (`reduce`, `normalize`, `render-nf`). They predate the debate
+> compiler and are not wired to it: the term shapes they build are the
+> older ones, the compiler recognises them only as legacy shapes, and
+> neither the labelling nor label-guided evaluation is applied to what
+> they produce. They are probably not safe to use until they are wired to
+> the new pipeline. Register the arguments instead (they join the
+> document graph, where every argument for a statement's contrary
+> attacks it) and use `graph`, `label`, `evaluate` and `explain`.
 
 - `undermine NEW ATTACKER TARGET`
 - `undercut NEW ATTACKER TARGET`

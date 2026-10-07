@@ -218,7 +218,8 @@ Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
 approved critique plan of 2026-08-29; see also the Layer 4 section of
 [[file:call-by-onus.org]] and the fixture suite in [[file:tests/rationality/README.org]]).
 
-** DOING Implement the cycle-free, quantifier-free fragment (M0-M7)
+** DONE Implement the cycle-free, quantifier-free fragment (M0-M7)
+CLOSED: [2026-10-07 Wed]
 :PROPERTIES:
 :ID:             aida-propositional-fragment-implementation
 :AREA:           phd
@@ -245,6 +246,20 @@ CLI wiring (a448d87), contested fixture (af42ed1); suite green at 722
 passed / 1 deliberate xfail. Remaining before DONE: the child tasks below
 (verification residues, strong normalization); see the per-milestone logs
 in the plan file.
+
+*Closed 2026-10-07 (prepared for the author's review).* The plan's
+milestones M0-M7 were implemented by 2026-08-31 (d908d94..9e71782, logs
+in propositional-fragment-plan.org), and the verification residues and
+full normal forms closed after (children below). Many later commits on
+comp-eval-experiment were bug fixes to this first cut, and the compiler
+is not complete: the work continues under
+[[id:aida-debate-compiler-completion]], where the open children of this
+task now live. The VERIFY above no longer describes the code in two
+places: V6 (acyclicity refusal on naf_olon.fspy) is superseded -
+derivation cycles are admitted ([[id:aida-cyclic-fragment]]) - and V3's "OUT => exception" no longer holds as stated:
+a defeated delegation is an exception, an obligation left OUT outside
+a clash is open, and since labelled terms the verdict follows the
+witness labelling ([[id:aida-labelled-sites-delegation-rewrite]]).
 
 *** DONE Extend the oracle normalizer to full normal forms
 CLOSED: [2026-08-31 Mon]
@@ -1026,168 +1041,6 @@ Phase B's business (aida-graph-first, B4 "adequacy restated"):
    sigma says A is IN. The label is right about the statement; only a
    term unfolded from the graph (B3) can witness it.
 
-*** BACKLOG Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
-:PROPERTIES:
-:ID:             aida-contrariness-as-edges
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            3
-:EFFORT:         4:00
-:DEFERRALS:      0
-:OUTCOME:        (design issue, no change planned) The synthesised NOT-contrary guard is kept as the representation of contrariness. If provenance of clashes is ever wanted on the graph, it is added as a distinct edge KIND that contributes only the guard to acceptance conditions and is ignored by parents(); never as a derivation edge.
-:VERIFY:         Nothing to verify while no change is made. Should the edge kind be introduced: grounded labels on every fixture are bit-identical before and after (the encodings are equivalent by construction), and a test asserts that a strict proof of Q does NOT make Q[context] IN (the failure of the naive derivation-edge encoding).
-:END:
-
-Raised by the author 2026-09-16 (session audits A2, A3), settled as a
-design note the same day: cosmetic, no change.
-
-Evidence. The primitive contrariness term
-mu att:Q.< mu _.<!d1 || att> || mu'_.<!d1' || d2!> > compiles today to a
-graph with no edges and two default markers; compile_conditions
-synthesises the guard from the fact that both sides of Q are
-materialised, and the labelling (UNDEC/UNDEC) is correct. The naive
-alternative - record the clash as derivation edges Q[c] <- Q[t] and
-Q[t] <- Q[c] - is *wrong*, not merely different: it makes the proof of
-Q a source of the refutation of Q, the conditions become non-unipolar,
-and with a strict proof of Q the refutation of Q labels strictly IN.
-A clash says two witnesses conflict, not that one derives the other,
-and a hyperedge can only say "derives". The only correct edge form is
-a distinct kind that contributes the guard and nothing else and that
-parents() ignores - which reproduces today's conditions exactly.
-
-Why it is cosmetic even under graph-first: unfolding does not need the
-edge. When unfolding reaches a proposition materialised on both sides,
-contrariness follows from proposition identity, so the clash term is
-reconstructible from the two default markers. The edge would preserve
-only *provenance* - that d1 and d2 were once composed by a specific
-attack - which no label or evaluation consumes.
-
-Correction to an earlier note: _match_scaffold does match the primitive
-contrariness term when its stolen-value slot holds a presumption; it
-fails only for a declared name there, which is =aida-strict-refutation-
-edges=, not a matcher gap. The "fifth shape" was misdiagnosed.
-
-The Geled asymmetry (=aida-attack-geled-reroute=) is therefore NOT
-subsumed by this note, as earlier written; it stands on its own as a
-term-level defect of _CapturingSubst.
-
-*** BACKLOG Implement implication edges, transposal closure and the negation bridge
-:PROPERTIES:
-:ID:             aida-strict-layer
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            3
-:EFFORT:         8:00
-:DEFERRALS:      0
-:OUTCOME:        The compiler represents every implication proposition an argument applies - declared (strict) or delegated (defeasible) - as its own hyperedge with sources, separate from the premises it is applied to; the closure of debate-graph-spec.org Layer 3 step 2 transposes every such edge, strict or defeasible alike (design decision: all implications in this system contrapose), and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens through either kind of implication and Q-versus-not-Q conflicts are visible to the labeller.
-:VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); the modus-tollens fixture tests/rationality/modus_tollens.fspy - an argument for P from a presumed Q via the declared axiom Q->P, plus a denied refutation of P - compiles to an implication edge P[t] <- Q[t] with its transposal Q[c] <- P[c]; the same holds with the axiom replaced by a delegated `by default` implication (delegated implications contrapose too, by design), and `label` prints Q term OUT, Q context IN, P term OUT (today, with the rule fused into the defeasible edge, Q stays IN); the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
-:END:
-
-Recorded 2026-09-16. What exists: nothing. =core/comp/adf_label.py='s
-docstring says the transposal closure is "vacuously satisfied"; no code
-implements it, and =grep transpos core wrap pres= finds only that
-docstring.
-
-Why the closure has nothing to act on today - corrected 2026-09-16.
-The earlier note (and the docstring in core/comp/adf_label.py) called
-the closure "vacuous in the fragment" as though that were a property of
-the fragment. It is not; it is a symptom of the rule/premise fusion
-described below. The spec's =strict(e)= is a property of the
-*derivation*, and a strict rule applied to a defeasible premise is a
-strict rule: the premise is what is defeasible. The compiler merges the
-two into one edge and lets the premise decide its strictness, so no
-strict edge with sources is ever emitted and the closure acts on the
-empty set. The author's own construction shows what is lost: from a
-strict refutation t of P and a defeasible t' for P from presumed Q via
-the axiom Q->P, one *can* build an attack on t' at Q from t by
-contraposition - the term binds the premise, mu' q.<rule || alpha>. The
-compiled graph cannot represent it because the rule is not an edge.
-
-Design decision (author, 2026-09-16): *every* implication contraposes,
-delegated ones included. The earlier note here imported the ASPIC+
-position that defeasible rules must not be transposed; that position is
-rejected for this system. Read defeasible implication as evidential
-support: if A is strong evidence for B then not-B is strong evidence for
-not-A (if P(B|A) > P(B) then P(not-A|not-B) > P(not-A)). The stock
-counterexamples ("man -> not bearded", so "bearded -> not man"?) are
-base-rate neglect: learning that something is a man *raises* the
-credence that it is bearded, so that rule was never a legitimate
-defeasible implication and should not be modelled as one. Consequently
-the strict/defeasible distinction affects only *default status* in the
-labelling, never which transposals exist.
-
-Terminology, fixed: there is no separate category of "rule" in this
-calculus. An implication is a proposition; it is either declared
-(strict, an axiom) or delegated (defeasible, a presumption node). The
-contraposition fixture tests/contrapositive.fspy is exactly a
-*delegated* implication A->B being contraposed: it compiles to the edge
-(A-B)[context] <- (A->B)[term:presumption], deriving not-B -> not-A from
-the delegation. That is defeasible contraposition in action, and it is
-what this task must generalise.
-
-Shape of a transposed delegated edge (verified on a hand-built graph):
-using A->B (presumption) to derive B from presumed A, with a strict
-refutation of B, the transposal A[c] <- B[c], (A->B)[t] carries the
-refutation to A. Result: A[t] UNDEC, A[c] UNDEC, (A->B)[t] IN, B[c] IN.
-UNDEC rather than OUT is correct: A is itself presumed, so after the
-transposal A is *contested* - its own presumption on the term side
-against the delegated modus tollens on the context side - and grounded
-declines to decide (the mode policy of Layer 4 then resolves it).
-Compare the strict case: a declared A->B gives a strict transposal,
-which bypasses the guard and sinks A[t] to OUT outright. That is the
-whole effect of strictness under this design: it decides whether the
-contraposed attack is decisive or merely contesting. Contrast the fused
-edge of today, under which A simply survives as IN.
-
-Where the strict rules went. A strict axiom used inside an argument does
-not become a strict edge. =pArg=, which derives P from a presumed Q via
-the declared axiom =pRule : Q->P=, compiles to one edge
-=P[t] <- Q[t:presumption]=, marked *defeasible* because of its premise.
-The rule and its premise are fused, and the edge's strictness is decided
-by the premise. The rule's transposal =Q[c] <- P[c]= (modus tollens) is
-therefore never generated.
-
-Consequence, measured (hand-built graphs, same session):
-
-: as compiled today      P[t]=(Q[t] & ~P[c])   Q[t]=true   P[c]=(true|false)
-:                        labels: P OUT, Q IN, P[c] IN
-: with rule + transposal P[t]=(Q[t] | (Q[t] & ~P[c]))   Q[t]=(true & ~Q[c])
-:                        Q[c]=(P[c] | false)   P[c]=(true|false)
-:                        labels: P OUT, Q OUT, P[c] IN, Q[c] IN
-
-With P strictly refuted, Q should fall; today it stays IN. The correct
-graph is refused by the acyclicity check, and rightly so: an implication
-edge and its own transposal always undermine each other, which is a
-derivation cycle through contrariness. Every debate that uses an
-implication therefore leaves the acyclic fragment once this task lands,
-hence the block on =aida-cyclic-fragment= (author's decision: the
-acyclic fragment is only the initial one).
-
-Object negation. =canonical_prop= maps =~K=, =-K= and =K->false= to one
-node, distinct from K, and nothing links the two: Q and ~Q both presumed
-ground both IN (oracle agrees - the conditions are faithful, the defect
-is in what the conditions omit). The strict derivations relating a
-refutation of K to a proof of K->false exist in the calculus; the bridge
-edges are an instance of the same strict-layer work.
-
-Not covered here: the one node that =~K= and =K->false= share has two
-spellings in the /term/, and Fellowship tells them apart when an unfolded
-debate is replayed. See [[id:aida-negation-spelling-in-unfolding]].
-
-The married-bachelor fixture passes only because its strict bridge is
-built by hand with =kind="assumption"= sources, which no compiled term
-can produce. Related: =aida-strict-refutation-edges= (declared
-refutations are dropped; the same "strict references carry no side"
-problem at the leaf level).
-
 *** DONE Distinguish meta-negation from object negation in the course notation
 CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
@@ -1216,157 +1069,6 @@ condition strings in tests/minicourse/test_minicourse.py and the
 sixteen occurrences in minicourse.org lessons 4-5 and 8 (the author's
 own answer on lesson 4 left as written) use the new rendering;
 tests/minicourse passes.
-
-*** WAITING Expose the intermediate conclusions of curried implications
-:PROPERTIES:
-:ID:             aida-curried-intermediate-conclusions
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            4
-:EFFORT:         8:00
-:DEFERRALS:      0
-:OUTCOME:        Every logically progressing step of an elimination spine is attackable and supportable: theta-expansion names each partial application of a curried implication as a term of its own (so B->C in an application of A->(B->C) to A and B becomes a term-side target), and the compiler emits one hyperedge per such step, so that an accepted refutation of an intermediate conclusion defeats the final one.
-:VERIFY:         In tests/minicourse/lesson5_labels.fspy, `attack d6 test d5` with the challenge to B->C succeeds; with A and B presumed and a strict refutation of B->C, `label` prints B->C context IN and C term OUT (today: C term IN, see the notes); the compiled graph for an application of A->(B->C) has edges C[t] <- B->C[t], B[t] and B->C[t] <- A[t] (plus the implication's own edge once aida-strict-layer lands); every expanded term replays in Fellowship; a three-premise curried implication exposes both of its intermediate conclusions; existing grounded-label tests are unchanged or the change is justified.
-:END:
-
-Status (author, 2026-09-16): a bug, but deliberately *not* part of the
-follow-up implementation plan (fragment-followups-plan.org phase D2 is
-withdrawn); the author will think about it separately. WAITING on that
-design thought, not on any other task.
-
-Found 2026-09-16 by the author, from an attack in
-tests/minicourse/lesson5_labels.fspy that failed:
-=attack d6 test d5= with =test= a counterargument to B->C, against =cArg=,
-which derives C from A and B via the axiom abc : A->(B->C).
-
-*Why the attack fails.* =cArg= never proves B->C. The two =elim= steps
-build the elimination stack =?A * !B * r=, and B->C occurs only as the
-type of that stack's tail - a *context*:
-
-: A->B->C   context:Cons, term:DI
-: B->C      context:Cons                 <- no term-side node
-: C         context:ID,   term:Mu
-
-A counterargument attacks term-side nodes, so =ThetaExpander= finds no
-target and =Argument.attack= raises. Strictness and default status are
-not the cause: an attack on the conclusion C (neither default nor
-strict) succeeds. An argument *for* B->C does find the context node, but
-the result is the proof fed into the stack as an alternative route; the
-graph shows no conflict at all.
-
-*The spec disagrees with this.* debate-graph-spec.org says theta-normal
-form exposes one open obligation per logically progressing node. The
-step that eliminates A is such a node, and its conclusion is B->C; the
-implementation only exposes nodes that already exist in the term.
-
-*Half 1 - theta-expansion (verified 2026-09-16).* Naming the partial
-application turns the intermediate conclusion into a term:
-
-: before :  < abc  ||  ?A * !B * r >
-: after  :  < mu b:B->C.< abc || ?A * b >  ||  !B * r >
-
-The rewritten term replays in Fellowship (instructions: cut (B -> C),
-cut (A -> B -> C), axiom abc, elim, next, moxia b, elim, by default,
-next, moxia r, ...), and once it is in this form the challenge to B->C
-attacks it successfully.
-
-*Half 2 - the compiler (verified 2026-09-16).* Naming is not enough.
-=compile_debate= still emits a single edge for the whole argument,
-C[t] <- A[t], B[t], so the intermediate conclusion is not a node on the
-path to C. With A and B presumed and a strict refutation of B->C
-attacking the rewritten term:
-
-: edges  : B->C[c] <- (none, strict)      C[t] <- A[t], B[t]
-: labels : B->C[c] IN,   C[t] IN
-
-The attack lands and is accepted, yet C is untouched. The spec requires
-the presentation to be "closed under subarguments (every subargument of a
-registered argument contributes its own hyperedge)"; the compiler only
-emits edges for whole arguments (the host and each scion). It must emit
-C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
-
-*Why it is gnarly* (the author's word):
-
-- A curried implication with n premises has n-1 intermediate
-  conclusions. Expanding every one is linear and deterministic (one mu
-  per elimination step), but =ThetaExpander= is driven by the issue
-  proposition, so it has to find the right prefix of the spine - the one
-  whose type is the issue - and split the stack exactly there.
-- The same implication may be applied several times, and the same
-  intermediate type may occur on several spines; which occurrences are
-  targets is the same universal-substitution question as for leaf sites.
-- The split interacts with =aida-strict-layer=: once the implication is
-  an edge of its own, each elimination step becomes an implication edge
-  with one premise, and each of those has a transposal. Designing the
-  two together avoids doing the spine decomposition twice.
-- The first-order analogue is the instantiation spine: a partially
-  instantiated =forall x, A x -> B x= has intermediate conclusions too
-  (=ConsFO= in the stack), so the same splitting is needed once
-  =aida-first-order-reduction= opens that fragment.
-- The compiler must recognise the named partial application as a
-  subargument (a mu-bound term with a proposition, not a scaffold),
-  which it currently has no shape for.
-
-*** NEXT Refuse opposing presumptions: track which side holds the onus
-:PROPERTIES:
-:ID:             aida-onus-delegation-polarity
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            2
-:EFFORT:         5:00
-:DEFERRALS:      0
-:OUTCOME:        A presumption is recognised as a DELEGATION of the onus of refutation, and a presentation in which both sides of one proposition are presumed is refused where it is built, not merely warned about at labelling time: the prover or the wrapper tracks which side currently holds the burden for each proposition, and `by default.` on a proposition whose contrary is already presumed is rejected with a message naming the two arguments.
-:VERIFY:         A fixture registering a presumption for Q and then a presumption for the contrary of Q is refused with a message naming both arguments; tests/rationality/contested.fspy, tests/rationality/document_attack.fspy, tests/rationality/two_witnesses.fspy and tests/demo/03_contested.fspy are re-expressed so that exactly one side delegates, and their documented verdicts are restated from an actual run; core/comp/adf_label.opposing_presumptions returns empty on every fixture in the suite and its warning never fires; the six-fixture replay through Fellowship still passes.
-:END:
-
-Raised and decided by the author 2026-09-25, while settling the
-asymmetric contrariness guard (see below).
-
-*The rule.* "Presumption" is the implementation's word; *delegation* is
-the author's, and it is the accurate one. Writing =!1:P= does not just
-assert P by default - it hands the burden of refuting P to the opposing
-side. The skeptic now owes a context witness. So the onus always sits on
-exactly one side of a proposition, and a presentation in which BOTH sides
-delegate is ill-formed: each has passed the burden to the other and
-neither can discharge it. Obligations are the dual and pose no problem -
-nobody delegated, both sides simply stay OUT until an argument arrives -
-and the normal pairing is a presumption on one side against an obligation
-on the other, which is the same delegation seen from both ends.
-
-*Why it is a separate task.* Enforcing it needs the onus to be *tracked*:
-at registration time the wrapper (or the prover) must know, per
-proposition, which side currently holds the burden, and reject a
-`by default.` that would take it from a side that has already delegated.
-That is a front-end change, independent of the acceptance-condition
-compiler, and the author asked to keep the two apart.
-
-*What was done instead, 2026-09-25* (task complete except for the
-refusal): =core/comp/adf_label.opposing_presumptions= reports the
-propositions presumed on both sides; =compile_conditions= raises the
-=OpposingPresumptions= warning; the CLI logs a line for any graph it
-compiles. Nothing is refused, and such graphs keep BOTH guards, i.e. the
-old mutual-rebut behaviour, so no verdict changed for them.
-
-*Fixtures that are currently ill-formed under the rule.* Scanned
-2026-09-25 over every .fspy in tests/: exactly four documents presume
-both sides - =tests/rationality/contested.fspy= (Q),
-=tests/rationality/document_attack.fspy= (Q),
-=tests/rationality/two_witnesses.fspy= (S) and =tests/olon.fspy= (B) -
-plus the hand-built =graph_contested_presumptions= in
-tests/test_adf_label.py. The demo fixtures are all clean, 03_contested
-included: its Nixon diamond argues both sides. Re-expressing the four is
-part of this task, and it is not cosmetic: the minimal contested debate
-of minicourse lesson 5 - one proposition presumed on both sides, no edges
-at all - is exactly the illegal shape, so lesson 5 needs a new minimal
-example whose challenge is *argued*.
 
 *** DONE Statements, witnesses and citations: one registry, Fellowship as the kernel
 CLOSED: [2026-09-28 Mon]
@@ -1591,74 +1293,6 @@ Evidence: 1084 passed, 2 skipped, 3 xfailed, 2 xpassed (16 new tests); a full
 run leaves no artifacts in the working directory. Cost: an evaluation is
 50.9 ms at INFO, unchanged, and 85.7 ms at DEBUG, the difference being the
 term rendering.
-
-*** NEXT Review the two semantics decisions of 2026-09-25
-:PROPERTIES:
-:ID:             aida-review-guard-and-strict-decisions
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         yes
-:EISENHOWER:     Q1
-:ICK:            1
-:EFFORT:         2:00
-:DEFERRALS:      0
-:OUTCOME:        The author has reviewed both semantics changes of 2026-09-25 - the asymmetric contrariness guard (=aida-asymmetric-contrariness-guard=, commit 9820d4e) and the removal of the two strict-phase rules (=aida-strict-phase-experimental=, commit 1a81650) - and recorded a verdict on each of the review points below; anything rejected has its own follow-up task and the code follows the verdict.
-:VERIFY:         Each point below carries an explicit accept/reject with a one-line reason, written into this entry; for every reject there is a new task with its own OUTCOME; the suite is green afterwards and the fixture verdicts in call-by-onus.org and tests/rationality/README.org match an actual run.
-:END:
-
-Both changes were implemented in one session, on the author's
-instruction, and both move verdicts on fixtures. They were agreed in
-conversation but not reviewed against the code. Points where an
-independent look is worth most:
-
-On the guard (=core/comp/adf_label.compile_conditions=):
-
-1. Against a bare default, a DEFEASIBLE argument now defeats exactly as a
-   STRICT one does. Strictness still separates the two when both sides
-   are derived. Is that narrowing of what strictness buys acceptable?
-2. The guard is dropped per DISJUNCT: a side that is presumed and argued
-   keeps the guard on its presumption. Without that, a dead argument
-   decides a contest between two defaults. Check the split is drawn in
-   the right place.
-3. Opposing presumptions keep the OLD symmetric behaviour and only warn,
-   pending =aida-onus-delegation-polarity=. Confirm that interim is right
-   rather than, say, refusing to label at all.
-4. Verdicts that moved: multiple_undercuts grounds two-valued; the
-   even-loop document drops its third stable labelling; cyclic_undercut
-   resolves to one labelling and its credulous value becomes argA;
-   the reductio shape Q[t] <- Q[c] with a bare contrary becomes unipolar
-   and grounds UNDEC/UNDEC instead of OUT/IN.
-
-On the strict phase (=core/dc/strict.py=):
-
-5. A captured presumption is now a discharge, so self-attack is a strict
-   proof of P. Check the even loop stays symmetric for the RIGHT reason -
-   neither side's presumption is discharged by the other - and not by
-   accident of shape.
-6. A site-free clash is strict and therefore wins a support scaffold by
-   strict redundancy, silencing a live supporter. The exception then
-   bubbles up. Confirm that is the wanted reading of "an uncatchable
-   clash should always bubble up", rather than preferring a clash-free
-   strict wing when one exists.
-7. The edge collector was widened from "a decision strictly below" to "at
-   or below", emitting at the OUTERMOST qualifying subterm. Check it
-   neither double-counts nor swallows an inner derivation that deserves
-   its own edge.
-8. =strict_in_debate= still accepts =catchers_ids= / =catchers_dis= and
-   ignores them. Decide whether to drop the parameters or keep them for
-   the abort-propagation work.
-
-Reading order: call-by-onus.org "The strict phase: what 'strict in the
-debate' means" for the definition and the fixture table; the two DONE
-entries below for what changed and what was rejected on the way;
-=git show 9820d4e= and =git show 1a81650= for the diffs.
-
-Since =aida-pipeline-logging= (2026-09-26) the machinery narrates itself:
-=explain ARG= replays one evaluation and prints the unfolding, the strict
-decisions with their reasons, the witness choice and the wing kept at each
-scaffold. That is the fastest way to check points 5 to 7 on a fixture.
 
 *** DONE Make the contrariness guard asymmetric: a derivation is contested only by a derivation
 CLOSED: [2026-09-25 Thu]
@@ -1992,48 +1626,6 @@ manuscript); the COMMA paper's own context-side support is not the
 mirror of its term-side support, the implementation mirrors (AI note
 for the author, not applied to the manuscript).
 
-*** BACKLOG Design: propagation of an abort through axioms and moxias
-:PROPERTIES:
-:ID:             aida-abort-propagation
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            4
-:EFFORT:         8:00
-:DEFERRALS:      0
-:OUTCOME:        It is decided, with a soundness argument recorded, whether and how an affine throw sitting inside an elimination spine (under a Cons whose head is an axiom or moxia that cannot be further decomposed) propagates to the root, so that a defeated debate's normal form is itself an exception; or, if propagation is rejected, the adequacy statement is fixed at OUT-implies-not-a-value and classify_nf is given a spine-aware notion of "aborted".
-:VERIFY:         A written note in call-by-onus.org states the additional reduction rules (or the decision not to add them) and their soundness argument; if rules are added, the in-attacker case of tests/test_evaluate.py asserts class exception and subject reduction is checked by replaying the normal form through Fellowship; if not, classify_nf's spine-aware definition is tested on the defeated fixture.
-:END:
-
-Note 2026-09-17 (aida-paper-attack-shape): a defeated site now holds
-the real clash mu alpha.< t || E >, and classify_nf finds an
-uncatchable clash wherever it sits, so a lost debate reports as an
-exception without propagation. What this task still asks is whether
-*reduction* should carry the abort to the root; the verdict no longer
-depends on it.
-
-Design issue, not a bug (author, 2026-09-16). Once the abort term sits
-at a defeated site (=aida-fragment-verification-residues=), a defeated
-debate for P still normalises to
-
-: mu pArg:P.< pRule:Q->P || mu b1:Q.< x:Q || nq:Q > * pArg:P >
-
-- the throw is one Cons deep under the axiom =pRule=, the root binder is
-non-affine, and =classify_nf= (root affine mu = exception) does not see
-it; the term even classifies as a value. For "OUT implies exception" the
-throw would have to bubble up through =pRule * ...=, i.e. through an
-axiom / moxia head that the standard rules cannot decompose. The four
-standard reductions do not do this; it needs additional rules, and the
-author has not yet examined whether such rules can be sound. Any such
-rules would extend the four standard reductions (Layer 0), not the
-deprecated call-by-onus system; the
-question is *which* rules exist, not congruence order, which is
-irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
-a compiler bug. Left as is for now.
-
 *** DONE Close the fragment verification residues (V1, V2, abort synthesis)
 CLOSED: [2026-09-16 Wed]
 :PROPERTIES:
@@ -2337,6 +1929,522 @@ mints its temporaries from a class-level counter instead of
 =TestHostEdgeNaming= (constituent names, no synthetic name, stable
 across two compilations, bare-body fallback) plus the two adjusted pins
 in that file.
+
+** DOING Complete the debate compiler
+:PROPERTIES:
+:ID:             aida-debate-compiler-completion
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         40:00
+:DEFERRALS:      0
+:OUTCOME:        The debate compiler implements its specification (debate-graph-spec.org) for the propositional fragment - rational closure (attack and support points beyond sites), transposition closure of strict edges, the open design decisions settled - and the shared route builds the same debates as the unfolded one; first-order debates are the next fragment.
+:VERIFY:         Every child below is DONE or DROPPED with its evidence; the spec's rational closure and transposition closure each have a test; the shared route agrees with the unfolded route on every fixture of tests/test_unfold_entrypoints.py; the author has reviewed minicourse-evaluation.org and minicourse-sharing.org; the suite passes.
+:END:
+
+Opened 2026-10-07 when [[id:aida-propositional-fragment-implementation]]
+was closed: the plan's first cut is in, the compiler is not complete.
+Its open children moved here. Related work tracked elsewhere:
+- the unfolder's design questions from lesson 8a and their follow-ups:
+  [[id:aida-unfold-design-review]] (among them the non-site attack points,
+  [[id:aida-discuss-non-site-attack-points]], and the shared route,
+  [[id:aida-shared-route-stack-shape]]);
+- sharing sub-debates: [[id:aida-shared-subarguments]];
+- first-order debates: [[id:aida-first-order-reduction]];
+- the s(CASP) correspondence and importer:
+  [[id:aida-scasp-stable-correspondence]],
+  [[id:aida-scasp-import-negative-justifications]];
+- the theory tasks T1-T6 (top-level, below).
+
+*** BACKLOG Implement rational closure: attack and support points beyond sites
+:PROPERTIES:
+:ID:             aida-rational-closure
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Attacks and supports reach subarguments and intermediate conclusions, not only sites, as the specification's rational closure requires (debate-graph-spec.org, "Rational closure"), in the debate graph and in the unfolded term.
+:VERIFY:         A fixture in which an argument attacks a lambda subargument or an intermediate conclusion of another argument evaluates as the spec prescribes, on the unfolded route; the decision of [[id:aida-discuss-non-site-attack-points]] is implemented; the suite passes.
+:END:
+
+Raised by the author 2026-10-07: part of the original specification
+("Rational closure (attacks/supports propagate to and from
+subarguments)"), not implemented - today only sites are attack and
+support points. Blocked on the discussion
+[[id:aida-discuss-non-site-attack-points]]; related to
+[[id:aida-curried-intermediate-conclusions]].
+
+*** NEXT Review minicourse-evaluation.org
+:PROPERTIES:
+:ID:             aida-review-minicourse-evaluation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The author has read minicourse-evaluation.org (lessons 8a-13, the AI-drafted sequel on the evaluation pipeline) and recorded every issue it raises as a task or a decision.
+:VERIFY:         Each lesson is marked reviewed in the file or here, with the tasks it raised linked.
+:END:
+
+The author's review; the agent only prepares. Lesson 8a alone raised
+[[id:aida-unfold-design-review]] and its children, which changed the
+unfolder, the strict phase and evaluation substantially.
+
+*** NEXT Review minicourse-sharing.org
+:PROPERTIES:
+:ID:             aida-review-minicourse-sharing
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        The author has read minicourse-sharing.org (the AI-drafted course on shared sub-debates) and recorded every issue it raises as a task or a decision.
+:VERIFY:         Each lesson is marked reviewed in the file or here, with the tasks it raised linked.
+:END:
+
+The author's review. The shared route lags behind the stacked shape
+([[id:aida-shared-route-stack-shape]]), so parts of the course describe
+a route that is due for rework; best reviewed together with that task.
+
+*** BACKLOG Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
+:PROPERTIES:
+:ID:             aida-contrariness-as-edges
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        (design issue, no change planned) The synthesised NOT-contrary guard is kept as the representation of contrariness. If provenance of clashes is ever wanted on the graph, it is added as a distinct edge KIND that contributes only the guard to acceptance conditions and is ignored by parents(); never as a derivation edge.
+:VERIFY:         Nothing to verify while no change is made. Should the edge kind be introduced: grounded labels on every fixture are bit-identical before and after (the encodings are equivalent by construction), and a test asserts that a strict proof of Q does NOT make Q[context] IN (the failure of the naive derivation-edge encoding).
+:END:
+
+Raised by the author 2026-09-16 (session audits A2, A3), settled as a
+design note the same day: cosmetic, no change.
+
+Evidence. The primitive contrariness term
+mu att:Q.< mu _.<!d1 || att> || mu'_.<!d1' || d2!> > compiles today to a
+graph with no edges and two default markers; compile_conditions
+synthesises the guard from the fact that both sides of Q are
+materialised, and the labelling (UNDEC/UNDEC) is correct. The naive
+alternative - record the clash as derivation edges Q[c] <- Q[t] and
+Q[t] <- Q[c] - is *wrong*, not merely different: it makes the proof of
+Q a source of the refutation of Q, the conditions become non-unipolar,
+and with a strict proof of Q the refutation of Q labels strictly IN.
+A clash says two witnesses conflict, not that one derives the other,
+and a hyperedge can only say "derives". The only correct edge form is
+a distinct kind that contributes the guard and nothing else and that
+parents() ignores - which reproduces today's conditions exactly.
+
+Why it is cosmetic even under graph-first: unfolding does not need the
+edge. When unfolding reaches a proposition materialised on both sides,
+contrariness follows from proposition identity, so the clash term is
+reconstructible from the two default markers. The edge would preserve
+only *provenance* - that d1 and d2 were once composed by a specific
+attack - which no label or evaluation consumes.
+
+Correction to an earlier note: _match_scaffold does match the primitive
+contrariness term when its stolen-value slot holds a presumption; it
+fails only for a declared name there, which is =aida-strict-refutation-
+edges=, not a matcher gap. The "fifth shape" was misdiagnosed.
+
+The Geled asymmetry (=aida-attack-geled-reroute=) is therefore NOT
+subsumed by this note, as earlier written; it stands on its own as a
+term-level defect of _CapturingSubst.
+
+*** BACKLOG Implement implication edges, transposal closure and the negation bridge
+:PROPERTIES:
+:ID:             aida-strict-layer
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The compiler represents every implication proposition an argument applies - declared (strict) or delegated (defeasible) - as its own hyperedge with sources, separate from the premises it is applied to; the closure of debate-graph-spec.org Layer 3 step 2 transposes every such edge, strict or defeasible alike (design decision: all implications in this system contrapose), and adds the object-negation bridge (neg K)[t] <-> K[c] and (neg K)[c] <-> K[t] whenever both nodes are present; so modus tollens through either kind of implication and Q-versus-not-Q conflicts are visible to the labeller.
+:VERIFY:         tests/rationality/test_postulates.py::TestObjectNegationConsistency flips from xfail to pass (Q and ~Q both presumed no longer ground both IN); the modus-tollens fixture tests/rationality/modus_tollens.fspy - an argument for P from a presumed Q via the declared axiom Q->P, plus a denied refutation of P - compiles to an implication edge P[t] <- Q[t] with its transposal Q[c] <- P[c]; the same holds with the axiom replaced by a delegated `by default` implication (delegated implications contrapose too, by design), and `label` prints Q term OUT, Q context IN, P term OUT (today, with the rule fused into the defeasible edge, Q stays IN); the married-bachelor graph-level fixture is reproduced from compiled terms rather than hand-built strict edges; every existing grounded-label test is unchanged or its change is justified in the commit.
+:END:
+
+Recorded 2026-09-16. What exists: nothing. =core/comp/adf_label.py='s
+docstring says the transposal closure is "vacuously satisfied"; no code
+implements it, and =grep transpos core wrap pres= finds only that
+docstring.
+
+Why the closure has nothing to act on today - corrected 2026-09-16.
+The earlier note (and the docstring in core/comp/adf_label.py) called
+the closure "vacuous in the fragment" as though that were a property of
+the fragment. It is not; it is a symptom of the rule/premise fusion
+described below. The spec's =strict(e)= is a property of the
+*derivation*, and a strict rule applied to a defeasible premise is a
+strict rule: the premise is what is defeasible. The compiler merges the
+two into one edge and lets the premise decide its strictness, so no
+strict edge with sources is ever emitted and the closure acts on the
+empty set. The author's own construction shows what is lost: from a
+strict refutation t of P and a defeasible t' for P from presumed Q via
+the axiom Q->P, one *can* build an attack on t' at Q from t by
+contraposition - the term binds the premise, mu' q.<rule || alpha>. The
+compiled graph cannot represent it because the rule is not an edge.
+
+Design decision (author, 2026-09-16): *every* implication contraposes,
+delegated ones included. The earlier note here imported the ASPIC+
+position that defeasible rules must not be transposed; that position is
+rejected for this system. Read defeasible implication as evidential
+support: if A is strong evidence for B then not-B is strong evidence for
+not-A (if P(B|A) > P(B) then P(not-A|not-B) > P(not-A)). The stock
+counterexamples ("man -> not bearded", so "bearded -> not man"?) are
+base-rate neglect: learning that something is a man *raises* the
+credence that it is bearded, so that rule was never a legitimate
+defeasible implication and should not be modelled as one. Consequently
+the strict/defeasible distinction affects only *default status* in the
+labelling, never which transposals exist.
+
+Terminology, fixed: there is no separate category of "rule" in this
+calculus. An implication is a proposition; it is either declared
+(strict, an axiom) or delegated (defeasible, a presumption node). The
+contraposition fixture tests/contrapositive.fspy is exactly a
+*delegated* implication A->B being contraposed: it compiles to the edge
+(A-B)[context] <- (A->B)[term:presumption], deriving not-B -> not-A from
+the delegation. That is defeasible contraposition in action, and it is
+what this task must generalise.
+
+Shape of a transposed delegated edge (verified on a hand-built graph):
+using A->B (presumption) to derive B from presumed A, with a strict
+refutation of B, the transposal A[c] <- B[c], (A->B)[t] carries the
+refutation to A. Result: A[t] UNDEC, A[c] UNDEC, (A->B)[t] IN, B[c] IN.
+UNDEC rather than OUT is correct: A is itself presumed, so after the
+transposal A is *contested* - its own presumption on the term side
+against the delegated modus tollens on the context side - and grounded
+declines to decide (the mode policy of Layer 4 then resolves it).
+Compare the strict case: a declared A->B gives a strict transposal,
+which bypasses the guard and sinks A[t] to OUT outright. That is the
+whole effect of strictness under this design: it decides whether the
+contraposed attack is decisive or merely contesting. Contrast the fused
+edge of today, under which A simply survives as IN.
+
+Where the strict rules went. A strict axiom used inside an argument does
+not become a strict edge. =pArg=, which derives P from a presumed Q via
+the declared axiom =pRule : Q->P=, compiles to one edge
+=P[t] <- Q[t:presumption]=, marked *defeasible* because of its premise.
+The rule and its premise are fused, and the edge's strictness is decided
+by the premise. The rule's transposal =Q[c] <- P[c]= (modus tollens) is
+therefore never generated.
+
+Consequence, measured (hand-built graphs, same session):
+
+: as compiled today      P[t]=(Q[t] & ~P[c])   Q[t]=true   P[c]=(true|false)
+:                        labels: P OUT, Q IN, P[c] IN
+: with rule + transposal P[t]=(Q[t] | (Q[t] & ~P[c]))   Q[t]=(true & ~Q[c])
+:                        Q[c]=(P[c] | false)   P[c]=(true|false)
+:                        labels: P OUT, Q OUT, P[c] IN, Q[c] IN
+
+With P strictly refuted, Q should fall; today it stays IN. The correct
+graph is refused by the acyclicity check, and rightly so: an implication
+edge and its own transposal always undermine each other, which is a
+derivation cycle through contrariness. Every debate that uses an
+implication therefore leaves the acyclic fragment once this task lands,
+hence the block on =aida-cyclic-fragment= (author's decision: the
+acyclic fragment is only the initial one).
+
+Object negation. =canonical_prop= maps =~K=, =-K= and =K->false= to one
+node, distinct from K, and nothing links the two: Q and ~Q both presumed
+ground both IN (oracle agrees - the conditions are faithful, the defect
+is in what the conditions omit). The strict derivations relating a
+refutation of K to a proof of K->false exist in the calculus; the bridge
+edges are an instance of the same strict-layer work.
+
+Not covered here: the one node that =~K= and =K->false= share has two
+spellings in the /term/, and Fellowship tells them apart when an unfolded
+debate is replayed. See [[id:aida-negation-spelling-in-unfolding]].
+
+The married-bachelor fixture passes only because its strict bridge is
+built by hand with =kind="assumption"= sources, which no compiled term
+can produce. Related: =aida-strict-refutation-edges= (declared
+refutations are dropped; the same "strict references carry no side"
+problem at the leaf level).
+
+*** WAITING Expose the intermediate conclusions of curried implications
+:PROPERTIES:
+:ID:             aida-curried-intermediate-conclusions
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        Every logically progressing step of an elimination spine is attackable and supportable: theta-expansion names each partial application of a curried implication as a term of its own (so B->C in an application of A->(B->C) to A and B becomes a term-side target), and the compiler emits one hyperedge per such step, so that an accepted refutation of an intermediate conclusion defeats the final one.
+:VERIFY:         In tests/minicourse/lesson5_labels.fspy, `attack d6 test d5` with the challenge to B->C succeeds; with A and B presumed and a strict refutation of B->C, `label` prints B->C context IN and C term OUT (today: C term IN, see the notes); the compiled graph for an application of A->(B->C) has edges C[t] <- B->C[t], B[t] and B->C[t] <- A[t] (plus the implication's own edge once aida-strict-layer lands); every expanded term replays in Fellowship; a three-premise curried implication exposes both of its intermediate conclusions; existing grounded-label tests are unchanged or the change is justified.
+:END:
+
+Status (author, 2026-09-16): a bug, but deliberately *not* part of the
+follow-up implementation plan (fragment-followups-plan.org phase D2 is
+withdrawn); the author will think about it separately. WAITING on that
+design thought, not on any other task.
+
+Found 2026-09-16 by the author, from an attack in
+tests/minicourse/lesson5_labels.fspy that failed:
+=attack d6 test d5= with =test= a counterargument to B->C, against =cArg=,
+which derives C from A and B via the axiom abc : A->(B->C).
+
+*Why the attack fails.* =cArg= never proves B->C. The two =elim= steps
+build the elimination stack =?A * !B * r=, and B->C occurs only as the
+type of that stack's tail - a *context*:
+
+: A->B->C   context:Cons, term:DI
+: B->C      context:Cons                 <- no term-side node
+: C         context:ID,   term:Mu
+
+A counterargument attacks term-side nodes, so =ThetaExpander= finds no
+target and =Argument.attack= raises. Strictness and default status are
+not the cause: an attack on the conclusion C (neither default nor
+strict) succeeds. An argument *for* B->C does find the context node, but
+the result is the proof fed into the stack as an alternative route; the
+graph shows no conflict at all.
+
+*The spec disagrees with this.* debate-graph-spec.org says theta-normal
+form exposes one open obligation per logically progressing node. The
+step that eliminates A is such a node, and its conclusion is B->C; the
+implementation only exposes nodes that already exist in the term.
+
+*Half 1 - theta-expansion (verified 2026-09-16).* Naming the partial
+application turns the intermediate conclusion into a term:
+
+: before :  < abc  ||  ?A * !B * r >
+: after  :  < mu b:B->C.< abc || ?A * b >  ||  !B * r >
+
+The rewritten term replays in Fellowship (instructions: cut (B -> C),
+cut (A -> B -> C), axiom abc, elim, next, moxia b, elim, by default,
+next, moxia r, ...), and once it is in this form the challenge to B->C
+attacks it successfully.
+
+*Half 2 - the compiler (verified 2026-09-16).* Naming is not enough.
+=compile_debate= still emits a single edge for the whole argument,
+C[t] <- A[t], B[t], so the intermediate conclusion is not a node on the
+path to C. With A and B presumed and a strict refutation of B->C
+attacking the rewritten term:
+
+: edges  : B->C[c] <- (none, strict)      C[t] <- A[t], B[t]
+: labels : B->C[c] IN,   C[t] IN
+
+The attack lands and is accepted, yet C is untouched. The spec requires
+the presentation to be "closed under subarguments (every subargument of a
+registered argument contributes its own hyperedge)"; the compiler only
+emits edges for whole arguments (the host and each scion). It must emit
+C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
+
+*Why it is gnarly* (the author's word):
+
+- A curried implication with n premises has n-1 intermediate
+  conclusions. Expanding every one is linear and deterministic (one mu
+  per elimination step), but =ThetaExpander= is driven by the issue
+  proposition, so it has to find the right prefix of the spine - the one
+  whose type is the issue - and split the stack exactly there.
+- The same implication may be applied several times, and the same
+  intermediate type may occur on several spines; which occurrences are
+  targets is the same universal-substitution question as for leaf sites.
+- The split interacts with =aida-strict-layer=: once the implication is
+  an edge of its own, each elimination step becomes an implication edge
+  with one premise, and each of those has a transposal. Designing the
+  two together avoids doing the spine decomposition twice.
+- The first-order analogue is the instantiation spine: a partially
+  instantiated =forall x, A x -> B x= has intermediate conclusions too
+  (=ConsFO= in the stack), so the same splitting is needed once
+  =aida-first-order-reduction= opens that fragment.
+- The compiler must recognise the named partial application as a
+  subargument (a mu-bound term with a proposition, not a scaffold),
+  which it currently has no shape for.
+
+*** NEXT Refuse opposing presumptions: track which side holds the onus
+:PROPERTIES:
+:ID:             aida-onus-delegation-polarity
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         5:00
+:DEFERRALS:      0
+:OUTCOME:        A presumption is recognised as a DELEGATION of the onus of refutation, and a presentation in which both sides of one proposition are presumed is refused where it is built, not merely warned about at labelling time: the prover or the wrapper tracks which side currently holds the burden for each proposition, and `by default.` on a proposition whose contrary is already presumed is rejected with a message naming the two arguments.
+:VERIFY:         A fixture registering a presumption for Q and then a presumption for the contrary of Q is refused with a message naming both arguments; tests/rationality/contested.fspy, tests/rationality/document_attack.fspy, tests/rationality/two_witnesses.fspy and tests/demo/03_contested.fspy are re-expressed so that exactly one side delegates, and their documented verdicts are restated from an actual run; core/comp/adf_label.opposing_presumptions returns empty on every fixture in the suite and its warning never fires; the six-fixture replay through Fellowship still passes.
+:END:
+
+Raised and decided by the author 2026-09-25, while settling the
+asymmetric contrariness guard (see below).
+
+*The rule.* "Presumption" is the implementation's word; *delegation* is
+the author's, and it is the accurate one. Writing =!1:P= does not just
+assert P by default - it hands the burden of refuting P to the opposing
+side. The skeptic now owes a context witness. So the onus always sits on
+exactly one side of a proposition, and a presentation in which BOTH sides
+delegate is ill-formed: each has passed the burden to the other and
+neither can discharge it. Obligations are the dual and pose no problem -
+nobody delegated, both sides simply stay OUT until an argument arrives -
+and the normal pairing is a presumption on one side against an obligation
+on the other, which is the same delegation seen from both ends.
+
+*Why it is a separate task.* Enforcing it needs the onus to be *tracked*:
+at registration time the wrapper (or the prover) must know, per
+proposition, which side currently holds the burden, and reject a
+`by default.` that would take it from a side that has already delegated.
+That is a front-end change, independent of the acceptance-condition
+compiler, and the author asked to keep the two apart.
+
+*What was done instead, 2026-09-25* (task complete except for the
+refusal): =core/comp/adf_label.opposing_presumptions= reports the
+propositions presumed on both sides; =compile_conditions= raises the
+=OpposingPresumptions= warning; the CLI logs a line for any graph it
+compiles. Nothing is refused, and such graphs keep BOTH guards, i.e. the
+old mutual-rebut behaviour, so no verdict changed for them.
+
+*Fixtures that are currently ill-formed under the rule.* Scanned
+2026-09-25 over every .fspy in tests/: exactly four documents presume
+both sides - =tests/rationality/contested.fspy= (Q),
+=tests/rationality/document_attack.fspy= (Q),
+=tests/rationality/two_witnesses.fspy= (S) and =tests/olon.fspy= (B) -
+plus the hand-built =graph_contested_presumptions= in
+tests/test_adf_label.py. The demo fixtures are all clean, 03_contested
+included: its Nixon diamond argues both sides. Re-expressing the four is
+part of this task, and it is not cosmetic: the minimal contested debate
+of minicourse lesson 5 - one proposition presumed on both sides, no edges
+at all - is exactly the illegal shape, so lesson 5 needs a new minimal
+example whose challenge is *argued*.
+
+*** NEXT Review the two semantics decisions of 2026-09-25
+:PROPERTIES:
+:ID:             aida-review-guard-and-strict-decisions
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author has reviewed both semantics changes of 2026-09-25 - the asymmetric contrariness guard (=aida-asymmetric-contrariness-guard=, commit 9820d4e) and the removal of the two strict-phase rules (=aida-strict-phase-experimental=, commit 1a81650) - and recorded a verdict on each of the review points below; anything rejected has its own follow-up task and the code follows the verdict.
+:VERIFY:         Each point below carries an explicit accept/reject with a one-line reason, written into this entry; for every reject there is a new task with its own OUTCOME; the suite is green afterwards and the fixture verdicts in call-by-onus.org and tests/rationality/README.org match an actual run.
+:END:
+
+Both changes were implemented in one session, on the author's
+instruction, and both move verdicts on fixtures. They were agreed in
+conversation but not reviewed against the code. Points where an
+independent look is worth most:
+
+On the guard (=core/comp/adf_label.compile_conditions=):
+
+1. Against a bare default, a DEFEASIBLE argument now defeats exactly as a
+   STRICT one does. Strictness still separates the two when both sides
+   are derived. Is that narrowing of what strictness buys acceptable?
+2. The guard is dropped per DISJUNCT: a side that is presumed and argued
+   keeps the guard on its presumption. Without that, a dead argument
+   decides a contest between two defaults. Check the split is drawn in
+   the right place.
+3. Opposing presumptions keep the OLD symmetric behaviour and only warn,
+   pending =aida-onus-delegation-polarity=. Confirm that interim is right
+   rather than, say, refusing to label at all.
+4. Verdicts that moved: multiple_undercuts grounds two-valued; the
+   even-loop document drops its third stable labelling; cyclic_undercut
+   resolves to one labelling and its credulous value becomes argA;
+   the reductio shape Q[t] <- Q[c] with a bare contrary becomes unipolar
+   and grounds UNDEC/UNDEC instead of OUT/IN.
+
+On the strict phase (=core/dc/strict.py=):
+
+5. A captured presumption is now a discharge, so self-attack is a strict
+   proof of P. Check the even loop stays symmetric for the RIGHT reason -
+   neither side's presumption is discharged by the other - and not by
+   accident of shape.
+6. A site-free clash is strict and therefore wins a support scaffold by
+   strict redundancy, silencing a live supporter. The exception then
+   bubbles up. Confirm that is the wanted reading of "an uncatchable
+   clash should always bubble up", rather than preferring a clash-free
+   strict wing when one exists.
+7. The edge collector was widened from "a decision strictly below" to "at
+   or below", emitting at the OUTERMOST qualifying subterm. Check it
+   neither double-counts nor swallows an inner derivation that deserves
+   its own edge.
+8. =strict_in_debate= still accepts =catchers_ids= / =catchers_dis= and
+   ignores them. Decide whether to drop the parameters or keep them for
+   the abort-propagation work.
+
+Reading order: call-by-onus.org "The strict phase: what 'strict in the
+debate' means" for the definition and the fixture table; the two DONE
+entries below for what changed and what was rejected on the way;
+=git show 9820d4e= and =git show 1a81650= for the diffs.
+
+Since =aida-pipeline-logging= (2026-09-26) the machinery narrates itself:
+=explain ARG= replays one evaluation and prints the unfolding, the strict
+decisions with their reasons, the witness choice and the wing kept at each
+scaffold. That is the fastest way to check points 5 to 7 on a fixture.
+
+*** BACKLOG Design: propagation of an abort through axioms and moxias
+:PROPERTIES:
+:ID:             aida-abort-propagation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided, with a soundness argument recorded, whether and how an affine throw sitting inside an elimination spine (under a Cons whose head is an axiom or moxia that cannot be further decomposed) propagates to the root, so that a defeated debate's normal form is itself an exception; or, if propagation is rejected, the adequacy statement is fixed at OUT-implies-not-a-value and classify_nf is given a spine-aware notion of "aborted".
+:VERIFY:         A written note in call-by-onus.org states the additional reduction rules (or the decision not to add them) and their soundness argument; if rules are added, the in-attacker case of tests/test_evaluate.py asserts class exception and subject reduction is checked by replaying the normal form through Fellowship; if not, classify_nf's spine-aware definition is tested on the defeated fixture.
+:END:
+
+Note 2026-09-17 (aida-paper-attack-shape): a defeated site now holds
+the real clash mu alpha.< t || E >, and classify_nf finds an
+uncatchable clash wherever it sits, so a lost debate reports as an
+exception without propagation. What this task still asks is whether
+*reduction* should carry the abort to the root; the verdict no longer
+depends on it.
+
+Design issue, not a bug (author, 2026-09-16). Once the abort term sits
+at a defeated site (=aida-fragment-verification-residues=), a defeated
+debate for P still normalises to
+
+: mu pArg:P.< pRule:Q->P || mu b1:Q.< x:Q || nq:Q > * pArg:P >
+
+- the throw is one Cons deep under the axiom =pRule=, the root binder is
+non-affine, and =classify_nf= (root affine mu = exception) does not see
+it; the term even classifies as a value. For "OUT implies exception" the
+throw would have to bubble up through =pRule * ...=, i.e. through an
+axiom / moxia head that the standard rules cannot decompose. The four
+standard reductions do not do this; it needs additional rules, and the
+author has not yet examined whether such rules can be sound. Any such
+rules would extend the four standard reductions (Layer 0), not the
+deprecated call-by-onus system; the
+question is *which* rules exist, not congruence order, which is
+irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
+a compiler bug. Left as is for now.
 
 *** BACKLOG Express the married-bachelor and contamination fixtures as .fspy
 :PROPERTIES:

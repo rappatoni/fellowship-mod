@@ -143,15 +143,22 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - All fellowship commands;
           - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
-          - Executing/Reducing an argument : "reduce <ArgName>"
-          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
+            term-level reducer, not the compiler pipeline; use "evaluate")
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+            (deprecated, like the debate ops)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
+            "render-nf <Arg>" (render-nf deprecated with reduce).
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
             "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
             the pipeline's stage-by-stage account of one evaluation;
             "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
-          - Debate ops: undermine NEW attacker target
+          - Debate ops (DEPRECATED: they build debate terms by grafting scaffolds, or
+            take such terms apart, at term level; they predate the debate compiler and
+            are not wired to it, so they are probably not safe to use.  Register
+            arguments and use graph/label/evaluate/explain instead):
+                        undermine NEW attacker target
                         undercut  NEW attacker target   (backward compatible alias)
                         undergird NEW supporter target [on PROP]
                         reinforce NEW supporter target [on PROP]
@@ -951,15 +958,22 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - All fellowship commands;
           - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
-          - Executing/Reducing an argument : "reduce <ArgName>"
-          - Normalize an argument (silent version of reduce): "normalize <ArgName>" 
+          - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
+            term-level reducer, not the compiler pipeline; use "evaluate")
+          - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
           - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>", "render-nf <Arg>".
+            (deprecated, like the debate ops)
+          - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
+            "render-nf <Arg>" (render-nf deprecated with reduce).
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
             "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
             the pipeline's stage-by-stage account of one evaluation;
             "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
           - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
+            DEPRECATED: they build debate terms by grafting scaffolds, or take such terms
+            apart, at term level; they predate the debate compiler and are not wired to it,
+            so they are probably not safe to use.  Register arguments and use
+            graph/label/evaluate/explain instead.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
           - Scripts: "load FILE" runs a .fspy file in this session.
 
