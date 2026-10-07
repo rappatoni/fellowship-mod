@@ -2570,7 +2570,8 @@ two models). In the self-attack the strict edge =SelfAttack*= overrides
 the framework; in the even loop an uncaptured site keeps it defeasible.
 Decide whether the source should remain, and if so what it means.
 
-*** BACKLOG Discuss: should the scaffold binders alt and b capture?
+*** DONE Discuss: should the scaffold binders alt and b capture?
+CLOSED: [2026-10-06 Tue]
 :PROPERTIES:
 :ID:             aida-discuss-scaffold-binder-scope
 :AREA:           phd
@@ -2644,6 +2645,261 @@ marked as a captured presumption; old and new implementation alike:
   copy wings without substituting beta), and the provenance-vs-shape
   disagreement between unfolder and compiler.
 
+Decision (author, 2026-10-06): every binder captures, the scaffold's
+=alt= and =b= included; there is no exception in the capture rule (the
+two =_= are placeholders and bind nothing). The unfolder's separate
+case "a statement already being proved at this point is left as an
+obligation" goes: in the stacked shape such a statement always has a
+binder in scope - inside a supporter or attacker of S, S's support or
+attack scaffold binds a proof of S with its =b=; inside a supporter of
+S's contrary, the contrary's own support scaffold binds the contrary -
+so capture alone prevents the infinite unfolding. Implementation:
+[[id:aida-unfold-scaffold-binders-capture]].
+
+What was found on the way (simulations on the unfolded route,
+2026-10-06):
+- Capture by =b= (cut fixture, tests/minicourse/lesson8a_cycle.fspy):
+  back's demand for B, today the obligation =?u3:B=, becomes =b5=, B's
+  support scaffold's binder; after the substitution =b5 := ?u1= back
+  shares B's own root obligation instead of a copy. The result stays
+  open, as it should (the author: not "proved by strictness").
+- Capture by =alt= (lesson 9, the attack on A): the root =u3:A?= of the
+  debate about "A fails" becomes =alt2=: if no refutation of A
+  succeeds, the proof of A is passed on as if unattacked - the default
+  makes way for the real continuation.
+- An attack left with nothing but its captured fallback,
+  =mu a.< T || mu'b.< mu _.<b||a> || mu'_.<b||a> > >=, is no special
+  case (the author): it normalises away, to the same result under cbn
+  and cbv up to one eta step (self-attack: =... * alt2= against
+  =... * mu'b4.<b4||alt2>=), with the same class. The matcher does not
+  recognise it as a scaffold and leaves it to normalisation.
+- All misbehaviour seen comes from three places in the code, none from
+  the semantics:
+  1. The strict phase counts a variable bound by =alt= or =b= as
+     settled, as it rightly does for an argument's own binders. With a
+     second, genuine supporter =other= of A next to the circular =back=
+     (B IN via other), the captured =back= "has no open site", beats
+     =other= by strictness ("original strict") and the result is OPEN
+     while B is IN; today the same document gives VALUE. At the attack
+     on A, a captured =alt2= beat con, which was dropped before sigma.
+     The crash seen in that run followed from this (the strict phase
+     had collapsed the attack itself and could no longer recognise it).
+  2. The scaffold rewrites (=keep_scion_support= and siblings, used by
+     the strict phase and by sigma) drop the =b= binder without
+     substituting it - a shortcut valid only while =b= never occurs in
+     a wing (lesson 13, point 4). With capture it left =b5= unbound.
+  3. The compiler does not count =b= as binding (it does count =alt=):
+     =free term variable 'b7' is neither bound nor a declared axiom=.
+- The strictness rule that fixes 1: a variable bound by a scaffold's
+  =b= is open if the supported term it stands for, after its own strict
+  decisions, still contains an open site (following such variables
+  outward; the chain ends, since the supported term stands outside the
+  scope of =b=); a variable bound by =alt= is open (it stands for "no
+  attack", undecided until sigma); an argument's own binder is settled.
+  "Open when in doubt" is right: the strict phase decides only what
+  holds whatever sigma later decides, and strict edges enter the graph
+  before labelling.
+- Withdrawn earlier (author): an onus conflict breaking under capture is
+  no counterexample; it is pathological.
+- Independent of capture, found on the same document: sigma keeps a
+  circular supporter (=back=) at a place where its demand can only be an
+  obligation, because the labelling says its source B is IN:
+  [[id:aida-circular-supporter-judged-in]].
+
+*** DONE Let every binder capture: alt and b too, and no separate case for a statement already being proved
+CLOSED: [2026-10-07 Wed]
+:PROPERTIES:
+:ID:             aida-unfold-scaffold-binders-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        On the unfolded route every binder in scope captures, the scaffold's alt and b included, and the unfolder no longer leaves an obligation for a statement it is already proving; the strict phase treats a variable bound by b as open when its supported term is, and one bound by alt as open; the scaffold rewrites substitute b; the compiler counts b as binding; verdicts are compared with today's on every fixture.
+:VERIFY:         The cut fixture's back rests on b (then ?u1) and stays OPEN; the document with a genuine supporter other next to the circular back gives VALUE in both registration orders (today: VALUE in one, OPEN in the other; with capture and the old strictness: OPEN in both); the attack on A in lesson 9 still leaves con to sigma; no free b after any rewrite (checked on every fixture); the framework test of tests/test_unfold_entrypoints.py passes; the verdict differences against today are listed here and accepted by the author; the author's working copy of even_loop_lk.fspy compiles on the unfolded route.
+:END:
+
+Decided 2026-10-06, see [[id:aida-discuss-scaffold-binder-scope]].
+
+Onus conflicts are out of scope here (author, 2026-10-07). With the
+attacker wing's root captured by the attack's alt, the skeptical
+verdicts of tests/rationality/contested.fspy (Q) and
+tests/rationality/two_witnesses.fspy (S), on both sides, change from
+EXCEPTION to VALUE: =μalt1:Q.<!u1:Q||u2:Q!>= becomes
+=μalt1:Q.<!u1:Q||alt1:Q>=, i.e. =!u1:Q=. Both documents presume the
+issue AND its contrary. That case is pathological and is expected to
+break the semantics; this task disregards it. Handling it needs design,
+see [[id:aida-onus-delegation-polarity]].
+
+*Recommendation (revised 2026-10-06): substitution, the calculus's own
+step, for both the rewrites and the strictness check.* The obstacle
+first noted - the normaliser's =substitute= renamed every binder of the
+target, the =_= placeholders included, so every undecided scaffold a
+substitution passed through became unrecognisable - is gone:
+=freshen_binders= now leaves =_= alone (=_= binds nothing and can
+capture nothing). Suite unchanged apart from the course's pin of the
+real C1 step (lesson 13), whose =_= now stay; a new test checks that the
+wing inside is still recognised after that step. So:
+- the rewrites substitute =b := T= in the kept wing with =substitute=;
+- the strictness check takes the outer step (=b := T=) before judging
+  the wings and asks "no open site" as today, instead of a separate
+  lookup table; a variable bound by =alt= still counts as open.
+The cost is a copy of T wherever =b= occurs, usually once, in the
+argument that captured it - minor on the unfolded route, which copies
+whole sub-debates anyway. A lookup (a map from each =b= in scope to its
+already strictly decided supported term, =alt= to "open") gives the
+same answer without copying and remains the fallback if the copies
+prove costly.
+
+Later, if phases 1 and 2 become steps of one normaliser ("What this
+means for a single label-guided normaliser" in
+minicourse-evaluation.org), the substitution route becomes the natural
+one, once the decision pairs survive substitution.
+
+*Implemented 2026-10-07.*
+- core/dc/unfold.py (stacked path only): every scaffold's alt and b are
+  drawn before its scion is built and put into the scope of the scion
+  (=_scaffold_scope=: alt binds the contrary, b the statement); the
+  stack gives each element the binders of the scaffolds around it; the
+  attacker wing's root is the attack's alt; the "already on the spine"
+  case is a WARNING fallback that no fixture reaches; b has its own
+  counter on the stacked path; a captured bare contrary carries
+  =captured_default=. Legacy shape (shared route) unchanged.
+- core/dc/debate_graph.py: =Match.beta=, =scion_scope= (alt and b over
+  the scion), =scoped_stack_elements= (each stack element with its
+  scaffolds' binders), =_same_variable= (the legacy matcher no longer
+  mistakes the wiring of an attack whose wing is only its fallback for a
+  supporter), env-bound =captured_default= marks the contrary's default.
+- core/dc/strict.py: =strict_in_scope= (b substituted by its resolved
+  supported term, outward; alt open); =_outer_step= substitutes b := the
+  original in =keep_scion_support= and =keep_attack_wing=; a scaffold
+  that no longer matches after its parts were resolved is left (WARNING)
+  instead of crashing.
+- core/comp/oracle_terms.py: =substitute(..., minimal=True)= renames only
+  the binders that could capture, so argument names survive the
+  rewrites.
+- Tests: tests/test_scaffold_capture.py (53: capture by b on the cycle
+  fixture, no fallback and no free scaffold variable on every fixture,
+  the wing root as alt in lesson 9, circular_supporter in both orders,
+  the attack with nothing but its fallback, strictness and rewrite unit
+  tests); adapted: tests/test_unfold.py (five shape tests, Peirce up to
+  eta), tests/test_evaluate.py (a supporter throwing to the scaffold's
+  alt is left to sigma; with its own continuation it is strict),
+  tests/test_pipeline_logging.py, tests/test_unfold_entrypoints.py
+  (literal), tests/minicourse/test_evaluation_course.py (all pins).
+  minicourse-evaluation.org lessons 8a-13, closing section and solutions
+  updated (gitignored).
+- Verdicts against the baseline (every statement and argument of the
+  fixtures of tests/test_unfold_entrypoints.py plus lesson14_sharing,
+  circular_supporter and entrypoints, both modes; 306 rows): class
+  changes only in
+  - circular_supporter, issue A and argument back, both modes: OPEN ->
+    VALUE (intended; issue B with back on top stays OPEN,
+    [[id:aida-circular-supporter-judged-in]]);
+  - 05_even_loop and lesson15_capture, P: and Q:, skeptical: OPEN ->
+    VALUE. Accepted by the author 2026-10-07 (the skeptical tiebreak
+    rightly discards the UNDEC supporter; the term does not show that
+    the delegation is not established):
+    [[id:aida-labelled-sites-delegation-rewrite]];
+  - contested Q and two_witnesses S, both sides, skeptical: EXCEPTION ->
+    VALUE; onus conflicts, disregarded (above).
+  The lesson 9 pipeline makes the same decisions as before (names and
+  site numbers only). The framework test (issue graphs equal to the
+  legacy term's up to names) passes on every fixture.
+- Behaviour change on a hand-built term: a supporter that throws a
+  strict proof to its scaffold's alt (=μk.<qAx||alt>=) is no longer
+  strict; the labelling judges it (OPEN where it was VALUE). A scaffold's
+  binder is not a commitment the debate made.
+- The author's working copy of tests/rationality/even_loop_lk.fspy
+  compiles and type-checks on the unfolded route; its two failures in
+  tests/test_share.py are on the shared route and unchanged.
+- Suite 2026-10-07: 1541 passed; the 2 failures are those of the working copy above.
+
+*** NEXT Classify an uncaught clash as an exception even when an obligation remains
+:PROPERTIES:
+:ID:             aida-classify-exception-before-open
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        classify_nf (core/comp/oracle_terms.py) reports a normal form containing an uncatchable clash as an exception whether or not it also contains an obligation; open is what remains of a term with an obligation and no uncaught clash.
+:VERIFY:         Lesson 9 with con's =by default.= commented out evaluates issue :C to EXCEPTION (today OPEN, normal form =μalt1:C.<nc:~C||?u1:C*_F_>=); tests/demo/04_document.fspy, issue Flies and argument tweety, evaluate to EXCEPTION in both modes; no other verdict of the fixtures in tests/test_unfold_entrypoints.py changes (simulated 2026-10-07: none does); the suite passes with the pins of 04_document and the course passages citing them updated.
+:END:
+
+Raised by the author 2026-10-07: an exception is an exception whether
+the attacked site is an obligation or a delegation, and an attacked
+strict term under a strict attacker is a strict contradiction too.
+Today =classify_nf= checks for an obligation first and returns OPEN
+before it looks for a clash, so any obligation anywhere in the normal
+form hides an exception. No spec or task records that precedence as a
+decision. Independent of capture and of
+[[id:aida-labelled-sites-delegation-rewrite]]; a prerequisite of the
+latter (with this order fixed, rewriting an OUT delegation to an
+obligation no longer turns the defeated cases - lesson 9 C,
+multiple_undercuts A, cyclic_undercut R, self_attack P[c] - from
+exception into open).
+
+*** BACKLOG Design: labellings in the term; a delegation not IN under sigma is an obligation again
+:PROPERTIES:
+:ID:             aida-labelled-sites-delegation-rewrite
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        A recorded design, then an implementation, in which the labelling evaluation used becomes part of the term (sites named with their labels, e.g. (OUT, u1:A!) becomes OUT:A?) and a delegation (presumption) whose statement is not IN under sigma becomes an obligation, so that the acceptance status of every obligation and delegation is visible in the normal form and the class follows from it.
+:VERIFY:         The design is written here and agreed by the author; after implementation, tests/demo/05_even_loop.fspy and tests/minicourse/lesson15_capture.fspy, issues P: and Q:, evaluate skeptically to OPEN (today VALUE, =μ'alt1:P.<alt1:P||u1:P!>=); every exception and every value backed by sigma among the fixtures of tests/test_unfold_entrypoints.py is unchanged; the onus conflicts (contested Q, two_witnesses S) are recorded with their new verdicts.
+:END:
+
+Discussed 2026-10-07 (the author's reading of the onus). For issue P:
+the opponent has the onus to refute P; the delegation =u1:P!= hands it
+to the proponent, who must now prove P to the standard of evidence the
+mode sets: skeptically, an argument IN under all labellings. The best
+the proponent has in the even loop is an UNDEC argument, which the
+skeptical tiebreak discards (uncertainty-blocking evaluation; a
+refusing, uncertainty-propagating evaluation is not implemented). That
+is right. But the opponent, too, would have to establish P: skeptically
+and cannot; the term does not show it, because whether =u1:P!= is IN,
+OUT or UNDEC is not visible in the term. Result today: VALUE.
+
+Two ideas (the author):
+1. A delegation labelled OUT or UNDEC under sigma rewrites to an
+   obligation; the result is then open, which is right.
+2. Rewriting operates on labelled terms, so that the acceptance status
+   of obligations and delegations is transparent throughout - the
+   bigger change, to be designed together with 1: name the sites with
+   their labels, e.g. (OUT, u1:A!) ---> OUT:A?.
+
+Simulated 2026-10-07 on every statement and argument of the fixtures,
+rewriting on the normal form and reclassifying:
+- with today's classifier, rewriting OUT as well turns every defeated
+  delegation's exception into open (lesson 9 C, multiple_undercuts A,
+  cyclic_undercut R, self_attack P[c]) - a classifier bug, see
+  [[id:aida-classify-exception-before-open]];
+- with that fixed, OUT-or-UNDEC and UNDEC-only give the same verdicts:
+  value -> open for the even loop and lesson 15 (P:, Q:, skeptical)
+  and for the onus conflicts (contested, two_witnesses, skeptical);
+  nothing else changes. In the fixtures an OUT delegation only ever
+  survives inside the clash that defeated it.
+Where it goes: after normalisation in =_evaluate_under= and
+=_evaluate_shared_under= (core/comp/evaluate.py), before classifying; a
+site's status is that of its statement under sigma, the witness
+labelling actually used. Captured presumptions are variables, not
+sites, and are not touched.
+
 *** DONE Show unfolded terms in the CLI, renderable, and in explanations
 CLOSED: [2026-10-06 Tue]
 :PROPERTIES:
@@ -2711,6 +2967,47 @@ the contrary's debate SUP~(ROOT_S̄, STACK_S̄); an argument entrypoint moves
 itself to the top of its stack. The strict phase checks the supporter
 first, so the stack order holds under strictness and sigma alike (the
 a1/a2 asymmetry of lesson 8a goes away).
+
+*** BACKLOG Do not judge an argument IN where its demand can only be an obligation
+:PROPERTIES:
+:ID:             aida-circular-supporter-judged-in
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        When an argument needs a statement that the term is already proving at that point, sigma does not keep it on the strength of that statement's label, so a statement labelled IN evaluates to a value whenever some argument proves it without going round in a circle.
+:VERIFY:         tests/circular_supporter.fspy: =evaluate pro= is VALUE in both modes (today OPEN, although A and B are IN), with =other='s proof of A; with =other= and =back= registered the other way round it stays VALUE; a check over all fixtures finds no (IN, open) case that a non-circular argument could have filled; the chosen rule is recorded here.
+:END:
+
+Found 2026-10-06 while simulating capture by the scaffold binders
+([[id:aida-discuss-scaffold-binder-scope]]); exists today, independent
+of capture. tests/circular_supporter.fspy: =pro= derives B from A,
+=other= derives A from a presumption of D, =back= derives A from B.
+Unfolded for pro, A's debate sits inside B's debate, and =back='s
+demand for B there was left as an obligation (=?u4:B=); since the
+scaffold binders capture ([[id:aida-unfold-scaffold-binders-capture]],
+2026-10-07) it is the =b= of B's support scaffold, i.e. B's own root
+obligation =?u1= after the outer step. Either way nothing can fill it at
+that point. Sigma judges =back= by the labels of its edge, A <- B; B is
+IN (through other), so back counts as IN, and on top of A's stack it is
+kept: =μpro:B.<r1||μb1:A.<r3||?u1:B*b1>*pro>=, OPEN, while A and B are
+IN. Registered the other way round, =other= is on top and the result is
+a VALUE. (Issue A itself is VALUE in both orders since 2026-10-07: in
+A's own debate back's demand for B expands, and B's debate holds A's
+=b=, i.e. the lower part of A's stack, which is other.)
+
+The labelling is right; what sigma lacks is where in the term it is
+judging. Starting point: at a place where an argument's demand is
+captured by one of its own statement's enclosing scaffolds (or left as
+an obligation there today), count that demand as unmet for this place,
+so sigma passes over the argument and goes on down the stack. Related
+to [[id:aida-unfounded-credulous-witness]], where the loop is not
+founded at all.
 
 *** BACKLOG Do not accept an unfounded loop as a credulous witness
 :PROPERTIES:
@@ -3442,7 +3739,8 @@ additive. Questions the design has to answer:
 
 * Correctness and maintenance
 
-** BACKLOG Keep argument names that end in _<digits> apart in the issue graph
+** DONE Keep argument names that end in _<digits> apart in the issue graph
+CLOSED: [2026-10-06 Tue]
 :PROPERTIES:
 :ID:             aida-fold-occurrences-names
 :AREA:           phd
@@ -3466,6 +3764,19 @@ names are wrong and a lookup by name fails - credulous =favour= was
 switched to take the argument's document edge for that reason. Fix
 idea: let the unfolder record which edge a copy came from (the renamed
 eta binder) instead of guessing it from the name.
+
+Done 2026-10-06 that way: =Unfolder._edge= tags the root binder of every
+copy with =origin= (the argument's edge name); =binder_origin= names
+edges (=_scion_name=, =_host_name=) and strict edges after it, and the
+shared route carries it through its rebuilt binders (=_same_origin=).
+=fold_occurrences= folds exact duplicates only; the =_<digits>= reading
+is a fallback for untagged terms, and only where an edge of the stem's
+own name with the same target and sources exists. Evidence:
+tests/test_unfold_entrypoints.py::test_argument_names_ending_in_digits_stay_apart
+(lesson 14: =a1_0=, =a1_1=, =a2_0=, =a2_1=) and
+::test_unfolding_copies_still_fold_under_their_argument (Peirce: one
+=s3=, no suffixed name); full suite 1486 passed, the two failures being
+the author's working copy of even_loop_lk.fspy.
 
 ** BACKLOG Emit the closing elimination for falsum-typed applications
 :PROPERTIES:

@@ -494,17 +494,36 @@ def _is_affine_binder(name: str) -> bool:
 class Match(tuple):
     """A matched scaffold: the 7-tuple (role, site_side, prop, orig, scion,
     alt, scion_kind), with ``legacy`` True for an M3 shape (whose attack
-    scion carries the alt reroute and needs _restore_scion)."""
+    scion carries the alt reroute and needs _restore_scion) and, for a
+    paper shape, ``beta`` the name of its b, which binds the statement in
+    the scion (aida-unfold-scaffold-binders-capture)."""
 
     def __new__(cls, role, site_side, prop, orig, scion, alt, scion_kind):
         return super().__new__(cls, (role, site_side, prop, orig, scion, alt, scion_kind))
 
     legacy = False
+    beta = None
 
 
-def _tag(m, legacy):
+def _tag(m, legacy, beta=None):
     m.legacy = legacy
+    m.beta = beta
     return m
+
+
+def scion_scope(match, owner):
+    """The scaffold's own binders over its scion, as ``outer`` entries
+    (name -> (prop, side, owner)): ``alt`` binds the contrary of the
+    statement, ``b`` the statement.  A legacy attack's alt is a reroute,
+    not a binder, and a legacy scaffold has no b in its scion."""
+    role, site_side, prop = match[0], match[1], match[2]
+    other = "context" if site_side == "term" else "term"
+    if match.legacy:
+        return {} if role == "attacker" else {match[5]: (prop, other, owner)}
+    scope = {match[5]: (prop, other, owner)}
+    if match.beta is not None:
+        scope[match.beta] = (prop, site_side, owner)
+    return scope
 
 
 def _affine_mu(n, prop):
@@ -536,11 +555,11 @@ def _match_paper_scaffold(n):
         # T-SUP: < mu_.<beta||alpha> || mu'_.<t2||alpha> >
         if (_is_di(w1.term, beta) and _is_id(w1.context, alpha)
                 and _is_id(w2.context, alpha) and not _is_di(w2.term, beta)):
-            return _tag(Match("supporter", "term", prop, t, w2.term, alpha, "term"), False)
+            return _tag(Match("supporter", "term", prop, t, w2.term, alpha, "term"), False, beta)
         # T-ATT: < mu_.<beta||e2> || mu'_.<beta||alpha> >
         if (_is_di(w1.term, beta) and _is_di(w2.term, beta) and _is_id(w2.context, alpha)
                 and not _is_id(w1.context, alpha)):
-            return _tag(Match("attacker", "term", prop, t, w1.context, alpha, "context"), False)
+            return _tag(Match("attacker", "term", prop, t, w1.context, alpha, "context"), False, beta)
         return None
     if isinstance(n, Mutilde):
         x, prop, tm, e = n.di.name, n.prop, n.term, n.context
@@ -553,11 +572,11 @@ def _match_paper_scaffold(n):
         # C-SUP: < mu_.<x||e2> || mu'_.<x||beta> >
         if (_is_di(w1.term, x) and _is_di(w2.term, x) and _is_id(w2.context, beta)
                 and not _is_id(w1.context, beta)):
-            return _tag(Match("supporter", "context", prop, e, w1.context, x, "context"), False)
+            return _tag(Match("supporter", "context", prop, e, w1.context, x, "context"), False, beta)
         # C-ATT: < mu_.<x||beta> || mu'_.<t2||beta> >
         if (_is_di(w1.term, x) and _is_id(w1.context, beta) and _is_id(w2.context, beta)
                 and not _is_di(w2.term, x)):
-            return _tag(Match("attacker", "context", prop, e, w2.term, x, "term"), False)
+            return _tag(Match("attacker", "context", prop, e, w2.term, x, "term"), False, beta)
     return None
 
 
@@ -630,6 +649,8 @@ def _match_legacy_scaffold(n, strict_names=()):
         ):
             return None
         if isinstance(w2.context, ID) and w2.context.name == alt:
+            if _same_variable(w1.term, w2.term):
+                return None
             return _tag(Match("supporter", "term", prop, w1.term, w2.term, alt, "term"), True)
         if isinstance(w2.term, (Goal, Deleg)) or (
             isinstance(w2.term, DI) and w2.term.name in strict_names
@@ -651,6 +672,8 @@ def _match_legacy_scaffold(n, strict_names=()):
         ):
             return None
         if isinstance(w1.term, DI) and w1.term.name == alt:
+            if _same_variable(w2.context, w1.context):
+                return None
             return _tag(Match("supporter", "context", prop, w2.context, w1.context, alt, "context"), True)
         if isinstance(w1.context, (Laog, Geled)) or (
             isinstance(w1.context, ID) and w1.context.name in strict_names
@@ -658,6 +681,16 @@ def _match_legacy_scaffold(n, strict_names=()):
             return _tag(Match("attacker", "context", prop, w2.context, w1.term, alt, "term"), True)
         return None
     return None
+
+
+def _same_variable(a, b) -> bool:
+    """Both halves the same variable: the wiring of a paper attack whose
+    wing is nothing but its captured fallback, mu b.< mu _.<a||b> ||
+    mu'_.<a||b> >.  It has the legacy support shape, but supports a
+    variable by itself; it is no scaffold and is left to normalisation
+    (aida-unfold-scaffold-binders-capture)."""
+    return (type(a) is type(b) and isinstance(a, (ID, DI)) and a.name == b.name
+            and not getattr(a, "cites", None))
 
 
 def _restore_scion(scion, scion_kind: str, alt: str, prop: str, fresh_site):
@@ -716,10 +749,10 @@ def _host_name(body, fallback: str) -> str:
     node = body
     while True:
         if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
-            names.append(node.id.name)
+            names.append(binder_origin(node))
             node = node.term
         elif isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
-            names.append(node.di.name)
+            names.append(binder_origin(node))
             node = node.context
         else:
             break
@@ -747,12 +780,23 @@ def binder_statements(node) -> dict:
     return out
 
 
+def binder_origin(node) -> str:
+    """The name a root binder stands for: the argument an unfolded copy of
+    its body came from (``origin``, set by the unfolder: a copy's binder is
+    renamed ``a1_0_2``, its argument is ``a1_0``), else the binder's own
+    name (aida-fold-occurrences-names)."""
+    found = getattr(node, "origin", None)
+    if found:
+        return found
+    return node.id.name if isinstance(node, Mu) else node.di.name
+
+
 def _scion_name(body, fallback: str) -> str:
     """An eta-wrapped scion carries its argument name in the root binder."""
     if isinstance(body, Mu) and isinstance(body.context, ID) and body.context.name == body.id.name:
-        return body.id.name
+        return binder_origin(body)
     if isinstance(body, Mutilde) and isinstance(body.term, DI) and body.term.name == body.di.name:
-        return body.di.name
+        return binder_origin(body)
     if isinstance(body, (ID, DI)):
         return body.name
     return fallback
@@ -767,16 +811,29 @@ def stack_elements(scion, strict_names=()) -> list:
     one edge each.  A scion that is not a support scaffold is its own one
     element; a bare leaf (a site, a captured variable) is given the eta
     wrapper an argument has, so it compiles as an identity edge."""
+    return [element for element, _scope in scoped_stack_elements(scion, strict_names)]
+
+
+def scoped_stack_elements(scion, strict_names=()) -> list:
+    """``stack_elements`` with the binders each element is under inside
+    the stack: [(element, {name: (prop, side)})].  A stack's scaffolds bind
+    too (aida-unfold-scaffold-binders-capture): an element that is a
+    supported term is under its scaffold's alt, one that is a scion under
+    its alt and b, so a supporter needing the statement it supports is
+    bound there, not free."""
     match = _match_paper_scaffold(scion)
     if match is not None and match[0] == "supporter":
-        return stack_elements(match[3], strict_names) + stack_elements(match[4], strict_names)
+        scope = {k: v[:2] for k, v in scion_scope(match, None).items()}
+        alt_only = {match[5]: scope[match[5]]}
+        return ([(e, {**alt_only, **inner}) for e, inner in scoped_stack_elements(match[3], strict_names)]
+                + [(e, {**scope, **inner}) for e, inner in scoped_stack_elements(match[4], strict_names)])
     if isinstance(scion, (Goal, Deleg, DI)) and not (isinstance(scion, DI) and scion.name in strict_names):
         prop = scion.prop
-        return [Mu(ID("x", prop), prop, scion, ID("x", prop))]
+        return [(Mu(ID("x", prop), prop, scion, ID("x", prop)), {})]
     if isinstance(scion, (Laog, Geled, ID)) and not (isinstance(scion, ID) and scion.name in strict_names):
         prop = scion.prop
-        return [Mutilde(DI("x", prop), prop, DI("x", prop), scion)]
-    return [scion]
+        return [(Mutilde(DI("x", prop), prop, DI("x", prop), scion), {})]
+    return [(scion, {})]
 
 
 #: Which declaration kind a declared name must have to appear on a side:
@@ -893,6 +950,13 @@ class _Compiler:
                 vside = "context" if isinstance(node, ID) else "term"
                 bound = env.get(node.name)
                 if bound is not None and bound[1] == vside:
+                    for kind in getattr(node, "captured_default", ()):
+                        # The bare contrary captured within the same body
+                        # (an attack whose wing is nothing but it): no
+                        # source, but the default somebody holds on the
+                        # contrary is still marked, as the legacy term's
+                        # bare site marked it.
+                        self.graph.mark_default(self.graph.add_node(bound[0]), vside, kind)
                     return _EMPTY
                 if node.name in self.strict_names:
                     self._check_kind(node.name, vside, name)
@@ -933,26 +997,24 @@ class _Compiler:
             match = _match_scaffold(node, self.strict_names)
             if match is not None:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match
-                alt_side = "context" if isinstance(node, Mu) else "term"
                 if srole == "attacker":
                     scion = (_restore_scion(scion_raw, scion_kind, alt, sprop, f"r{next(self._fresh)}")
                              if match.legacy else scion_raw)
                     target_side = "context" if site_side == "term" else "term"
-                    if match.legacy:
-                        # the reroute is wiring, not capture
-                        sub_outer = {**outer, **{k: (*v, name) for k, v in env.items() if k != alt}}
-                    else:
-                        sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
-                                     alt: (sprop, alt_side, name)}
                 else:
                     scion = scion_raw
                     target_side = site_side
-                    sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()},
-                                 alt: (sprop, alt_side, name)}
+                # the scion sees the binders in scope and the scaffold's own
+                # (a legacy attack's reroute is wiring, not capture)
+                sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()
+                                         if not (match.legacy and srole == "attacker" and k == alt)},
+                             **scion_scope(match, name)}
                 # A stacked scion is one edge per alternative in it.
-                for element in ([scion] if match.legacy else stack_elements(scion, self.strict_names)):
+                for element, inner in ([(scion, {})] if match.legacy
+                                       else scoped_stack_elements(scion, self.strict_names)):
                     label = _scion_name(element, f"{name}.{srole}{next(self._fresh)}")
-                    self.graph.add_edge(self.compile_body(element, label, srole, sub_outer,
+                    element_outer = {**sub_outer, **{k: (*v, name) for k, v in inner.items()}}
+                    self.graph.add_edge(self.compile_body(element, label, srole, element_outer,
                                                           expect_side=target_side, expect_prop=sprop))
                 # the site stays a source of this derivation; the scion is
                 # its own edge
@@ -1052,20 +1114,17 @@ def scion_record(match, env, strict_names, strict_kinds=None, owner="host"):
     if role == "attacker":
         scion = _restore_scion(scion_raw, scion_kind, alt, prop, "r0") if match.legacy else scion_raw
         target_side = "context" if site_side == "term" else "term"
-        if match.legacy:
-            outer = {k: (*v, owner) for k, v in env.items() if k != alt}
-        else:
-            alt_side = "context" if site_side == "term" else "term"
-            outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
     else:
         scion = scion_raw
         target_side = site_side
-        alt_side = "context" if site_side == "term" else "term"   # mu alt on a term site, mu' alt on a context site
-        outer = {**{k: (*v, owner) for k, v in env.items()}, alt: (prop, alt_side, owner)}
-    elements = [scion] if match.legacy else stack_elements(scion, strict_names)
-    return [compiler.compile_body(element, _scion_name(element, "scion"), role, outer,
+    outer = {**{k: (*v, owner) for k, v in env.items()
+                if not (match.legacy and role == "attacker" and k == alt)},
+             **scion_scope(match, owner)}
+    elements = [(scion, {})] if match.legacy else scoped_stack_elements(scion, strict_names)
+    return [compiler.compile_body(element, _scion_name(element, "scion"), role,
+                                  {**outer, **{k: (*v, owner) for k, v in inner.items()}},
                                   expect_side=target_side, expect_prop=prop)
-            for element in elements]
+            for element, inner in elements]
 
 
 def compile_debate(body: ProofTerm, name: str, *, strict_names=None,

@@ -39,10 +39,18 @@ mu/mu'-capture of the spec).  Two kinds of site, two meanings:
   so the labelling still sees the loop and semantics and mode decide
   whether neither, one or both models are accepted.
 
-Scaffold catch variables are wiring, not scope.  A statement that is
-already being expanded on the current path but has no binder in scope
-is left as a bare site: the route through it is circular and stays
-open.  Each statement is therefore expanded at most once per path (T6).
+Every binder captures, the scaffolds' own included (author, 2026-10-06;
+aida-unfold-scaffold-binders-capture).  On either side a scaffold's
+``alt`` binds the contrary of its statement and its ``b`` the statement
+itself; the scion is in the scope of both, the supported or attacked
+term in that of ``alt`` only.  A supporter that needs the statement it
+supports gets ``b`` - after the outer step the supported term, so it
+shares the root instead of a copy - and the attacker wing's root, the
+contrary, is the attack's ``alt``.  Every statement being expanded has
+such a binder in scope below its debate, so capture alone ends the
+unfolding: each statement is expanded at most once per path (T6).  The
+legacy shape (``stacked = False``) keeps its scaffold variables out of
+scope and leaves a statement already being expanded as a bare site.
 
 Debates are classical: the scaffolds throw to a second conclusion,
 which LJ forbids, so there are no lj debates (author, 2026-09-17) and
@@ -95,6 +103,11 @@ class Unfolder:
         self.graph = graph
         self._sites = count(1)
         self._alts = count(1)
+        # stacked shape: b has its own series, so that the sites of the
+        # argument unfolded keep the lowest numbers although every b is
+        # drawn before its scion is built; the legacy shape numbers b with
+        # the sites (the shared route's names stay as they were)
+        self._betas = count(1) if self.stacked else self._sites
         self._used = set()
         self._by_target = {}
         for edge in graph.edges:
@@ -153,14 +166,26 @@ class Unfolder:
     def _fresh_alt(self):
         return self._wiring("alt", self._alts)
 
+    def _fresh_beta(self):
+        return self._wiring("b", self._betas)
+
+    @staticmethod
+    def _scaffold_scope(statement, alt, beta, env):
+        """The scope inside a scaffold's scion (stacked shape): on either
+        side ``alt`` binds the contrary and ``b`` the statement itself, so
+        a demand for either in the scion is captured by them like by any
+        binder (aida-unfold-scaffold-binders-capture)."""
+        return {**env, contrary(statement): alt, statement: beta}
+
     # -- scaffolds ----------------------------------------------------------
 
     # The paper's shapes (debate_graph.py, scaffold catalogue): the
     # exposure  t -> mu alpha.< t || [A:] >  with the slot filled.
-    def _support(self, statement, orig, scion, alt):
+    def _support(self, statement, orig, scion, alt, beta=None):
         key, side = statement
         prop = self._prop(key)
-        beta = self._wiring("b", self._sites)
+        if beta is None:
+            beta = self._fresh_beta()
         if side == "term":
             return Mu(ID(alt, prop), prop, orig,
                       Mutilde(DI(beta, prop), prop,
@@ -172,10 +197,11 @@ class Unfolder:
                           Mutilde(DI("_", prop), prop, DI(alt, prop), ID(beta, prop))),
                        orig)
 
-    def _attack(self, statement, orig, scion, alt):
+    def _attack(self, statement, orig, scion, alt, beta=None):
         key, side = statement
         prop = self._prop(key)
-        beta = self._wiring("b", self._sites)
+        if beta is None:
+            beta = self._fresh_beta()
         if side == "term":
             return Mu(ID(alt, prop), prop, orig,
                       Mutilde(DI(beta, prop), prop,
@@ -243,8 +269,17 @@ class Unfolder:
                          env[statement], " (presumption)" if presumed else "")
             return var
         if statement in spine:
+            if self.stacked:
+                # Every statement being unfolded has a binder in scope
+                # below its debate (the scaffold's alt and b), so capture
+                # alone ends the unfolding; this is a defensive fallback.
+                site = self._site(statement, own_kind)
+                logger.warning("unfold: no binder in scope for %s, a statement already being "
+                               "unfolded; left as the site %s",
+                               self._show(statement), getattr(site, "number", "?"))
+                return site
             # circular: the route through it stays open (T6)
-            site = self._site(statement, own_kind if self.stacked else None)
+            site = self._site(statement)
             logger.debug("unfold: %s already on the spine, left as the bare site %s",
                          self._show(statement), getattr(site, "number", "?"))
             return site
@@ -298,11 +333,14 @@ class Unfolder:
         Where that argument demands a statement somebody presumes, the
         presumption is the bottom of the stack.  The attacker wing is the
         contrary's debate without its attackers (they are this statement's
-        supporters): its root is the contrary's site, present whenever the
+        supporters): its root is the contrary, present whenever the
         statement has attackers or the contrary a default marker, and
-        captured by a binder in scope like any site.  Empty parts are left
-        out: no supporters, no support scaffold; no attackers and no
-        marker on the contrary, no attack scaffold."""
+        always captured by the attack's own ``alt``, which binds the
+        contrary - if no attacker succeeds, the proof goes on unattacked.
+        A wing that is nothing but that captured root is built like any
+        other and left to normalisation.  Empty parts are left out: no
+        supporters, no support scaffold; no attackers and no marker on the
+        contrary, no attack scaffold."""
         canonical = self._presumed(statement)
         root_presumed = canonical if own_kind is None else own_kind
         bottom = own_kind is False and canonical
@@ -316,62 +354,85 @@ class Unfolder:
         contra = contrary(statement)
         attackers = self._by_target.get(contra, [])
         if attackers or self.graph.defaults.get(contra):
-            alt = self._fresh_alt()
-            logger.debug("  unfold: %s attacked by the debate about %s, %d supporter(s) (alt %s)",
-                         self._show(statement), self._show(contra), len(attackers), alt)
-            term = self._attack(statement, term, self._wing(contra, env, spine | {contra}), alt)
+            alt, beta = self._fresh_alt(), self._fresh_beta()
+            logger.debug("  unfold: %s attacked by the debate about %s, %d supporter(s) "
+                         "(alt %s, b %s)", self._show(statement), self._show(contra),
+                         len(attackers), alt, beta)
+            wing = self._wing(contra, self._scaffold_scope(statement, alt, beta, env),
+                              spine | {contra})
+            term = self._attack(statement, term, wing, alt, beta)
         return term
 
     def _supported(self, statement, root, edges, env, spine, *, top=None, bottom=False):
         """``root`` under one support scaffold whose scion is the stack, or
-        ``root`` alone when there is nothing to stack."""
+        ``root`` alone when there is nothing to stack.  The stack is in
+        the scaffold's scope: a supporter demanding the statement itself
+        is captured by ``b`` (after the outer step, the supported term)."""
         if not edges and not bottom:
             return root
-        alt = self._fresh_alt()
-        stack = self._stack(statement, edges, env, spine, top=top, bottom=bottom)
-        return self._support(statement, root, stack, alt)
+        alt, beta = self._fresh_alt(), self._fresh_beta()
+        stack = self._stack(statement, edges, self._scaffold_scope(statement, alt, beta, env),
+                            spine, top=top, bottom=bottom)
+        return self._support(statement, root, stack, alt, beta)
 
     def _stack(self, statement, edges, env, spine, *, top=None, bottom=False):
         """The supporters as a stack: SUP(SUP(P1, P2), P3) for P1, P2, P3 in
         registration order - the last registered outermost, judged first
         by sigma (and, the strict phase checking the supporter first, by
         strictness too).  ``top`` goes outermost; a ``bottom`` presumption
-        (the bare presumption site) innermost."""
+        (the bare presumption site) innermost.  Each element is in the
+        scope of the scaffolds around it: P_k (k >= 2), the scion of the
+        k-th scaffold, under that scaffold's alt and b; P1, a supported
+        term, under the alts only (the statement stays bound by the
+        enclosing support scaffold's b, in ``env``)."""
         ordered = [e for e in edges if e is not top] + ([top] if top is not None else [])
         items = ([None] if bottom else []) + ordered
+        contra = contrary(statement)
 
-        def element(item):
+        # Every scaffold's names are drawn when the stack is begun, before
+        # any element is built; the innermost scaffold (the second item's)
+        # is the first.
+        wiring = [(self._fresh_alt(), self._fresh_beta()) for _ in items[1:]]
+        scopes = ([{**env, contra: wiring[0][0]} if wiring else env]
+                  + [self._scaffold_scope(statement, alt, beta, env) for alt, beta in wiring])
+
+        def element(k):
+            item = items[k]
             if item is None:
                 logger.debug("  unfold: %s +the presumption of %s, at the bottom",
                              self._show(statement), self._show(statement))
                 return self._site(statement, True)
             logger.debug("  unfold: %s +support '%s'%s", self._show(statement), item.name,
                          " (the argument unfolded, on top)" if item is top else "")
-            return self._edge(item, env, spine, own=item is top)
+            return self._edge(item, scopes[k], spine, own=item is top)
 
         # The argument unfolded is expanded first, so that its own binders
         # keep their names and its sites the lowest numbers.
-        built = {id(top): element(top)} if top is not None else {}
+        built = {len(items) - 1: element(len(items) - 1)} if top is not None else {}
 
-        def get(item):
-            return built[id(item)] if item is not None and id(item) in built else element(item)
+        def get(k):
+            return built[k] if k in built else element(k)
 
-        term = get(items[0])
-        for item in items[1:]:
-            alt = self._fresh_alt()
-            term = self._support(statement, term, get(item), alt)
+        term = get(0)
+        for k in range(1, len(items)):
+            alt, beta = wiring[k - 1]
+            term = self._support(statement, term, get(k), alt, beta)
         return term
 
     def _wing(self, contra, env, spine):
         """The attacker wing: the debate about the contrary without its
         own attackers, SUP~(ROOT_c, STACK_c), or the root alone when nobody
-        derives the contrary.  A lone site needs no eta wrapper here: the
-        compiler gives one to a bare leaf it records (``stack_elements``),
-        and none survives into a normal form."""
+        derives the contrary.  ``env`` is the attack's scope, so the root
+        is the attack's ``alt``; inside the wing's own support scaffold an
+        attacker demanding the contrary is captured by its ``b``, one
+        demanding the statement attacked by its ``alt``."""
         root = self._bare(contra, env)
         if isinstance(root, (Goal, Laog, Deleg, Geled)):
             logger.debug("unfold: %s, the attacker wing, root %s (%s)",
                          self._show(contra), root.number, type(root).__name__)
+        else:
+            logger.debug("unfold: %s, the attacker wing, root '%s'",
+                         self._show(contra), root.name)
         return self._supported(contra, root, self._by_target.get(contra, []), env, spine)
 
     def statement_site_only(self, statement, env=None):
@@ -393,12 +454,17 @@ class Unfolder:
         it (author, 2026-10-05).  The bare contrary stands for the default
         somebody holds on that statement, and a default meets a binder in
         scope exactly as a site in an edge body does: the binder takes it.
-        It is never expanded - its debate is the attack being built - so
-        there is no cut case."""
+        It is never expanded - its debate is the attack being built.  In
+        the stacked shape the attack's own ``alt`` is always in scope."""
         if statement in env:
             var = self._variable(statement, env[statement])
-            if "presumption" in self.graph.defaults.get(statement, ()):
+            defaults = self.graph.defaults.get(statement, ())
+            if "presumption" in defaults:
                 var.captured_presumption = True
+            # the default somebody holds on the contrary stays visible to
+            # the labelling even where no edge records it (an attack whose
+            # wing is nothing but this variable): the compiler marks it
+            var.captured_default = tuple(sorted(defaults))
             logger.debug("unfold: the bare %s captured as '%s'", self._show(statement), env[statement])
             return var
         return self._site(statement)
@@ -493,7 +559,12 @@ class Unfolder:
                 return out
             raise UnfoldError(f"Edge '{edge.name}': cannot unfold node {type(node).__name__}.")
 
-        return walk(edge.term, env, {})
+        copy = walk(edge.term, env, {})
+        if isinstance(copy, (Mu, Mutilde)):
+            # the copy's root binder may be renamed (a1_0_2); it still
+            # records the argument a1_0 (aida-fold-occurrences-names)
+            copy.origin = edge.name
+        return copy
 
 
 def unfold(graph: DebateGraph, issue) -> ProofTerm:

@@ -255,13 +255,13 @@ class SharedDebate:
             if isinstance(node, Mu):
                 new = fresh(node.id.name)
                 names2 = {**names, ("context", node.id.name): new}
-                return Mu(ID(new, node.id.prop), node.prop,
-                          walk(node.term, names2), walk(node.context, names2))
+                return _same_origin(node, Mu(ID(new, node.id.prop), node.prop,
+                                             walk(node.term, names2), walk(node.context, names2)))
             if isinstance(node, Mutilde):
                 new = fresh(node.di.name)
                 names2 = {**names, ("term", node.di.name): new}
-                return Mutilde(DI(new, node.di.prop), node.prop,
-                               walk(node.term, names2), walk(node.context, names2))
+                return _same_origin(node, Mutilde(DI(new, node.di.prop), node.prop,
+                                                  walk(node.term, names2), walk(node.context, names2)))
             if isinstance(node, Cons):
                 out = Cons(walk(node.term, names), walk(node.context, names))
                 out.prop = node.prop
@@ -470,6 +470,13 @@ class SharedDebate:
             lines.append(f"{name}[{', '.join(sites)}] :=")
             lines.extend("   " + line for line in pres_tree(body).splitlines())
         return "\n".join(lines)
+
+
+def _same_origin(old, new):
+    """A rebuilt binder keeps the argument its body came from."""
+    if getattr(old, "origin", None):
+        new.origin = old.origin
+    return new
 
 
 def _leaves(node):

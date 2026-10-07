@@ -63,13 +63,16 @@ class TestEveryStageSpeaks:
         expected = set(_PIPELINE_LOGGERS) - {"core.dc.typecheck"}
         assert expected <= spoke, f"silent: {sorted(expected - spoke)}"
 
-    def test_the_unfolder_reports_its_three_way_choice(self, fresh, caplog):
+    def test_the_unfolder_reports_its_choice(self, fresh, caplog):
         caplog.set_level(logging.DEBUG)
         evaluate_fixture(fresh, "tests/rationality/cyclic_undercut.fspy", "argA",
                          mode="credulous")
         said = " ".join(messages(caplog, "core.dc.unfold"))
         assert "expanded" in said
-        assert "already on the spine" in said          # the T6 cut
+        # every binder captures, the scaffolds' too: a statement already
+        # being unfolded is captured, never left as a site
+        # (aida-unfold-scaffold-binders-capture)
+        assert "captured as" in said and "no binder in scope" not in said
         # the stacked shape (aida-unfold-entrypoints): a supporter joins the
         # stack, the contrary's debate attacks
         assert "+support" in said and "attacked by the debate about" in said

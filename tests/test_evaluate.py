@@ -177,19 +177,30 @@ class TestCaptureIsDecidedByStrictness:
         assert sigma[(Q, "context")] == "OUT" and cls == "open"
         assert contains(nf, lambda n: isinstance(n, Goal) and n.prop == "Q")
 
-    def test_a_strict_capturing_supporter_is_kept_regardless_of_sigma(self):
-        # The supporter meets the demand for Q by throwing the site's own
-        # continuation an axiom: closed in the debate, so the strict phase
-        # keeps it whatever the labelling of Q[c] says.
+    def test_a_supporter_throwing_to_the_scaffolds_alt_is_left_to_sigma(self):
+        # The supporter meets the demand for "Q fails" with the scaffold's
+        # own alt.  A scaffold's binder is not a commitment the debate made
+        # (aida-unfold-scaffold-binders-capture): alt stands for the
+        # contrary's default, an open site, so the supporter is not strict
+        # and the labelling judges it - Q[c] is an obligation nobody meets.
         from core.dc.strict import strict_resolve
-        from core.comp.oracle_terms import _occurs
         scion = Mu(ID("k", "Q"), "Q", DI("qAx", "Q"), ID("alt", "Q"))
         body = parg(t_sup("Q", Goal("1", "Q"), scion))
         trace = []
-        resolved, edges = strict_resolve(body, STRICT | {"qAx"}, trace=trace)
+        strict_resolve(body, STRICT | {"qAx"}, trace=trace)
+        assert trace == []
+        nf, cls, sigma, _ = evaluate_debate(body, "d", strict_names=STRICT | {"qAx"}, mode="skeptical")
+        assert sigma[(Q, "context")] == "OUT" and cls == "open"
+
+    def test_a_strict_supporter_is_kept_regardless_of_sigma(self):
+        # The same supporter throwing to its own continuation: closed in
+        # the debate, so the strict phase keeps it whatever the labelling.
+        from core.dc.strict import strict_resolve
+        scion = Mu(ID("k", "Q"), "Q", DI("qAx", "Q"), ID("k", "Q"))
+        body = parg(t_sup("Q", Goal("1", "Q"), scion))
+        trace = []
+        strict_resolve(body, STRICT | {"qAx"}, trace=trace)
         assert trace == [((Q, "term"), "supporter strict")]
-        site = resolved.term.context.term
-        assert isinstance(site, Mu) and _occurs(site.term, ID, site.id.name)   # binder kept: captured
         nf, cls, sigma, _ = evaluate_debate(body, "d", strict_names=STRICT | {"qAx"}, mode="skeptical")
         assert cls == "value"
 

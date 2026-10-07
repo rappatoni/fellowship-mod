@@ -201,7 +201,7 @@ class TestShapes:
         # q demands A; p1 presumes it.  In q's term the root of A's debate is
         # q's own obligation, and the presumption is A's only supporter.
         term = unfold_argument(doc.document, argument_edge(doc.document, "q"))
-        assert "μalt2:A.<?u2:A||μ'b4:A.<μ_:A.<b4:A||alt2:A>||μ'_:A.<!u3:A||alt2:A>>>" in pres_str(term)
+        assert "μalt2:A.<?u2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<!u3:A||alt2:A>>>" in pres_str(term)
         # canonically A is presumed: the issue term of G has the presumption as A's root
         assert "!u2:A*th:G" in pres_str(unfold(doc.document, (K("G"), "term")))
 
@@ -303,3 +303,22 @@ def test_the_cli(fresh, tmp_path, caplog):
     assert "Evaluated 'p1' (credulous, preferred, base cbn, favoured): VALUE" in text
     assert "Rendering p1, the normal form of the last evaluation:" in text
     assert "Grounded labelling for 'issue :B':" in text
+
+
+def test_argument_names_ending_in_digits_stay_apart(fresh):
+    # aida-fold-occurrences-names: a1_0 and a1_1 are two arguments, not
+    # copies of an "a1"; copies are named after the argument they came from.
+    run(fresh, "tests/minicourse/lesson14_sharing.fspy")
+    doc = fresh.document
+    graph = issue_graph(unfold(doc, (K("P2"), "term")), *options(fresh).values())
+    assert sorted(e.name for e in graph.edges) == ["a1_0", "a1_1", "a2_0", "a2_1"]
+
+
+def test_unfolding_copies_still_fold_under_their_argument(fresh):
+    run(fresh, "tests/peirces_law.fspy")
+    doc = fresh.document
+    graph = issue_graph(unfold(doc, fresh.issue_of(fresh.get_argument("p1"))),
+                        *options(fresh).values())
+    names = [e.name for e in graph.edges]
+    assert len(names) == len(set(names)) and "s3" in names and not any(
+        n.rsplit("_", 1)[-1].isdigit() for n in names)

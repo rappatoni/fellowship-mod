@@ -45,8 +45,8 @@ from core.ac.ast import (
     first_order_node, FirstOrderNotSupported,
 )
 from core.comp.oracle_terms import _free_names, contains_uncatchable_clash
-from core.dc.debate_graph import DebateGraph, Edge, _Compiler, _match_scaffold
-from core.dc.share import SharedDebate, is_cite
+from core.dc.debate_graph import DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin
+from core.dc.share import SharedDebate, is_cite, _same_origin
 from core.dc.strict import (
     strict_resolve, is_closed, _contains_assumption, _eta_statement, fold_occurrences, key_of,
 )
@@ -329,11 +329,13 @@ class IssueResolver:
             elif isinstance(n, Mu):
                 new = fresh(n.id.name)
                 names2 = {**names, ("context", n.id.name): new}
-                return Mu(ID(new, n.id.prop), n.prop, walk(n.term, names2), walk(n.context, names2))
+                return _same_origin(n, Mu(ID(new, n.id.prop), n.prop,
+                                          walk(n.term, names2), walk(n.context, names2)))
             elif isinstance(n, Mutilde):
                 new = fresh(n.di.name)
                 names2 = {**names, ("term", n.di.name): new}
-                return Mutilde(DI(new, n.di.prop), n.prop, walk(n.term, names2), walk(n.context, names2))
+                return _same_origin(n, Mutilde(DI(new, n.di.prop), n.prop,
+                                               walk(n.term, names2), walk(n.context, names2)))
             elif isinstance(n, Cons):
                 out = Cons(walk(n.term, names), walk(n.context, names))
             elif isinstance(n, Sonc):
@@ -417,7 +419,7 @@ class IssueResolver:
             statement = _eta_statement(node)
             if statement is not None and _has_decision(node) and is_closed(node, self.strict_names):
                 full = self.materialise(node)
-                name = node.id.name if isinstance(node, Mu) else node.di.name
+                name = binder_origin(node)
                 if contains_uncatchable_clash(full):
                     logger.debug("strict: no edge for '%s': it holds an uncatchable clash", name)
                 else:

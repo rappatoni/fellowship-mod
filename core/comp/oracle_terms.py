@@ -75,12 +75,23 @@ def all_names(node) -> set:
     return names
 
 
-def freshen_binders(node, avoid: set):
+def freshen_binders(node, avoid: set, only=None):
     """A copy of ``node`` in which every binder (and its bound occurrences)
     got a fresh name outside ``avoid``.  Free occurrences are untouched.
 
+    The placeholder ``_`` is left alone: no variable is ever called ``_``,
+    so it binds nothing and can capture nothing, and the scaffold matcher
+    recognises a scaffold's inner pair by it - renamed, a scaffold that
+    passed through a substitution was no longer recognisable (lesson 13 of
+    minicourse-evaluation.org; aida-unfold-scaffold-binders-capture).
+
     After this, no binder name in the result occurs in ``avoid``, and all
-    binder names are pairwise distinct.
+    binder names other than ``_`` are pairwise distinct.
+
+    ``only``: rename just the binders whose name is in it and keep every
+    other binder's name, so that a substitution leaves the names of the
+    arguments it passes through alone (``substitute(minimal=True)``).
+    Afterwards no binder name occurs in ``avoid & only``.
     """
     node = deepcopy(node)
     taken = set(avoid) | all_names(node)
@@ -92,6 +103,11 @@ def freshen_binders(node, avoid: set):
             if name not in taken:
                 taken.add(name)
                 return name
+
+    def keep_placeholder(name: str) -> str:
+        if name == "_" or (only is not None and name not in only):
+            return name
+        return fresh()
 
     def walk(n, term_env: dict, ctx_env: dict):
         """term_env / ctx_env map in-scope old binder names to new ones."""
@@ -106,27 +122,27 @@ def freshen_binders(node, avoid: set):
                 n.name = ctx_env[n.name]
             return
         if isinstance(n, Mu):
-            new = fresh()
+            new = keep_placeholder(n.id.name)
             inner_ctx = dict(ctx_env); inner_ctx[n.id.name] = new
             n.id.name = new
             walk(n.term, term_env, inner_ctx)
             walk(n.context, term_env, inner_ctx)
             return
         if isinstance(n, Mutilde):
-            new = fresh()
+            new = keep_placeholder(n.di.name)
             inner_term = dict(term_env); inner_term[n.di.name] = new
             n.di.name = new
             walk(n.term, inner_term, ctx_env)
             walk(n.context, inner_term, ctx_env)
             return
         if isinstance(n, Lamda):
-            new = fresh()
+            new = keep_placeholder(n.di.di.name)
             inner_term = dict(term_env); inner_term[n.di.di.name] = new
             n.di.di.name = new
             walk(n.term, inner_term, ctx_env)
             return
         if isinstance(n, Admal):
-            new = fresh()
+            new = keep_placeholder(n.id.id.name)
             inner_ctx = dict(ctx_env); inner_ctx[n.id.id.name] = new
             n.id.id.name = new
             walk(n.context, term_env, inner_ctx)
@@ -153,20 +169,23 @@ def _replace_free(node, kind, name: str, replacement):
     return node
 
 
-def substitute(node, kind, name: str, replacement):
+def substitute(node, kind, name: str, replacement, minimal=False):
     """Capture-avoiding substitution [replacement / name] on a copy of node.
 
     ``kind`` is DI for term variables, ID for context variables.  The
     strategy is freshen-then-replace: every binder in the target is renamed
     to a fresh name outside names(replacement) + {name}; afterwards every
     remaining occurrence of ``name`` is free and plain replacement cannot
-    capture.
+    capture.  ``minimal``: rename only the binders that could capture, i.e.
+    those named like ``name`` or like a name of ``replacement``; every
+    other binder keeps its name.
     """
     if kind not in (ID, DI):
         raise TypeError("kind must be the ID or DI class")
     _check_propositional(node, "Oracle substitution")
     _check_propositional(replacement, "Oracle substitution")
-    prepared = freshen_binders(node, avoid=all_names(replacement) | {name})
+    avoid = all_names(replacement) | {name}
+    prepared = freshen_binders(node, avoid=avoid, only=avoid if minimal else None)
     return _replace_free(prepared, kind, name, replacement)
 
 

@@ -216,7 +216,7 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
             role, site_side, prop, orig, scion_raw, alt, scion_kind = match
             if stubs is not None:
                 read = Match(role, site_side, prop, orig, stubs.for_record(scion_raw), alt, scion_kind)
-                read.legacy = match.legacy
+                read.legacy, read.beta = match.legacy, match.beta
                 records = scion_record(read, env, strict_names)
             else:
                 records = scion_record(match, env, strict_names)

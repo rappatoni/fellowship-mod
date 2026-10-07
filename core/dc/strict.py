@@ -69,10 +69,12 @@ from dataclasses import replace
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Goal, Laog, Deleg, Geled, ID, DI,
 )
-from core.comp.oracle_terms import _occurs, _free_names, _contains, contains_uncatchable_clash
+from core.comp.oracle_terms import (
+    _occurs, _free_names, _contains, contains_uncatchable_clash, substitute,
+)
 from core.dc.debate_graph import (
     DebateGraph, Edge, canonical_prop, compile_debate, _match_scaffold, _restore_scion,
-    scaffold_parts, BUILTIN_LEAVES,
+    scaffold_parts, BUILTIN_LEAVES, binder_origin,
 )
 from core.logging_util import TRACE, artifact
 
@@ -122,6 +124,63 @@ def strict_in_debate(node, catchers_ids=frozenset(), catchers_dis=frozenset()) -
     return not _contains_assumption(node)
 
 
+#: How many rounds of substitution ``strict_in_scope`` takes at most; each
+#: round replaces the scaffold variables free in the term by what stands
+#: outside them, so the chain ends long before.
+_SCOPE_ROUNDS = 64
+
+
+def strict_in_scope(node, scope) -> bool:
+    """Strict in the debate, with the scaffolds' own variables taken for
+    what they stand for (aida-unfold-scaffold-binders-capture).  An
+    argument's binder is a commitment the debate has made; a scaffold's
+    is not.  ``scope`` maps the name of every scaffold variable in scope
+    to ("b", kind, T) - the scaffold's b, standing for its supported term
+    T after the outer step - or ("alt", kind, prop) - its alt, standing
+    for "the statement fails", which no strictness can settle.  Each such
+    variable free in ``node`` is substituted in a copy (b by T, alt by an
+    open site) until none is left, and the copy is asked for an open site
+    as usual.  The chain goes outward, so it ends."""
+    if not scope:
+        return strict_in_debate(node)
+    term = node
+    for _ in range(_SCOPE_ROUNDS):
+        free = [(kind, name) for kind, name in _free_names(term) if name in scope]
+        if not free:
+            return strict_in_debate(term)
+        for _kind, name in free:
+            role, kind, what = scope[name]
+            if role == "alt":
+                # an open site stands where "the statement fails" would
+                return False
+            term = substitute(term, kind, name, what, minimal=True)
+    raise RuntimeError("strict: scaffold variables do not resolve outward")
+
+
+def _paper_beta(node):
+    """(kind, name, orig) of a paper scaffold's b: the variable, its kind
+    (DI on the term side, ID on the context side) and the term it is bound
+    to by the outer step.  None for a legacy shape, whose inner binders
+    are placeholders."""
+    if isinstance(node, Mu) and isinstance(node.context, Mutilde) and node.context.di.name != "_":
+        return DI, node.context.di.name, node.term
+    if isinstance(node, Mutilde) and isinstance(node.term, Mu) and node.term.id.name != "_":
+        return ID, node.term.id.name, node.context
+    return None
+
+
+def _outer_step(node, scion):
+    """The scion after the scaffold's outer step, b := the original.  The
+    rewrites below drop b's binder; a scion that uses b (a supporter that
+    needs the statement it supports, captured by b) must not be left with
+    it unbound."""
+    beta = _paper_beta(node)
+    if beta is None or not _occurs(scion, beta[0], beta[1]):
+        return scion
+    kind, name, orig = beta
+    return substitute(scion, kind, name, orig, minimal=True)
+
+
 def is_closed(node, strict_names=()) -> bool:
     """No open site and no free variable but declared names."""
     if not strict_in_debate(node):
@@ -152,9 +211,10 @@ def keep_orig(node, orig, alt):
 
 
 def keep_scion_support(node, scion, alt):
-    """The supporter wins: inner pair to <t2||alpha>, outer pair discards
-    the original: mu alpha.<t2 || alpha> -> t2."""
-    return _eta(isinstance(node, Mu), scion, alt, node.prop)
+    """The supporter wins: the outer pair binds b := the original, the
+    inner pair goes to <t2||alpha>: mu alpha.<t2[b:=orig] || alpha> -> t2
+    (eta, when t2 does not use alpha)."""
+    return _eta(isinstance(node, Mu), _outer_step(node, scion), alt, node.prop)
 
 
 def keep_attack_wing(node, match):
@@ -170,7 +230,7 @@ def keep_attack_wing(node, match):
         result.term = deepcopy(wing.term)
         result.context = deepcopy(wing.context)
         return result
-    orig, scion = match[3], match[4]
+    orig, scion = match[3], _outer_step(node, match[4])
     if isinstance(node, Mu):
         result.term = deepcopy(orig)
         result.context = deepcopy(scion)
@@ -208,34 +268,54 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
             return set(), {node.di.name}
         return set(), set()
 
-    def walk(node, ids=frozenset(), dis=frozenset()):
+    def walk(node, ids=frozenset(), dis=frozenset(), scope=None):
         """Top-down identification, bottom-up decision: a scaffold is
         recognised before its wiring, its original and scion are
         rewritten first, then it is decided.  ``ids``/``dis`` are the
-        enclosing mu/mu' binders, the catchers in scope."""
+        enclosing mu/mu' binders, the catchers in scope; ``scope`` the
+        paper scaffolds' own variables in scope (``strict_in_scope``)."""
         if not isinstance(node, ProofTerm):
             return node
+        scope = scope or {}
         own_ids, own_dis = binders_of(node)
         inner_ids, inner_dis = ids | own_ids, dis | own_dis
         match = _match_scaffold(node, strict_names)
         if match is None:
+            # an argument's binder shadows a scaffold variable of that name
+            inner_scope = ({k: v for k, v in scope.items() if k not in own_ids | own_dis}
+                           if own_ids or own_dis else scope)
             for slot in ("term", "context"):
                 child = getattr(node, slot, None)
                 if isinstance(child, ProofTerm):
-                    setattr(node, slot, walk(child, inner_ids, inner_dis))
+                    setattr(node, slot, walk(child, inner_ids, inner_dis, inner_scope))
             return node
         # the wiring binders (alpha/x and beta) are catchers for the parts
         wiring = node.context if isinstance(node, Mu) else node.term
         w_ids, w_dis = binders_of(wiring)
         part_ids, part_dis = inner_ids | w_ids, inner_dis | w_dis
-        for parent, slot in scaffold_parts(node, match):
-            setattr(parent, slot, walk(getattr(parent, slot), part_ids, part_dis))
+        # A paper scaffold's alt binds the contrary over both parts, its b
+        # the statement over the scion, bound to the original once it is
+        # resolved (aida-unfold-scaffold-binders-capture).  Legacy shapes
+        # keep their variables out of this: their terms never capture by
+        # them.
+        alt_kind = ID if isinstance(node, Mu) else DI
+        orig_scope = scope if match.legacy else {**scope, match[5]: ("alt", alt_kind, match[2])}
+        (o_parent, o_slot), (s_parent, s_slot) = scaffold_parts(node, match)
+        setattr(o_parent, o_slot, walk(getattr(o_parent, o_slot), part_ids, part_dis, orig_scope))
+        beta = None if match.legacy else _paper_beta(node)
+        scion_scope = (orig_scope if beta is None
+                       else {**orig_scope, beta[1]: ("b", beta[0], beta[2])})
+        setattr(s_parent, s_slot, walk(getattr(s_parent, s_slot), part_ids, part_dis, scion_scope))
         match = _match_scaffold(node, strict_names)      # same shape, rewritten parts
+        if match is None:
+            logger.warning("strict: a scaffold no longer matches after its parts were "
+                           "resolved; left for the labelling")
+            return node
         role, site_side, prop, orig, scion, alt, scion_kind = match
         effective = (_restore_scion(scion, scion_kind, alt, prop, "r0")
                      if (match.legacy and role == "attacker") else scion)
-        s_orig = strict_in_debate(orig, part_ids, part_dis)
-        s_scion = strict_in_debate(effective, part_ids, part_dis)
+        s_orig = strict_in_scope(orig, orig_scope)
+        s_scion = strict_in_scope(effective, scion_scope)
         statement = (canonical_prop(prop), site_side if role == "supporter"
                      else ("context" if site_side == "term" else "term"))
         logger.log(TRACE, "  strict: %s scaffold on %s: original %s, %s %s",
@@ -305,7 +385,7 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         if statement is not None and has_decision(node):
             # It owes its closedness to a decision.  Three conditions gate the
             # edge, and which one vetoed it is the interesting part.
-            name = node.id.name if isinstance(node, Mu) else node.di.name
+            name = binder_origin(node)
             if not is_closed(node, strict_names):
                 free = sorted({n for _kind, n in _free_names(node)}
                               - set(strict_names or ()) - set(BUILTIN_LEAVES))
@@ -370,13 +450,27 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
 def fold_occurrences(graph: DebateGraph) -> None:
     """Unfolding copies a document edge into every site of its statement,
     and the compiler makes one edge per copy (s3 and s3_2 on Peirce).
-    Fold copies - same name stem, target, sources and strictness - into
-    one under the stem name, keeping the first role; a duplicate disjunct
-    changes no label, so this is presentation only."""
+    Fold copies - same name, target, sources and strictness - into one,
+    keeping the first role; a duplicate disjunct changes no label, so this
+    is presentation only.
+
+    A copy is named after the argument it came from (``binder_origin``),
+    so copies share a name.  The suffix is read off a name only as a
+    fallback for a term the unfolder did not mark, and only where an edge
+    of the stem's own name exists with the same target and sources: a1_0
+    and a1_1 are two arguments, not copies of an a1
+    (aida-fold-occurrences-names)."""
+    def body(edge):
+        return (edge.target_key, edge.target_side, edge.strict,
+                tuple((s.key, s.side, s.kind) for s in edge.sources))
+
+    present = {(edge.name, body(edge)) for edge in graph.edges}
     seen = {}
     kept = []
     for edge in graph.edges:
-        stem = re.sub(r"_\d+$", "", edge.name)          # s3_2 -> s3: an unfolding copy
+        stem = re.sub(r"_\d+(?=\*?$)", "", edge.name)     # s3_2 -> s3, s3_2* -> s3*
+        if stem == edge.name or (stem, body(edge)) not in present:
+            stem = edge.name
         key = (stem, edge.target_key, edge.target_side, edge.strict,
                tuple((s.key, s.side, s.kind) for s in edge.sources))
         if key in seen:

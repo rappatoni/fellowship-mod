@@ -8,6 +8,7 @@ each issue and check T6 (termination), the labels and the verdicts.
 """
 
 import warnings
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -89,8 +90,20 @@ class TestShapes:
         term = unfold(doc, (K("P"), "term"))
         parg_copy = _match_scaffold(term, STRICT)[4]
         site = parg_copy.term.context.term
-        match = _match_scaffold(site, STRICT)
-        assert match is not None and match[0] == "attacker" and not match.legacy
+        # The attack on Q has no attacker, only the default "Q fails": its
+        # wing is the contrary captured by the attack's own alt
+        # (aida-unfold-scaffold-binders-capture).  Both halves of the
+        # wiring are then equal, the matcher does not recognise a scaffold,
+        # and normalisation takes it apart.
+        assert _match_scaffold(site, STRICT) is None
+        alt, wiring = site.id.name, site.context
+        assert isinstance(site.term, Deleg) and isinstance(wiring, Mutilde)
+        beta = wiring.di.name
+        for half in (wiring.term, wiring.context):
+            assert (isinstance(half.term, DI) and half.term.name == beta
+                    and isinstance(half.context, ID) and half.context.name == alt)
+        # the presumption of "Q fails" is still in the framework: an onus
+        # conflict, both sides undecided
         g = compile_debate(term, "u", strict_names=STRICT)
         labels = grounded_labels(g)
         assert labels[(K("Q"), "term")] == "UNDEC" and labels[(K("Q"), "context")] == "UNDEC"
@@ -140,11 +153,11 @@ class TestShapes:
         doc = document(("s2", host), ("p3", p3))
         term = unfold(doc, (K("P"), "term"))
         assert _contains(term, lambda n: isinstance(n, ID) and n.name == "beta")
-        # p3's demand is gone; the one Laog for P left is the root's trivial
-        # challenge (P[c] carries an obligation marker), outside p3
+        # p3's demand is gone; so is the root's trivial challenge (P[c]
+        # carries an obligation marker): the attack's own alt captures it
         laogs = []
         _contains(term, lambda n: laogs.append(n) if isinstance(n, Laog) and n.prop == "P" else False)
-        assert len(laogs) == 1
+        assert laogs == []
         assert not _contains(term, lambda n: isinstance(n, Mu) and n.id.name == "g"
                              and _contains(n, lambda m: isinstance(m, Laog)))
 
@@ -163,11 +176,12 @@ class TestShapes:
                                      ID("g", "Q"))))
         doc = compile_document([("s2", host), ("p3", p3)], strict_names=STRICT | {"pq"})
         term = unfold(doc, (K("P"), "term"))
-        # root = ATT(P!, SUP(site, s2)): inside the copy of s2 the presumed
-        # refutation of P is gone, captured; the bare P! at the root is the
-        # contrary's own default attacking the issue.
-        root_attack = _match_scaffold(term, STRICT)
-        s2_copy = _match_scaffold(root_attack[3], STRICT)[4]
+        # root = ATT(SUP(site, s2), alt): inside the copy of s2 the presumed
+        # refutation of P is gone, captured; the contrary's own default at
+        # the root is captured by the attack's alt, so the attack has
+        # nothing but that fallback and is no scaffold.
+        assert _match_scaffold(term, STRICT) is None
+        s2_copy = _match_scaffold(term.term, STRICT)[4]
         assert not _contains(s2_copy, lambda n: isinstance(n, Geled) and n.prop == "P")
         captured = []
         _contains(term, lambda n: captured.append(n) if isinstance(n, ID) and n.name == "beta" else False)
@@ -204,15 +218,20 @@ class TestShapes:
         trace = []
         strict_resolve(term, strict, trace=trace)
         assert [(s, what) for (_, s), what in trace] == [("term", "attacker strict: defeat")]
-        # stacked shape (aida-unfold-entrypoints): the contrary's root is the
-        # attack scion itself, the captured variable with no eta wrapper
-        for issue, wing in (((K("Q"), "term"), "μ_:P.<b3:P||s:P>"),
-                            ((K("R"), "term"), "μ'_:P.<h:P||b3:P>")):
+        # stacked shape: the contrary's root is the attack scion itself, and
+        # the attack's own alt, the innermost binder of the contrary,
+        # captures it (aida-unfold-scaffold-binders-capture).  The attack is
+        # then nothing but its fallback; strictness leaves it to
+        # normalisation, and the verdicts are those of the legacy shape.
+        for issue, wing, verdict in (((K("Q"), "term"), "μ_:P.<b2:P||alt2:P>", "open"),
+                                     ((K("R"), "term"), "μ_:P.<alt2:P||b2:P>", "value")):
             term = unfold(doc, issue)
             assert wing in pres_str(term)
             trace = []
             strict_resolve(term, strict, trace=trace)
-            assert [what for _, what in trace] == ["attacker strict: defeat"]
+            assert trace == []
+            for mode in ("skeptical", "credulous"):
+                assert evaluate_debate(term, "u", strict_names=strict, mode=mode)[1] == verdict
 
 
 def bare_contrary_document():
@@ -332,7 +351,30 @@ def test_peirce_is_a_theorem(prover):
                                         Mu(ID("a", P), P, DI("f", I),
                                            Cons(Lamda(Hyp(DI("h", P), P), Mu(ID("_", Q), Q, DI("h", P), ID("a", P))),
                                                 ID("a", P)))))
-    assert alpha_equal(nf, classical_proof)
+    # up to eta: the outer step b := t of a scaffold whose supporter
+    # captured b leaves an eta redex (aida-unfold-scaffold-binders-capture)
+    assert alpha_equal(eta_normal(nf), eta_normal(classical_proof))
+
+
+def eta_normal(term):
+    """Every eta redex mu a.<t||a> / mu'x.<x||e> contracted, everywhere."""
+    from core.ac.ast import ProofTerm
+    from core.comp.oracle_terms import _occurs
+    term = deepcopy(term)
+
+    def walk(n):
+        if (isinstance(n, Mu) and isinstance(n.context, ID) and n.context.name == n.id.name
+                and not _occurs(n.term, ID, n.id.name)):
+            return walk(n.term)
+        if (isinstance(n, Mutilde) and isinstance(n.term, DI) and n.term.name == n.di.name
+                and not _occurs(n.context, DI, n.di.name)):
+            return walk(n.context)
+        for slot in ("term", "context"):
+            child = getattr(n, slot, None)
+            if isinstance(child, ProofTerm):
+                setattr(n, slot, walk(child))
+        return n
+    return walk(term)
 
 
 def test_even_loop_is_symmetric(prover):
