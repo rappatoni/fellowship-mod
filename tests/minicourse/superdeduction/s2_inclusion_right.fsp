@@ -1,0 +1,8 @@
+(* Superdeduction course, lesson S2: the right rule of A ⊆ B, computed by decomposing its definition. *)
+lk.
+declare El, Set : type.
+declare mem : El -> Set -> bool.
+declare A, B : Set.
+theorem rhs : (forall x:El, mem [x] [A] -> mem [x] [B]).
+elim.
+elim h.
