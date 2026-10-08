@@ -1,5 +1,8 @@
 # A formalization of first order logic Isabelle style.
-minimal. lk.
+% Arguments are intuitionistic: the hypothetical rules (implfi, orfe, existsfe, forallfi)
+% are only adequate for an intuitionistic object logic while the meta-level is lj.
+minimal.
+lj.
 declare form : type.
 declare termf : type.
 declare botf : form.
@@ -7,7 +10,76 @@ declare andf, orf, implf : form -> form -> form.
 
 declare forallf, existsf : [termf -> form] -> form.
 declare truef : form -> bool.
-declare andfi: (forall p:form, forall q:form, truef [p] -> truef [andf (p)(q)] ).
-#other rules ommitted for now, let's get to the interesting stuff: quantifier rules.
-declare forallfi : (forall f:termf -> form, forall x:termf, truef[f(x)] -> truef[forallf(f)]).
-#TODO: second forallf axiom, existsf axioms. 
+declare andfi: (forall p:form, forall q:form, truef [p] -> truef [q] -> truef [andf (p)(q)] ).
+declare andfe1 : (forall p:form, forall q:form, truef [andf p q] -> truef [p]).
+declare andfe2 : (forall p:form, forall q:form, truef [andf p q] -> truef [q]).
+declare orfi1 : (forall p:form, forall q:form, truef [p] -> truef [orf p q]).
+declare orfi2 : (forall p:form, forall q:form, truef [q] -> truef [orf p q]).
+declare orfe : (forall p:form, forall q:form, forall r:form, truef [orf p q] -> (truef [p] -> truef [r]) -> (truef [q] -> truef [r]) -> truef [r]).
+declare implfi : (forall p:form, forall q:form, (truef [p] -> truef [q]) -> truef [implf p q]).
+declare implfe : (forall p:form, forall q:form, truef [implf p q] -> truef [p] -> truef [q]).
+declare botfe : (forall p:form, truef [botf] -> truef [p]).
+#Quantifier rules.
+declare forallfi : (forall f:termf -> form, (forall x:termf, truef[f(x)]) -> truef[forallf(f)]).
+declare forallfe : (forall f:termf -> form, forall x:termf, truef[forallf(f)] -> truef[f(x)]).
+declare existsfi : (forall f:termf -> form, forall x:termf, truef[f(x)] -> truef[existsf(f)]).
+declare existsfe : (forall f:termf -> form, forall c:form, truef[existsf(f)] -> (forall x:termf, truef[f(x)] -> truef[c]) -> truef[c]).
+
+#Probe proofs: each quantifier rule is used at a declared predicate P.
+declare P : termf -> form.
+declare c : termf.
+
+theorem all_ex : (truef [forallf P] -> truef [existsf P]).
+prove all_ex
+elim H.
+cut (forall f:termf -> form, forall x:termf, truef[f(x)] -> truef[existsf(f)]) th.
+axiom existsfi.
+elim [P].
+elim [c].
+elim.
+cut (forall f:termf -> form, forall x:termf, truef[forallf(f)] -> truef[f(x)]) th2.
+axiom forallfe.
+elim [P].
+elim [c].
+elim.
+axiom H.
+axiom th2.
+axiom th.
+qed.
+
+theorem all_all : (truef [forallf P] -> truef [forallf P]).
+prove all_all
+elim H.
+cut (forall f:termf -> form, (forall x:termf, truef[f(x)]) -> truef[forallf(f)]) th.
+axiom forallfi.
+elim [P].
+elim.
+elim.
+cut (forall f:termf -> form, forall x:termf, truef[forallf(f)] -> truef[f(x)]) th2.
+axiom forallfe.
+elim [P].
+elim [x].
+elim.
+axiom H.
+axiom th2.
+axiom th.
+qed.
+
+theorem ex_elim : (truef [existsf P] -> (forall x:termf, truef [P x] -> truef [botf]) -> truef [botf]).
+prove ex_elim
+elim H.
+elim K.
+cut (forall f:termf -> form, forall c:form, truef[existsf(f)] -> (forall x:termf, truef[f(x)] -> truef[c]) -> truef[c]) th.
+axiom existsfe.
+elim [P].
+elim [botf].
+elim.
+axiom H.
+elim.
+axiom K.
+axiom th.
+qed.
+
+% Excluded middle for the object logic, truef [orf Q (implf Q botf)], is refused here:
+% its proof uses the conclusion twice. The same script is accepted under lk, see
+% lib/fol_em.fspy. The logic cannot be switched inside one session.

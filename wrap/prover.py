@@ -5,6 +5,12 @@ from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
 from core.ac.signature import Declaration
 from mod import store
+from core.dc.debate_graph import (
+    DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
+    SYNTHETIC_PREFIX,
+)
+from core.dc.share import ANON_PREFIX, SharedDebate, share
+from core.ac.ast import FirstOrderNotSupported
 
 logger = logging.getLogger('fsp.wrapper')
 
@@ -20,6 +26,32 @@ class ProverNeedsMoreInput(ProverError):
 
 class MachinePayloadError(ProverError):
     pass
+
+
+class NameClash(ProverError):
+    """A name is already taken in this document (tasks.org,
+    aida-statements-and-witnesses).  Refused before the prover sees it."""
+
+
+class CitationRefused(ProverError):
+    """`axiom NAME` cited a registered argument that does not fit the goal:
+    the wrong side or the wrong proposition."""
+
+
+class StrictnessRefused(ProverError):
+    """`qed` demanded a strict witness and the witness still has open
+    obligations or presumptions.  Nothing reaches Fellowship's theorems."""
+
+
+#: Prefixes of the names the wrapper generates itself: the ones it sends to
+#: Fellowship (the type oracle's replay, the theta-expansion names) and the
+#: ones it gives to sub-debates nobody named (core/dc/share.py).  A user name
+#: with one of them could collide with a generated one, so it is refused.
+RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX, ANON_PREFIX)
+
+#: What may refine what: a recording becomes the argument it records, a
+#: statement's enthymeme becomes its witness.  Anything else is a clash.
+_REFINABLE = {"recording", "statement"}
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 
@@ -50,6 +82,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.last_output_text: str = ""
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
+        # Whether `graph ... show` and `tree` may write image/DOT files and open
+        # a viewer.  ACDC_NO_RENDER=1 turns both off for a whole session (test
+        # runs, headless CI); ACDC_NO_OPEN is the narrower "write but do not
+        # open".  execute_script can override it per script.
+        self.render_files = os.getenv("ACDC_NO_RENDER", "").lower() in {"", "0", "false", "no"}
         self.declarations: Dict[str, Declaration] = {}
         self.decorations: Dict[str, str] = {}
  
@@ -64,7 +101,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return atom[1:-1]
         return atom
 
-    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
+    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False, keep_document: bool = False) -> Dict[str, Any]:
         """Send a single command to Fellowship.
 
         command -- The command string
@@ -72,6 +109,19 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         Returns a preparsed (sexp) proof state.
         """
+        stripped = command.strip().rstrip(".").strip()
+        if stripped in ("lj", "lk") and not keep_document:
+            # Fellowship starts a new theory here; so does the document
+            # (the type-check switch is a session setting and survives).
+            kept = {key: store.document[key]
+                    for key in ("typecheck", "typecheck_expanded", "pipeline_unfolded")
+                    if key in store.document}
+            revision = store.document.get("revision", 0)
+            store.document.clear()
+            store.document["logic"] = stripped
+            store.document.update(kept)
+            # monotonic, so that no term cached before the switch looks fresh
+            store.document["revision"] = revision + 1
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -85,7 +135,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 self.last_output_text = out
                 state: Dict[str, Any] = {"_need_more_input": True}
                 if include_ui:
-                    state["_ui"] = out.strip()
+                    state["_ui"] = MACHINE_BLOCK_RE.sub("", out).strip()
                 return state
             logger.error("pexpect timeout on command %r: %s", command, e)
             raise ProverError(f"Prover I/O timeout (possible incomplete command): {e}") from e
@@ -195,7 +245,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 # to complete the command.
                 state = {"_need_more_input": True}
                 if include_ui:
-                    state["_ui"] = output.strip()
+                    state["_ui"] = MACHINE_BLOCK_RE.sub("", output).strip()
             else:
                 logger.error("Machine block missing in prover output for command %r", command_for_error)
                 raise MachinePayloadError("Machine block missing in prover output.")
@@ -209,7 +259,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         if include_ui:
             # Keep prover UI text for interactive mode.
-            state['_ui'] = output.strip()
+            state['_ui'] = MACHINE_BLOCK_RE.sub('', output).strip()
             # Also surface extracted plaintext parse errors explicitly so the CLI can show
             # a crisp error even if Fellowship's surrounding UI text is noisy.
             if state.get('_no_machine_block_ok') and state.get('errors'):
@@ -414,6 +464,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(typ, str):
                         typ = self._unquote(typ)
                     self.declarations[nm] = tagged(typ, 'sort')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  declared.", nm, typ)
                 elif kind == 'prop':
                     # We store the proposition string for axioms/theorems.
@@ -421,6 +472,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
                     self.declarations[nm] = tagged(pr, 'prop')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  declared.", nm, pr)
                 elif kind == 'moxia':
                     # Store the proposition string for refutations (deny).
@@ -428,6 +480,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
                     if isinstance(pr, str):
                         pr = self._unquote(pr)
                     self.declarations[nm] = tagged(pr, 'moxia')
+                    self.bump_revision()
                     logger.info("'%s' : '%s'  denied.", nm, pr)
             
 
@@ -474,9 +527,252 @@ TODO: Mechanism to declare a scenario of default assumptions.
         else:
             return f"Error: Tactic '{tactic_name}' is not defined."
 
-    def register_argument(self, argument: Any) -> None:
-        """ Register a new argument (i.e. a partial Fellowship proof.)"""
+    # -- names ---------------------------------------------------------------
+
+    @property
+    def names(self) -> Dict[str, str]:
+        """Every name taken in this document, with what took it:
+        "declaration", "statement", "recording" or "argument".  Scoped like
+        the document itself: `lk.`/`lj.` start a new theory in Fellowship
+        and a new, empty table here."""
+        return store.document.setdefault("names", {})
+
+    def claim_name(self, name: str, kind: str, *, refine: bool = False, dry_run: bool = False) -> None:
+        """Take ``name`` for ``kind`` or raise NameClash.
+
+        One namespace for sorts, declared axioms, statements and arguments,
+        checked here because only the wrapper sees every name: defeasible
+        arguments never reach Fellowship, which silently replaces an
+        existing theorem of the same name.  ``refine`` lets a recording
+        become its argument and a statement become its witness."""
+        if any(name.startswith(p) for p in RESERVED_PREFIXES):
+            raise NameClash(
+                f"'{name}' starts with a prefix the wrapper reserves for the names it "
+                f"generates itself ({', '.join(RESERVED_PREFIXES)}); choose another name."
+            )
+        held = self.names.get(name)
+        if held is not None and not (refine and held in _REFINABLE):
+            raise NameClash(
+                f"'{name}' is already a {held} in this document; names are unique "
+                f"per document (lk. or lj. starts a new one)."
+            )
+        if not dry_run:
+            self.names[name] = kind
+
+    def claim_declared_names(self, command: str) -> None:
+        """The names a `declare N1, N2 : TYPE.` command introduces."""
+        match = re.match(r"\s*declare\s+(.+?)\s*:", command)
+        if not match:
+            return
+        for name in (n.strip() for n in match.group(1).split(",")):
+            if name:
+                self.claim_name(name, "declaration")
+
+    def register_argument(self, argument: Any, *, replace: bool = False) -> None:
+        """ Register a new argument (i.e. a partial Fellowship proof.)
+
+        An atomic argument (not one the debate operators composed) also
+        contributes its hyperedges to the document graph; a composed one
+        is a *debate*, named for its issue, and adds nothing - the
+        conflicts it names are already in the document (option (i)+(ii)
+        of the aida-document-graph decision).
+
+        The name must be free, or held by the recording or statement this
+        argument refines; otherwise NameClash, and nothing is registered."""
+        if not (replace and argument.name in self.arguments):
+            self.claim_name(argument.name, "argument", refine=True)
+        else:
+            self.names[argument.name] = "argument"
+        # A replacement (a refinement, or a citer replayed after its citation
+        # became strict) keeps its position: dict assignment to an existing
+        # key does, and registration order is the order unfolding nests
+        # scaffolds in.
         self.arguments[argument.name] = argument
+        if not getattr(argument, "composed", False):
+            self.document_add(argument)
+        self.bump_revision()
+
+    def rebuild_document(self) -> None:
+        """Recompile the document graph from the atomic arguments, in
+        registration order.  Needed after a replacement: merging cannot take
+        an old edge back out, and default markers are not tracked per edge."""
+        store.document["graph"] = DebateGraph()
+        for argument in self.arguments.values():
+            if not getattr(argument, "composed", False):
+                self.document_add(argument)
+        self.bump_revision()
+        logger.debug("Document graph rebuilt: %d edge(s)", len(self.document.edges))
+
+    # -- the document graph (Phase C) --------------------------------------
+
+    @property
+    def document(self) -> DebateGraph:
+        return store.document.setdefault("graph", DebateGraph())
+
+    @property
+    def typecheck_enabled(self) -> bool:
+        """Whether unfolded terms are replayed through Fellowship before
+        use (default on; FSP_TYPECHECK=0 or `typecheck off` disables)."""
+        return store.document.get("typecheck", os.getenv("FSP_TYPECHECK", "1") != "0")
+
+    @typecheck_enabled.setter
+    def typecheck_enabled(self, value: bool) -> None:
+        store.document["typecheck"] = bool(value)
+
+    @property
+    def typecheck_expanded(self) -> bool:
+        """Whether the type check replays the whole unfolded term instead of
+        one definition at a time (default off; FSP_TYPECHECK=expanded or
+        `typecheck expanded` selects it).  The expanded replay is the older,
+        exponentially larger check; it is kept as the reference the
+        per-definition check is tested against (core/dc/typecheck.py)."""
+        return store.document.get("typecheck_expanded",
+                                  os.getenv("FSP_TYPECHECK", "1") == "expanded")
+
+    @typecheck_expanded.setter
+    def typecheck_expanded(self, value: bool) -> None:
+        store.document["typecheck_expanded"] = bool(value)
+
+    @property
+    def pipeline_unfolded(self) -> bool:
+        """Whether graph, label and evaluate work on the term unfolded from
+        the document graph - whose cost grows with the number of paths
+        through the graph - instead of on the shared debate.  Default ON
+        since 2026-10-06: only the unfolded route builds the stacked shape
+        and the argument entrypoints (aida-unfold-entrypoints); the shared
+        route keeps the legacy shape until aida-shared-route-stack-shape.
+        FSP_PIPELINE=shared or `pipeline shared` selects the shared route."""
+        return store.document.get("pipeline_unfolded",
+                                  os.getenv("FSP_PIPELINE", "unfolded") == "unfolded")
+
+    @pipeline_unfolded.setter
+    def pipeline_unfolded(self, value: bool) -> None:
+        store.document["pipeline_unfolded"] = bool(value)
+
+    def typechecked(self) -> dict:
+        """The definitions that already replayed in this document, with the
+        term Fellowship rebuilt for each (``typecheck_shared``)."""
+        return store.document.setdefault("typechecked", {})
+
+    @property
+    def logic(self) -> str:
+        """"lk" (classical, default) or "lj", as last selected by the user."""
+        return store.document.get("logic", "lk")
+
+    def document_add(self, argument: Any) -> None:
+        """Compile an argument into hyperedges and merge them into the
+        document graph.  Refusals are logged, not raised: the argument is
+        still registered for the term-level commands."""
+        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
+            return
+        # A citation is a name leaf in the body; the compiler reads it as an
+        # obligation on the cited conclusion, or a strict leaf if Fellowship
+        # holds the cited argument (core/dc/cite.py).
+        body = argument.body
+        try:
+            graph = compile_debate(body, argument.name,
+                                   strict_names=self.declarations.keys(),
+                                   strict_kinds=declaration_kinds(self.declarations))
+        except (DebateCompileError, FirstOrderNotSupported) as e:
+            logger.warning("Argument '%s' not added to the document graph: %s", argument.name, e)
+            return
+        self.document.merge(graph)
+        logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
+
+    @staticmethod
+    def issue_of(argument: Any):
+        """The statement an argument (or debate) is about."""
+        side = "context" if getattr(argument, "is_anti", False) else "term"
+        return (canonical_prop(argument.conclusion), side)
+
+    def anon_name(self, statement) -> str:
+        """The ``anon_k`` name of a statement's debate, allocated on first
+        use and kept with the document so the numbers do not shift between
+        commands (tasks.org, aida-shared-subarguments, decision 6)."""
+        table = store.document.setdefault("anon", {})
+        if statement not in table:
+            table[statement] = f"{ANON_PREFIX}{len(table) + 1}"
+        return table[statement]
+
+    def debate_names(self) -> Dict[Any, str]:
+        """{statement: name} for the statements exactly one registered
+        argument or debate is about: the name the author gave its debate.
+        Where several arguments conclude one statement no single name
+        denotes the whole debate, and it is left to ``anon_name``."""
+        about: Dict[Any, List[str]] = {}
+        for name, argument in self.arguments.items():
+            if not getattr(argument, "conclusion", None):
+                continue
+            try:
+                about.setdefault(self.issue_of(argument), []).append(name)
+            except ValueError:          # a conclusion the graph has no node for
+                continue
+        return {statement: names[0] for statement, names in about.items() if len(names) == 1}
+
+    # -- revisions and unfolded terms (aida-unfold-entrypoints) -----------
+
+    @property
+    def revision(self) -> int:
+        """The document's revision: it changes whenever an argument is
+        registered (or the document rebuilt) or a declaration is added, so
+        a term unfolded or evaluated at an older revision may be stale - a
+        new argument can support or attack, a new declaration can make a
+        presumption strict or refuted."""
+        return store.document.get("revision", 0)
+
+    def bump_revision(self) -> None:
+        store.document["revision"] = self.revision + 1
+
+    def unfolded_term(self, argument: Any):
+        """The debate term unfolded for ``argument`` (biased towards it), from
+        the cache when it is fresh; None if the argument has no edge of its
+        own in the document (a composed debate, or one refused at
+        registration)."""
+        from core.dc.unfold import argument_edge, unfold_argument, report_cached
+        if (getattr(argument, "unfolded_body", None) is not None
+                and argument.unfolded_revision == self.revision):
+            return report_cached(argument.unfolded_body,
+                                 f"the term unfolded for '{argument.name}'", self.revision)
+        edge = argument_edge(self.document, argument.name)
+        if edge is None:
+            return None
+        argument.unfolded_body = unfold_argument(self.document, edge)
+        argument.unfolded_revision = self.revision
+        return argument.unfolded_body
+
+    def issue_term(self, statement):
+        """The canonical debate term of ``statement`` (an issue entrypoint),
+        cached per revision."""
+        from core.dc.unfold import unfold, report_cached
+        cache = store.document.setdefault("issue_terms", {})
+        found = cache.get(statement)
+        if found is not None and found[0] == self.revision:
+            return report_cached(found[1], "the issue's canonical term", self.revision)
+        term = unfold(self.document, statement)
+        cache[statement] = (self.revision, term)
+        return term
+
+    def shared_debate(self, issue) -> SharedDebate:
+        """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
+        return share(self.document, issue, self.debate_names(), self.anon_name)
+
+    def check_reachable(self, host: Any, scion: Any, kind: str) -> None:
+        """The debate verbs' assertion (aida-document-graph decision): an
+        attacker must conclude the contrary of a statement reachable from
+        the host's issue, a supporter must conclude such a statement.
+        Only checked when the host is in the document graph."""
+        issue = self.issue_of(host)
+        if issue not in set(self.document.statements()):
+            return
+        reach = self.document.reachable(issue)
+        key, side = self.issue_of(scion)
+        wanted = (key, ("context" if side == "term" else "term")) if kind == "attack" else (key, side)
+        if wanted not in reach:
+            display = self.document.nodes.get(key, scion.conclusion)
+            raise ProverError(
+                f"{kind}: '{scion.name}' concludes {display}[{side[0]}], but no statement "
+                f"{display}[{wanted[1][0]}] is reachable from '{host.name}' in the document graph."
+            )
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

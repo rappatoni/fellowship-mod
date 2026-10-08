@@ -1,0 +1,1435 @@
+#+title: The AC/DC Fragment Implementation - A Minicourse
+#+startup: overview
+
+# AI NOTE: Drafted by an AI agent (Claude) at the author's request,
+# 2026-09-15. Teaching material about the implementation, not manuscript
+# prose. Every transcript quoted below was produced by running the code,
+# not written from memory; tests/minicourse/test_minicourse.py pins the
+# quoted values so this file cannot silently go stale.
+
+* About this course
+
+Eight short lessons on the *semantics of the implementation*: which object
+in the code realises which piece of AC/DC theory, and - lesson 8 - where
+the implementation decides something the theory leaves open.
+
+It does *not* teach the calculus or Dung-style labellings; it assumes
+those. It does teach abstract dialectical frameworks (lesson 3), since
+that is the piece introduced by the implementation rather than by the
+papers.
+
+Each lesson has a *definition*, a *worked example* with real output, and
+*exercises*. Solutions are in the appendix - try first.
+
+A sequel, =minicourse-evaluation.org= (lessons 9-13), follows one
+labelled debate term through evaluation reduction by reduction: the
+strict phase, the sigma phase, normalisation, and names and capture.
+
+Running things:
+
+: .venv/bin/python -m pytest tests/minicourse/ -q        # check the course still holds
+: .venv/bin/acdc                                          # interactive CLI
+: .venv/bin/python tests/minicourse/coursekit.py         # print a worked graph
+
+=tests/minicourse/coursekit.py= is the exercise toolkit. Run it directly
+for the worked example, or import its helpers to inspect your own graphs:
+
+: import sys; sys.path.insert(0, "tests/minicourse")
+: from coursekit import show, conditions_of, graph_from_edges
+
+=show(graph)= prints edges, acceptance conditions and grounded labels
+together; =conditions_of(graph)= returns just the conditions, rendered in
+the course's notation rather than as the raw nested tuples that
+=compile_conditions= returns.
+
+Course fixtures live in =tests/minicourse/=. Note that =graph ARG show=
+writes an image into the current directory, so run it where you do not
+mind an artifact.
+
+Reference map, for looking things up afterwards:
+
+| concept                | lives in                      |
+|------------------------+-------------------------------|
+| sites, statements      | core/ac/ast.py, debate_graph.py |
+| compilation            | core/dc/debate_graph.py       |
+| ADF semantics (oracle) | core/comp/oracle.py           |
+| acceptance conditions  | core/comp/adf_label.py        |
+| evaluation             | core/comp/evaluate.py         |
+| reduction (oracle)     | core/comp/oracle_terms.py     |
+
+* Lesson 1 - Sites and statements
+
+** Definition
+
+An *open site* is a leaf of a proof term standing for something not yet
+witnessed. There are four, along two independent axes:
+
+|           | term side (a proof is owed) | context side (a refutation is owed) |
+|-----------+-----------------------------+-------------------------------------|
+| obligation| =Goal=   printed =?n:A=     | =Laog=   printed =n:A?=             |
+| presumption| =Deleg= printed =!n:A=     | =Geled=  printed =n:A!=             |
+
+The *side* axis is polarity: term-side sites are things the proponent
+owes, context-side sites things the opponent owes. The *kind* axis is
+burden of proof: an obligation is owed by whoever asserts it (default
+OUT), a presumption is granted until challenged (default IN). Both are
+semantically the same thing - an adjoined indeterminate; only the default
+differs. (constructing_enthymemes calls these type-I and type-II
+enthymemes.)
+
+A *statement* is a pair (proposition, side). This is the unit the
+labelling works on, and the course's central abstraction:
+
+  - =Q[term]=    "Q is proved"
+  - =Q[context]= "Q is refuted"
+
+Printed output abbreviates the side to its initial: =Q[t]= is =Q[term]=
+and =Q[c]= is =Q[context]=. Both spellings appear below; they mean the
+same thing.
+
+These are *two* statements about *one* proposition, and they are
+contraries: accepting one defeats the other. Lesson 4 shows how.
+
+Proposition identity is =canonical_prop=: parse, unfold ~A into A->false
+(definitional in the calculus), take the alpha-invariant canonical form.
+So whitespace, redundant parentheses, bound-variable names and the two
+negation spellings all collapse to one node; =A-(B->C)= and =(A-B)->C=
+stay apart.
+
+** Example
+
+The term
+
+:   mu pArg:P.< mu rule:P.< pRule:Q->P || ?1:Q * rule:P > || pArg:P >
+
+has one open site, =?1:Q= - a term-side obligation for Q. Its graph
+mentions two statements:
+
+: obligation graph: [('P', 'term'), ('Q', 'term')]
+
+P[term] because the argument concludes P; Q[term] because of the site.
+Note Q[context] is *absent*: nothing in this debate refutes Q, so the
+statement is not materialised at all.
+
+Add a challenge to Q and it appears:
+
+: contested graph : [('P', 'term'), ('Q', 'term'), ('Q', 'context')]
+
+And identity:
+
+: canonical_prop("~A") == canonical_prop("A->false")   ->  True
+
+** Exercises
+
+1. In =mu cArg:C.< mu r:C.< abc:A->B->C || ?1:A * !2:B * r:C > || cArg:C >=,
+   list every open site with its kind and side, and then list the
+   statements you expect the graph to mention.
+2. Will =canonical_prop= give =forall x:iota, Q x= and
+   =forall y:iota, Q y= the same key? What about =Q x= and =Q y=?
+3. Why is it wrong to model Q[term] and Q[context] as two unrelated
+   nodes - and also wrong to model them as one node with one label?
+
+* Lesson 2 - Hyperedges: from terms to a graph
+
+** Definition
+
+A *hyperedge* is one subargument, recorded as:
+
+  - =target=  : the statement it concludes (proposition + side);
+  - =sources= : the finite multiset of its unwitnessed inputs, each a
+                (statement, kind) pair;
+  - =strict=  : true iff no source is an obligation or presumption;
+  - =role=    : diagnostic - argument / supporter / attacker. It is never
+                read by the labeller or the evaluator; only =strict= and
+                the target/sources matter semantically. Note a strict edge
+                can carry role "supporter" - =bArg= below is exactly that -
+                so "supporter" and "defeasible edge" are *not* synonyms.
+
+Edges are *poly-arrows*: one target, any number of sources. An argument
+with two premises is not two binary edges, it is one edge with two
+sources - and this matters semantically, because the sources of one edge
+are *conjoined* (lesson 4). Binary edges cannot express that.
+
+Where do the sources come from? A term's root judgment only exposes the
+whole argument's sequent; the subarguments' sequents live in the typing
+*derivation*, which is meta-level. *Theta-expansion* reifies them: it
+exposes one open obligation per logically-progressing node, so each
+subargument's inputs become surface syntax that the compiler can read off
+mechanically. That is why the debate operations theta-expand before
+grafting.
+
+Two special cases:
+
+  - An *identity edge* - an eta-wrapped argument whose only source is its
+    own target, e.g. =mu p:P.< ?1:P || p:P >= - makes no logical progress.
+    It is recorded as a *default marker* on the statement rather than an
+    edge, so bare challenges do not fake dependency cycles.
+  - A *strict edge* has no defeasible input. In this fragment that means
+    no sources at all (free variables that are not declared axioms are
+    refused at compile time).
+
+** Example
+
+=tests/minicourse/lesson2_graph.fspy=: cArg derives C from A and B through
+the axiom abc; bArg then supports B via the axiom axB.
+
+: Debate graph for 'd2': 3 nodes, 2 edges
+:   bArg (supporter, strict): B[t] <- -
+:   cArg (argument, defeasible): C[t] <- A[t:obli], B[t:obli]
+:   default A[t]: obligation
+:   default B[t]: obligation
+
+Read it: =cArg= is one edge with *two* sources, both term-side obligations
+(until 2026-09-16 this edge was printed under the debate's name =d2=;
+edges are now named after the subargument they record, task
+=aida-host-edge-naming=).
+=bArg= is strict with no sources - an axiom needs nothing. The default
+markers record that A and B are obligations wherever they are referenced.
+
+** Exercises
+
+1. =bArg= concludes B, and B is also a source of =d2=. Sketch the two-edge
+   graph. Which statement is the conclusion of the debate (the one no
+   other edge consumes)?
+2. Predict what changes in that printout if =axB= is removed and bArg
+   instead rests on an open site =?x:D=. Run it if you like.
+3. Why must the supporter appear as its own edge rather than being
+   substituted into =d2='s source list?
+
+* Lesson 3 - Abstract dialectical frameworks
+
+** Definition
+
+An *abstract dialectical framework* (Brewka & Woltran) is a set S of
+statements together with, for each s in S, an *acceptance condition*
+AC_s: a propositional formula over S. Statement s is accepted exactly
+when AC_s evaluates to true. The parents of s are the statements
+occurring in AC_s.
+
+An ADF generalises a Dung AF: the Dung condition "no attacker is
+accepted" is the special case AC_s = ~a1 & ... & ~an. By writing the
+condition freely, an ADF can also say "accepted if *some* supporter is
+accepted", "accepted by default", "accepted unless refuted" - which is
+exactly the vocabulary a debate needs.
+
+Interpretations are three-valued: each statement maps to true, false or
+*undecided* (None). The *characteristic operator* Gamma refines an
+interpretation v by consensus:
+
+  Gamma(v)(s) = true   if AC_s holds under *every* two-valued completion of v
+              = false  if it fails under every completion
+              = None   otherwise
+
+Gamma(v) itself is the interpretation assembled from those values
+pointwise - Gamma(v) = (s |-> Gamma(v)(s)) - so Gamma maps interpretations
+to interpretations. Two things that clause hides:
+
+  - it is *simultaneous*: every statement is computed from the same v, not
+    from a v already updated at earlier statements;
+  - it is *monotone* in the information ordering, so iterating it from the
+    all-undecided interpretation converges to the least fixed point, which
+    is the grounded interpretation.
+
+Writing Gamma(v) = v therefore means pointwise agreement everywhere.
+Take the two-statement ADF with AC_a = b and AC_b = true (statements here
+are bare names; the debate-specific (proposition, side) statements of
+lesson 1 are just one way of naming them). Iterating from all-undecided:
+
+: v0 (all undecided): {'a': None, 'b': None}
+: Gamma^1(v0)       : {'a': None, 'b': True}
+: Gamma^2(v0)       : {'a': True, 'b': True}
+: Gamma^3(v0)       : {'a': True, 'b': True}
+
+Step 1 is the instructive one: AC_a = b, and under v0 the completions give
+b both values, so the consensus is undecided - a cannot move until b has.
+In the even loop below, nothing is ever forced, so v0 is already a fixed
+point.
+
+The semantics:
+
+  - *complete*  : Gamma(v) = v (v is its own consensus);
+  - *grounded*  : the information-least complete interpretation - commit to
+                  nothing that is not forced. Always exists, always unique;
+  - *two-valued model* : a total v with v(s) = AC_s(v) for all s;
+  - *stable*    : a two-valued model surviving a reduct check.
+
+Why an ADF here, and not the alternatives:
+
+  - a *Dung AF* cannot express support, nor per-node defaults, nor the
+    two sides of a proposition;
+  - a *bipolar AF* adds support but its semantics are contested - deductive
+    and necessary support propagate in opposite directions, so "support"
+    would be ambiguous;
+  - an ADF makes the choice explicit in the condition, which is then a
+    written-down artifact you can argue about (lesson 4 does).
+
+=core/comp/oracle.py= implements all of this by brute-force enumeration -
+deliberately dumb, correct by inspection, exponential and test-only. It
+is one of the two cross-checks of the *production* labeller, which is the
+independent third-party solver =adf-bdd= (decided 2026-09-16, lesson 8
+decision 4; the other cross-check is the in-tree Kleene fixpoint of
+lesson 5).
+
+** Example
+
+The even loop: two statements, each accepted iff the other is not.
+
+: ADF(["p","q"], {"p": neg(var("q")), "q": neg(var("p"))})
+
+Computing Gamma by hand on the all-undecided interpretation: completions
+are (T,T),(T,F),(F,T),(F,F); AC_p = ~q is true under two of them and false
+under the other two, so Gamma gives None - and likewise for q. So
+all-undecided is complete, and being the least such, it is grounded:
+
+: grounded: {'p': None, 'q': None}
+: gamma(all undec): {'p': None, 'q': None}
+
+Whereas (p=T, q=F) is its own consensus too - a second complete
+interpretation, and a two-valued model:
+
+: gamma(p=T,q=F): {'p': True, 'q': False}
+: two-valued models: [{'p': True, 'q': False}, {'p': False, 'q': True}]
+: complete: [{'p': True, 'q': False}, {'p': False, 'q': True}, {'p': None, 'q': None}]
+
+Exported for the third-party solver, this ADF is:
+
+: s(s1).
+: s(s2).
+: ac(s1,neg(s2)).
+: ac(s2,neg(s1)).
+
+and =adf-bdd -q --lx --grd= answers =u(s1) u(s2)=, agreeing with the
+oracle. (This was the first real cross-check: two independently written
+implementations of the same definition.)
+
+** Exercises
+
+1. Compute Gamma by hand on the *self-attacking* ADF, one statement with
+   AC_p = ~p. How many two-valued models are there? What is grounded?
+2. For the even loop, grounded says UNDEC but there are two two-valued
+   models. In debate terms, what is the difference between "the grounded
+   answer" and "the credulous answer" here?
+3. The oracle refuses any ADF with more than 14 statements. Why is that a
+   feature rather than a limitation, given its role?
+
+* Lesson 4 - Acceptance conditions for debates
+
+** Definition
+
+This is where the implementation's semantics actually lives: the
+translation from a debate graph to an ADF. For every referenced statement
+(K, side):
+
+: D          =  [ OR over defeasible edges: AND of its sources ]
+:
+: AC(K,side) =  [ OR over strict edges: AND of its sources ]
+:               OR
+:               ( D    [ AND NOT (K, other side) ] )
+:               OR
+:               ( true   AND NOT (K, other side) )     if presumed
+
+with four side conditions that matter, because they decide the *shape*
+of what you will actually see printed:
+
+  - the strict part is present only if there is at least one strict edge.
+    With none, the condition is just the rest - no outer OR at all.
+  - the guard =AND NOT (K, other side)= is added only when the other side
+    is a materialised statement of this ADF. You cannot reference a
+    statement that does not exist, and most debates never materialise the
+    context side.
+  - *the guard on D is asymmetric*: it is added only when the other side
+    is itself *derived*, i.e. is the target of at least one edge. A side
+    that is nothing but a default marker has delegated the onus and does
+    not guard back. The presumption disjunct keeps its guard either way.
+    This is the 2026-09-25 decision, spelled out in the next subsection.
+  - an empty OR renders =false=; an empty AND renders =true=. So a strict
+    edge with no sources contributes =true=, and an obligation marker,
+    which contributes no disjunct at all, leaves an empty D that renders
+    =false=.
+
+Worked through for B in the exercise below: B has one strict edge with no
+sources, giving =true=, and D is empty (obligation marker only), so the
+guard is skipped and the second disjunct is bare =false= - hence
+=(true | false)=, and not =(true | (false & not B[c]))=.
+
+Clause by clause:
+
+  - *sources are conjoined*: an edge fires only if all its inputs hold.
+  - *edges are disjoined*: any edge suffices. Support is disjunctive -
+    each undefeated supporter is on its own sufficient.
+  - *an obligation marker contributes nothing*. An empty disjunction is
+    false, so a statement with only obligations and no edge is OUT. This
+    is the burden of proof: assert it, and you owe a derivation.
+  - *a presumption marker contributes =true=*. Granted unless defeated.
+  - *the NOT-contrary guard is how attack enters*. There is no separate
+    attack relation: accepting K[term] defeats K[context] and vice versa,
+    because each condition negates the other. Attack is contrariness.
+  - *strict disjuncts sit outside the guard*. A strict derivation is not
+    defeated by the other side merely being accepted; only a strict
+    contradiction on both sides does that, which
+    =strict_contradictions= reports separately.
+  - *a derivation is contested only by a derivation*. See below.
+
+*** The asymmetric guard: who holds the onus
+
+A presumption is a *delegation*. Writing =!1:P= does not merely assert P;
+it hands the burden of refutation to the other side. The skeptic now owes
+a context witness. That is what the marker means computationally, and the
+guard has to respect it.
+
+So the guard is not symmetric. Read it off the two markers:
+
+  - *bare default against an argument*: the default delegated the onus and
+    the argument discharges it. The argument wins outright, and the guard
+    on the argument's side is dropped. Before 2026-09-25 both sides
+    guarded each other here and the contest ground to UNDEC, which said
+    that an undercut of a presumed premise never settles anything.
+  - *argument against argument*: both guards stand, the negation cycle is
+    intact, and the contest is genuine - UNDEC under grounded, two
+    extensions under preferred or stable.
+  - *default against default*: an *onus conflict*. Both sides delegate,
+    so neither holds the burden, and nobody can discharge it. The
+    compiler warns (=OpposingPresumptions=) and still labels, keeping the
+    old mutual rebut; making it an error is task
+    =aida-onus-delegation-polarity=.
+  - *obligation against obligation*: no conflict at all. Nobody delegated
+    anything, an obligation contributes no disjunct, and both sides stay
+    OUT until an argument arrives.
+
+Two consequences to keep in view. First, the drop is *per disjunct*, not
+per statement: a side that is presumed *and* argued keeps the guard on
+its presumption, so a failed argument cannot decide a contest of defaults
+by merely being present. Second, against a bare default a defeasible
+argument now wins exactly as a strict one does; strictness separates the
+two only when both sides are derived.
+
+** Example
+
+*Notation.* In the blocks below, a line =S = phi= means "the statement S
+has acceptance condition phi" - it is AC_S written with the subscript
+moved to the left, not an equation. Occurrences of statements *inside*
+phi are variables standing for those statements' values. So =P[t] = Q[t]=
+reads: the acceptance condition of (P, term) is the formula "(Q, term)
+holds". Compare =Gamma(v) = v= in lesson 3, where = really is equality.
+
+Same argument, three variants. With the site an *obligation*:
+
+:   P[t] = Q[t]
+:   Q[t] = false
+
+P inherits Q, and Q has nothing to stand on - so both are OUT. Change the
+site to a *presumption*:
+
+:   P[t] = Q[t]
+:   Q[t] = true
+
+Both IN. Now add a presumption-backed challenge to Q, so both sides of Q
+are materialised:
+
+:   P[t] = Q[t]
+:   Q[t] = (true & not Q[c])
+:   Q[c] = (true & not Q[t])
+
+The last two lines are the whole theory of attack in this implementation:
+a mutual negation between the two sides of one proposition. Note it is
+*structurally the even loop of lesson 3*. Its labels:
+
+: {('P', 'term'): 'UNDEC', ('Q', 'term'): 'UNDEC', ('Q', 'context'): 'UNDEC'}
+
+This is also the onus conflict of the previous subsection - both sides are
+bare defaults - so compiling it warns. Give either side an actual
+derivation and the asymmetry bites. With the challenge argued from a
+presumed S instead of presumed outright:
+
+:   Q[t] = (true & not Q[c])
+:   Q[c] = S[t]
+:   S[t] = true
+
+Read the two lines that changed. Q[c] is *derived*, and the side it
+attacks is a bare default, so its guard is dropped: =S[t]=, not
+=(S[t] & not Q[t])=. Q[t] is a presumption and keeps its own guard. The
+cycle is broken in one direction only, which is exactly the onus: Q[t]
+delegated the burden and S discharged it. Labels: S[t] IN, Q[c] IN,
+Q[t] OUT. Under the old symmetric guard all three were UNDEC.
+
+** Exercises
+
+1. Write the conditions for lesson 2's =d2= graph (edges: C[t] <- A[t],
+   B[t]; B[t] <- strict, no sources; markers: A[t] and B[t] obligations).
+   Then check: =.venv/bin/python tests/minicourse/coursekit.py= builds
+   exactly that graph and prints its conditions and labels.
+2. In that graph, is B[t]'s strict edge inside or outside a guard? Why
+   does the answer not matter here, and when would it start to matter?
+3. Suppose someone proposes making support *conjunctive* instead of
+   disjunctive - all supporters must hold. There are two disjunctions
+   this could mean: the *outer* one, between the strict part and D, and
+   the *inner* one, over the defeasible edges within D. Take each in
+   turn: what does the condition become, and what breaks? (A strict edge
+   can be a supporter too, so both readings are legitimate.)
+
+* Lesson 5 - Labelling
+
+** Definition
+
+*Grounded labels* of a debate graph are the grounded ADF interpretation
+(lesson 3) of its compiled acceptance conditions (lesson 4), reported as
+IN / OUT / UNDEC per statement. Nothing new is defined in this lesson;
+it is lessons 3 and 4 composed. What it adds is *how* the labels are
+computed, and one consequence of the composition that is easy to miss.
+
+*** Three implementations, and why they agree
+
+  - =grounded_labels= is the *production* path: the third-party solver
+    adf-bdd, run on the exported acceptance conditions. It implements
+    the ADF semantics directly (BDDs), which is why it is trusted against
+    drift in our own code; it refuses to run without the binary, and
+    there is no fallback (=make install= builds it into the venv).
+  - =grounded_labels_via_oracle= is lesson 3 taken literally: enumerate,
+    filter for Gamma(v) = v, take the information-least one. Correct by
+    inspection, exponential, capped at 14 statements. A cross-check.
+  - =grounded_labels_kleene= is the in-tree *Kleene fixpoint*: start with
+    every statement undecided; evaluate each condition under strong
+    three-valued Kleene logic (an AND with a false conjunct is false even
+    if others are undecided; an OR with a true disjunct is true); commit
+    any statement whose condition came out decided; repeat until nothing
+    changes. No enumeration. The second cross-check - and the one with a
+    precondition, next.
+
+These do *not* agree for arbitrary conditions. The witness is a
+tautology: take AC_p = q | ~q with q undecided. Gamma checks every
+completion and finds AC_p true under all of them, so Gamma says *true*;
+Kleene evaluates q | ~q with q undecided and gets *undecided*, because it
+never notices that the two disjuncts cannot both fail.
+
+: AC_p = q | ~q, q undecided:   Gamma(v)(p) = True    kleene(v)(p) = None
+
+They agree exactly on *unipolar* formulas - each statement occurring with
+a single polarity throughout a condition - because such a formula is
+monotone in every variable, and then evaluating with undecided inputs
+coincides with quantifying over all their completions. The compiled
+conditions of lesson 4 are unipolar by construction: sources occur
+positively, the contrary occurs negatively, and no statement occurs both
+ways in one condition. =test_adf_label.py= asserts this property directly
+instead of trusting the argument. The compiler can produce a non-unipolar
+condition in exactly one way - an edge whose source is the contrary of
+its own target, Q[t] <- Q[c] - and on that shape Kleene is wrong (UNDEC
+where the definition says OUT). So =grounded_labels_kleene= *checks*
+unipolarity first and raises =NonUnipolarConditions= rather than answer;
+adf-bdd handles the shape correctly (lesson 8 item 15). That precondition
+is why the Kleene path is a cross-check and not the production path.
+
+*** What "cycle-free" does and does not rule out
+
+The fragment is described as cycle-free, and a natural expectation is
+that its grounded labels are therefore always IN or OUT, never UNDEC:
+UNDEC is what cycles produce. That expectation is *wrong*, and the reason
+is worth getting exactly right, because two different notions of "cycle"
+are in play and the fragment only controls one of them.
+
+*Notion 1 - derivation cycles.* Arguments that attack each other round
+in a circle: two arguments each undermining a premise of the other, or
+=even_loop.fspy=, where P rests on the absence of Q and Q on the absence
+of P. Note that such a cycle does *not* run through derivation edges
+alone. In even_loop the two edges are
+
+:   P[t] <- Q[c]        Q[t] <- P[c]
+
+and no statement is shared between them. The cycle only closes through
+contrariness: P[t] <- Q[c], which contradicts Q[t]; Q[t] <- P[c], which
+contradicts P[t]. So the precise definition is:
+
+  a *derivation cycle* is a cycle in the statement graph built from
+  derivation edges *and* contrariness links, passing through at least
+  one derivation edge.
+
+This is what =DebateGraph.is_acyclic= checks. Until 2026-09-16
+=compile_debate= refused it; since the cyclic fragment
+(=aida-cyclic-fragment=) it is a *classifier* - =graph ARG= prints
+"fragment: acyclic" or "fragment: cyclic" - and cyclic debates are
+labelled by adf-bdd like any other. What it classifies:
+
+: mutual undercut (A attacks B's premise, B attacks A's):  is_acyclic = False -> cyclic
+: even_loop                                             :  is_acyclic = False -> cyclic
+
+*Notion 2 - contrariness.* The two sides of *one* proposition. Lesson 4's
+guard makes each side's condition negate the other's:
+
+:   Q[t] = ... & not Q[c]
+:   Q[c] = ... & not Q[t]
+
+That is a two-statement negation cycle in the *conditions*. But it runs
+through contrariness links only - there is no derivation edge in it - so
+it is not a derivation cycle, and the fragment does not refuse it. A
+proposition with grounds on both sides is called *contested*; a
+rebuttal is exactly this.
+
+The minimal contested debate has *no edges whatsoever*: one proposition
+presumed on both sides - someone claims Q by default, someone else
+challenges it by default. That is also the onus conflict of lesson 4:
+both sides delegate the burden of refutation, the compiler warns, and the
+UNDEC below is what falls out of leaving both guards in place.
+
+: edges        : (none)
+: is_acyclic() : True                           (trivially: nothing to cycle)
+: conditions   : Q[t] = (true & not Q[c])
+:                Q[c] = (true & not Q[t])
+: labels       : Q[t] UNDEC, Q[c] UNDEC
+
+Gamma stalls at once: under all-undecided, not Q[c] is true in one completion
+and false in the other, so the consensus is undecided both ways; the
+all-undecided interpretation is a fixed point, and being the least, it is
+grounded. This is lesson 3's even loop, arising from lesson 4's guard.
+
+Put an ordinary derivation on top and the UNDEC just flows downstream:
+
+: edges        : pArg : P[t] <- Q[t]
+: is_acyclic() : True
+: labels       : P[t] UNDEC, Q[t] UNDEC, Q[c] UNDEC
+
+So the correct statement is: *derivation-acyclic and uncontested implies
+two-valued*. Derivation-acyclic alone does not. The plan's original
+claim (V-two, "acyclic implies two-valued") elided "uncontested" and was
+corrected when the implementation produced this example.
+
+Two things follow, one reassuring and one not.
+
+The reassuring one: contested debates are handled correctly. The labeller
+grounds them to UNDEC, the oracle and adf-bdd agree, and the evaluation
+modes of lesson 7 exist precisely to resolve UNDEC. Admitting them is the
+right call; a debate consisting of one claim and one counterclaim is about
+as ordinary as argumentation gets, and refusing it would be absurd.
+
+*** How the check computes notion 1
+
+=DebateGraph.parents= collects the *proposition* of each source and
+drops its side. That merges the two contrary statements of each
+proposition into one node - in other words, it contracts every
+contrariness link. After the contraction:
+
+  - a cycle containing a derivation edge becomes a cycle between
+    propositions, and every cycle between propositions lifts back to
+    one by re-inserting the contrariness hops;
+  - a cycle made only of contrariness links collapses into a single
+    node with no loop.
+
+So the proposition-level check computes notion 1 exactly, and admits
+notion 2. It also refuses the edge Q[t] <- Q[c] (an argument for Q from
+a refutation of Q - a derivation edge from Q to Q), which matters for
+the labeller, see below.
+
+A worked instance, easy to get wrong (this course's first draft did):
+
+:   Q[t] <- P[t]        P[c] <- Q[c]
+
+The two edges share no statement, so they look independent. They are
+not. The first argument concludes Q, contradicting the second's premise
+not-Q; the second concludes not-P, contradicting the first's premise P.
+They undermine each other - notion 1, through two derivation edges and
+two contrariness links. With presumption premises the labelling bears
+it out:
+
+: conditions : Q[t] = P[t]                  P[c] = Q[c]
+:              P[t] = (true & not P[c])     Q[c] = (true & not Q[t])
+: labels     : all four UNDEC            (two two-valued models)
+: is_acyclic : False -> refused
+
+Each derivation lost its guard, because the side it attacks is a bare
+default; each presumption kept its own. What survives is a single loop
+through all four statements with two negations in it, which is even, so
+it grounds UNDEC with two models. Under the old symmetric guard the same
+example had a guard on all four conditions and three models.
+
+One refinement is *not* taken, on purpose. The check assumes every
+contrariness link is present, while the guard is only generated when a
+side has a defeasible part and, since 2026-09-25, only against a contrary
+that is itself derived (lesson 4). With *obligation* premises the same
+pair has no cycle in its conditions and grounds two-valued (all OUT), yet
+is still refused. That is the structural notion: the mutual attack exists
+whether or not it bites.
+
+Where this leads. An implication edge and its own transposal ("P gives
+Q", "not-Q gives not-P") always form exactly this pattern. So once the
+strict layer adds transposals, every debate that uses an implication
+has a derivation cycle and leaves the fragment. That is accepted: the
+acyclic fragment is the initial one, and the next fragment admits
+cycles (task =aida-cyclic-fragment=).
+
+*** Terminology, fixed
+
+To avoid the traps that produced this lesson's earlier drafts:
+*derivation cycle* means a cycle through derivation edges and
+contrariness links containing at least one derivation edge; this is what
+the fragment excludes, and it can close through contrariness even when
+no two derivation edges share a statement. *Contested* means both sides of one
+proposition have grounds; this the fragment admits, and it yields UNDEC
+through the guard. The word "cycle" on its own is ambiguous between the
+two and is avoided below.
+
+** Example
+
+=tests/minicourse/lesson5_labels.fspy=. cArg derives C from two sites: A
+is an obligation, B is a presumption.
+
+: Grounded labelling for 'cArg':
+:   C   term  OUT
+:   A   term  OUT
+:   B   term  IN
+
+B is granted, A is not, and C needs *both* - sources are conjoined, so one
+IN source does not carry the conclusion. This is the single most common
+source of surprise when reading labels.
+
+Now discharge A with a strict supporter and relabel:
+
+: Grounded labelling for 'd5':
+:   A   term  IN
+:   C   term  IN
+:   B   term  IN
+
+** Exercises
+
+1. Before running anything: in the cArg graph, what would happen to C if
+   *both* sites were presumptions? If both were obligations?
+2. =tests/rationality/contested.fspy= grounds everything UNDEC. Identify
+   the negation cycle: which two statements, and which clause of lesson 4
+   put it there?
+3. =tests/rationality/even_loop.fspy= has a derivation cycle (P rests on
+   the absence of Q and vice versa) and is *refused* by =compile_debate=;
+   its labels can only be obtained from the oracle. The contested case is
+   admitted and grounds UNDEC. Both are negation cycles at the ADF
+   level. State precisely what distinguishes them structurally, and why
+   the fragment treats one as in scope and the other as out of scope.
+4. Take the implication "P gives Q" as the edge Q[t] <- P[t], and add its
+   transposal. Write the transposal as an edge, show that the pair is a
+   derivation cycle, and say what that means for a debate that uses the
+   implication once the strict layer exists.
+
+* Lesson 6 - Scaffolds as critical pairs
+
+** Definition
+
+Support and attack are not primitives. They are *syntactic scaffolds*
+placed at a site, and the implementation recognises exactly four shapes
+(=core/dc/debate_graph.py=, the COMMA 2026 paper's Definitions Support
+and Attack, with the context side mirrored; adopted 2026-09-17,
+replacing the shapes the term-level verbs generate, which are kept as
+a legacy pattern). Every scaffold starts with the same bureaucratic
+step, the *exposure* of the site's continuation as an obligation,
+
+:   t  ->  mu alpha:A.< t || [A:] >          (context side: E -> mu'x:A.< [:A] || E >)
+
+and fills the slot with an alternative between two contexts. With A the
+issue, =alpha= (=x=) the site's own binder, =beta= the binder for the
+original and =_= an affine binder:
+
+: T-SUP:  mu alpha:A.< t || mu'beta:A.< mu _:A.<beta || alpha> || mu'_:A.<t2 || alpha> > >
+: T-ATT:  mu alpha:A.< t || mu'beta:A.< mu _:A.<beta || e2>    || mu'_:A.<beta || alpha> > >
+: C-SUP:  mu'x:A.< mu beta:A.< mu _:A.<x || e2>   || mu'_:A.<x || beta> > || e >
+: C-ATT:  mu'x:A.< mu beta:A.< mu _:A.<x || beta> || mu'_:A.<t2 || beta> > || e >
+
+Now the observation the whole evaluation layer rests on. Look at the
+inner command of any of them:
+
+:   < mu _ . c1   ||   mu' _ . c2 >
+
+That is a *critical pair* - a mu against a mu-tilde, the one command shape
+whose reduction is non-deterministic. Both binders are affine, so:
+
+  - (mu<) substitutes the context into a binder that ignores it: the
+    right wing is discarded, the left survives;
+  - (>mu) does the mirror: the left wing is discarded, the right survives.
+
+So *a scaffold is a choice between its two wings, offered to the
+evaluation strategy*. Support and attack are not new reduction rules; they
+are ordinary critical pairs placed where a choice is wanted. Lesson 7
+decides them by label instead of by a fixed strategy.
+
+Read the wings. In T-SUP the left wing returns the original (=beta=, bound
+to =t= by the outer command) to =alpha= and the right wing returns the
+supporter =t2= instead: (mu<) keeps the original, (>mu) the supporter.
+In T-ATT the left wing *steals* the original into the refutation =e2= -
+the clash =< t || e2 >=, the paper's abort - and the right wing returns
+it: (mu<) is defeat, (>mu) keeps the original. So on the term side the
+same reduction means opposite things at a support and at an attack, and
+that is what makes the modes of lesson 7 uniform strategies. The
+context side is the exact mirror. Nothing is rerouted: the attacker keeps
+its own sites, and a challenge that merely demands a refutation is an
+attacker whose source is an obligation, discarded by the labelling.
+
+** Example
+
+From =tests/minicourse/lesson2_graph.fspy=, the enriched composite (the
+support scaffold, in the middle, formatted here for reading):
+
+: mu d2:C.< ... mu r:C.< abc:A->B->C
+:            || ?1:A * mu alt:B.< mu _:B.< ?2:B      || alt:B >
+:                              || mu'_:B.< mu bArg:B.<axB:B||bArg:B> || alt:B > >
+:                     * r:C > ... >
+
+That is the *legacy* T-SUP shape, which the term-level =support= verb
+still builds by theta-expansion and grafting. Unfolded from the document
+graph (Phase B) the same site reads, in the paper's shape,
+
+: mu alt:B.< ?2:B || mu'b:B.< mu _:B.<b || alt> || mu'_:B.< mu bArg:B.<axB||bArg> || alt > > >
+
+with the original =?2:B= bound to =b=. (mu<) keeps the obligation; (>mu)
+keeps the axiom.
+
+** Exercises
+
+1. In that term, which reduction - (mu<) or (>mu) - keeps =bArg=? Which
+   keeps =?2:B=?
+2. In T-ATT the left wing steals the original into the refutation and the
+   right wing returns it. If the attacker wins, which wing survives, and
+   what is left sitting where the value should have been?
+3. T-SUP and T-ATT have opposite polarity: (mu<) keeps the original at a
+   support and defeats it at an attack. What does that make of a uniform
+   call-by-name evaluation of a term-side debate?
+
+* Lesson 7 - Label-guided evaluation
+
+** Definition
+
+The pipeline, in order:
+
+:   compile (L2)  ->  label (L5)  ->  resolve scaffolds  ->  normalise  ->  classify
+
+The discipline is *sigma first*: one witness labelling is fixed for the
+whole debate before any reduction step, and every scaffold consults that
+same sigma. Never decide a critical pair by looking at some labelling
+locally - locally greedy choices can mix incompatible labellings and end
+up consistent with no extension at all.
+
+*How sigma is chosen (A3, 2026-09-16).* The modes are defined over a
+*labelling semantics*, a parameter of both =label= and =evaluate=:
+grounded, complete, preferred or stable, all computed by adf-bdd
+(preferred as the information-maximal complete ones). Evaluation defaults
+to preferred. Then
+
+  - *credulous*: sigma is some labelling of that semantics in which the
+    issue - the debate's root statement - is IN. Which one changes only
+    the normal form, never the verdict; by default the first in the
+    canonical numbering =label ARG SEMANTICS= prints, =evaluate ARG
+    credulous SEMANTICS N= picks labelling N, and =... all= prints one
+    normal form per accepting labelling. If none exists the issue is
+    credulously rejected: sigma falls back to grounded and the residue
+    is resolved *skeptically*.
+  - *skeptical*: sigma is the statement-wise intersection of all
+    labellings of that semantics, UNDEC where they disagree.
+
+Under a two-valued semantics the credulous sigma decides every scaffold,
+so the UNDEC column below is never consulted; under grounded semantics
+credulous and skeptical coincide, because there is only one labelling.
+The previous build took sigma := grounded always and let the mode pick
+each UNDEC scaffold independently. That *was* unsound in the acyclic
+fragment: two supporters of P resting on the contrary presumptions !S and
+S! are each kept by the local rule, and P evaluates to a value although
+no labelling of any semantics has S[t] and S[c] both IN
+(=tests/test_witness.py::TestLocalPolicyWasUnsound=). This is why the
+fallback resolves skeptically rather than credulously.
+
+*Wing choice.* At a scaffold for issue A, compute the scion's
+*derivation status* under sigma: IN if the scion's target statement and
+every one of its sources (the open sites on its spine, and the ORIG
+wings of scaffolds nested inside it) are IN, OUT if any of them is OUT,
+UNDEC otherwise. Until 2026-09-16 the rule read the target statement's
+label alone; that was unsound, because Q[t] IN says *some* derivation
+of Q is live, not that this supporter's is - with Q presumed and the
+supporter's own source refuted, the supporter was kept and the normal
+form came out open while sigma said the issue was IN
+(=tests/rationality/two_witnesses.fspy=, task
+=aida-supporter-derivation-status=). The UNDEC columns are the tiebreak
+for a status sigma leaves undecided:
+
+| role      | IN    | OUT  | UNDEC, credulous | UNDEC, skeptical |
+|-----------+-------+------+------------------+------------------|
+| supporter | scion | orig | scion            | orig             |
+| attacker  | scion | orig | orig             | scion            |
+
+Read the UNDEC column as the modes' definitions: credulous discards an
+undecided *attacker* (give the proponent the benefit of the doubt);
+skeptical discards the undecided *attacked side*.
+
+*The modes are uniform strategies.* Translating wing choice into
+reductions with the paper's shapes of lesson 6: on the term side (mu<)
+keeps the original at a support and defeats it at an attack, (>mu) the
+reverse, so
+
+| side        | credulous on UNDEC | skeptical on UNDEC |
+|-------------+--------------------+--------------------|
+| term (pro)  | CBN                | CBV                |
+| context(con)| CBV                | CBN                |
+
+Credulous is call-by-name and skeptical call-by-value on the proponent's
+side, and the opponent's side is the mirror - the executable form of
+"if the proponent has skeptical onus then the opponent has credulous
+onus", and the reason the paper's call-by-onus could be stated as a
+choice between (mu<) and (>mu) at all. (Until 2026-09-17 the
+implementation used the shapes the term-level verbs graft, whose attack
+wings are swapped; there neither mode was a uniform strategy, and this
+passage said so.)
+
+*The base strategy is independent.* =evaluate ARG [mode] [semantics]
+[base]= (any order) takes three orthogonal parameters: =semantics= fixes
+the space of labellings, =mode= chooses sigma in it and decides any
+residual UNDEC scaffolds, =base= resolves only critical pairs sigma does
+not decide.
+
+*Capture, and what the evaluator does with it.* If the catch variable
+=alt= occurs free inside a wing, the graft has *captured*: the scion's
+assumption has been bound to the rootstock's own binder. Until
+2026-09-16 the evaluator refused such scaffolds (=EvaluationRefused=,
+"a capture pattern, outside the acyclic fragment"); see the end of this
+passage for what happens now. Earlier drafts of this lesson justified
+the refusal as a typing condition - "dropping the caught wing would
+un-type the term". That is wrong on two counts, both due to the author.
+
+First, a wing with =alt= free is perfectly well-typed; the outer binder
+still binds it. Nothing about discarding it is unsound.
+
+Second, and this is the substantive point: capture is not a term-level
+phenomenon at all. It is the term-level shadow of a *derivation cycle*.
+A rootstock t for A resting on a lemma B, attacked at B by a scion a
+whose ground is a presumption that A is refuted, is on the graph
+
+:   A[t] <- B[t]          (t)
+:   B[c] <- A[c]          (a, its presumption captured by t's binder)
+
+linked through contrariness at A and at B - a cycle, refused by the
+acyclic fragment for that reason. The labelling then decides the case
+without any term-level inference:
+
+  - t strict except for its lemma, a's only ground the captured
+    presumption: grounded gives A[t] IN, B[t] IN, B[c] OUT, A[c] OUT,
+    one two-valued model. That is the proof by contradiction - a's
+    presumption is defeated by t's own conclusion, a collapses, t
+    stands. Here the caught wing is OUT and *is* discarded.
+  - both defeasible: grounded is all UNDEC, with three two-valued
+    models, one accepting t and one accepting a. Each defends itself
+    against the other, so both are credulously acceptable and neither
+    skeptically; under skeptical mode both wings go.
+
+So "a caught wing may not be discarded" is false; whether it goes is
+sigma's decision like any other. The refusal was a fragment guard -
+capture is a cycle, and the fragment refused cycles - and went with
+the cyclic fragment (task =aida-cyclic-fragment=, 2026-09-16). Under
+graph-first (=aida-graph-first=) the catch/throw structure is what
+unfolding *produces* from the cycle, and evaluation never inspects it.
+
+*What the cyclic fragment does with capture (2026-09-16, revised
+2026-09-17).* First, every lambda is a subargument of its own: a proof
+of an implication under a hypothesis, compiled as an edge targeting the
+implication (=s2.λ1: P->Q[t] <- Q[t]=), which the enclosing edge uses as
+a source of kind =subargument=. An edge is strict only if no
+indeterminate occurs anywhere in it, subarguments included. Then two
+cases, by what a scion captured:
+
+  - A *site of the scion* was bound to a hypothesis or continuation of
+    an enclosing subargument (a lambda-bound =h:P=, a mu-bound =beta:P=,
+    or the scaffold's own catch variable). In the argumentation
+    framework this is a cycle through obligations: the framework records
+    the captured variable as an obligation source at the binder's
+    statement, cannot see that the demand is met inside its scope, and
+    labels the loop OUT. Capture is a debate phenomenon - the opponent
+    assumed the very point at issue, and the substitution has bound that
+    assumption to the proponent's continuation - so strictness is read
+    off the *concrete debate term* after unfolding (=core/dc/strict.py=,
+    the paper's strict redundancy and strict defeat): a scaffold whose
+    one wing has no assumption left and whose other wing has is decided
+    by strictness, and a closed subterm that results contributes a strict
+    edge to the issue graph. Peirce's law (=tests/peirces_law.fspy=):
+
+    : p3 (supporter, defeasible): Q[t] <- P[t:obli], P[c:obli]
+    : s2 (supporter, defeasible): P[t] <- P->Q[t:suba], P->Q[c:obli]
+    : s1 (supporter, defeasible): ((P->Q)->P)->P[t] <- P[t:obli]
+    : s1* (strict): ((P->Q)->P)->P[t] <- -
+
+    the trap as a cycle, every claim in it OUT, and one strict edge for
+    the thesis, IN; =evaluate d5= returns the classical proof term
+    =lambda f. mu alpha.< f || (lambda h. mu _.< h || alpha >) * alpha >=.
+    (Until 2026-09-17 the compiler *absorbed* a capturing scion into the
+    subargument binding the variable - the same verdicts, computed at
+    the wrong level.)
+  - A *presumption* of the scion names a proposition the rootstock
+    binds. Unfolding captures it too - the opponent's default "A fails"
+    inside the debate about A is A's own continuation - which is how a
+    cycle is represented in a finite term (the even loop unfolded from
+    P has one copy of each argument, closed by that capture). The
+    captured variable is marked and stays a *presumption source* of the
+    scion's edge, so the graph shows the cycle =A[t] <- B[t], B[c] <-
+    A[c]= above and the labelling decides it: the term from each entry
+    point is one model of the loop, accepted or not by semantics and
+    mode (=aida-presumption-capture=).
+
+  - *What counts as strict on the term* (author, 2026-09-25;
+    call-by-onus.org has the full note). A subterm is *strict in the
+    debate* iff it has no open site. Nothing else: strictness asks what a
+    term RESTS ON. A free variable is not that - the unfolded term is
+    closed as a whole, so every free variable of a subterm is bound by a
+    binder of the debate, and a binder is a commitment already made. So a
+    captured presumption is not an assumption either, and
+    =tests/rationality/self_attack_lk.fspy= is the classical proof of P
+    from =(P->false)->P=: strict edge =SelfAttack*=, P[t] IN, a value in
+    both modes, although the framework alone still grounds it UNDEC. A
+    clash is not something a term rests on but something it PRODUCES, so
+    it is strict and decides a scaffold, yet claims no strict edge - it
+    derives its statement only from an inconsistency - and surfaces as an
+    =exception= at the root.
+The one genuine discard condition that remains is: never discard a
+wing sigma labels IN - which cannot arise once sigma is a single
+witness labelling.
+
+*Normal-form classes* (spec-derived, =classify_nf=):
+
+  - =open=      : an unfilled obligation remains;
+  - =exception= : the root is an affine mu - a throw, an aborted debate;
+  - =value=     : anything else. Presumptions *may* remain in a value: an
+    IN-by-default site is never instantiated, so the result is a proof
+    *modulo the presumption* - polynomial in that indeterminate.
+
+Adequacy in this fragment: sigma(issue) = IN implies a value; OUT implies
+not a value.
+
+** Example
+
+=tests/minicourse/lesson7_evaluate.fspy= - two arguments differing only in
+the kind of their one site:
+
+: Grounded labelling for 'pOpen':   P term OUT,  Q term OUT
+: Evaluated 'pOpen' (skeptical, base cbn): OPEN
+:   normal form: mu pOpen:P.<pRule:Q->P||?1.2.1:Q*pOpen:P>
+
+: Grounded labelling for 'pPres':   P term IN,   Q term IN
+: Evaluated 'pPres' (skeptical, preferred, base cbn): VALUE
+:   normal form: mu pPres:P.<pRule:Q->P||!1.2.1:Q*pPres:P>
+
+Note the value still contains =!1.2.1:Q=. That is the polynomial case, not
+a leftover: the debate is won *given* the presumption.
+
+For mode divergence, =tests/rationality/contested.fspy= (everything UNDEC):
+
+: Evaluated 'datt' (skeptical, preferred, base cbn): OPEN
+:   normal form: mu datt:P.<pRule:Q->P||mu b1:Q.<?...:Q||...:Q!>*datt:P>
+: Evaluated 'datt' (credulous, preferred, base cbn): VALUE
+:   normal form: mu datt:P.<pRule:Q->P||!...:Q*datt:P>
+
+=label datt preferred= shows the two labellings behind this: one with
+P[t], Q[t] IN and Q[c] OUT, one the other way round. Credulous takes the
+first as sigma, the attacker is OUT in it, and the presumption stands.
+Skeptical intersects them (everything UNDEC, here equal to grounded),
+drops the attacked side, and what remains is the *clash itself*:
+=mu b1:Q.<?Q || Q!>= - an obligation facing a delegation, the debate
+reduced to its unresolved conflict.
+
+** Exercises
+
+1. Same contested debate, but make the challenge rest on an *obligation*
+   instead of a delegation. Predict Q[context], Q[term], P[term], and both
+   modes' NF classes. Then check.
+2. A supporter is labelled OUT but the catch variable occurs free in it.
+   What does the evaluator do today, and what *should* happen? (Use the
+   graph reading from the capture passage above.)
+3. You evaluate with =credulous cbv= and get a value; with =credulous cbn=
+   you get the same value. Does that mean base strategy never matters?
+   When would it?
+
+* Lesson 8 - Where the implementation decides, and where it merely guesses
+
+** Definition
+
+This lesson was first written as a list of "places where the code had to
+be total and the theory is not yet". Working the course changed that
+picture: most of the items turned out to be one of three other things.
+So the list is now sorted by *what each item is*, because that decides
+what to do about it.
+
+  - a *design decision* the author has since taken - the code should
+    follow it, and the theory should record it;
+  - a *bug* against the spec - nothing to decide, just fix;
+  - a *shadow of the term-first direction* - the implementation inspects
+    a term to learn something the graph already knows; these dissolve
+    under graph-first (=aida-graph-first=) and should not be fixed in
+    place;
+  - a genuinely *open* decision - the spec allows more than one answer.
+
+Read this lesson as the agenda for the design discussion, not as a
+catalogue of defects.
+
+*** A. Decisions taken (code must catch up)
+
+1. *Every implication contraposes, delegated ones included.* Rejects the
+   ASPIC+ prohibition on contraposing defeasible rules: read defeasible
+   implication as evidential support, and if P(B|A) > P(B) then
+   P(not-A|not-B) > P(not-A); the stock counterexamples are base-rate
+   neglect. Consequence: strictness affects *default status* only -
+   whether a contraposed attack is decisive (premise OUT) or merely
+   contesting (premise UNDEC) - never which transposals exist. Task
+   =aida-strict-layer=.
+
+2. *"Cycle-free" means no derivation cycle.* A derivation cycle runs
+   through derivation edges and contrariness links and contains at least
+   one derivation edge; a rebuttal's cycle is contrariness only and is
+   admitted. The proposition-level check computes this exactly (it
+   contracts contrariness) and stays. Its refusals are correct even where
+   the conditions would ground two-valued - the structural notion, on
+   purpose. Lesson 5.
+
+3. *The acyclic fragment is the initial one; the next admits cycles.*
+   Forced by 1 + 2: an implication and its own transposal always form a
+   derivation cycle, so transposal closure takes every implication-using
+   debate out of the fragment. Task =aida-cyclic-fragment=.
+
+4. *adf-bdd is the primary labeller; the in-tree code is the check.* A
+   trusted third-party implementation of the ADF semantics guards against
+   specification drift in our own labelling. Reverses the initial plan's
+   trust hierarchy. Task =aida-adf-bdd-primary=.
+
+5. *The labelling semantics is a parameter, and the evaluation modes are
+   defined over it.* credulous/skeptical only exist relative to a
+   multi-extension semantics; grounded has one labelling. So complete and
+   stable (from adf-bdd) come first, and credulous sigma is then a single
+   witness labelling chosen from them - the per-scaffold policy the
+   evaluator uses today goes away. Task =aida-credulous-witness-labelling=.
+
+*** B. Bugs against the spec
+
+6. *Strict refutations were dropped - fixed.* =_collect_sources= used
+   to record nothing for a declared name, so a denied refutation
+   vanished and =strict_contradictions= could never fire from a compiled
+   term. Now the primitive contrariness term
+   mu att:Q.< mu _.<t || att> || mu'_.<t || t'> > compiles to two strict
+   edges on opposite sides of Q, CONTR is reported, and the compiler
+   checks declaration kinds ("prop" for a proof, "moxia" for a
+   refutation) against the side a name occurs on. Task
+   =aida-strict-refutation-edges=, done.
+
+7. *What a defeated site holds.* When the attack wing survives, the
+   defeated site is left as the clash under an affine binder,
+
+   :   mu alpha:A.< t || E >        (alpha unused)
+
+   the site's original t - its derivation, or its bare site - facing the
+   winning refutation E: the paper's abort, an uncatchable exception
+   (2026-09-17; the legacy shapes left =< ?g:A || E >=, the special case
+   where the original is a bare obligation, and the classifier saw only
+   "open"). =classify_nf= now reports any term containing an uncatchable
+   clash as an exception - a clash is uncatchable when no enclosing
+   mu/mu' binds a variable free in it; an affine mu of type false is the
+   negation introduction, not a clash. Two earlier drafts of this item
+   were wrong. One called the open obligation a bug and wanted an "abort
+   term" substituted for it; the clash needs no payload beyond t. The
+   other invoked main.tex:300's "vacuous witness" as that abort term;
+   the ednote is ex contradictione quodlibet (mu_:A.<F||F> witnesses A
+   *given a contradiction*), unrelated to defeat. Consequence: a lost
+   debate classifies as an *exception* (the clash is found wherever it
+   sits), also when the original was a bare obligation - until
+   2026-10-07 the classifier checked for obligations first and called
+   that case *open* (task =aida-classify-exception-before-open=) - and
+   adequacy's OUT half is "not a value". Making the clash propagate to
+   the root by reduction, rather than by the classifier finding it,
+   would need rules through axiom-headed spines that do not exist - a
+   design issue, left as is (task =aida-abort-propagation=; see item 14).
+
+8. *Intermediate conclusions of curried implications are not nodes.* An
+   application of A->(B->C) to A and B exposes B->C only as a context
+   type, so a challenge to B->C finds no target, and even after naming
+   the partial application the compiler emits one edge per whole
+   argument, so an accepted refutation of B->C leaves C IN. Against the
+   spec's "one obligation per logically progressing node" and "closed
+   under subarguments". Task =aida-curried-intermediate-conclusions=.
+
+*** C. Shadows of the term-first direction
+
+These look like evaluator or compiler rules; each is really the term
+inspecting itself for a fact the graph states directly. Under
+graph-first, unfolding *produces* the term from the graph and the
+labelling, and none of these decisions is made at the term level.
+
+9. *The capture refusal.* The evaluator refused a scaffold whose catch
+   variable occurs in a wing. This was mis-sold as a typing condition; it
+   is a fragment guard, since a captured presumption *is* a derivation
+   cycle (lesson 7), and the labelling decides it: proof by contradiction
+   when the rootstock is strict, mutual credulous acceptability
+   otherwise. Gone with decision 3 (2026-09-16); captures are sources
+   in the framework and strictness is read off the term, see lesson 7.
+
+10. *The per-scaffold mode policy.* The wing-choice table resolves each
+    UNDEC scaffold independently by inspecting its shape. Under a single
+    witness sigma (decision 5) the choice is read off sigma, and the
+    scaffold shape is irrelevant.
+
+11. *The capture table dispatches on obligations only.* Grafting wires a
+    scion's =Goal=/=Laog= sites to in-scope binders but leaves
+    =Deleg=/=Geled= untouched, so a by-default challenge composes with no
+    steal wiring - the "Geled asymmetry". Term and graph then disagree
+    about when two sides conflict. Under graph-first the graph is the
+    only place conflict is recorded, and unfolding wires whatever the
+    edges say. Task =aida-attack-geled-reroute=, likely subsumed by
+    decision 13.
+
+12. *Rational closure is implemented nowhere.* Grafting substitutes the
+    scion at the matching sites only; neither the scion's subarguments
+    into the rootstock nor the rootstock's into the scion. The spec says
+    closure is reachability on the graph and is never term substitution;
+    term-first has no natural place for it. Task =aida-graph-first=.
+
+*** D. Settled while working the course (recorded here because each was open when the lesson was first written)
+
+13. *Contrariness: synthesised guard, kept.* Contrary witnesses
+    correspond to constructible terms, which seemed to argue for
+    recording clashes as edges. Working the example settled it the other
+    way. The naive encoding - a derivation edge Q[c] <- Q[t] - is wrong:
+    it makes the proof of Q a source of its refutation, and a strict
+    proof of Q then labels the refutation IN. A clash says two witnesses
+    conflict, and a hyperedge can only say "derives"; the only correct
+    edge form contributes the guard and nothing else, i.e. reproduces
+    today's conditions exactly. And unfolding does not need it:
+    contrariness follows from proposition identity, so the clash term
+    is reconstructible from the two default markers. An edge would
+    record provenance only. Design note, no change
+    (=aida-contrariness-as-edges=).
+
+14. *Congruence order in the normaliser - vacuous, not cosmetic.* An
+    earlier draft said the fixed order (leftmost-outermost, term slot
+    before context) "changes printed normal forms, never a label". That
+    was wrong: it changes nothing. Under a *uniform* strategy - CBN or
+    CBV throughout - the four rules with congruences are confluent (the
+    CBN and CBV sub-calculi of the lambda-mu-mu-tilde calculus are), and
+    typed terms are strongly normalising, so every order reaches the
+    same normal form. Verified on every fixture debate, both modes, both
+    strategies, three orders: 64 comparisons, no difference (pinned in
+    =tests/test_oracles.py::TestCongruenceOrderIrrelevant=).
+
+    The choice that *is* load-bearing is a different one: sigma resolves
+    every scaffold *before* any reduction (=resolve_scaffolds= walks the
+    whole tree first). Interleave the two and the base strategy would
+    resolve a scaffold's critical pair by CBN/CBV before sigma reached
+    it - that is where order would matter, and resolve-first is exactly
+    what rules it out. Since sigma is fixed and reduction can only
+    discard or duplicate a scaffold, never create one, resolving before
+    or after gives the same result.
+
+    The skip rules of =call-by-onus.org=, which the earlier draft cited,
+    belong to something else: the paper's *call-by-onus*, a
+    non-uniform strategy that assigns CBN or CBV to each subterm from
+    binder structure (which variables are affine) and pushes that
+    assignment down the term. For a non-uniform strategy order genuinely
+    matters, and those rules *are* its order. The implementation does
+    not use call-by-onus; it uses sigma-first plus a uniform base.
+    Decided (author, 2026-09-16): call-by-onus is *fully deprecated* in
+    favour of sigma-first. Rules 5-25 of =call-by-onus.org= and the
+    onus-parallel discipline of =core/comp/reduce.py= are legacy;
+    their retirement is =aida-legacy-reducer-findings=.
+
+15. *What the refused-cycle guard protects, and its replacements.*
+    Refusing cycles currently buys three things: locality of the mode
+    policy (replaced by 5), termination of unfolding (replaced by the
+    spec's capture-based cycle breaking, target T6), and unipolarity of
+    compiled conditions - the edge Q[t] <- Q[c] yields
+    Q[t] = (Q[c] & not Q[c]), the one shape where the Kleene labeller and
+    the oracle disagree (production UNDEC, oracle OUT). Decided
+    (author, 2026-09-16): rely on adf-bdd (decision 4), which handles
+    the shape correctly - verified against the oracle; the Kleene
+    cross-check asserts unipolarity and refuses non-unipolar input
+    instead of answering; and a missing adf-bdd binary is an error, with
+    no fallback to Kleene, since a fallback would readmit the silent
+    wrong label. The graph-level refusal of Q[t] <- Q[c] went with the
+    cyclic fragment (2026-09-16; =tests/rationality/self_attack.fspy=
+    compiles to exactly that edge). Pinned in =TestNonUnipolarShape=.
+
+16. *The old labellers.* =color.py= classifies term shape, not
+    acceptance. Decided (author, 2026-09-16): it goes, and the demo
+    relies on the new implementation. Not a theory question; listed so
+    nobody mistakes it for one. Task =aida-renderers-grounded-labels=.
+
+** Exercises
+
+1. For each item in A, say what in the *theory documents* (spec, papers)
+   still states the pre-decision position and needs updating.
+2. Items in C are claimed to dissolve under graph-first. For each, say
+   what graph fact replaces the term inspection.
+3. Item 15 lists three protections. Which of the three, if its
+   replacement were skipped, would produce a *wrong label* rather than
+   a refusal or a non-terminating unfolding?
+
+* Appendix - Solutions
+
+Verified against the implementation; the values are pinned in
+=tests/minicourse/test_minicourse.py=.
+
+** Lesson 1
+
+1. =?1:A= is a term-side obligation, =!2:B= a term-side presumption.
+   Statements: C[term] (the conclusion), A[term], B[term]. No
+   context-side statement appears - nothing refutes anything here.
+2. =forall x:iota, Q x= and =forall y:iota, Q y= give the *same* key -
+   canonical_prop is alpha-invariant in bound variables. =Q x= and =Q y=
+   give *different* keys: those x and y are free, and free variables are
+   part of a proposition's identity.
+3. Two unrelated nodes loses the conflict: nothing would then make
+   proving Q defeat refuting Q. One node with one label loses the
+   asymmetry: the two sides have independent grounds and independent
+   defaults (Q may be an obligation on one side and a presumption on the
+   other - lesson 7's contested example has exactly that). You need one
+   *proposition* carrying two *statements* linked by contrariness.
+
+** Lesson 2
+
+1. =B[t] <- bArg= (strict, no sources), and =C[t] <- d2= with sources
+   A[t], B[t]. C[term] is the conclusion: no edge consumes it.
+2. =bArg= stops being strict - it gains a source D[t:obli] - and a
+   D[term] obligation marker appears. B[t] then depends on D[t].
+3. Because a supporter is a *separate derivation with its own inputs*.
+   Substituting it into the source list would conflate "C needs B" with
+   "C needs whatever bArg needs", losing both the sharing (another
+   argument may also use B) and the disjunctive reading (a second
+   supporter for B is an alternative, not an extra requirement).
+
+** Lesson 3
+
+1. AC_p = ~p. Under the completion p=T it is false; under p=F it is true;
+   so Gamma(undecided)(p) = None - undecided is complete and therefore
+   grounded. There are *no* two-valued models (p = ~p is unsatisfiable),
+   and exactly one complete interpretation.
+   : gamma(undec): {'p': None}   models: []   complete: [{'p': None}]
+2. Grounded commits to nothing not forced, so it answers UNDEC for both.
+   Credulous asks "is there *some* extension accepting p?" - and there
+   is, namely (p=T, q=F). That difference is exactly what the evaluation
+   modes in lesson 7 operationalise.
+3. Because the oracle's job is to be *obviously correct*, not fast. The
+   guard makes the cost bound explicit and forces anything larger through
+   the production labeller, which is separately checked against it. An
+   oracle that silently scaled would be tempting to optimise, and an
+   optimised oracle is no longer a trustworthy criterion.
+
+** Lesson 4
+
+1. : C[t] = (A[t] & B[t])
+   : A[t] = false
+   : B[t] = (true | false)
+   Labels: C OUT, A OUT, B IN. The =(true | false)= is worth reading: the
+   left disjunct is bArg's strict edge (an empty conjunction of sources is
+   =true=), the right is the defeasible part - an obligation marker
+   contributing nothing, i.e. an empty disjunction, i.e. =false=.
+2. Outside the guard - it is a strict edge. It does not matter here
+   because B[context] is not materialised, so no guard is generated at
+   all. It would start to matter the moment something refutes B: then the
+   defeasible part would be guarded by not B[c] while the strict part would
+   keep B[t] IN regardless.
+3. Two disjunctions, two different breakages.
+
+   *Inner* (D's "OR over defeasible edges" becomes an AND): a second
+   supporter becomes an extra burden rather than an alternative route.
+   With Z[t] = (X[t] | Y[t]), X IN and Y OUT, Z is IN; conjunctively
+   Z[t] = (X[t] & Y[t]) and Z is OUT. So *adding* an argument for a claim
+   could turn it from IN to OUT - non-monotonic in the wrong direction,
+   and it makes the redundancy analysis of the COMMA paper's evaluation
+   section vacuous, since a redundant supporter becomes harmful.
+
+   *Outer* (the OR between the strict part and D becomes an AND):
+   B[t] = (true & false) instead of (true | false), so a strict
+   derivation is blocked whenever the defeasible part is empty or fails.
+   Strict support breaks - an axiom stops being sufficient on its own,
+   and the whole point of keeping strict disjuncts outside the guard
+   (exercise 2) is lost with them.
+
+   Both readings are legitimate: =role= is diagnostic only and a strict
+   edge can be a supporter, so "all supporters must hold" does not by
+   itself pick out one of the two disjunctions.
+
+** Lesson 5
+
+1. Both presumptions: everything IN (=C IN, A IN, B IN=). Both
+   obligations: everything OUT. Conjunction of sources means the
+   conclusion is only as strong as its weakest input.
+2. Q[term] and Q[context]. The clause is the NOT-contrary guard: each
+   side's condition negates the other, producing =Q[t] = true & not Q[c]=
+   and =Q[c] = true & not Q[t]=.
+3. In even_loop the arguments attack each other round a circle: its
+   derivation edges P[t] <- Q[c] and Q[t] <- P[c] are joined by the
+   contrariness links Q[c] ~ Q[t] and P[c] ~ P[t], and the cycle
+   contains derivation edges. The contested case's cycle is made of
+   contrariness links only - one proposition, both sides grounded, no
+   derivation edge anywhere. Same ADF-level shape (a negation cycle),
+   different structure. The fragment excludes derivation cycles because
+   they are what needs machinery beyond grounded - witness labellings for
+   the evaluation modes (the plan's M4 concern) and cycle-breaking when a
+   graph is unfolded back into a term. It admits contested nodes because
+   grounded plus the mode policy of lesson 7 already handles them, and
+   refusing a plain rebuttal would exclude the most ordinary debate there
+   is.
+4. The transposal is P[c] <- Q[c]. The first edge's conclusion Q
+   contradicts the transposal's premise not-Q, and the transposal's
+   conclusion not-P contradicts the first edge's premise P, so the pair
+   undermines itself: a derivation cycle through two derivation edges
+   and two contrariness links. =is_acyclic= refuses it. Every debate that
+   uses an implication therefore leaves the acyclic fragment once the
+   strict layer adds transposals - accepted by design; the next fragment
+   admits cycles.
+
+** Lesson 6
+
+1. (>mu) keeps =bArg= - the right wing survives; (mu<) keeps =?2:B= - the
+   left wing survives.
+2. The *left* wing survives - (mu<) - leaving =mu alpha.< t || E >=
+   where the value should be: the original t thrown to the refutation,
+   an uncatchable clash. When t was a bare obligation this is
+   =< ?g:A || E >=, the shape the legacy verbs always produced.
+3. A uniform call-by-name run keeps every supporter and returns every
+   original at an attack: it gives the proponent the benefit of every
+   doubt, which is the credulous mode. Call-by-value is the skeptical
+   mode. On the context side the roles swap.
+
+** Lesson 7
+
+1. Q[context] is now an obligation with no edge, so it is OUT; the guard
+   in Q[term] becomes =true & ~false= = true, so Q[term] is IN and P[term]
+   is IN. With nothing undecided the modes agree: *both* give a value.
+   : labels: P[t] IN, Q[t] IN, Q[c] OUT
+   : skeptical: value    credulous: value
+2. Today it refuses (=EvaluationRefused=, "a capture pattern, outside
+   the acyclic fragment") - and an earlier version of this solution
+   defended that as type preservation. It is not: a wing with the catch
+   variable free is well-typed, since the outer binder still binds it.
+   What should happen is: follow sigma. The captured presumption is a
+   derivation cycle on the graph (the supporter's ground is the
+   rootstock's own contrary), and the labelling has already settled it.
+   If sigma says the supporter is OUT, drop it, caught variable or not -
+   in the proof-by-contradiction case that is exactly what happens, and
+   the rootstock stands. The refusal is a fragment guard (capture is a
+   cycle; the fragment refuses cycles), not a soundness condition, and it
+   goes with the cyclic fragment.
+3. No. It means sigma decided every critical pair in that particular
+   debate, so the base never got consulted. It matters wherever a critical
+   pair survives scaffold resolution - a mu against a mu-tilde arising
+   from ordinary lambda/application structure rather than from a support
+   or attack.
+
+** Lesson 8
+
+1. Decision 1: debate-graph-spec.org's strict layer speaks of transposing
+   *strict* edges and =tests/rationality/README.org='s married-bachelor
+   note frames contraposition as a strict-rule property; both need
+   "every implication". Decision 2: the fragment plan's V-two note and
+   its "Out of scope: cyclic graphs" line. Decision 3: the plan's title
+   and framing ("cycle-free fragment") describe the initial fragment
+   only. Decision 4: the plan's trust hierarchy (in-tree primary) is
+   reversed. Decision 5: call-by-onus.org's Layer 4 states the witness
+   discipline correctly but with grounded as the only concrete
+   semantics; lessons 3, 5 and 7 of this course described the in-tree
+   fixpoint as production (updated 2026-09-16: adf-bdd is production
+   and lesson 7 states the witness discipline as built).
+2. (9) the labelling of the cycle the capture encodes - the caught
+   wing's label. (10) the single witness sigma - the wing's label under
+   it. (11) the contrariness relation between the challenge's conclusion
+   and the site it attacks, which the graph has whether or not the term
+   was wired. (12) reachability from the graft site: every edge with the
+   proposition as source or target is engaged, which is closure.
+3. Unipolarity. Skipping the mode-policy replacement gives a wrong
+   *evaluation* (a wing choice no extension realises), but the labels
+   themselves stay right; skipping cycle-breaking makes unfolding loop,
+   which is loud. Skipping the unipolarity protection makes the
+   production labeller silently return UNDEC where the definition says
+   OUT - a wrong label with no error, the worst of the three. That is
+   why decision 4 (a labeller that implements the definition directly)
+   is the safest replacement.

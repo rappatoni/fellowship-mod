@@ -33,7 +33,7 @@ end argument
 # Construct support, reduce, color.
 support first sup1 arg1
 reduce first
-color first
+label first
 #
 #Next we try alternative counterarguments:
 #
@@ -68,7 +68,7 @@ end argument
 # Construct support, reduce, color.
 support second csup1 c1
 reduce second
-color second
+label second
 #
 #Testing admal
 declare r7: (A - D).

@@ -1,0 +1,41 @@
+% An argument that needs the statement the term is already proving at
+% that point (tasks.org, aida-circular-supporter-judged-in).
+%
+%   pro   : B from an obligation for A
+%   back  : A from an obligation for B   (circular inside B's debate)
+%   other : A from a presumption of D    (a genuine supporter of A)
+%
+% B is IN (via other).  With back registered last it is on top of A's
+% stack; sigma judges it IN (its source B is IN) and keeps it, although
+% inside B's debate back's B can only be an obligation: the evaluation
+% is OPEN.  With other registered last it is VALUE.
+lk.
+declare A,B,D:bool.
+declare r1: (A -> B).
+declare r3: (B -> A).
+declare rd: (D -> A).
+
+start argument pro B
+cut (A -> B) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+
+start argument other A
+cut (D -> A) th.
+axiom rd.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start argument back A
+cut (B -> A) th.
+axiom r3.
+elim.
+next.
+axiom.
+end argument

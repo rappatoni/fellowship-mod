@@ -1,0 +1,52 @@
+% The even loop as a classical debate (lk copy of even_loop.fspy; debates
+% are classical, see tests/test_unfold.py).  Each argument alone is
+% acyclic, the document graph of both is the loop.  Unfolded from either
+% side the labelling is symmetric: grounded UNDEC everywhere, skeptical
+% OPEN, credulous VALUE.  The opponent's presumed refutation stays a
+% presumption when unfolded - presumptions are never captured - so
+% neither side turns into a classical proof of the other's failure.
+lk.
+
+# Rationality fixture: even attack loop of length 2.
+# P rests on the default absence of Q; Q rests on the default absence of P.
+# Expected labellings (graph labeller, see README.org):
+#   grounded:  P UNDEC, Q UNDEC
+#   preferred: two labellings - {P IN, Q OUT} and {P OUT, Q IN}
+#   credulous evaluation of issue P: value; skeptical: suspended focus.
+
+declare P,Q:bool.
+declare pRule : ((Q->false)->P).
+declare qRule : ((P->false)->Q).
+
+# argument Pdefault derives P from geled Q
+start argument Pdefault P
+cut ((Q->false)->P) rule.
+axiom pRule.
+elim.
+elim h.
+cut (Q) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+# argument Qdefault derives Q from geled P
+start argument Qdefault Q
+cut ((P->false)->Q) rule.
+axiom qRule.
+elim.
+elim h.
+cut (P) alpha.
+axiom h.
+by default.
+next.
+axiom.
+end argument
+
+graph Pdefault
+label Pdefault
+evaluate Pdefault skeptical
+evaluate Pdefault credulous
+graph Qdefault
+label Qdefault

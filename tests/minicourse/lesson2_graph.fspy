@@ -1,0 +1,29 @@
+% Lesson 2 - Hyperedges: from terms to a graph.
+%
+% cArg derives C from TWO open sites (A and B) through the axiom abc.
+% That single subargument is one hyperedge with two sources - the reason
+% edges are poly-arrows rather than binary.
+%
+% bArg then supports the B site strictly, adding a second edge.
+lk.
+declare A,B,C:bool.
+declare abc : (A->(B->C)).
+declare axB : (B).
+
+start argument cArg C
+cut (A->(B->C)) r.
+axiom abc.
+elim.
+next.
+elim.
+next.
+axiom r.
+end argument
+
+start argument bArg B
+axiom axB.
+end argument
+
+support d2 bArg cArg
+
+graph d2 show

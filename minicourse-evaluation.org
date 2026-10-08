@@ -1,0 +1,1307 @@
+#+title: Evaluating a Labelled Debate Term - A Sequel to the Minicourse
+#+startup: overview
+
+# AI NOTE: Drafted by an AI agent (Claude) at the author's request,
+# 2026-09-29. Teaching material about the implementation, not manuscript
+# prose. Every transcript quoted below was produced by running the code;
+# tests/minicourse/test_evaluation_course.py pins the quoted values so this
+# file cannot silently go stale.
+#
+# Revised 2026-10-02: since the sharing work (minicourse-sharing.org), the
+# CLI no longer unfolds a debate by default. The transcripts here are from
+# the unfolded route, selected by `pipeline unfolded`; the pinned values
+# are computed on the unfolded term through the Python API, which is
+# unchanged.
+#
+# Revised 2026-10-05: lesson 8a (unfolding) added at the author's request,
+# since the course started from an unfolded term that no lesson built.
+# Its transcripts are pinned by the same test file.
+#
+# Regenerated 2026-10-06 for the stacked shape and the argument
+# entrypoints (tasks.org, aida-unfold-entrypoints): every term below is
+# the one unfolded for the argument named, every transcript was taken on
+# the unfolded route, which is the CLI default again since that day.
+#
+# Revised 2026-10-07 for labelled terms (tasks.org,
+# aida-labelled-sites-delegation-rewrite): lessons 9, 11, 12 and 13 and
+# the closing section; the labelled term of lesson 9 was printed by the
+# code, the normal forms are pinned by the test file.
+
+* About this sequel
+
+minicourse.org ends its account of evaluation at lesson 7: sigma decides
+each scaffold, then the term is normalised. This sequel takes that
+sentence apart. Lesson 8a first builds the debate term from the
+document: the unfolding that minicourse.org only mentions. Lessons 9-13
+then start where unfolding and labelling have finished - with a debate
+term and a witness labelling sigma in hand - and follow the term through
+every phase to its normal form, one reduction at a time.
+
+Prerequisites: lesson 2 (hyperedges), lesson 6 (a scaffold is a critical
+pair) and lesson 7 (how sigma is chosen, derivation status, the wing
+table).
+
+The code under study is =_evaluate_under= in =core/comp/evaluate.py=:
+
+:   term, sigma
+:     |  phase 1  strict_resolve     core/dc/strict.py        decide by strictness
+:     |  phase 2  resolve_scaffolds  core/comp/evaluate.py    decide by sigma
+:     |  phase 3  normalize_strong   core/comp/oracle_terms.py  base strategy
+:     v  classify_nf                 core/comp/oracle_terms.py  value / exception / open
+
+*Two routes.* What this sequel describes is the pipeline on the *unfolded*
+term. It is the CLI default (=pipeline unfolded=), since 2026-10-06 again:
+only this route builds the stacked shape and the argument entrypoints of
+lesson 8a. The other route, =pipeline shared=, keeps the debate as named
+sub-debates and runs phases 1-3 one sub-debate at a time; it still builds
+the older, legacy shape (tasks.org, aida-shared-route-stack-shape) and is
+the subject of minicourse-sharing.org (lessons 14-18).
+
+*Is phase 2 normalisation?* Yes. Every decision phases 1 and 2 take is
+the choice of one rule, (mu<) or (>mu), at one critical pair - the
+scaffold's inner pair. What makes them look like something else is that
+the implementation does not fire that rule as a reduction step. It
+recognises a scaffold by its shape and replaces it in one rewrite by the
+wing it keeps: the decided step, plus the bookkeeping step before it and
+an eta step after it. Lessons 10 and 11 replay those rewrites as the
+individual steps they abbreviate, and lesson 13 explains why the
+implementation cannot currently take them one at a time.
+
+One worked example runs through all six lessons:
+=tests/minicourse/lesson9_evaluation.fspy=. Lesson 8a adds three small
+ones, =tests/minicourse/lesson8a_cycle.fspy=,
+=tests/rationality/self_attack_lk.fspy= and =tests/entrypoints.fspy=. To
+follow along:
+
+: .venv/bin/acdc --script tests/minicourse/lesson9_evaluation.fspy   # add `explain pro` at the end
+: .venv/bin/python -m pytest tests/minicourse/test_evaluation_course.py -q
+
+In the CLI, =unfold argument pro= prints the term lessons 9-13 work on,
+=render pro vanilla unfolded= renders it, and =unfold issue :B= prints the
+canonical term of the issue B (lesson 8a).
+
+=coursekit.py= has four helpers for stepping by hand:
+
+: import sys; sys.path.insert(0, "tests/minicourse")
+: from coursekit import debate_term, scaffold_at, fire, eta_step
+: prover, term = debate_term("tests/minicourse/lesson9_evaluation.fspy", "pro")
+: c = scaffold_at(term, "u3")        # the scaffold whose original is the site u3
+: fire(c, ">mu")                     # one step at c's command, in place
+: from pres.gen import pres_str; print(pres_str(c))
+
+=fire= uses the normaliser's own rules and substitution, so what it
+prints is exactly what =normalize_strong= would produce at that command.
+
+* Lesson 8a - Unfolding: from the document to a debate term
+
+(Numbered 8a so that lessons 9-18, and the files and tests named after
+them, keep their numbers.)
+
+** Definition
+
+*The input: the document graph.* Every atomic argument is compiled when
+it is registered (=document_add=, =wrap/prover.py=), with the compiler of
+lesson 2, and its edges are merged into one graph, the document graph
+(=prover.document=; =graph document= prints it). There is one difference
+from lesson 2: each edge also keeps the *body* it was compiled from
+(=Edge.term=), with the sites still numbered as Fellowship numbered them
+(=!1.2.1:A=). An edge says which statement an argument derives and from
+which statements. Its body says how. Unfolding needs both.
+
+The default markers of the graph (lesson 2) record, for each statement,
+whether some edge of the document uses it as an obligation or as a
+presumption.
+
+*The output: a debate term, from an entrypoint* (=core/dc/unfold.py=).
+There are two kinds of entrypoint, and they give two kinds of term:
+
+  - an *issue*, a statement: =unfold_issue(graph, S)= gives the
+    *canonical* term of the debate about S. The CLI writes an issue
+    =issue :X= (X proved, the term side) or =issue X:= (X refuted);
+  - an *argument*: =unfold_argument(graph, edge)= gives the term *biased
+    towards* that argument, the one =evaluate pro= and =explain pro=
+    work on. It answers "can this argument be defended?" rather than "is
+    S acceptable?".
+
+The two differ only in the order of one stack and in the kinds of the
+sites in the argument's own body (below). The labelling plays no part
+in unfolding: the term is built from the document alone, and labelled
+afterwards.
+
+*The shape.* The debate about a statement S, whose contrary is S̄:
+
+: ATT( SUP( ROOT_S , STACK_S ) ,  SUP~( ROOT_S̄ , STACK_S̄ ) )
+: STACK = SUP( SUP( P1, P2 ), P3 )        for supporters P1, P2, P3 in registration order
+
+  - ROOT_S is S's own site: a presumption (=!u=, =u!=) if some argument
+    of the document presumes S, an obligation (=?u=, =u?=) otherwise.
+  - STACK_S holds the arguments deriving S as one stack of support
+    scaffolds, the last registered outermost. Sigma reads it top-down,
+    so the last registered is *judged first* (lesson 11), and the
+    strict phase checks a supporter before what it supports (lesson
+    10), so the order holds there too.
+  - One support scaffold puts ROOT_S on top: =SUP(ROOT_S, STACK_S)=. The
+    root is what is left if no supporter is accepted.
+  - One attack scaffold wraps all of it. Its scion, the *attacker wing*,
+    is the debate about the contrary *without its own attackers* (those
+    are S's supporters): S̄'s root under S̄'s stack. The contrary's root
+    stands for "somebody presumes or demands S̄ outright"; it is there
+    whenever S has attackers or S̄ a default marker. It is always
+    captured, by the attack's own =alt=, which binds S̄ (below): if no
+    attacker succeeds, the proof of S is passed on as if unattacked.
+  - Empty parts are left out: no supporters, no support scaffold; no
+    attackers and no marker on S̄, no attack scaffold.
+
+The scaffolds are the paper's shapes of lesson 6. On the term side, with
+T for the supported or attacked term:
+
+: SUP(T, S)   mu alt.< T || mu'b.< mu _.<b || alt> || mu'_.< S || alt > > >
+: ATT(T, E)   mu alt.< T || mu'b.< mu _.<b || E >   || mu'_.< b || alt > > >
+
+=SUP~= and =ATT~= are the context-side mirror images.
+
+*An argument entrypoint* changes two things, and only for the argument
+itself:
+
+  - the argument goes on *top* of its statement's stack, so it is judged
+    first: =SUP( ROOT_S, SUP( SUP(P2, P3), P1 ) )= for P1. A
+    counterargument is a supporter of its own, context-side statement;
+  - the sites directly in its *own body* keep the kind it wrote. Where it
+    demands a statement that somebody else presumes, the root of that
+    sub-debate is its own obligation and the presumption becomes the
+    bottom of that statement's stack.
+
+Below that, every sub-debate is canonical.
+
+*The algorithm* is two mutually recursive functions. =statement(S, env,
+spine)= gives the term (or context) standing for the statement S at the
+current place. =env= maps statements to the binders in scope there, and
+=spine= is the set of statements being expanded on the path from the
+root. Two cases, tried in this order:
+
+| case     | condition                 | result                         |
+|----------+---------------------------+--------------------------------|
+| captured | S is bound in =env=       | the binder's variable          |
+| expanded | otherwise                 | the debate about S (=_debate=) |
+
+=_debate= draws the root, builds the stack (=_stack=), the support
+scaffold (=_supported=) and the attacker wing (=_wing=), in that order.
+While a stack element is unfolded S is on the spine, and while the
+attacker wing is unfolded its contrary is too. A statement on the spine
+is always bound in =env= as well (below), so it is always captured. Should
+one ever be on the spine without a binder, =statement= logs a warning
+("no binder in scope") and leaves a bare site; on the fixtures this
+never happens (=tests/test_scaffold_capture.py=).
+
+Only argument edges become stack elements. A lambda's own subargument
+edge (=SelfAttack.λ1= below) is a piece of its parent's body, and
+appears where the parent is unfolded.
+
+*A stack element* is an edge's body unfolded in place (=_edge=). The body
+is copied, and while it is copied:
+
+  - every site in it (Goal, Laog, Deleg, Geled) is replaced by
+    =statement= for that site's statement: whatever the body had there,
+    the debate about that statement takes its place. A =cite NAME= leaf
+    is handled the same way, as a site for the cited argument's
+    statement;
+  - every binder puts its statement into =env= for its own body: a
+    lambda's hypothesis =h:P= and a =mu'x:P= bind P[t] (a proof of P is
+    in scope), a =mu a:P= and a lambda-bar bind P[c] (a refutation of P
+    is). =env= is passed down into the elements unfolded inside the
+    body, so the binders of every *enclosing* argument are in scope as
+    well;
+  - every binder is named by =fresh=: the body's own name the first time
+    it occurs anywhere in the term, suffixed after that (=th_2=), because
+    Fellowship's replay refuses a hypothesis introduced twice. For an
+    argument entrypoint its own body is unfolded first, so it keeps its
+    names.
+
+*Every binder captures*, the scaffolds' own included (decided
+2026-10-06, tasks.org aida-unfold-scaffold-binders-capture). On either
+side a scaffold's =alt= binds the *contrary* of its statement and its =b=
+the *statement itself*; the scion is in the scope of both, the supported
+or attacked term in that of =alt= only. So, inside the debate about S:
+
+  - a supporter of S that needs S gets the =b= of its scaffold. After the
+    scaffold's outer step =b= is the supported term - the root, or the
+    lower part of the stack - so the supporter *shares* it instead of
+    starting a second obligation for S;
+  - a supporter of S that needs S̄ gets the scaffold's =alt=;
+  - the attacker wing's root, S̄, is the attack's =alt=; an attacker that
+    needs S̄ gets the =b= of the wing's own support scaffold (that is, the
+    root again), and one that needs S the wing's =alt=.
+
+Every statement being expanded therefore has a binder in scope below its
+debate, and capture alone ends the unfolding. The placeholders =_= bind
+nothing.
+
+*Numbers.* Sites, =alt= binders and =b= binders each have a counter of
+their own (=_wiring= skips any name already used). A site is numbered
+when its statement is expanded; an =alt= and its =b= when their scaffold
+is begun, before its scion is built. So both grow from the root inwards,
+and a captured root takes no number.
+
+*A bare issue.* If nobody derives or contests the issue, the result is a
+bare site, and =unfold= gives it the eta wrapper =mu x.< site || x >=
+every argument has, so that the pipeline can read the issue off the root.
+
+*Why capture* (the author's reading, 2026-10-05). Read the self-attack
+below computationally. The opponent's default "P fails" is a
+continuation for P that nobody has supplied: a bluff. Inside the lambda
+the hypothesis =h:P= is a witness for P, and the body passes it to that
+default continuation, =< h || P fails >=. So the opponent has produced,
+or cooperated in producing, a witness for P. The proponent's binder
+=mu rule:P= is a real continuation for P, and it has been waiting for
+exactly such a witness. Capture replaces the default by the bound
+continuation, =< h || rule >=, and the witness is thrown back to the
+proponent. Two continuations for P compete, one of them a default, and
+the default makes way for the real one. The term side is the mirror
+image: a demand for P under a hypothesis =h:P= is met by =h=.
+
+Capture does not depend on the kind of the site. An obligation and a
+presumption are both holes and differ only in onus, who owes the
+witness. =statement= tests =env= before it looks at anything else, and
+the contrary's root is captured in the same way (=_bare=).
+
+The variable that replaces the site no longer shows which onus the hole
+had. A captured presumption is therefore marked (=captured_presumption=).
+On this route the issue graph is compiled again from the unfolded term
+(=compile_issue=), and the compiler records a captured variable as a
+source of the binder's statement, a presumption source if it is marked
+and an obligation source otherwise. The document graph already holds
+that source; the mark is only needed for the round trip from the term
+back to a graph. Whether the issue graph should be taken from the
+document graph instead, and how a captured site that stays a source
+fits with the strict phase, which does not count it as an assumption
+(lesson 10), are open questions in tasks.org. Lesson 13 follows the
+consequences.
+
+*Termination and size.* A statement is expanded at most once on any path
+(the spine): below its debate it is bound, so every later demand for it
+is captured. A document has finitely many statements, so the term has
+finite depth. But a statement reached along two paths is expanded on
+both, so the term grows with the number of paths through the document
+graph - exponentially in the worst case (minicourse-sharing.org, lesson
+14).
+
+*Terms are kept.* The term unfolded for an argument is kept on it
+(=Argument.unfolded_body=), the canonical term of an issue on the
+document, each with the document's *revision*. Registering an argument
+or adding a declaration makes them stale - a new argument can support or
+attack, a new declaration can make a presumption strict or refuted - and
+the next use unfolds again. =unfold argument NAME= and =unfold issue :X=
+build and print them; =render NAME [style] unfolded= renders one.
+
+*After unfolding.* The term is replayed through Fellowship (the type
+check), compiled into the issue graph and labelled:
+
+:   document graph, entrypoint
+:     |  unfold          core/dc/unfold.py          this lesson
+:     |  type check      core/dc/typecheck.py       Fellowship replays the term
+:     |  compile_issue   core/dc/strict.py          lesson 2, plus strict edges (lesson 10)
+:     |  labellings      core/comp/adf_label.py     lessons 3-5
+:     v  sigma           core/comp/evaluate.py      lesson 7 (witness_labelling)
+
+The issue graph and its labels are the same from every entrypoint; only
+the term, and so the normal form, depends on it. Lesson 9 starts from
+the end of that pipeline.
+
+** Example
+
+*The running example.* =graph document= on
+=tests/minicourse/lesson9_evaluation.fspy=:
+
+: Document graph: 5 nodes, 4 edges (every registered atomic argument)
+:   pro (argument, defeasible): B[t] <- A[t:pres]
+:   con (argument, defeasible): A[c] <- C[t:pres]
+:   killC (argument, strict): C[c] <- -
+:   attackrule (argument, defeasible): A->B[c] <- D[t:pres]
+:   default A[t]: presumption
+:   default C[t]: presumption
+:   default D[t]: presumption
+
+and the bodies the first three edges keep:
+
+: pro    μpro:B.<μth:B.<r1:A->B||!1.2.1:A*th:B>||pro:B>
+: con    μ'con:A.<con:A||μ'x:A.<μth:~A.<r2:C->~A||!1.1.2.1:C*th:~A>||μ'H1:~A.<H1:~A||x:A*_F_>>>
+: killC  μ'killC:C.<killC:C||μ'x:C.<nc:~C||μ'H1:~C.<H1:~C||x:C*_F_>>>
+
+*What attackrule shows: only sites can be attacked.* =attackrule= refutes
+=A -> B= from a presumption of D. It is meant to attack the rule pro
+applies, =r1: A -> B=, but it takes no part in pro's debate: the term
+below has no trace of it. The reason is that =r1= is a declared axiom.
+In pro's body it is a leaf, a strict name, not a site; pro's edge is
+=B[t] <- A[t]= and has no source A->B[t]; so nothing the unfolder walks
+stands for the statement "A -> B is proved", and the refutation of that
+statement is never reached. The document graph does have the node A->B,
+but only its context side. In the current implementation the only
+points at which an argument can be attacked (or supported) are its sites
+and its conclusion: not the declared axioms it uses, not the lambda
+subarguments inside it, not the intermediate conclusions of a curried
+rule. To make r1 attackable today, pro has to take the rule as a premise
+(=cut (A -> B) th. by default.=), which gives the site =!:A->B=. Whether
+a declared axiom should be attackable at all - in ASPIC+ terms a strict
+premise cannot be attacked, but it can rebut, which would make
+attackrule OUT - is recorded in tasks.org
+(aida-discuss-non-site-attack-points, with aida-strict-layer and
+aida-curried-intermediate-conclusions on the graph side). Nothing reports
+that attackrule is unreachable; it is silently left out.
+
+=explain pro= prints the unfolder's steps:
+
+: unfold         B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold           B[t] +support 'pro' (the argument unfolded, on top)
+: unfold         A[t] expanded, root u2 (Deleg), 0 supporter(s)
+: unfold           A[t] attacked by the debate about A[c], 1 supporter(s) (alt alt2, b b2)
+: unfold         the bare A[c] captured as 'alt2'
+: unfold         A[c], the attacker wing, root 'alt2'
+: unfold           A[c] +support 'con'
+: unfold         C[t] expanded, root u3 (Deleg), 0 supporter(s)
+: unfold           C[t] attacked by the debate about C[c], 1 supporter(s) (alt alt4, b b4)
+: unfold         the bare C[c] captured as 'alt4'
+: unfold         C[c], the attacker wing, root 'alt4'
+: unfold           C[c] +support 'killC'
+
+Step by step:
+
+1. *B[t]*, =env= and spine empty. Nobody presumes B, so the root is the
+   obligation ?u1. One argument derives B, pro, which is also the
+   entrypoint; its stack is pro alone, under the support scaffold =alt1=,
+   =b1=, so =env= = {B[c]: alt1, B[t]: b1} inside it. Nobody derives
+   B[c], and B[c] has no marker: no attack scaffold.
+2. pro's body. Its binders =pro= and =th= are both continuations for B,
+   so they shadow =alt1=: =env= = {B[c]: th, B[t]: b1}. At the site
+   =!1.2.1:A= the unfolder asks for *A[t]*: not in =env=, so expanded. pro
+   presumes A, and pro is the entrypoint, so the root is its own kind,
+   the presumption !u2. Nobody derives A, so no support scaffold. con
+   derives A[c], so A[t] is attacked: =alt2= (binds A[c]), =b2= (binds
+   A[t]).
+3. The attacker wing, the debate about *A[c]* without its attackers. Its
+   root is A[c], and A[c] is bound to =alt2=: the root is =alt2=. Its
+   stack is con, under the wing's support scaffold =alt3=, =b3=.
+4. con's body. =con= and =x= bind A[t], =th= binds ~A[c] and is renamed
+   =th_2=, since pro's =th= came first. At the site =!1.1.2.1:C= the
+   unfolder asks for *C[t]*. With a TRACE log the state there is
+
+   : unfold: at C[t]  env={B[c]:th, B[t]:b1, A[c]:b3, A[t]:x, B(S:A,->,false)[c]:th_2}  spine={A[t], A[c], B[t]}
+
+   (=B(S:A,->,false)= is the key of ~A, which is not a node of the
+   document, so the log prints the raw key). =env= holds the binders of
+   every enclosing argument and scaffold; the innermost wins (=x= over
+   =alt3= for A[t]). C[t] is not in it, so it is expanded: the
+   presumption !u3, attacked by the debate about C[c] (=alt4=, =b4=) -
+   its root captured as =alt4=, its stack killC (=alt5=, =b5=).
+5. killC's body has no site, so the recursion stops. Its binders are
+   renamed where taken: =x= becomes =x_2=, and its =H1= is the first
+   =H1= in the term, so it is con's =H1=, met later, that becomes =H1_2=.
+
+The result is the term lesson 9 starts from:
+
+: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+
+Here pro is B's only supporter, so its term is also the canonical term
+of B: =unfold issue :B= prints the same.
+
+*Two entrypoints that differ.* =tests/entrypoints.fspy= has three
+arguments for B, =p1=, =p2= and =p3=, each from a presumption of its own,
+registered in that order. The canonical term of B and the term for p1
+differ only in the stack:
+
+: issue :B    SUP( ?u1:B, SUP( SUP(P1, P2), P3 ) )
+: p1          SUP( ?u1:B, SUP( SUP(P2, P3), P1 ) )
+
+All three are IN, so =evaluate issue :B= returns p3's proof, the top of
+the canonical stack, and =evaluate p1= returns p1's own (lesson 11).
+
+*A capture by b.* =tests/minicourse/lesson8a_cycle.fspy=: =pro= derives B
+from an obligation for A, and =back= derives A from an obligation for B.
+Unfolded for pro:
+
+: unfold: B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold:   B[t] +support 'pro' (the argument unfolded, on top)
+: unfold: A[t] expanded, root u2 (Goal), 1 supporter(s)
+: unfold:   A[t] +support 'back'
+: unfold: B[t] captured as 'b1'
+:
+: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<?u2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<μback:A.<μth_2:A.<r3:B->A||b1:B*th_2:A>||back:A>||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+
+Inside back, the demand for B is the demand the whole debate is about:
+an obligation for a statement already being proved. The support
+scaffold of B binds B[t] to =b1=, so the demand becomes =b1=. After that
+scaffold's outer step =b1= is B's root, so back shares the obligation
+?u1 instead of opening a second one; evaluation leaves it open
+(=μpro:B.<r1:A->B||μb1:A.<r3:B->A||?u1:B*b1:A>*pro:B>=).
+
+*A capture, and the contrary's root.* =tests/rationality/self_attack_lk.fspy=:
+one argument for P from =pRule: (P->false)->P=, whose body presumes "P
+fails". The document holds two edges, =SelfAttack.λ1= (the lambda) and
+=SelfAttack=, and the default marker P[c]: presumption. Unfolded for
+SelfAttack:
+
+: unfold: P[t] expanded, root u1 (Goal), 1 supporter(s), 'SelfAttack' on top
+: unfold:   P[t] +support 'SelfAttack' (the argument unfolded, on top)
+: unfold: P[c] captured as 'rule' (presumption)
+: unfold:   P[t] attacked by the debate about P[c], 0 supporter(s) (alt alt2, b b2)
+: unfold: the bare P[c] captured as 'alt2'
+: unfold: P[c], the attacker wing, root 'alt2'
+:
+: μalt2:P.<μalt1:P.<?u1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μSelfAttack:P.<μrule:P.<pRule:(P->false)->P||λh:P.μalpha:false.<h:P||rule:P>*rule:P>||SelfAttack:P>||alt1:P>>>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<b2:P||alt2:P>>>
+
+Inside the body, at the site for P[c], =env= is {P[c]: rule, P[t]: h,
+false[c]: alpha}: =mu rule:P= is a continuation for P, so the
+presumption "P fails" becomes =rule=. Only SelfAttack is a supporter;
+its lambda edge is inside it. And because the document presumes P[c],
+the issue is attacked by the debate about P[c]: nobody derives "P
+fails", so the wing is its root alone, and the root is captured by the
+attack's own =alt2=. Both halves of the attack's wiring are then the
+same, =mu _.<b2||alt2>= and =mu'_.<b2||alt2>=: the attack has nothing
+but its fallback. The matcher does not recognise that as a scaffold,
+and normalisation takes it apart, with the same result under cbn and
+cbv up to one eta step (lesson 13). The presumption "P fails" stays in
+the framework all the same: the compiler marks P[c] as presumed when
+it meets the captured contrary (=captured_default=).
+
+** Exercises
+
+1. In the running example the =alt= and the =b= numbers both grow from
+   the root inwards (=alt1=, =b1= on B ... =alt5=, =b5= on C[c]), and the
+   sites are u1, u2, u3 with no gap, although the debates about A[c] and
+   C[c] each have a root. Explain all three from when each name is
+   drawn. What would the numbers be if killC were registered *before*
+   con?
+2. In the capture-by-b example, pro's body has two binders for B, =pro=
+   and =th=. Why does neither capture the demand for B inside back, and
+   which binder does?
+3. In the running example, delete the line =by default.= from pro, so
+   that pro *demands* A instead of presuming it. (a) What is the root of
+   A's debate in pro's term now? (b) Now also add a copy of the original
+   pro, called =pa= and registered after pro, which still presumes A.
+   What is the root of A's debate inside pro now, and where is pa's
+   presumption? How many times does the debate about A occur in pro's
+   term, and with which roots? Predict first, then check with =unfold
+   argument pro=.
+4. Why does unfolding terminate on every document, and why can the term
+   still be exponentially larger than the document graph?
+5. In =tests/entrypoints.fspy=, which argument's proof does =evaluate
+   issue :B= return, and which does =evaluate p2=? What would change if
+   p2 were registered last?
+
+* Lesson 9 - The input: a labelled, unfolded term
+
+** Definition
+
+The term is *closed* (every variable is bound), and Fellowship has
+replayed it (the type check), so it is a well-typed proof term in which
+some leaves are open. What it can contain:
+
+| printed        | what it is                                                | who makes it     |
+|----------------+-----------------------------------------------------------+------------------|
+| =?u1:B=        | obligation site, term side (Goal)                         | unfold, =_site=  |
+| =u1:A?=        | obligation site, context side (Laog)                      | unfold           |
+| =!u2:A=        | presumption site, term side (Deleg)                       | unfold           |
+| =u1:P!=        | presumption site, context side (Geled)                    | unfold           |
+| =r1=, =nc=     | declared names: axioms, strict leaves                     | =declare=        |
+| =alt1=, =alt2= | a scaffold's outer binder (alpha, or x on the context side) | =_fresh_alt=   |
+| =b1=, =b2=     | a scaffold's wiring binder beta                           | unfold           |
+| =_=            | the two affine binders of a scaffold's inner pair         | unfold           |
+| =pro=, =con=   | an argument's own eta wrapper =mu pro.< ... ‖ pro >=      | the argument     |
+| =th_2=, =H1_2= | an argument's own binder, suffixed on reuse               | unfold, =fresh=  |
+
+In phase 2 the term also carries sigma, and its normal form has sites
+named by their labels (since 2026-10-07, tasks.org
+aida-labelled-sites-delegation-rewrite):
+
+| printed             | what it is                                                     | who makes it      |
+|---------------------+----------------------------------------------------------------+-------------------|
+| =B{IN}=             | a term-sorted occurrence of B (mu, site, term variable), labelled | =label_term=    |
+| ={OUT}A=            | a context-sorted occurrence of A (mu', site, continuation)     | =label_term=      |
+| =!IN:A=, =IN:A!=    | a site labelled IN: a delegation, whatever it was              | =discharge_labels= |
+| =?OUT:B=, =UNDEC:P?= | a site labelled OUT or UNDEC: an obligation, whatever it was  | =discharge_labels= |
+
+Sites, =alt= and =b= binders each have their own counter. Lesson 8a
+builds this term step by step.
+
+Unfolding numbers the sites =u1=, =u2=, ... in the order it reaches them.
+It keeps an argument's binder names, and suffixes one only if that name
+is already used elsewhere in the term, because Fellowship refuses a
+hypothesis introduced twice. (Since 2026-10-02 the unfolder's own names
+=alt=, =b= and =x= are chosen the same way, from the names not yet taken:
+an argument whose own binder is called =alt1= - a term pasted from an
+earlier unfolding has one - no longer produces that name twice.)
+
+*Is anything special about =alt=?* In evaluation, no. The matcher
+(=_match_paper_scaffold=, =core/dc/debate_graph.py=) recognises the
+scaffold's alpha by where it stands, not by its name: it is whatever the
+outer binder is called, and the kept-wing checks compare against that
+name. =alt= is only a naming convention. Three things *are* special:
+
+  - *The name =_=.* It marks an affine binder, and the matcher tests
+    affinity by that name (=_is_affine_binder=), not by checking that the
+    variable is unused. Lesson 13 shows why this matters.
+  - *alpha and beta bind, like any binder* (since 2026-10-07). While
+    unfolding, a site is captured by the innermost binder in scope for
+    its statement, an argument's own or a scaffold's: alpha binds the
+    contrary of the scaffold's statement, beta the statement itself
+    (lesson 8a). The strict phase does not count them as settled,
+    though, as it does an argument's binders (lesson 10), and the
+    rewrites substitute beta (lesson 13).
+  - *alpha is eta-removed after a decision* when the kept wing does not
+    use it (lesson 11). So =alt= names disappear from the result, and an
+    argument's own wrapper name (=pro=) is what the normal form and the
+    strict edges carry.
+
+The literal string ="alt"= does matter in one place: the legacy
+term-level reducer, =core/comp/reduce.py=, which the =support= and
+=attack= verbs use. Evaluation never calls it.
+
+*sigma* maps each statement of the issue graph to IN, OUT or UNDEC.
+Phase 1 reads strictness off the term and does not use it. Then sigma is
+written into the term (=label_term=, =core/comp/labelled.py=): every
+occurrence of a statement carries its label, =A{L}= on the term side and
+={L}A= on the context side. The label depends only on the proposition
+and the side, so no reduction step can make it wrong. Phase 2 reads the
+labels off this term, through a scaffold's derivation status. Before
+phase 3 they are discharged into the sites (lesson 12), and phase 3
+reads nothing but the base strategy.
+
+** Example
+
+The fixture's arguments: =pro= proves B from =r1: A -> B= and a
+presumption of A. =con= refutes A from =r2: C -> ~A= and a presumption
+of C. =killC= refutes C strictly, from the axiom =nc: ~C=. (=attackrule=
+takes no part; lesson 8a.) Unfolded for =pro=:
+
+: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+
+The same term with each part named once, from the inside out:
+
+: K    = mu'killC:C.< killC || mu'x_2:C.< nc || mu'H1:~C.< H1 || x_2 * _F_ > > >
+:                                           killC's refutation of C (no site)
+: CW   = mu'alt5:C.< mu b5:C.< mu _:C.<alt5 || K> || mu'_:C.<alt5 || b5> > || alt4 >
+:                                           C-SUP: the debate about C[c] - its root alt4, supported by K
+: CSC  = mu alt4:C.< !u3 || mu'b4:C.< mu _:C.<b4 || CW> || mu'_:C.<b4 || alt4> > >
+:                                           T-ATT on C: the presumption u3, attacked by CW
+: CON  = mu'con:A.< con || mu'x:A.< mu th_2:~A.< r2 || CSC * th_2 >
+:                                  || mu'H1_2:~A.< H1_2 || x * _F_ > > >
+:                                           con's refutation of A, resting on u3
+: AW   = mu'alt3:A.< mu b3:A.< mu _:A.<alt3 || CON> || mu'_:A.<alt3 || b3> > || alt2 >
+:                                           C-SUP: the debate about A[c] - its root alt2, supported by CON
+: ASC  = mu alt2:A.< !u2 || mu'b2:A.< mu _:A.<b2 || AW> || mu'_:A.<b2 || alt2> > >
+:                                           T-ATT on A: the presumption u2, attacked by AW
+: PRO  = mu pro:B.< mu th:B.< r1 || ASC * th > || pro >
+:                                           pro's proof of B, resting on u2
+: root = mu alt1:B.< ?u1 || mu'b1:B.< mu _:B.<b1 || alt1> || mu'_:B.<PRO || alt1> > >
+:                                           T-SUP on B: the root u1, supported by PRO
+
+Every site of a body is replaced by the debate about its statement. The
+issue's own root u1 is an obligation, since nobody presumes B. pro's
+site for A is its presumption u2. A[t] has no supporter, so its debate
+is u2 under one attack scaffold, whose wing AW is the debate about "A
+fails": its root and its one supporter, con. The root is A[c], which
+the attack's =alt2= binds, so it is =alt2=: if con fails, the proof of A
+is passed on as if unattacked. The same happens to con's site for C, and
+so on down to killC, which has no site left.
+
+The witness labelling (preferred; there is exactly one):
+
+: C[c]=IN  A[c]=OUT  C[t]=OUT  B[t]=IN  A[t]=IN
+
+Written into the term after phase 1 (=explain pro= prints it as
+=evaluate: the labelled term=; phase 1 has decided C, lesson 10):
+
+: μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
+
+Three things to read off it. The labels follow the sort, not the
+binder: =alt2= is a continuation for A, so it carries A[c]'s label,
+={OUT}A=, and =b2= stands for a proof of A, so =A{IN}=. AW's root is
+=alt2:{OUT}A=: the attacker's conclusion, A[c], is labelled where the
+captured root stands. Statements the graph has no node for - B[c], ~A,
+the axioms - carry no label.
+
+** Exercises
+
+1. Rename =pro='s =cut (A -> B) th.= to =cut (A -> B) t.= Which binder
+   names in the unfolded term change, and why do *two* of them change?
+2. The scaffold =ASC= sits on the site u2:A. Its scion is the wing AW,
+   which holds two alternatives. Which, and which labels decide ASC?
+   (Hint: what does the compiler record for the captured root =alt2=?)
+3. Why does killC's part of the debate sit *inside* con's body, rather
+   than next to con on u2?
+
+* Lesson 10 - Phase 1: strictness
+
+** Definition
+
+A subterm is *strict in the debate* iff it contains no open site: no
+Goal, Laog, Deleg or Geled (=strict_in_debate=). Nothing else counts:
+
+  - A *free variable* bound by an *argument's* binder is not an
+    assumption. The whole term is closed, so such a variable is bound by
+    some enclosing binder of an argument, a commitment the debate has
+    already made. This covers sites captured by an argument (lesson 13).
+  - A free variable bound by a *scaffold's* binder is not a commitment
+    (since 2026-10-07, aida-unfold-scaffold-binders-capture). It is
+    taken for what it stands for (=strict_in_scope=): a =b= for its
+    supported term after its own strict decisions, substituted in a copy
+    and judged with it (following such variables outward); an =alt= for
+    "the statement fails", an open site. So a supporter that needs the
+    statement it supports is strict only if what it supports is, and the
+    attacker wing's captured root is never strict.
+  - A *declared name* is a leaf with nothing open: strict.
+  - A *clash* - an original facing its winning attacker under an unused
+    binder - has no open site if neither side has one. It is strict. It
+    decides a scaffold like any strict wing and then surfaces as an
+    exception when the normal form is classified.
+
+The rules, with t the supported or attacked term (the code calls it the
+original), t2 the supporter and e2 the attacker:
+
+| scaffold | condition                              | decision                   | result                  |
+|----------+----------------------------------------+----------------------------+-------------------------|
+| support  | both strict, t an uncaught contradiction | keep t                   | t                       |
+| support  | else t2 strict                         | keep the supporter         | t2                      |
+| support  | else t strict                          | keep t                     | t                       |
+| support  | neither                                | delay                      | unchanged               |
+| attack   | e2 strict, t not                       | defeat                     | =mu alpha.< t ‖ e2 >=   |
+| attack   | t strict, e2 not                       | keep t                     | t                       |
+| attack   | both, or neither                       | delay (both: inconsistent) | unchanged               |
+
+*The supporter first* (since 2026-10-06, aida-unfold-entrypoints). In a
+stack the supported term of an inner support scaffold is a lower
+supporter. Checking the supporter first lets the higher of two strict
+supporters win, so the strict phase keeps the stack's order, which sigma
+keeps too (lesson 11). Outside a stack t is a site, never strict, and
+the order changes nothing. *One exception* is its own piece of
+semantics, not a consequence of the order (the author): among strict
+terms an uncaught strict contradiction always wins. If t is strict but
+holds a clash no binder in scope can catch, and t2 holds none, t is
+kept, so that the contradiction surfaces as an exception wherever it
+stands in the stack.
+
+*Bottom-up.* =strict_resolve= recognises a scaffold top-down, rewrites
+its supported (or attacked) term and its scion first, and only then
+decides it. The order is
+necessary: deciding an inner scaffold can remove an open site, and that
+can make an outer wing strict. In the self-attack
+(=tests/rationality/self_attack_lk.fspy=) the root's support scaffold
+contains the obligation ?u1; only after its decision ("supporter
+strict") has dropped ?u1 is the whole term closed, and only then is it a
+strict edge (=SelfAttack*=). (Before 2026-10-07 the attack around it was
+then decided too, "original strict"; its wing is now the captured
+contrary alone, which is no scaffold, lesson 8a.)
+
+*Strict edges.* After deciding, =strict_resolve= collects every
+outermost eta-wrapped subterm =mu n.< t || n >= that
+  1. contains a strictly decided scaffold,
+  2. is *closed* - strict, and no free variable except declared names - and
+  3. holds no uncatchable clash.
+Each such subterm becomes a source-less strict edge =n*= of the issue
+graph: a strict derivation the framework could not see. Condition 3
+exists because a subterm that holds a clash derives its statement only
+from an inconsistency.
+
+*How strict subterms are handled, end to end.* A strict argument in the
+document unfolds to its body, like killC here, and is strict because it
+has no site. A strict argument used by =axiom NAME= or =cite NAME= is a
+declared-name leaf. Phase 1 decides every scaffold that strictness
+decides. Its strict edges enter the issue graph *before* labelling, so
+sigma cannot contradict a strict decision. After normalisation,
+=check_conservativity= requires that an input with no site at all
+normalises to a term with no open obligation.
+
+*Phase 1 runs twice.* =compile_issue= runs it to collect the strict
+edges for the labelling and discards the rewritten term.
+=_evaluate_under= then runs it again to obtain that term. The results
+are identical. (On the shared route it runs once per sub-debate and the
+result is kept; minicourse-sharing.org, lesson 17.)
+
+** Example
+
+=explain pro=, phase 1:
+
+: strict  C[c] supporter strict
+: strict  C[c] attacker strict: defeat
+: strict  A[c] delayed for the labelling (neither the original nor the supporter is strict)
+: strict  A[c] delayed for the labelling (neither wing is strict)
+: strict  B[t] delayed for the labelling (neither the original nor the supporter is strict)
+: strict  no edge for 'pro' on B[t]: not closed (an open site remains)
+: strict  no edge for 'con' on A[c]: not closed (an open site remains)
+: strict  edge 'killC*' on C[c] (a closed derivation the framework missed)
+
+(The log names a scaffold by the statement its scion concludes: both C
+lines are about killC's refutation of C, both A lines about con's.)
+
+The debate about C is innermost, so it is decided first, in two steps.
+Its wing CW is the root =alt4= supported by K; K has no site, and =alt4=
+is the attack's =alt=, which stands for "C fails" and counts as open, so
+the supporter wins, and the wing becomes K. Now CSC has the presumption
+!u3 as its attacked term and K as its attacker; !u3 is a site and K
+none, so the attacker wins, and the scaffold becomes the clash:
+
+: μalt4:C.<!u3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>
+
+that is, =mu alt4:C.< !u3 || K >= with =alt4= unused. The defeat leaves
+!u3 in place, so CON still rests on a site, and neither the debate about
+A[c] (its root =alt2=, open, and CON) nor the A scaffold can be decided
+by strictness. PRO contains ASC, which contains !u2, so neither can the
+B scaffold. Had =alt2= counted as settled, as an argument's binder does,
+the wing AW would have been "original strict" and con dropped before
+sigma ever saw it.
+
+The first decision gives a strict edge. K, killC's own wrapper, is
+closed and is the term kept by a decision, so the collector records
+=killC*: C[c] <- -=. It changes no label: killC is already a strict edge
+of the framework. Before 2026-10-06 the term had K itself as the
+attacker of the presumption of C, with no scaffold decided inside or
+around K's wrapper,
+and no =killC*= was collected.
+
+*The same decisions as reduction steps.* The wing first (it is a
+context-side scaffold; =fire= at the binder =alt5=):
+
+: W1  (mu<)  < mu b5.< mu _.<alt5||K> || mu'_.<alt5||b5> > || alt4 >
+:              -->  < mu _.<alt5||K> || mu'_.<alt5||alt4> >
+: W2  (mu<)  < mu _.<alt5||K> || mu'_.<alt5||alt4> >
+:              -->  < alt5 || K >                             [decided: the supporter]
+: W3  eta    mu'alt5.< alt5 || K >  -->  K
+
+then the attack (=scaffold_at(term, "u3")=):
+
+: C1  (>mu)  < !u3 || mu'b4.< mu _.<b4||K> || mu'_.<b4||alt4> > >
+:              -->  < mu _.<!u3||K> || mu'_.<!u3||alt4> >
+: C2  (mu<)  < mu _.<!u3||K> || mu'_.<!u3||alt4> >
+:              -->  < !u3 || K >                              [decided: defeat]
+
+W1 and C1 are not choices: the outer command has a leaf on one side
+(the root =alt4=, the presumption u3), so only one rule applies. W2 and C2
+are the decisions. On the context side the rules are mirrored: at W2
+(mu<) keeps the supporter, where at a term-side support it would keep
+the supported term. At C2 (mu<) keeps the attacked term *facing the
+attacker* and discards the context side that would return it to alpha:
+defeat. Base cbn would have fired (>mu) at both and kept the roots. As
+in lesson 13, the real steps rename every binder they pass except =_=
+(K comes out as =μ'b4:C.<b4:C||...>=); the test checks that W1-W3;C1;C2 is
+alpha-equal to what =strict_resolve= wrote.
+
+** Exercises
+
+1. Remove =killC= from the fixture. Which scaffolds does phase 1 decide,
+   and what does the evaluation return?
+2. At an attack, why is "both wings strict" delayed rather than decided?
+3. This debate gets the strict edge =killC*= but none for pro or con,
+   although both contain killC's decision. Which of the three collector
+   conditions fails for them? Why did the legacy term, with K as the
+   attacker itself, give no =killC*= either?
+4. In =tests/entrypoints.fspy= =s1= and =s2= both prove E strictly.
+   Which proof does the strict phase keep for =evaluate issue :E=, and
+   which for =evaluate s1=? What did the rule "t strict first" do?
+
+* Lesson 11 - Phase 2: sigma
+
+** Definition
+
+=resolve_scaffolds= walks the term *top-down*. At each scaffold it
+still finds:
+
+1. *Compile the scion* against the binders in scope (=scion_record=).
+   This gives the edge the compiler would give the scion: its target
+   statement and its sources. A scion that is a *stack* - the supporter
+   stack under a root, or an attacker wing (lesson 8a) - stands for
+   several alternatives and gives one edge per element
+   (=stack_elements=); a lone root counts as an identity edge, the
+   statement resting on itself. A root captured by the attack's =alt=
+   compiles the same way: the captured variable is a source at the
+   statement it is bound to. The stack's own =alt= and =b= are in scope
+   for each element (=scoped_stack_elements=).
+2. *Derivation status* under sigma (=derivation_status=): for one edge,
+   IN if the target and every source are IN, OUT if any of them is OUT,
+   and UNDEC otherwise; for several, IN if some alternative is IN, OUT
+   if all are OUT. So a stack is IN if some supporter in it is. The
+   labels are those of the labelled term (lesson 9): the compiler copies
+   each occurrence's label into the edge it builds - the target's from
+   the scion's root, a source's from its site, captured variable or
+   lambda. sigma itself is not consulted again.
+3. *Wing choice* (=_wing_choice=): the table of lesson 7. The mode's
+   tiebreak is used only when the status is UNDEC.
+4. *Rewrite* the scaffold to the kept wing - =keep_orig=,
+   =keep_scion_support= or =keep_attack_wing=, the same functions phase 1
+   uses - and walk on *into the result only*.
+
+Step 4 has a consequence. Every scaffold inside a discarded wing is
+never consulted, which is how one decision can remove a whole subdebate.
+The =sigma= log line counts what went with it.
+
+*The steps behind one rewrite.* A term-side scaffold
+=mu alpha.< t || mu'beta.< W1 || W2 > >= becomes its kept wing in three
+steps:
+
+| step       | rule                         | what it does                                        |
+|------------+------------------------------+-----------------------------------------------------|
+| outer pair | (>mu)                        | beta := t, the original enters both wings - and the kept wing, wherever it uses beta |
+| inner pair | (mu<) or (>mu) - the decision | keeps one wing, discards the other                  |
+| eta        | not a reduction rule          | =mu alpha.< u ‖ alpha >= to u, when alpha is not free in u |
+
+Which rule means what depends on the scaffold (lesson 6):
+
+| scaffold (term side) | (mu<) keeps                   | (>mu) keeps  |
+|----------------------+-------------------------------+--------------|
+| support              | the original                  | the supporter |
+| attack               | the attacker, facing t (defeat) | the original |
+
+The context side is the mirror image.
+
+** Example
+
+=explain pro=, phase 2:
+
+: sigma  supporter B[t] is IN -> keep the supporter, dropping the original
+: sigma  attacker A[c] is OUT -> keep the original, dropping the attacker and the 1 scaffold(s) inside it
+
+The "IN" and "OUT" in these lines are *derivation statuses*, not the
+labels of B[t] and A[c]. The B scaffold's scion is PRO, whose edge is
+B[t] <- A[t]:pres@u2, and B[t] and A[t] are both IN, so its status is
+IN. The A scaffold's scion is the wing AW, with two alternatives: its
+root =alt2=, recorded as an obligation source at A[c] - the identity
+edge A[c] <- A[c] - and con, A[c] <- C[t]:pres@u3.
+A[c] is OUT, so both are OUT, and so is AW. Walking top-down, phase 2
+decides B, keeps PRO, walks into it, and decides A. It never reaches
+anything inside AW: the support scaffold there (the "1 scaffold inside
+it") and the debate about C go with it, and phase 1's decisions on C
+were work for nothing. The result, still labelled:
+
+: μpro:B{IN}.<μth:B{IN}.<r1:A->B||!u2:A{IN}*th:B>||pro:B>
+
+*The same two decisions as reduction steps:*
+
+: B1  (>mu)  < ?u1 || mu'b1.< mu _.<b1||alt1> || mu'_.<PRO||alt1> > >
+:              -->  < mu _.<?u1||alt1> || mu'_.<PRO||alt1> >
+: B2  (>mu)  < mu _.<?u1||alt1> || mu'_.<PRO||alt1> >
+:              -->  < PRO || alt1 >                           [decided: supporter IN]
+: B3  eta    mu alt1.< PRO || alt1 >  -->  PRO
+: A1  (>mu)  < !u2 || mu'b2.< mu _.<b2||AW> || mu'_.<b2||alt2> > >
+:              -->  < mu _.<!u2||AW> || mu'_.<!u2||alt2> >
+: A2  (>mu)  < mu _.<!u2||AW> || mu'_.<!u2||alt2> >
+:              -->  < !u2 || alt2 >                           [decided: attacker OUT]
+: A3  eta    mu alt2.< !u2 || alt2 >  -->  !u2
+
+Both decisions are (>mu), which here means opposite things: keep the
+supporter at a support, keep the attacked term at an attack. That is
+the polarity of lesson 6 at work.
+
+B3 could also be done by a reduction: (mu<) at =< mu pro.c || alt1 >=
+gives =c[pro := alt1]=, the same term with =pro= renamed to =alt1=. A3
+cannot. =< !u2 || alt2 >= is a leaf facing a variable, and no rule
+applies to it. Only eta removes =alt2=. If A3 is left out, the steps
+lead to a different normal form (lesson 12).
+
+*A stack, read top-down.* In =tests/entrypoints.fspy= B has three
+supporters, all IN. The canonical term =SUP( ?u1, SUP( SUP(P1, P2), P3 ) )=
+is decided as: the root scaffold's scion is the whole stack, IN because
+some element is, so the stack is kept; then P3 is IN, so P3 is kept and
+the rest dropped. =evaluate issue :B= returns p3's proof. In p1's term
+=SUP( ?u1, SUP( SUP(P2, P3), P1 ) )= the same walk keeps P1 first. Had
+P1's derivation been OUT, the walk would go on to P3, then P2, and only
+then to the root.
+
+*Where sigma differs from the base strategy.* Plain =normalize_strong=
+on the unfolded term, with no sigma at all:
+
+: cbn:  μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>
+: cbv:  μalt1:B.<?u1:B||alt1:B>
+
+cbn takes (>mu) at every pair, including both of the pairs sigma
+decides. It therefore reaches sigma's answer up to eta and renaming.
+The pairs where it differs are phase 1's W2 and C2, which sit in a
+discarded wing. cbv takes (mu<) everywhere, keeps the obligation at the
+root, and stays open. In tests/multiple_undercuts.fspy sigma does
+disagree with cbn: the supporter's derivation is OUT there, so sigma
+fires (mu<) at the root pair, where cbn would fire (>mu).
+
+** Exercises
+
+1. At B2 and A2, what would cbv have done, and what would the evaluation
+   have returned had those been the decisions?
+2. Why does a (>mu) keep the supporter at B2 but the original at A2?
+3. Phase 1 decided the C scaffold, and phase 2 discarded it. Could a
+   phase-2 decision ever *need* a scaffold that phase 1 decided inside
+   the wing it keeps?
+
+* Lesson 12 - Phase 3: normalisation and the class
+
+** Definition
+
+*Discharging the labels* comes first (=discharge_labels=,
+=core/comp/labelled.py=). Every site takes its label as its name, and
+its kind from the label, whatever kind it had:
+
+| label        | obligation =?u:A=  | delegation =!u:A=  | (context side: the mirror) |
+|--------------+--------------------+--------------------+----------------------------|
+| IN           | =!IN:A=            | =!IN:A=            | =IN:A!=                    |
+| OUT          | =?OUT:A=           | =?OUT:A=           | =OUT:A?=                   |
+| UNDEC        | =?UNDEC:A=         | =?UNDEC:A=         | =UNDEC:A?=                 |
+
+An obligation labelled IN is a delegation: the onus is now on the
+opponent, who would have to bring an argument the labelling has not
+considered. A delegation not IN is an obligation again: it was not
+established under the mode. All other labels are dropped, so the
+normaliser, alpha-equality and the matcher never see one. A site's
+name no longer says which site it was; in a normal form it does not
+need to.
+
+=normalize_strong= applies the four standard rules of the calculus -
+(->), (-), (mu<), (>mu) - under every congruence. It works one step at a
+time: each step fires at the leftmost-outermost command that has a redex
+(term slot before context slot) and then restarts from the root. The
+only choice the rules leave open is at a critical pair =< mu a.c || mu'x.c' >=.
+There, cbv fires (mu<) first and cbn fires (>mu) first. It runs out of
+fuel after 2000 steps and raises rather than returning a half-reduced
+term.
+
+After phases 1 and 2 no scaffold is left, so the critical pairs the base
+strategy meets are ordinary cuts in the arguments' own proofs. On a
+debate whose scaffolds are all decided, the base strategy can still
+change the normal form, but only through those cuts.
+
+=classify_nf= then reports, checking in this order:
+
+  - =exception= if the term holds an uncatchable clash: an affine mu/mu'
+    whose command no enclosing mu/mu' binder can catch. This is checked
+    first (since 2026-10-07, tasks.org
+    aida-classify-exception-before-open): an exception is an exception
+    whether the defeated site is an obligation or a presumption, and
+    whatever obligations remain elsewhere. Lesson 9 with con's
+    =by default.= removed gives =μalt1:C.<nc:~C||?u1:C*_F_>= for
+    =issue :C=: the obligation for C is strictly refuted, an exception.
+    Until then an obligation anywhere hid the clash, and this was open;
+  - =open= if an obligation (Goal/Laog) remains;
+  - =value= otherwise. Presumptions may remain; the value is then a
+    proof modulo them.
+
+After discharge, the last two read: a value iff every remaining site is
+IN. Issue =P:= of tests/demo/05_even_loop.fspy - the opponent's onus to
+refute P, delegated by a presumption - is UNDEC skeptically, so the
+delegation is the obligation =UNDEC:P?= and the debate is open
+(=μ'alt1:P.<alt1:P||UNDEC:P?>=; a value, =μ'alt1:P.<alt1:P||u1:P!>=,
+before 2026-10-07). Credulously the witness has P[c] IN: =IN:P!=, a
+value.
+
+** Example
+
+: normalise  normal form after 1 step(s) under cbn
+: N1  (mu<)  < mu th.< r1 || !IN * th > || pro >  -->  < r1 || !IN * pro >
+
+Discharge turns =!u2:A{IN}= into =!IN:A=. The root command has a mu on
+the term side and the variable =pro= on the context side, so only (mu<)
+applies. Afterwards =< r1 || !IN * pro >= is normal: (->) would need a
+lambda, and =r1= is a declared name. The result, in both modes and under
+both base strategies:
+
+: μpro:B.<r1:A->B||!IN:A*pro:B>          VALUE
+
+This is a proof of B from =r1=, modulo the presumption of A. sigma says
+nobody defeated A, so A stays presumed, and its label is IN.
+
+** Exercises
+
+1. Leave out A3 (the eta step) and normalise. What comes out, and is it
+   still a value?
+2. The plain cbv run of lesson 11 returned =μalt1:B.<?u1:B||alt1:B>=.
+   Classify it. Which of cbv's choices produced it?
+
+* Lesson 13 - Names, capture and substitution
+
+** Definition
+
+Four different things in the pipeline involve binders and names. It
+helps to keep them apart.
+
+*1. Capture at unfolding, on purpose.* While expanding an argument's
+body, the unfolder keeps the binders of the enclosing bodies in scope:
+a lambda's hypothesis and a mu's or mu''s variable, each standing for a
+statement. A site whose statement is bound in scope becomes that
+variable. This is how a cycle is represented in a finite term. The
+self-attack: =pRule: ((P->false)->P)=, and the body's presumption
+"P fails", =u:P!=, sits under =mu rule:P=, which is the continuation for
+P:
+
+: unfold  P[c] captured as 'rule' (presumption)
+: ... μrule:P.<pRule:(P->false)->P||λh:P.μalpha:false.<h:P||rule:P>*rule:P> ...
+
+The site is gone, so the supporter is strict (lesson 10). The debate
+keeps the presumption as a *source* in the framework (marked
+=captured_presumption=), so the labelling still sees the cycle. Since
+2026-10-07 the scaffold binders =alt= and =b= are in this scope too
+(lesson 8a): a demand the innermost binder for its statement is a
+scaffold's is captured by that =alt= or =b=. Unlike an argument's
+binder, the strict phase does not count those as settled (lesson 10).
+
+*2. Renaming at unfolding.* The same argument body can be unfolded more
+than once, and different arguments reuse names such as =x=, =th= and
+=H1=. The unfolder keeps a name the first time it meets it and suffixes
+later ones (=th_2=, =H1_2=), because Fellowship refuses a hypothesis
+introduced twice. This is renaming, not capture avoidance: the names
+must be globally distinct for the replay.
+
+*3. Capture-avoiding substitution in the normaliser.* (mu<) and (>mu)
+substitute, and =substitute= avoids capture the simple way. Before
+replacing, it renames every binder of the target to a fresh =bN=
+(=freshen_binders=) - every binder except the placeholder =_=, which
+binds nothing and so can capture nothing (since 2026-10-06; before, =_=
+was renamed too). Here is the real C1 step, taken on the unfolded term,
+with the wing CW still undecided:
+
+: μalt4:C.<μ_:C.<!u3:C||μ'b1:C.<μb2:C.<μ_:C.<b1:C||μ'b3:C.<b3:C||μ'b6:C.<nc:~C||μ'b7:~C.<b7:~C||b6:C*_F_>>>>||μ'_:C.<b1:C||b2:C>>||alt4:C>>||μ'_:C.<!u3:C||alt4:C>>
+
+The lesson 10 account prints =mu _.<!u3||CW>=, and so does the real
+term now. Inside the wing =alt5= and =b5= became =b1= and =b2=, and
+=killC=, =x_2= and =H1= inside K became =b3=, =b6= and =b7= (=b4= and =b5=
+are taken: the fresh names avoid every name of the term); the =_=
+binders stayed. Three things follow:
+
+  - Normal forms carry =bN= names wherever a substitution passed through
+    a binder. The self-attack's normal form is
+    =μalt2:P.<pRule||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>=: =h= and
+    =alpha= were renamed by a (mu<) step, and the root binder is the
+    attack's =alt2= (below, "eta and a captured alpha"). In the running
+    example the one normalisation step went through no binder, so its
+    normal form keeps its names.
+  - The renaming goes further than capture avoidance needs. At C1 the
+    replacement =!u3= has no names at all, so nothing could be captured,
+    yet every binder is renamed. It is correct, only more than necessary.
+    The scaffold rewrites (point 4) use the minimal form,
+    =substitute(..., minimal=True)=, which renames only the binders that
+    could capture, so the arguments' names survive them.
+  - *After a real step, the matcher still finds the scaffolds inside.*
+    It recognises affine binders by the name =_= (lesson 9), and the
+    substitution keeps that name: in the step above, the wing CW is
+    still recognised as the support scaffold on C[c]. Until 2026-10-06
+    =_= was renamed as well, and every scaffold a substitution passed
+    through became unrecognisable; that was the concrete reason phases 1
+    and 2 rewrite whole scaffolds instead of firing the steps. It is
+    one obstacle less for doing them as steps (last section).
+
+*4. The scaffold rewrites substitute beta.* The outer step substitutes
+the original t for beta. In the wiring beta occurs once in each wing, at
+the top level of that wing's command, under nothing but the wing's own
+=_=; there t could simply be copied. But since beta captures (lesson
+8a), it can also occur *inside* the scion: a supporter that needs the
+statement it supports, or an attacker wing's own supporters. The kept
+wing then still mentions beta, and dropping beta's binder would leave it
+free (the compiler refused such terms: "free term variable 'b7'").
+=keep_scion_support= and =keep_attack_wing= therefore take the outer
+step for real, =scion[b := t]= (=_outer_step=, minimal substitution),
+before they keep the wing. =keep_orig= keeps t itself, in which beta
+cannot occur (t is outside beta's scope). In the capture-by-b example of
+lesson 8a, keeping back puts B's root ?u1 where back had =b1=.
+
+*eta and a captured alpha.* A rewrite removes alpha by eta only when the
+kept wing does not use it (=_eta=). A wing in which alpha occurs free
+keeps its =mu alpha= wrapper. Since alpha captures (lesson 8a), this
+arises on the paper shapes too, wherever a kept wing holds a captured
+alpha; it also arises in the legacy shapes that grafting builds. And an
+attack whose wing is nothing but its captured root, as in the
+self-attack, is no scaffold at all: normalisation reduces it, and its
+=alt2= ends up as the binder at the root of the normal form, eta-equal
+to the proof itself (=μSelfAttack=), the same under cbn and cbv up to
+that one eta step. The eta step also decides the names. Without
+it the result is =mu alt1.< PRO || alt1 >=, whose eta wrapper is named
+=alt1=. The strict-edge collector names an edge after that wrapper, so it
+would call the edge =alt1*= instead of =pro*=.
+
+** Example
+
+Replaying lesson 11's steps with the real rules, and taking (mu<) instead
+of eta at B3:
+
+: after B1, B2, B3=(mu<), A1, A2, then normalize_strong cbn:
+: μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>
+: the pipeline:
+: μpro:B.<r1:A->B||!IN:A*pro:B>
+
+The two differ by one eta step (A3), by the name of the root binder, and
+by the site's name: the steps by hand skip the labels. The test labels
+and discharges the hand-made normal form with the same sigma and then
+checks that the two are equal once both are eta-reduced. They are not
+alpha-equal.
+
+** Exercises
+
+1. After B1, =pro= is renamed. Was that needed to avoid capture?
+2. Until 2026-10-06 the substitution renamed =_= too, and a scaffold was
+   no longer recognisable after a real step. Why is leaving =_= alone
+   safe, and what else could have been done?
+3. In the self-attack's normal form, where did =h= and =alpha= go, and
+   which step renamed them?
+
+* What this means for a single label-guided normaliser
+
+The lessons show that phases 1 and 2 *are* normalisation. What stands
+between the implementation and doing them as normalisation steps:
+
+1. *Affinity by name* - solved 2026-10-06: =freshen_binders= leaves =_=
+   alone, so a scaffold stays recognisable after a substitution (lesson
+   13). Before, substitution renamed =_=, and the matcher lost the
+   scaffold after one step.
+2. *eta is not a rule.* Without it, stepwise normal forms keep
+   =mu alt.< !u || alt >= residues and differ from today's (lessons 11,
+   13). A stepwise normaliser needs eta for the scaffold's alpha, and
+   only for alpha: the arguments' own wrappers must stay, because they
+   name strict edges.
+3. *Outer pairs are not always free of choice.* In this example every
+   supported or attacked term is a leaf, so the outer command has one
+   rule. When it is a mu-term - an argument lower in a stack (lesson
+   8a), or the support scaffold an attack wraps - the outer command is
+   itself a critical pair. The rewrites always resolve it by (>mu)
+   (beta := the original), whatever the base strategy; since 2026-10-07
+   they take that step for real, substituting beta in the kept wing
+   (lesson 13, point 4), and the strict phase judges a captured beta by
+   the same substitution (lesson 10). A stepwise normaliser must make
+   the same choice explicitly, or the nested scaffold loses its shape.
+4. *The phases walk in opposite orders.* Strictness is decided
+   bottom-up, because an inner decision can make an outer wing strict
+   (lesson 10). Sigma is decided top-down, so discarded subdebates are
+   never visited. Leftmost-outermost normalisation is top-down, so
+   strict decisions need an inner-first pass or a rule for reducing
+   inner pairs first.
+5. *Phase 1 runs twice*, and it decides scaffolds that phase 2 then
+   discards (lesson 10). On the shared route it runs once per
+   sub-debate, but still before sigma, so the second half stands.
+6. *sigma is in the term* (since 2026-10-07). Phase 2 reads the labels
+   off the labelled term (lessons 9, 11), and a label depends only on a
+   statement, so every reduction step keeps the labels right. In a
+   single normaliser they are type annotations, and discharging them
+   (lesson 12) is a local pass that commutes with the rules: it can come
+   at any point after the last decision.
+
+* Appendix - Solutions
+
+** Lesson 8a
+
+1. An =alt= and its =b= are drawn together when their scaffold is
+   begun, before its scion is unfolded: B's support first (=alt1=,
+   =b1=), then the attack on A (=alt2=, =b2=), the support inside its
+   wing (=alt3=, =b3=), the attack on C (=alt4=, =b4=) and the support
+   inside its wing (=alt5=, =b5=). Each series has its own counter, so
+   the two run in step. Sites have a third counter; the roots of the two
+   attacker wings are captured by =alt2= and =alt4= and draw no site, so
+   the sites are u1, u2, u3 without a gap. Registering killC before con
+   changes nothing: the numbers follow the walk, and the walk goes B,
+   pro, A, A[c], con, C, C[c], killC whatever the order. Registration
+   order only matters between arguments for the *same* statement, in
+   its stack.
+2. =mu pro:B= and =mu th:B= bind continuations for B, so they put B[c]
+   into =env=. The demand inside back is for B[t], a proof of B, which
+   would need a lambda hypothesis or a =mu'= binder of type B. The
+   support scaffold of B has one: its =b1= binds B[t] over the whole
+   stack, back included. So =b1= captures the demand, and after the
+   outer step back shares B's root ?u1.
+3. (a) The obligation ?u2. pro is the entrypoint and its own site
+   demands A, and nobody else presumes A, so there is nothing to put
+   under it. (b) Still ?u2: pro's own site keeps the kind pro wrote.
+   pa's presumption becomes the bottom of A's stack there (the trace
+   says =A[t] expanded, root u2 (Goal), 0 supporter(s), its presumption
+   at the bottom=). The debate about A occurs twice: inside pro, as just
+   described, and inside pa, which is canonical - A is presumed in the
+   document, so its root is the presumption =!u5=. pa sits below pro in
+   B's stack, since pro is the entrypoint.
+4. Each expansion puts its statement on the spine, and below its debate
+   the statement is bound in =env= (by the scaffolds' =alt= and =b=), so
+   every later demand for it is captured, not expanded again. So a path
+   from the root expands each of the finitely many statements at most
+   once, and every path is finite. The spine is per path, though: a statement reached
+   along two different paths is expanded on both, as A in exercise 3(b).
+   With two alternative supporters per level the number of paths
+   doubles per level (minicourse-sharing.org, the table in "About this
+   sequel").
+5. =evaluate issue :B= returns p3's proof: all three are IN, and p3, the
+   last registered, is the top of the canonical stack. =evaluate p2=
+   returns p2's own: in p2's term p2 is on top. Had p2 been registered
+   last, both would return p2.
+
+** Lesson 9
+
+1. Two names change: =pro='s =th= becomes =t=, and con's =th_2=
+   becomes =th=. A binder keeps its name the first time the unfolder
+   meets that name and is suffixed after that. Once pro no longer uses
+   =th=, con's =th= is the first one. The order is the order of the
+   walk, not of the arguments: killC's =H1= is met while unfolding the
+   site inside con's body, *before* con's own =H1=, so killC keeps =H1=
+   and con's becomes =H1_2=.
+2. AW's root =alt2=, which the compiler records as an obligation source
+   at A[c] - the identity edge A[c] <- A[c] - and con,
+   A[c] <- C[t]:pres@u3. The status is IN if either is IN, so the labels
+   of A[c] and C[t] decide ASC. The label of A[t] plays no part.
+3. Unfolding replaces every site of a body by the debate about its
+   statement, in scope. con's body has the site u3:C, so the debate
+   about C - u3 attacked by killC - sits inside con. u2 is a site of
+   pro, so the debate about A, with con in it, sits inside pro.
+
+** Lesson 10
+
+1. None. Without killC nobody refutes C, so C[t] is not attacked at all
+   and con rests on the presumption !u3. Every remaining wing rests on a
+   site or on the captured root =alt2=, which counts as open: ?u1, !u2,
+   =alt2= or !u3. sigma has C[t] IN, A[c] IN, A[t] OUT and
+   B[t] OUT, so pro's derivation is OUT and the root keeps ?u1. B[t] is
+   OUT, so after discharge the evaluation returns =?OUT:B=, OPEN.
+2. Two strict wings that contradict each other are an inconsistency. A
+   strict phase that picked one of them would be choosing between two
+   proofs. The labelling decides that case (CONTR in call-by-onus.org),
+   and the paper allows that proofs can be strictly defeated there.
+3. Condition 2, closedness, fails for both: PRO rests on !u2 and CON on
+   !u3, even after the defeat. K, killC's wrapper, is closed and is the
+   term the wing's decision kept, so it contains a decision. In the
+   legacy term K was the attacker itself: the only decision was made at
+   the attack scaffold, outside K's wrapper, and the clash it left
+   still holds the presumption of C, so nothing closed contained a
+   decision.
+4. s2 for the issue and s1 for s1. In the issue term
+   =SUP(?u1, SUP(S1, S2))= the inner scaffold has two strict wings; the
+   supporter, s2, is checked first and kept, so the higher of the two
+   wins, as sigma would have it. In s1's term =SUP(?u1, SUP(S2, S1))= the
+   same rule keeps s1. The old rule checked t first, kept the lower one
+   in both, and so ignored the stack's order: s1 for the issue, s2 for
+   s1's own term.
+
+** Lesson 11
+
+1. cbv fires (mu<) at both pairs. At B2 that keeps the root ?u1, and
+   the evaluation is OPEN, like the plain cbv run (with eta, =?u1:B=).
+   At A2 (mu<) is defeat, which would leave the clash
+   =mu alt2.< !u2 || AW >= inside PRO.
+2. Because the wings are arranged the other way round. In T-SUP the
+   context wing =mu'_.<t2||alpha>= returns the supporter. In T-ATT the
+   context wing =mu'_.<beta||alpha>= returns the attacked term. (>mu)
+   always keeps the context wing.
+3. Yes. If sigma kept con, the kept wing would contain phase 1's clash
+   on C, and the normal form would carry that clash. It could not be
+   IN: con's source C[t] is OUT whenever killC is IN, and killC is
+   strict, so it is always IN. This is the sense in which phase 1 and
+   sigma cannot disagree.
+
+** Lesson 12
+
+1. =μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>=, still a value. The
+   residue =μb1:A.<!u2||b1>= is eta-equivalent to =!u2=, and =b1=
+   occurs in it, so it is not an affine binder and not a clash.
+2. OPEN, because the obligation ?u1 remains. cbv fired (mu<) at the root
+   scaffold's inner pair, keeping the original instead of the supporter.
+
+** Lesson 13
+
+1. No. The replacement =?u1= has no names, so no binder could capture
+   anything. =freshen_binders= renames every binder of the target
+   regardless.
+2. No variable is ever called =_=, so a =_= binder can capture nothing,
+   and renaming it can never be needed for correctness; the only
+   property lost is that all binder names come out pairwise distinct,
+   which nothing relies on. That is what was done. The alternatives
+   were to test affinity by non-occurrence, as =_is_affine_node= does,
+   instead of by name, or to mark the decision pair on the node when the
+   term is built.
+3. They are =b1= and =b2=. A (mu<) step of the normaliser substitutes
+   into SelfAttack's body, which contains =λh= and =mu alpha=, and
+   =freshen_binders= renames both. (The root binder =alt2= comes from
+   the attack around it, whose wing is the captured contrary alone;
+   lesson 13, "eta and a captured alpha".)

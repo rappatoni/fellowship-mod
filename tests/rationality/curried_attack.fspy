@@ -1,0 +1,49 @@
+% Attack on the intermediate conclusion of a curried implication.
+% Exposes a known defect (task aida-curried-intermediate-conclusions).
+%
+% cArg derives C from A (obligation) and B (presumption) via the axiom
+% abc : A->(B->C).  The elimination stack applies abc to A and then to B,
+% so the step that eliminates A concludes B->C - a logically progressing
+% node in the sense of debate-graph-spec.org.  A challenge to B->C ought
+% to attack it.
+%
+% Today the attack FAILS: B->C occurs in cArg's term only as the type of
+% the elimination stack's tail, a context, so theta-expansion finds no
+% term-side target and Argument.attack raises
+%   "no target with proposition 'B->C' found for mode=term".
+% The fix has two halves: theta-expansion must name the partial
+% application (mu b:B->C.<abc || ?A * b>) and the compiler must emit one
+% hyperedge per elimination step (C[t] <- B->C[t], B[t] and
+% B->C[t] <- A[t]), so that a refutation of B->C actually reaches C.
+%
+% Not in DEFAULT_SCRIPTS (strict replay would fail); its compiled form is
+% pinned as a strict xfail in test_postulates.py::TestCurriedAttack.
+lk.
+declare A,B,C:bool.
+declare abc : (A->(B->C)).
+declare axA : (A).
+
+start argument cArg C
+cut (A->(B->C)) r.
+axiom abc.
+elim.
+next.
+elim.
+by default.
+next.
+axiom r.
+end argument
+
+start argument aArg A
+axiom axA.
+end argument
+
+support d5 aArg cArg
+
+start counterargument test (B->C)
+by default.
+end counterargument
+
+attack d6 test d5
+label d6
+graph d6

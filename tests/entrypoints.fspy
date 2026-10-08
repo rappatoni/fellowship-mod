@@ -1,0 +1,75 @@
+% Unfolding from an entrypoint (tasks.org, aida-unfold-entrypoints);
+% tests/test_unfold_entrypoints.py.
+%
+%   p1, p2, p3 : B from the presumptions of A, C, D   (a stack of three)
+%   s1, s2     : E strictly, from two axioms           (strict stack order)
+%   c1, c2     : refute F strictly                     (context-side entrypoints)
+%   q          : G from an OBLIGATION for A, which p1 presumes
+%                (q's own site keeps its kind; the presumption goes to the bottom)
+lk.
+declare A,B,C,D,E,F,G:bool.
+declare r1: (A -> B).
+declare r2: (C -> B).
+declare r3: (D -> B).
+declare e1: (E).
+declare e2: (E).
+declare n1: (~F).
+declare n2: (~F).
+declare rg: (A -> G).
+
+start argument p1 B
+cut (A -> B) th.
+axiom r1.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start argument p2 B
+cut (C -> B) th.
+axiom r2.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start argument p3 B
+cut (D -> B) th.
+axiom r3.
+elim.
+by default.
+next.
+axiom.
+end argument
+
+start argument s1 E
+axiom e1.
+end argument
+
+start argument s2 E
+axiom e2.
+end argument
+
+start counterargument c1 F
+cut (~F) x.
+axiom n1.
+elim.
+axiom.
+end argument
+
+start counterargument c2 F
+cut (~F) x.
+axiom n2.
+elim.
+axiom.
+end argument
+
+start argument q G
+cut (A -> G) th.
+axiom rg.
+elim.
+next.
+axiom.
+end argument

@@ -38,7 +38,7 @@ undercut u1 arg2 arg1
 #
 # Next, we reduce the resulting argument to confirm that arg1 is defeated and color it.
 reduce u1
-color u1
+label u1
 #
 #We add an attacker to the counterargument to test that the original conclusion is restored as intended.
 #
@@ -59,7 +59,7 @@ end argument
 # Introduce the attacker, normalize and color:
 undercut u2 arg3 u1
 reduce u2
-color u2
+label u2
 #
 # And one last undercut
 #
@@ -79,7 +79,7 @@ end argument
 # Introduce the attacker, normalize and color:
 undercut u3 arg4 u2
 reduce u3
-color u3
+label u3
 tree u3 nl
 #
 # Now we test an undercut on a laog assumption
@@ -110,4 +110,4 @@ undercut u4 arg6 arg5
 # Reduce, color
 reduce u4
 render u4 vanilla
-color u4
+label u4

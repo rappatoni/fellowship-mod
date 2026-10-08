@@ -1,5 +1,6 @@
 declare A : bool.
 deny mA : (A).
 antitheorem notA : (A).
+refute notA
 moxia mA.
 qed.

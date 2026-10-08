@@ -1,0 +1,13 @@
+(* Superdeduction course, lesson S2: the left rule of A ⊆ B, computed by decomposing its definition as a hypothesis. *)
+lk.
+declare El, Set : type.
+declare mem : El -> Set -> bool.
+declare A, B : Set.
+declare t : El.
+declare C : bool.
+theorem lhs : ((forall x:El, mem [x] [A] -> mem [x] [B]) -> C).
+elim H.
+cut (forall x:El, mem [x] [A] -> mem [x] [B]) th.
+axiom H.
+elim [t].
+elim.

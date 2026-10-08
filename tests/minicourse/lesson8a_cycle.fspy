@@ -1,0 +1,29 @@
+% Lesson 8a (minicourse-evaluation.org) - unfolding cuts a cycle.
+%
+% pro derives B from an obligation for A, back derives A from an
+% obligation for B.  Unfolded for B, the demand for B inside back meets a
+% statement that is already being expanded and has no binder in scope
+% (pro's binders are continuations for B, i.e. B[c]), so it stays the
+% bare site ?u3:B.
+lk.
+declare A,B:bool.
+declare r1: (A -> B).
+declare r3: (B -> A).
+
+start argument pro B
+cut (A -> B) th.
+axiom r1.
+elim.
+next.
+axiom.
+end argument
+
+start argument back A
+cut (B -> A) th.
+axiom r3.
+elim.
+next.
+axiom.
+end argument
+
+graph document

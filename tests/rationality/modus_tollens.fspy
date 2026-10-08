@@ -1,0 +1,33 @@
+% Modus tollens through a strict rule (VERIFY fixture for aida-strict-layer).
+%
+% tp argues P from a PRESUMED Q via the declared axiom pRule : Q->P.
+% notP is a denied (strict) refutation of P.  Classically, refuting P
+% refutes Q by contraposition of the rule, so Q must fall.
+%
+% Expected once the strict layer exists (the rule as its own strict edge,
+% closed under transposition):
+%   Q term OUT, Q context IN, P term OUT, P context IN.
+% Today the rule is fused into the defeasible edge tp and no transposal is
+% generated, so Q stays IN - the defect this fixture is meant to expose.
+lk.
+declare P,Q:bool.
+declare pRule : (Q->P).
+deny notP : (P).
+
+start argument tp P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+end argument
+
+start counterargument t P
+moxia notP.
+end counterargument
+
+attack d t tp
+
+graph d
+label d

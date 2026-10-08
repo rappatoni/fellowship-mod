@@ -77,7 +77,7 @@ undergird d5 s3 d4
 render d5 vanilla
 normalize d5
 render-nf d5 vanilla
-color d5
+label d5
 render-nf d5 dialectical
 
 # start argument p1 ((P -> Q)->P)->P

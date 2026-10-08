@@ -1,0 +1,11 @@
+(* Superdeduction course, lesson S3: the left rule of fly. *)
+lk.
+declare Bird, Abnormal, C : bool.
+theorem fly_l : ((Bird /\ ~Abnormal) -> C).
+elim H.
+cut (Bird /\ ~Abnormal) th.
+axiom H.
+elim hb hn (C).
+cut (~Abnormal) k.
+axiom hn.
+elim.

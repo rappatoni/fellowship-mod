@@ -1,4 +1,5 @@
 import logging, copy, os
+from itertools import count
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Admal, Cons, Context, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term
@@ -14,16 +15,20 @@ from core.ac.alt_structure import (
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
 from core.comp.reduce import ArgumentTermReducer, EtaReducer, ThetaExpander
+from core.comp.oracle_terms import check_conservativity
 from core.dc.graft import graft_uniform, graft_single
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
     pretty_natural,
     natural_language_rendering,
-    natural_language_dialectical_rendering,
+    dialectical_rendering,
     natural_language_argumentative_rendering,
     pruefschema_rendering,
 )
-from wrap.prover import ProverError
+from wrap.prover import ProverError, StrictnessRefused, CitationRefused
+from core.dc.cite import (
+    CitationError, citation_target, is_strict_citation, cite_at_site, mark_citations,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +43,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     
     """
     
+    #: Deterministic sequence for the theta-expansion temporaries (was
+    #: id(body), a memory address that changed between runs).
+    _theta_seq = count(1)
+
     def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS", is_anti: bool = False):
         # TODO: some of these stil need type hints.
         self.prover = prover
@@ -61,6 +70,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.normal_body           = None  # reduced AST (deep‑copy)
         self.normal_form           = None  # Normalized proof term.
         self.normal_representation = None  # NL rendering of normal form.
+        # The debate term unfolded for this argument (aida-unfold-entrypoints)
+        # and the evaluated normal form, each with the document revision it
+        # was built at: adding an argument or a declaration makes them stale.
+        self.unfolded_body = None
+        self.unfolded_revision = None
+        self.labelled_nf = None
+        self.labelled_nf_revision = None
         # Explicit flag recording the user's intent to build a counterargument.
         # Why we need this:
         # - In recording mode we only have plain instruction strings; there is no AST
@@ -74,6 +90,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # - We need to persist and replay the choice across sessions (render/normalize/
         #   chain), and transient machine state is not available beforehand.
         self.is_anti = is_anti
+        # Citations made by `cite NAME` (core/dc/cite.py): [(site, name,
+        # strict, proposition)], filled at replay.  A defeasible one leaves the site open to
+        # Fellowship and becomes a name leaf in the body.
+        self.citations = []
+        # Fellowship holds it as a theorem (qed'd), so `axiom NAME` cites it
+        # as a strict name.  Only ever true of a strict argument.
+        self.citable = False
 
     @staticmethod
     def _rename_outer_binder(node: ProofTerm, new_name: str) -> ProofTerm:
@@ -394,7 +417,38 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             logger.trace("Batched prover output: %s", output)
             pending_commands.clear()
 
+        stepwise = False        # once something is cited, one instruction at a time
         for i, instr in enumerate(instr_list):
+            try:
+                cited = citation_target(self.prover, instr)
+            except CitationError as e:
+                flush_pending()
+                self.prover.send_command('discard theorem.')   # leave the prover clean
+                raise CitationRefused(str(e)) from e
+            if cited is not None:
+                flush_pending()
+                try:
+                    site, side, prop = self._cite_site(last_output, cited, instr)
+                except CitationError as e:
+                    self.prover.send_command('discard theorem.')
+                    raise CitationRefused(str(e)) from e
+                if is_strict_citation(self.prover, cited.name):
+                    # Fellowship holds it: it closes the goal itself.
+                    last_output = self.prover.send_command(
+                        f"{'axiom' if side == 'rhs' else 'moxia'} {cited.name}.")
+                    self.citations.append((site, cited.name, True, prop))
+                    continue
+                # Defeasible: the site stays open to Fellowship and becomes a
+                # name leaf afterwards.  Move off it, unless it is the only goal.
+                self.citations.append((site, cited.name, False, prop))
+                stepwise = True
+                if self._goal_count(last_output) > 1:
+                    last_output = self.prover.send_command('next.')
+                continue
+            if stepwise and not instr.startswith('tactic '):
+                # A cited site is closed from the user's point of view: never
+                # let a later step land on it.
+                last_output = self._step_off_cited_sites(last_output, instr)
             if instr.startswith('tactic '):
                 flush_pending()
                 # Handle custom tactic invocation within argument execution
@@ -409,7 +463,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 # Preserve the historical special case: if a final "next"
                 # raises, ignore it.  Keep that one command on the old single
                 # command path so we still know exactly which command failed.
-                should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay
+                should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay or stepwise
                 if use_batch_replay and not should_single_step:
                     pending_commands.append(command)
                     continue
@@ -442,6 +496,20 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
                 self.conclusion = self.body.prop
                 self._rename_outer_binder(self.body, self.name)
+        for site, cited_name, strict, prop in self.citations:
+            if strict:
+                continue
+            try:
+                self.body = cite_at_site(self.body, site, cited_name, prop)
+            except CitationError as e:
+                self.prover.send_command('discard theorem.')
+                raise CitationRefused(str(e)) from e
+            logger.info("Argument '%s' cites '%s' at site %s.", self.name, cited_name, site)
+        strict_cited = {name for _, name, strict, _ in self.citations if strict}
+        if strict_cited:
+            # Fellowship left the name as an axiom leaf; mark it as the
+            # citation it was, so it regenerates as `cite` and reads as one.
+            mark_citations(self.body, lambda n: n in strict_cited)
         #Generate natural language representation
         render_context = {
             "declarations": getattr(self.prover, "declarations", {}),
@@ -450,12 +518,20 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if self.rendering == "argumentation":
             self.representation = pretty_natural(self.body, natural_language_argumentative_rendering, **render_context)
         elif self.rendering == "dialectical":
-            self.representation = pretty_natural(self.body, natural_language_dialectical_rendering, **render_context)
+            self.representation = pretty_natural(self.body, dialectical_rendering, **render_context)
         elif self.rendering == "intuitionistic":
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         elif self.rendering == "pruefschema":
             self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
-        if declare:
+        open_sites = self.open_sites()
+        if declare is True and open_sites:
+            self.prover.send_command('discard theorem.')
+            raise StrictnessRefused(
+                f"'{self.name}' is not strict, so it cannot be a theorem: "
+                + "; ".join(open_sites)
+                + ". Discharge them, or end with `end argument` to keep it as a defeasible argument."
+            )
+        if declare is True or (declare == "auto" and not open_sites):
             try:
                 self.prover.send_command('qed.')
             except Exception:
@@ -464,6 +540,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 except Exception:
                     pass
                 raise
+            self.citable = True
+            logger.info("'%s' is strict; Fellowship now holds it as a theorem.", self.name)
         else:
             self.prover.send_command('discard theorem.')
         logger.info("Argument '%s' executed.", self.name)
@@ -504,6 +582,94 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if isinstance(atom, str) and len(atom) >= 2 and atom[0] == '"' and atom[-1] == '"':
             return atom[1:-1]
         return atom
+
+    def open_sites(self) -> list:
+        """What keeps this argument from being strict, in words: its open
+        obligations, its presumptions, and the defeasible arguments it
+        cites.  Empty for a strict argument."""
+        cited = {site for site, _, strict, _ in self.citations if not strict}
+        found = []
+        for meta, info in self.assumptions.items():
+            if meta in cited:
+                continue
+            found.append(f"obligation ?{meta}:{info.get('prop')}")
+        for meta, info in self.delegations.items():
+            found.append(f"presumption !{meta}:{info.get('prop')}")
+        for site, name, strict, _ in self.citations:
+            if not strict:
+                found.append(f"cited defeasible argument '{name}' at {site}")
+        return found
+
+    @staticmethod
+    def _goal_list(state):
+        goals = state.get("goals") if isinstance(state, dict) else None
+        if isinstance(goals, list) and goals and goals[0] == "goal":
+            goals = [goals]
+        return goals or []
+
+    def _goal_count(self, state) -> int:
+        return len(self._goal_list(state))
+
+    def _goal_metas(self, state) -> list:
+        metas = []
+        for goal in self._goal_list(state):
+            for item in goal[1:]:
+                if isinstance(item, list) and len(item) == 2 and item[0] == "meta":
+                    metas.append(self._unquote(item[1]))
+        return metas
+
+    def _focused_goal(self, state):
+        """(meta, active-prop, side) of the focused goal, or None."""
+        goals = self._goal_list(state)
+        if not goals:
+            return None
+        try:
+            index = int(state.get("current-goal-index", 1)) - 1
+        except (TypeError, ValueError):
+            index = 0
+        goal = goals[index] if 0 <= index < len(goals) else goals[0]
+        fields = {item[0]: self._unquote(item[1]) for item in goal[1:]
+                  if isinstance(item, list) and len(item) == 2}
+        return fields.get("meta"), fields.get("active-prop"), fields.get("side")
+
+    def _cite_site(self, state, cited, instr: str):
+        """(site, side) of the focused goal a citation fills, checked against
+        the cited argument: same side, same proposition."""
+        from core.dc.debate_graph import canonical_prop
+        focused = self._focused_goal(state)
+        if focused is None:
+            raise CitationError(f"`{instr}`: no open goal to cite '{cited.name}' for.")
+        site, prop, side = focused
+        cited_anti = isinstance(cited.body, Mutilde) or getattr(cited, "is_anti", False)
+        wants_anti = side == "lhs"
+        if cited_anti != wants_anti:
+            raise CitationError(
+                f"`{instr}`: '{cited.name}' is {'a counterargument' if cited_anti else 'an argument'}, "
+                f"but the goal {site} needs {'a refutation' if wants_anti else 'a proof'} of {prop}."
+            )
+        if canonical_prop(prop) != canonical_prop(cited.conclusion):
+            raise CitationError(
+                f"`{instr}`: '{cited.name}' concludes {cited.conclusion}, but the goal {site} is {prop}."
+            )
+        return site, side, prop
+
+    def _step_off_cited_sites(self, state, instr: str):
+        """Before ``instr``, move the focus off a cited site with `next.`.
+        Refuses when only cited sites are left: the step would work on a
+        citation, which `cite` closed as far as the author is concerned."""
+        cited = {site for site, _, strict, _ in self.citations if not strict}
+        for _ in range(self._goal_count(state) + 1):
+            focused = self._focused_goal(state)
+            if focused is None or focused[0] not in cited:
+                return state
+            if set(self._goal_metas(state)) <= cited:
+                self.prover.send_command('discard theorem.')
+                raise CitationRefused(
+                    f"`{instr}` would work on the cited goal {focused[0]}, and no other goal is open; "
+                    f"a cited goal is closed by `cite`, so the argument is complete here."
+                )
+            state = self.prover.send_command('next.')
+        return state
 
     def _parse_proof_state(self, proof_state: Dict[str, Any]) -> None:
         """
@@ -731,6 +897,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # Create a new Argument instance
         combined_argument = Argument(self.prover, combined_name, combined_conclusion, combined_instructions)
         combined_argument.body = combined_body
+        combined_argument.composed = True   # a debate, not an atomic argument
         logger.debug("Instructions '%s'", combined_instructions)
         # Execute the combined argument
         combined_argument.execute()
@@ -784,6 +951,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         return eb, te.found_target, te.changed
 
     def support(self, other_argument: "Argument", name: Optional[str] = None, on: Optional[str] = None, *, expand_defaults: str = "also") -> "Argument":
+        check = getattr(self.prover, "check_reachable", None)
+        if check is not None:
+            check(other_argument, self, "support")
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             logger.debug("Executing supporter argument '%s'", self.name)
@@ -826,7 +996,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
 
         logger.debug("Creating expanded argument for supported argument '%s'", other_argument.name)
-        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        temp_name = f"theta_expand_{other_argument.name}_{next(Argument._theta_seq)}"
         expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded argument")
@@ -892,6 +1062,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
           - Build a one-step adapter to embed the attacker at the right kind.
           - Chain attacker → adapter (η at root) → θ-expanded target.
         """
+        check = getattr(self.prover, "check_reachable", None)
+        if check is not None:
+            check(other_argument, self, "attack")
         from core.ac.ast import Mu, Mutilde, Goal, Laog, ID, DI
         if not self.executed:
             logger.debug("Executing attacker argument '%s'", self.name)
@@ -931,7 +1104,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 f"attack: target with proposition '{issue}' for mode={target_kind}, expand_defaults={expand_defaults}, allow_strict={allow_strict} is already in exposed form"
             )
         logger.debug("Default-eta exposure found_target=%s changed=%s; exposed body: %s", found_target, te_changed, expanded_body.pres)
-        temp_name = f"theta_expand_{other_argument.name}_{id(expanded_body)}"
+        temp_name = f"theta_expand_{other_argument.name}_{next(Argument._theta_seq)}"
         expanded_arg = Argument(self.prover, temp_name, other_argument.conclusion)
         expanded_arg.body = expanded_body
         logger.debug("Executing expanded attacked argument")
@@ -987,21 +1160,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
 
         # 1. deep‑copy then reduce
         red_ast = copy.deepcopy(self.body)
-        eval_disc = os.getenv("FSP_EVAL_DISCIPLINE", "legacy")
-        # Backwards/ergonomic aliases
-        if eval_disc == "onus_parallel":
-            eval_disc = "onus-parallel"
-        if eval_disc in ("onus_only", "onus-only"):
-            eval_disc = "onus"
-        onus_fb   = os.getenv("FSP_ONUS_FALLBACK", "none")
-        onus_st   = os.getenv("FSP_ONUS_STANCE", "skeptical")
+        # The legacy reducer (call-by-onus retired 2026-09-16; sigma-first
+        # evaluation lives in core/comp/evaluate.py).
         red_ast = ArgumentTermReducer(
-            evaluation_discipline=eval_disc,
-            onus_fallback=onus_fb,
-            onus_stance=onus_st,
-            assumptions=self.assumptions,                  # opcional pero recomendable (para snapshot)
-            axiom_props=self.prover.declarations           # clave para que _is_axiom_leaf funcione
+            assumptions=self.assumptions,
+            axiom_props=self.prover.declarations,
         ).reduce(red_ast)
+        # V2 (propositional-fragment-plan.org): reduction of a strict, closed
+        # argument must not leave an open obligation behind.
+        check_conservativity(self.body, red_ast, operation=f"normalize('{self.name}')")
 
         # 2. optionally enrich props/types
         if enrich:
@@ -1016,7 +1183,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # 4. natural‑language rendering
         style = {
             "argumentation": natural_language_argumentative_rendering,
-            "dialectical":   natural_language_dialectical_rendering,
+            "dialectical":   dialectical_rendering,
             "intuitionistic": natural_language_rendering,
         }[self.rendering]
         self.normal_representation = pretty_natural(

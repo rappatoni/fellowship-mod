@@ -1,0 +1,62 @@
+% Lesson 17 (minicourse-sharing.org) - the strict phase, one instance at
+% a time.
+%
+% The doubled chain of lesson 14, plus a strict refutation of P0: the
+% axiom np0 refutes P0 outright, and k is the counterargument that uses
+% it.  Unfolded for P2, the attack on P0's presumption is written out
+% four times (under each supporter of P1, under each supporter of P2) and
+% decided by strictness four times.  Shared, the debate about P0 is one
+% instance, decided once.
+lk.
+declare P0, P1, P2 : bool.
+declare r1_0 : (P0 -> P1).
+declare r1_1 : (P0 -> P1).
+declare r2_0 : (P1 -> P2).
+declare r2_1 : (P1 -> P2).
+declare np0 : (~P0).
+
+start argument a0 P0
+by default.
+end argument
+
+start counterargument k P0
+cut (~P0) x.
+axiom np0.
+elim.
+axiom.
+end counterargument
+
+start argument a1_0 P1
+cut (P0 -> P1) th.
+axiom r1_0.
+elim.
+next.
+axiom.
+end argument
+
+start argument a1_1 P1
+cut (P0 -> P1) th.
+axiom r1_1.
+elim.
+next.
+axiom.
+end argument
+
+start argument a2_0 P2
+cut (P1 -> P2) th.
+axiom r2_0.
+elim.
+next.
+axiom.
+end argument
+
+start argument a2_1 P2
+cut (P1 -> P2) th.
+axiom r2_1.
+elim.
+next.
+axiom.
+end argument
+
+debate a2_0
+explain a2_0

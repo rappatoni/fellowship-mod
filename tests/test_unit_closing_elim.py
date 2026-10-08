@@ -128,4 +128,4 @@ def test_term_side_negation_elimination_collapses_to_one_elim():
         assumptions={"1.1.1": {"prop": "A"}, "1.2": {"prop": "~A"}},
     )
 
-    assert instructions == ["cut (~A) H1", "elim H2", "next", "next"]
+    assert instructions == ["cut (~A) H1", "elim H2", "next"]  # trailing next dropped (aida-trailing-next-warning)

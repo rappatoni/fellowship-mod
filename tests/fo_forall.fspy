@@ -21,6 +21,7 @@ declare P: N -> bool.
 declare ax: (forall n:N, P [n]).
 
 theorem fo_forall: (P [O]).
+prove fo_forall
 cut (forall n:N, P [n]) th.
 axiom ax.
 elim [O].

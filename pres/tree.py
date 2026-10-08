@@ -1,6 +1,5 @@
 from copy import deepcopy
 from typing import Mapping, Optional
-from pres.color import AcceptanceColoringVisitor
 from pres.decorations import render_prop
 from pres.gen import ProofTermGenerationVisitor
 from pres.nl import (
@@ -9,10 +8,24 @@ from pres.nl import (
     natural_language_argumentative_rendering,
 )
 from core.ac.ast import ProofTerm, Mu, Mutilde, Lamda, Cons, Goal, Laog, Deleg, Geled, ID, DI
+from core.dc.debate_graph import canonical_prop
+
+#: Grounded ADF label -> node fill.  The only source of colour in the tree.
+LABEL_FILL = {"IN": "palegreen2", "OUT": "lightcoral", "UNDEC": "khaki1"}
+
 
 class AcceptanceTreeRenderer:
-    """Deprecated?"""
-    _gv_colors = {"green": "palegreen2", "red": "lightcoral", "yellow": "khaki1"}
+    """Graphviz tree of a normal form, one box per binder along the spine.
+
+    Boxes are filled by the grounded ADF labels of the statements the
+    binders establish - a mu binder for A is the statement (A, term), a
+    mu' binder the statement (A, context) - taken from ``labels`` as
+    returned by core.comp.adf_label.grounded_labels.  A node whose
+    statement has no label inherits its parent's fill; with no labels at
+    all (the debate graph was refused) the tree is drawn uncoloured.
+    The earlier shape-based colouring was retired on 2026-09-16
+    (tasks.org, aida-renderers-grounded-labels).
+    """
 
     def __init__(
         self,
@@ -22,8 +35,9 @@ class AcceptanceTreeRenderer:
         nl_style: str = "argumentation",
         declarations: Mapping[str, str] | None = None,
         decorations: Mapping[str, str] | None = None,
+        labels: Mapping[tuple[str, str], str] | None = None,
     ):
-        self.color_v = AcceptanceColoringVisitor(verbose=verbose)
+        self.labels = labels
         self._idmap: dict[int, str] = {}
         self._seq = 0
         self.label_mode = label_mode  # "proof" or "nl"
@@ -50,11 +64,19 @@ class AcceptanceTreeRenderer:
         c = ProofTermGenerationVisitor().visit(c)
         return getattr(c, "pres", repr(c))
 
-    def _class_or_inherit(self, n, parent_color: Optional[str]) -> Optional[str]:
-        try:
-            return self.color_v.classify(n)
-        except Exception:
-            return parent_color
+    def label_of(self, n) -> Optional[str]:
+        """The grounded label of the statement a binder establishes."""
+        if not self.labels:
+            return None
+        if isinstance(n, Mu):
+            return self.labels.get((canonical_prop(n.prop), "term"))
+        if isinstance(n, Mutilde):
+            return self.labels.get((canonical_prop(n.prop), "context"))
+        return None
+
+    def _class_or_inherit(self, n, parent_label: Optional[str]) -> Optional[str]:
+        label = self.label_of(n)
+        return label if label is not None else parent_label
 
     def _label_and_child(self, n) -> tuple[str, Optional[ProofTerm]]:
         found = {"child": None}
@@ -144,7 +166,7 @@ class AcceptanceTreeRenderer:
             _lbl_proof, child = self._label_and_child(n)
             label = self._nl_label_with_elision(n, child)
         col  = self._class_or_inherit(n, parent_color)
-        fill = self._gv_colors.get(col)
+        fill = LABEL_FILL.get(col)
         my = self._nid(n)
         attr = f'shape=box,style=filled,fillcolor="{fill}"' if fill else 'shape=box'
         esc_label = label.replace("\\", "\\\\").replace("\"", "\\\"")
@@ -172,6 +194,7 @@ def render_acceptance_tree_dot(
     nl_style: str = "argumentation",
     declarations: Mapping[str, str] | None = None,
     decorations: Mapping[str, str] | None = None,
+    labels: Mapping[tuple[str, str], str] | None = None,
 ) -> str:
     return AcceptanceTreeRenderer(
         verbose=verbose,
@@ -179,4 +202,5 @@ def render_acceptance_tree_dot(
         nl_style=nl_style,
         declarations=declarations,
         decorations=decorations,
+        labels=labels,
     ).to_dot(pt)

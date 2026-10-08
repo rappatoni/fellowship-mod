@@ -221,11 +221,14 @@ def test_fspy_counterargument_recording_and_rendering(monkeypatch):
         assert arg.body.term.name == 'notA'
         assert arg.body.context.name == 'mA'
 
-        # decls include sort and the denied moxia; recorded counterargument is NOT QED, so it's not in decls
+        # decls include the sort and the denied moxia.  The recorded
+        # counterargument is closed (it only uses the moxia mA), so since
+        # aida-statements-and-witnesses Fellowship holds it as a denial too,
+        # and `moxia notA` would cite it.
         decls = prover.declarations
         assert decls.get('A') == 'bool'
         assert decls.get('mA') == 'A'
-        assert 'notA' not in decls
+        assert 'notA' in decls and arg.citable
         # also verify we recorded a counterargument intent
         assert getattr(arg, "is_anti", False) is True
         logger.info("decls %r", decls)

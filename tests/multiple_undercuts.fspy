@@ -60,16 +60,16 @@ end argument
 #Constructing undercuts, reducing coloring, building trees.
 undercut first counter1 arg1
 reduce first
-color first
+label first
 tree first
 undercut second counter2 first
 reduce second
-color second
+label second
 tree second
 undercut third counter3 second
 #
 #Reduce, color and construct tree
 #
 reduce third
-color third
+label third
 tree third nl

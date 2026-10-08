@@ -1,0 +1,34 @@
+(* Superdeduction course, lesson S6: Burel's Crab rule A -> B /\ (A => C) as a compatible theory, under lj. *)
+(* B |- C needs the lemma ac, i.e. a cut: the super sequent calculus without cut cannot prove it. *)
+lj.
+declare A, B, C : bool.
+declare crab_r : (B /\ (A -> C) -> A).
+declare crab_l : (A -> B /\ (A -> C)).
+theorem ac : (A -> C).
+elim hA.
+cut (A -> B /\ (A -> C)) y.
+axiom crab_l.
+elim.
+axiom hA.
+elim hB2 hAC (C).
+cut (A -> C) z.
+axiom hAC.
+elim.
+axiom hA.
+axiom.
+axiom.
+qed.
+theorem bc : (B -> C).
+elim hB.
+cut (A -> C) x.
+axiom ac.
+elim.
+cut (B /\ (A -> C) -> A) r.
+axiom crab_r.
+elim.
+elim.
+axiom hB.
+axiom ac.
+axiom.
+axiom.
+qed.

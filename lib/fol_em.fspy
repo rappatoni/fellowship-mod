@@ -1,0 +1,39 @@
+# Excluded middle for the object logic of lib/fol.fspy, on the debate level.
+% Same rules as lib/fol.fspy (repeated because scripts cannot include each other),
+% but under lk. The conclusion th is used twice: once thrown to from inside implfi,
+% once at the end. With `lj.` in place of `lk.` the first `axiom th` is refused
+% ("th is neither in your hypothesis nor in your conclusion").
+minimal.
+lk.
+declare form : type.
+declare botf : form.
+declare orf, implf : form -> form -> form.
+declare truef : form -> bool.
+declare orfi1 : (forall p:form, forall q:form, truef [p] -> truef [orf p q]).
+declare orfi2 : (forall p:form, forall q:form, truef [q] -> truef [orf p q]).
+declare implfi : (forall p:form, forall q:form, (truef [p] -> truef [q]) -> truef [implf p q]).
+declare Q : form.
+
+theorem em : (truef [orf Q (implf Q botf)]).
+prove em
+cut (forall p:form, forall q:form, truef [q] -> truef [orf p q]) th.
+axiom orfi2.
+elim [Q].
+elim [implf Q botf].
+elim.
+cut (forall p:form, forall q:form, (truef [p] -> truef [q]) -> truef [implf p q]) b.
+axiom implfi.
+elim [Q].
+elim [botf].
+elim.
+elim HQ.
+cut (forall p:form, forall q:form, truef [p] -> truef [orf p q]) d.
+axiom orfi1.
+elim [Q].
+elim [implf Q botf].
+elim.
+axiom HQ.
+axiom th.
+axiom b.
+axiom th.
+qed.

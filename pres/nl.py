@@ -93,6 +93,9 @@ class Rendering_Semantics:
         self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
+# The former `dialectical` style's phrases; only the acceptance tree's labels
+# (pres/tree.py, `tree ARG nl dialectical`) still use them.  The `dialectical`
+# render style is `dialectical_rendering` below.
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
 natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(child_indent_delta=3), ApplicationRenderer(header_template="Für @prop ist hinreichend, dass @arg_prop", end_label=None), DualApplicationRenderer(header_template="Für @prop ist notwendig dass @condition_prop", warrant_indent_delta=3, end_label=None), DefeasibleWarrantRenderer(header_template="Für @prop spricht ", exception_indent_delta=3), DualDefeasibleWarrantRenderer(header_template="gegen @prop spricht ", support_indent_delta=3)])
 pruefschema_rendering = Rendering_Semantics(
@@ -109,7 +112,7 @@ pruefschema_rendering = Rendering_Semantics(
     ["es liegt vor: ", "Prüfung fehlgeschlagen: "],
     pattern_renderers=[
         AlternativeCasesRenderer(
-            header_template="Die Prüfung, ob @prop gilt, zerfällt in folgende Fallgruppen:",
+            header_template="Die Prüfung @binder, ob @prop gilt, zerfällt in folgende Fallgruppen:",
             first_case_label="Fallgruppe @index:",
             next_case_label="oder Fallgruppe @index:",
         ),
@@ -185,14 +188,17 @@ class _VanillaVisitor(ProofTermVisitor):
         return [first_prefix + lines[0], *(rest_prefix + line for line in lines[1:])]
 
     def _render_child(self, node, *, is_last: bool) -> list[str]:
-        child_lines: list[str] = []
-        child_visitor = _VanillaVisitor(self.semantic, child_lines)
-        child_visitor.render(node)
         return self._with_prefix(
-            child_lines,
+            self._render_lines(node),
             self._child_prefix(self.prefix, is_last),
             self._continuation_prefix(self.prefix, is_last),
         )
+
+    def _render_lines(self, node) -> list[str]:
+        """``node`` rendered on its own, unprefixed, by this kind of visitor."""
+        child_lines: list[str] = []
+        type(self)(self.semantic, child_lines).render(node)
+        return child_lines
 
     def render(self, node) -> None:
         self.visit(node)
@@ -240,12 +246,8 @@ class _VanillaVisitor(ProofTermVisitor):
     def visit_Lamda(self, node: Lamda):
         self._emit(f"λ{node.di.di.name}:{node.di.prop}.")
         self._newline()
-        old_prefix = self.prefix
-        self.prefix = self._child_prefix(old_prefix, True)
-        try:
-            self.visit(node.term)
-        finally:
-            self.prefix = old_prefix
+        # The body is the binder's one child.
+        self.lines.extend(self._render_child(node.term, is_last=True))
         return node
 
     def visit_Cons(self, node: Cons):
@@ -282,24 +284,27 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_ID(self, node: ID):
-        self._emit(f"{node.name}:{node.prop}" if node.prop else f"{node.name}")
+        self._emit(self._leaf(node))
         return node
 
     def visit_DI(self, node: DI):
-        self._emit(f"{node.name}:{node.prop}" if node.prop else f"{node.name}")
+        self._emit(self._leaf(node))
         return node
+
+    @staticmethod
+    def _leaf(node) -> str:
+        # A citation of a sub-debate (core/dc/share.py) carries what its
+        # site captures and cuts, as ``pres.gen`` prints it.
+        name = f'{node.name}{getattr(node, "bracket", "")}'
+        return f"{name}:{node.prop}" if node.prop else name
 
     # -- first-order nodes -------------------------------------------------
 
     def visit_LamdaFO(self, node: LamdaFO):
         self._emit(f"λ{node.var}:{node.sort}.")
         self._newline()
-        old_prefix = self.prefix
-        self.prefix = self._child_prefix(old_prefix, True)
-        try:
-            self.visit(node.term)
-        finally:
-            self.prefix = old_prefix
+        # The body is the binder's one child.
+        self.lines.extend(self._render_child(node.term, is_last=True))
         return node
 
     def visit_ConsFO(self, node: ConsFO):
@@ -321,6 +326,100 @@ class _VanillaVisitor(ProofTermVisitor):
     def visit_unhandled(self, node):
         self._emit(f"Unhandled term type: {type(node)}")
         return node
+
+
+# Dialectical rendering: the vanilla rendering with every support and attack
+# scaffold abbreviated to its debate.  A statement t with supporters a_1..a_n
+# reads  SUP(t) ( ++a_1 ... ++a_n )  and with attackers  ATT(t) ( --b_1 ... ),
+# PUS and TTA on the context side; the scaffold's wiring is not shown.
+dialectical_rendering = Rendering_Semantics('   ', "", "", "", "", "", "", "", "", "", "")
+
+_SCAFFOLD_HEADS = {
+    ("supporter", "term"): "SUP",
+    ("attacker", "term"): "ATT",
+    ("supporter", "context"): "PUS",
+    ("attacker", "context"): "TTA",
+}
+
+
+def _match_any_scaffold(node):
+    """The paper shapes first, then the legacy M3 shapes the `support` and
+    `attack` verbs still build (core/dc/debate_graph.py).  Only meaningful
+    top-down, which is how the visitor meets them: it never descends into
+    a scaffold's wiring, where a legacy shape could match spuriously."""
+    from core.dc.debate_graph import _match_legacy_scaffold, _match_paper_scaffold
+    return _match_paper_scaffold(node) or _match_legacy_scaffold(node)
+
+
+class _DialecticalVisitor(_VanillaVisitor):
+    def visit_Mu(self, node: Mu):
+        match = _match_any_scaffold(node)
+        if match is None:
+            return super().visit_Mu(node)
+        self._scaffold(match)
+        return node
+
+    def visit_Mutilde(self, node: Mutilde):
+        match = _match_any_scaffold(node)
+        if match is None:
+            return super().visit_Mutilde(node)
+        self._scaffold(match)
+        return node
+
+    @staticmethod
+    def _scion(match):
+        """A matched scaffold's scion; a legacy attack scion has its open
+        site rerouted to the scaffold's binder, which is not shown, so the
+        site is put back (named after that binder)."""
+        role, _, prop, _, scion, alt, kind = match
+        if match.legacy and role == "attacker":
+            from core.dc.debate_graph import _restore_scion
+            return _restore_scion(scion, kind, alt, prop, alt)
+        return scion
+
+    def _stack(self, scion, side):
+        """A supporter scion's alternatives, bottom first: in the stacked
+        shape the scion is itself a support scaffold SUP(SUP(P1, P2), P3)
+        (core.dc.debate_graph.stack_elements)."""
+        match = _match_any_scaffold(scion)
+        if match is not None and match[0] == "supporter" and match[1] == side:
+            return self._stack(match[3], side) + self._stack(self._scion(match), side)
+        return [scion]
+
+    def _scaffold(self, match):
+        """SUP(base) ( ++a_1 ... ++a_n ): the scaffolds of one role stacked
+        on one statement (the legacy shape nests them through the original,
+        the stacked shape through the supporter scion) read as one."""
+        role, side, prop = match[0], match[1], match[2]
+        items = []
+        while True:
+            scion = self._scion(match)
+            items[:0] = self._stack(scion, side) if role == "supporter" else [scion]
+            base = match[3]
+            match = _match_any_scaffold(base)
+            if match is None or match[:3] != (role, side, prop):
+                break
+        head = _SCAFFOLD_HEADS[(role, side)]
+        mark = "++ " if role == "supporter" else "-- "
+        opening_prefix = self.prefix
+        base_lines = self._render_lines(base)
+        if len(base_lines) == 1:
+            self._emit(f"{head}({base_lines[0]}) (")
+            self._newline()
+        else:
+            self._emit(f"{head}(")
+            self._newline()
+            self.lines.extend(opening_prefix + "   " + line for line in base_lines)
+            self._emit_line(") (", prefix=opening_prefix)
+        for i, item in enumerate(items):
+            is_last = i == len(items) - 1
+            self.lines.extend(self._with_prefix(
+                self._render_lines(item),
+                self._child_prefix(opening_prefix, is_last) + mark,
+                self._continuation_prefix(opening_prefix, is_last) + "   ",
+            ))
+        self._emit_line(")", prefix=opening_prefix)
+        self._cur = []
 
 
 def _fill(template: str, **values: str) -> str:
@@ -611,5 +710,7 @@ class _NLVisitor(ProofTermVisitor):
 def traverse_proof_term(semantic, term, lines, indent, *, declarations=None, decorations=None):
     if semantic is vanilla_rendering:
         _VanillaVisitor(semantic, lines, indent=indent).render(term)
+    elif semantic is dialectical_rendering:
+        _DialecticalVisitor(semantic, lines, indent=indent).render(term)
     else:
         _NLVisitor(semantic, lines, indent=indent, declarations=declarations, decorations=decorations).visit(term)

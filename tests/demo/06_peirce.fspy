@@ -1,0 +1,55 @@
+# ================================================================
+#  AC/DC demo 6 - Peirce's law: a trap, and a classical proof
+# ================================================================
+# The prover-skeptic dialogue for ((P->Q)->P)->P, one move per argument.
+lk.
+declare P,Q : bool.
+# P: I claim the thesis.
+start argument p1 ((P -> Q)->P)->P
+end argument
+# S: then derive P from (P->Q)->P.
+start argument s1 ((P -> Q)->P)->P
+elim f.
+end argument
+# P: I will use the lemma (P->Q)->P; you owe me P->Q.
+start argument p2 P
+cut ((P -> Q)->P) alpha.
+elim g.
+next.
+elim.
+next.
+axiom alpha.
+end argument
+# S: to get P->Q I offer you P - now prove Q.
+start argument s2 P
+cut (P->Q) beta.
+elim h.
+end argument
+# P: you offered P; that is all I needed.  (The trap.)
+start argument p3 Q
+cut (P) gamma.
+end argument
+# S: refute P->Q from the lemma, then.
+start counterargument s3 P->Q
+cut ((P->Q)->P) theta.
+next.
+elim.
+axiom theta.
+end argument
+%stop
+# ---- paste from here ----------------------------------------------------
+# The document: a cycle through P - the skeptic's offer of P is the very
+# point at issue.  As a framework, nothing here is established.
+graph document
+label document
+# The debate about the thesis, unfolded: the trap is sprung by capture, and
+# strictness read off the term adds one strict edge, s1*, for the thesis.
+graph p1
+label p1
+# The value is the classical proof term of Peirce's law.
+evaluate p1
+# Every unfolded term is replayed through Fellowship first (the type oracle);
+# `typecheck off` skips that for speed.
+typecheck off
+evaluate p1
+typecheck on

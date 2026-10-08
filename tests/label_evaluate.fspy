@@ -1,0 +1,33 @@
+% CLI surface of the fragment pipeline (propositional-fragment-plan.org):
+% graph / label / evaluate on a support composition.
+%
+% pArg argues P from an open Q obligation via pRule; qStrict closes Q
+% strictly. Supported, the debate labels Q and P IN, and label-guided
+% evaluation keeps the supporter and returns a value in both modes.
+lk.
+declare P,Q,R:bool.
+declare pRule : (Q->P).
+declare axQ : (Q).
+
+% Argument for P resting on an open Q obligation.
+start argument pArg P
+cut (Q->P) rule.
+axiom pRule.
+elim.
+next.
+axiom rule.
+end argument
+
+% Strict supporter for Q.
+start argument qStrict Q
+axiom axQ.
+end argument
+
+support dsup qStrict pArg
+
+% Compile the debate graph, print the grounded labelling, then evaluate
+% under both modes and base strategies.
+graph dsup
+label dsup
+evaluate dsup
+evaluate dsup credulous cbv

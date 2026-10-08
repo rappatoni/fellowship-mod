@@ -1,0 +1,7 @@
+(* Superdeduction course, lesson S3: the right rule of fly, from the completion fly <-> bird /\ ~abnormal. *)
+lk.
+declare Bird, Abnormal : bool.
+theorem fly_r : (Bird /\ ~Abnormal).
+elim.
+next.
+elim ha.
