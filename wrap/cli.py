@@ -15,11 +15,13 @@ from pres.tree import render_acceptance_tree_dot
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 from wrap.registry import (
-    parse_statement, state, parse_refine, reopen, abandon, start_recording,
-    finish_recording, is_qed,
+    parse_statement, parse_refine, reopen, abandon, start_recording, is_qed,
 )
 from core.dc.cite import citation_target, CitationError, is_strict_citation, parse_cite
 from core.dc.debate import DebateError
+from wrap.service import (
+    Service, AidaError, NotFound, InvalidRequest, Refused, UnfoldRefused,
+)
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
@@ -45,7 +47,7 @@ def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[s
       - Stream to stdout
       - Avoid duplicate handlers if already configured
     """
-    # The CLI reports onus conflicts itself, in _report_onus_conflicts, with
+    # The CLI reports onus conflicts itself (wrap/service.py, _report_onus_conflicts), with
     # a message aimed at the person at the prompt; the library warning would
     # only duplicate it on stderr.
     import warnings as _warnings
@@ -75,8 +77,6 @@ def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[s
         fh.setLevel(level)
         fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
         root.addHandler(fh)
-
-
 
 
 def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: int) -> None:
@@ -174,7 +174,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                                    current_argument['name'])
                     recording, current_argument = False, None
                 try:
-                    prover.new_document(*fresh)
+                    _call(Service.of(prover).new_document, *fresh)
                     logger.info("New document (%s).", prover.doc.logic_name)
                 except (ValueError, ProverError) as e:
                     _refuse_in_script(e, strict, script_path, lineno)
@@ -192,7 +192,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 # opens its proof.
                 is_anti, name, conclusion, keyword = statement
                 try:
-                    state(prover, is_anti, name, conclusion, keyword)
+                    _call(Service.of(prover).state, keyword, name, conclusion, anti=is_anti)
                 except ProverError as e:
                     _refuse_in_script(e, strict, script_path, lineno)
                 continue
@@ -213,7 +213,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 recording = False
                 current_argument = None
                 try:
-                    arg = finish_recording(prover, current, demand_strict=True)
+                    arg = _finish(prover, current, demand_strict=True)
                     logger.info("'%s' proved: %s.", arg.name, arg.conclusion)
                 except ProverError as e:
                     abandon(prover, current)
@@ -275,7 +275,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     recording = False
                     current_argument = None
                     try:
-                        arg = finish_recording(prover, current, demand_strict=False)
+                        arg = _finish(prover, current, demand_strict=False)
                     except ProverError as e:
                         abandon(prover, current)
                         _refuse_in_script(e, strict, script_path, lineno)
@@ -675,7 +675,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         pass
                     recording, current_argument = False, None
                 try:
-                    prover.new_document(*fresh)
+                    _call(Service.of(prover).new_document, *fresh)
                     print(f"New document ({prover.doc.logic_name}).")
                 except (ValueError, ProverError) as e:
                     print(f"refused: {e}")
@@ -790,7 +790,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 # A statement records a claim, and nothing more.
                 is_anti, name, conclusion, keyword = parse_statement(command)
                 try:
-                    state(prover, is_anti, name, conclusion, keyword)
+                    _call(Service.of(prover).state, keyword, name, conclusion, anti=is_anti)
                     print(f"Stated {keyword} '{name}' : {conclusion}; `prove {name}` opens its proof.")
                 except ProverError as e:
                     print(f"refused: {e}")
@@ -839,7 +839,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 current_argument = None
                 try:
                     prover.send_command('discard theorem.')
-                    arg = finish_recording(prover, current, demand_strict=True)
+                    arg = _finish(prover, current, demand_strict=True)
                     print(f"'{arg.name}' proved: {arg.conclusion}.")
                 except MachinePayloadError as e:
                     print(f"acdc: fatal prover communication error: {e}")
@@ -942,7 +942,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 recording = False
                 current_argument = None
                 try:
-                    arg = finish_recording(prover, current, demand_strict=False)
+                    arg = _finish(prover, current, demand_strict=False)
                 except ProverError as e:
                     abandon(prover, current)
                     print(f"refused: {e}")
@@ -986,7 +986,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
                         # claimed, and the argument is registered.
                         start_recording(prover, name, False)
                         try:
-                            finish_recording(prover, {'name': name, 'conclusion': conclusion,
+                            _finish(prover, {'name': name, 'conclusion': conclusion,
                                                       'instructions': instructions},
                                              demand_strict=False)
                         except ProverError:
@@ -1123,48 +1123,42 @@ def debate_line(prover: ProverWrapper, command: str) -> bool:
     A move is a line whose first word is a verb or a registered argument;
     any other line is left to the other commands, which keep working
     while a debate is recorded - `evaluate NAME` compiles the debate as
-    it stands.  Refusals raise DebateError or NameClash."""
-    from dataclasses import replace
-    from core.dc.debate import Debate, Move, DebateError, VERBS, check_opening, check_move
+    it stands.  The work is the service's (wrap/service.py); a refusal
+    raises DebateError or NameClash."""
+    from core.dc.debate import VERBS
 
     text = command.strip()
     words = text.rstrip(".").split()
     if not words or not hasattr(prover, "debates"):
         return False
+    service = Service.of(prover)
+
+    def run(method, *args, **kwargs):
+        try:
+            return method(*args, **kwargs)
+        except AidaError as e:
+            if isinstance(e.cause, (DebateError, ProverError)):
+                raise e.cause from None
+            raise DebateError(str(e)) from None
+
     if words[0] == "debate":
         match = _DEBATE_HEADER.match(text)
         if match is None:
             raise DebateError("Use: debate pro|con open|closed NAME : ISSUE.  "
                               "(The shared form of an argument's debate is now `share ARG`.)")
-        if prover.recording_debate is not None:
-            raise DebateError(f"debate '{prover.recording_debate}' is still being recorded; "
-                              f"close it with `hora est.` first.")
         onus, scope, name, issue = match.groups()
-        debate = Debate(name, issue, onus, scope)
-        debate.issue                       # refuse an unreadable issue before claiming the name
-        prover.register_debate(debate)
-        prover.recording_debate = name
-        logger.info("Recording debate '%s' (%s, %s scope) about %s.", name, onus, scope,
-                    f":{issue}" if onus == "pro" else f"{issue}:")
+        run(service.start_debate, name, issue, onus, scope)
         return True
     if words == ["hora", "est"]:
         if not text.endswith("."):
             raise DebateError("`hora est.` ends with a full stop.")
-        name = prover.recording_debate
-        if name is None:
-            raise DebateError("hora est: no debate is being recorded.")
-        debate = prover.debates[name]
-        if not debate.moves:
-            raise DebateError(f"debate '{name}' has no move yet; open it with an argument.")
-        debate.finished = True
-        prover.recording_debate = None
-        logger.info("Debate '%s' recorded: %d move(s).", name, len(debate.moves))
+        run(service.close_debate)
         return True
     name = prover.recording_debate
     if words[0] in VERBS and len(words) == 3:
-        move = Move(words[1], words[0], words[2])
+        verb, argument, target = words
     elif name is not None and words[0] in prover.arguments and len(words) <= 2:
-        move = Move(words[0], None, words[1] if len(words) == 2 else None)
+        verb, argument, target = None, words[0], (words[1] if len(words) == 2 else None)
     elif words[0] in _OLD_VERBS and len(words) >= 3:
         raise DebateError(f"`{words[0]} NEW A B` is gone: a debate is recorded with "
                           f"`debate pro|con open|closed NAME : ISSUE.` and its moves "
@@ -1175,24 +1169,7 @@ def debate_line(prover: ProverWrapper, command: str) -> bool:
         raise DebateError(f"`{text}` is a debate move, but no debate is being recorded.")
     if not text.endswith("."):
         raise DebateError(f"a move ends with a full stop: `{text}.`")
-    debate = prover.debates[name]
-    graph = prover.debate_graph(replace(debate, moves=debate.moves + [move], _term=None))
-
-    def statement_of(argument_name):
-        argument = prover.arguments.get(argument_name)
-        if argument is None or getattr(argument, "composed", False):
-            return None
-        return prover.issue_of(argument)
-
-    if not debate.moves:
-        if move.verb is not None or move.target is not None:
-            raise DebateError(f"debate '{name}': the opening move is an argument alone: "
-                              f"`{move.argument}.`")
-        check_opening(debate, graph, move.argument, statement_of)
-    else:
-        check_move(debate, graph, move, statement_of)
-    debate.moves.append(move)
-    logger.info("Debate '%s', move %d: %s", name, len(debate.moves), move)
+    run(service.move, argument, verb, target)
     return True
 
 
@@ -1236,50 +1213,25 @@ def _parse_register_command(command: str) -> tuple[str, str, bool, str]:
 
 
 def register_argument_cmd(prover: ProverWrapper, command: str) -> Argument:
-    """Register an argument/theorem from a proof-term string.
+    """Register an argument/theorem from a proof-term string
+    (wrap/service.py, ``register``).
 
     Command syntax:
         register NAME [strict] : TYPE := PROOF_TERM
 
     With `strict`, replay is finalized with `qed.` so Fellowship declares the
     theorem/antitheorem; otherwise the replayed theorem is discarded after the
-    wrapper extracts and registers the argument state.
+    wrapper extracts and registers the argument state.  A refusal raises the
+    prover's own error (NameClash, StrictnessRefused, ...).
     """
     name, conclusion, declare_theorem, proof_term = _parse_register_command(command)
-    proof_term = Argument._normalize_pt_to_unicode(proof_term)
+    try:
+        return Service.of(prover).register(name, conclusion, proof_term, strict=declare_theorem).value
+    except AidaError as e:
+        if e.cause is not None:
+            raise e.cause
+        raise
 
-    parsed = Grammar().parser.parse(proof_term)
-    body = ProofTermTransformer().transform(parsed)
-    # A term typed as a string has lost its citation marks: a free leaf
-    # naming a registered argument is a citation (core/dc/cite.py).
-    from core.dc.cite import mark_citations
-    registered = getattr(prover, "arguments", {})
-    mark_citations(body, lambda n: n in registered and n != name)
-
-    arg = Argument(
-        prover,
-        name=name,
-        conclusion=conclusion,
-        is_anti=isinstance(body, Mutilde),
-    )
-    arg.body = body
-    # The name is checked before the replay: a strict one ends in `qed`,
-    # which would otherwise let Fellowship silently replace a clashing name.
-    claim = getattr(prover, "claim_name", None)
-    if claim is not None:
-        claim(name, "argument", dry_run=True)
-    # Not `strict`: registered either way, and held by Fellowship if it
-    # turns out closed - the same rule as `end argument`.
-    arg.execute(declare=True if declare_theorem else "auto", preserve_input_body=True)
-    prover.register_argument(arg)
-
-    logger.info(
-        "Registered argument '%s' with conclusion '%s'%s.",
-        arg.name,
-        arg.conclusion,
-        " and declared it in Fellowship" if declare_theorem else "",
-    )
-    return arg
 
 def resolve_fsp_path() -> Path:
     """
@@ -1356,62 +1308,42 @@ def expand_argument_cmd(prover: ProverWrapper, name: str) -> None:
 
 
 def set_typecheck_cmd(prover: ProverWrapper, command: str) -> None:
-    """CLI: `typecheck on | off | expanded`.  `on` replays each sub-debate
-    once (core/dc/typecheck.py, typecheck_shared); `expanded` replays the
-    whole unfolded term, the older and far larger check; `off` skips it."""
-    mode = command.split()[1]
-    prover.typecheck_enabled = mode != "off"
-    prover.typecheck_expanded = mode == "expanded"
-    logger.info("Type checking of unfolded terms: %s",
-                {"on": "on", "off": "off", "expanded": "on (the expanded term)"}[mode])
+    """CLI: `typecheck on | off | expanded` (wrap/service.py, ``set_typecheck``)."""
+    done = Service.of(prover).set_typecheck(command.split()[1])
+    logger.info("Type checking of unfolded terms: %s", done.message)
 
 
 def set_pipeline_cmd(prover: ProverWrapper, command: str) -> None:
-    """CLI: `pipeline shared | unfolded`.  `shared` (the default) runs
-    graph, label and evaluate on the debate as named sub-debates, one
-    instance at a time; `unfolded` runs them on the term unfolded from the
-    document graph, the reference the shared pipeline is tested against.
-    Both give the same graph, labels and normal form up to the names of
-    binders and sites."""
-    prover.pipeline_unfolded = command.split()[1] == "unfolded"
-    logger.info("Pipeline: %s", "unfolded term" if prover.pipeline_unfolded else "shared debate")
+    """CLI: `pipeline shared | unfolded` (wrap/service.py, ``set_pipeline``)."""
+    done = Service.of(prover).set_pipeline(command.split()[1])
+    logger.info("Pipeline: %s", done.message)
 
 
 def share_argument_cmd(prover: ProverWrapper, name: str) -> None:
-    """CLI: `debate ARG` - the debate about ARG's issue as named
-    sub-debates: the issue's term, then one `NAME[open sites] := term`
-    line per sub-debate it cites.
+    """CLI: `share ARG` - the debate about ARG's issue as named sub-debates:
+    the issue's term, then one `NAME[open sites] := term` line per
+    sub-debate it cites (wrap/service.py, ``share``; core/dc/share.py).
 
     A sub-debate needed in two or more places is written once and cited by
     name; one needed once stays in place.  A citation shows what its site
     does to the cited debate, `d[alpha -> !:A, B:?]`: alpha captures its
-    delegation of A, its obligation B is left open (core/dc/share.py).
-    Names are transparent: `graph`, `label` and `evaluate` work on the
-    expansion.
+    delegation of A, its obligation B is left open.  Names are transparent:
+    `graph`, `label` and `evaluate` work on the expansion.
     """
-    from core.dc.unfold import UnfoldError
-    arg = prover.get_argument(name)
-    if arg is None:
-        logger.error("debate: no argument '%s'.", name)
-        return
-    if not arg.executed:
-        arg.execute()
-    issue = prover.issue_of(arg)
-    document = prover.graph
-    if issue not in set(document.statements()):
-        print(f"debate: '{name}' is not in the document graph; it has no debate to share.")
-        return
     try:
-        shared = prover.shared_debate(issue)
-        text = shared.to_text()
-    except UnfoldError as e:
+        shared = Service.of(prover).share(name)
+    except UnfoldRefused as e:
         print(f"debate: refused: {e}")
-        logger.warning("Sharing refused for '%s': %s", name, e)
         return
-    named = shared.named()
-    print(f"Debate about '{name}' ({document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]), "
-          f"{len(named)} sub-debate(s) cited by name:")
-    for line in text.splitlines():
+    except Refused as e:
+        print(f"debate: {e}")
+        return
+    except AidaError as e:
+        _report(e)
+        return
+    print(f"Debate about '{name}' ({shared.display}), "
+          f"{len(shared.named)} sub-debate(s) cited by name:")
+    for line in shared.text.splitlines():
         print(f"  {line}")
 
 
@@ -1421,61 +1353,15 @@ TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
 
 
 def _select_term(prover: ProverWrapper, name: str, which: str):
-    """(description, term) for one of NAME's terms, or None after a
-    message.  ``registered`` is the term as Fellowship returned it (text
-    only), ``enriched`` the parsed and annotated body, ``unfolded`` the
-    debate term unfolded for it (unfolded again if the document changed),
-    ``normal`` its plain normal form, ``evaluated`` the normal form of its
-    last evaluation - refused if the document changed since.  An issue
-    (``issue :X``) has only its unfolded term."""
-    debate = prover.debates.get(name)
-    if debate is not None:
-        if which == "evaluated":
-            if debate.labelled_nf is None or debate.labelled_nf_revision != prover.revision:
-                logger.error("Debate '%s' has no evaluation at the document's current revision; "
-                             "run `evaluate %s` first.", name, name)
-                return None
-            return "the normal form of the last evaluation", debate.labelled_nf
-        if which not in (None, "unfolded"):
-            logger.error("A debate has only an unfolded and an evaluated term, not '%s'.", which)
-            return None
-        _arg, _issue_, term, _shared = _debate_issue(prover, debate)
-        if term is None:
-            return None
-        return f"the term of debate '{name}'", term
-    if name.startswith("issue "):
-        if which not in (None, "unfolded"):
-            logger.error("An issue has only an unfolded term, not '%s'.", which)
-            return None
-        issue = _parse_issue(name)
-        if issue is None:
-            return None
-        return f"the canonical debate term of {name}", prover.issue_term(issue)
-    arg = prover.get_argument(name)
-    if not arg:
-        logger.error("Argument '%s' not found.", name)
+    """(description, term) for one of NAME's terms (wrap/service.py,
+    ``term``), or None after a message."""
+    service = Service.of(prover)
+    try:
+        found = service.term(service.target(name), which)
+    except AidaError as e:
+        _report(e)
         return None
-    if not arg.executed:
-        arg.execute()
-    if which == "registered":
-        return "the term Fellowship returned", arg.proof_term
-    if which == "enriched":
-        return "the enriched term", arg.body
-    if which == "normal":
-        if arg.normal_body is None:
-            arg.normalize()
-        return "the normal form", arg.normal_body
-    if which == "evaluated":
-        if arg.labelled_nf is None or arg.labelled_nf_revision != prover.revision:
-            logger.error("'%s' has no evaluation at the document's current revision; "
-                         "run `evaluate %s` first.", name, name)
-            return None
-        return "the normal form of the last evaluation", arg.labelled_nf
-    term = prover.unfolded_term(arg)
-    if term is None:
-        term = prover.issue_term(prover.issue_of(arg))
-        return f"the canonical term of '{name}''s issue ('{name}' has no edge of its own)", term
-    return f"the debate term unfolded for '{name}'", term
+    return found.description, found.term
 
 
 def _show_selected(prover: ProverWrapper, name: str, which: str, style: Optional[str]) -> None:
@@ -1619,24 +1505,30 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     )
     logger.info("")  # spacer after NL rendering
 
-def _parse_issue(name: str):
-    """The statement of an issue target: ``issue :X`` is X proved (term
-    side), ``issue X:`` X refuted (context side); X is any proposition.
-    None after an error message."""
-    from core.dc.debate_graph import canonical_prop
-    spec = name[len("issue "):].strip()
-    if spec.startswith(":") and not spec.endswith(":"):
-        prop, side = spec[1:].strip(), "term"
-    elif spec.endswith(":") and not spec.startswith(":"):
-        prop, side = spec[:-1].strip(), "context"
-    else:
-        logger.error("An issue is written ':X' (X proved) or 'X:' (X refuted), not '%s'.", spec)
-        return None
+
+def _call(method, *args, **kwargs):
+    """Call a service operation from the dispatchers: a refusal raises the
+    error that caused it (ProverError, NameClash, DebateError, ...), which
+    the dispatchers already report."""
     try:
-        return (canonical_prop(prop), side)
-    except Exception as e:
-        logger.error("Cannot read the proposition '%s': %s", prop, e)
-        return None
+        return method(*args, **kwargs)
+    except AidaError as e:
+        raise (e.cause if isinstance(e.cause, Exception) else ProverError(str(e))) from None
+
+
+def _finish(prover: ProverWrapper, current: dict, *, demand_strict: bool):
+    """Replay and register a recording (wrap/service.py, ``finish_recording``)."""
+    return _call(Service.of(prover).finish_recording, current, demand_strict=demand_strict).value
+
+
+def _report(error) -> None:
+    """Print a service refusal as the CLI always has: ``STAGE: refused:
+    MESSAGE`` for a refusal of a pipeline stage, an error log line for a
+    request that is malformed or names nothing."""
+    if error.stage:
+        print(f"{error.stage}: refused: {error}")
+    else:
+        logger.error("%s", error)
 
 
 def _target(parts):
@@ -1648,169 +1540,28 @@ def _target(parts):
 
 
 def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
-    """Resolve NAME to (arg, issue, term, shared): the debate about the
-    argument's issue, as named sub-debates (``shared``, core/dc/share.py)
-    and, if ``want_term`` or the type check needs it, as the term unfolded
-    from the document graph (Phase C).
-
-    Every registered atomic argument is in the document; a composed
-    argument (a debate) names its host's issue.  An argument the document
-    refused at registration falls back to its own term, with a notice, and
-    has no shared form.  Returns (arg, issue, None, None) after printing a
-    refusal.
-
-    On the unfolded route the term is the one unfolded for the argument -
-    the canonical shape with the argument on top of its supporter stack
-    (aida-unfold-entrypoints) - cached on the argument until the document
-    changes.  NAME may also be an issue, ``issue :X`` (X proved) or ``issue
-    X:`` (X refuted); then ``arg`` is None and the term is the canonical one.
-    """
-    from core.dc.unfold import unfold_legacy, UnfoldError
-
-    debate = prover.debates.get(name)
-    if debate is not None:
-        return _debate_issue(prover, debate)
-    if name.startswith("issue "):
-        arg, issue = None, _parse_issue(name)
-        if issue is None:
-            return None, None, None, None
-    else:
-        arg = prover.get_argument(name)
-        if not arg:
-            logger.error("Argument '%s' not found.", name)
-            return None, None, None, None
-        if not arg.executed:
-            arg.execute()
-        issue = prover.issue_of(arg)
-    document = prover.graph
-    refusal = _debate_logic_refusal(prover)
-    if refusal:
-        print(f"graph: refused: {refusal}")
-        logger.warning("Debate commands refused in %s for '%s'.", prover.doc.logic_name, name)
-        return arg, issue, None, None
-    if _pipeline_logger.isEnabledFor(logging.DEBUG) and arg is not None:
-        from pres.gen import pres_tree
-        _pipeline_logger.debug("issue: '%s' is about %s; the document has %d edge(s)",
-                               name, f"{document.nodes.get(issue[0], arg.conclusion)}[{issue[1][0]}]",
-                               len(document.edges))
-        artifact(_pipeline_logger, "issue: the term '%s' was registered with (before unfolding)" % name,
-                 pres_tree(arg.body))
-    if arg is not None and issue not in set(document.statements()):
-        logger.warning("'%s' is not in the document graph; using its own term.", name)
-        _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
-                               "the document, so '%s' is evaluated as it was registered", name)
-        return arg, issue, arg.body, None
+    """(arg, issue, term, shared) for NAME - an argument, a debate, or an
+    issue (``issue :X`` / ``issue X:``) - from the service's ``issue_term``
+    (wrap/service.py), or (None, None, None, None) after printing the
+    refusal."""
+    service = Service.of(prover)
     try:
-        if prover.pipeline_unfolded:
-            # Built for the per-definition type check only; it is the legacy
-            # shape (aida-shared-route-stack-shape), not the term evaluated,
-            # so it must not narrate itself as the unfolding.
-            unfold_log = logging.getLogger("core.dc.unfold")
-            was_disabled, unfold_log.disabled = unfold_log.disabled, True
-            try:
-                shared = prover.shared_debate(issue)
-            finally:
-                unfold_log.disabled = was_disabled
-        else:
-            shared = prover.shared_debate(issue)
-    except UnfoldError as e:
-        print(f"graph: refused: {e}")
-        logger.warning("Unfolding refused for '%s': %s", name, e)
-        return arg, issue, None, None
-    if _pipeline_logger.isEnabledFor(logging.DEBUG) and not prover.pipeline_unfolded:
-        artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text(tree=True))
-    # A statement spelled two ways (~A and A -> false) joins two spellings
-    # only in the expanded term, so that is the one to type-check then
-    # (tasks.org, aida-negation-spelling-in-unfolding).
-    clashes = shared.spelling_clashes() if prover.typecheck_enabled else {}
-    expanded_check = prover.typecheck_enabled and (prover.typecheck_expanded or bool(clashes))
-    term = None
-    if want_term or expanded_check:
-        try:
-            if want_term:
-                term = prover.unfolded_term(arg) if arg is not None else None
-                if term is None:            # an issue, or a composed debate
-                    term = prover.issue_term(issue)
-            else:
-                term = unfold_legacy(document, issue)    # the shared route's reference
-        except UnfoldError as e:
-            print(f"graph: refused: {e}")
-            logger.warning("Unfolding refused for '%s': %s", name, e)
-            return arg, issue, None, None
-    if prover.typecheck_enabled:
-        # The type oracle: the debate must replay through Fellowship
-        # (core/dc/typecheck.py).  `typecheck off` skips it.
-        from core.dc.typecheck import typecheck, typecheck_shared, TypeCheckFailed
-        # Fellowship names the replayed theorems after the target, and an
-        # issue target ("issue B:") is no identifier.
-        check_name = re.sub(r"\W+", "_", name).strip("_") if arg is None else name
-        try:
-            if clashes:
-                _pipeline_logger.debug(
-                    "typecheck: the expanded term is replayed, since the debate spells %s "
-                    "in more than one way", ", ".join(sorted(clashes)))
-            if expanded_check:
-                typecheck(prover, term, check_name, document.nodes.get(issue[0], issue[0]),
-                          issue[1] == "context")
-            else:
-                # One replay per sub-debate instead of one of the whole
-                # unfolded term (tasks.org, aida-shared-subarguments, stage 2).
-                typecheck_shared(prover, shared, check_name, prover.typechecked())
-        except TypeCheckFailed as e:
-            print(f"graph: refused: {e}")
-            logger.warning("Type check failed for '%s': %s", name, e)
-            return arg, issue, None, None
-    return arg, issue, term, shared
+        found = service.issue_term(service.target(name), want_term=want_term)
+    except AidaError as e:
+        _report(e)
+        return None, None, None, None
+    return found.argument, found.issue, found.term, found.shared
 
 
 def _debate_logic_refusal(prover: ProverWrapper) -> Optional[str]:
-    """Why the document's logic admits no debates, or None.  Debates are
-    classical: their scaffolds throw to a second conclusion, which LJ
-    forbids.  Minimal logic changes the negation proof terms (no ex falso,
-    no `_F_`), on which the compiler and the unfolder are untested."""
-    if prover.logic == "lj":
-        return ("debates are classical (their scaffolds throw to a second conclusion, "
-                "which LJ forbids); start the document with `new document.` (lk).")
-    if prover.minimal:
-        return ("debates are not supported in minimal logic yet (its negation proof "
-                "terms are untested in the compiler); start the document with `new document.`")
-    return None
+    """Why the document's logic admits no debates, or None (wrap/service.py)."""
+    return Service.of(prover)._logic_refusal()
 
 
 def _debate_issue(prover: ProverWrapper, debate):
-    """``_issue`` for a debate (core/dc/debate.py): (None, issue, term,
-    None) with the term compiled from the debate's scope and moves - as
-    recorded so far, while it is being recorded - and type-checked by
-    replaying it whole.  A debate has no shared form."""
-    from core.dc.unfold import UnfoldError
-    refusal = _debate_logic_refusal(prover)
-    if refusal:
-        print(f"graph: refused: {refusal}")
-        return None, None, None, None
-    if not debate.moves:
-        print(f"graph: refused: debate '{debate.name}' has no move yet.")
-        return None, None, None, None
-    if _pipeline_logger.isEnabledFor(logging.DEBUG):
-        _pipeline_logger.debug("issue: debate '%s' is about %s[%s]; %s scope, %d move(s)%s",
-                               debate.name, debate.issue_prop, debate.issue[1][0], debate.scope,
-                               len(debate.moves), "" if debate.finished else ", still being recorded")
-        artifact(_pipeline_logger, "issue: the debate '%s' was registered with (before unfolding)"
-                 % debate.name, "\n".join([debate.header()] + [str(m) for m in debate.moves]))
-    try:
-        term = prover.debate_term(debate)
-    except UnfoldError as e:
-        print(f"graph: refused: {e}")
-        logger.warning("Unfolding refused for debate '%s': %s", debate.name, e)
-        return None, None, None, None
-    if prover.typecheck_enabled:
-        from core.dc.typecheck import typecheck, TypeCheckFailed
-        try:
-            typecheck(prover, term, debate.name, debate.issue_prop, debate.onus == "con")
-        except TypeCheckFailed as e:
-            print(f"graph: refused: {e}")
-            logger.warning("Type check failed for debate '%s': %s", debate.name, e)
-            return None, None, None, None
-    return None, debate.issue, term, None
+    """``_issue`` for a debate: (None, issue, term, None), or all None after
+    printing the refusal."""
+    return _issue(prover, debate.name, want_term=True)
 
 
 def _issue_term(prover: ProverWrapper, name: str):
@@ -1820,127 +1571,22 @@ def _issue_term(prover: ProverWrapper, name: str):
     return arg, issue, term
 
 
-def _compile_argument_graph(prover: ProverWrapper, name: str):
-    """(arg, graph, term) for NAME: the issue's debate graph; or, for the
-    name ``document``, the document graph itself.  (arg, None, None) after
-    printing the refusal - the log-and-refuse convention: compile errors
-    are one-line messages, not tracebacks.
-
-    The issue graph is compiled from the shared debate, one instance of a
-    sub-debate at a time (core/dc/instances.py), so the debate is not unfolded
-    for it; ``term`` is the unfolded term only where something else needed
-    it (the expanded type check) or the argument has no shared form.
-    """
-    from core.dc.debate_graph import DebateCompileError, declaration_kinds
-    from core.dc.instances import compile_issue_shared
-    from core.dc.strict import compile_issue
-    from core.dc.unfold import unfold_legacy
-    from core.ac.ast import FirstOrderNotSupported
-
-    if name == "document":
-        _report_onus_conflicts(prover.graph)
-        return None, prover.graph, None
-    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
-    if term is None and shared is None:
-        return arg, None, None
-    if prover.pipeline_unfolded:
-        shared = None                      # `pipeline unfolded`: the reference path
-    options = dict(strict_names=prover.declarations.keys(),
-                   strict_kinds=declaration_kinds(prover.declarations))
-    try:
-        graph = None
-        if shared is not None:
-            try:
-                graph = compile_issue_shared(shared, name, **options)
-            except (DebateCompileError, FirstOrderNotSupported, RecursionError):
-                raise                      # the unfolded term is deeper still
-            except Exception as e:
-                # The instance-wise compiler is checked against the unfolded
-                # term on every fixture; should it ever fail, say so and use
-                # the reference rather than refuse a sound debate.
-                logger.warning("Compiling '%s' from its shared debate failed (%s: %s); "
-                               "compiling the unfolded term instead.", name, type(e).__name__, e)
-                term = term if term is not None else unfold_legacy(prover.graph, issue)
-        if graph is None:
-            graph = compile_issue(term, name, **options)
-    except (DebateCompileError, FirstOrderNotSupported) as e:
-        print(f"graph: refused: {e}")
-        logger.warning("Debate graph compilation refused for '%s': %s", name, e)
-        return arg, None, term
-    except RecursionError:
-        # tasks.org, aida-deep-term-recursion: the term walks recurse.
-        print(f"graph: refused: the debate about '{name}' is nested too deeply for the "
-              f"compiler, which follows a chain of sub-debates by recursion.")
-        logger.warning("Debate graph compilation refused for '%s': recursion depth exceeded.", name)
-        return arg, None, term
-    _report_onus_conflicts(graph)
-    _remember_strict_edges(prover, graph, name)
-    return arg, graph, term
-
-
-def _remember_strict_edges(prover: ProverWrapper, graph, issue_name: str) -> None:
-    """Keep the strict edges an issue graph showed, by name, so `adopt` can
-    promote one the user has seen.  Scoped to the document: `new document`
-    forgets."""
-    seen = prover.doc.strict_edges
-    for edge in graph.edges:
-        if edge.strict and edge.name.endswith("*") and getattr(edge, "term", None) is not None:
-            seen[edge.name] = (issue_name, edge, graph.nodes.get(edge.target_key, edge.target_key))
-
-
 def adopt_strict_edge_cmd(prover: ProverWrapper, command: str):
     """CLI: `adopt EDGE* as NAME` - promote a strict edge that unfolding
-    discovered (Peirce's thesis, say) to a theorem Fellowship holds.
-
-    Queries never change the registry, so a strict edge shown by `graph` or
-    `evaluate` stays a fact about that issue graph until adopted.  Adopting
-    replays the closed term stored on the edge with `qed`: Fellowship checks
-    it again rather than trusting it, and needs no normalisation, since the
-    strict phase already produced a closed term.  A closed term rests only on
-    declarations, so later changes to the document cannot invalidate it.
-    """
+    discovered (Peirce's thesis, say) to a theorem Fellowship holds
+    (wrap/service.py, ``adopt``)."""
     parts = command.split()
     if len(parts) != 4 or parts[0] != "adopt" or parts[2] != "as":
         print("adopt: use `adopt EDGE* as NAME`, with an edge name shown by `graph ARG`.")
         return None
-    edge_name, name = parts[1], parts[3]
-    seen = prover.doc.strict_edges
-    if edge_name not in seen:
-        print(f"adopt: no strict edge '{edge_name}' has been shown in this document; "
-              f"run `graph ARG` for the argument whose graph has it.")
-        return None
-    issue_name, edge, conclusion = seen[edge_name]
     try:
-        prover.claim_name(name, "argument", dry_run=True)
-        arg = Argument(prover, name=name, conclusion=conclusion,
-                       is_anti=edge.target_side == "context")
-        arg.body = copy.deepcopy(edge.term)
-        arg.execute(declare=True, preserve_input_body=True)
-        prover.register_argument(arg)
-    except ProverError as e:
+        return Service.of(prover).adopt(parts[1], parts[3]).value
+    except NotFound as e:
+        print(f"adopt: {e}")
+    except AidaError as e:
         print(f"adopt: refused: {e}")
-        logger.warning("Adopting '%s' as '%s' refused: %s", edge_name, name, e)
-        return None
-    logger.info("Adopted '%s' (from the issue graph of '%s') as the theorem '%s' : %s.",
-                edge_name, issue_name, name, conclusion)
-    return arg
+    return None
 
-
-def _report_onus_conflicts(graph) -> None:
-    """Warn about propositions presumed on BOTH sides.
-
-    A presumption delegates the burden of refutation to the other side, so
-    both sides presuming means neither holds it.  The compiler still
-    labels such a graph; task aida-onus-delegation-polarity makes it an
-    error at registration time.
-    """
-    from core.comp.adf_label import opposing_presumptions
-
-    clash = opposing_presumptions(graph)
-    if clash:
-        names = ", ".join(graph.nodes.get(key, key) for key in clash)
-        logger.warning("Opposing presumptions on %s: both sides delegate the onus "
-                       "of refutation, so neither side holds it.", names)
 
 
 def _render_graph_image(dot_source: str, out_base: str, fmt: str = "png") -> Optional[str]:
@@ -2124,7 +1770,8 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
 
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
                        show: bool = False, whole: bool = False) -> None:
-    """CLI: compile an argument's debate graph; print a summary, optionally DOT.
+    """CLI: compile an argument's debate graph; print a summary, optionally DOT
+    (wrap/service.py, ``graph``).
 
     Syntax:
         graph ARG|DEBATE [all] [FILE.dot] [show]
@@ -2135,16 +1782,13 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     graph is what its conclusion reaches; with `all`, the whole of its
     scope - a move that connects to nothing included.
     """
-    debate = prover.debates.get(name)
-    if whole and debate is None:
-        logger.error("graph: 'all' is for debates; '%s' is not one.", name)
+    service = Service.of(prover)
+    try:
+        result = service.graph(service.target(name), whole=whole, labels=True)
+    except AidaError as e:
+        _report(e)
         return
-    if whole:
-        arg, graph = None, prover.debate_graph(debate)
-    else:
-        arg, graph, _term = _compile_argument_graph(prover, name)
-    if graph is None:
-        return
+    graph, arg, debate = result.graph, result.argument, result.debate
     if whole:
         logger.info("Scope of debate '%s' (%s): %d nodes, %d edges", name, debate.scope,
                     len(graph.nodes), len(graph.edges))
@@ -2174,15 +1818,9 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
         logger.info("  default %s[%s]: %s", graph.nodes[key], side[0], ", ".join(sorted(kinds)))
     logger.info("  fragment: %s",
                 "acyclic" if graph.is_acyclic() else "cyclic (derivation cycle; labelled like any other)")
-    labels = None
-    try:
-        from core.comp.adf_label import grounded_labels
-        labels = grounded_labels(graph)
-    except AdfBddNotFound as e:
-        # The graph itself needs no labeller; labels are an overlay.  But
-        # say loudly why they are missing - there is no fallback labeller.
-        print(f"graph: labels unavailable: {e}")
-        logger.warning("Labels unavailable for the graph view: %s", e)
+    labels = result.labels
+    if result.labels_unavailable:
+        print(f"graph: labels unavailable: {result.labels_unavailable}")
     may_render = getattr(prover, "render_files", True)
     if dot_path:
         if may_render:
@@ -2248,7 +1886,8 @@ def _split_eval_tokens(tokens):
 
 
 def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "grounded") -> None:
-    """CLI: ADF labelling(s) of an argument's debate graph.
+    """CLI: ADF labelling(s) of an argument's debate graph (wrap/service.py,
+    ``label``).
 
     Syntax:
         label ARG [grounded|complete|preferred|stable]
@@ -2256,17 +1895,13 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
     grounded prints the one grounded labelling; the others print every
     labelling of that semantics, numbered.
     """
-    from core.comp.adf_label import labellings
-
-    arg, graph, _term = _compile_argument_graph(prover, name)
-    if graph is None:
-        return
+    service = Service.of(prover)
     try:
-        found = labellings(graph, semantics)
-    except AdfBddNotFound as e:
-        print(f"label: refused: {e}")
-        logger.error("Labelling refused for '%s': %s", name, e)
+        result = service.label(service.target(name), semantics)
+    except AidaError as e:
+        _report(e)
         return
+    graph, found = result.graph, result.labellings
     if not found:
         logger.info("No %s labelling exists for '%s'.", semantics, name)
         return
@@ -2281,18 +1916,13 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
         for (key, side), label in labels.items():
             logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
 
-def _remember_evaluation(prover: ProverWrapper, arg, nf) -> None:
-    """Cache an evaluated normal form on its argument or debate, with the
-    revision it belongs to (an issue has nothing to cache it on)."""
-    if arg is not None:
-        arg.labelled_nf = nf
-        arg.labelled_nf_revision = prover.revision
 
 
 def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptical",
                           base: str = "cbn", semantics: str = "preferred",
                           witness=None, favour: bool = False) -> None:
-    """CLI: label-guided evaluation of an argument's debate term.
+    """CLI: label-guided evaluation of an argument's debate term
+    (wrap/service.py, ``evaluate``).
 
     Syntax:
         evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all] [favour]
@@ -2311,139 +1941,57 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     form (the last one, under `all`) is cached on the argument as
     .labelled_nf.
     """
-    from core.comp.evaluate import evaluate_debate, evaluate_witnesses, EvaluationRefused
-    from core.dc.debate_graph import DebateCompileError, declaration_kinds
-    from core.ac.ast import FirstOrderNotSupported
     from pres.gen import ProofTermGenerationVisitor
     import copy as _copy
 
-    if name == "document":
-        logger.error("evaluate needs an argument or debate name; 'document' has no issue.")
-        return
-    from core.comp.evaluate import evaluate_shared, evaluate_witnesses_shared
-    from core.dc.unfold import unfold_legacy
-
-    arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
-    if term is None and shared is None:
-        return
-    if prover.pipeline_unfolded:
-        shared = None                      # `pipeline unfolded`: the reference path
-    favoured = None
-    if favour:
-        from core.dc.unfold import argument_edge
-        favoured = argument_edge(prover.graph, arg.name) if arg is not None else None
-        if mode != "credulous" or witness is not None or shared is not None or favoured is None:
-            print("evaluate: refused: 'favour' needs credulous mode without a witness number, "
-                  "an argument with its own edge in the document, and the unfolded pipeline.")
-            return
-    common = dict(strict_names=prover.declarations.keys(),
-                  strict_kinds=declaration_kinds(prover.declarations),
-                  base=base, semantics=semantics)
-
-    def run(on_shared, on_term, **options):
-        """Evaluate from the shared debate, one instance of a sub-debate at
-        a time (core/dc/instances.py); should that route ever fail other
-        than by a refusal, say so and evaluate the unfolded term, the
-        reference it is tested against."""
-        nonlocal term
-        if shared is not None:
-            try:
-                return on_shared(shared, name, **options)
-            except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported,
-                    AdfBddNotFound, RecursionError):
-                raise
-            except Exception as e:
-                logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
-                               "evaluating the unfolded term instead.", name, type(e).__name__, e)
-        if term is None:
-            term = unfold_legacy(prover.graph, issue)   # the shared route's reference
-        return on_term(term, name, **options)
-
+    service = Service.of(prover)
     try:
-        if witness == "all":
-            results, _ = run(evaluate_witnesses_shared, evaluate_witnesses, **common)
-            if not results:
-                logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
-                            name, semantics, base)
-                return
-            logger.info("Evaluated '%s' (credulous, %s, base %s) under %d accepting witness(es):",
-                        name, semantics, base, len(results))
-            for number, nf, nf_class, _sigma in results:
-                pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
-                logger.info("  [%d] %s", number, nf_class.upper())
-                logger.info("      normal form: %s", pretty)
-                _remember_evaluation(prover, arg if arg is not None else prover.debates.get(name), nf)
+        result = service.evaluate(service.target(name), mode=mode, semantics=semantics,
+                                  base=base, witness=witness, favour=favour)
+    except AidaError as e:
+        _report(e)
+        return
+    if witness == "all":
+        if not result.results:
+            logger.info("Evaluated '%s' (credulous, %s, base %s): no labelling accepts the issue.",
+                        name, semantics, base)
             return
-        options = dict(mode=mode, witness=witness, **common)
-        if favoured is not None:
-            options["favour"] = favoured
-        nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate, **options)
-        _remember_strict_edges(prover, graph, name)
-    except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
-        print(f"evaluate: refused: {e}")
-        logger.warning("Evaluation refused for '%s': %s", name, e)
+        logger.info("Evaluated '%s' (credulous, %s, base %s) under %d accepting witness(es):",
+                    name, semantics, base, len(result.results))
+        for number, nf, nf_class, _sigma in result.results:
+            pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+            logger.info("  [%d] %s", number, nf_class.upper())
+            logger.info("      normal form: %s", pretty)
         return
-    except RecursionError:
-        # tasks.org, aida-deep-term-recursion: the term walks recurse.
-        print(f"evaluate: refused: the debate about '{name}' is nested too deeply for the "
-              f"evaluator, which follows a chain of sub-debates by recursion.")
-        logger.warning("Evaluation refused for '%s': recursion depth exceeded.", name)
-        return
-    _remember_evaluation(prover, arg if arg is not None else prover.debates.get(name), nf)
-    pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
+    pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(result.normal_form)).pres
     chosen = (f", witness {witness}" if witness is not None else "") + (", favoured" if favour else "")
-    logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
+    logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen,
+                result.nf_class.upper())
     logger.info("  normal form: %s", pretty)
+
 
 def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mode: str = "pt",
                       nl_style: str = "argumentation", which: Optional[str] = None) -> None:
     """CLI: render the acceptance tree (proof terms or NL), coloured by the
     grounded ADF labels of the argument's debate graph, and save it as a
-    file.  If the graph is refused or adf-bdd is missing the tree is
-    written uncoloured with a one-line notice.  ``which`` (TERM_SELECTORS)
-    draws another of the argument's terms than its normal form."""
-    from core.comp.adf_label import grounded_labels
-
-    arg, graph, _term = _compile_argument_graph(prover, name)
-    debate = prover.debates.get(name)
-    if arg is None and debate is None:
-        return
-    if debate is not None and which is None:
-        which = "unfolded"              # a debate has no term of its own to normalise
-    labels = None
-    if graph is not None:
-        try:
-            labels = grounded_labels(graph)
-        except AdfBddNotFound as e:
-            print(f"tree: labels unavailable: {e}")
-            logger.warning("Tree for '%s' drawn without labels: %s", name, e)
-    else:
-        logger.warning("Tree for '%s' drawn without labels: debate graph refused.", name)
-    if which is not None:
-        found = _select_term(prover, name, which)
-        if found is None or isinstance(found[1], str):
-            if found is not None:
-                logger.error("tree: the registered term is text only; choose another term.")
-            return
-        drawn = found[1]
-    else:
-        if arg.normal_body is None:
-            arg.normalize()
-        drawn = arg.normal_body
+    file (wrap/service.py, ``tree``, gives the DOT).  If the graph is
+    refused or adf-bdd is missing the tree is written uncoloured with a
+    one-line notice.  ``which`` (TERM_SELECTORS) draws another of the
+    argument's terms than its normal form."""
+    service = Service.of(prover)
     try:
-        label_mode = "proof" if mode != "nl" else "nl"
-        dot = render_acceptance_tree_dot(
-            drawn,
-            verbose=False,
-            label_mode=label_mode,
-            nl_style=nl_style,
-            declarations=getattr(prover, "declarations", {}),
-            decorations=getattr(prover, "decorations", {}),
-            labels=labels,
-        )
-    except Exception as e:
-        logger.error("Failed to build acceptance tree for '%s': %s", name, e)
+        tree = service.tree(service.target(name), mode=mode, nl_style=nl_style, which=which)
+    except InvalidRequest as e:
+        logger.error("%s", e)
         return
+    except AidaError as e:
+        _report(e)
+        return
+    if tree.graph_refused is not None:
+        _report(tree.graph_refused)
+    if tree.labels_unavailable:
+        print(f"tree: labels unavailable: {tree.labels_unavailable}")
+    dot = tree.dot
     out_base = f"{name}_tree"
     if not getattr(prover, "render_files", True):
         logger.info("File output is off (ACDC_NO_RENDER): not writing %s.%s for '%s'.",

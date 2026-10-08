@@ -19,8 +19,8 @@
 :EFFORT:         40:00
 :DEFERRALS:      0
 :BLOCKED_BY:     id:aida-debate-objects
-:OUTCOME:        A tested Python service layer, served over HTTP, gives a document-based editor (the DUI branch) everything it needs from AIDA on the compiler pipeline only: sessions, documents, debates, graphs, labellings, verdicts and explanations as JSON, errors with source positions.
-:VERIFY:         The DUI editor, rebased on main, runs its flow through the API against a live backend; contract tests (FastAPI TestClient) cover every endpoint; two concurrent sessions do not interfere.
+:OUTCOME:        A tested Python service layer, ready for the DUI side to serve over HTTP, gives a document-based editor (the DUI branch) everything it needs from AIDA on the compiler pipeline only: sessions, documents, debates, graphs, labellings, verdicts and explanations as JSON, errors with source positions.
+:VERIFY:         The integration guide is written and handed over; a reference adapter (or the coworker's server) runs the editor's flow through the service against a live backend; two concurrent sessions do not interfere.
 :END:
 
 Requested by the author 2026-10-08 for a coworker's document UI (branch
@@ -40,7 +40,14 @@ verbs). Plan, each phase opened by a design discussion with the author:
    [[id:aida-transport-limits]]), results at the lines asked for in one
    pass, and the s(CASP) importer returning text in memory with
    provenance.
-6. The HTTP layer, DUI rebased onto main, contract tests.
+6. A handover to the DUI side (re-scoped by the author, 2026-10-08: the
+   HTTP server, its endpoints and the editor are the coworker's): an
+   integration guide - using =Service=, its results and errors, what the
+   editor can colour with, the constraints (one fsp process per session
+   behind its lock, the GIL and worker processes, pty and transport
+   limits), installing fsp and adf-bdd, what his branch uses that is gone -
+   and optionally a minimal reference adapter.  The service API and the
+   versioned JSON formats stay ours.
 
 ** BACKLOG Compile documents incrementally (future work)
 :PROPERTIES:
@@ -113,6 +120,72 @@ Design as built:
   compound operations take the lock in the service layer (Phase 3); what
   stays module-level is pure memoisation; =explain= redirects global
   loggers and is not safe concurrently (CLI-only).
+
+** REVIEW Offer the session's operations as a service that returns results
+:PROPERTIES:
+:ID:             aida-service-layer
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         16:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-sessions-and-documents
+:OUTCOME:        wrap/service.py offers the documents, settings, content and queries of a session as calls that hold its lock, return result objects (graph, labellings, normal form, terms, DOT) with the warnings they logged, and raise AidaError with a stable code and stage; the CLI prints these results with its output unchanged.
+:VERIFY:         tests/test_service.py covers every operation, the error codes, the diagnostics (on results, on errors, per thread) and the lock; the suite, whose CLI transcripts pin the output, passes unchanged.
+:END:
+
+Phase 3 of [[id:aida-dui-api]]. Decisions (author, 2026-10-08):
+- CLI-only: reduce, normalize, render-nf, the projections, expand,
+  tactic, explain.
+- Proofs block-only; live proving is [[id:aida-live-proving]].
+- The service sits under the existing dispatchers, whose line parsing
+  stays until Phase 5.
+- The per-command report of a loaded document waits for Phase 5.
+- The service lives in wrap/service.py.
+
+As built:
+- =Service.of(session)=: one per session.
+- =Target= (argument, debate, issue, document) with =target(text)= for
+  the CLI forms.
+- Errors: =AidaError= (=code=, =stage=, =cause=, =diagnostics=) with
+  NotFound, InvalidRequest, Refused (LogicRefused, UnfoldRefused,
+  TypeCheckRefused, CompileRefused, EvaluationFailed, TooDeep,
+  ContentRefused) and LabellerMissing.
+- Results are dataclasses carrying the domain objects.
+- A thread-filtered handler collects WARNING+ records per call.
+- The CLI's query commands (graph, label, evaluate, render/unfold/term,
+  share, tree, adopt, the settings, register) and the dispatchers'
+  content branches (new document, statements, finishing a recording,
+  debates) call the service. A refusal prints as before (=STAGE:
+  refused: MESSAGE=), or re-raises the original error where the
+  dispatchers expect it.
+- =decorate= and raw Fellowship commands stay direct in the CLI: one-line
+  passthroughs that the test fakes also take.
+
+** BACKLOG Prove step by step through the service, with goal feedback
+:PROPERTIES:
+:ID:             aida-live-proving
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q3
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A client can open a proof, send one instruction at a time and read the open goals after each, then finish or abandon it - what the interactive CLI does with _live_step - through the service.
+:VERIFY:         A service test opens a proof, steps through a fixture's instructions reading the goals, and finishes it with the same registered argument as the block call; abandoning restores the name.
+:END:
+
+Recorded 2026-10-08 ([[id:aida-service-layer]]): Phase 3 offers proofs as
+whole blocks only. Stepping is a stateful protocol on Fellowship's open
+proof (one per session), so it needs its own design: what a client
+holds, how it is abandoned, and the lock held across calls.
 
 ** BACKLOG Specify the JSON format for explanation terms
 :PROPERTIES:
@@ -2713,6 +2786,15 @@ On the strict phase (=core/dc/strict.py=):
 8. =strict_in_debate= still accepts =catchers_ids= / =catchers_dis= and
    ignores them. Decide whether to drop the parameters or keep them for
    the abort-propagation work.
+
+Prepared for review 2026-10-08: minicourse-evaluation.org, lesson 13b,
+takes the eight points one by one, each with a run of today's code and
+the question to decide (pinned by tests/minicourse/test_review_course.py).
+Preparing it turned up two things worth a look: under point 2, an argument
+whose sources are OUT still makes its side count as derived, which turns
+1a's defeat into a stalemate; and under point 4, the committed
+tests/multiple_undercuts.fspy is not the presumed graph the change was
+made on (only the hand-built test is).
 
 Reading order: call-by-onus.org "The strict phase: what 'strict in the
 debate' means" for the definition and the fixture table; the two DONE

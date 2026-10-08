@@ -427,6 +427,22 @@ declarations, names, arguments, document graph, debates and caches.
 - Debates are classical: in an `lj` or a `minimal` document the debate
   commands are refused.
 
+### The service layer
+
+`wrap/service.py` is what a program (the coming HTTP API for the document
+UI, a notebook, a test) calls instead of the CLI. `Service.of(session)`
+offers the documents (`new_document`, `load`, `inventory`), the settings,
+the content (`command`, `register`, `record_argument`, `state`, `prove`,
+`adopt`, `decorate`, `start_debate` / `move` / `close_debate`) and the
+queries (`graph`, `label`, `evaluate`, `term`, `render`, `unfold`, `share`,
+`tree`, which gives DOT text and writes no file). Each call holds the
+session's lock, returns a result object - the graph, the labellings, the
+normal form with its class and witness labelling - and carries the
+warnings it logged as `diagnostics`; a refusal raises an `AidaError` with a
+stable `code` and the stage that refused. The CLI prints these results.
+The deprecated term-level commands, `tactic` and `explain` stay CLI-only,
+and proofs are recorded as whole blocks.
+
 ## Interactive commands
 
 Interactive mode accepts:

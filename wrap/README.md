@@ -15,6 +15,10 @@ Files
   - Document: everything a new document replaces - logic, declarations,
     decorations, names, arguments, the document graph, debates, caches.
     Nothing module-global: two sessions never share one.
+- service.py
+  - Service: the session's operations as calls that return result objects
+    and raise AidaError (code, stage, diagnostics); the CLI is a printer over
+    it. Every call holds the session lock and collects its own warnings.
 - cli.py
   - CLI/task helpers: setup_prover(), execute_script(), interactive_mode(), plus the command helpers (record, register, render, reduce, tree, graph, label, evaluate, explain, debates).
 
