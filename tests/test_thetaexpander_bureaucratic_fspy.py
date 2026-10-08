@@ -7,7 +7,7 @@ SCRIPT = Path(__file__).with_name("thetaexpander_bureaucratic_cases.fspy")
 
 
 def _run_thetaexpander_cases(prover):
-    execute_script(prover, str(SCRIPT))
+    execute_script(prover, str(SCRIPT), isolate=False)
     return {name: prover.get_argument(name) for name in [
         "atomic_term",
         "atomic_context",

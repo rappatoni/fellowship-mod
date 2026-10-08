@@ -2,12 +2,19 @@
 
 Files
 - prover.py
-  - ProverWrapper: manages a Fellowship process (pexpect).
-  - send_command(), machine payload parsing; per-session declarations; global arguments store via mod.store.
+  - ProverWrapper, the session: one Fellowship process (pexpect), its settings
+    and a re-entrant lock every send holds; it holds one document at a time
+    (`doc`) and `new_document()` replaces it.
+  - send_command(), machine payload parsing; the logic toggles, valid at the
+    head of a document only.
   - Exceptions: ProverError, MachinePayloadError.
   - Env: FSP_MACHINE=1 enables machine mode; FSP_ECHO_NOTES toggles note logging;
     ACDC_NO_RENDER=1 stops `graph ... show` and `tree` writing image/DOT files
     (ACDC_NO_OPEN=1 only stops the viewer).
+- document.py
+  - Document: everything a new document replaces - logic, declarations,
+    decorations, names, arguments, the document graph, debates, caches.
+    Nothing module-global: two sessions never share one.
 - cli.py
   - CLI/task helpers: setup_prover(), execute_script(), interactive_mode(), plus the command helpers (record, register, render, reduce, tree, graph, label, evaluate, explain, debates).
 

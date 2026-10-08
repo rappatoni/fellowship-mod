@@ -84,7 +84,7 @@ def _unfold_trace(prover, name, caplog):
     from core.dc.unfold import argument_edge, unfold_argument
     caplog.clear()
     with caplog.at_level(logging.DEBUG, logger="core.dc.unfold"):
-        term = unfold_argument(prover.document, argument_edge(prover.document, name))
+        term = unfold_argument(prover.graph, argument_edge(prover.graph, name))
     lines = [r.getMessage().strip() for r in caplog.records
              if r.name == "core.dc.unfold" and r.levelno == logging.DEBUG]
     skip = ("unfold: argument ", "unfold: the debate term")
@@ -95,7 +95,7 @@ class TestLesson8aUnfold:
     def test_document_graph(self):
         prover, _ = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
         try:
-            g = prover.document
+            g = prover.graph
             show = lambda k, s: f"{g.nodes.get(k, k)}[{s[0]}]"
             assert [(e.name, show(e.target_key, e.target_side), e.strict,
                      [(show(s.key, s.side), s.kind) for s in e.sources]) for e in g.edges] == [
@@ -117,8 +117,8 @@ class TestLesson8aUnfold:
         prover, term = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
         try:
             assert "attackrule" not in pres_str(term) and "D" not in pres_str(term)
-            assert (prover.document.nodes and
-                    ("B(S:A,->,S:B)", "term") not in set(prover.document.statements()))
+            assert (prover.graph.nodes and
+                    ("B(S:A,->,S:B)", "term") not in set(prover.graph.statements()))
         finally:
             prover.close()
 
@@ -174,7 +174,7 @@ class TestLesson8aUnfold:
             ]
             assert pres_str(term) == SELF_ATTACK_UNFOLDED
             # the lambda's own edge is in the document but never a scion
-            assert [e.name for e in prover.document.edges] == ["SelfAttack.λ1", "SelfAttack"]
+            assert [e.name for e in prover.graph.edges] == ["SelfAttack.λ1", "SelfAttack"]
         finally:
             prover.close()
 

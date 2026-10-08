@@ -7,6 +7,7 @@ import pytest
 
 from wrap.cli import setup_prover, execute_script
 from core.dc.argument import Argument
+from wrap.prover import ProverError
 from core.dc.debate_graph import canonical_prop, compile_debate, declaration_kinds
 from core.dc.unfold import unfold
 from core.dc.typecheck import typecheck
@@ -24,7 +25,7 @@ def prover():
 
 def issue_graph(prover, name):
     arg = prover.get_argument(name)
-    term = unfold(prover.document, prover.issue_of(arg))
+    term = unfold(prover.graph, prover.issue_of(arg))
     typecheck(prover, term, name, arg.conclusion, arg.is_anti)     # the type oracle
     return compile_debate(term, name, strict_names=prover.declarations.keys(),
                           strict_kinds=declaration_kinds(prover.declarations))
@@ -35,7 +36,7 @@ def test_attack_registered_elsewhere_counts(prover):
         warnings.simplefilter("ignore")
         execute_script(prover, "tests/rationality/document_attack.fspy",
                        strict=True, stop_on_error=True, isolate=False)
-    doc = prover.document
+    doc = prover.graph
     assert {e.name for e in doc.edges} == {"pArg"}
     assert doc.defaults[(K("Q"), "context")] == {"presumption"}      # qAtt's presumption, no verb
     labels = grounded_labels(issue_graph(prover, "pArg"))
@@ -47,7 +48,6 @@ def test_a_verb_refuses_a_target_without_the_node(prover):
     # nothing to the document (tests/test_debates.py).
     from core.dc.debate import DebateError
     from wrap.cli import debate_line
-    prover.send_command("lk.")
     prover.send_command("declare P,Q,R:bool.")
     prover.send_command("declare pRule : (Q->P).")
     pArg = Argument(prover, "pArg", "P", ["cut (Q->P) rule", "axiom pRule", "elim", "by default", "next", "axiom rule"])
@@ -64,20 +64,29 @@ def test_a_verb_refuses_a_target_without_the_node(prover):
     assert debate_line(prover, "rArg pArg.")            # no verb: a non sequitur is allowed
 
 
-def test_logic_mode_is_tracked(prover):
-    assert prover.logic == "lk"
-    prover.send_command("lj.")
+def test_logic_is_chosen_when_a_document_starts(prover):
+    # A session starts with a classical document; `new document` chooses
+    # the logic, and a toggle at the head of the document may change it.
+    assert (prover.logic, prover.minimal) == ("lk", False)
+    prover.new_document("lj")
     assert prover.logic == "lj"
-    prover.send_command("lk.")
+    prover.send_command("lk.")                       # still at the head
     assert prover.logic == "lk"
+
+
+def test_a_logic_change_after_the_head_is_refused(prover):
+    prover.send_command("declare P:bool.")
+    with pytest.raises(ProverError, match="logic is chosen when a document starts"):
+        prover.send_command("lj.")
+    assert prover.logic == "lk" and "P" in prover.declarations
+    prover.send_command("lk.")                       # the logic in force: a no-op
 
 
 def test_debate_commands_are_refused_in_lj(prover):
     from wrap.cli import _issue_term
-    prover.send_command("lj.")
+    prover.new_document("lj")
     prover.send_command("declare P:bool.")
     pArg = Argument(prover, "pArg", "P", ["by default"])
     pArg.execute(); prover.register_argument(pArg)
     arg, issue, term = _issue_term(prover, "pArg")
     assert term is None                      # debates are classical
-    prover.send_command("lk.")

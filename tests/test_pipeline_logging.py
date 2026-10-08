@@ -31,9 +31,6 @@ def fresh():
     a half-built document.  One launch per test is the price of replaying
     a fixture faithfully.
     """
-    from mod import store
-    store.arguments.clear()
-    store.document.clear()
     pw = setup_prover()
     yield pw
     pw.close()
@@ -43,7 +40,7 @@ def evaluate_fixture(prover, script, name, **kwargs):
     """Replay a fixture and evaluate one of its arguments."""
     execute_script(prover, script, strict=False, stop_on_error=False, isolate=False)
     sn, sk = prover.declarations.keys(), declaration_kinds(prover.declarations)
-    term = unfold(prover.document, prover.issue_of(prover.get_argument(name)))
+    term = unfold(prover.graph, prover.issue_of(prover.get_argument(name)))
     return evaluate_debate(term, name, strict_names=sn, strict_kinds=sk, **kwargs)
 
 

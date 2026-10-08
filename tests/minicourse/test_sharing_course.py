@@ -24,7 +24,6 @@ from core.dc.typecheck import shape, typecheck, typecheck_shared, TypeCheckFaile
 # The shared route keeps the legacy shape until aida-shared-route-stack-shape,
 # so its reference is the legacy unfolding.
 from core.dc.unfold import unfold_legacy as unfold
-from mod import store
 from pres.gen import pres_str
 from wrap.cli import execute_script, setup_prover
 
@@ -68,8 +67,6 @@ DEF17_A0 = (
 
 @pytest.fixture
 def fresh():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     yield prover
     prover.close()
@@ -89,7 +86,7 @@ def load(prover, lesson, prop):
     """(document, issue, strict names, kinds, shared form) for a lesson's fixture."""
     run(prover, HERE / lesson)
     issue = (K(prop), "term")
-    return (prover.document, issue, set(prover.declarations.keys()),
+    return (prover.graph, issue, set(prover.declarations.keys()),
             declaration_kinds(prover.declarations), prover.shared_debate(issue))
 
 
@@ -246,7 +243,7 @@ class TestLesson16TypeCheck:
     def test_two_spellings_fall_back_to_the_expanded_term(self, fresh):
         out = run(fresh, HERE / "lesson16_spelling.fspy")
         assert "graph: refused: Fellowship rejected the unfolded term for 'p'" in out
-        doc = fresh.document
+        doc = fresh.graph
         issue = (K("P"), "term")
         shared = fresh.shared_debate(issue)
         assert list(shared.spelling_clashes()) == ["Q->false"]

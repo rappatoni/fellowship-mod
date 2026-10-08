@@ -4,7 +4,6 @@ import pytest
 import os
 import importlib.util, sys
 import logging
-from mod import store
 
 
 from wrap.cli import (
@@ -158,8 +157,11 @@ def pytest_report_header(config):
     return f"TODO: {PYTEST_TODO}"
 
 @pytest.fixture(autouse=True)
-def reset_global_store():
-    # Keep declarations session-scoped (per ProverWrapper instance).
-    # Arguments are global via mod.store; clear between tests to avoid bleed-through.
-    store.arguments.clear()
-    store.document.clear()
+def fresh_document(request):
+    """Every test that uses the session-wide `prover` starts on a fresh
+    document (wrap/document.py): nothing a test registers or declares leaks
+    into the next.  Tests with a prover of their own are fresh anyway."""
+    defs = request.node._fixtureinfo.name2fixturedefs.get("prover")
+    if defs and defs[-1].scope == "session":       # not a module's own `prover`
+        request.getfixturevalue("prover").new_document()
+    yield

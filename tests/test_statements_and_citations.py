@@ -20,7 +20,6 @@ from core.dc.cite import (
 )
 from core.dc.unfold import unfold
 from core.ac.ast import Mu, ID, DI, Deleg
-from mod import store
 from wrap.cli import execute_script, setup_prover, register_argument_cmd
 from wrap.prover import NameClash
 
@@ -31,8 +30,6 @@ FIXTURE = "tests/statements_and_citations.fspy"
 def fresh():
     """A prover of the test's own: the fixtures here declare overlapping
     names, and names are unique per document."""
-    store.arguments.clear()
-    store.document.clear()
     pw = setup_prover()
     yield pw
     pw.close()
@@ -66,15 +63,15 @@ class TestStatements:
         assert down.citable                                  # Fellowship holds it
         assert "metro_down" in fresh.declarations
         assert not contains(down.body, lambda n: isinstance(n, Goal))
-        assert any(e.name == "metro_down" and e.strict for e in fresh.document.edges)
+        assert any(e.name == "metro_down" and e.strict for e in fresh.graph.edges)
 
     def test_an_unproved_statement_is_the_enthymeme(self, fresh, tmp_path):
         run(fresh, HEADER + "theorem foo : (B).\n", tmp_path)
         foo = fresh.get_argument("foo")
         assert isinstance(foo.body, Mu) and isinstance(foo.body.term, Goal)
         assert not foo.citable and "foo" not in fresh.declarations
-        key = next(k for k, v in fresh.document.nodes.items() if v == "B")
-        assert "obligation" in fresh.document.defaults[(key, "term")]
+        key = next(k for k, v in fresh.graph.nodes.items() if v == "B")
+        assert "obligation" in fresh.graph.defaults[(key, "term")]
         assert fresh.names["foo"] == "statement"
 
     def test_qed_on_an_open_witness_is_refused_and_the_claim_stays(self, fresh):
@@ -148,7 +145,7 @@ class TestCitation:
 
     def test_the_citing_edge_has_an_obligation_the_cited_edge_meets(self, fresh):
         execute_script(fresh, FIXTURE, strict=False, stop_on_error=False, isolate=False)
-        g = fresh.document
+        g = fresh.graph
         edge = next(e for e in g.edges if e.name == "use")
         assert [(g.nodes[s.key], s.kind) for s in edge.sources] == [("EfficientMetro", "obligation")]
         term = unfold(g, fresh.issue_of(fresh.get_argument("use")))
@@ -242,10 +239,17 @@ class TestNames:
         with pytest.raises(NameClash, match="reserves"):
             fresh.claim_name("typecheck_mine", "argument")
 
-    def test_lk_starts_a_new_namespace(self, fresh, tmp_path):
+    def test_a_new_document_starts_a_new_namespace(self, fresh, tmp_path):
         run(fresh, HEADER + "start argument z A\nby default.\nend argument\n", tmp_path)
-        run(fresh, HEADER + "start argument z B\nby default.\nend argument\n", tmp_path, "second.fspy")
+        run(fresh, "new document.\n" + HEADER + "start argument z B\nby default.\nend argument\n",
+            tmp_path, "second.fspy")
         assert fresh.get_argument("z").conclusion == "B"
+
+    def test_lk_does_not_start_a_new_namespace(self, fresh, tmp_path):
+        # `lk.` only chooses the logic (a no-op in a classical document)
+        run(fresh, HEADER + "start argument z A\nby default.\nend argument\n", tmp_path)
+        run(fresh, "lk.\nstart argument z B\nby default.\nend argument\n", tmp_path, "second.fspy")
+        assert fresh.get_argument("z").conclusion == "A"
 
 
 class TestAdopt:
@@ -259,7 +263,7 @@ class TestAdopt:
 
     def test_a_query_does_not_register_the_edge(self, fresh, tmp_path):
         self.peirce(fresh, tmp_path)
-        assert "s1*" in store.document["strict_edges"]
+        assert "s1*" in fresh.doc.strict_edges
         assert fresh.get_argument("peirce") is None
 
     def test_adopt_makes_the_thesis_citable(self, fresh, tmp_path):
@@ -283,7 +287,7 @@ class TestRefinement:
                    "refine y\naxiom ax.\nend argument\n", tmp_path)
         y = fresh.get_argument("y")
         assert y.citable
-        g = fresh.document
+        g = fresh.graph
         key = next(k for k, v in g.nodes.items() if v == "A")
         assert "presumption" not in g.defaults.get((key, "term"), set())   # the old marker is gone
         assert any(e.name == "y" and e.strict for e in g.edges)

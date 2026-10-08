@@ -1,10 +1,10 @@
-import os, re, logging, warnings
+import os, re, logging, threading, warnings
 from typing import Any, List, Tuple, Optional, Dict, Callable
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
 from core.ac.signature import Declaration
-from mod import store
+from wrap.document import Document
 from core.dc.debate_graph import (
     DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
     SYNTHETIC_PREFIX,
@@ -48,6 +48,16 @@ _REFINABLE = {"recording", "statement"}
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 
+#: Fellowship's logic toggles: valid only before a document's first
+#: instruction.
+LOGIC_TOGGLES = ("lk", "lj", "minimal", "full")
+_LOGIC_REPLY = re.compile(r"Current logic:\s*(minimal\s+)?\s*(intuitionistic|classic)")
+_TOO_LATE = "Only the first instructions can be used to specify a logical setting"
+
+
+def _env_flag(name: str, default: str, true_values=("1", "true", "yes", "on")) -> bool:
+    return os.getenv(name, default).strip().lower() in true_values
+
 class ProverWrapper:
     """
     The main class for the argumentation layer on top of the Fellowship prover. Includes utilities to execute an instance of the fellowship prover (self.prover, self.prover.expect), send commands to it and receive and process its output (send_command, self._sexp). Maintains a state in the form of Dicts of registered constant declarations and arguments (self.declarations, self.arguments) and parsed prover ouput (self.last_state). Allows for the registration and execution of custom tactics (self.custom_tactics).
@@ -73,19 +83,80 @@ TODO: Mechanism to declare a scenario of default assumptions.
         self.custom_tactics : Dict[str, Any] = {} # Tactics registered with register_custom_tactic; none are bundled.
         self.last_state: Any = None
         self._sexp = SexpParser()
+        #: One Fellowship process answers one command at a time.  Every send
+        #: holds the lock; a compound operation (a replay, a new document, a
+        #: service call) holds it around all its sends - it is re-entrant.
+        self.lock = threading.RLock()
+        # Session settings: read from the environment once, here, and kept
+        # across documents.
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
         # Whether `graph ... show` and `tree` may write image/DOT files and open
         # a viewer.  ACDC_NO_RENDER=1 turns both off for a whole session (test
         # runs, headless CI); ACDC_NO_OPEN is the narrower "write but do not
         # open".  execute_script can override it per script.
         self.render_files = os.getenv("ACDC_NO_RENDER", "").lower() in {"", "0", "false", "no"}
-        self.declarations: Dict[str, Declaration] = {}
-        self.decorations: Dict[str, str] = {}
- 
+        #: Whether unfolded terms are replayed through Fellowship before use
+        #: (default on; FSP_TYPECHECK=0 or `typecheck off` disables).
+        self.typecheck_enabled = os.getenv("FSP_TYPECHECK", "1") != "0"
+        #: Whether the type check replays the whole unfolded term instead of
+        #: one definition at a time (FSP_TYPECHECK=expanded or `typecheck
+        #: expanded`).  The expanded replay is the older, exponentially larger
+        #: check, kept as the reference the per-definition check is tested
+        #: against (core/dc/typecheck.py).
+        self.typecheck_expanded = os.getenv("FSP_TYPECHECK", "1") == "expanded"
+        #: Whether graph, label and evaluate work on the term unfolded from
+        #: the document graph instead of on the shared debate.  Default on
+        #: since 2026-10-06: only the unfolded route builds the stacked shape
+        #: and the argument entrypoints (aida-unfold-entrypoints).
+        #: FSP_PIPELINE=shared or `pipeline shared` selects the shared route.
+        self.pipeline_unfolded = os.getenv("FSP_PIPELINE", "unfolded") == "unfolded"
+        #: The current document (wrap/document.py).  Fellowship starts in a
+        #: fresh theory; ``new_document`` sets its logic (setup_prover).
+        self.doc = Document()
+
+    # -- the document --------------------------------------------------------
 
     @property
     def arguments(self) -> Dict[str, Any]:
-        return store.arguments
+        return self.doc.arguments
+
+    @property
+    def declarations(self) -> Dict[str, Declaration]:
+        return self.doc.declarations
+
+    @property
+    def decorations(self) -> Dict[str, str]:
+        return self.doc.decorations
+
+    def new_document(self, logic: str = "lk", minimal: bool = False) -> Document:
+        """Start a new document: reset Fellowship (``discard all.``), set the
+        logic - both flags, since Fellowship keeps them across the reset -
+        and replace the document.  Session settings survive.  Raises
+        ProverError if Fellowship does not confirm the logic."""
+        with self.lock:
+            old = self.doc
+            if old.recording_debate is not None:
+                logger.warning("Debate '%s' was still being recorded; the new document "
+                               "discards it.", old.recording_debate)
+            # The new document is installed first, at its head, so that the
+            # toggles below pass the head check and set its logic.
+            self.doc = Document(logic, minimal, revision=old.revision + 1)
+            # Fellowship's own notes ("Prover reset.", "Current logic: ...")
+            # would repeat what the caller reports once.
+            echo, self.echo_notes = self.echo_notes, False
+            try:
+                self.send_command("discard all.")
+                self.doc.head = True
+                self.send_command("minimal." if minimal else "full.")
+                self.send_command(f"{logic}.")
+            finally:
+                self.echo_notes = echo
+            if (self.doc.logic, self.doc.minimal) != (logic, minimal):
+                raise ProverError(
+                    f"Fellowship did not switch to {Document(logic, minimal).logic_name}; "
+                    f"it reports {self.doc.logic_name}.")
+            logger.debug("New document (%s).", self.doc.logic_name)
+            return self.doc
 
     @staticmethod
     def _unquote(atom: Any) -> Any:
@@ -93,27 +164,58 @@ TODO: Mechanism to declare a scenario of default assumptions.
             return atom[1:-1]
         return atom
 
-    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False, keep_document: bool = False) -> Dict[str, Any]:
+    def send_command(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
         """Send a single command to Fellowship.
 
         command -- The command string
         silent -- A flag determining verbosity (off if 1). TODO: Replace by dedicated logger.
 
         Returns a preparsed (sexp) proof state.
+
+        A logic toggle (``lk.``, ``lj.``, ``minimal.``, ``full.``) is valid
+        only at the head of a document: later it raises ProverError, as
+        Fellowship would refuse it; at the head the document records the
+        logic Fellowship reports.  Any other command ends the head.
         """
-        stripped = command.strip().rstrip(".").strip()
-        if stripped in ("lj", "lk") and not keep_document:
-            # Fellowship starts a new theory here; so does the document
-            # (the type-check switch is a session setting and survives).
-            kept = {key: store.document[key]
-                    for key in ("typecheck", "typecheck_expanded", "pipeline_unfolded")
-                    if key in store.document}
-            revision = store.document.get("revision", 0)
-            store.document.clear()
-            store.document["logic"] = stripped
-            store.document.update(kept)
-            # monotonic, so that no term cached before the switch looks fresh
-            store.document["revision"] = revision + 1
+        word = command.strip().rstrip(".").strip()
+        with self.lock:
+            if word in LOGIC_TOGGLES:
+                return self._toggle_logic(command, silent=silent, include_ui=include_ui)
+            if not word.startswith("machine ") and word != "discard all":
+                self.doc.head = False
+            return self._send(command, silent=silent, include_ui=include_ui,
+                              allow_incomplete=allow_incomplete)
+
+    def _toggle_logic(self, command: str, *, silent: int = 1, include_ui: bool = False) -> Dict[str, Any]:
+        word = command.strip().rstrip(".").strip()
+        if not self.doc.head:
+            # Past the head only a change is refused: asking for the logic
+            # in force (a script's `lk.` loaded into a classical document)
+            # is a no-op, and Fellowship is not asked.
+            unchanged = {"lk": self.doc.logic == "lk", "lj": self.doc.logic == "lj",
+                         "minimal": self.doc.minimal, "full": not self.doc.minimal}[word]
+            if unchanged:
+                logger.debug("'%s': the document is already %s; nothing to switch.",
+                             command.strip(), self.doc.logic_name)
+                return dict(self.last_state or {})
+            raise ProverError(
+                f"'{command.strip()}': the logic is chosen when a document starts "
+                f"(`new document [minimal] lk|lj.`); this document is {self.doc.logic_name}.")
+        state = self._send(command, silent=silent, include_ui=True)
+        reply = state.get("_ui", "")
+        if _TOO_LATE in reply:
+            self.doc.head = False
+            raise ProverError(f"'{command.strip()}': Fellowship refuses it - {_TOO_LATE.lower()}.")
+        match = _LOGIC_REPLY.search(reply)
+        if match is None:
+            raise ProverError(f"'{command.strip()}': Fellowship did not report the logic: {reply!r}")
+        self.doc.minimal = bool(match.group(1))
+        self.doc.logic = "lj" if match.group(2) == "intuitionistic" else "lk"
+        if not include_ui:
+            state.pop("_ui", None)
+        return state
+
+    def _send(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
@@ -156,6 +258,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if not cleaned:
             raise ValueError("send_commands requires at least one command")
 
+        if any(c.rstrip(".").strip() in LOGIC_TOGGLES for c in cleaned):
+            raise ProverError("a logic toggle cannot be batched; send it on its own")
+        with self.lock:
+            self.doc.head = False
+            return self._send_batch(cleaned, silent=silent, include_ui=include_ui)
+
+    def _send_batch(self, cleaned: List[str], *, silent: int = 1, include_ui: bool = False) -> Dict[str, Any]:
         block = "\n".join(cleaned)
         logger.log(5, ">> batch(%d)\n%s", len(cleaned), block)
         outputs: List[str] = []
@@ -197,21 +306,22 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if not cleaned:
             raise ValueError("send_commands_quiet_final requires at least one command")
 
-        try:
-            self.send_command("machine quiet on.", silent=silent)
-        except ProverError as e:
-            logger.debug("Quiet replay unavailable; falling back to normal batch replay: %s", e)
-            return self.send_commands(cleaned, silent=silent)
-        try:
-            for cmd in cleaned:
-                self.send_command(cmd, silent=silent)
-        except Exception:
+        with self.lock:
             try:
-                self.send_command("machine quiet off.", silent=silent)
+                self.send_command("machine quiet on.", silent=silent)
+            except ProverError as e:
+                logger.debug("Quiet replay unavailable; falling back to normal batch replay: %s", e)
+                return self.send_commands(cleaned, silent=silent)
+            try:
+                for cmd in cleaned:
+                    self.send_command(cmd, silent=silent)
             except Exception:
-                pass
-            raise
-        return self.send_command("machine quiet off.", silent=silent)
+                try:
+                    self.send_command("machine quiet off.", silent=silent)
+                except Exception:
+                    pass
+                raise
+            return self.send_command("machine quiet off.", silent=silent)
 
     def _finalize_state_from_output(
         self,
@@ -518,10 +628,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @property
     def names(self) -> Dict[str, str]:
         """Every name taken in this document, with what took it:
-        "declaration", "statement", "recording" or "argument".  Scoped like
-        the document itself: `lk.`/`lj.` start a new theory in Fellowship
-        and a new, empty table here."""
-        return store.document.setdefault("names", {})
+        "declaration", "statement", "recording", "argument" or "debate".
+        Scoped like the document itself: `new document` starts a new,
+        empty table."""
+        return self.doc.names
 
     def claim_name(self, name: str, kind: str, *, refine: bool = False, dry_run: bool = False) -> None:
         """Take ``name`` for ``kind`` or raise NameClash.
@@ -540,7 +650,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if held is not None and not (refine and held in _REFINABLE):
             raise NameClash(
                 f"'{name}' is already a {held} in this document; names are unique "
-                f"per document (lk. or lj. starts a new one)."
+                f"per document (`new document` starts a new one)."
             )
         if not dry_run:
             self.names[name] = kind
@@ -582,68 +692,34 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """Recompile the document graph from the atomic arguments, in
         registration order.  Needed after a replacement: merging cannot take
         an old edge back out, and default markers are not tracked per edge."""
-        store.document["graph"] = DebateGraph()
+        self.doc.graph = DebateGraph()
         for argument in self.arguments.values():
             if not getattr(argument, "composed", False):
                 self.document_add(argument)
         self.bump_revision()
-        logger.debug("Document graph rebuilt: %d edge(s)", len(self.document.edges))
+        logger.debug("Document graph rebuilt: %d edge(s)", len(self.graph.edges))
 
     # -- the document graph (Phase C) --------------------------------------
 
     @property
-    def document(self) -> DebateGraph:
-        return store.document.setdefault("graph", DebateGraph())
-
-    @property
-    def typecheck_enabled(self) -> bool:
-        """Whether unfolded terms are replayed through Fellowship before
-        use (default on; FSP_TYPECHECK=0 or `typecheck off` disables)."""
-        return store.document.get("typecheck", os.getenv("FSP_TYPECHECK", "1") != "0")
-
-    @typecheck_enabled.setter
-    def typecheck_enabled(self, value: bool) -> None:
-        store.document["typecheck"] = bool(value)
-
-    @property
-    def typecheck_expanded(self) -> bool:
-        """Whether the type check replays the whole unfolded term instead of
-        one definition at a time (default off; FSP_TYPECHECK=expanded or
-        `typecheck expanded` selects it).  The expanded replay is the older,
-        exponentially larger check; it is kept as the reference the
-        per-definition check is tested against (core/dc/typecheck.py)."""
-        return store.document.get("typecheck_expanded",
-                                  os.getenv("FSP_TYPECHECK", "1") == "expanded")
-
-    @typecheck_expanded.setter
-    def typecheck_expanded(self, value: bool) -> None:
-        store.document["typecheck_expanded"] = bool(value)
-
-    @property
-    def pipeline_unfolded(self) -> bool:
-        """Whether graph, label and evaluate work on the term unfolded from
-        the document graph - whose cost grows with the number of paths
-        through the graph - instead of on the shared debate.  Default ON
-        since 2026-10-06: only the unfolded route builds the stacked shape
-        and the argument entrypoints (aida-unfold-entrypoints); the shared
-        route keeps the legacy shape until aida-shared-route-stack-shape.
-        FSP_PIPELINE=shared or `pipeline shared` selects the shared route."""
-        return store.document.get("pipeline_unfolded",
-                                  os.getenv("FSP_PIPELINE", "unfolded") == "unfolded")
-
-    @pipeline_unfolded.setter
-    def pipeline_unfolded(self, value: bool) -> None:
-        store.document["pipeline_unfolded"] = bool(value)
+    def graph(self) -> DebateGraph:
+        """The document graph."""
+        return self.doc.graph
 
     def typechecked(self) -> dict:
         """The definitions that already replayed in this document, with the
         term Fellowship rebuilt for each (``typecheck_shared``)."""
-        return store.document.setdefault("typechecked", {})
+        return self.doc.typechecked
 
     @property
     def logic(self) -> str:
-        """"lk" (classical, default) or "lj", as last selected by the user."""
-        return store.document.get("logic", "lk")
+        """"lk" (classical, default) or "lj": the document's logic."""
+        return self.doc.logic
+
+    @property
+    def minimal(self) -> bool:
+        """Whether the document's logic is minimal (no ex falso)."""
+        return self.doc.minimal
 
     def document_add(self, argument: Any) -> None:
         """Compile an argument into hyperedges and merge them into the
@@ -652,7 +728,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         graph = self._compile_argument(argument, "the document graph")
         if graph is None:
             return
-        self.document.merge(graph)
+        self.graph.merge(graph)
         logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
 
     def _compile_argument(self, argument: Any, into: str):
@@ -677,17 +753,17 @@ TODO: Mechanism to declare a scenario of default assumptions.
     def debates(self) -> Dict[str, Any]:
         """The recorded debates by name.  They share the document's
         namespace but not its graph: a debate adds no edge."""
-        return store.document.setdefault("debates", {})
+        return self.doc.debates
 
     @property
     def recording_debate(self) -> Optional[str]:
         """The name of the debate being recorded (between its header and
         ``hora est.``), or None."""
-        return store.document.get("debate_recording")
+        return self.doc.recording_debate
 
     @recording_debate.setter
     def recording_debate(self, name: Optional[str]) -> None:
-        store.document["debate_recording"] = name
+        self.doc.recording_debate = name
 
     def register_debate(self, debate: Any) -> None:
         self.claim_name(debate.name, "debate")
@@ -698,7 +774,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         or the arguments of its closed scope compiled on their own, so
         that what is presumed is what the scope presumes."""
         if debate.scope == "open":
-            return self.document
+            return self.graph
         from core.dc.cite import cited_names
         from core.dc.debate import scope_names
 
@@ -737,7 +813,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """The ``anon_k`` name of a statement's debate, allocated on first
         use and kept with the document so the numbers do not shift between
         commands (tasks.org, aida-shared-subarguments, decision 6)."""
-        table = store.document.setdefault("anon", {})
+        table = self.doc.anon
         if statement not in table:
             table[statement] = f"{ANON_PREFIX}{len(table) + 1}"
         return table[statement]
@@ -766,10 +842,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
         a term unfolded or evaluated at an older revision may be stale - a
         new argument can support or attack, a new declaration can make a
         presumption strict or refuted."""
-        return store.document.get("revision", 0)
+        return self.doc.revision
 
     def bump_revision(self) -> None:
-        store.document["revision"] = self.revision + 1
+        self.doc.revision += 1
 
     def unfolded_term(self, argument: Any):
         """The debate term unfolded for ``argument`` (biased towards it), from
@@ -781,10 +857,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 and argument.unfolded_revision == self.revision):
             return report_cached(argument.unfolded_body,
                                  f"the term unfolded for '{argument.name}'", self.revision)
-        edge = argument_edge(self.document, argument.name)
+        edge = argument_edge(self.graph, argument.name)
         if edge is None:
             return None
-        argument.unfolded_body = unfold_argument(self.document, edge)
+        argument.unfolded_body = unfold_argument(self.graph, edge)
         argument.unfolded_revision = self.revision
         return argument.unfolded_body
 
@@ -792,17 +868,17 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """The canonical debate term of ``statement`` (an issue entrypoint),
         cached per revision."""
         from core.dc.unfold import unfold, report_cached
-        cache = store.document.setdefault("issue_terms", {})
+        cache = self.doc.issue_terms
         found = cache.get(statement)
         if found is not None and found[0] == self.revision:
             return report_cached(found[1], "the issue's canonical term", self.revision)
-        term = unfold(self.document, statement)
+        term = unfold(self.graph, statement)
         cache[statement] = (self.revision, term)
         return term
 
     def shared_debate(self, issue) -> SharedDebate:
         """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
-        return share(self.document, issue, self.debate_names(), self.anon_name)
+        return share(self.graph, issue, self.debate_names(), self.anon_name)
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

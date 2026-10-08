@@ -1,4 +1,5 @@
 import logging, copy, os
+from itertools import count
 from typing import Optional, Any, Dict
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Admal, Cons, Context, DI, Geled, Goal, Hyp, ID, Laog, Lamda, Mu, Mutilde, ProofTerm, Pyh, Sonc, Term
@@ -126,12 +127,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.enrich_props()
             self.generate_proof_term()
 
+    #: Mints names for open leaves; they need only be fresh, so one
+    #: process-wide counter serves every session (next() is atomic).
+    _open_numbers = count(1)
+
     @staticmethod
     def _fresh_open_number(prefix: str = "open") -> str:
-        if not hasattr(Argument, "_open_counter"):
-            Argument._open_counter = 0
-        Argument._open_counter += 1
-        return f"{prefix}{Argument._open_counter}"
+        return f"{prefix}{next(Argument._open_numbers)}"
 
     @staticmethod
     def _binder_names(node: ProofTerm | None) -> set[str]:

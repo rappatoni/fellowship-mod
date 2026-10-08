@@ -247,13 +247,10 @@ def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
     debate term (aida-debate-objects)."""
     import logging
     from pathlib import Path
-    from mod import store
     from pres.gen import pres_str
     source = Path(__file__).parent / "lesson2_graph.fspy"
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("ACDC_NO_RENDER", "1")
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     try:
         with caplog.at_level(logging.INFO):
@@ -271,8 +268,6 @@ def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
                 "<axB:B||bArg:B>||alt2:B>>>") in term
     finally:
         prover.close()
-        store.arguments.clear()
-        store.document.clear()
 
 
 class TestLesson3GammaIteration:

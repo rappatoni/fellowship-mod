@@ -36,7 +36,6 @@ import pytest
 from core.comp.evaluate import evaluate_debate, EvaluationRefused
 from core.dc.debate_graph import declaration_kinds, canonical_prop as K
 from core.dc.unfold import unfold
-from mod import store
 from wrap.cli import execute_script, setup_prover
 
 
@@ -182,15 +181,13 @@ def verdicts(tmp_path_factory):
         rules = parse(src)
         path = tmp / f"{name}.fspy"
         path.write_text(to_fspy(rules))
-        store.arguments.clear()
-        store.document.clear()
         prover = setup_prover()
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 execute_script(prover, str(path), strict=False, stop_on_error=True, isolate=False,
                                render_files=False, stop_marker=False)
-            doc = prover.document
+            doc = prover.graph
             options = dict(strict_names=list(prover.declarations),
                            strict_kinds=declaration_kinds(prover.declarations))
             for query, statement in queries(rules):
@@ -280,8 +277,6 @@ def test_the_documents_stable_labellings_are_the_stable_models(tmp_path, name):
     rules = parse(PROGRAMS[name])
     path = tmp_path / f"{name}.fspy"
     path.write_text(to_fspy(rules))
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     try:
         with warnings.catch_warnings():
@@ -289,7 +284,7 @@ def test_the_documents_stable_labellings_are_the_stable_models(tmp_path, name):
             execute_script(prover, str(path), strict=False, stop_on_error=True, isolate=False,
                            render_files=False, stop_marker=False)
         found = []
-        for labelling in labellings(prover.document, "stable"):
+        for labelling in labellings(prover.graph, "stable"):
             model = {a for a in atoms(rules) if labelling.get((K(prop(a)), "term")) == "IN"}
             for a in atoms(rules):
                 assert (labelling[(K(prop(a)), "context")] == "IN") == (a not in model)

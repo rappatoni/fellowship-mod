@@ -1,6 +1,8 @@
+import threading
 import pytest
 
 from core.dc.argument import Argument
+from wrap.document import Document
 from wrap.prover import ProverError, ProverWrapper
 from wrap.sexp_parser import SexpParser
 
@@ -148,6 +150,7 @@ def _machine_output(messages: str = "(errors) (warnings) (notes)") -> str:
 
 def test_send_commands_surfaces_intermediate_errors():
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.prover = _PromptFakeChild([
         _machine_output(),
         _machine_output('(errors "boom") (warnings) (notes)'),
@@ -155,7 +158,8 @@ def test_send_commands_surfaces_intermediate_errors():
     ])
     wrapper._sexp = SexpParser()
     wrapper.echo_notes = False
-    wrapper.declarations = {}
+    wrapper.doc = Document()
+    wrapper.lock = threading.RLock()
     wrapper.last_state = None
 
     with pytest.raises(ProverError, match="boom"):
@@ -166,6 +170,7 @@ def test_send_commands_surfaces_intermediate_errors():
 
 def test_send_commands_quiet_final_toggles_quiet_and_returns_full_state(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
     wrapper.batches = []
 
@@ -200,6 +205,7 @@ def test_send_commands_quiet_final_toggles_quiet_and_returns_full_state(monkeypa
 
 def test_send_commands_quiet_final_falls_back_when_quiet_command_unavailable(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
     wrapper.batches = []
 
@@ -225,6 +231,7 @@ def test_send_commands_quiet_final_falls_back_when_quiet_command_unavailable(mon
 
 def test_send_commands_quiet_final_restores_quiet_mode_on_replay_error(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
 
     def send_command(cmd, *args, **kwargs):

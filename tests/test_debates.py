@@ -16,7 +16,6 @@ import pytest
 from core.comp.evaluate import evaluate_debate
 from core.dc.debate import DebateError
 from core.dc.debate_graph import canonical_prop as K, declaration_kinds
-from mod import store
 from pres.gen import pres_str
 from wrap.cli import setup_prover, execute_script, debate_line
 from wrap.prover import NameClash
@@ -26,16 +25,12 @@ FIXTURE = "tests/debates.fspy"
 
 @pytest.fixture
 def prover():
-    store.arguments.clear()
-    store.document.clear()
     p = setup_prover()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         execute_script(p, FIXTURE, strict=True, isolate=False)
     yield p
     p.close()
-    store.arguments.clear()
-    store.document.clear()
 
 
 def script(prover, text):
@@ -96,14 +91,14 @@ def test_an_open_debate_hears_the_document(prover):
     # penguin and photo are registered, so the open debate hears both
     assert verdict(prover, "o") == ("value", "IN")
     graph = prover.debate_graph(prover.debates["o"])
-    assert graph is prover.document
+    assert graph is prover.graph
 
 
 def test_a_debate_adds_nothing_to_the_document(prover):
-    before = (list(prover.document.edges), dict(prover.document.defaults))
+    before = (list(prover.graph.edges), dict(prover.graph.defaults))
     record(prover, "debate pro closed d : Flies.", "tweety.", "rebut penguin tweety.", "hora est.")
     verdict(prover, "d")
-    assert (list(prover.document.edges), dict(prover.document.defaults)) == before
+    assert (list(prover.graph.edges), dict(prover.graph.defaults)) == before
     assert "d" not in prover.arguments and prover.names["d"] == "debate"
 
 
@@ -112,7 +107,7 @@ def test_a_closed_scope_presumes_only_what_its_arguments_presume(prover):
     graph = prover.debate_graph(prover.debates["d"])
     assert {e.name for e in graph.edges} == {"tweety"}
     assert (K("Penguin"), "term") not in graph.defaults
-    assert (K("Penguin"), "term") in prover.document.defaults
+    assert (K("Penguin"), "term") in prover.graph.defaults
 
 
 def test_a_citation_brings_the_cited_argument_into_the_scope(prover):

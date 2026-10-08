@@ -25,7 +25,6 @@ from core.dc.typecheck import shape
 # The shared route keeps the legacy shape until aida-shared-route-stack-shape,
 # so its reference is the legacy unfolding.
 from core.dc.unfold import unfold_legacy as unfold
-from mod import store
 from wrap.cli import setup_prover, execute_script
 from wrap.prover import NameClash
 
@@ -238,8 +237,6 @@ SCRIPTS = [
 
 @pytest.fixture
 def fresh():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     yield prover
     prover.close()
@@ -255,7 +252,7 @@ def run(prover, script, **options):
 @pytest.mark.parametrize("script", SCRIPTS)
 def test_expansion_is_unfolding_on_fixtures(fresh, script, capsys):
     run(fresh, script, stop_marker=False)
-    doc = fresh.document
+    doc = fresh.graph
     assert doc.statements(), "the fixture registered no argument"
     for statement in doc.statements():
         shared = share(doc, statement, fresh.debate_names(), fresh.anon_name)
@@ -378,7 +375,7 @@ class TestTypeCheckPerDefinition:
             fresh.send_command("discard theorem.")     # a fixture may end inside a proof
         except Exception:
             pass
-        doc = fresh.document
+        doc = fresh.graph
         for statement in doc.statements():
             expanded, per_definition = both_checks(fresh, doc, statement)
             assert expanded == per_definition, statement
@@ -399,7 +396,7 @@ class TestTypeCheckPerDefinition:
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))
         run(fresh, script)
-        doc = fresh.document
+        doc = fresh.graph
         edge = next(e for e in doc.edges if e.name == "a1_0")
         rule = next(leaf for leaf in _leaves(edge.term) if getattr(leaf, "name", "") == "r1_0")
         rule.name = "r2_0"                       # P1->P2 where P0->P1 is needed
@@ -419,7 +416,7 @@ class TestTypeCheckPerDefinition:
         script.write_text(SPELLINGS + "label p\n")
         run(fresh, script)
         out = capsys.readouterr().out
-        doc = fresh.document
+        doc = fresh.graph
         issue = (K("P"), "term")
         shared = share(doc, issue)
         assert list(shared.spelling_clashes()) == ["Q->false"]
@@ -431,7 +428,7 @@ class TestTypeCheckPerDefinition:
 
     def test_the_naf_fixture_spells_each_statement_once(self, fresh, capsys):
         run(fresh, "tests/naf_olon.fspy", stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         for statement in doc.statements():
             assert share(doc, statement).spelling_clashes() == {}
 
@@ -519,14 +516,14 @@ class TestIssueGraphFromInstances:
     @pytest.mark.parametrize("script", SCRIPTS)
     def test_fixtures(self, fresh, script, capsys):
         run(fresh, script, stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
         for statement in doc.statements():
             same_graph(doc, statement, names, kinds, semantics=("grounded", "complete", "stable"))
 
     def test_peirce_gets_the_same_strict_edges_with_closed_terms(self, fresh, capsys):
         run(fresh, "tests/peirces_law.fspy", stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names = list(fresh.declarations.keys())
         found = 0
         for statement in doc.statements():
@@ -669,7 +666,7 @@ class TestEvaluateFromTheSharedDebate:
     @pytest.mark.parametrize("script", SCRIPTS)
     def test_fixtures(self, fresh, script, capsys):
         run(fresh, script, stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
         for statement in doc.statements():
             small = len(referenced_statements(

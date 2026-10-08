@@ -12,7 +12,6 @@ import argparse
 import logging
 from typing import Any, Optional
 from pres.tree import render_acceptance_tree_dot
-from mod import store
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
 from wrap.registry import (
@@ -90,7 +89,7 @@ def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: 
         raise ProverError(f"{script_path}:{lineno}: {error}") from error
 
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None, new_document: bool = False) -> None:
     """ Executes a .fspy script.
         script_path: .fspy file to be run.
         
@@ -132,6 +131,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
     if isolate:
         # start a fresh prover session for this script
         prover = setup_prover()
+    elif new_document:
+        # `load FILE`: the file replaces the session's document
+        prover.new_document()
     prev_echo = getattr(prover, "echo_notes", False)
     prover.echo_notes = echo_notes
     # render_files=None keeps whatever the session has (ACDC_NO_RENDER); False
@@ -161,6 +163,22 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            try:
+                fresh = parse_new_document(command)
+            except ValueError as e:
+                _refuse_in_script(e, strict, script_path, lineno)
+                continue
+            if fresh is not None:
+                if recording:
+                    logger.warning("'%s' was still being recorded; the new document discards it.",
+                                   current_argument['name'])
+                    recording, current_argument = False, None
+                try:
+                    prover.new_document(*fresh)
+                    logger.info("New document (%s).", prover.doc.logic_name)
+                except (ValueError, ProverError) as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                continue
             if not recording:
                 try:
                     if debate_line(prover, command):
@@ -642,6 +660,26 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 continue
             if command.lower() in ['exit', 'quit']:
                 break
+            try:
+                fresh = parse_new_document(command)
+            except ValueError as e:
+                print(f"refused: {e}")
+                continue
+            if fresh is not None:
+                if recording:
+                    print(f"'{current_argument['name']}' was still being recorded; "
+                          f"the new document discards it.")
+                    try:
+                        prover.send_command('discard theorem.')
+                    except ProverError:
+                        pass
+                    recording, current_argument = False, None
+                try:
+                    prover.new_document(*fresh)
+                    print(f"New document ({prover.doc.logic_name}).")
+                except (ValueError, ProverError) as e:
+                    print(f"refused: {e}")
+                continue
             if not recording:
                 try:
                     if debate_line(prover, command):
@@ -656,7 +694,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     print(f"load: no such file {path}")
                     continue
                 try:
-                    execute_script(prover, str(path), strict=False, stop_on_error=False, isolate=False)
+                    execute_script(prover, str(path), strict=False, stop_on_error=False, isolate=False,
+                                   new_document=True)
                 except (ProverError, MachinePayloadError) as e:
                     print(f"load: stopped: {e}")
                 continue
@@ -1059,6 +1098,21 @@ _OLD_VERBS = ("chain", "attack", "support", "undercut", "undermine", "rebut",
               "undergird", "reinforce", "buttress")
 
 
+_NEW_DOCUMENT = re.compile(r"^new\s+document(?:\s+(minimal))?(?:\s+(lk|lj))?\s*\.$")
+
+
+def parse_new_document(command: str):
+    """(logic, minimal) for `new document [minimal] [lk|lj].`, else None.
+    A `new document` line that does not parse raises ValueError."""
+    text = command.strip()
+    if not re.match(r"^new\s+document\b", text):
+        return None
+    match = _NEW_DOCUMENT.match(text)
+    if match is None:
+        raise ValueError("Use: new document [minimal] [lk|lj].  (lk, classical, is the default.)")
+    return (match.group(2) or "lk", bool(match.group(1)))
+
+
 def debate_line(prover: ProverWrapper, command: str) -> bool:
     """A line of the debate syntax (core/dc/debate.py), or False:
 
@@ -1260,13 +1314,10 @@ def setup_prover() -> ProverWrapper:
     env.setdefault("FSP_MACHINE", "1")
     fsp_path = resolve_fsp_path()
     prover = ProverWrapper(str(fsp_path), env=env)
-    # Fellowship starts a session in LJ, but the wrapper's `logic` defaults to
-    # "lk" and debates are classical.  Make the default real: otherwise the
-    # "debates are classical" guard never fires and the type oracle replays
-    # classical scaffolds in LJ ("alt1 is neither in your hypothesis nor in
-    # your conclusion").  Starting a prover is not a new document, so the
-    # document store is left alone.
-    prover.send_command('lk.', keep_document=True)
+    # Fellowship starts a session in LJ; a session starts with a classical
+    # document, the default of `new document`.  A script may still choose
+    # its logic with `lk.`/`lj.`/`minimal.` at its head.
+    prover.new_document()
     # Declare some booleans to work with.
     #prover.send_command('declare A,B,C,D:bool.')
     #logger.info("Prover decls %r", prover.declarations)
@@ -1346,7 +1397,7 @@ def share_argument_cmd(prover: ProverWrapper, name: str) -> None:
     if not arg.executed:
         arg.execute()
     issue = prover.issue_of(arg)
-    document = prover.document
+    document = prover.graph
     if issue not in set(document.statements()):
         print(f"debate: '{name}' is not in the document graph; it has no debate to share.")
         return
@@ -1483,8 +1534,9 @@ def unfold_cmd(prover: ProverWrapper, command: str) -> None:
     if parts[1] == "debate" and parts[2].rstrip(".") not in prover.debates:
         logger.error("unfold debate: no debate '%s'.", parts[2].rstrip("."))
         return
-    if prover.logic == "lj":
-        print("unfold: refused: debates are classical; select lk.")
+    refusal = _debate_logic_refusal(prover)
+    if refusal:
+        print(f"unfold: refused: {refusal}")
         return
     name = f"issue {parts[2]}" if parts[1] == "issue" else parts[2].rstrip(".")
     found = _select_term(prover, name, "unfolded")
@@ -1630,11 +1682,11 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
         if not arg.executed:
             arg.execute()
         issue = prover.issue_of(arg)
-    document = prover.document
-    if prover.logic == "lj":
-        print("graph: refused: debates are classical (their scaffolds throw to a second "
-              "conclusion, which LJ forbids); select lk for graph, label and evaluate.")
-        logger.warning("Debate commands refused in lj for '%s'.", name)
+    document = prover.graph
+    refusal = _debate_logic_refusal(prover)
+    if refusal:
+        print(f"graph: refused: {refusal}")
+        logger.warning("Debate commands refused in %s for '%s'.", prover.doc.logic_name, name)
         return arg, issue, None, None
     if _pipeline_logger.isEnabledFor(logging.DEBUG) and arg is not None:
         from pres.gen import pres_tree
@@ -1711,14 +1763,29 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
     return arg, issue, term, shared
 
 
+def _debate_logic_refusal(prover: ProverWrapper) -> Optional[str]:
+    """Why the document's logic admits no debates, or None.  Debates are
+    classical: their scaffolds throw to a second conclusion, which LJ
+    forbids.  Minimal logic changes the negation proof terms (no ex falso,
+    no `_F_`), on which the compiler and the unfolder are untested."""
+    if prover.logic == "lj":
+        return ("debates are classical (their scaffolds throw to a second conclusion, "
+                "which LJ forbids); start the document with `new document.` (lk).")
+    if prover.minimal:
+        return ("debates are not supported in minimal logic yet (its negation proof "
+                "terms are untested in the compiler); start the document with `new document.`")
+    return None
+
+
 def _debate_issue(prover: ProverWrapper, debate):
     """``_issue`` for a debate (core/dc/debate.py): (None, issue, term,
     None) with the term compiled from the debate's scope and moves - as
     recorded so far, while it is being recorded - and type-checked by
     replaying it whole.  A debate has no shared form."""
     from core.dc.unfold import UnfoldError
-    if prover.logic == "lj":
-        print("graph: refused: debates are classical; select lk.")
+    refusal = _debate_logic_refusal(prover)
+    if refusal:
+        print(f"graph: refused: {refusal}")
         return None, None, None, None
     if not debate.moves:
         print(f"graph: refused: debate '{debate.name}' has no move yet.")
@@ -1771,8 +1838,8 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
     from core.ac.ast import FirstOrderNotSupported
 
     if name == "document":
-        _report_onus_conflicts(prover.document)
-        return None, prover.document, None
+        _report_onus_conflicts(prover.graph)
+        return None, prover.graph, None
     arg, issue, term, shared = _issue(prover, name, want_term=prover.pipeline_unfolded)
     if term is None and shared is None:
         return arg, None, None
@@ -1793,7 +1860,7 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
                 # the reference rather than refuse a sound debate.
                 logger.warning("Compiling '%s' from its shared debate failed (%s: %s); "
                                "compiling the unfolded term instead.", name, type(e).__name__, e)
-                term = term if term is not None else unfold_legacy(prover.document, issue)
+                term = term if term is not None else unfold_legacy(prover.graph, issue)
         if graph is None:
             graph = compile_issue(term, name, **options)
     except (DebateCompileError, FirstOrderNotSupported) as e:
@@ -1807,14 +1874,15 @@ def _compile_argument_graph(prover: ProverWrapper, name: str):
         logger.warning("Debate graph compilation refused for '%s': recursion depth exceeded.", name)
         return arg, None, term
     _report_onus_conflicts(graph)
-    _remember_strict_edges(graph, name)
+    _remember_strict_edges(prover, graph, name)
     return arg, graph, term
 
 
-def _remember_strict_edges(graph, issue_name: str) -> None:
+def _remember_strict_edges(prover: ProverWrapper, graph, issue_name: str) -> None:
     """Keep the strict edges an issue graph showed, by name, so `adopt` can
-    promote one the user has seen.  Scoped to the document: `lk.` forgets."""
-    seen = store.document.setdefault("strict_edges", {})
+    promote one the user has seen.  Scoped to the document: `new document`
+    forgets."""
+    seen = prover.doc.strict_edges
     for edge in graph.edges:
         if edge.strict and edge.name.endswith("*") and getattr(edge, "term", None) is not None:
             seen[edge.name] = (issue_name, edge, graph.nodes.get(edge.target_key, edge.target_key))
@@ -1836,7 +1904,7 @@ def adopt_strict_edge_cmd(prover: ProverWrapper, command: str):
         print("adopt: use `adopt EDGE* as NAME`, with an edge name shown by `graph ARG`.")
         return None
     edge_name, name = parts[1], parts[3]
-    seen = store.document.get("strict_edges", {})
+    seen = prover.doc.strict_edges
     if edge_name not in seen:
         print(f"adopt: no strict edge '{edge_name}' has been shown in this document; "
               f"run `graph ARG` for the argument whose graph has it.")
@@ -2263,7 +2331,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
     favoured = None
     if favour:
         from core.dc.unfold import argument_edge
-        favoured = argument_edge(prover.document, arg.name) if arg is not None else None
+        favoured = argument_edge(prover.graph, arg.name) if arg is not None else None
         if mode != "credulous" or witness is not None or shared is not None or favoured is None:
             print("evaluate: refused: 'favour' needs credulous mode without a witness number, "
                   "an argument with its own edge in the document, and the unfolded pipeline.")
@@ -2288,7 +2356,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
                                "evaluating the unfolded term instead.", name, type(e).__name__, e)
         if term is None:
-            term = unfold_legacy(prover.document, issue)   # the shared route's reference
+            term = unfold_legacy(prover.graph, issue)   # the shared route's reference
         return on_term(term, name, **options)
 
     try:
@@ -2310,7 +2378,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
         if favoured is not None:
             options["favour"] = favoured
         nf, nf_class, sigma, graph = run(evaluate_shared, evaluate_debate, **options)
-        _remember_strict_edges(graph, name)
+        _remember_strict_edges(prover, graph, name)
     except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported, AdfBddNotFound) as e:
         print(f"evaluate: refused: {e}")
         logger.warning("Evaluation refused for '%s': %s", name, e)

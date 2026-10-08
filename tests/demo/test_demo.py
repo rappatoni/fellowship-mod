@@ -34,7 +34,7 @@ def run(prover, script):
 
 def issue_verdict(prover, name, mode="skeptical"):
     arg = prover.get_argument(name)
-    term = unfold(prover.document, prover.issue_of(arg))
+    term = unfold(prover.graph, prover.issue_of(arg))
     sn, sk = prover.declarations.keys(), declaration_kinds(prover.declarations)
     _, cls, sigma, _ = evaluate_debate(term, name, strict_names=sn, strict_kinds=sk, mode=mode)
     return cls, sigma[prover.issue_of(arg)]

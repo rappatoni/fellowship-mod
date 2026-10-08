@@ -178,7 +178,8 @@ The prompt has readline line editing (emacs bindings) and a history file
 (`~/.acdc_history`, or `ACDC_HISTORY`). A pasted block runs one line at a
 time; lines starting with `#` are echoed as narration and lines starting
 with `%` are ignored, as in scripts. `load FILE` runs a script inside the
-session. A script loaded with `--load` or `load` stops at a `%stop` line,
+session, in a new document: whatever the session held before is gone.
+A script loaded with `--load` or `load` stops at a `%stop` line,
 so a demo file can hold its setup above the marker and the commands to
 paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
 
@@ -400,15 +401,31 @@ environment variable for the whole session so a run leaves no files behind.
 
 A typical wrapper workflow is:
 1. declare prover resources
-2. record an argument or counterargument
-3. register it under a name
-4. compose or attack/support named arguments
-5. normalize the result
-6. render it in one or more views
+2. record arguments and counterargument; each joins the document graph
+3. record debates over them, if a limited or ordered selection is wanted
+4. graph, label and evaluate an argument, an issue or a debate
+5. render it in one or more views
 
-The wrapper stores named arguments internally through `ProverWrapper`, so later
-commands such as `reduce`, `render`, `support`, or `attack` can refer to them by
-name.
+### Sessions and documents
+
+A *session* is one running Fellowship with its settings (`typecheck`,
+`pipeline`, file output); the CLI holds one, and a server can hold several,
+each with a process of its own (`wrap/prover.py`, `ProverWrapper`). A
+session holds one *document* at a time (`wrap/document.py`): the
+declarations, names, arguments, document graph, debates and caches.
+
+- `new document [minimal] [lk|lj].` starts a new document: Fellowship is
+  reset (`discard all.`) and the logic chosen - classical (`lk`, the
+  default), intuitionistic (`lj`), or either without ex falso (`minimal`).
+  Session settings survive.
+- `lk.`, `lj.`, `minimal.` and `full.` choose the logic at the *head* of a
+  document, before its first instruction (a script's first line, say).
+  Later a change is refused - Fellowship fixes the logic at the first
+  instruction - and asking for the logic in force does nothing.
+- A session starts with a classical document, and `load FILE` replaces the
+  document with the file's.
+- Debates are classical: in an `lj` or a `minimal` document the debate
+  commands are refused.
 
 ## Interactive commands
 
@@ -504,10 +521,10 @@ everywhere, so it never holds a defeasible argument.
   registers it as the theorem `peirce`.
 - **Names are unique per document.** Sorts, declared axioms, statements and
   arguments share one namespace, checked before anything reaches the prover;
-  `lk.` or `lj.` starts a new one. Names starting with `typecheck_`,
+  `new document` starts a new one. Names starting with `typecheck_`,
   `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
-- **Sessions start in LK.** Debates are classical, and the prover is switched
-  to LK when it starts, so the type check of a debate never runs in LJ by
+- **Sessions start in LK.** Debates are classical, and a session starts with
+  a classical document, so the type check of a debate never runs in LJ by
   accident.
 
 ### Stored-argument commands

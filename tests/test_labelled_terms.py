@@ -21,7 +21,6 @@ from core.comp.labelled import (
 from core.dc.debate_graph import canonical_prop as K
 from core.dc.strict import compile_issue, strict_resolve
 from core.dc.unfold import argument_edge, unfold, unfold_argument
-from mod import store
 from pres.gen import pres_str
 
 from test_scaffold_capture import fresh, run, options, evaluate, LESSON9  # noqa: F401
@@ -118,7 +117,7 @@ def test_the_attackers_conclusion_is_labelled_on_the_captured_alt(fresh):
     # type A - it carries A[c]'s label, OUT, which is what sigma reads for
     # the attacker's conclusion.
     run(fresh, LESSON9)
-    doc, opts = fresh.document, options(fresh)
+    doc, opts = fresh.graph, options(fresh)
     term = unfold_argument(doc, argument_edge(doc, "pro"))
     sigma, _ = witness_labelling(compile_issue(term, "pro", **opts), issue_of(term), "skeptical")
     assert sigma[(A, "context")] == "OUT"
@@ -134,10 +133,9 @@ def test_labels_read_off_the_term_agree_with_the_labelling(fresh, monkeypatch):
     monkeypatch.setattr(evaluate_module, "CHECK_LABELS", True)
     checked = 0
     for script in FIXTURES:
-        store.arguments.clear()
-        store.document.clear()
+        fresh.new_document()
         run(fresh, script)
-        doc = fresh.document
+        doc = fresh.graph
         for statement in doc.statements():
             for mode in ("skeptical", "credulous"):
                 evaluate(fresh, unfold(doc, statement), mode)
@@ -158,7 +156,7 @@ def test_an_undecided_delegation_is_an_obligation_again(fresh, script, prop):
     # an obligation again and the debate is open (VALUE before).
     # Credulously the witness has the delegation IN: a value.
     run(fresh, script)
-    term = unfold(fresh.document, (K(prop), "context"))
+    term = unfold(fresh.graph, (K(prop), "context"))
     nf, cls, *_ = evaluate(fresh, term, "skeptical")
     assert (cls, f"UNDEC:{prop}?" in pres_str(nf)) == ("open", True)
     nf, cls, *_ = evaluate(fresh, term, "credulous")

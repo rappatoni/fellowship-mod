@@ -39,13 +39,13 @@ test: install
 	$(VENV)/bin/pytest -q tests
 
 lint: install
-	$(VENV)/bin/ruff check core pres wrap mod tests
+	$(VENV)/bin/ruff check core pres wrap tests
 
 format: install
-	$(VENV)/bin/black core pres wrap mod tests
+	$(VENV)/bin/black core pres wrap tests
 
 typecheck: install
-	$(VENV)/bin/mypy core pres wrap mod
+	$(VENV)/bin/mypy core pres wrap
 
 # Optional: short local command
 binlink:

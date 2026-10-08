@@ -115,10 +115,10 @@ def even_loop_prover():
 
 
 def _replay_even_loop(prover):
-    # Replayed per test: conftest's autouse fixture clears the argument
-    # store between tests, so a module-level replay would be lost.
+    # Replayed per test, each time into a new document of the module's
+    # prover: nothing carries over from the test before.
     execute_script(prover, str(Path("tests/rationality/even_loop.fspy")),
-                   strict=True, stop_on_error=True, isolate=False)
+                   strict=True, stop_on_error=True, isolate=False, new_document=True)
     return prover.declarations.keys(), declaration_kinds(prover.declarations)
 
 

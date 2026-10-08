@@ -64,6 +64,56 @@ unfolded term, labelling and evaluation - debates' included - is recomputed
 after any revision bump (=ProverWrapper.revision=). See also
 [[id:aida-module-system]] on held theorems.
 
+** REVIEW Hold the document on the session, not in a module-global store
+:PROPERTIES:
+:ID:             aida-sessions-and-documents
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-debate-objects
+:OUTCOME:        A session (ProverWrapper: one Fellowship process, settings, a lock) holds one Document (wrap/document.py) at a time; `new document [minimal] [lk|lj].` starts a new one; lk./lj./minimal./full. choose the logic at the head of a document only; `load FILE` replaces the document; mod.store is gone and no state leaks between tests.
+:VERIFY:         tests/test_sessions.py (isolation, reset, four logics, toggles, load replaces, settings, lock) passes; the suite passes in its usual and in reversed file order; `grep mod.store` is empty.
+:END:
+
+Phase 2 of [[id:aida-dui-api]]. Decisions (author, 2026-10-08): remove
+=mod.store=; split session and document; =lk.=/=lj.= are logic choices, not
+document delimiters - a dedicated keyword starts a document, classical by
+default, with an optional logic; =load FILE= replaces the document (merging
+belongs to the module system, [[id:aida-module-system]]); =explain= stays
+CLI-only; no leakage between tests; concurrency left to the agent.
+
+Found on the way (verified against the binary):
+- Fellowship fixes the logic at the first instruction and refuses a later
+  toggle with a *message*; the wrapper had recorded the switch and
+  cleared its document anyway, so the two disagreed.
+- The wrapper's declarations survived =lk.=: stale names stayed strict.
+- =discard all.= resets Fellowship (signature, theorems, moxias) and
+  reopens the logic switch, but keeps the minimal/lj flags.
+
+Design as built:
+- =Document= holds logic and minimal, the head flag, declarations,
+  decorations, names, arguments, graph, debates, the recording debate,
+  anon names, revision (monotonic across documents) and the caches.
+- =ProverWrapper= holds the process, custom tactics, the settings (read
+  from the env once), a =threading.RLock= around every send, and =doc=;
+  =prover.graph= is the document graph (was =prover.document=).
+- =new_document(logic, minimal)= sends =discard all.=, =full.=/=minimal.=,
+  =lk.=/=lj.=, and checks Fellowship's "Current logic:" reply.
+- A toggle at the head sets the logic from Fellowship's reply; after it, a
+  change raises ProverError and the logic in force is a no-op.
+- Debate commands are refused in lj (as before) and in minimal logic
+  ([[id:aida-minimal-logic-debates]]).
+- Concurrency: one process per session, the lock serialises its I/O;
+  compound operations take the lock in the service layer (Phase 3); what
+  stays module-level is pure memoisation; =explain= redirects global
+  loggers and is not safe concurrently (CLI-only).
+
 ** BACKLOG Specify the JSON format for explanation terms
 :PROPERTIES:
 :ID:             aida-explanation-term-json-format
@@ -80,8 +130,11 @@ after any revision bump (=ProverWrapper.revision=). See also
 :VERIFY:         Validate representative explanation terms against the schema and confirm lossless serialization and deserialization tests.
 :END:
 
-** BACKLOG Prepare AIDA for the demo feature freeze
-DEADLINE: <2026-09-04 Fri>
+** DONE Prepare AIDA for the demo feature freeze
+CLOSED: [2026-10-08 Thu] DEADLINE: <2026-09-04 Fri>
+- State "DONE"       from "BACKLOG"    [2026-10-08 Thu] \\
+  The author confirmed 2026-10-08 that the COMMA 2026 demo (16-18
+  September) took place.
 :PROPERTIES:
 :ID:             aida-demo-readiness
 :AREA:           phd
@@ -115,8 +168,8 @@ DEADLINE: <2026-08-31 Mon>
 :VERIFY:         Record the rehearsal date, exercised demo path, observed failures, timing, and resulting follow-up tasks.
 :END:
 
-*** BACKLOG Integrate theoretically ready results before the demo freeze
-DEADLINE: <2026-09-04 Fri>
+*** DONE Integrate theoretically ready results before the demo freeze
+CLOSED: [2026-10-08 Thu] DEADLINE: <2026-09-04 Fri>
 :PROPERTIES:
 :ID:             aida-integrate-theory-before-demo-freeze
 :AREA:           phd
@@ -132,8 +185,16 @@ DEADLINE: <2026-09-04 Fri>
 :VERIFY:         Compare the ready-results list with the implemented demo capabilities and run the relevant integration tests.
 :END:
 
-*** BACKLOG Polish AIDA before the demo freeze
-DEADLINE: <2026-09-04 Fri>
+Closed 2026-10-08 after the demo. No list of "theoretically ready
+results" was ever recorded, so the check is against what was planned in
+writing: the demo slice of propositional-fragment-plan.org (R9: M0 and
+M2-M4 with DOT export) is in, and every session of tests/demo/ runs
+(tests/demo/test_demo.py, 10 passed). Not implemented, and never planned
+for the demo: the (dual-)intuitionistic restriction on arguments that the
+COMMA paper states ([[id:aida-argument-lj-restriction]]).
+
+*** DONE Polish AIDA before the demo freeze
+CLOSED: [2026-10-08 Thu] DEADLINE: <2026-09-04 Fri>
 :PROPERTIES:
 :ID:             aida-polish-before-demo-freeze
 :AREA:           phd
@@ -159,6 +220,11 @@ issue graph. Not rehearsed. Open for the demo: `graph ... show` needs
 Graphviz. (The strict phase was still experimental when this was
 written; it was settled 2026-09-25, so demo 6's caveat can go.)
 
+Closed 2026-10-08 after the demo took place (the author). Both open
+points are gone: without Graphviz =graph ... show= prints a text tree,
+and demo 6's note in tests/demo/README.md reads as settled. The six
+sessions run end to end: tests/demo/test_demo.py, 10 passed.
+
 ** BACKLOG Integrate AIDA into the DIREGA demonstrator
 :PROPERTIES:
 :ID:             aida-direga-demonstrator-integration
@@ -171,7 +237,6 @@ written; it was settled 2026-09-25, so demo 6's caveat can go.)
 :ICK:            3
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-demo-readiness
 :SYNC_WITH:      id:phd-aida-direga-demonstrator-integration
 :TARGET_DATE:    TBD: before the DIREGA steering committee meeting
 :OUTCOME:        AIDA is integrated into the DIREGA demonstrator before the steering committee meeting.
@@ -220,7 +285,7 @@ Five prover-side defects were found and fixed on the way:
 - The Python side read =¬A= as a symbol *named* =¬A= rather than as a
   negation, and =⊥= likewise.
 
-** BACKLOG Extend first-order support to reduction and the debate operations
+** BACKLOG Extend the debate compiler to first-order arguments
 :PROPERTIES:
 :ID:             aida-first-order-reduction
 :AREA:           phd
@@ -232,26 +297,47 @@ Five prover-side defects were found and fixed on the way:
 :ICK:            4
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-first-order-front-end
-:OUTCOME:        Normalization, grafting, support/attack and acceptance colouring handle first-order terms instead of refusing them.
-:VERIFY:         A first-order argument normalizes, is grafted onto and attacked, with the reduction rules recorded and a semantic-equivalence check against the prover.
+:OUTCOME:        A first-order argument joins the document graph, and the compiler pipeline - unfolding, the strict phase, labelling and label-guided evaluation, on the unfolded and the shared route - handles first-order debates instead of refusing them, following first-order reduction rules recorded in call-by-onus.org.
+:VERIFY:         tests/fo_forall.fspy and tests/fo_exists_forall.fspy register without the "not added to the document graph" warning; a first-order debate with a move against an instantiated premise gives =graph=, =label= and =evaluate= results stated here; its unfolded and its normal-form terms replay in Fellowship; the reduction rules for the quantifier stacks are written down with the author before they are implemented; no =FirstOrderNotSupported= is raised in core/dc or core/comp/evaluate.py.
 :END:
+
+Rewritten 2026-10-08 for the compiler pipeline: the grafting verbs and
+colouring this task first named are gone ([[id:aida-debate-objects]],
+[[id:aida-renderers-grounded-labels]]). The front end is done
+([[id:aida-first-order-front-end]]).
+
+Where the pipeline refuses today (checked 2026-10-08):
+- registration: =ProverWrapper._compile_argument= (wrap/prover.py) catches
+  the refusal of =_Compiler.compile= (core/dc/debate_graph.py), so a
+  first-order argument is checked by Fellowship but never joins the
+  document graph, and no debate sees it;
+- the shared route: =core/dc/instances.py= (debate graph compilation);
+- evaluation: =_compile_for_evaluation= (core/comp/evaluate.py);
+- shape matching used by the deprecated projections: core/dc/match_utils.py,
+  core/ac/alt_structure.py;
+- legacy, outside the pipeline: the legacy reducer (core/comp/reduce.py,
+  reduction and eta), =LegacyShapeClassifier= (core/comp/legacy_shape.py)
+  and core/dc/graft.py, which nothing imports any more.
+
+Questions the design has to answer first: statement identity (is
+=forall x, P x= one node, and is an instance =P a= a statement of its
+own that the general one derives); sites under a binder (a site for
+=P x= with x bound); capture across instantiation; the intermediate
+conclusions of an instantiation spine (=ConsFO=; see
+[[id:aida-curried-intermediate-conclusions]]); and the reduction rules
+for the quantifier stacks.
+
+Historical note (2026-08-19), still true for the theory:
 
 Deferred deliberately: the reduction rules for first-order AC/DC are not
 settled theory. The COMMA paper lists a first-order extension as future work
 (=papers/comma2026/main.tex:564=), so implementing reduction now would mean
 inventing the rules rather than following them.
 
-Seven entry points currently raise =FirstOrderNotSupported= rather than
-guess: both reducers, both grafts, structural matching, shape comparison,
-acceptance colouring and debate labelling. Each has a fall-through that would
-otherwise be silent and wrong — grafting returns the node unchanged, matching
-reports "not equal", colouring reports "green".
-
 Threading =Prop= objects onto node =.prop= belongs to this task rather than
-to the front end: it is what the ~40 proposition-comparison and dict-key
-sites in =reduce.py=, =graft.py=, =argument.py= and =color.py= need, and
-those are exactly the operations deferred here.
+to the front end. (The 2026-08-19 list of seven refusing entry points and
+of the comparison sites in =reduce.py=, =graft.py=, =argument.py= and
+=color.py= predates the compiler; the current list is above.)
 
 * Specification and verification
 
@@ -1998,10 +2084,10 @@ Its open children moved here. Related work tracked elsewhere:
 - first-order debates: [[id:aida-first-order-reduction]];
 - the s(CASP) correspondence and importer:
   [[id:aida-scasp-stable-correspondence]],
-  [[id:aida-scasp-import-negative-justifications]];
+  [[file:../scasp-aida/tasks.org::*Translate negative justifications in the s(CASP) importer][aida-scasp-import-negative-justifications]] (scasp-aida repository);
 - the theory tasks T1-T6 (top-level, below).
 
-*** DOING Record debates as named, ordered, scoped selections of the document
+*** REVIEW Record debates as named, ordered, scoped selections of the document
 :PROPERTIES:
 :ID:             aida-debate-objects
 :AREA:           phd
@@ -2053,7 +2139,7 @@ Decisions (author, 2026-10-08):
   compatibility breaks anyway with the syntax unification).
 - Later: dynamics - a debate on top of a debate, merging, removing moves.
 
-Evidence (2026-10-08, uncommitted, awaiting the author's review):
+Evidence (2026-10-08, committed as 4f12d45, awaiting the author's review):
 - core/dc/debate.py (=Debate=, =Move=, =VERBS=, the checks,
   =unfold_debate=); =Unfolder(order=...)= in core/dc/unfold.py; the
   registry, the scope graph (closed: its arguments compiled on their own)
@@ -2247,7 +2333,11 @@ The author's review. The shared route lags behind the stacked shape
 ([[id:aida-shared-route-stack-shape]]), so parts of the course describe
 a route that is due for rework; best reviewed together with that task.
 
-*** BACKLOG Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
+*** DONE Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
+CLOSED: [2026-10-08 Thu]
+- State "DONE"       from "BACKLOG"    [2026-10-08 Thu] \\
+  Closed by the author as a settled design note: the decision below
+  stands, no change was made.
 :PROPERTIES:
 :ID:             aida-contrariness-as-edges
 :AREA:           phd
@@ -2409,7 +2499,7 @@ can produce. Related: =aida-strict-refutation-edges= (declared
 refutations are dropped; the same "strict references carry no side"
 problem at the leaf level).
 
-*** WAITING Expose the intermediate conclusions of curried implications
+*** BACKLOG Design: should the intermediate conclusions of curried implications be attack points?
 :PROPERTIES:
 :ID:             aida-curried-intermediate-conclusions
 :AREA:           phd
@@ -2421,14 +2511,19 @@ problem at the leaf level).
 :ICK:            4
 :EFFORT:         8:00
 :DEFERRALS:      0
-:OUTCOME:        Every logically progressing step of an elimination spine is attackable and supportable: theta-expansion names each partial application of a curried implication as a term of its own (so B->C in an application of A->(B->C) to A and B becomes a term-side target), and the compiler emits one hyperedge per such step, so that an accepted refutation of an intermediate conclusion defeats the final one.
-:VERIFY:         In tests/minicourse/lesson5_labels.fspy, `attack d6 test d5` with the challenge to B->C succeeds; with A and B presumed and a strict refutation of B->C, `label` prints B->C context IN and C term OUT (today: C term IN, see the notes); the compiled graph for an application of A->(B->C) has edges C[t] <- B->C[t], B[t] and B->C[t] <- A[t] (plus the implication's own edge once aida-strict-layer lands); every expanded term replays in Fellowship; a three-premise curried implication exposes both of its intermediate conclusions; existing grounded-label tests are unchanged or the change is justified.
+:OUTCOME:        It is decided, with reasons, whether the intermediate conclusion of a curried application (B->C in an application of A->(B->C) to A and B) is an attack and support point of its own. If yes: each partial application is named as a term of its own and the compiler emits one hyperedge per elimination step, as sketched below. If no: the status quo is recorded as intended, with what a debate can still say about B->C (an argument that takes the implication as a premise).
+:VERIFY:         The decision is written here with its reasons. If adopted: on tests/minicourse/lesson5_labels.fspy a move of the challenge to B->C against cArg is accepted, and with A and B presumed and a strict refutation of B->C, =label= prints B->C context IN and C term OUT; the graph has C[t] <- B->C[t], B[t] and B->C[t] <- A[t]; every expanded term replays in Fellowship. If not: the refused move (tests/rationality/test_postulates.py) is pinned with the decision as its reason.
 :END:
 
-Status (author, 2026-09-16): a bug, but deliberately *not* part of the
-follow-up implementation plan (fragment-followups-plan.org phase D2 is
-withdrawn); the author will think about it separately. WAITING on that
-design thought, not on any other task.
+Needs design (the author, 2026-10-08): not obviously a bug, and leaving
+it as is may be fine. Earlier status (2026-09-16): recorded as a bug, but
+deliberately not part of the follow-up implementation plan
+(fragment-followups-plan.org phase D2 is withdrawn).
+
+The analysis below dates from 2026-09-16, when debates were built by the
+grafting verbs (=attack=, =ThetaExpander=, =Argument.attack=); those are
+gone ([[id:aida-debate-objects]]), and the same move is now refused by the
+verb check. The graph-side analysis is unchanged.
 
 Found 2026-09-16 by the author, from an attack in
 tests/minicourse/lesson5_labels.fspy that failed:
@@ -3540,7 +3635,7 @@ constraint, the NMR check (=p :- not p.=: no models).
 :EFFORT:         6:00
 :DEFERRALS:      0
 :OUTCOME:        For propositional normal programs, a recorded and tested statement of how evaluation relates to s(CASP): each program of a fixture set is translated into a document (a rule as a declared implication, an atom premise as an obligation, =not b= as the presumed refutation of b); the stable labellings of its issue graphs are compared with the program's stable models, credulous evaluation under stable semantics with s(CASP) query success, skeptical with truth in every stable model; the difference of complete and preferred (supported semantics: positive loops accepted) is recorded; how the importer treats s(CASP)'s coinductive hypotheses =chs(...)= is checked.
-:VERIFY:         A test over the fixture set (positive loop; positive loop with a founded alternative; even loop; odd loop free and forced by a constraint; a fact; a two-premise rule): the stable models computed by brute force, s(CASP)'s answers (skipped when s(CASP) is not installed), and the verdicts of =evaluate_debate= for every atom agree as stated here, or every disagreement is recorded with its cause; =scasp_import= run on an even-loop justification tree, with its handling of =chs= recorded (fixed, or a follow-up task).
+:VERIFY:         A test over the fixture set (positive loop; positive loop with a founded alternative; even loop; odd loop free and forced by a constraint; a fact; a two-premise rule): the stable models computed by brute force, s(CASP)'s answers (skipped when s(CASP) is not installed), and the verdicts of =evaluate_debate= for every atom agree as stated here, or every disagreement is recorded with its cause; the importer (now in the scasp-aida repository) run on an even-loop justification tree, with its handling of =chs= recorded (fixed, or a follow-up task).
 :END:
 
 Raised by the author 2026-10-07, replacing
@@ -3570,7 +3665,8 @@ translation (two sides per statement, defaults from presumptions, the
 contrariness guard), so the correspondence has to be checked, not
 assumed. The importer translates one answer's justification tree, not
 a program, and drops the wrappers =not=, =forall=, =proved= but not
-=chs= (scasp_import/importer.py, =_atom_from_json=).
+=chs= (=_atom_from_json=, src/scasp_aida/importer.py in the scasp-aida
+repository; the importer moved there on 2026-10-08).
 
 *Findings 2026-10-07* (tests/test_scasp_correspondence.py, 199 checks;
 8 programs, every atom queried as =a= and =not a=, both modes, stable
@@ -3615,7 +3711,7 @@ or =PATH=).
   child - and so =chs= under it - is dropped with a warning, and a node
   left without children becomes a declared axiom. The even loop's
   answer =p :- not q :- chs(p)= is imported as the strict fact =p:(P)=.
-  Follow-up: [[id:aida-scasp-import-negative-justifications]].
+  Follow-up: [[file:../scasp-aida/tasks.org::*Translate negative justifications in the s(CASP) importer][aida-scasp-import-negative-justifications]] (scasp-aida repository).
 - The document graph, labelled as a whole, has exactly one stable
   labelling per stable model on all eight programs: A[t] IN iff a is in
   the model, A[c] IN iff A[t] is not (an atom no rule derives has no
@@ -3811,7 +3907,13 @@ The author wants the unfolded route understood and fixed first
 keeps the kinds it wrote, so a statement can need a second definition
 (root obligation with a presumption supporter at the bottom).
 
-** BACKLOG Prove well-definedness of label-guided reduction (T1, T6)
+** DROPPED Prove well-definedness of label-guided reduction (T1, T6)
+CLOSED: [2026-10-08 Thu]
+- State "DROPPED"    from "BACKLOG"    [2026-10-08 Thu] \\
+  Dropped by the author. Part of its outcome had lapsed anyway: the
+  grafting it asks labelling to commute with was removed with
+  [[id:aida-debate-objects]]. Its lemma on strictness under the residual
+  choices stays open as a task of its own, below.
 :PROPERTIES:
 :ID:             aida-spec-labelled-reduction-well-defined
 :AREA:           phd
@@ -3827,7 +3929,7 @@ keeps the kinds it wrote, so a statement can need a second definition
 :VERIFY:         Written proofs reviewed against debate-graph-spec.org targets T1 and T6, plus property-based tests comparing graft-then-label with label-then-graft on generated debates.
 :END:
 
-*** BACKLOG Lemma: strictness is invariant under the residual choices
+** BACKLOG Lemma: strictness is invariant under the residual choices
 :PROPERTIES:
 :ID:             aida-strictness-invariant-under-sigma
 :AREA:           phd
@@ -3844,8 +3946,9 @@ keeps the kinds it wrote, so a statement can need a second definition
 :END:
 
 Raised by the author 2026-09-25 while framing soundness and completeness
-with respect to classical logic, and filed here rather than as its own
-target because T1 already owns the well-definedness of the strategy.
+with respect to classical logic, and first filed under T1, which owned the
+well-definedness of the strategy. Moved up on 2026-10-08 when T1 was
+dropped; "target T1" below refers to debate-graph-spec.org.
 
 *Why it is not free.* It does not follow from confluence. The calculus is
 deliberately NOT confluent at the critical pair between a mu and a
@@ -3920,7 +4023,6 @@ stability, so Peirce is the critical witness rather than the proof.
 :ICK:            2
 :EFFORT:         8:00
 :DEFERRALS:      0
-:BLOCKED_BY:     id:aida-spec-labelled-reduction-well-defined
 :OUTCOME:        For a fixed witness labelling sigma, an issue labelled IN normalizes to a value, OUT to an abort term, and UNDEC to the mode-dependent residue, proved by induction on the fixpoint stages of sigma.
 :VERIFY:         Written proof plus one fixture per label per mode in tests/rationality/ whose evaluated normal form matches the predicted class.
 :END:
@@ -3941,7 +4043,13 @@ stability, so Peirce is the critical witness rather than the proof.
 :VERIFY:         Written proofs leaning on the transposition-closed strict layer, plus the graph labeller diffed against every expected labelling in tests/rationality/README.org, including the contamination pair.
 :END:
 
-** BACKLOG Align the term labeller with the graph labelling (T5)
+** DROPPED Align the term labeller with the graph labelling (T5)
+CLOSED: [2026-10-08 Thu]
+- State "DROPPED"    from "BACKLOG"    [2026-10-08 Thu] \\
+  Closed by the author: the term labeller it aligns (=DebateTermLabeller=,
+  core/comp/color.py) and its colour fixtures were removed on 2026-09-16
+  ([[id:aida-renderers-grounded-labels]]); the renderers read the grounded
+  labels directly.
 :PROPERTIES:
 :ID:             aida-spec-labeller-alignment
 :AREA:           phd
@@ -4193,10 +4301,10 @@ Asked for by the author, 2026-10-01, with [[id:aida-shared-subarguments]]:
 the wrapper holds one registry (=prover.names=, =prover.arguments=,
 =prover.declarations=) and nothing shows it. Anonymous names (=anon_k=)
 are a stopgap the author expects to change, so the naming command should
-go through =claim_name= and keep the statement-to-name table in
-=store.document=.
+go through =claim_name= and keep the statement-to-name table on the
+document (=prover.doc=, wrap/document.py).
 
-** BACKLOG Commit scaling fixtures and a benchmark harness
+** BACKLOG Keep the scaling benchmarks as a repeatable experiment on the current architecture
 :PROPERTIES:
 :ID:             aida-scaling-benchmarks
 :AREA:           phd
@@ -4208,12 +4316,32 @@ go through =claim_name= and keep the statement-to-name table in
 :ICK:            1
 :EFFORT:         2:00
 :DEFERRALS:      0
-:OUTCOME:        A generator for synthetic documents (chains, stated chains, doubled chains, declaration-only files, layered graphs, independent even loops) and a harness that times load, label and evaluate with repeated runs live in the repository.
-:VERIFY:         One make target runs the harness and writes a table of median wall times over at least five runs per size, with the labelling result of each run recorded for equivalence checks.
+:OUTCOME:        The scaling measurements are a maintained, repeatable experiment: bench/ generates synthetic documents in the current syntax (chains, stated chains, doubled chains, declaration-only files, layered graphs, independent even loops, and debates of closed and open scope over a large document) and a harness times each phase of the current architecture - loading into the document graph, the type check (per definition, expanded, off), =graph=, =label= and =evaluate= on the unfolded and the shared route, debates by scope, and a =new document= reset in a long session - with repeated runs and recorded results.
+:VERIFY:         One make target runs the harness, a fresh session per run, and writes a table of median wall times over at least five runs per size, route and family, with each run's labelling and verdict recorded and compared across runs and routes; bench/README.md says how to repeat it and no longer calls the scripts throwaway; a test generates a small instance of every family and runs it, so the experiment cannot rot; the 2026-09-30 table below is re-measured on it.
 :END:
 
-The 2026-09-30 analysis used throwaway scripts (single runs except the
-parser micro-benchmarks, best of 3). Measured shapes to re-establish:
+Not throwaway (the author, 2026-10-08): the scripts behind the 2026-09-30
+analysis are kept in bench/ (=gen.py=, =run.sh=, =graphbench.py=,
+=loops.py=, =parsebench.py=) and are to be persisted as a repeatable
+experiment. Today they time single runs (the parser benchmark best of 3),
+record no labellings, and know only the 2026-09-30 architecture. Checked
+2026-10-08: =run.sh chain 5=, =double 3= and =stated 5 nolabel= still run.
+
+What the architecture has gained since, and the harness must measure:
+- the shared route and per-instance compilation
+  ([[id:aida-shared-subarguments]]), now off by default: the default route
+  is =unfolded=, whose cost grows with the number of paths, until
+  [[id:aida-shared-route-stack-shape]];
+- the stacked shape and argument entrypoints
+  ([[id:aida-unfold-entrypoints]]): issue and argument terms are cached
+  per document revision;
+- debate objects ([[id:aida-debate-objects]]): a closed debate compiles
+  only its scope, which was one of the author's reasons for them, so its
+  saving over an open debate on a large document is a claim to measure;
+- labelled terms (sigma written into the term) and the sessions/documents
+  split in progress (wrap/document.py), which changes what a reset costs.
+
+Measured shapes of 2026-09-30, to re-establish:
 
 | family                          | sizes        | result                         |
 |---------------------------------+--------------+--------------------------------|
@@ -4354,6 +4482,51 @@ additive. Questions the design has to answer:
   of its citers;
 - size: a library the size of the AFP (~10^5-10^6 names) is far beyond
   the measured declaration curve, see [[id:aida-quadratic-hotspots]].
+
+** BACKLOG Design: interactive graph views, live label evolution and normalization
+:PROPERTIES:
+:ID:             aida-interactive-graph-views
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A written design for interactive views of acceptance trees and debate graphs - at least one view in which labels change visibly as arguments are added, and one that steps through normalization - fixing the rendering library, what the pipeline must emit per step, and how the view is opened from the CLI.
+:VERIFY:         The design note here answers each question below with a decision, includes a hand-made prototype (a static HTML page) on one fixture, and is reviewed by the author.
+:END:
+
+Needs design (author, 2026-10-08): "Live evolution of labels or
+normalization sounds particularly interesting."
+
+Today =_render_graph_image= (=wrap/cli.py=) renders hand-written DOT
+from =pres/tree.py= and =core/dc/debate_graph.py= to PNG through the
+=dot= binary; the optional =graphviz= Python package is not installed
+and adds nothing over the binary. Candidates discussed:
+
+- SVG output from the same DOT: zoom, tooltips and links, no animation;
+  nearly free;
+- d3-graphviz: renders the existing DOT in a browser and animates
+  between successive graphs - the natural fit for label evolution;
+- Cytoscape.js (dagre or ELK layout): click-to-inspect, collapsible
+  subtrees, filtering; needs a new JSON rendering path, possibly shared
+  with [[id:aida-dui-api]].
+
+Questions the design has to answer:
+
+- label evolution: what is a step (a registered argument, a debate
+  operation, a document line), and does the pipeline record labellings
+  per step or recompute them for each prefix of the document;
+- normalization: does the reducer expose its individual steps today, and
+  what a frame shows (the term, the redex, the tree);
+- layout stability: nodes must not jump between frames, so either a
+  fixed layout over the final graph or a layout library that preserves
+  positions;
+- delivery: a standalone HTML file opened like the PNGs today, or a view
+  in the document UI.
 
 * Correctness and maintenance
 
@@ -4815,7 +4988,49 @@ a design change to the term representation (it interacts with sharing,
 should be discussed before it is implemented; the numeric names are the
 stopgap that makes output round-trippable now.
 
-** BACKLOG Make =load= replace the session's document instead of merging into it
+** BACKLOG Support debates in minimal logic
+:PROPERTIES:
+:ID:             aida-minimal-logic-debates
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Debate commands work in a minimal classical document, or are refused there with a recorded reason.
+:VERIFY:         The demo fixtures replayed under `new document minimal lk.` graph, label and evaluate with the verdicts they have in lk, or the differences are explained here; tests pin it.
+:END:
+
+Recorded 2026-10-08 ([[id:aida-sessions-and-documents]], open issue O2).
+Minimal logic changes the negation proof terms (Fellowship's help: =*1 *
+*2= instead of =mu'x:~P.<x|*1 * _F_>=); the compiler and the unfolder were
+never run on them, so the debate commands refuse a minimal document.
+
+** BACKLOG Report the logic in Fellowship's machine payload
+:PROPERTIES:
+:ID:             aida-logic-in-machine-payload
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Fellowship's machine payload carries the current logic (lj/lk, minimal) and whether the logic switch is still open, and the wrapper reads them instead of parsing UI messages.
+:VERIFY:         Rebuild fsp; a test toggles each logic and reads it from the payload; wrap/prover.py no longer matches "Current logic:" or "Only the first instructions".
+:END:
+
+Recorded 2026-10-08 ([[id:aida-sessions-and-documents]], open issue O3):
+the wrapper parses Fellowship's UI text to learn the logic and whether a
+toggle was refused, which breaks silently if the messages change.
+
+** DONE Make =load= replace the session's document instead of merging into it
+CLOSED: [2026-10-08 Thu]
 :PROPERTIES:
 :ID:             aida-load-replaces-document
 :AREA:           phd
@@ -4848,6 +5063,15 @@ not show in one issue's graph, but they share the registry and the
 graph); a name used in both files collides in Fellowship; and the
 calculus mode of the second file (=lk.= / =lj.=) is applied on top of
 the first file's state.
+
+Done with [[id:aida-sessions-and-documents]] (2026-10-08): =load FILE=
+and =--load= start a new document first (=execute_script(...,
+new_document=True)=), which resets Fellowship as well (=discard all.=).
+Evidence: tests/test_sessions.py::test_load_replaces_the_document (loads
+01_arguments then 05_even_loop: =tweety= is gone, =Pdefault= is there;
+loading the same file twice in strict mode raises nothing); the CLI check
+=load 01=, =load 05=, =render tweety= prints "Argument 'tweety' not
+found."
 
 Not affected: =--load= at start-up (it runs on the fresh prover from
 =main=) and =--script= (isolated by default).

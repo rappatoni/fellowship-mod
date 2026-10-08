@@ -480,7 +480,7 @@ class TestWiringNamesDoNotClash:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             execute_script(prover, str(script), strict=True, stop_on_error=True, isolate=False)
-        doc = prover.document
+        doc = prover.graph
         issue = (K("P"), "term")
         term = unfold(doc, issue)
         assert "alt1" in binder_list(prover.get_argument("p").body)
