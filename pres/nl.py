@@ -150,6 +150,7 @@ pruefschema_rendering = Rendering_Semantics(
 vanilla_rendering = Rendering_Semantics('   ', "", "", "", "", "", "", "", "", "", "")
 
 from core.comp.visitor import ProofTermVisitor
+from pres.gen import labelled_prop
 
 
 class _VanillaVisitor(ProofTermVisitor):
@@ -207,7 +208,7 @@ class _VanillaVisitor(ProofTermVisitor):
 
     def visit_Mu(self, node: Mu):
         opening_prefix = self.prefix
-        self._emit(f"μ{node.id.name}:{node.prop}.<")
+        self._emit(f"μ{node.id.name}:{labelled_prop(node.prop, node, False)}.<")
         self._newline()
 
         term_lines = self._render_child(node.term, is_last=False)
@@ -226,7 +227,7 @@ class _VanillaVisitor(ProofTermVisitor):
 
     def visit_Mutilde(self, node: Mutilde):
         opening_prefix = self.prefix
-        self._emit(f"μ'{node.di.name}:{node.prop}.<")
+        self._emit(f"μ'{node.di.name}:{labelled_prop(node.prop, node, True)}.<")
         self._newline()
 
         term_lines = self._render_child(node.term, is_last=False)
@@ -268,19 +269,19 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_Goal(self, node: Goal):
-        self._emit(f"?{node.number}:{node.prop}")
+        self._emit(f"?{node.number}:{labelled_prop(node.prop, node, False)}")
         return node
 
     def visit_Laog(self, node: Laog):
-        self._emit(f"{node.number}:{node.prop}?")
+        self._emit(f"{node.number}:{labelled_prop(node.prop, node, True)}?")
         return node
 
     def visit_Deleg(self, node: Deleg):
-        self._emit(f"!{node.number}:{node.prop}")
+        self._emit(f"!{node.number}:{labelled_prop(node.prop, node, False)}")
         return node
 
     def visit_Geled(self, node: Geled):
-        self._emit(f"{node.number}:{node.prop}!")
+        self._emit(f"{node.number}:{labelled_prop(node.prop, node, True)}!")
         return node
 
     def visit_ID(self, node: ID):
@@ -296,7 +297,8 @@ class _VanillaVisitor(ProofTermVisitor):
         # A citation of a sub-debate (core/dc/share.py) carries what its
         # site captures and cuts, as ``pres.gen`` prints it.
         name = f'{node.name}{getattr(node, "bracket", "")}'
-        return f"{name}:{node.prop}" if node.prop else name
+        prop = labelled_prop(node.prop, node, isinstance(node, ID))
+        return f"{name}:{prop}" if prop else name
 
     # -- first-order nodes -------------------------------------------------
 
@@ -356,14 +358,14 @@ class _DialecticalVisitor(_VanillaVisitor):
         match = _match_any_scaffold(node)
         if match is None:
             return super().visit_Mu(node)
-        self._scaffold(match)
+        self._scaffold(node, match)
         return node
 
     def visit_Mutilde(self, node: Mutilde):
         match = _match_any_scaffold(node)
         if match is None:
             return super().visit_Mutilde(node)
-        self._scaffold(match)
+        self._scaffold(node, match)
         return node
 
     @staticmethod
@@ -386,10 +388,12 @@ class _DialecticalVisitor(_VanillaVisitor):
             return self._stack(match[3], side) + self._stack(self._scion(match), side)
         return [scion]
 
-    def _scaffold(self, match):
+    def _scaffold(self, node, match):
         """SUP(base) ( ++a_1 ... ++a_n ): the scaffolds of one role stacked
         on one statement (the legacy shape nests them through the original,
-        the stacked shape through the supporter scion) read as one."""
+        the stacked shape through the supporter scion) read as one.  In a
+        labelled term the head carries the statement's label as its
+        proposition would: SUP{L}, {L}PUS."""
         role, side, prop = match[0], match[1], match[2]
         items = []
         while True:
@@ -399,7 +403,7 @@ class _DialecticalVisitor(_VanillaVisitor):
             match = _match_any_scaffold(base)
             if match is None or match[:3] != (role, side, prop):
                 break
-        head = _SCAFFOLD_HEADS[(role, side)]
+        head = labelled_prop(_SCAFFOLD_HEADS[(role, side)], node, side == "context")
         mark = "++ " if role == "supporter" else "-- "
         opening_prefix = self.prefix
         base_lines = self._render_lines(base)

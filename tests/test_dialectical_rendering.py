@@ -115,3 +115,28 @@ def test_the_context_side_attack_reads_tta():
 def test_other_terms_render_as_vanilla():
     term = Mu(ID("x", "A"), "A", DI("f", "B->A"), Cons(Goal("1", "B"), ID("x", "A")))
     assert pretty_natural(term, dialectical_rendering) == pretty_natural(term, vanilla_rendering)
+
+
+# Labelled terms (core/comp/labelled.py) print their labels as pres_str does:
+# A{L} on a term-sorted node, {L}A on a context-sorted one.
+def labelled(node, label):
+    node.label = label
+    return node
+
+
+def test_vanilla_prints_the_labels_of_a_labelled_term():
+    term = labelled(Mu(ID("x", "A"), "A", labelled(Deleg("u1", "A"), "IN"),
+                       labelled(ID("x", "A"), "OUT")), "IN")
+    assert pretty_natural(term, vanilla_rendering) == (
+        "μx:A{IN}.<\n"
+        "├─ !u1:A{IN}||\n"
+        "└─ x:{OUT}A\n"
+        ">"
+    )
+
+
+def test_a_labelled_scaffold_carries_its_label_on_the_head():
+    term = labelled(t_sup("alt1", "b1", "A", labelled(Goal("u1", "A"), "IN"), DI("f", "A")), "IN")
+    assert pretty_natural(term, dialectical_rendering).splitlines()[0] == "SUP{IN}(?u1:A{IN}) ("
+    wing = labelled(c_sup("x1", "b3", "A", labelled(Laog("u2", "A"), "OUT"), ID("k", "A")), "OUT")
+    assert pretty_natural(wing, dialectical_rendering).splitlines()[0] == "{OUT}PUS(u2:{OUT}A?) ("

@@ -30,6 +30,17 @@ def pres_str(node) -> str:
         return repr(node)
 
 
+def labelled_prop(prop, node, context_sorted):
+    """A proposition with the label of a labelled term
+    (core/comp/labelled.py): ``A{L}`` for a term-sorted node, ``{L}A``
+    for a context-sorted one; unchanged without a label.  Every renderer
+    of proof terms prints labels through this."""
+    label = getattr(node, "label", None)
+    if not label or not prop:
+        return prop
+    return f'{{{label}}}{prop}' if context_sorted else f'{prop}{{{label}}}'
+
+
 def pres_tree(node) -> str:
     """Render a proof term as an indented tree, for a multi-line log
     artifact (``core.logging_util.artifact``), never raising.
@@ -77,15 +88,7 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
         """
         return f'({node.pres})' if isinstance(node, (Cons, ConsFO, Sonc)) else node.pres
 
-    @staticmethod
-    def _labelled(prop, node, context_sorted):
-        """A proposition with the label of a labelled term
-        (core/comp/labelled.py): ``A{L}`` for a term-sorted node, ``{L}A``
-        for a context-sorted one; unchanged without a label."""
-        label = getattr(node, "label", None)
-        if not label or not prop:
-            return prop
-        return f'{{{label}}}{prop}' if context_sorted else f'{prop}{{{label}}}'
+    _labelled = staticmethod(labelled_prop)
 
     def _typed_leaf(self, name, prop, node=None):
         if self.verbosity < 0:

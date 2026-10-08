@@ -513,8 +513,8 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     strict_trace = []
     strict_body, _ = strict_resolve(body, strict_names or (), trace=strict_trace)
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
+        from pres.gen import pres_tree
+        artifact(logger, "evaluate: the labelled term", pres_tree(label_term(strict_body, sigma)))
     # Phase 2: sigma decides what strictness delayed, reading the labelled term.
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
@@ -617,8 +617,8 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
                        else Mutilde(DI("x1", prop), prop, DI("x1", prop), strict_body))
     # Phase 2: sigma decides what strictness delayed.
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
+        from pres.gen import pres_tree
+        artifact(logger, "evaluate: the labelled term", pres_tree(label_term(strict_body, sigma)))
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
                                  trace=sigma_trace, stubs=resolver)
