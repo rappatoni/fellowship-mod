@@ -6,8 +6,8 @@ Purpose
 
 Structure
 - ac/: AST + grammar + instruction lowering to Fellowship commands.
-- comp/: Visitors and transformations (enrichment, reduction, α-renaming, neg-intro rewrite).
-- dc/: Higher-level debate operations (graft, undercut helpers, matching utilities, Argument class).
+- comp/: Visitors and transformations (enrichment, reduction, α-renaming).
+- dc/: Arguments and debates: the Argument class, debate objects, the document graph, unfolding, strictness, citation, sharing and the type oracle.
 
 Notes
 - Import directly: core.ac.grammar, core.comp.reduce, core.dc.argument, etc.

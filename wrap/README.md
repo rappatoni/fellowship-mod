@@ -9,7 +9,7 @@ Files
     ACDC_NO_RENDER=1 stops `graph ... show` and `tree` writing image/DOT files
     (ACDC_NO_OPEN=1 only stops the viewer).
 - cli.py
-  - CLI/task helpers: setup_prover(), execute_script(), interactive_mode(), plus reduce/render/color/tree/undercut command helpers.
+  - CLI/task helpers: setup_prover(), execute_script(), interactive_mode(), plus the command helpers (record, register, render, reduce, tree, graph, label, evaluate, explain, debates).
 
 Notes
 - Tests and callers import from wrap.cli and wrap.prover directly (no shim).

@@ -1,11 +1,10 @@
-from pathlib import Path
 
 import pytest
 from wrap.prover import ProverError
 
 
-def test_affine_cut_script_roundtrip(prover):
-    script = Path(".cecli/workspace/affine_cut.fsp")
+def test_affine_cut_script_roundtrip(prover, tmp_path):
+    script = tmp_path / "affine_cut.fsp"
     script.write_text(
         "\n".join(
             [

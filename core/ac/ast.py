@@ -279,7 +279,7 @@ class FirstOrderNotSupported(NotImplementedError):
     def __init__(self, operation: str, node: "ProofTerm"):
         super().__init__(
             f"{operation} does not support first-order terms yet, and this one "
-            f"contains a {type(node).__name__}. The first-order reduction and "
-            f"grafting rules are not settled; see Milestone B in the plan."
+            f"contains a {type(node).__name__}. The first-order reduction "
+            f"rules are not settled (tasks.org, aida-first-order-reduction)."
         )
         self.node = node

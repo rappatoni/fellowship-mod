@@ -658,9 +658,9 @@ worked examples of every shape.
 
 - `tactic NAME ARGS...`
   - invoke a custom tactic registered on the wrapper via
-    `ProverWrapper.register_custom_tactic`. `setup_prover()` currently
-    registers only `pop`, which is marked deprecated in the source and is not
-    expected to work; the mechanism otherwise has no bundled tactics.
+    `ProverWrapper.register_custom_tactic`. No tactics are bundled
+    (`pop` was removed with the grafting verbs), so `tactic` reports an
+    unknown tactic unless one is registered from Python.
 
 ### Debates
 

@@ -37,24 +37,13 @@ def is_falsum_prop(p: str) -> bool:
         return False
     return p.strip() in _FALSUM_SPELLINGS
 
-def is_negation_prop(p: str) -> bool:
-    if not isinstance(p, str):
-        return False
-    ps = p.replace(" ", "")
-    if ps.startswith("¬") or ps.startswith("~"):
-        return True
-    if "->" in ps:
-        rhs = ps.split("->", 1)[1]
-        return rhs in _FALSUM_SPELLINGS
-    return False
-
 def is_primitive_negation_prop(p: str) -> bool:
     """Whether p is a primitive negation, as opposed to an arrow into falsum.
 
     Fellowship treats the two differently: eliminating ¬A consumes the falsum
     in the same step, while eliminating A->false leaves the falsum as an open
-    goal.  is_negation_prop conflates them, so it must not be used to decide
-    whether a falsum still needs discharging.
+    goal.  A test that accepts both shapes cannot decide whether a falsum
+    still needs discharging.
     """
     if not isinstance(p, str):
         return False
@@ -314,4 +303,3 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
 
     def visit_unhandled(self, node):
         raise Exception(f"Unhandled node type: {type(node).__name__} {self._node_pres(node)}")
-        return node

@@ -29,18 +29,13 @@ PYTEST_TODO = ("Add version of trees with natural language renderings; update/tw
                "then implement scenarios.")
 
 DEFAULT_SCRIPTS = [
-    # These scripts contain bare `axiom.` commands, which currently fail in
-    # prover replay with "You need to specify one identifier." Keep them out
-    # of the default script suite until that known prover issue is addressed.
-    # "normalize_render.fspy",
-    # "tactics.fspy",
-    # "test1.fspy",
-    # "counterarguments_and_undercut.fspy",
-    # "multiple_undercuts.fspy",
+    "normalize_render.fspy",
+    "tactics.fspy",
+    "test1.fspy",
+    "counterarguments_and_undercut.fspy",
+    "multiple_undercuts.fspy",
     "multiple_supports_stack_vs_queue.fspy",
-    # The first-order fixtures.  They also use bare `axiom.`, but pass the
-    # commands straight through rather than recording an argument and
-    # replaying it, which is where the issue above bites.
+    # The first-order fixtures.
     "fo_forall.fspy",
     "fo_exists_forall.fspy",
     # The runnable rationality-postulate fixtures (tests/rationality/).
@@ -55,8 +50,8 @@ DEFAULT_SCRIPTS = [
     "rationality/modus_tollens.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",
-    #"tests/test2.fspy",
-    # "tests/negation_expanded.fspy",  # uncomment when ready
+    # Not test2.fspy: it calls the `pop` tactic, removed with the grafting
+    # verbs.
 ]
 
 def make_assert_log(logger: logging.Logger):

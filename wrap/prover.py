@@ -17,13 +17,6 @@ logger = logging.getLogger('fsp.wrapper')
 class ProverError(Exception):
     pass
 
-class ProverNeedsMoreInput(ProverError):
-    """The prover has not returned to the prompt yet (e.g. waiting for a trailing '.').
-
-    This is not a desync; the caller should keep feeding input lines until a prompt appears.
-    """
-    pass
-
 class MachinePayloadError(ProverError):
     pass
 
@@ -77,9 +70,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         # terminal echo negotiation, so that defensive delay only adds linear
         # latency to proof replay.
         self.prover.delaybeforesend = None
-        self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
+        self.custom_tactics : Dict[str, Any] = {} # Tactics registered with register_custom_tactic; none are bundled.
         self.last_state: Any = None
-        self.last_output_text: str = ""
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}
         # Whether `graph ... show` and `tree` may write image/DOT files and open
@@ -132,7 +124,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 # The prover may be waiting for a continuation line / trailing '.'
                 # and thus has not printed the prompt yet.
                 out = getattr(self.prover, "before", "")
-                self.last_output_text = out
                 state: Dict[str, Any] = {"_need_more_input": True}
                 if include_ui:
                     state["_ui"] = MACHINE_BLOCK_RE.sub("", out).strip()
@@ -174,13 +165,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 self.prover.expect('fsp <')
                 outputs.append(self.prover.before)
         except PexpectTIMEOUT as e:
-            out = "".join(outputs) + getattr(self.prover, "before", "")
-            self.last_output_text = out
             logger.error("pexpect timeout on command batch %r: %s", cleaned, e)
             raise ProverError(f"Prover I/O timeout during command batch: {e}") from e
         except PexpectEOF as e:
-            out = "".join(outputs) + getattr(self.prover, "before", "")
-            self.last_output_text = out
             logger.error("pexpect EOF on command batch %r: %s", cleaned, e)
             raise ProverError(f"Prover I/O EOF during command batch: {e}") from e
 
@@ -236,7 +223,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
         allow_incomplete: bool = False,
     ) -> Dict[str, Any]:
         """Parse prover output and apply the standard state side effects."""
-        self.last_output_text = output
         state = self._extract_machine_block(output)
         if state is None:
             if allow_incomplete:

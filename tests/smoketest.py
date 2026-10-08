@@ -1,9 +1,7 @@
-import os
-from wrap.prover import ProverWrapper
+from wrap.cli import setup_prover
 
-def test_machine_stub(monkeypatch):
-    monkeypatch.setenv("FSP_HUMAN_UI", "0")  # enforce machine mode
-    pw = ProverWrapper('./fsp')
+def test_machine_stub():
+    pw = setup_prover()   # resolves fsp as the CLI does and forces machine mode
     state = pw.send_command('lj.')
     assert state.get('mode') in {None, 'idle', 'success', 'subgoals', 'exception'}
     pw.close()
