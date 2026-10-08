@@ -385,9 +385,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         start_payload = self.prover.send_command(start_cmd)
         output = start_payload
         # Execute each instruction.  Ordinary Fellowship commands are batched
-        # by default to avoid one pexpect round-trip per proof step.  Custom
-        # Python tactics may call back into the wrapper, so pending Fellowship
-        # commands are flushed before and after such tactic boundaries.
+        # by default to avoid one pexpect round-trip per proof step.
         last_output = start_payload
         instr_list = list(self.instructions)
         total = len(instr_list)
@@ -442,38 +440,29 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 if self._goal_count(last_output) > 1:
                     last_output = self.prover.send_command('next.')
                 continue
-            if stepwise and not instr.startswith('tactic '):
+            if stepwise:
                 # A cited site is closed from the user's point of view: never
                 # let a later step land on it.
                 last_output = self._step_off_cited_sites(last_output, instr)
-            if instr.startswith('tactic '):
-                flush_pending()
-                # Handle custom tactic invocation within argument execution
-                parts = instr.split()
-                tactic_name = parts[1]
-                tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                output = self.prover.execute_tactic(tactic_name, *tactic_args)
+            norm = instr.strip().lower()
+            command = instr.strip() + '.'
+            # Preserve the historical special case: if a final "next"
+            # raises, ignore it.  Keep that one command on the old single
+            # command path so we still know exactly which command failed.
+            should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay or stepwise
+            if use_batch_replay and not should_single_step:
+                pending_commands.append(command)
+                continue
+            flush_pending()
+            try:
+                output = self.prover.send_command(command)
                 last_output = output
-            else:
-                norm = instr.strip().lower()
-                command = instr.strip() + '.'
-                # Preserve the historical special case: if a final "next"
-                # raises, ignore it.  Keep that one command on the old single
-                # command path so we still know exactly which command failed.
-                should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay or stepwise
-                if use_batch_replay and not should_single_step:
-                    pending_commands.append(command)
-                    continue
-                flush_pending()
-                try:
-                    output = self.prover.send_command(command)
-                    last_output = output
-                    logger.trace("Prover output: %s", output)
-                except ProverError as e:
-                    if i == total - 1 and norm == "next":
-                        logger.warning("Ignoring ProverError on final 'next': %s", e)
-                        break
-                    raise
+                logger.trace("Prover output: %s", output)
+            except ProverError as e:
+                if i == total - 1 and norm == "next":
+                    logger.warning("Ignoring ProverError on final 'next': %s", e)
+                    break
+                raise
         flush_pending()
         # Capture the assumptions (open goals) using the last successful state
         if last_output is None:

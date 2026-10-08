@@ -96,7 +96,6 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         
         Syntax for scripts: 
           - All fellowship commands;
-          - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
           - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
             term-level reducer, not the compiler pipeline; use "evaluate")
@@ -265,24 +264,12 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     logger.info("Argument '%s' executed and registered  with conclusion '%s'.", arg.name, arg.conclusion)
             elif recording:
                     # Record-only during scripts: do not execute lines now.
-                    if command.startswith('tactic '):
-                        # Keep the tactic line as-is; Argument.execute will run it.
-                        current_argument['instructions'].append(command)
-                    else:
-                        # Strip trailing dot; Argument.execute will add a single '.'
-                        instr = command.rstrip('.').strip()
-                        current_argument['instructions'].append(instr)
+                    # Strip trailing dot; Argument.execute will add a single '.'
+                    instr = command.rstrip('.').strip()
+                    current_argument['instructions'].append(instr)
             else:
                     # Handle commands outside of recording
-                    if command.startswith('tactic '):
-                        # Handle tactic commands outside of recording
-                        parts = command.split()
-                        tactic_name = parts[1]
-                        tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                        output = prover.execute_tactic(tactic_name, *tactic_args)
-                        #print(output)
-
-                    elif command.startswith("decorate "):
+                    if command.startswith("decorate "):
                         try:
                             name, template = parse_decorate_command(command)
                             prover.register_decoration(name, template)
@@ -552,7 +539,7 @@ def _live_step(prover: ProverWrapper, current: dict, command: str, *, record: bo
                       f"the term will show the name '{cited.name}' there.")
             _print_ui(output)
         else:
-            if cited_sites and not command.startswith('tactic '):
+            if cited_sites:
                 for _ in range(len(_live_goal_metas(state)) + 1):
                     focused = probe._focused_goal(state)
                     if focused is None or focused[0] not in cited_sites:
@@ -562,18 +549,14 @@ def _live_step(prover: ProverWrapper, current: dict, command: str, *, record: bo
                               f"end the recording with `end argument` or `qed.`")
                         return "refused"
                     state = prover.send_command('next.', include_ui=True)
-            if command.startswith('tactic '):
-                parts = command.split()
-                output = prover.execute_tactic(parts[1], *parts[2:])
-            else:
-                output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+            output = prover.send_command(command, include_ui=True, allow_incomplete=True)
+            _print_ui(output)
+            while isinstance(output, dict) and output.get('_need_more_input'):
+                more = _read_line('... ')
+                output = prover.send_command(more, include_ui=True, allow_incomplete=True)
                 _print_ui(output)
-                while isinstance(output, dict) and output.get('_need_more_input'):
-                    more = _read_line('... ')
-                    output = prover.send_command(more, include_ui=True, allow_incomplete=True)
-                    _print_ui(output)
-                if isinstance(output, dict) and output.get('_need_more_input'):
-                    return "refused"
+            if isinstance(output, dict) and output.get('_need_more_input'):
+                return "refused"
     except MachinePayloadError as e:
         print(f"acdc: fatal prover communication error: {e}")
         logger.error("Fatal prover communication error during recording: %s", e)
@@ -601,7 +584,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
         
         Syntax for commands: 
           - All fellowship commands;
-          - (Custom) tactics: "tactic <TacticName> <Args>"
           - Arguments: "start argument / end argument";
           - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
             term-level reducer, not the compiler pipeline; use "evaluate")
@@ -914,18 +896,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
             elif recording:
                 # Record the command as part of the argument
                 if command:
-                    if command.startswith('tactic '):
-                        # Handle custom tactic invocation during recording
-                        parts = command.split()
-                        tactic_name = parts[1]
-                        tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                        output = prover.execute_tactic(tactic_name, *tactic_args)
-                        # print(output)
-                        # Record the tactic command as part of the instructions
-                        current_argument['instructions'].append(command)
-                    else:
-                        if _live_step(prover, current_argument, command) == "fatal":
-                            break
+                    if _live_step(prover, current_argument, command) == "fatal":
+                        break
             else:
                 # Normal command execution
                 if command.startswith('argument '):
@@ -958,13 +930,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     except Exception as e:
                         print(f"Error parsing argument: {e}")
                         logger.error("Error parsing argument '%s': %s", name, e)
-                elif command.startswith('tactic '):
-                    # Handle custom tactic invocation outside of recording
-                    parts = command.split()
-                    tactic_name = parts[1]
-                    tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
-                    output = prover.execute_tactic(tactic_name, *tactic_args)
-                    # print(output)
                 else:
                     # Execute the command normally.  A `declare` takes its
                     # names first; NameClash is a ProverError, handled below.
