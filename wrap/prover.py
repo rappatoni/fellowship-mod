@@ -70,7 +70,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         # terminal echo negotiation, so that defensive delay only adds linear
         # latency to proof replay.
         self.prover.delaybeforesend = None
-        self.custom_tactics : Dict[str, Any] = {} # Keeps custom tactics. Most importantly those that realize the argumentative layer (pop, chain, undercut, focussed undercut, rebut, support.)
+        self.custom_tactics : Dict[str, Any] = {} # Tactics registered with register_custom_tactic; none are bundled.
         self.last_state: Any = None
         self._sexp = SexpParser()
         self.echo_notes = os.getenv("FSP_ECHO_NOTES", "1").lower() not in {"0", "false", "no"}

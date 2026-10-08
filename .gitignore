@@ -52,6 +52,10 @@ acdc
 .aider*
 aider.*
 
+# editor backups and old Subversion metadata
+*~
+.svn/
+
 # local latex/image artifacts
 ltximg/
 *.dot
