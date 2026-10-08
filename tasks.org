@@ -2087,7 +2087,8 @@ Its open children moved here. Related work tracked elsewhere:
   [[file:../scasp-aida/tasks.org::*Translate negative justifications in the s(CASP) importer][aida-scasp-import-negative-justifications]] (scasp-aida repository);
 - the theory tasks T1-T6 (top-level, below).
 
-*** REVIEW Record debates as named, ordered, scoped selections of the document
+*** DONE Record debates as named, ordered, scoped selections of the document
+CLOSED: [2026-10-08 Thu]
 :PROPERTIES:
 :ID:             aida-debate-objects
 :AREA:           phd
