@@ -294,7 +294,7 @@ def test_the_cli(fresh, tmp_path, caplog):
     text = "\n".join(r.getMessage() for r in caplog.records)
     assert "Unfolded the debate term unfolded for 'p1'" in text
     assert "Unfolded the canonical debate term of issue :B" in text
-    assert "unfold debate: not implemented yet" in text
+    assert "unfold debate: no debate 'whatever'." in text
     assert "Evaluated 'p1' (credulous, preferred, base cbn): VALUE" in text
     assert "normal form: μp1:B.<r1:A->B||!IN:A*p1:B>" in text
     assert "Evaluated 'issue :B' (credulous, preferred, base cbn): VALUE" in text

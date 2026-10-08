@@ -97,7 +97,11 @@ class Unfolder:
     #: still builds (core/dc/share.py) until aida-shared-route-stack-shape.
     stacked = True
 
-    def __init__(self, graph: DebateGraph, *, stacked=None):
+    def __init__(self, graph: DebateGraph, *, stacked=None, order=None):
+        """``order`` ({argument name: rank}, a debate's utterance order,
+        core/dc/debate.py): at every statement the edges of the ranked
+        arguments go above the others, in rank order - the last uttered
+        outermost, judged first; the rest keep registration order below."""
         if stacked is not None:
             self.stacked = stacked
         self.graph = graph
@@ -114,6 +118,10 @@ class Unfolder:
             if edge.role == "subargument":
                 continue
             self._by_target.setdefault((edge.target_key, edge.target_side), []).append(edge)
+        if order:
+            for edges in self._by_target.values():
+                # stable: unranked edges keep registration order
+                edges.sort(key=lambda e: (e.name in order, order.get(e.name, 0)))
 
     # -- helpers ------------------------------------------------------------
 

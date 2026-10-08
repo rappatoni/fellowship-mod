@@ -47,8 +47,9 @@ def test_demo_runs_end_to_end(prover, script):
 
 def test_02_verbs_and_refusal(prover):
     run(prover, "tests/demo/02_support_attack.fspy")
-    assert prover.get_argument("dsup") and prover.get_argument("datt")
-    assert prover.get_argument("bad") is None                     # refused support
+    assert [str(m) for m in prover.debates["dsup"].moves] == ["tweety.", "support wings tweety."]
+    assert [str(m) for m in prover.debates["datt"].moves] == ["tweety.", "attack penguin tweety."]
+    assert [str(m) for m in prover.debates["bad"].moves] == ["tweety."]   # the support is refused
     assert issue_verdict(prover, "tweety", "skeptical")[0] != "value"
     assert issue_verdict(prover, "tweety", "credulous")[0] == "value"
 

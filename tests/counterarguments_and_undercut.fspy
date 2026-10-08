@@ -34,10 +34,13 @@ end argument
 #
 # Now we test if arg2 undercuts arg1 on EfficientMetro as intended: 
 #
-undercut u1 arg2 arg1
+debate pro open u1 : UseMetro.
+arg1.
+rebut arg2 arg1.
+hora est.
 #
 # Next, we reduce the resulting argument to confirm that arg1 is defeated and color it.
-reduce u1
+evaluate u1
 label u1
 #
 #We add an attacker to the counterargument to test that the original conclusion is restored as intended.
@@ -57,8 +60,12 @@ axiom.
 end argument
 #
 # Introduce the attacker, normalize and color:
-undercut u2 arg3 u1
-reduce u2
+debate pro open u2 : UseMetro.
+arg1.
+rebut arg2 arg1.
+rebut arg3 arg2.
+hora est.
+evaluate u2
 label u2
 #
 # And one last undercut
@@ -77,8 +84,13 @@ axiom.
 end argument
 #
 # Introduce the attacker, normalize and color:
-undercut u3 arg4 u2
-reduce u3
+debate pro open u3 : UseMetro.
+arg1.
+rebut arg2 arg1.
+rebut arg3 arg2.
+rebut arg4 arg3.
+hora est.
+evaluate u3
 label u3
 tree u3 nl
 #
@@ -106,8 +118,11 @@ next.
 axiom.
 end argument
 # Constructing undercut
-undercut u4 arg6 arg5
+debate con open u4 : LowballOffer.
+arg5.
+rebut arg6 arg5.
+hora est.
 # Reduce, color
-reduce u4
+evaluate u4
 render u4 vanilla
 label u4

@@ -82,9 +82,20 @@ axiom.
 moxia beta.
 end argument
 
-support first arg1 sup1
-support second counter1 counter2
-undercut third second first
+debate pro open first : A.
+sup1.
+support arg1 sup1.
+hora est.
+debate con open second : A_h.
+counter2.
+support counter1 counter2.
+hora est.
+debate pro open third : A.
+sup1.
+support arg1 sup1.
+rebut counter2 arg1.
+support counter1 counter2.
+hora est.
 
 render third vanilla
 label third

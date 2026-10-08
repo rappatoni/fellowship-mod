@@ -23,7 +23,10 @@ start argument qStrict Q
 axiom axQ.
 end argument
 
-support dsup qStrict pArg
+debate pro open dsup : P.
+pArg.
+support qStrict pArg.
+hora est.
 
 % Compile the debate graph, print the grounded labelling, then evaluate
 % under both modes and base strategies.

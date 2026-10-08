@@ -34,8 +34,15 @@ axiom.
 end argument
 
 # This is an example of a positive loop: A can defend itself against C by counter attacking.
-attack intermediate second first
-attack final third intermediate
+debate pro open intermediate : A.
+first.
+attack second first.
+hora est.
+debate pro open final : A.
+first.
+attack second first.
+attack third second.
+hora est.
 # But we want to prevent infinite loops where first is now again introduced as a supporter for third. How to do this?
 
 
@@ -71,4 +78,8 @@ end argument
 
 register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
 
-support olon olonMaker intermediate
+debate pro open olon : A.
+first.
+attack second first.
+support olonMaker second.
+hora est.

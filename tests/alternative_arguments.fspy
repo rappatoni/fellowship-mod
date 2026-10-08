@@ -31,8 +31,13 @@ axiom.
 end argument
 #
 # Construct support, reduce, color.
-support first sup1 arg1
-reduce first
+debate pro open first : B.
+arg1.
+% was `support sup1 arg1.`: :A is not a node of 'arg1' yet (an intermediate
+% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
+sup1 arg1.
+hora est.
+evaluate first
 label first
 #
 #Next we try alternative counterarguments:
@@ -66,8 +71,13 @@ moxia r6.
 end argument
 #
 # Construct support, reduce, color.
-support second csup1 c1
-reduce second
+debate con open second : B.
+c1.
+% was `support csup1 c1.`: A: is not a node of 'c1' yet (an intermediate
+% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
+csup1 c1.
+hora est.
+evaluate second
 label second
 #
 #Testing admal
@@ -81,4 +91,9 @@ end argument
 #
 #Supporting arg1
 #
-support third admaltest arg1
+debate pro open third : B.
+arg1.
+% was `support admaltest arg1.`: :A is not a node of 'arg1' yet (an intermediate
+% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
+admaltest arg1.
+hora est.

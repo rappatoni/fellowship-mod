@@ -49,8 +49,15 @@ start counterargument sChal S
 by default.
 end counterargument
 
-attack yAtt sChal yQ
-support d yAtt pArg
+debate pro open yAtt : Q.
+yQ.
+attack sChal yQ.
+hora est.
+debate pro open d : P.
+pArg.
+support yQ pArg.
+attack sChal yQ.
+hora est.
 
 graph d show
 label d preferred

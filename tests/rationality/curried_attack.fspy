@@ -38,12 +38,21 @@ start argument aArg A
 axiom axA.
 end argument
 
-support d5 aArg cArg
+debate pro open d5 : C.
+cArg.
+support aArg cArg.
+hora est.
 
 start counterargument test (B->C)
 by default.
 end counterargument
 
-attack d6 test d5
+debate pro open d6 : C.
+cArg.
+support aArg cArg.
+% was `attack test cArg.`: B->C: is not a node of 'cArg' yet (an intermediate
+% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
+test cArg.
+hora est.
 label d6
 graph d6

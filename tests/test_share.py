@@ -276,10 +276,10 @@ def chain_script(levels):
     return "\n".join(lines) + "\n"
 
 
-class TestDebateCommand:
-    def test_debate_prints_the_named_sub_debate(self, fresh, tmp_path, capsys):
+class TestShareCommand:
+    def test_share_prints_the_named_sub_debate(self, fresh, tmp_path, capsys):
         script = tmp_path / "double.fspy"
-        script.write_text(chain_script(2) + "debate a2_0\n")
+        script.write_text(chain_script(2) + "share a2_0\n")
         run(fresh, script)
         out = capsys.readouterr().out
         assert "Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:" in out
@@ -288,7 +288,7 @@ class TestDebateCommand:
 
     def test_an_authors_citation_keeps_its_name(self, fresh, tmp_path, capsys):
         script = tmp_path / "cited.fspy"
-        script.write_text(open("tests/statements_and_citations.fspy").read() + "\ndebate use\n")
+        script.write_text(open("tests/statements_and_citations.fspy").read() + "\nshare use\n")
         run(fresh, script)
         out = capsys.readouterr().out
         assert "efficient:EfficientMetro*th:UseMetro" in out

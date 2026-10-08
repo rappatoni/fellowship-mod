@@ -12,4 +12,3 @@ start argument scion A -> B->C
 axiom axScion.
 end argument
 
-chain scion root

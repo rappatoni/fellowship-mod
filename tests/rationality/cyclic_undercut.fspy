@@ -70,9 +70,21 @@ elim.
 axiom.
 end counterargument
 
-attack aB cR argB
-support cQs aB cQ on B
-attack d cQs argA
+debate pro open aB : B.
+argB.
+attack cR argB.
+hora est.
+debate con open cQs : Q.
+cQ.
+support argB cQ.
+attack cR argB.
+hora est.
+debate pro open d : A.
+argA.
+attack cQ argA.
+support argB cQ.
+attack cR argB.
+hora est.
 
 graph d
 label d

@@ -27,6 +27,9 @@ start argument aArg A
 axiom axA.
 end argument
 
-support d5 aArg cArg
+debate pro open d5 : C.
+cArg.
+support aArg cArg.
+hora est.
 
 label d5

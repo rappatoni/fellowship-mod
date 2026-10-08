@@ -8,4 +8,3 @@ end argument
 start argument argB B
 cut (A) H.
 end argument
-chain argA argB

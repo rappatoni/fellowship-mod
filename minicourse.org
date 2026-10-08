@@ -6,6 +6,10 @@
 # prose. Every transcript quoted below was produced by running the code,
 # not written from memory; tests/minicourse/test_minicourse.py pins the
 # quoted values so this file cannot silently go stale.
+#
+# Revised 2026-10-08 (aida-debate-objects): the grafting verbs are gone;
+# lessons 2 and 6 now compose with a recorded debate, and their
+# transcripts were rerun.
 
 * About this course
 
@@ -152,11 +156,13 @@ are *conjoined* (lesson 4). Binary edges cannot express that.
 
 Where do the sources come from? A term's root judgment only exposes the
 whole argument's sequent; the subarguments' sequents live in the typing
-*derivation*, which is meta-level. *Theta-expansion* reifies them: it
-exposes one open obligation per logically-progressing node, so each
-subargument's inputs become surface syntax that the compiler can read off
-mechanically. That is why the debate operations theta-expand before
-grafting.
+*derivation*, which is meta-level. The compiler reads them off the term
+instead: every open site of a registered argument is a source, and every
+lambda inside it - an implication proved under a hypothesis - is a
+subargument with its own edge. (The grafting debate verbs, removed
+2026-10-08, first *theta-expanded* their target to expose such sites as
+surface syntax; a debate is now a selection of registered arguments and
+grafts nothing.)
 
 Two special cases:
 
@@ -171,30 +177,44 @@ Two special cases:
 ** Example
 
 =tests/minicourse/lesson2_graph.fspy=: cArg derives C from A and B through
-the axiom abc; bArg then supports B via the axiom axB.
+the axiom abc; bArg concludes B by the axiom axB. The debate =d2= puts the
+two together:
 
-: Debate graph for 'd2': 3 nodes, 2 edges
+: debate pro open d2 : C.
+: cArg.
+: support bArg cArg.
+: hora est.
+
+=support bArg cArg.= is checked - cArg must have a site on B - and adds
+nothing to the document: the conflicts and supports are already there by
+proposition identity. =graph d2=:
+
+: Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 3 nodes, 3 edges
 :   bArg (supporter, strict): B[t] <- -
-:   cArg (argument, defeasible): C[t] <- A[t:obli], B[t:obli]
+:   cArg (supporter, defeasible): C[t] <- A[t:obli], B[t:obli]
+:   bArg* (strict, strict): B[t] <- -
 :   default A[t]: obligation
 :   default B[t]: obligation
+:   default C[t]: obligation
 
-Read it: =cArg= is one edge with *two* sources, both term-side obligations
-(until 2026-09-16 this edge was printed under the debate's name =d2=;
-edges are now named after the subargument they record, task
-=aida-host-edge-naming=).
-=bArg= is strict with no sources - an axiom needs nothing. The default
-markers record that A and B are obligations wherever they are referenced.
+Read it: =cArg= is one edge with *two* sources, both term-side obligations.
+=bArg= is strict with no sources - an axiom needs nothing. =bArg*= is the
+same derivation once more, the strict edge the strict phase contributes
+(=minicourse-evaluation.org=, lesson 10). Edges are named after the
+argument or subargument they record (task =aida-host-edge-naming=), and
+the role is read off the debate term: both arguments sit on support
+stacks there. The default markers record that A, B and C are obligations
+wherever they are referenced.
 
 ** Exercises
 
-1. =bArg= concludes B, and B is also a source of =d2=. Sketch the two-edge
+1. =bArg= concludes B, and B is also a source of =cArg=. Sketch the two-edge
    graph. Which statement is the conclusion of the debate (the one no
    other edge consumes)?
 2. Predict what changes in that printout if =axB= is removed and bArg
    instead rests on an open site =?x:D=. Run it if you like.
 3. Why must the supporter appear as its own edge rather than being
-   substituted into =d2='s source list?
+   substituted into =cArg='s source list?
 
 * Lesson 3 - Abstract dialectical frameworks
 
@@ -712,8 +732,8 @@ Support and attack are not primitives. They are *syntactic scaffolds*
 placed at a site, and the implementation recognises exactly four shapes
 (=core/dc/debate_graph.py=, the COMMA 2026 paper's Definitions Support
 and Attack, with the context side mirrored; adopted 2026-09-17,
-replacing the shapes the term-level verbs generate, which are kept as
-a legacy pattern). Every scaffold starts with the same bureaucratic
+replacing the shapes the removed term-level verbs generated, which are
+still recognised as a legacy pattern). Every scaffold starts with the same bureaucratic
 step, the *exposure* of the site's continuation as an obligation,
 
 :   t  ->  mu alpha:A.< t || [A:] >          (context side: E -> mu'x:A.< [:A] || E >)
@@ -758,27 +778,23 @@ attacker whose source is an obligation, discarded by the labelling.
 
 ** Example
 
-From =tests/minicourse/lesson2_graph.fspy=, the enriched composite (the
-support scaffold, in the middle, formatted here for reading):
+From =tests/minicourse/lesson2_graph.fspy=, the term of the debate =d2=
+(=render d2=), its B site formatted here for reading:
 
-: mu d2:C.< ... mu r:C.< abc:A->B->C
-:            || ?1:A * mu alt:B.< mu _:B.< ?2:B      || alt:B >
-:                              || mu'_:B.< mu bArg:B.<axB:B||bArg:B> || alt:B > >
-:                     * r:C > ... >
+: mu alt2:B.< ?u3:B || mu'b2:B.< mu _:B.<b2:B || alt2:B>
+:                             || mu'_:B.< mu bArg:B.<axB:B||bArg:B> || alt2:B > > >
 
-That is the *legacy* T-SUP shape, which the term-level =support= verb
-still builds by theta-expansion and grafting. Unfolded from the document
-graph (Phase B) the same site reads, in the paper's shape,
-
-: mu alt:B.< ?2:B || mu'b:B.< mu _:B.<b || alt> || mu'_:B.< mu bArg:B.<axB||bArg> || alt > > >
-
-with the original =?2:B= bound to =b=. (mu<) keeps the obligation; (>mu)
-keeps the axiom.
+That is T-SUP, the paper's shape, with the original =?u3:B= bound to
+=b2=. (mu<) keeps the obligation; (>mu) keeps the axiom. (Until
+2026-10-08 the term-level =support= verb built the *legacy* shape here by
+theta-expansion and grafting, =mu alt:B.< mu _:B.< ?2:B || alt > || mu'_:B.<
+bArg || alt > >=; the verbs are gone, and a debate's term is always
+unfolded.)
 
 ** Exercises
 
 1. In that term, which reduction - (mu<) or (>mu) - keeps =bArg=? Which
-   keeps =?2:B=?
+   keeps =?u3:B=?
 2. In T-ATT the left wing steals the original into the refutation and the
    right wing returns it. If the attacker wins, which wing survives, and
    what is left sitting where the value should have been?
@@ -865,7 +881,7 @@ side, and the opponent's side is the mirror - the executable form of
 "if the proponent has skeptical onus then the opponent has credulous
 onus", and the reason the paper's call-by-onus could be stated as a
 choice between (mu<) and (>mu) at all. (Until 2026-09-17 the
-implementation used the shapes the term-level verbs graft, whose attack
+implementation used the shapes the term-level verbs grafted, whose attack
 wings are swapped; there neither mode was a uniform strategy, and this
 passage said so.)
 
@@ -1275,7 +1291,7 @@ Verified against the implementation; the values are pinned in
 
 ** Lesson 2
 
-1. =B[t] <- bArg= (strict, no sources), and =C[t] <- d2= with sources
+1. =B[t] <- bArg= (strict, no sources), and =C[t] <- cArg= with sources
    A[t], B[t]. C[term] is the conclusion: no edge consumes it.
 2. =bArg= stops being strict - it gains a source D[t:obli] - and a
    D[term] obligation marker appears. B[t] then depends on D[t].
@@ -1369,12 +1385,12 @@ Verified against the implementation; the values are pinned in
 
 ** Lesson 6
 
-1. (>mu) keeps =bArg= - the right wing survives; (mu<) keeps =?2:B= - the
+1. (>mu) keeps =bArg= - the right wing survives; (mu<) keeps =?u3:B= - the
    left wing survives.
 2. The *left* wing survives - (mu<) - leaving =mu alpha.< t || E >=
    where the value should be: the original t thrown to the refutation,
    an uncatchable clash. When t was a bare obligation this is
-   =< ?g:A || E >=, the shape the legacy verbs always produced.
+   =< ?g:A || E >=, the shape the removed grafting verbs always produced.
 3. A uniform call-by-name run keeps every supporter and returns every
    original at an attack: it gives the proponent the benefit of every
    doubt, which is the credulous mode. Call-by-value is the skeptical

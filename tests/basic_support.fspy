@@ -27,9 +27,12 @@ axiom.
 end argument
 #
 # Construct support, reduce, color.
-support first sup1 arg1
+debate pro open first : B.
+arg1.
+support sup1 arg1.
+hora est.
 render first vanilla
-reduce first
+evaluate first
 label first
 #
 # Now we test a defeated supporter
@@ -48,9 +51,13 @@ end argument
 #
 # Applying undercut to debate "first"
 #
-undercut second counter first
+debate pro open second : B.
+arg1.
+support sup1 arg1.
+rebut counter sup1.
+hora est.
 #
 # Render, reduce, color
 render second vanilla
-reduce second
+evaluate second
 label second

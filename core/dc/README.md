@@ -3,7 +3,9 @@
 Files
 - argument.py
   - Argument: executes/normalizes/render arguments against a live prover.
-  - Methods: execute(), normalize(), render(), reduce(), chain(), focussed_undercut(); support()/rebut() placeholders.
+  - Methods: execute(), normalize(), render(), reduce(); the projections out/tou/sub/bus/attacker/regatta (deprecated).
+- debate.py
+  - Debate, Move: debates as named, ordered, scoped selections of the document's arguments; the verb checks; unfold_debate.
   - Normalization: enrichment → reduction → pres generation → NL rendering.
 - graft.py
   - graft_single(body_B, number, body_A): replace a single open Goal/Laog; capture-aware; alpha-renames on collision.

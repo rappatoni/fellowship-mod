@@ -27,7 +27,10 @@ start counterargument t P
 moxia notP.
 end counterargument
 
-attack d t tp
+debate pro open d : P.
+tp.
+attack t tp.
+hora est.
 
 graph d
 label d

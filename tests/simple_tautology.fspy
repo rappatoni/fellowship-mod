@@ -20,7 +20,10 @@ start argument s1  A -> B -> A
 elim x.
 end argument
 
-undergird d1 s1 p1
+debate pro open d1 : A -> B -> A.
+p1.
+reinforce s1 p1.
+hora est.
 
 start argument p2 B -> A
 cut ( B -> A ) alpha.

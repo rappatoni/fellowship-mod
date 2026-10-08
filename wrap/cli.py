@@ -21,6 +21,7 @@ from wrap.registry import (
     finish_recording, is_qed,
 )
 from core.dc.cite import citation_target, CitationError, is_strict_citation, parse_cite
+from core.dc.debate import DebateError
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
@@ -80,51 +81,6 @@ def configure_logging_cli(level_name: Optional[str] = None, log_file: Optional[s
 
 
 
-def check_for_errors(output,errors):
-    """ Rudimentary exception surfacing from prover output.
-    TODO: Update and test this for machine-oriented output.
-    """
-    for error in errors:
-        if error in output:
-            # print('Error detected: {error}.')
-            raise Exception(f'Error detected: {error}')
-            # return f'Error detected: {error}.'
-        else:
-            pass
-
-        
-# ---------------------------------------TACTICS-------------------------------------------------
-#TODO: Add Implication Elimination tactic.
-#TODO: Add Negation expansion tactic.
-
-def pop(prover, x, y, closed=True, errors=['This is not trivial. Work some more.']):
-    """DEPRECATED: Currently not used and code needs updating.
-    """
-
-    instructions = [f'cut ({y}) stash.', f'next.', f'cut ({x}) affine.',f'next.', f'axiom.']
-    output = ''
-    counter = 0
-    for instruction in instructions:
-        try:
-            output += prover.send_command(instruction)
-            check_for_errors(output, errors)
-        except Exception as X:
-            print(X)
-            print('Undoing and aborting.')
-            #Trying to undo the tactic application. Note that Fellowship's undo appears to be buggy so this will not always work.
-            i=0
-            while i<counter:
-                output += prover.send_command(f'undo.')
-                i+=1
-            return output
-        if instruction not in [f'next.',f'idtac.',f'prev.']:
-            # Note that undo does not seem to work with idtac, but there should be no reason to use idtac in a tactic anyway.
-            counter += 1
-            
-    return output
-
-# -----------------------------------------Scripts/Interactive Mode -----------------------------
-
 def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: int) -> None:
     """Log-and-refuse for the registry's refusals (a clashing name, a `qed`
     on a witness that is not strict): print and log, and in strict mode stop
@@ -146,25 +102,20 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
           - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
             term-level reducer, not the compiler pipeline; use "evaluate")
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
-          - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-            (deprecated, like the debate ops)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
             "render-nf <Arg>" (render-nf deprecated with reduce).
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
             "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
             the pipeline's stage-by-stage account of one evaluation;
             "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
-          - Debate ops (DEPRECATED: they build debate terms by grafting scaffolds, or
-            take such terms apart, at term level; they predate the debate compiler and
-            are not wired to it, so they are probably not safe to use.  Register
-            arguments and use graph/label/evaluate/explain instead):
-                        undermine NEW attacker target
-                        undercut  NEW attacker target   (backward compatible alias)
-                        undergird NEW supporter target [on PROP]
-                        reinforce NEW supporter target [on PROP]
-                        support   NEW supporter target [on PROP]
-                        attack    NEW attacker  target [strict] [on PROP]
-                        rebut     NEW attacker  target [on PROP]
+          - Debates (core/dc/debate.py): "debate pro|con open|closed NAME : ISSUE.",
+            then moves "ARG." or "[VERB] ARG TARGET." (VERB: attack, rebut,
+            undermine/undercut, support, buttress/reinforce, undergird), then
+            "hora est."; graph/label/evaluate/explain/render/tree take a debate name,
+            "graph NAME all" shows its whole scope.
+          - Share: "share ARG" prints ARG's debate as named sub-debates.
+          - Projections (DEPRECATED: they take term-level debate structures apart,
+            outside the compiler pipeline):
                         out      INDEX ARG NAME   (also accepts: out NAME ARG INDEX)
                         tou      INDEX ARG NAME   (also accepts: tou NAME ARG INDEX)
                         sub      ARG NAME         (also accepts: sub NAME ARG)
@@ -211,6 +162,13 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                 continue
             # developer-level trace only
             logger.debug("Sending command [%s:%d] %s", script_path, lineno, command)
+            if not recording:
+                try:
+                    if debate_line(prover, command):
+                        continue
+                except (DebateError, ProverError) as e:
+                    _refuse_in_script(e, strict, script_path, lineno)
+                    continue
             statement = None if recording else parse_statement(command)
             if statement is not None:
                 # A statement records a claim, and nothing more: `prove NAME`
@@ -373,8 +331,8 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         expand_argument_cmd(prover, command.split()[1])
                     elif command.startswith("unfold "):
                         unfold_cmd(prover, command)
-                    elif command.startswith("debate "):
-                        debate_argument_cmd(prover, command.split()[1])
+                    elif command.startswith("share "):
+                        share_argument_cmd(prover, command.split()[1].rstrip("."))
                     elif command.startswith("render-nf "):
                         # Usage: render-nf ARG [style]
                         parts = command.split()
@@ -386,11 +344,11 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                         name, style, which = _render_tokens(command)
                         render_argument_cmd(prover, name, False, style=style, which=which)
                     elif command.startswith("graph "):
-                        # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                        # Usage: graph ARG|DEBATE|issue :X|X: [all] [FILE.dot] [show]
                         name, opts = _target(command.split())
                         show = "show" in opts
-                        dot_path = next((o for o in opts if o != "show"), None)
-                        graph_argument_cmd(prover, name, dot_path, show=show)
+                        dot_path = next((o for o in opts if o not in ("show", "all")), None)
+                        graph_argument_cmd(prover, name, dot_path, show=show, whole="all" in opts)
                     elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                         set_typecheck_cmd(prover, command)
                     elif command in ("pipeline shared", "pipeline unfolded"):
@@ -446,322 +404,6 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             if stop_on_error:
                                 break
 
-                    elif command.startswith('undermine ') or command.startswith('undercut '):
-                        # Format: undermine NEW_NAME attacker target
-                        # Legacy alias: undercut NEW_NAME attacker target
-                        parts = command.split()
-                        if len(parts) != 4:
-                            logger.error("Invalid undermine command. Use: undermine NEW_NAME attacker target")
-                            continue
-                        new_name = parts[1]
-                        attacker_name = parts[2]
-                        target_name = parts[3]
-                        attacker = prover.get_argument(attacker_name)
-                        target = prover.get_argument(target_name)
-                        if attacker and target:
-                            try:
-                                result = attacker.undercut(target, name=new_name)
-                                prover.register_argument(result)
-                                logger.info("Constructed undermine '%s' (target '%s' by '%s').",
-                                            result.name, target.name, attacker.name)
-                            except ProverError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during undermine: %s", e)
-                                if stop_on_error:
-                                    break
-                            except MachinePayloadError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during undermine: %s", e)
-                                if stop_on_error:
-                                    break
-                        else:
-                            logger.error("Undermine failed: one or both arguments not found ('%s', '%s').",
-                                         attacker_name, target_name)
-                            if strict:
-                                if isolate:
-                                    try:
-                                        prover.close()
-                                    except Exception:
-                                        pass
-                                else:
-                                    prover.echo_notes = prev_echo
-                                    prover.render_files = prev_render
-                                logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: Undermine failed: missing arguments")
-                            if stop_on_error:
-                                break
-
-                    elif command.startswith('undergird ') or command.startswith('reinforce ') or command.startswith('support '):
-                        verb = command.split()[0]
-                        # Format: support/undergird/reinforce NEW_NAME supporter target [on <PROP...>]
-                        parts = command.split()
-                        if len(parts) < 4:
-                            logger.error("Invalid %s command. Use: %s NEW_NAME supporter target [on PROP]", verb, verb)
-                            continue
-                        new_name = parts[1]
-                        supporter_name = parts[2]
-                        target_name = parts[3]
-                        # Optional: parse 'on <prop...>'
-                        on_prop = None
-                        if len(parts) > 4:
-                            try:
-                                on_idx = parts.index('on', 4)
-                                on_prop = " ".join(parts[on_idx+1:]).strip()
-                            except ValueError:
-                                on_prop = None
-
-                        supporter = prover.get_argument(supporter_name)
-                        target = prover.get_argument(target_name)
-                        if supporter and target:
-                            try:
-                                if verb == 'undergird':
-                                    result = supporter.undergird(target, name=new_name, on=on_prop)
-                                elif verb == 'reinforce':
-                                    result = supporter.reinforce(target, name=new_name, on=on_prop)
-                                else:
-                                    result = supporter.support(target, name=new_name, on=on_prop)
-                                prover.register_argument(result)
-                                logger.info("Constructed %s '%s' (target '%s' by '%s'%s).",
-                                            verb, result.name, target.name, supporter.name,
-                                            f" on {on_prop}" if on_prop else "")
-                            except ProverError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during %s: %s", verb, e)
-                                if stop_on_error:
-                                    break
-                            except MachinePayloadError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during %s: %s", verb, e)
-                                if stop_on_error:
-                                    break
-                        else:
-                            logger.error("%s failed: one or both arguments not found ('%s', '%s').",
-                                         verb.capitalize(), supporter_name, target_name)
-                            if strict:
-                                if isolate:
-                                    try:
-                                        prover.close()
-                                    except Exception:
-                                        pass
-                                else:
-                                    prover.echo_notes = prev_echo
-                                    prover.render_files = prev_render
-                                logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: {verb.capitalize()} failed: missing arguments")
-                            if stop_on_error:
-                                break
-                    elif command.startswith('attack '):
-                        # Format: attack NEW_NAME attacker target [strict] [on <PROP...>]
-                        try:
-                            new_name, attacker_name, target_name, on_prop, allow_strict_attack = _parse_attack_command(command)
-                        except SyntaxError as e:
-                            logger.error("%s", e)
-                            continue
-                        attacker = prover.get_argument(attacker_name)
-                        target = prover.get_argument(target_name)
-                        if attacker and target:
-                            try:
-                                result = attacker.attack(target, name=new_name, on=on_prop, allow_strict=allow_strict_attack)
-                                prover.register_argument(result)
-                                logger.info("Constructed attack '%s' (target '%s' by '%s'%s%s).",
-                                            result.name, target.name, attacker.name,
-                                            f" on {on_prop}" if on_prop else "",
-                                            " allowing strict targets" if allow_strict_attack else "")
-                            except ProverError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during attack: %s", e)
-                                if stop_on_error:
-                                    break
-                            except MachinePayloadError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during attack: %s", e)
-                                if stop_on_error:
-                                    break
-                        else:
-                            logger.error("Attack failed: one or both arguments not found ('%s', '%s').",
-                                         attacker_name, target_name)
-                            if strict:
-                                if isolate:
-                                    try:
-                                        prover.close()
-                                    except Exception:
-                                        pass
-                                else:
-                                    prover.echo_notes = prev_echo
-                                    prover.render_files = prev_render
-                                logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: Attack failed: missing arguments")
-                            if stop_on_error:
-                                break
-                    elif command.startswith('rebut '):
-                        # Format: rebut NEW_NAME attacker target [on <PROP...>]
-                        parts = command.split()
-                        if len(parts) < 4:
-                            logger.error("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
-                            continue
-                        new_name = parts[1]
-                        attacker_name = parts[2]
-                        target_name = parts[3]
-                        # Optional: parse 'on <prop...>'
-                        on_prop = None
-                        if len(parts) > 4:
-                            try:
-                                on_idx = parts.index('on', 4)
-                                on_prop = " ".join(parts[on_idx+1:]).strip()
-                            except ValueError:
-                                on_prop = None
-                        attacker = prover.get_argument(attacker_name)
-                        target = prover.get_argument(target_name)
-                        if attacker and target:
-                            try:
-                                result = attacker.rebut(target, name=new_name, on=on_prop)
-                                prover.register_argument(result)
-                                logger.info("Constructed rebut '%s' (target '%s' by '%s'%s).",
-                                            result.name, target.name, attacker.name,
-                                            f" on {on_prop}" if on_prop else "")
-                            except ProverError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error during rebut: %s", e)
-                                if stop_on_error:
-                                    break
-                            except MachinePayloadError as e:
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise MachinePayloadError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Prover error (no machine payload) during rebut: %s", e)
-                                if stop_on_error:
-                                    break
-                            except ValueError as e:
-                                # e.g., when target contains an open Goal/Laog (undercut-only case)
-                                if strict:
-                                    if isolate:
-                                        try:
-                                            prover.close()
-                                        except Exception:
-                                            pass
-                                    else:
-                                        prover.echo_notes = prev_echo
-                                        prover.render_files = prev_render
-                                    logger.info("Finished script %s", script_path)
-                                    raise ProverError(f"{script_path}:{lineno}: {e}") from e
-                                logger.error("Rebut precondition failed: %s", e)
-                                if stop_on_error:
-                                    break
-                        else:
-                            logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
-                                         attacker_name, target_name)
-                            if strict:
-                                if isolate:
-                                    try:
-                                        prover.close()
-                                    except Exception:
-                                        pass
-                                else:
-                                    prover.echo_notes = prev_echo
-                                    prover.render_files = prev_render
-                                logger.info("Finished script %s", script_path)
-                                raise ProverError(f"{script_path}:{lineno}: Rebut failed: missing arguments")
-                            if stop_on_error:
-                                break
-                    elif command.startswith('chain '):
-                        # Handle chaining of arguments
-                        # Format: chain arg1 arg2
-                        parts = command.split()
-                        if len(parts) != 3:
-                            logger.error("Invalid chain command. Use: chain arg1 arg2")
-                            continue
-                        arg1_name = parts[1]
-                        arg2_name = parts[2]
-                        arg1 = prover.get_argument(arg1_name)
-                        arg2 = prover.get_argument(arg2_name)
-                        if arg1 and arg2:
-                            combined_arg = arg1.chain(arg2)
-                            if combined_arg:
-                                prover.register_argument(combined_arg)
-                                logger.info("Arguments '%s' and '%s' chained into '%s'.",
-                                            arg1_name, arg2_name, combined_arg.name)
-                            else:
-                                logger.error("Failed to chain arguments.")
-                        else:
-                            logger.error("One or both arguments not found.")
                     else:
                         # Execute other commands.  A `declare` takes its names
                         # first: NameClash is a ProverError, handled below.
@@ -801,6 +443,10 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                             if stop_on_error:
                                 break
                         # print(output)
+    if getattr(prover, "recording_debate", None) is not None:
+        logger.warning("Debate '%s' was not closed with `hora est.`; it keeps the %d move(s) "
+                       "recorded so far.", prover.recording_debate,
+                       len(prover.debates[prover.recording_debate].moves))
     # restore/close and announce completion
     if isolate:
         try:
@@ -961,19 +607,16 @@ def interactive_mode(prover: ProverWrapper) -> None:
           - Executing/Reducing an argument : "reduce <ArgName>" (deprecated: the legacy
             term-level reducer, not the compiler pipeline; use "evaluate")
           - Normalize an argument (silent version of reduce): "normalize <ArgName>" (deprecated)
-          - Chaining (Grafting) two arguments "chain <Arg1> <Arg2>" (Arg1 is rootstock, Arg2 is scion)
-            (deprecated, like the debate ops)
           - Rendering arguments (unreduced term, normal form, respectively): "render <Arg>",
             "render-nf <Arg>" (render-nf deprecated with reduce).
           - Debate graph: "graph ARG [FILE.dot] [show]", "label ARG [SEMANTICS]",
             "evaluate ARG [MODE] [SEMANTICS] [BASE]"; "explain ARG [same options]" prints
             the pipeline's stage-by-stage account of one evaluation;
             "tree ARG [nl [STYLE]|pt]" colours by the grounded labels.
-          - Debate ops: undermine, undergird, reinforce, support, attack, rebut, out, tou, sub, bus, attacker, regatta.
-            DEPRECATED: they build debate terms by grafting scaffolds, or take such terms
-            apart, at term level; they predate the debate compiler and are not wired to it,
-            so they are probably not safe to use.  Register arguments and use
-            graph/label/evaluate/explain instead.
+          - Debates: "debate pro|con open|closed NAME : ISSUE.", moves "ARG." or
+            "[VERB] ARG TARGET.", "hora est." (see core/dc/debate.py); "share ARG".
+          - Projections (DEPRECATED, outside the compiler pipeline): out, tou, sub, bus,
+            attacker, regatta.
           - Register proof terms: "register NAME [strict] : TYPE := PROOF_TERM".
           - Scripts: "load FILE" runs a .fspy file in this session.
 
@@ -985,7 +628,10 @@ def interactive_mode(prover: ProverWrapper) -> None:
     try:
         while True:
             try:
-                prompt = 'acdc> ' if not recording else 'acdc (recording)> '
+                prompt = ('acdc (recording)> ' if recording else
+                          f'acdc (debate {prover.recording_debate})> '
+                          if getattr(prover, "recording_debate", None)
+                          else 'acdc> ')
                 command = _read_line(prompt)
             except EOFError:
                 print("\nEOFError: No input detected. Exiting interactive mode.")
@@ -997,6 +643,14 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 continue
             if command.lower() in ['exit', 'quit']:
                 break
+            if not recording:
+                try:
+                    if debate_line(prover, command):
+                        continue
+                except (DebateError, ProverError) as e:
+                    print(f"refused: {e}")
+                    logger.warning("Debate refused: %s", e)
+                    continue
             if command.startswith('load '):
                 path = Path(command.split(maxsplit=1)[1].strip()).expanduser()
                 if not path.is_file():
@@ -1036,8 +690,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 expand_argument_cmd(prover, command.split()[1])
             elif command.startswith("unfold "):
                 unfold_cmd(prover, command)
-            elif command.startswith("debate "):
-                debate_argument_cmd(prover, command.split()[1])
+            elif command.startswith("share "):
+                share_argument_cmd(prover, command.split()[1].rstrip("."))
             elif command.startswith("render-nf "):
                     parts = command.split()
                     name = parts[1] if len(parts) >= 2 else ""
@@ -1048,11 +702,11 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     name, style, which = _render_tokens(command)
                     render_argument_cmd(prover, name, False, style=style, which=which)
             elif command.startswith("graph "):
-                # Usage: graph ARG|issue :X|X: [FILE.dot] [show]
+                # Usage: graph ARG|DEBATE|issue :X|X: [all] [FILE.dot] [show]
                 name, opts = _target(command.split())
                 show = "show" in opts
-                dot_path = next((o for o in opts if o != "show"), None)
-                graph_argument_cmd(prover, name, dot_path, show=show)
+                dot_path = next((o for o in opts if o not in ("show", "all")), None)
+                graph_argument_cmd(prover, name, dot_path, show=show, whole="all" in opts)
             elif command in ("typecheck on", "typecheck off", "typecheck expanded"):
                 set_typecheck_cmd(prover, command)
             elif command in ("pipeline shared", "pipeline unfolded"):
@@ -1093,135 +747,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 except Exception as e:
                     print(f"{command.split()[0].capitalize()} failed: {e}")
                     logger.error("%s failed: %s", command.split()[0].capitalize(), e)
-
-            elif command.startswith('undermine ') or command.startswith('undercut '):
-                # Format: undermine NEW_NAME attacker target
-                # Legacy alias: undercut NEW_NAME attacker target
-                parts = command.split()
-                if len(parts) != 4:
-                    print("Invalid undermine command. Use: undermine NEW_NAME attacker target")
-                    logger.error("Invalid undermine command. Use: undermine NEW_NAME attacker target")
-                    continue
-                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
-                attacker = prover.get_argument(attacker_name)
-                target = prover.get_argument(target_name)
-                if attacker and target:
-                    try:
-                        result = attacker.undercut(target, name=new_name)
-                        prover.register_argument(result)
-                        print(f"Constructed undermine '{result.name}' (target '{target.name}' by '{attacker.name}').")
-                        logger.info("Constructed undermine '%s' (target '%s' by '%s').",
-                                    result.name, target.name, attacker.name)
-                    except Exception as e:
-                        print(f"Prover error during undermine: {e}")
-                        logger.error("Prover error during undermine: %s", e)
-                else:
-                    print(f"Undermine failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
-                    logger.error("Undermine failed: one or both arguments not found ('%s', '%s').",
-                                 attacker_name, target_name)
-
-            elif command.startswith('undergird ') or command.startswith('reinforce ') or command.startswith('support '):
-                # Format: support/undergird/reinforce NEW_NAME supporter target [on PROP...]
-                parts = command.split()
-                verb = parts[0]
-                if len(parts) < 4:
-                    print(f"Invalid {verb} command. Use: {verb} NEW_NAME supporter target [on PROP]")
-                    logger.error("Invalid %s command. Use: %s NEW_NAME supporter target [on PROP]", verb, verb)
-                    continue
-                new_name, supporter_name, target_name = parts[1], parts[2], parts[3]
-                on_prop = None
-                if len(parts) > 4:
-                    try:
-                        on_idx = parts.index('on', 4)
-                        on_prop = " ".join(parts[on_idx+1:]).strip()
-                    except ValueError:
-                        on_prop = None
-                supporter = prover.get_argument(supporter_name)
-                target = prover.get_argument(target_name)
-                if supporter and target:
-                    try:
-                        if verb == 'undergird':
-                            result = supporter.undergird(target, name=new_name, on=on_prop)
-                        elif verb == 'reinforce':
-                            result = supporter.reinforce(target, name=new_name, on=on_prop)
-                        else:
-                            result = supporter.support(target, name=new_name, on=on_prop)
-                        prover.register_argument(result)
-                        suffix = f" on {on_prop}" if on_prop else ""
-                        print(f"Constructed {verb} '{result.name}' (target '{target.name}' by '{supporter.name}'{suffix}).")
-                        logger.info("Constructed %s '%s' (target '%s' by '%s'%s).",
-                                    verb, result.name, target.name, supporter.name, suffix)
-                    except Exception as e:
-                        print(f"Prover error during {verb}: {e}")
-                        logger.error("Prover error during %s: %s", verb, e)
-                else:
-                    print(f"{verb.capitalize()} failed: one or both arguments not found ('{supporter_name}', '{target_name}').")
-                    logger.error("%s failed: one or both arguments not found ('%s', '%s').",
-                                 verb.capitalize(), supporter_name, target_name)
-
-            elif command.startswith('attack '):
-                # Format: attack NEW_NAME attacker target [strict] [on PROP...]
-                try:
-                    new_name, attacker_name, target_name, on_prop, allow_strict_attack = _parse_attack_command(command)
-                except SyntaxError as e:
-                    print(str(e))
-                    logger.error("%s", e)
-                    continue
-                attacker = prover.get_argument(attacker_name)
-                target = prover.get_argument(target_name)
-                if attacker and target:
-                    try:
-                        result = attacker.attack(target, name=new_name, on=on_prop, allow_strict=allow_strict_attack)
-                        prover.register_argument(result)
-                        suffix = f" on {on_prop}" if on_prop else ""
-                        strict_suffix = " allowing strict targets" if allow_strict_attack else ""
-                        print(f"Constructed attack '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}{strict_suffix}).")
-                        logger.info("Constructed attack '%s' (target '%s' by '%s'%s%s).",
-                                    result.name, target.name, attacker.name, suffix, strict_suffix)
-                    except Exception as e:
-                        print(f"Prover error during attack: {e}")
-                        logger.error("Prover error during attack: %s", e)
-                else:
-                    print(f"Attack failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
-                    logger.error("Attack failed: one or both arguments not found ('%s', '%s').",
-                                 attacker_name, target_name)
-
-            elif command.startswith('rebut '):
-                # Format: rebut NEW_NAME attacker target [on PROP...]
-                parts = command.split()
-                if len(parts) < 4:
-                    print("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
-                    logger.error("Invalid rebut command. Use: rebut NEW_NAME attacker target [on PROP]")
-                    continue
-                new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
-                on_prop = None
-                if len(parts) > 4:
-                    try:
-                        on_idx = parts.index('on', 4)
-                        on_prop = " ".join(parts[on_idx+1:]).strip()
-                    except ValueError:
-                        on_prop = None
-                attacker = prover.get_argument(attacker_name)
-                target = prover.get_argument(target_name)
-                if attacker and target:
-                    try:
-                        result = attacker.rebut(target, name=new_name, on=on_prop)
-                        prover.register_argument(result)
-                        suffix = f" on {on_prop}" if on_prop else ""
-                        print(f"Constructed rebut '{result.name}' (target '{target.name}' by '{attacker.name}'{suffix}).")
-                        logger.info("Constructed rebut '%s' (target '%s' by '%s'%s).",
-                                    result.name, target.name, attacker.name, suffix)
-                    except Exception as e:
-                        print(f"Rebut failed: {e}")
-                        logger.error("Rebut failed: %s", e)
-
-            # -----------------------------------------------------------------
-            # Fellowship commands outside wrapper-specific commands
-            # -----------------------------------------------------------------
-                else:
-                    print(f"Rebut failed: one or both arguments not found ('{attacker_name}', '{target_name}').")
-                    logger.error("Rebut failed: one or both arguments not found ('%s', '%s').",
-                                 attacker_name, target_name)
 
             elif not recording and parse_statement(command) is not None:
                 # A statement records a claim, and nothing more.
@@ -1441,29 +966,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     tactic_args = parts[2:]  # Remaining parts are arguments to the tactic
                     output = prover.execute_tactic(tactic_name, *tactic_args)
                     # print(output)
-                elif command.startswith('chain'):
-                    # Handle chaining of arguments
-                    # Format: chain arg1 arg2
-                    parts = command.split()
-                    if len(parts) != 3:
-                        print("Invalid chain command. Use: chain arg1 arg2")
-                        continue
-                    arg1_name = parts[1]
-                    arg2_name = parts[2]
-                    arg1 = prover.get_argument(arg1_name)
-                    arg2 = prover.get_argument(arg2_name)
-                    if arg1 and arg2:
-                        combined_arg = arg1.chain(arg2)
-                        if combined_arg:
-                            prover.register_argument(combined_arg)
-                            print(f"Arguments '{arg1_name}' and '{arg2_name}' chained into '{combined_arg.name}'.")
-                            logger.info("Arguments '%s' and '%s' chained into '%s'.", arg1_name, arg2_name, combined_arg.name)
-                        else:
-                            print("Failed to chain arguments.")
-                            logger.error("Failed to chain arguments in interactive mode")
-                    else:
-                        print("One or both arguments not found.")
-                        logger.error("One or both arguments not found in interactive mode")
                 else:
                     # Execute the command normally.  A `declare` takes its
                     # names first; NameClash is a ProverError, handled below.
@@ -1494,46 +996,6 @@ def interactive_mode(prover: ProverWrapper) -> None:
 # ---------------------------------------------------------------------------
 #  CLI helper commands                                                       
 # ---------------------------------------------------------------------------
-
-
-def _parse_attack_command(command: str) -> tuple[str, str, str, str | None, bool]:
-    """Parse `attack NEW attacker target [strict] [on PROP...]`.
-
-    Strict-target attacks are opt-in and can be enabled with any of:
-    `strict`, `--strict`, `allow-strict`, `--allow-strict`,
-    `strict-proofs`, or `--strict-proofs`.
-    """
-    parts = command.split()
-    if len(parts) < 4:
-        raise SyntaxError("Invalid attack command. Use: attack NEW_NAME attacker target [strict] [on PROP]")
-
-    new_name, attacker_name, target_name = parts[1], parts[2], parts[3]
-    strict_tokens = {
-        "strict",
-        "--strict",
-        "allow-strict",
-        "--allow-strict",
-        "strict-proofs",
-        "--strict-proofs",
-    }
-    allow_strict = False
-    remainder: list[str] = []
-    for token in parts[4:]:
-        if token in strict_tokens:
-            allow_strict = True
-        else:
-            remainder.append(token)
-
-    on_prop = None
-    if remainder:
-        try:
-            on_idx = remainder.index('on')
-        except ValueError:
-            on_idx = -1
-        if on_idx >= 0:
-            on_prop = " ".join(remainder[on_idx + 1:]).strip() or None
-
-    return new_name, attacker_name, target_name, on_prop, allow_strict
 
 
 def _parse_projection_debate_command(prover: ProverWrapper, command: str) -> tuple[str, str, str, int | None]:
@@ -1591,6 +1053,94 @@ def projection_debate_cmd(prover: ProverWrapper, command: str) -> Argument:
 
     prover.register_argument(result)
     return result
+
+
+_DEBATE_HEADER = re.compile(r"^debate\s+(\S+)\s+(\S+)\s+([^\s:]+)\s*:\s*(.+?)\s*\.$")
+_OLD_VERBS = ("chain", "attack", "support", "undercut", "undermine", "rebut",
+              "undergird", "reinforce", "buttress")
+
+
+def debate_line(prover: ProverWrapper, command: str) -> bool:
+    """A line of the debate syntax (core/dc/debate.py), or False:
+
+        debate pro|con open|closed NAME : ISSUE.   starts recording NAME
+        ARG.  /  ARG TARGET.  /  VERB ARG TARGET.  a move (while recording)
+        hora est.                                   closes the debate
+
+    A move is a line whose first word is a verb or a registered argument;
+    any other line is left to the other commands, which keep working
+    while a debate is recorded - `evaluate NAME` compiles the debate as
+    it stands.  Refusals raise DebateError or NameClash."""
+    from dataclasses import replace
+    from core.dc.debate import Debate, Move, DebateError, VERBS, check_opening, check_move
+
+    text = command.strip()
+    words = text.rstrip(".").split()
+    if not words or not hasattr(prover, "debates"):
+        return False
+    if words[0] == "debate":
+        match = _DEBATE_HEADER.match(text)
+        if match is None:
+            raise DebateError("Use: debate pro|con open|closed NAME : ISSUE.  "
+                              "(The shared form of an argument's debate is now `share ARG`.)")
+        if prover.recording_debate is not None:
+            raise DebateError(f"debate '{prover.recording_debate}' is still being recorded; "
+                              f"close it with `hora est.` first.")
+        onus, scope, name, issue = match.groups()
+        debate = Debate(name, issue, onus, scope)
+        debate.issue                       # refuse an unreadable issue before claiming the name
+        prover.register_debate(debate)
+        prover.recording_debate = name
+        logger.info("Recording debate '%s' (%s, %s scope) about %s.", name, onus, scope,
+                    f":{issue}" if onus == "pro" else f"{issue}:")
+        return True
+    if words == ["hora", "est"]:
+        if not text.endswith("."):
+            raise DebateError("`hora est.` ends with a full stop.")
+        name = prover.recording_debate
+        if name is None:
+            raise DebateError("hora est: no debate is being recorded.")
+        debate = prover.debates[name]
+        if not debate.moves:
+            raise DebateError(f"debate '{name}' has no move yet; open it with an argument.")
+        debate.finished = True
+        prover.recording_debate = None
+        logger.info("Debate '%s' recorded: %d move(s).", name, len(debate.moves))
+        return True
+    name = prover.recording_debate
+    if words[0] in VERBS and len(words) == 3:
+        move = Move(words[1], words[0], words[2])
+    elif name is not None and words[0] in prover.arguments and len(words) <= 2:
+        move = Move(words[0], None, words[1] if len(words) == 2 else None)
+    elif words[0] in _OLD_VERBS and len(words) >= 3:
+        raise DebateError(f"`{words[0]} NEW A B` is gone: a debate is recorded with "
+                          f"`debate pro|con open|closed NAME : ISSUE.` and its moves "
+                          f"(see the README, *Debates*); `chain` gave way to citation.")
+    else:
+        return False
+    if name is None:
+        raise DebateError(f"`{text}` is a debate move, but no debate is being recorded.")
+    if not text.endswith("."):
+        raise DebateError(f"a move ends with a full stop: `{text}.`")
+    debate = prover.debates[name]
+    graph = prover.debate_graph(replace(debate, moves=debate.moves + [move], _term=None))
+
+    def statement_of(argument_name):
+        argument = prover.arguments.get(argument_name)
+        if argument is None or getattr(argument, "composed", False):
+            return None
+        return prover.issue_of(argument)
+
+    if not debate.moves:
+        if move.verb is not None or move.target is not None:
+            raise DebateError(f"debate '{name}': the opening move is an argument alone: "
+                              f"`{move.argument}.`")
+        check_opening(debate, graph, move.argument, statement_of)
+    else:
+        check_move(debate, graph, move, statement_of)
+    debate.moves.append(move)
+    logger.info("Debate '%s', move %d: %s", name, len(debate.moves), move)
+    return True
 
 
 def _parse_register_command(command: str) -> tuple[str, str, bool, str]:
@@ -1711,7 +1261,6 @@ def setup_prover() -> ProverWrapper:
     env.setdefault("FSP_MACHINE", "1")
     fsp_path = resolve_fsp_path()
     prover = ProverWrapper(str(fsp_path), env=env)
-    prover.register_custom_tactic('pop', pop)
     # Fellowship starts a session in LJ, but the wrapper's `logic` defaults to
     # "lk" and debates are classical.  Make the default real: otherwise the
     # "debates are classical" guard never fires and the type oracle replays
@@ -1778,7 +1327,7 @@ def set_pipeline_cmd(prover: ProverWrapper, command: str) -> None:
     logger.info("Pipeline: %s", "unfolded term" if prover.pipeline_unfolded else "shared debate")
 
 
-def debate_argument_cmd(prover: ProverWrapper, name: str) -> None:
+def share_argument_cmd(prover: ProverWrapper, name: str) -> None:
     """CLI: `debate ARG` - the debate about ARG's issue as named
     sub-debates: the issue's term, then one `NAME[open sites] := term`
     line per sub-debate it cites.
@@ -1829,6 +1378,21 @@ def _select_term(prover: ProverWrapper, name: str, which: str):
     ``normal`` its plain normal form, ``evaluated`` the normal form of its
     last evaluation - refused if the document changed since.  An issue
     (``issue :X``) has only its unfolded term."""
+    debate = prover.debates.get(name)
+    if debate is not None:
+        if which == "evaluated":
+            if debate.labelled_nf is None or debate.labelled_nf_revision != prover.revision:
+                logger.error("Debate '%s' has no evaluation at the document's current revision; "
+                             "run `evaluate %s` first.", name, name)
+                return None
+            return "the normal form of the last evaluation", debate.labelled_nf
+        if which not in (None, "unfolded"):
+            logger.error("A debate has only an unfolded and an evaluated term, not '%s'.", which)
+            return None
+        _arg, _issue_, term, _shared = _debate_issue(prover, debate)
+        if term is None:
+            return None
+        return f"the term of debate '{name}'", term
     if name.startswith("issue "):
         if which not in (None, "unfolded"):
             logger.error("An issue has only an unfolded term, not '%s'.", which)
@@ -1908,7 +1472,7 @@ def unfold_cmd(prover: ProverWrapper, command: str) -> None:
     Syntax:
         unfold argument NAME      the term biased towards NAME, cached on it
         unfold issue :X | X:      the canonical term of an issue
-        unfold debate NAME        not yet (aida-unfold-debate-bias)
+        unfold debate NAME        the debate's term (core/dc/debate.py)
 
     The term is kept until the document changes (a new argument or
     declaration) and is what `evaluate`, `explain`, `render ... unfolded`
@@ -1917,14 +1481,13 @@ def unfold_cmd(prover: ProverWrapper, command: str) -> None:
     if len(parts) < 3 or parts[1] not in ("argument", "issue", "debate"):
         logger.error("Use: unfold argument NAME | unfold issue :X | unfold issue X: | unfold debate NAME")
         return
-    if parts[1] == "debate":
-        logger.warning("unfold debate: not implemented yet (tasks.org, aida-unfold-debate-bias); "
-                       "nothing done.")
+    if parts[1] == "debate" and parts[2].rstrip(".") not in prover.debates:
+        logger.error("unfold debate: no debate '%s'.", parts[2].rstrip("."))
         return
     if prover.logic == "lj":
         print("unfold: refused: debates are classical; select lk.")
         return
-    name = f"issue {parts[2]}" if parts[1] == "issue" else parts[2]
+    name = f"issue {parts[2]}" if parts[1] == "issue" else parts[2].rstrip(".")
     found = _select_term(prover, name, "unfolded")
     if found is None:
         return
@@ -1944,7 +1507,7 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
     of TERM_SELECTORS) renders another of the argument's terms; an issue
     target (``issue :X``) renders its unfolded term.
     """
-    if which is not None or name.startswith("issue "):
+    if which is not None or name.startswith("issue ") or name in prover.debates:
         _show_selected(prover, name, which or "unfolded", style)
         return
     arg = prover.get_argument(name)
@@ -2053,6 +1616,9 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
     """
     from core.dc.unfold import unfold_legacy, UnfoldError
 
+    debate = prover.debates.get(name)
+    if debate is not None:
+        return _debate_issue(prover, debate)
     if name.startswith("issue "):
         arg, issue = None, _parse_issue(name)
         if issue is None:
@@ -2144,6 +1710,41 @@ def _issue(prover: ProverWrapper, name: str, *, want_term: bool):
             logger.warning("Type check failed for '%s': %s", name, e)
             return arg, issue, None, None
     return arg, issue, term, shared
+
+
+def _debate_issue(prover: ProverWrapper, debate):
+    """``_issue`` for a debate (core/dc/debate.py): (None, issue, term,
+    None) with the term compiled from the debate's scope and moves - as
+    recorded so far, while it is being recorded - and type-checked by
+    replaying it whole.  A debate has no shared form."""
+    from core.dc.unfold import UnfoldError
+    if prover.logic == "lj":
+        print("graph: refused: debates are classical; select lk.")
+        return None, None, None, None
+    if not debate.moves:
+        print(f"graph: refused: debate '{debate.name}' has no move yet.")
+        return None, None, None, None
+    if _pipeline_logger.isEnabledFor(logging.DEBUG):
+        _pipeline_logger.debug("issue: debate '%s' is about %s[%s]; %s scope, %d move(s)%s",
+                               debate.name, debate.issue_prop, debate.issue[1][0], debate.scope,
+                               len(debate.moves), "" if debate.finished else ", still being recorded")
+        artifact(_pipeline_logger, "issue: the debate '%s' was registered with (before unfolding)"
+                 % debate.name, "\n".join([debate.header()] + [str(m) for m in debate.moves]))
+    try:
+        term = prover.debate_term(debate)
+    except UnfoldError as e:
+        print(f"graph: refused: {e}")
+        logger.warning("Unfolding refused for debate '%s': %s", debate.name, e)
+        return None, None, None, None
+    if prover.typecheck_enabled:
+        from core.dc.typecheck import typecheck, TypeCheckFailed
+        try:
+            typecheck(prover, term, debate.name, debate.issue_prop, debate.onus == "con")
+        except TypeCheckFailed as e:
+            print(f"graph: refused: {e}")
+            logger.warning("Type check failed for debate '%s': %s", debate.name, e)
+            return None, None, None, None
+    return None, debate.issue, term, None
 
 
 def _issue_term(prover: ProverWrapper, name: str):
@@ -2455,20 +2056,36 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
 
 
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
-                       show: bool = False) -> None:
+                       show: bool = False, whole: bool = False) -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT.
 
     Syntax:
-        graph ARG [FILE.dot] [show]
+        graph ARG|DEBATE [all] [FILE.dot] [show]
 
     With `show`, render the graph and open it in the platform viewer;
     when Graphviz is not installed, print an indented text view instead
-    (which always works and needs no dependencies).
+    (which always works and needs no dependencies).  For a debate the
+    graph is what its conclusion reaches; with `all`, the whole of its
+    scope - a move that connects to nothing included.
     """
-    arg, graph, _term = _compile_argument_graph(prover, name)
+    debate = prover.debates.get(name)
+    if whole and debate is None:
+        logger.error("graph: 'all' is for debates; '%s' is not one.", name)
+        return
+    if whole:
+        arg, graph = None, prover.debate_graph(debate)
+    else:
+        arg, graph, _term = _compile_argument_graph(prover, name)
     if graph is None:
         return
-    if name.startswith("issue "):
+    if whole:
+        logger.info("Scope of debate '%s' (%s): %d nodes, %d edges", name, debate.scope,
+                    len(graph.nodes), len(graph.edges))
+    elif debate is not None:
+        logger.info("Debate graph for debate '%s' (issue %s[%s], %s scope, %d move(s)): "
+                    "%d nodes, %d edges", name, debate.issue_prop, debate.issue[1][0],
+                    debate.scope, len(debate.moves), len(graph.nodes), len(graph.edges))
+    elif name.startswith("issue "):
         logger.info("Debate graph for %s (unfolded from the document): %d nodes, %d edges",
                     name, len(graph.nodes), len(graph.edges))
     elif arg is None:
@@ -2598,8 +2215,8 @@ def label_argument_cmd(prover: ProverWrapper, name: str, semantics: str = "groun
             logger.info("    %-40s %-8s %s", graph.nodes[key], side, label)
 
 def _remember_evaluation(prover: ProverWrapper, arg, nf) -> None:
-    """Cache an evaluated normal form on its argument, with the revision it
-    belongs to (an issue has no argument to cache it on)."""
+    """Cache an evaluated normal form on its argument or debate, with the
+    revision it belongs to (an issue has nothing to cache it on)."""
     if arg is not None:
         arg.labelled_nf = nf
         arg.labelled_nf_revision = prover.revision
@@ -2688,7 +2305,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
                 pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
                 logger.info("  [%d] %s", number, nf_class.upper())
                 logger.info("      normal form: %s", pretty)
-                _remember_evaluation(prover, arg, nf)
+                _remember_evaluation(prover, arg if arg is not None else prover.debates.get(name), nf)
             return
         options = dict(mode=mode, witness=witness, **common)
         if favoured is not None:
@@ -2705,7 +2322,7 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
               f"evaluator, which follows a chain of sub-debates by recursion.")
         logger.warning("Evaluation refused for '%s': recursion depth exceeded.", name)
         return
-    _remember_evaluation(prover, arg, nf)
+    _remember_evaluation(prover, arg if arg is not None else prover.debates.get(name), nf)
     pretty = ProofTermGenerationVisitor().visit(_copy.deepcopy(nf)).pres
     chosen = (f", witness {witness}" if witness is not None else "") + (", favoured" if favour else "")
     logger.info("Evaluated '%s' (%s, %s, base %s%s): %s", name, mode, semantics, base, chosen, nf_class.upper())
@@ -2721,8 +2338,11 @@ def tree_argument_cmd(prover: ProverWrapper, name: str, fmt: str = "png", *, mod
     from core.comp.adf_label import grounded_labels
 
     arg, graph, _term = _compile_argument_graph(prover, name)
-    if arg is None:
+    debate = prover.debates.get(name)
+    if arg is None and debate is None:
         return
+    if debate is not None and which is None:
+        which = "unfolded"              # a debate has no term of its own to normalise
     labels = None
     if graph is not None:
         try:

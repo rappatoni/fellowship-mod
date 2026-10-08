@@ -24,6 +24,9 @@ start argument bArg B
 axiom axB.
 end argument
 
-support d2 bArg cArg
+debate pro open d2 : C.
+cArg.
+support bArg cArg.
+hora est.
 
 graph d2 show

@@ -20,14 +20,10 @@ An earlier motivation/theory overview is available
 The current codebase supports:
 - theorem and counterargument / antitheorem workflows
 - raw Fellowship commands and wrapper-level recording commands
-- argument composition by grafting / chaining
-- debate operations:
-  - `attack`
-  - `undercut` / `undermine`
-  - `rebut`
-  - `support`
-  - `undergird`
-  - `reinforce`
+- citation of registered arguments by name (`cite NAME`)
+- debates: named, ordered selections of a document's arguments, open or
+  closed, with checked moves (`attack`, `rebut`, `undermine`/`undercut`,
+  `support`, `buttress`/`reinforce`, `undergird`)
 - normalization of argument terms in multiple evaluation disciplines
 - natural-language rendering styles:
   - `argumentation`
@@ -63,14 +59,11 @@ tracked in `tasks.org`:
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
-- **The old debate verbs are deprecated.** `attack`, `support`,
-  `undercut`/`undermine`, `rebut`, `undergird`, `reinforce` and `chain`
-  build a debate by grafting scaffolds into a term, and `reduce`,
-  `normalize` and `render-nf` normalise with the legacy term-level
-  reducer. Neither goes through the compiler pipeline, and they are
-  probably not safe to use until they are wired to it (see *Debate
-  commands*). Register arguments and use `graph`, `label`, `evaluate` and
-  `explain` instead.
+- **The legacy reducer is deprecated.** `reduce`, `normalize` and
+  `render-nf` normalise with the legacy term-level reducer, outside the
+  compiler pipeline; use `evaluate` and `explain`. The grafting debate
+  verbs are gone: a debate is now recorded as a debate object (see
+  *Debates*).
 
 Smaller design questions are open as well. `minicourse-evaluation.org` and
 `minicourse-sharing.org` explain the pipeline lesson by lesson; they are
@@ -253,7 +246,7 @@ The phases are described below as they act on the *unfolded* debate term,
 which is what defines them and what the default route builds. `pipeline
 shared` (or `FSP_PIPELINE=shared`) keeps the debate as named sub-debates
 instead, and each phase works on those (see the note after phase 5 and
-`debate ARG`); `pipeline unfolded` switches back. The shared route has not
+`share ARG`); `pipeline unfolded` switches back. The shared route has not
 yet been ported to the stacked shape the unfolded route builds (see
 *Status*). The unfolded route's cost grows with the number of paths
 through the document graph.
@@ -300,7 +293,7 @@ through the document graph.
 
    `graph ARG` and `label ARG` need only the issue graph, and get it without
    building the unfolded term. The debate is kept as one definition per
-   statement (see `debate ARG`), and phases 4 and 5 run on one *instance* of
+   statement (see `share ARG`), and phases 4 and 5 run on one *instance* of
    a sub-debate at a time: a statement together with the statements captured
    and cut in it, which is all that the copy of that sub-debate at a site
    depends on. Each instance is compiled and strictness-resolved once; a
@@ -457,7 +450,7 @@ detects a machine-mode desynchronization.
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
 - `expand ARG`
   - print ARG's full term, with every cited argument's term grafted in
-- `debate ARG`
+- `share ARG`
   - print the debate about ARG's issue as named sub-debates: the issue's
     term, then one `NAME[open sites] := term` line per sub-debate it cites
 
@@ -494,7 +487,7 @@ everywhere, so it never holds a defeasible argument.
   citation like any obligation. Refine the cited argument and every citer
   follows. `expand ARG` computes the full term on demand.
 - **Sub-debates are shared by name.** The debate about an issue brings in the
-  debate of every statement it reaches. `debate ARG` writes a sub-debate that
+  debate of every statement it reaches. `share ARG` writes a sub-debate that
   is needed in two or more places once and cites it by name - the author's
   name where one argument or debate is about that statement, `anon_1`,
   `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in
@@ -531,20 +524,15 @@ everywhere, so it never holds a defeasible argument.
 - `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
   - render an acceptance tree coloured by the grounded labels (see
     Debate-graph commands); drawn uncoloured if the graph is refused
-- `chain ARG1 ARG2`
-  - graft / chain one argument into another (**deprecated**, see *Debate
-    commands*)
 
 ### Debate-graph commands
 
 Every atomic argument you register (`start argument ... end argument`,
 `register`) adds its hyperedges to one **document graph** for the whole
 file; proposition identity is global to it, so a counterargument to Q
-registered anywhere contests every use of Q. The debate verbs
-(`attack`, `support`, `chain`) name a debate whose issue is the host's
-conclusion and check that the attacker concludes the contrary of (the
-supporter concludes) a statement reachable from that issue; they add no
-edge. `graph`, `label` and `evaluate` take a name, read its issue,
+registered anywhere contests every use of Q. A debate (see *Debates*)
+selects and orders arguments without adding an edge. `graph`, `label`
+and `evaluate` take a name, read its issue,
 **unfold** the document graph from that issue into a debate term
 (cycles broken by capture: a demand for P inside a proof of P->Q is the
 hypothesis, a demand for a refutation of P inside a proof of P is the
@@ -617,9 +605,8 @@ one-line message.
 
 ### Projection / extraction commands
 
-> **Deprecated** with the debate commands below: they take apart the
-> term-level debate structures those verbs build, outside the compiler
-> pipeline.
+> **Deprecated:** they take apart the term-level debate structures the
+> removed grafting verbs built, outside the compiler pipeline.
 
 These pull a sub-term back out of an already-recorded argument and register
 it under a new name, projecting the wrapper-side metadata (assumptions,
@@ -675,34 +662,60 @@ worked examples of every shape.
     registers only `pop`, which is marked deprecated in the source and is not
     expected to work; the mechanism otherwise has no bundled tactics.
 
-### Debate commands
+### Debates
 
-> **Deprecated.** These verbs build a debate term by grafting scaffolds
-> into the target's term, and their results are normalised by the legacy
-> reducer (`reduce`, `normalize`, `render-nf`). They predate the debate
-> compiler and are not wired to it: the term shapes they build are the
-> older ones, the compiler recognises them only as legacy shapes, and
-> neither the labelling nor label-guided evaluation is applied to what
-> they produce. They are probably not safe to use until they are wired to
-> the new pipeline. Register the arguments instead (they join the
-> document graph, where every argument for a statement's contrary
-> attacks it) and use `graph`, `label`, `evaluate` and `explain`.
+A *debate* is a named, ordered selection of the document's arguments
+(`core/dc/debate.py`): who said what, in which order, in reply to whom.
+It is compiled on demand and never joins the document graph, so it adds
+no edge and duplicates nothing.
 
-- `undermine NEW ATTACKER TARGET`
-- `undercut NEW ATTACKER TARGET`
-  - backward-compatible aliases for default-target attack
-- `support NEW SUPPORTER TARGET [on PROP]`
-- `undergird NEW SUPPORTER TARGET [on PROP]`
-  - support restricted to default targets
-- `reinforce NEW SUPPORTER TARGET [on PROP]`
-  - support restricted to non-default targets
-- `attack NEW ATTACKER TARGET [strict] [on PROP]`
-  - generic attack operation. With `strict` (also accepted as `--strict`,
-    `allow-strict`, or `--allow-strict`), strict proof leaves/axioms on the
-    target may also be opened and attacked; this is opt-in because it is
-    otherwise treated as invalid.
-- `rebut NEW ATTACKER TARGET [on PROP]`
-  - attack restricted to non-default targets
+```
+debate pro|con open|closed NAME : ISSUE.
+ARG.
+[VERB] ARG TARGET.
+...
+hora est.
+```
+
+- The **onus** says who opens: `pro`, an argument for ISSUE; `con`, a
+  counterargument. The opening move must match it.
+- The **scope** says what the debate hears. A `closed` debate is compiled
+  from its moves' arguments only, together with every argument they cite
+  (`cite NAME`): a limited debate, for an agent's limited knowledge, a
+  counterfactual, a checklist or a transcript. An `open` debate hears
+  the whole document. The strict store (declarations and theorems) is
+  always in scope. Inside the scope conflicts arise by proposition
+  identity, as in the document, so a move attacks or supports wherever
+  its conclusion fits, not only at its target.
+- A move **adds** ARG to the scope and **orders** the term, which is
+  biased towards the debate's own arguments: it is unfolded for the
+  opening argument (on top of the issue's stack, its sites as it wrote
+  them), and at every statement the moved arguments stand above the
+  others, the last uttered outermost, so judged first.
+- A **verb** only checks the move. The target must be an earlier move with
+  a node the mover's conclusion can reach, of the verb's kind:
+
+  | verb | the target needs |
+  |---|---|
+  | `attack` | a site of the contrary of the mover's conclusion |
+  | `rebut` | ... that is an obligation |
+  | `undermine` (= `undercut`) | ... that is a presumption |
+  | `support` | a site of the mover's conclusion |
+  | `buttress` (= `reinforce`) | ... that is an obligation |
+  | `undergird` | ... that is a presumption |
+
+  A node is a site of the target's body (its subarguments included) or
+  its conclusion, which counts as an obligation unless the scope presumes
+  it. Intermediate conclusions and strict leaves are not nodes yet
+  (rational closure). Without a verb a move is not checked: a non
+  sequitur is allowed and simply joins the scope.
+
+Every command that takes an argument also takes a debate: `evaluate`,
+`explain`, `label`, `render` (the debate's term, or `evaluated`), `tree`,
+`unfold debate NAME`. `graph NAME` shows what the debate's conclusion
+reaches; `graph NAME all` shows its whole scope, non sequiturs included.
+While a debate is being recorded these commands compile it as it stands.
+The term is cached until the document or the debate changes.
 
 ## Script files (`.fspy`)
 
@@ -713,7 +726,7 @@ Typical script commands include:
 - Fellowship commands such as `lk.`, `declare ...`, `deny ...`, `qed.`
 - wrapper recording commands such as `start argument ...` / `end argument`
 - normalization / rendering commands
-- debate operations such as `support`, `undercut`, `attack`, `rebut`
+- debates: `debate pro|con open|closed NAME : ISSUE.`, moves, `hora est.`
 - wrapper-only decoration commands such as `decorate NAME : 'template'`
 
 Lines starting with:
@@ -912,8 +925,8 @@ exercises every first-order proof-term constructor.
 
 ### What is not supported yet
 
-Normalization and the debate operations — `reduce`, `chain`, `support`,
-`attack` and the debate graph — do not handle first-order terms. The
+Normalization and the debate pipeline — `reduce`, the debate graph,
+labelling and evaluation — do not handle first-order terms. The
 reduction rules for first-order AC/DC are not settled, so rather than guess,
 those operations raise `FirstOrderNotSupported` naming the construct they
 stopped at.
@@ -988,8 +1001,8 @@ File: `tests/counterarguments_and_undercut.fspy`
 
 This script demonstrates:
 - `start counterargument ...`
-- `undercut`
-- `reduce`
+- debates (`debate ... hora est.`) with `undercut` moves
+- `evaluate`
 - `label`
 - `tree ... nl`
 - `deny` / `moxia`
@@ -1005,8 +1018,7 @@ Run it with:
 File: `tests/basic_support.fspy`
 
 Demonstrates:
-- `support`
-- `undercut`
+- debates with `support` and `undercut` moves
 - `render ... vanilla`
 - `label`
 

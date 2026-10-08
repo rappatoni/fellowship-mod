@@ -552,8 +552,9 @@ name. =alt= is only a naming convention. Three things *are* special:
     strict edges carry.
 
 The literal string ="alt"= does matter in one place: the legacy
-term-level reducer, =core/comp/reduce.py=, which the =support= and
-=attack= verbs use. Evaluation never calls it.
+term-level reducer, =core/comp/reduce.py=, which =reduce= and =normalize=
+still use (the =support= and =attack= verbs that grafted for it are gone).
+Evaluation never calls it.
 
 *sigma* maps each statement of the issue graph to IN, OUT or UNDEC.
 Phase 1 reads strictness off the term and does not use it. Then sigma is
@@ -1099,7 +1100,8 @@ lesson 8a, keeping back puts B's root ?u1 where back had =b1=.
 kept wing does not use it (=_eta=). A wing in which alpha occurs free
 keeps its =mu alpha= wrapper. Since alpha captures (lesson 8a), this
 arises on the paper shapes too, wherever a kept wing holds a captured
-alpha; it also arises in the legacy shapes that grafting builds. And an
+alpha; it also arose in the legacy shapes the removed grafting verbs
+built. And an
 attack whose wing is nothing but its captured root, as in the
 self-attack, is no scaffold at all: normalisation reduces it, and its
 =alt2= ends up as the binder at the root of the normal form, eta-equal

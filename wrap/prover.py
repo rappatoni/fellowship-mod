@@ -663,21 +663,83 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """Compile an argument into hyperedges and merge them into the
         document graph.  Refusals are logged, not raised: the argument is
         still registered for the term-level commands."""
-        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
-            return
-        # A citation is a name leaf in the body; the compiler reads it as an
-        # obligation on the cited conclusion, or a strict leaf if Fellowship
-        # holds the cited argument (core/dc/cite.py).
-        body = argument.body
-        try:
-            graph = compile_debate(body, argument.name,
-                                   strict_names=self.declarations.keys(),
-                                   strict_kinds=declaration_kinds(self.declarations))
-        except (DebateCompileError, FirstOrderNotSupported) as e:
-            logger.warning("Argument '%s' not added to the document graph: %s", argument.name, e)
+        graph = self._compile_argument(argument, "the document graph")
+        if graph is None:
             return
         self.document.merge(graph)
         logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
+
+    def _compile_argument(self, argument: Any, into: str):
+        """The hyperedges of one argument, or None (logged) if it cannot
+        be compiled."""
+        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
+            return None
+        # A citation is a name leaf in the body; the compiler reads it as an
+        # obligation on the cited conclusion, or a strict leaf if Fellowship
+        # holds the cited argument (core/dc/cite.py).
+        try:
+            return compile_debate(argument.body, argument.name,
+                                  strict_names=self.declarations.keys(),
+                                  strict_kinds=declaration_kinds(self.declarations))
+        except (DebateCompileError, FirstOrderNotSupported) as e:
+            logger.warning("Argument '%s' not added to %s: %s", argument.name, into, e)
+            return None
+
+    # -- debates (core/dc/debate.py, aida-debate-objects) ------------------
+
+    @property
+    def debates(self) -> Dict[str, Any]:
+        """The recorded debates by name.  They share the document's
+        namespace but not its graph: a debate adds no edge."""
+        return store.document.setdefault("debates", {})
+
+    @property
+    def recording_debate(self) -> Optional[str]:
+        """The name of the debate being recorded (between its header and
+        ``hora est.``), or None."""
+        return store.document.get("debate_recording")
+
+    @recording_debate.setter
+    def recording_debate(self, name: Optional[str]) -> None:
+        store.document["debate_recording"] = name
+
+    def register_debate(self, debate: Any) -> None:
+        self.claim_name(debate.name, "debate")
+        self.debates[debate.name] = debate
+
+    def debate_graph(self, debate: Any) -> DebateGraph:
+        """The graph a debate is compiled from: the document (open scope),
+        or the arguments of its closed scope compiled on their own, so
+        that what is presumed is what the scope presumes."""
+        if debate.scope == "open":
+            return self.document
+        from core.dc.cite import cited_names
+        from core.dc.debate import scope_names
+
+        def cited(name):
+            argument = self.arguments.get(name)
+            body = getattr(argument, "body", None)
+            return [n for n in cited_names(body) if n in self.arguments] if body is not None else []
+
+        graph = DebateGraph()
+        for name in scope_names(debate, cited):
+            argument = self.arguments.get(name)
+            compiled = self._compile_argument(argument, f"debate '{debate.name}'") if argument else None
+            if compiled is not None:
+                graph.merge(compiled)
+        return graph
+
+    def debate_term(self, debate: Any):
+        """The debate's term, cached until the document or the debate
+        changes."""
+        from core.dc.unfold import report_cached
+        from core.dc.debate import unfold_debate
+        key = (self.revision, tuple(str(m) for m in debate.moves))
+        if debate._term is not None and debate._term[0] == key:
+            return report_cached(debate._term[1], f"the term of debate '{debate.name}'", self.revision)
+        term = unfold_debate(self.debate_graph(debate), debate)
+        debate._term = (key, term)
+        return term
 
     @staticmethod
     def issue_of(argument: Any):
@@ -755,24 +817,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
     def shared_debate(self, issue) -> SharedDebate:
         """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
         return share(self.document, issue, self.debate_names(), self.anon_name)
-
-    def check_reachable(self, host: Any, scion: Any, kind: str) -> None:
-        """The debate verbs' assertion (aida-document-graph decision): an
-        attacker must conclude the contrary of a statement reachable from
-        the host's issue, a supporter must conclude such a statement.
-        Only checked when the host is in the document graph."""
-        issue = self.issue_of(host)
-        if issue not in set(self.document.statements()):
-            return
-        reach = self.document.reachable(issue)
-        key, side = self.issue_of(scion)
-        wanted = (key, ("context" if side == "term" else "term")) if kind == "attack" else (key, side)
-        if wanted not in reach:
-            display = self.document.nodes.get(key, scion.conclusion)
-            raise ProverError(
-                f"{kind}: '{scion.name}' concludes {display}[{side[0]}], but no statement "
-                f"{display}[{wanted[1][0]}] is reachable from '{host.name}' in the document graph."
-            )
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

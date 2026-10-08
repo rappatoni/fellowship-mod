@@ -265,10 +265,15 @@ class TestCurriedAttack:
     @pytest.mark.xfail(strict=True, reason="curried intermediate conclusions not exposed (aida-curried-intermediate-conclusions)")
     def test_challenge_to_intermediate_conclusion_attacks(self, curried_prover):
         from core.dc.argument import Argument
+        from wrap.cli import debate_line
         host = self._host(curried_prover)
+        curried_prover.register_argument(host)
         challenge = Argument(curried_prover, 'test', 'B->C', ['by default'], is_anti=True)
         challenge.execute()
-        challenge.attack(host, name='d6')   # raises today
+        curried_prover.register_argument(challenge)
+        debate_line(curried_prover, "debate pro closed d6 : C.")
+        debate_line(curried_prover, "cArg.")
+        debate_line(curried_prover, "attack test cArg.")   # refused today: B->C is no node
 
 
 class TestCaptureIsACycle:

@@ -31,10 +31,13 @@ start argument s1 ((P -> Q)->P)->P
 elim f.
 end argument
 
-undergird d1 s1 p1
+debate pro open d1 : ((P -> Q)->P)->P.
+p1.
+reinforce s1 p1.
+hora est.
 
 render d1 vanilla
-normalize d1
+evaluate d1
 
 start argument p2 P
 cut ((P -> Q)->P) alpha.
@@ -45,7 +48,11 @@ next.
 axiom alpha.
 end argument
 
-undergird d2 p2 d1
+debate pro open d2 : ((P -> Q)->P)->P.
+p1.
+reinforce s1 p1.
+reinforce p2 s1.
+hora est.
 
 render d2 vanilla
 
@@ -54,17 +61,28 @@ cut (P->Q) beta.
 elim h.
 end argument
 
-undergird d3 s2 d2
+debate pro open d3 : ((P -> Q)->P)->P.
+p1.
+reinforce s1 p1.
+reinforce p2 s1.
+reinforce s2 p2.
+hora est.
 render d3 vanilla
 
 start argument p3 Q
 cut (P) gamma.
 end argument
 
-undergird d4 p3 d3
+debate pro open d4 : ((P -> Q)->P)->P.
+p1.
+reinforce s1 p1.
+reinforce p2 s1.
+reinforce s2 p2.
+buttress p3 s2.
+hora est.
 render d4 vanilla
-normalize d4
-render-nf d4 vanilla
+evaluate d4
+render d4 vanilla evaluated
 
 start counterargument s3 P->Q
 cut ((P->Q)->P) theta.
@@ -73,12 +91,20 @@ elim.
 axiom theta.
 end argument
 
-undergird d5 s3 d4
+debate pro open d5 : ((P -> Q)->P)->P.
+p1.
+reinforce s1 p1.
+reinforce p2 s1.
+reinforce s2 p2.
+buttress p3 s2.
+buttress s3 s2.
+hora est.
 render d5 vanilla
-normalize d5
-render-nf d5 vanilla
+evaluate d5
+render d5 vanilla evaluated
 label d5
-render-nf d5 dialectical
+evaluate d5
+render d5 dialectical evaluated
 
 # start argument p1 ((P -> Q)->P)->P
 # end argument

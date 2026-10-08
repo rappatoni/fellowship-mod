@@ -134,7 +134,7 @@ is the statement, if there is exactly one; otherwise =anon_1=, =anon_2=,
 not shift between commands. =anon_= is a reserved prefix. A sub-debate
 needed once is printed in place, and a trivial one is never named.
 
-*What =debate ARG= prints:* the issue's term, in which every named
+*What =share ARG= prints:* the issue's term, in which every named
 sub-debate is a citation, and then one line
 
 : NAME[open sites] := body
@@ -148,7 +148,7 @@ tests/minicourse/lesson14_sharing.fspy: two alternative supporters per
 level. =a1_0= and =a1_1= both derive P1 from the presumption of P0 (the
 argument =a0=), and =a2_0= and =a2_1= both derive P2 from P1.
 
-=debate a2_0=:
+=share a2_0=:
 
 : Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:
 :   μalt2:P2.<μalt1:P2.<?u1:P2||μ'b2:P2.<μ_:P2.<b2:P2||alt1:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<r2_0:P1->P2||anon_1:P1*th:P2>||a2_0:P2>||alt1:P2>>>||μ'b3:P2.<μ_:P2.<b3:P2||alt2:P2>||μ'_:P2.<μa2_1:P2.<μth_2:P2.<r2_1:P1->P2||anon_1:P1*th_2:P2>||a2_1:P2>||alt2:P2>>>
@@ -187,7 +187,7 @@ under =a2_0= and under =a2_1=, with a1_0 and a1_1 renamed =a1_0_2= and
 
 ** Exercises
 
-1. =debate a1_0= on the same document prints one line and names
+1. =share a1_0= on the same document prints one line and names
    nothing. Why?
 2. Give each level three supporters instead of two. How do the number of
    definitions, the size of the shared form and the size of the unfolded
@@ -243,7 +243,7 @@ tests/minicourse/lesson15_capture.fspy: =p1= and =p2= both derive P
 from "Q fails", presumed; =q= derives Q from "P fails", presumed. The
 even loop of tests/rationality/even_loop_lk.fspy, with P argued twice.
 
-=debate p1=:
+=share p1=:
 
 : Debate about 'p1' (P[t]), 1 sub-debate(s) cited by name:
 :   μalt3:P.<μalt2:P.<μalt1:P.<?u1:P||μ'b2:P.<μ_:P.<b2:P||alt1:P>||μ'_:P.<μp1:P.<μrule:P.<pRule1:(Q->false)->P||λh:Q.μalpha:false.<h:Q||anon_1[rule -> P:!, h -> ?:Q, ?:P]:Q>*rule:P>||p1:P>||alt1:P>>>||μ'b3:P.<μ_:P.<b3:P||alt2:P>||μ'_:P.<μp2:P.<μrule_2:P.<pRule2:(Q->false)->P||λh_2:Q.μalpha_2:false.<h_2:Q||anon_1[rule_2 -> P:!, h_2 -> ?:Q, ?:P]:Q>*rule_2:P>||p2:P>||alt2:P>>>||μ'b5:P.<μ_:P.<b5:P||μ'x4:P.<x4:P||u2:P!>>||μ'_:P.<b5:P||alt3:P>>>
@@ -283,9 +283,9 @@ the same debate, as the test checks, and the labels are the even loop's:
 
 ** Exercises
 
-1. =debate q= names nothing. Why is the debate about "P fails" not
+1. =share q= names nothing. Why is the debate about "P fails" not
    named there, although p1 and p2 both attack it?
-2. Remove =p2= from the fixture. What does =debate p1= print?
+2. Remove =p2= from the fixture. What does =share p1= print?
 3. Inside =anon_1='s definition, "Q fails" under =p1_2= is written
    =rule_3:Q=, not as a citation. Which rule of the unfolder is that?
 
@@ -339,7 +339,7 @@ aida-negation-spelling-in-unfolding; the fallback keeps it as it was.
 : ...
 : typecheck      'a2_0' - 2 definition(s) replayed, 1 already checked or bare
 
-The term sent for P2 is the first line of =debate a2_0= with the two
+The term sent for P2 is the first line of =share a2_0= with the two
 citations =anon_1:P1= replaced by the obligations =?u2:P1= and =?u3:P1=.
 P1's skeleton is the second line, with its sites numbered from u1
 again, since it cites nothing. P0's definition is bare and is not
@@ -416,7 +416,7 @@ tests/minicourse/lesson17_instances.fspy: lesson 14's document plus a
 strict refutation of P0, the counterargument =k= from the axiom
 =np0 : ~P0=.
 
-=debate a2_0= now names two sub-debates. P0's definition is no longer
+=share a2_0= now names two sub-debates. P0's definition is no longer
 bare - k contests it - and it is needed twice, so it is named; and since
 =a0= is the one argument about P0[t], it is called =a0=:
 

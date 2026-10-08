@@ -58,18 +58,30 @@ axiom.
 end argument
 #
 #Constructing undercuts, reducing coloring, building trees.
-undercut first counter1 arg1
-reduce first
+debate pro open first : B.
+arg1.
+rebut counter1 arg1.
+hora est.
+evaluate first
 label first
 tree first
-undercut second counter2 first
-reduce second
+debate pro open second : B.
+arg1.
+rebut counter1 arg1.
+rebut counter2 arg1.
+hora est.
+evaluate second
 label second
 tree second
-undercut third counter3 second
+debate pro open third : B.
+arg1.
+rebut counter1 arg1.
+rebut counter2 arg1.
+rebut counter3 arg1.
+hora est.
 #
 #Reduce, color and construct tree
 #
-reduce third
+evaluate third
 label third
 tree third nl

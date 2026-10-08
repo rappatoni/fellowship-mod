@@ -31,7 +31,10 @@ start counterargument qAtt Q
 by default.
 end counterargument
 
-attack datt qAtt pArg
+debate pro open datt : P.
+pArg.
+attack qAtt pArg.
+hora est.
 
 graph datt
 label datt

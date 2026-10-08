@@ -9,7 +9,6 @@ from mod import store
 
 from wrap.cli import (
     configure_logging_cli,
-    pop,
     execute_script,
     interactive_mode,
     setup_prover,

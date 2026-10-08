@@ -6,6 +6,64 @@
 
 * Thesis-critical implementation
 
+** BACKLOG Provide an API for the document UI
+:PROPERTIES:
+:ID:             aida-dui-api
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         40:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-debate-objects
+:OUTCOME:        A tested Python service layer, served over HTTP, gives a document-based editor (the DUI branch) everything it needs from AIDA on the compiler pipeline only: sessions, documents, debates, graphs, labellings, verdicts and explanations as JSON, errors with source positions.
+:VERIFY:         The DUI editor, rebased on main, runs its flow through the API against a live backend; contract tests (FastAPI TestClient) cover every endpoint; two concurrent sessions do not interfere.
+:END:
+
+Requested by the author 2026-10-08 for a coworker's document UI (branch
+=DUI=: =server.py=, =frontend/aida_editor.html=, =prototype.py=; it
+imports the retired =core.comp.color= and drives the removed grafting
+verbs). Plan, each phase opened by a design discussion with the author:
+1. Debate objects ([[id:aida-debate-objects]]).
+2. A session object instead of the module-global =mod.store= (=lk.=
+   clears it for every session).
+3. A service layer that returns results instead of printing them
+   (=wrap/cli.py=).
+4. JSON for graphs, labellings, verdicts, terms and the explain stages
+   ([[id:aida-explanation-term-json-format]]); errors with codes and source
+   spans.
+5. One syntax (full stops everywhere, one command grammar), documents and
+   editing ([[id:aida-load-replaces-document]],
+   [[id:aida-transport-limits]]), results at the lines asked for in one
+   pass, and the s(CASP) importer returning text in memory with
+   provenance.
+6. The HTTP layer, DUI rebased onto main, contract tests.
+
+** BACKLOG Compile documents incrementally (future work)
+:PROPERTIES:
+:ID:             aida-incremental-compilation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A change to a document (a new or refined argument, a declaration) recomputes only what depends on it: the unfolded terms, labellings and evaluations of the statements it reaches.
+:VERIFY:         On a fixture with two unconnected issues, registering an argument about one leaves the other's cached term and evaluation in use (logged); a benchmark records the saving.
+:END:
+
+Recorded 2026-10-08 (the author): today the document graph grows
+incrementally at registration, a refinement rebuilds it, and every
+unfolded term, labelling and evaluation - debates' included - is recomputed
+after any revision bump (=ProverWrapper.revision=). See also
+[[id:aida-module-system]] on held theorems.
+
 ** BACKLOG Specify the JSON format for explanation terms
 :PROPERTIES:
 :ID:             aida-explanation-term-json-format
@@ -1943,6 +2001,189 @@ Its open children moved here. Related work tracked elsewhere:
   [[id:aida-scasp-import-negative-justifications]];
 - the theory tasks T1-T6 (top-level, below).
 
+*** DOING Record debates as named, ordered, scoped selections of the document
+:PROPERTIES:
+:ID:             aida-debate-objects
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A debate is recorded as `debate pro|con open|closed NAME : ISSUE.`, moves `[VERB] ARG TARGET.` and `hora est.`; it is compiled on demand from its scope (closed: its moves' and cited arguments; open: the document), ordered by its moves, never added to the document graph; the verbs only check their target; the grafting verbs and `chain` are gone and the fixtures ported.
+:VERIFY:         tests/test_debates.py (scope, citation, order, verb table, refusals, cache) passes; the metro and Tweety examples evaluate as narrated; every fixture runs without a refused move; the suite passes against the pre-change baseline.
+:END:
+
+Designed by the author 2026-10-08 (the API discussion for the document UI,
+[[id:aida-dui-api]]), reintroducing scoping - rejected for the document on
+2026-09-17 ([[id:aida-document-graph]]) - as a separate object: the
+document stays compiled as a whole, a debate is a selection of it. Reasons
+given: performance (a closed debate compiles its scope, not the document
+or a library) and use cases - an agent's limited knowledge,
+counterfactuals (add or remove an argument), due diligence (the
+Prüfschema: points A-D checked, not every contingency), and the
+transcript of a concrete debate in which certain arguments were uttered
+in a certain order.
+
+Decisions (author, 2026-10-08):
+- Syntax with full stops everywhere; =debate ARG= (the shared form) is
+  renamed =share ARG=.
+- =cite= adds the cited argument to the scope; the strict store
+  (declarations, theorems) is always in scope.
+- No debate-local arguments yet: counterfactuals are closed debates whose
+  scope is edited ([[id:aida-debate-local-arguments]]).
+- Verbs: rebut/buttress attack/support an obligation, undermine/undergird
+  a presumption, attack/support either; undercut = undermine, reinforce =
+  buttress. The target must be an earlier move. No verb, no check - a non
+  sequitur ("your uncle shouting into the debate") is allowed and shows in
+  =graph NAME all=, not in =graph NAME=.
+- Order: the term is unfolded for the opening argument (on top of the
+  issue's stack, its sites as it wrote them; the author, 2026-10-08:
+  "biassing the debate in favor of its arguments is exactly the point"),
+  and at every statement the moved arguments stand above the others, the
+  last uttered outermost; in an open scope the others stay below in
+  registration order. This absorbs [[id:aida-unfold-debate-bias]].
+- The recipe persists; the term is cached per document revision and move
+  list, like every unfolded term (no incremental compilation:
+  [[id:aida-incremental-compilation]]).
+- The old verb commands are removed, the fixtures ported (backwards
+  compatibility breaks anyway with the syntax unification).
+- Later: dynamics - a debate on top of a debate, merging, removing moves.
+
+Evidence (2026-10-08, uncommitted, awaiting the author's review):
+- core/dc/debate.py (=Debate=, =Move=, =VERBS=, the checks,
+  =unfold_debate=); =Unfolder(order=...)= in core/dc/unfold.py; the
+  registry, the scope graph (closed: its arguments compiled on their own)
+  and the cached term in wrap/prover.py; =debate_line= and the commands on
+  debate names in wrap/cli.py; =share ARG= for the old =debate ARG=.
+- Removed: the grafting verbs (=Argument.attack/support/...=,
+  =_theta_expand=, =check_reachable=) and the =chain=, =attack=, ...
+  commands; =Argument.chain= stays for =pop_arg=, the legacy reducer and
+  the projections stay (deprecated).
+- 24 fixtures ported by script to open-scope debates (the old semantics:
+  the whole document), verbs adjusted to what the check accepts; where the
+  old verb reached an intermediate conclusion (alternative_arguments,
+  curried_attack) the move carries no verb and a comment. (Peirce's
+  moves first got the same treatment by mistake; each has a valid verb -
+  =buttress p3 s2=, =buttress s3 s2= - and now uses it.)
+- Also removed (author, 2026-10-08): =Argument.pop_arg= and =chain=, the
+  =pop= tactic and =check_for_errors= (wrap/cli.py), and five monolith
+  tests in tests/tests.py with their wrappers (test_chain,
+  test_simple_undercut, test_focussed_undercut, test_undercut_support,
+  test_pop_subargument) - they swallowed their exceptions, so they
+  "passed" while calling methods that no longer existed.
+- minicourse.org lessons 2 and 6 rewritten for debates, the new
+  transcript pinned (test_minicourse.py::test_lesson2_debate_transcript);
+  minicourse-evaluation.org and minicourse-sharing.org (=share ARG=)
+  adjusted.
+  Every ported fixture runs without a refused move (simple_tautology's
+  and test2's errors predate this, checked on the baseline).
+- Tests: tests/test_debates.py (25), ports in test_document,
+  test_debate_graph_integration, test_multiple_supports_order,
+  test_postulates (the curried xfail now a refused move), test_demo,
+  test_share, test_unfold_entrypoints; grafting-only tests removed
+  (test_graft_affine_capture, six in test_attack_expand_defaults, five
+  in test_thetaexpander_bureaucratic_fspy).
+- Suite: 1764 passed, 2 skipped, 3 xfailed, 1 xpassed; baseline (HEAD
+  plus the author's uncommitted edits) 1753 passed, 1 failed (an artefact
+  of the temporary worktree: an untracked .cecli file).
+
+*** BACKLOG Design: projections onto debate terms (replacing out, tou, sub, bus, attacker, regatta)
+:PROPERTIES:
+:ID:             aida-debate-term-projections
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A design, then an implementation, for obtaining the exact subterm of a debate's (or an unfolded) term that a given argument or subargument occupies, and for what may be done with it; the deprecated projections are retired or rebuilt on it.
+:VERIFY:         The design is recorded here; on tests/debates.fspy the agreed command returns penguin's fragment of debate d's term exactly as it occurs there (site numbers included), and a lambda subargument's fragment likewise; tests pin both; the old projection commands are removed or ported.
+:END:
+
+Raised by the author 2026-10-08. The projections (=out=, =tou=, =sub=,
+=bus=, =attacker=, =regatta=; wrap/cli.py, core/dc/argument.py,
+core/ac/alt_structure.py) cut a subterm out of a term and register it. They
+match the legacy shapes the removed grafting verbs built, not the stacked
+shapes the unfolder builds, and their result never joins the document; no
+fixture uses them. Debates do not replace them: no command returns an
+argument's fragment of a debate's term exactly - =unfold argument NAME=
+gives a different term (its own debate, unfolded from the whole document,
+other site numbers), =render NAME= the registered term.
+
+Starting point: the unfolder tags each copy of an argument with its name
+(=copy.origin = edge.name=, core/dc/unfold.py), and a lambda subargument
+is its own edge (=ARG.λk=), so a fragment can be found by name; stacks are
+read by =stack_elements= (core/dc/debate_graph.py). The matchers in
+core/ac/alt_structure.py stay: pres/pattern_render.py renders hand-written
+patterns with them.
+
+Open questions:
+- Syntax, e.g. =render d at penguin=, and which terms it applies to: a
+  debate's, an argument's unfolded term, an issue's.
+- Several occurrences: an argument occurs once per path through the graph
+  - an occurrence number, or all of them.
+- Viewing only, or registering the fragment. Registering as an argument
+  of the document would duplicate edges
+  ([[id:aida-duplicate-derivations]]) and turn the captured variables
+  (=alt=, =b=, hypotheses) into open sites, which breaks capture; a
+  registered term outside the document is what the projections did.
+- What =sub= / =bus= become: naming an existing subargument edge rather
+  than copying a term.
+- Hand-written terms in the legacy shapes (=register=): still projectable,
+  or only renderable?
+
+*** BACKLOG Let a debate hold arguments of its own (stretch)
+:PROPERTIES:
+:ID:             aida-debate-local-arguments
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        An argument can be registered into a debate only: it is in the debate's scope and nowhere in the document graph, so a counterfactual or a transcript does not leak into the document.
+:VERIFY:         A closed debate with a local counterargument changes its verdict while =evaluate= on the document and =graph document= are unchanged; the local argument's name is still claimed; a test covers both.
+:END:
+
+Stretch goal (author, 2026-10-08). Until then the same is done in reverse:
+a closed debate whose scope is edited. Obstacle: registering an argument
+puts it into the document (=ProverWrapper.register_argument=), and its name
+is claimed in Fellowship's namespace too.
+
+*** BACKLOG Design: should identical derivations be one edge?
+:PROPERTIES:
+:ID:             aida-duplicate-derivations
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided, with reasons, whether two arguments with the same derivation (or a shared subargument) give one edge or two, and the decision is implemented or the status quo recorded.
+:VERIFY:         The decision is written here; a test pins the chosen behaviour for two arguments with identical bodies and for a lambda subargument shared by two arguments.
+:END:
+
+Found 2026-10-08: =DebateGraph.merge= only appends, so two arguments with
+identical bodies give two edges (=arg1=, =arg2=, both deriving P) and the
+issue term stacks the derivation twice. The labelling is unaffected (an
+acceptance condition is an OR over edges); the term, and the cost of
+unfolding and replaying it, doubles. No test covered it. A lambda
+subargument is compiled per parent, so presumably duplicated alike (not
+checked). The author: "The status quo might also be fine. Needs design."
+
 *** BACKLOG Implement rational closure: attack and support points beyond sites
 :PROPERTIES:
 :ID:             aida-rational-closure
@@ -3499,7 +3740,8 @@ Implemented 2026-10-06 (evidence):
 - Full suite: 1484 passed; the two remaining failures are the author's
   working copy of even_loop_lk.fspy (aida-discuss-scaffold-binder-scope).
 
-*** BACKLOG Unfold composed debates biased towards several arguments
+*** DONE Unfold composed debates biased towards several arguments
+CLOSED: [2026-10-08 Thu]
 :PROPERTIES:
 :ID:             aida-unfold-debate-bias
 :AREA:           phd
@@ -3518,6 +3760,15 @@ Implemented 2026-10-06 (evidence):
 
 Requested by the author 2026-10-06. Until then =unfold debate= warns and
 does nothing, and a composed debate is evaluated on its issue term.
+
+Delivered by [[id:aida-debate-objects]] (2026-10-08): a debate's term is
+its issue unfolded with every moved argument above the others at its
+statement, the last uttered outermost (=Unfolder(order=...)=,
+core/dc/unfold.py; =unfold_debate=, core/dc/debate.py), and =unfold
+debate NAME= prints it. Evidence:
+tests/test_debates.py::test_the_last_uttered_supporter_is_outermost and
+tests/test_multiple_supports_order.py (the later supporter encloses the
+earlier and is the one the value shows).
 
 *** BACKLOG Favour the original argument as far as possible when it cannot be fully accepted
 :PROPERTIES:

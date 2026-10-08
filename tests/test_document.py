@@ -1,12 +1,11 @@
-"""Phase C (aida-document-graph): the document graph on the prover and
-the debate verbs' assertion (option (i)+(ii) of the recorded decision)."""
+"""Phase C (aida-document-graph): the document graph on the prover, and
+the check of the debate verbs (aida-debate-objects)."""
 
 import warnings
 
 import pytest
 
 from wrap.cli import setup_prover, execute_script
-from wrap.prover import ProverError
 from core.dc.argument import Argument
 from core.dc.debate_graph import canonical_prop, compile_debate, declaration_kinds
 from core.dc.unfold import unfold
@@ -43,23 +42,11 @@ def test_attack_registered_elsewhere_counts(prover):
     assert labels[(K("Q"), "term")] == "UNDEC" and labels[(K("P"), "term")] == "UNDEC"
 
 
-def test_composed_debate_adds_nothing_to_the_document(prover):
-    prover.send_command("lk.")
-    prover.send_command("declare P,Q:bool.")
-    prover.send_command("declare pRule : (Q->P).")
-    pArg = Argument(prover, "pArg", "P", ["cut (Q->P) rule", "axiom pRule", "elim", "by default", "next", "axiom rule"])
-    pArg.execute(); prover.register_argument(pArg)
-    qAtt = Argument(prover, "qAtt", "Q", ["by default"], is_anti=True)
-    qAtt.execute(); prover.register_argument(qAtt)
-    before = (len(prover.document.edges), dict(prover.document.defaults))
-    d = qAtt.attack(pArg, name="datt")
-    prover.register_argument(d)
-    assert getattr(d, "composed", False)
-    assert (len(prover.document.edges), dict(prover.document.defaults)) == before
-    assert prover.issue_of(d) == (K("P"), "term")
-
-
-def test_verb_assertion_refuses_an_unreachable_target(prover):
+def test_a_verb_refuses_a_target_without_the_node(prover):
+    # The debate verbs check their target (core/dc/debate.py); a debate adds
+    # nothing to the document (tests/test_debates.py).
+    from core.dc.debate import DebateError
+    from wrap.cli import debate_line
     prover.send_command("lk.")
     prover.send_command("declare P,Q,R:bool.")
     prover.send_command("declare pRule : (Q->P).")
@@ -67,12 +54,14 @@ def test_verb_assertion_refuses_an_unreachable_target(prover):
     pArg.execute(); prover.register_argument(pArg)
     rArg = Argument(prover, "rArg", "R", ["by default"])
     rArg.execute(); prover.register_argument(rArg)
-    with pytest.raises(ProverError, match="not.*reachable|no statement"):
-        rArg.support(pArg, name="bad")
     rAtt = Argument(prover, "rAtt", "R", ["by default"], is_anti=True)
     rAtt.execute(); prover.register_argument(rAtt)
-    with pytest.raises(ProverError, match="reachable"):
-        rAtt.attack(pArg, name="bad2")
+    assert debate_line(prover, "debate pro closed d : P.") and debate_line(prover, "pArg.")
+    with pytest.raises(DebateError, match="no site on :R"):
+        debate_line(prover, "support rArg pArg.")
+    with pytest.raises(DebateError, match="no site on :R"):
+        debate_line(prover, "attack rAtt pArg.")
+    assert debate_line(prover, "rArg pArg.")            # no verb: a non sequitur is allowed
 
 
 def test_logic_mode_is_tracked(prover):

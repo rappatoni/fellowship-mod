@@ -43,11 +43,21 @@ end argument
 # ---- paste from here ----------------------------------------------------
 # The document already holds every conflict: proposition identity is global.
 graph document
-# The verbs name a debate and CHECK it: a supporter must conclude a statement
-# reachable from the host's issue, an attacker the contrary of one.
-support dsup wings tweety
-attack datt penguin tweety
-support bad sings tweety
+# A debate names a selection of the document's arguments; its verbs CHECK
+# each move: a supporter must conclude a site of its target, an attacker the
+# contrary of one.  An open debate hears the whole document.
+debate pro open dsup : Flies.
+tweety.
+support wings tweety.
+hora est.
+debate pro open datt : Flies.
+tweety.
+attack penguin tweety.
+hora est.
+debate pro open bad : Flies.
+tweety.
+support sings tweety.
+hora est.
 # The debate about Flies: supported by wings, contested by penguin.
 graph tweety show
 label tweety

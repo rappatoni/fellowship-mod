@@ -242,6 +242,39 @@ def test_lesson_fixture_replays(script, tmp_path, monkeypatch):
         prover.close()
 
 
+def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
+    """Pins lesson 2's =graph d2= transcript and lesson 6's B site of the
+    debate term (aida-debate-objects)."""
+    import logging
+    from pathlib import Path
+    from mod import store
+    from pres.gen import pres_str
+    source = Path(__file__).parent / "lesson2_graph.fspy"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ACDC_NO_RENDER", "1")
+    store.arguments.clear()
+    store.document.clear()
+    prover = setup_prover()
+    try:
+        with caplog.at_level(logging.INFO):
+            execute_script(prover, str(source), strict=True, isolate=False)
+        text = "\n".join(r.getMessage() for r in caplog.records)
+        for line in (
+            "Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 3 nodes, 3 edges",
+            "  bArg (supporter, strict): B[t] <- -",
+            "  cArg (supporter, defeasible): C[t] <- A[t:obli], B[t:obli]",
+            "  bArg* (strict, strict): B[t] <- -",
+        ):
+            assert line in text
+        term = pres_str(prover.debate_term(prover.debates["d2"]))
+        assert ("μalt2:B.<?u3:B||μ'b2:B.<μ_:B.<b2:B||alt2:B>||μ'_:B.<μbArg:B."
+                "<axB:B||bArg:B>||alt2:B>>>") in term
+    finally:
+        prover.close()
+        store.arguments.clear()
+        store.document.clear()
+
+
 class TestLesson3GammaIteration:
     """Pins the Gamma-iteration table added to Lesson 3."""
 
