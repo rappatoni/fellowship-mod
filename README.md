@@ -217,7 +217,7 @@ before dropping into the REPL. It can only be combined with `--interactive`:
 external proof/argument representation into a `.fspy` script. Importers are
 separate packages that register under the `acdc.importers` entry point (see
 `wrap/importers.py` for the contract); the s(CASP) importer is
-[scasp-aida](../scasp-aida), source language `scasp`. `MODE` is either:
+[scasp-aida](https://git8.cs.fau.de/regass/explanations), source language `scasp`. `MODE` is either:
 - `file` — write the translated script to `TARGET_FILE_NAME` (default:
   `SOURCE_JSON` with its extension replaced by `.fspy`) and exit
 - `interactive` — translate to a temporary script, replay it strictly, and
