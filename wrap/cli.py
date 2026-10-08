@@ -24,7 +24,7 @@ from core.dc.cite import citation_target, CitationError, is_strict_citation, par
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
-from scasp_import.importer import ScaspImportError, translate_json
+from wrap.importers import ImporterNotFound, SourceImportError, load_importer, missing_importer_message
 from pres.decorations import parse_decorate_command
 
 logger = logging.getLogger('fsp.wrapper')
@@ -2787,8 +2787,10 @@ def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) 
     source_language, source_json, mode = import_args[:3]
     target_file_name = import_args[3] if len(import_args) == 4 else None
 
-    if source_language != "scasp":
-        ap.error("Unsupported import source language '%s' (currently only 'scasp')" % source_language)
+    try:
+        translate = load_importer(source_language)
+    except ImporterNotFound:
+        ap.error(missing_importer_message(source_language))
     if mode not in ("file", "interactive"):
         ap.error("Unsupported import mode '%s' (expected 'file' or 'interactive')" % mode)
 
@@ -2798,8 +2800,8 @@ def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) 
 
     try:
         data = json.loads(json_path.read_text())
-        result = translate_json(data)
-    except (OSError, json.JSONDecodeError, ScaspImportError) as e:
+        result = translate(data)
+    except (OSError, json.JSONDecodeError, SourceImportError) as e:
         ap.error(f"failed to import {json_path}: {e}")
 
     script_name = json_path.stem
@@ -2810,7 +2812,7 @@ def _handle_import_command(ap: argparse.ArgumentParser, import_args: list[str]) 
         return
 
     prover = setup_prover()
-    with tempfile.TemporaryDirectory(prefix="scasp_import_cli_") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix=f"{source_language}_import_cli_") as tmpdir:
         script_path = Path(tmpdir) / f"{script_name}.fspy"
         result.write_fspy(script_path, name=script_name)
         execute_script(prover, str(script_path), strict=True, stop_on_error=True, isolate=False)

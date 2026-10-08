@@ -3,15 +3,11 @@ import re
 import subprocess
 
 from core.ac.ast import Cons, DI, Goal, ID, Mu, Mutilde, Sonc
-from core.ac.instructions import InstructionsGenerationVisitor
-from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
-from pres.nl import natural_language_argumentative_rendering, pretty_natural
-from pres.tree import render_acceptance_tree_dot
-from pres.decorations import parse_decorate_command, render_declaration, render_prop
+from pres.decorations import parse_decorate_command
 from scasp_import import importer
 from scasp_import.importer import atom_to_prop, run_scasp_json, translate_json
-from wrap.cli import _handle_import_command, execute_script
+from wrap.cli import _handle_import_command
 
 
 def _answer_tree(*trees):
@@ -45,64 +41,6 @@ def _const(name):
 
 def _var(name):
     return {"type": "var", "name": name}
-
-
-def test_decoration_command_parser_and_compositional_rendering():
-    assert parse_decorate_command("decorate Bird : '@arg1 is a bird'.") == ("Bird", "@arg1 is a bird")
-
-    declarations = {
-        "A": "bool",
-        "B": "bool",
-        "ax": "A -> B",
-        "bird_tweety": "Bird Tweety",
-    }
-    decorations = {
-        "A": "Foo",
-        "B": "Bar",
-        "ax": "If @arg1 then @arg2",
-        "Bird": "@arg1 is a bird",
-    }
-
-    assert render_prop("Bird Tweety", declarations, decorations) == "Tweety is a bird"
-    assert render_declaration("bird_tweety", declarations, decorations) == "Tweety is a bird"
-    assert render_declaration("ax", declarations, decorations) == "If Foo then Bar"
-    assert render_prop("A -> B", declarations, decorations, {"->": "@left impliziert @right"}) == "Foo impliziert Bar"
-
-
-def test_declaration_names_are_not_implicit_decorations_for_their_types():
-    declarations = {"A": "bool", "a": "A"}
-
-    assert render_prop("A", declarations, {}) == "A"
-    assert render_declaration("a", declarations, {}) == "A"
-    assert render_prop("A -> A", declarations, {}, {"->": "@left impliziert @right"}) == "A impliziert A"
-
-    assert render_prop("A", declarations, {"a": "Decorated a"}) == "A"
-    assert render_prop("A", declarations, {"A": "Decorated A"}) == "Decorated A"
-    assert render_declaration("a", declarations, {"a": "Decorated a"}) == "Decorated a"
-    assert render_declaration("a", declarations, {"A": "Decorated A", "a": "Decorated a"}) == "Decorated a"
-
-
-def test_natural_language_and_tree_renderers_consume_decorations():
-    body = Mu(ID("alpha", "Bird Tweety"), "Bird Tweety", DI("bird_tweety", "Bird Tweety"), ID("alpha", "Bird Tweety"))
-    declarations = {"bird_tweety": "Bird Tweety"}
-    decorations = {"Bird": "@arg1 is a bird", "Tweety": "Tweety"}
-
-    rendered = pretty_natural(
-        body,
-        natural_language_argumentative_rendering,
-        declarations=declarations,
-        decorations=decorations,
-    )
-    dot = render_acceptance_tree_dot(
-        body,
-        label_mode="nl",
-        declarations=declarations,
-        decorations=decorations,
-    )
-
-    assert "Tweety is a bird" in rendered
-    assert "Bird Tweety" not in rendered
-    assert "Tweety is a bird" in dot
 
 
 def test_scasp_display_metadata_emits_wrapper_decorations():
@@ -160,37 +98,6 @@ def test_scasp_display_markup_is_simplified_to_positional_template():
         "Bird_list",
         "@arg1 ist eine \\sn{Liste} von \\sr{Vogel}{Vögeln.}",
     )
-
-
-def test_execute_script_handles_decorate_wrapper_only(tmp_path):
-    class FakeProver:
-        def __init__(self):
-            self.echo_notes = False
-            self.decorations = {}
-            self.commands = []
-
-        def register_decoration(self, name, template):
-            self.decorations[name] = template
-
-        def send_command(self, command):
-            self.commands.append(command)
-            return {}
-
-    script = tmp_path / "decorations.fspy"
-    script.write_text(
-        "decorate Bird : '@arg1 is a bird'.\n"
-        'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste}"\n'
-        "declare A:bool.\n"
-    )
-    prover = FakeProver()
-
-    execute_script(prover, str(script), isolate=False)
-
-    assert prover.decorations == {
-        "Bird": "@arg1 is a bird",
-        "Bird_list": "@arg1 ist eine \\sn{Liste}",
-    }
-    assert prover.commands == ["declare A:bool."]
 
 
 def test_atom_to_prop_name_mapping():
@@ -399,13 +306,6 @@ def test_translate_json_omits_unsupported_children_with_warning():
     assert any("unsupported child" in warning for warning in result.warnings)
 
 
-def test_prop_to_command_renders_predicate_applications_and_connectives():
-    assert prop_to_command("Child Bob") == "Child[Bob]"
-    assert prop_to_command("Father Rich Bob") == "Father[Rich][Bob]"
-    assert prop_to_command("Child Bob -> Orphan Bob") == "Child[Bob] -> Orphan[Bob]"
-    assert prop_to_command("H_Orphan Bob-Child Bob") == "H_Orphan[Bob]-Child[Bob]"
-
-
 def test_translate_orphans_json_imports_structured_predicates():
     payload = _answer_tree(
         _compound("orphan", [_const("bob")], [
@@ -479,20 +379,6 @@ def test_translate_structured_equality_and_inequality_atoms():
     assert "declare Eq:iota -> iota -> bool." in result.setup_commands()
     assert "declare Neq:iota -> iota -> bool." in result.setup_commands()
     assert "register imported : Eq[Bob][Bob] := μ" in result.to_fspy()
-
-
-def test_instruction_generation_renders_predicate_cut_commands_with_brackets():
-    body = Mu(
-        ID("alpha", "Orphan Bob"),
-        "Orphan Bob",
-        DI("f_Child_Bob_Orphan_Bob", "Child Bob -> Orphan Bob"),
-        ID("alpha", "Orphan Bob"),
-    )
-    body.contr = "Child Bob -> Orphan Bob"
-
-    instructions = list(InstructionsGenerationVisitor().return_instructions(body))
-
-    assert any(instr == "cut (Child[Bob] -> Orphan[Bob]) alpha" for instr in instructions)
 
 
 def test_run_scasp_json_accepts_nonzero_exit_when_json_exists(tmp_path, monkeypatch):

@@ -12,9 +12,10 @@ from typing import Any
 from core.ac.ast import Cons, Deleg, DI, Geled, Goal, ID, Mutilde, Mu, ProofTerm, Sonc, Term
 from core.ac.prop_render import prop_to_command
 from pres.gen import ProofTermGenerationVisitor
+from wrap.importers import SourceImportError
 
 
-class ScaspImportError(Exception):
+class ScaspImportError(SourceImportError):
     """Raised when sCASP output cannot be translated into an AC/DC term."""
 
 
