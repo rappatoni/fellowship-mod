@@ -4448,6 +4448,57 @@ disjuncts) or adf-bdd's enumeration is responsible; then consider
 enumerating per SCC, which the independent-loop case decomposes into, and
 computing preferred without the k^2 filter over complete labellings.
 
+** BACKLOG Design: registering tactics in the wrapper
+:PROPERTIES:
+:ID:             aida-tactic-registration
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A written design deciding whether and how the wrapper offers proof steps of its own beyond Fellowship's tactics - what such a step is, how an argument records and replays it, whether it shows in the proof term, and how a script invokes it - or a recorded decision not to.
+:VERIFY:         The design note here answers each question below with a decision and is reviewed by the author.
+:END:
+
+Needs design (author, 2026-10-08).
+
+History: =tactic NAME ARGS= ran a Python function registered with
+=ProverWrapper.register_custom_tactic= against the live prover. The only
+bundled tactic, =pop=, was removed with the grafting verbs (4f12d45).
+With nothing registered, a =tactic= line inside a recording crashed
+=Argument.execute= (=AttributeError=: =execute_tactic= returned an error
+string where a proof state was expected; =tests/test2.fspy=), so the
+command, =register_custom_tactic= and =execute_tactic= were removed on
+2026-10-08. A =tactic= line is now an ordinary Fellowship command and
+gets Fellowship's parse error.
+
+What the old mechanism did, as a reference point: the argument recorded
+only the command line, replay ran the function again, batch replay was
+flushed around it, and the proof term held whatever the function sent,
+with no trace of the tactic itself.
+
+Related: no superdeduction task exists yet, here or in the supervision
+repository. =minicourse-superdeduction.org= lesson S8 (AI-drafted and
+awaiting the author's review; its connections to AC/DC are proposals, not
+settled) has the wrapper compute super rules by driving the kernel and
+apply them by expanding a super-term node. A registered derived rule is
+one candidate answer to the questions below. Libraries of such rules
+would also meet [[id:aida-module-system]].
+
+Questions:
+- What is registered: a Python function, a fixed sequence of Fellowship
+  commands, or a derived rule closed once as a theorem and then applied?
+- What an argument records: the call, its expansion, or both; and whether
+  replay re-runs the call or replays the expansion.
+- Whether the step is visible in the proof term (a node of its own, as
+  S8's super terms) or only in the instructions.
+- Where registrations live and how scripts declare them: per document,
+  per library, or in Python only.
+
 ** BACKLOG Design a module system for libraries
 :PROPERTIES:
 :ID:             aida-module-system
@@ -4621,6 +4672,50 @@ vocabulary is =cut=, =elim=, =axiom=, =moxia=, =next= and =by default=, and
 no =.fspy= script uses =focus=. The manual expansion reaches =qed= on the
 exact goal where =focus= aborts, which is how both first-order fixtures are
 written. It also no-ops silently when applied to a conclusion.
+
+** BACKLOG Run the first-order resolution pass on parsed proof terms
+:PROPERTIES:
+:ID:             aida-fo-resolve-unwired
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Every proof term AIDA parses - Fellowship's term in =Argument.execute= and the user's term in =register= - goes through =core/ac/resolve.py=, so =\x:N.= becomes a =LamdaFO= and =x*K2= a =ConsFO=, and a name in an ambiguous position that the declarations do not account for is refused.
+:VERIFY:         Replaying tests/fo_exists_forall.fspy through =execute_script= registers a body containing =LamdaFO= and =ConsFO=; a =register= whose term puts an undeclared name in an ambiguous position is refused with =ResolutionError=; a regression test pins both; the documented test suite passes.
+:END:
+
+Bug report (found 2026-10-08 in the dead-code review). =resolve()= is
+called only by tests (=tests/test_resolve.py=, =test_enrich_prop.py= and
+three =test_fo_*.py= files). The two production parse sites, =Argument.execute=
+(=core/dc/argument.py=) and =register_argument_cmd= (=wrap/cli.py=), call
+=Grammar().parser.parse= and stop there, so the parser's propositional
+reading of the two ambiguous constructors is never revised.
+
+Reproduction: run =tests/fo_exists_forall.fspy= with =execute_script= and
+collect the node kinds of the registered body. Observed: =Cons=, =DI=,
+=DestructTermsPairFO=, =Hyp=, =ID=, =Lamda=, =Mu=, =Mutilde=,
+=TermsPairFO=. Expected, per the fixture's own header: =LamdaFO= for
+=\x:N.= and =ConsFO= for =x*K2= as well. The two pair constructors are
+unambiguous and parse directly, which is why the fixtures still replay.
+Not yet examined: which downstream paths take the propositional branch
+for the misread nodes (=PropEnrichmentVisitor= has =visit_LamdaFO= /
+=visit_ConsFO=; instruction generation and rendering dispatch on node
+kind as well).
+
+The evidence of [[id:aida-first-order-front-end]] says
+=tests/test_fo_instructions.py= drives "prover → parse → resolve → enrich
+→ instructions → prover". It does, but the test calls =resolve= itself:
+the pass was verified, its wiring was not. Its commit (220235b) names
+=register= as the case the strict mode exists for.
+
+Fix sketch: =resolve(body, prover.declarations)= after both parses (no
+=env= at the root). Tests that relied on the propositional reading may
+need updating.
 
 ** BACKLOG Regenerate the Fellowship documentation transcripts
 :PROPERTIES:

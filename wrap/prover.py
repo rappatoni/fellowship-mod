@@ -1,5 +1,5 @@
 import os, re, logging, threading, warnings
-from typing import Any, List, Tuple, Optional, Dict, Callable
+from typing import Any, List, Tuple, Optional, Dict
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
@@ -60,7 +60,7 @@ def _env_flag(name: str, default: str, true_values=("1", "true", "yes", "on")) -
 
 class ProverWrapper:
     """
-    The main class for the argumentation layer on top of the Fellowship prover. Includes utilities to execute an instance of the fellowship prover (self.prover, self.prover.expect), send commands to it and receive and process its output (send_command, self._sexp). Maintains a state in the form of Dicts of registered constant declarations and arguments (self.declarations, self.arguments) and parsed prover ouput (self.last_state). Allows for the registration and execution of custom tactics (self.custom_tactics).
+    The main class for the argumentation layer on top of the Fellowship prover. Includes utilities to execute an instance of the fellowship prover (self.prover, self.prover.expect), send commands to it and receive and process its output (send_command, self._sexp). Maintains a state in the form of Dicts of registered constant declarations and arguments (self.declarations, self.arguments) and parsed prover ouput (self.last_state).
 
 TODO: Unified exception handling and logging.
 TODO: Consistent use of type annotations.
@@ -80,7 +80,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
         # terminal echo negotiation, so that defensive delay only adds linear
         # latency to proof replay.
         self.prover.delaybeforesend = None
-        self.custom_tactics : Dict[str, Any] = {} # Tactics registered with register_custom_tactic; none are bundled.
         self.last_state: Any = None
         self._sexp = SexpParser()
         #: One Fellowship process answers one command at a time.  Every send
@@ -611,17 +610,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """Register wrapper-side natural-language decoration metadata."""
         self.decorations[name] = template
         logger.info("'%s' decorated as '%s'.", name, template)
-
-    def register_custom_tactic(self, name: str, function: Callable[..., Any]) -> None:
-        """ Register a custom tactic with its associated function """
-        self.custom_tactics[name] = function
-
-    def execute_tactic(self, tactic_name: str, *args: Any) -> Any:
-        """ Execute a tactic, either a custom or predefined tactic """
-        if tactic_name in self.custom_tactics:
-            return self.custom_tactics[tactic_name](self, *args)
-        else:
-            return f"Error: Tactic '{tactic_name}' is not defined."
 
     # -- names ---------------------------------------------------------------
 

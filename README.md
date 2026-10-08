@@ -671,14 +671,6 @@ worked examples of every shape.
 
   (from `tests/olon.fspy`, which also shows the `μ'`-headed dual form)
 
-### Custom tactics
-
-- `tactic NAME ARGS...`
-  - invoke a custom tactic registered on the wrapper via
-    `ProverWrapper.register_custom_tactic`. No tactics are bundled
-    (`pop` was removed with the grafting verbs), so `tactic` reports an
-    unknown tactic unless one is registered from Python.
-
 ### Debates
 
 A *debate* is a named, ordered selection of the document's arguments
