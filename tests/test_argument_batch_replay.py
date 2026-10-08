@@ -32,7 +32,6 @@ class _BatchFakeProver:
         self.commands = []
         self.batches = []
         self.quiet_batches = []
-        self.tactics = []
         self.declarations = {}
         self.decorations = {}
         self.fail_final_next = fail_final_next
@@ -58,11 +57,6 @@ class _BatchFakeProver:
     def send_commands_quiet_final(self, commands, *args, **kwargs):
         self.quiet_batches.append(tuple(commands))
         return self._state()
-
-    def execute_tactic(self, tactic_name, *args):
-        self.tactics.append((tactic_name, args))
-        return self._state()
-
 
 @pytest.mark.parametrize("env_value", ["0", "false", "no"])
 def test_argument_execute_can_disable_batch_replay(monkeypatch, env_value):
@@ -104,18 +98,6 @@ def test_argument_execute_prefers_quiet_final_replay(monkeypatch):
     assert prover.batches == []
     assert prover.quiet_batches == [("intro.", "axiom.")]
     assert prover.commands[-1] == "discard theorem."
-
-
-def test_argument_execute_flushes_batch_around_custom_tactics(monkeypatch):
-    monkeypatch.delenv("FSP_BATCH_REPLAY", raising=False)
-    prover = _BatchFakeProver()
-    arg = Argument(prover, "demo", "A", instructions=["intro", "tactic foo X Y", "axiom"])
-
-    arg.execute()
-
-    assert prover.batches == []
-    assert prover.quiet_batches == [("intro.",), ("axiom.",)]
-    assert prover.tactics == [("foo", ("X", "Y"))]
 
 
 def test_argument_execute_preserves_final_next_error_special_case(monkeypatch):

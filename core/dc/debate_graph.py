@@ -19,6 +19,7 @@ This module is being built along propositional-fragment-plan.org:
 import logging
 from copy import deepcopy
 from dataclasses import dataclass, field
+from functools import lru_cache
 from itertools import count
 
 from core.ac.ast import (
@@ -48,6 +49,7 @@ def _unfold_neg(p: Prop) -> Prop:
     return p
 
 
+@lru_cache(maxsize=None)
 def canonical_prop(text: str) -> str:
     """The graph-node identity key for a proposition string.
 
@@ -59,15 +61,22 @@ def canonical_prop(text: str) -> str:
 
     Raises PropError on unparsable input: an unreadable proposition must
     never silently become its own node.
+
+    Cached: a document spells the same few propositions over and over, and
+    each call would otherwise run the Earley parser (the suite's hottest
+    path before the cache).  The result is a pure function of ``text``; a
+    PropError is not cached and is raised again on the next call.
     """
     return _unfold_neg(Prop.parse(text)).canonical()
 
 
+@lru_cache(maxsize=None)
 def display_prop(text: str) -> str:
     """The display normalization: parse and re-render with the printer.
 
     Unlike ``canonical_prop`` this keeps the author's negation spelling;
-    it only normalizes whitespace and parenthesisation.
+    it only normalizes whitespace and parenthesisation.  Cached like
+    ``canonical_prop``.
     """
     return str(Prop.parse(text))
 

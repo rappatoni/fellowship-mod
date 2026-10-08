@@ -49,8 +49,6 @@ DEFAULT_SCRIPTS = [
     "rationality/modus_tollens.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",
-    # Not test2.fspy: it calls the `pop` tactic, removed with the grafting
-    # verbs.
 ]
 
 def make_assert_log(logger: logging.Logger):
