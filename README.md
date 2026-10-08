@@ -211,11 +211,13 @@ before dropping into the REPL. It can only be combined with `--interactive`:
 .venv/bin/acdc --interactive --load tests/normalize_render.fspy
 ```
 
-### Importing from s(CASP)
+### Importing from other formalisms
 
 `--import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]` translates an
-external proof/argument representation into a `.fspy` script. Currently the
-only supported `SOURCE_LANGUAGE` is `scasp`. `MODE` is either:
+external proof/argument representation into a `.fspy` script. Importers are
+separate packages that register under the `acdc.importers` entry point (see
+`wrap/importers.py` for the contract); the s(CASP) importer is
+[scasp-aida](../scasp-aida), source language `scasp`. `MODE` is either:
 - `file` — write the translated script to `TARGET_FILE_NAME` (default:
   `SOURCE_JSON` with its extension replaced by `.fspy`) and exit
 - `interactive` — translate to a temporary script, replay it strictly, and
@@ -225,8 +227,6 @@ only supported `SOURCE_LANGUAGE` is `scasp`. `MODE` is either:
 .venv/bin/acdc --import scasp path/to/proof.json file imported.fspy
 .venv/bin/acdc --import scasp path/to/proof.json interactive
 ```
-
-See `scasp_import/` for the translator itself.
 
 ## Logging and environment variables
 

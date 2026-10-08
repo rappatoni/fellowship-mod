@@ -235,7 +235,7 @@ failure in a body becomes ¬ in φ.
 
 ** Worked example: tweety
 
-=scasp_import/tests/tweety.pl= contains the clause
+=tests/fixtures/tweety.pl= in the scasp-aida repository contains the clause
 
 : fly(X) :- bird(X), not abnormal(X).
 

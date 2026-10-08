@@ -22,9 +22,5 @@ test = [
 [project.scripts]
 acdc = "wrap.cli:main"
 
-# Transitional: registers the in-tree importer until it moves to scasp-aida.
-[project.entry-points."acdc.importers"]
-scasp = "scasp_import.importer:translate_json"
-
 [tool.setuptools.packages.find]
-include = ["core*", "pres*", "wrap*", "mod*", "scasp_import*"]
+include = ["core*", "pres*", "wrap*", "mod*"]

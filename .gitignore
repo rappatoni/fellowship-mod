@@ -71,7 +71,3 @@ _region_.tex
 papers/comma2026/.cecli/
 *.json
 *.txt
-
-# s(CASP) import: solver output and importer output are generated
-scasp_import/tests/*.json
-scasp_import/tests/*.fspy

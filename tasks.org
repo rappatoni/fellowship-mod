@@ -6,23 +6,6 @@
 
 * Thesis-critical implementation
 
-** NEXT Finish the propositional s(CASP) translation for the negated fragment
-:PROPERTIES:
-:ID:             aida-propositional-scasp-translation
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         yes
-:EISENHOWER:     Q1
-:ICK:            2
-:EFFORT:         8:00
-:DEFERRALS:      0
-:SYNC_WITH:      id:phd-aida-propositional-scasp-translation
-:OUTCOME:        AIDA translates the supported propositional s(CASP) negated fragment into the intended AC/DC representation.
-:VERIFY:         Run the documented test suite and check positive and negative translation cases covering every supported propositional construct.
-:END:
-
 ** BACKLOG Specify the JSON format for explanation terms
 :PROPERTIES:
 :ID:             aida-explanation-term-json-format
@@ -3421,31 +3404,6 @@ additions). This would answer the relevance question without
 necessarily forcing the document-wide labelling. Whether in general
 the document labelling should be used for issues is an independent
 question.
-
-*** BACKLOG Translate negative justifications in the s(CASP) importer
-:PROPERTIES:
-:ID:             aida-scasp-import-negative-justifications
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      yes
-:URGENT:         no
-:EISENHOWER:     Q2
-:ICK:            2
-:EFFORT:         3:00
-:DEFERRALS:      0
-:OUTCOME:        scasp_import translates the negative parts of a justification tree - =not t= (with the dual rules' =not o_t_i= under it), =chs(...)= and =proved(...)= - as the JTree- case of scasp_import/report.tex, instead of dropping them and declaring the parent an axiom.
-:VERIFY:         Importing the even loop's answer (=p :- not q. q :- not p.=, =?- p.=) gives an argument for P resting on the presumed refutation of Q (not the strict fact =p:(P)= of 2026-10-07), with no "unsupported child" warning; the existing importer tests pass.
-:END:
-
-Found 2026-10-07 ([[id:aida-scasp-stable-correspondence]]).
-=translate_tree= (scasp_import/importer.py) translates positive
-children only: a child whose atom =_atom_from_json= does not read -
-every =not=, =forall=, =proved= and =chs= node - is skipped with
-"Ignoring unsupported child", and an atom with no translated children
-is declared as an axiom. So the negative premises of an answer vanish,
-and an atom whose premises are all negative is imported as strict. report.tex has the translation for
-=o :- [not t]= (JTree-); the importer does not implement it yet.
 
 *** BACKLOG Find strict edges directly, not through "contains a decision"
 :PROPERTIES:
