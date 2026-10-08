@@ -613,11 +613,6 @@ def make_abort_term(prop: str, inner_term, inner_context):
     return Mu(ID("_", prop), prop, inner_term, inner_context)
 
 
-def make_abort_context(prop: str, inner_term, inner_context):
-    """Context-side dual of make_abort_term."""
-    return Mutilde(DI("_", prop), prop, inner_term, inner_context)
-
-
 def instantiate_sites(node, site_map):
     """Build ev_m(node) by direct syntactic substitution at open sites.
 

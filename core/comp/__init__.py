@@ -4,4 +4,3 @@
 #   from core.comp.reduce import ArgumentTermReducer
 #   from core.comp.enrich import PropEnrichmentVisitor
 #   from core.comp.alpha import FreshenBinderNames
-#   from core.comp.neg_rewrite import NegIntroRewriter

@@ -140,7 +140,6 @@ class ArgumentTermReducer(ProofTermVisitor):
         self.assumptions  = assumptions  or {}
         self.axiom_props  = axiom_props or {}
         self._root        = None     # set by reduce()
-        self._step        = 0        # counter for pretty printing
         self._trace_rows: list[tuple[int, str, str, str]] = []
         self._term_no: int = 0
         self._printed_header: bool = False
@@ -218,15 +217,6 @@ class ArgumentTermReducer(ProofTermVisitor):
         c = ProofTermGenerationVisitor().visit(c)
         return getattr(c, "pres", repr(c))
 
-    # ADD: structural subtree equality via presentation
-    def _same_subtree(self, a: Optional[ProofTerm], b: Optional[ProofTerm]) -> bool:
-        if a is None or b is None:
-            return False
-        try:
-            return self._pres_str(a) == self._pres_str(b)
-        except Exception:
-            return False
-
     def _is_tprime(self, n: Optional[ProofTerm]) -> bool:
         if n is None:
             return False
@@ -260,8 +250,6 @@ class ArgumentTermReducer(ProofTermVisitor):
             return False
 
         # Alternative proofs/refutations are “caught exceptions”; don't classify as exceptions.
-        # IMPORTANT: don't use _is_ap_node/_is_ar_node here, because they consult _is_exception_node
-        # to detect defeated alternatives, which would cause us to mask real exceptions.
         if isinstance(n, (Mu, Mutilde)):
             is_ap_shape = (
                 isinstance(n, Mu)
@@ -348,56 +336,6 @@ class ArgumentTermReducer(ProofTermVisitor):
             return False
 
         return False
-
-    def _is_defeated_exception_node(self, n: ProofTerm) -> bool:
-        """
-        True iff n is an exception whose t' part is itself an exception.
-        Classic affine shape only:
-          - Mu:      μ_.<t' || t>  where t' is an exception
-          - Mutilde: μ'_.<t || t'> where t' is an exception
-        """
-        logger.debug("Is %s (can be stale) a defeated exception?", n.pres)
-        try:
-            if isinstance(n, Mu) and _is_affine(n.id.name, n):
-                tprime = n.term
-                logger.debug("Checking if t' (%s) (can be stale) is an exception: %s", tprime.pres, self._is_exception_node(tprime))
-                return self._is_exception_node(tprime)
-            if isinstance(n, Mutilde) and _is_affine(n.di.name, n):
-                tprime = n.context
-                logger.debug("Checking if t' (%s) (can be stale) is an exception: %s", tprime.pres, self._is_exception_node(tprime))
-                return self._is_exception_node(tprime)
-        except Exception:
-            pass
-        logger.debug("%s (can be stale) is not a defeated exception.", n.pres)
-        return False
-
-    def _is_ap_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
-        # ap ::= μ_.<t'||α> | μ'_.<t'||α>; returns (is_ap, is_default, is_defeated)
-        if isinstance(n, Mu) and _is_affine(n.id.name, n) and isinstance(n.context, ID):
-            tprime = n.term
-            is_def = isinstance(tprime, Goal)
-            is_defeated = self._is_exception_node(tprime)
-            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
-        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.context, ID):
-            tprime = n.term
-            is_def = isinstance(tprime, Goal)
-            is_defeated = self._is_exception_node(tprime)
-            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
-        return (False, False, False)
-
-    def _is_ar_node(self, n: ProofTerm) -> tuple[bool, bool, bool]:
-        # ar ::= μ'_.<x||t'> | μ_.<x||t'>; returns (is_ar, is_default, is_defeated)
-        if isinstance(n, Mu) and _is_affine(n.id.name, n) and isinstance(n.term, ID):
-            tprime = n.context
-            is_def = isinstance(tprime, Laog)
-            is_defeated = self._is_exception_node(tprime)
-            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
-        if isinstance(n, Mutilde) and _is_affine(n.di.name, n) and isinstance(n.term, DI):
-            tprime = n.context
-            is_def = isinstance(tprime, Laog)
-            is_defeated = self._is_exception_node(tprime)
-            return (self._is_tprime(tprime) and not is_defeated, is_def, is_defeated)
-        return (False, False, False)
 
     def visit_Mu(self, node: Mu):
         # First, normalise the sub‑components so that the rule also fires in
@@ -1199,40 +1137,6 @@ class ThetaExpander(ProofTermVisitor):
         if self.mode == "term":
             return self._expand_term(node)
         return self._expand_context(node)
-
-    def _same_subtree(self, a: Optional[ProofTerm], b: Optional[ProofTerm]) -> bool:
-        if a is None or b is None:
-            return False
-        try:
-            return ProofTermGenerationVisitor().visit(deepcopy(a)).pres == ProofTermGenerationVisitor().visit(deepcopy(b)).pres
-        except Exception:
-            return False
-
-    def _matches_exposed_term_command(self, node) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(node, Mu)
-            and node.prop == A
-            and isinstance(node.id, ID)
-            and node.id.name == "_"
-            and isinstance(node.term, Term)
-            and getattr(node.term, "prop", None) == A
-            and isinstance(node.context, ID)
-            and node.context.prop == A
-        )
-
-    def _matches_exposed_context_command(self, node) -> bool:
-        A = self.target_prop
-        return (
-            isinstance(node, Mutilde)
-            and node.prop == A
-            and isinstance(node.di, DI)
-            and node.di.name == "_"
-            and isinstance(node.term, DI)
-            and node.term.prop == A
-            and isinstance(node.context, Context)
-            and getattr(node.context, "prop", None) == A
-        )
 
     def _is_bureaucratic_mu(self, expr) -> bool:
         A = self.target_prop

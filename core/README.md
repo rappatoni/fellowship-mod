@@ -6,7 +6,7 @@ Purpose
 
 Structure
 - ac/: AST + grammar + instruction lowering to Fellowship commands.
-- comp/: Visitors and transformations (enrichment, reduction, α-renaming, neg-intro rewrite).
+- comp/: Visitors and transformations (enrichment, reduction, α-renaming).
 - dc/: Higher-level debate operations (graft, undercut helpers, matching utilities, Argument class).
 
 Notes

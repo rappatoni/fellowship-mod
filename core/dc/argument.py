@@ -822,14 +822,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("")  # spacer after enriched proof term
         return
              
-    def get_assumptions(self) -> list[str]:
-        if not self.executed:
-            self.execute()
-        return [self.assumptions[key]["prop"] for key in self.assumptions]
-
-    def get_conclusion(self) -> str:
-        return self.conclusion
-
     def normalize(self, enrich: bool = True) -> ProofTerm:
         """Compute and cache the normal form *(body, term, rendering) without mutating *self.body*."""
         if not self.executed:

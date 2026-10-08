@@ -157,7 +157,6 @@ def test_send_commands_surfaces_intermediate_errors():
     wrapper.echo_notes = False
     wrapper.declarations = {}
     wrapper.last_state = None
-    wrapper.last_output_text = ""
 
     with pytest.raises(ProverError, match="boom"):
         wrapper.send_commands(["first.", "second.", "third."])

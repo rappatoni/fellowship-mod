@@ -45,8 +45,6 @@ from core.ac.ast import (
 from core.dc.debate_graph import canonical_prop, _is_affine_binder, DebateCompileError
 
 
-LABELS = ("IN", "OUT", "UNDEC")
-
 _TERM_SORTED = (Mu, Goal, Deleg, DI, Lamda)
 _CONTEXT_SORTED = (Mutilde, Laog, Geled, ID, Admal)
 _SITES = (Goal, Laog, Deleg, Geled)

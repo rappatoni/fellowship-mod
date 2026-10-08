@@ -1,6 +1,6 @@
 import re
 from typing import Mapping
-from pres.decorations import render_declaration, render_prop
+from pres.decorations import render_prop
 from pres.pattern_render import (
     AlternativeCasesRenderer,
     AlternativeCounterexamplesRenderer,
@@ -464,16 +464,6 @@ class _NLVisitor(ProofTermVisitor):
             self.decorations,
             getattr(self.semantic, "connective_templates", {}),
         )
-
-    def _render_declaration_or_prop(self, name: str, prop: str | None) -> str:
-        if name in self.declarations or name in self.decorations:
-            return render_declaration(
-                name,
-                self.declarations,
-                self.decorations,
-                getattr(self.semantic, "connective_templates", {}),
-            )
-        return self._render_prop(prop)
 
     @staticmethod
     def _leaf_prefix(prefix, index: int) -> str:
