@@ -2,13 +2,13 @@
 
 Files
 - gen.py
-  - ProofTermGenerationVisitor: generates canonical .pres strings from AST.
+  - ProofTermGenerationVisitor: generates canonical .pres strings from AST, labelled sites included.
 - nl.py
-  - Natural language rendering; multiple styles (argumentation/dialectical/intuitionistic).
+  - Natural language rendering in the styles argumentation, dialectical, intuitionistic, vanilla and pruefschema.
+- pattern_render.py
+  - Renderers for the named term shapes (core/ac/alt_structure.py) that nl.py uses.
+- decorations.py
+  - The `decorate NAME : "template".` command and rendering propositions through decorations.
 - tree.py
   - AcceptanceTreeRenderer: acceptance trees with proof/NL labels, coloured
-    by the grounded ADF labels passed in (core/comp/adf_label.py); the
-    shape-based colouring was retired on 2026-09-16.
-
-Notes
-- Operate on normalized ASTs for stable output (normalize via Argument.normalize()).
+    by the grounded ADF labels passed in (core/comp/adf_label.py).

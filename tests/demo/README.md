@@ -9,8 +9,8 @@ or as a block, from your editor.
 
 then paste from below `%stop`.  Lines starting with `#` are echoed as
 narration, lines starting with `%` are ignored, and a pasted block runs one
-line at a time.  `load FILE` at the prompt runs another file in the same
-session; `exit` leaves it.
+line at a time.  `load "FILE".` at the prompt runs another file in the same
+session, in a new document; `exit` leaves it.
 
 To run a file end to end, `%stop` included, use `--script`:
 
@@ -19,7 +19,7 @@ To run a file end to end, `%stop` included, use `--script`:
 | file | shows |
 |---|---|
 | 01_arguments | an argument is a proof term with open sites; the document graph; `graph`, `label`, `evaluate` |
-| 02_support_attack | the verbs name a debate and check it against the document; a refused support; scaffolds; the modes |
+| 02_support_attack | a debate's moves are checked against the document; a refused support; scaffolds; the modes |
 | 03_contested | grounded vs preferred labellings; skeptical vs credulous evaluation; choosing the witness |
 | 04_document | a counterargument registered anywhere contests every use of its proposition |
 | 05_even_loop | a cycle closes in the term by capturing the continuation; two models; semantics and mode decide |

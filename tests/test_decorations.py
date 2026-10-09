@@ -8,7 +8,7 @@ from wrap.cli import execute_script
 
 
 def test_decoration_command_parser_and_compositional_rendering():
-    assert parse_decorate_command("decorate Bird : '@arg1 is a bird'.") == ("Bird", "@arg1 is a bird")
+    assert parse_decorate_command('decorate Bird : "@arg1 is a bird".') == ("Bird", "@arg1 is a bird")
 
     declarations = {
         "A": "bool",
@@ -83,7 +83,7 @@ def test_execute_script_handles_decorate_wrapper_only(tmp_path):
 
     script = tmp_path / "decorations.fspy"
     script.write_text(
-        "decorate Bird : '@arg1 is a bird'.\n"
+        'decorate Bird : "@arg1 is a bird".\n'
         'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste}".\n'
         "declare A:bool.\n"
     )

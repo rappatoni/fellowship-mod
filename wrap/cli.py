@@ -146,7 +146,7 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
 
 def _run_cli_only(prover: ProverWrapper, c, *, interactive: bool = False) -> None:
     """The commands only the CLI runs: explain, the deprecated term-level
-    commands, tactic and load."""
+    commands and load."""
     k = c.kind
     if k == "explain":
         explain_argument_cmd(prover, c["target"], c["mode"], c["base"], c["semantics"],
@@ -172,8 +172,6 @@ def _run_cli_only(prover: ProverWrapper, c, *, interactive: bool = False) -> Non
             (print if interactive else logger.info)(f"Constructed {c['verb']} '{result.name}'.")
         except Exception as e:
             logger.error("%s failed: %s", c["verb"].capitalize(), e)
-    elif k == "tactic":
-        prover.execute_tactic(c["name"], *c["args"])
     elif k == "load":
         path = Path(c["path"]).expanduser()
         if not path.is_file():

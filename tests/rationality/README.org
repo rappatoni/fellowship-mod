@@ -9,15 +9,15 @@ This directory holds the benchmark scenarios for verification target T4 of
 rationality postulates (closure, direct and indirect consistency,
 subargument closure, non-interference/crash-resistance) plus the canonical
 loop cases. Each fixture records its *expected labelling* as data; the graph
-labeller, once implemented, is diffed against it.
+labeller (core/comp/adf_label.py) is checked against it.
 
 IMPORTANT: the expected labellings below are hand-derived from the theory
 and are *pending oracle validation* (milestone M7 of
 [[file:../../propositional-fragment-plan.org]]). They are to be regenerated
 from the naive ADF oracle and the third-party adf-bdd cross-check, not
 from any existing experimental algorithm; until then treat them as
-conjectured, not authoritative. Fixtures are not yet in
-the default suite (=tests/conftest.py DEFAULT_SCRIPTS=); run one explicitly:
+conjectured, not authoritative. The runnable fixtures are in the default
+suite (=tests/conftest.py DEFAULT_SCRIPTS=); to run one alone:
 
 : .venv/bin/python -m pytest tests/script_test.py --script tests/rationality/<name>.fspy
 
@@ -98,13 +98,39 @@ An attack on the intermediate conclusion of a curried implication:
 =cArg= derives C from A and B via =abc : A->(B->C)=, and a challenge to
 B->C tries to attack it. The attack fails today, because B->C occurs in
 the term only as the type of the elimination stack's tail (a context),
-so theta-expansion finds no term-side target. Found by the author while
+so a debate move finds no term-side site to attack. Found by the author while
 working lesson 5 of the minicourse; tracked as
 =aida-curried-intermediate-conclusions=, whose two halves (name the
 partial application; emit one hyperedge per elimination step) are
 recorded there. Its compiled form is pinned as a strict xfail in
 =test_postulates.py::TestCurriedAttack=, alongside a test pinning the
 cause. Kept out of DEFAULT_SCRIPTS since strict replay raises.
+
+* even_loop_lk.fspy, self_attack_lk.fspy [runnable]
+
+Classical copies of even_loop.fspy and self_attack.fspy, which are in
+=lj=: debates are classical, so the debate commands and their tests use
+these.
+
+* two_witnesses.fspy [runnable]
+
+Two preferred labellings that both accept P and differ on S; credulous
+evaluation under either witness gives a value
+(=aida-supporter-derivation-status=). The expected values are in the
+file's header.
+
+* cyclic_undercut.fspy [runnable]
+
+A derivation cycle through A, Q and R built from arguments and a debate;
+the compiler classifies the fragment as cyclic and the cycle resolves to
+one two-valued labelling (=aida-cyclic-fragment=). The expected labelling
+is in the file's header.
+
+* document_attack.fspy [runnable]
+
+A counterargument registered on its own contests every use of its
+proposition: the document graph is one graph for the whole file
+(=aida-document-graph=).
 
 * odd_loop (covered by ../naf_olon.fspy) [runnable]
 
@@ -170,15 +196,15 @@ stable semantics selects both OUT. The evidential intuition ("support
 transmits acceptance, it does not create it" - no free lunch from support
 cycles) is captured by stable, while grounded merely refuses to decide.
 See test_support_cycle_grounded_is_undecided in tests/test_oracles.py.
-Note the fixture is cyclic, hence outside the acyclic fragment: the graph
-compiler refuses it (CyclicDebateNotSupported) and only the oracle labels
-it.
+The scenario is a derivation cycle; the compiler admits those since
+2026-09-16 (cyclic_undercut.fspy).
 
 * begging_the_question.fspy [spec-only]
 
 Question-begging capture (debate-graph-spec.org section 2.4): an attack on
 an argument for A whose counterargument itself presumes the contrary of A,
-grafted non-capture-avoidingly so the rootstock captures the assumption.
+so that the unfolding captures that presumption with the argument's own
+binder.
 Expected: the composite labels A IN via the argument from contradiction;
 the attack edge is neutralized. Pending: canonical-assumption naming must
 be a checked invariant before this can be a stable fixture (same section).

@@ -15,7 +15,7 @@ Every operation
 Nothing here prints.  The CLI (wrap/cli.py) is a printer over these calls
 and keeps its own output; JSON is the next phase.  Out of the service, and
 CLI-only: the deprecated term-level commands (reduce, normalize,
-render-nf, the projections, expand), ``tactic`` and ``explain``.  Proofs
+render-nf, the projections, expand) and ``explain``.  Proofs
 are recorded as whole blocks; stepping through one with goal feedback is
 not offered (tasks.org, aida-live-proving).
 """
@@ -471,7 +471,7 @@ class Service:
         aida-document-check).  The check goes on after a refusal or an
         error, so one pass shows every problem; it stops at ``%stop`` and at
         a broken prover connection.  Commands only the CLI runs (explain,
-        the deprecated term-level commands, tactic, load) are skipped."""
+        the deprecated term-level commands, load) are skipped."""
         import time
         from wrap.interpreter import Interpreter
         from wrap.syntax import parse_units

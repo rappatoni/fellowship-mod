@@ -17,7 +17,7 @@ Statuses:
   to;
 - ``fatal``: the prover connection broke;
 - ``cli``: a command only the CLI runs (explain, the deprecated term-level
-  commands, tactic, load); the CLI runs it, a document check skips it;
+  commands, load); the CLI runs it, a document check skips it;
 - ``comment`` and ``stop`` for comment lines and ``%stop``.
 
 Arguments are recorded as blocks: ``argument N : (P).`` ... ``dixi.``, and
@@ -39,7 +39,7 @@ from wrap.service import AidaError, Service
 from wrap.syntax import Command, Span, SyntaxRefused, Unit, parse_units, split, parse
 
 QUERIES = ("graph", "label", "evaluate", "render", "tree", "unfold", "share")
-CLI_ONLY = ("explain", "render_nf", "reduce", "normalize", "expand", "projection", "tactic", "load")
+CLI_ONLY = ("explain", "render_nf", "reduce", "normalize", "expand", "projection", "load")
 
 
 @dataclass
@@ -267,7 +267,7 @@ class Interpreter:
             return Outcome(None, c.text, c.kind, "refused",
                            f"'{self.recording['name']}' is still being recorded; end it with "
                            f"`dixi.` (or `qed.`) first.")
-        if c.kind == "tactic" or not self.live:
+        if not self.live:
             self.recording["instructions"].append(c.text)
             return Outcome(None, c.text, "instruction", "ok")
         status = self._live_step(self.recording, c.text)

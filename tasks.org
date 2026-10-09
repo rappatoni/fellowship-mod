@@ -4685,8 +4685,8 @@ With nothing registered, a =tactic= line inside a recording crashed
 =Argument.execute= (=AttributeError=: =execute_tactic= returned an error
 string where a proof state was expected; =tests/test2.fspy=), so the
 command, =register_custom_tactic= and =execute_tactic= were removed on
-2026-10-08. A =tactic= line is now an ordinary Fellowship command and
-gets Fellowship's parse error.
+2026-10-08. A =tactic= line is refused by the wrapper (=wrap/syntax.py=,
+since 2026-10-09).
 
 What the old mechanism did, as a reference point: the argument recorded
 only the command line, replay ran the function again, batch replay was
@@ -4832,6 +4832,35 @@ tests/test_unfold_entrypoints.py::test_argument_names_ending_in_digits_stay_apar
 ::test_unfolding_copies_still_fold_under_their_argument (Peirce: one
 =s3=, no suffixed name); full suite 1486 passed, the two failures being
 the author's working copy of even_loop_lk.fspy.
+
+** BACKLOG Remove the deprecated term-level commands and the code only they use
+:PROPERTIES:
+:ID:             aida-retire-deprecated-term-commands
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The legacy reducer's commands (=reduce=, =normalize=, =render-nf=) and what only they and the removed grafting verbs use are gone: =ArgumentTermReducer= and =Argument.normalize=/=reduce= with their CLI helpers, =core/comp/legacy_shape.py=, the legacy scaffold shapes still recognised in =core/dc/debate_graph.py=, =core/dc/graft.py= and =core/dc/match_utils.py=; each removed command is refused with its replacement; the term selector =normal= and =tree='s default no longer draw the legacy normal form.
+:VERIFY:         grep finds no =ArgumentTermReducer=, =LegacyShapeClassifier=, =graft_single=, =graft_uniform= or =match_trees= outside historical notes; =reduce A.=, =normalize A.= and =render-nf A.= are refused with their replacement (tests in tests/test_syntax.py); the fixtures that ran them (tests/normalize_render.fspy, tests/argument_counter_render_normalize.fspy, tests/peirces_law.fspy) are ported or retired with the decision recorded here; the reducer tests (tests/reduction_test.py, mu_/mutilde_reduction_test.py, affine_test.py, non_affine_test.py, graft_test.py) are deleted or reduced to the four standard rules of core/comp/oracle_terms.py; the documented suite passes.
+:END:
+
+Filed 2026-10-09 (author), after the README update removed every
+reference to these commands. They still run: =wrap/cli.py=
+(=_run_cli_only=), =wrap/syntax.py= (=COMMANDS=) and the service's
+=term(..., "normal")= and =tree= without a selector, which call
+=Argument.normalize()=. Decide first what =tree= draws by default
+(=registered= or =evaluated=).
+
+The projections (=out=, =tou=, =sub=, =bus=, =attacker=, =regatta=) are
+out of scope: =aida-debate-term-projections= retires or rebuilds them.
+=core/ac/alt_structure.py= stays, since =pres/pattern_render.py= renders
+with it. Related history: =aida-legacy-reducer-findings= (call-by-onus
+retired 2026-09-16).
 
 ** BACKLOG Emit the closing elimination for falsum-typed applications
 :PROPERTIES:

@@ -65,6 +65,7 @@ def test_commands(text, kind, args):
     ("register t : B := μx:B", "double-quote the proof term"),
     ("evaluate a sceptical", "unknown option"),
     ("evaluate a 2", "requires credulous"),
+    ("tactic pop", "`tactic` is gone"),
 ])
 def test_old_and_wrong_forms_name_their_fix(text, hint):
     with pytest.raises(SyntaxRefused, match=None) as e:

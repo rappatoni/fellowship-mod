@@ -412,9 +412,8 @@ def _p_projection(verb):
 
 
 def _p_tactic(words, rest, text):
-    if not words:
-        raise SyntaxRefused("Use: tactic NAME ARGS.")
-    return Command("tactic", text, args={"name": words[0], "args": words[1:]})
+    raise SyntaxRefused("`tactic` is gone: the wrapper has no tactics of its own "
+                        "(tasks.org, aida-tactic-registration).")
 
 
 def _p_old(replacement):
