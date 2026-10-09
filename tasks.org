@@ -1077,7 +1077,7 @@ Implementation notes:
   (=--com=) and stable (=--stm=) interpretations, which
   =aida-credulous-witness-labelling= needs and the in-tree code cannot
   provide beyond the 14-statement oracle.
-- *Downstream text.* minicourse.org lessons 3 and 5 describe the
+- *Downstream text.* docs/minicourses/minicourse.org lessons 3 and 5 describe the
   in-tree fixpoint as the production path and adf-bdd as test-only;
   update them when this lands.
 
@@ -1385,7 +1385,7 @@ CLOSED: [2026-09-16 Wed]
 :EFFORT:         0:30
 :DEFERRALS:      0
 :OUTCOME:        tests/minicourse/coursekit.py renders the acceptance-condition negation differently from the proposition printer's negation, so a condition over the node ~Q is no longer printed identically to the guard on Q[c].
-:VERIFY:         conditions_of on a graph with an edge sourced at (~Q)[c] prints a string distinguishable from the guard's "not Q[c]"; minicourse.org lessons 4-5 use the new rendering; tests/minicourse/ passes.
+:VERIFY:         conditions_of on a graph with an edge sourced at (~Q)[c] prints a string distinguishable from the guard's "not Q[c]"; docs/minicourses/minicourse.org lessons 4-5 use the new rendering; tests/minicourse/ passes.
 :END:
 
 Found 2026-09-16: an edge with sources Q[t] and (~Q)[c] prints as
@@ -1396,7 +1396,7 @@ Evidence (2026-09-16): =readable= in tests/minicourse/coursekit.py
 renders the meta-negation as =not X=, so the guard prints =not Q[c]=
 and an edge sourced at the node ~Q prints =~Q[c]=; the six pinned
 condition strings in tests/minicourse/test_minicourse.py and the
-sixteen occurrences in minicourse.org lessons 4-5 and 8 (the author's
+sixteen occurrences in docs/minicourses/minicourse.org lessons 4-5 and 8 (the author's
 own answer on lesson 4 left as written) use the new rendering;
 tests/minicourse passes.
 
@@ -2253,7 +2253,7 @@ Evidence (2026-09-16): =_host_name= in core/dc/debate_graph.py peels the
 eta-wrapper chain of a host body and names the edge after the innermost
 binder that is not synthetic (=SYNTHETIC_PREFIX= "theta_expand_"),
 falling back to the debate name for a bare body; the lesson-2 host edge
-now prints =cArg= (minicourse.org updated). =Argument._theta_expand=
+now prints =cArg= (docs/minicourses/minicourse.org updated). =Argument._theta_expand=
 mints its temporaries from a class-level counter instead of
 =id(body)=, so names are deterministic. tests/test_debate_graph.py
 =TestHostEdgeNaming= (constituent names, no synthetic name, stable
@@ -2273,7 +2273,7 @@ in that file.
 :EFFORT:         40:00
 :DEFERRALS:      0
 :OUTCOME:        The debate compiler implements its specification (debate-graph-spec.org) for the propositional fragment - rational closure (attack and support points beyond sites), transposition closure of strict edges, the open design decisions settled - and the shared route builds the same debates as the unfolded one; first-order debates are the next fragment.
-:VERIFY:         Every child below is DONE or DROPPED with its evidence; the spec's rational closure and transposition closure each have a test; the shared route agrees with the unfolded route on every fixture of tests/test_unfold_entrypoints.py; the author has reviewed minicourse-evaluation.org and minicourse-sharing.org; the suite passes.
+:VERIFY:         Every child below is DONE or DROPPED with its evidence; the spec's rational closure and transposition closure each have a test; the shared route agrees with the unfolded route on every fixture of tests/test_unfold_entrypoints.py; the author has reviewed docs/minicourses/minicourse-evaluation.org and docs/minicourses/minicourse-sharing.org; the suite passes.
 :END:
 
 Opened 2026-10-07 when [[id:aida-propositional-fragment-implementation]]
@@ -2365,9 +2365,9 @@ Evidence (2026-10-08, committed as 4f12d45, awaiting the author's review):
   test_simple_undercut, test_focussed_undercut, test_undercut_support,
   test_pop_subargument) - they swallowed their exceptions, so they
   "passed" while calling methods that no longer existed.
-- minicourse.org lessons 2 and 6 rewritten for debates, the new
+- docs/minicourses/minicourse.org lessons 2 and 6 rewritten for debates, the new
   transcript pinned (test_minicourse.py::test_lesson2_debate_transcript);
-  minicourse-evaluation.org and minicourse-sharing.org (=share ARG=)
+  docs/minicourses/minicourse-evaluation.org and docs/minicourses/minicourse-sharing.org (=share ARG=)
   adjusted.
   Every ported fixture runs without a refused move (simple_tautology's
   and test2's errors predate this, checked on the baseline).
@@ -2497,7 +2497,7 @@ support points. Blocked on the discussion
 [[id:aida-discuss-non-site-attack-points]]; related to
 [[id:aida-curried-intermediate-conclusions]].
 
-*** NEXT Review minicourse-evaluation.org
+*** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
 :ID:             aida-review-minicourse-evaluation
 :AREA:           phd
@@ -2509,7 +2509,7 @@ support points. Blocked on the discussion
 :ICK:            2
 :EFFORT:         8:00
 :DEFERRALS:      0
-:OUTCOME:        The author has read minicourse-evaluation.org (lessons 8a-13, the AI-drafted sequel on the evaluation pipeline) and recorded every issue it raises as a task or a decision.
+:OUTCOME:        The author has read docs/minicourses/minicourse-evaluation.org (lessons 8a-13, the AI-drafted sequel on the evaluation pipeline) and recorded every issue it raises as a task or a decision.
 :VERIFY:         Each lesson is marked reviewed in the file or here, with the tasks it raised linked.
 :END:
 
@@ -2517,7 +2517,7 @@ The author's review; the agent only prepares. Lesson 8a alone raised
 [[id:aida-unfold-design-review]] and its children, which changed the
 unfolder, the strict phase and evaluation substantially.
 
-*** NEXT Review minicourse-sharing.org
+*** NEXT Review docs/minicourses/minicourse-sharing.org
 :PROPERTIES:
 :ID:             aida-review-minicourse-sharing
 :AREA:           phd
@@ -2529,7 +2529,7 @@ unfolder, the strict phase and evaluation substantially.
 :ICK:            2
 :EFFORT:         6:00
 :DEFERRALS:      0
-:OUTCOME:        The author has read minicourse-sharing.org (the AI-drafted course on shared sub-debates) and recorded every issue it raises as a task or a decision.
+:OUTCOME:        The author has read docs/minicourses/minicourse-sharing.org (the AI-drafted course on shared sub-debates) and recorded every issue it raises as a task or a decision.
 :VERIFY:         Each lesson is marked reviewed in the file or here, with the tasks it raised linked.
 :END:
 
@@ -2917,7 +2917,7 @@ On the strict phase (=core/dc/strict.py=):
    ignores them. Decide whether to drop the parameters or keep them for
    the abort-propagation work.
 
-Prepared for review 2026-10-08: minicourse-evaluation.org, lesson 13b,
+Prepared for review 2026-10-08: docs/minicourses/minicourse-evaluation.org, lesson 13b,
 takes the eight points one by one, each with a run of today's code and
 the question to decide (pinned by tests/minicourse/test_review_course.py).
 Preparing it turned up two things worth a look: under point 2, an argument
@@ -3011,7 +3011,7 @@ yet be expressed as a compiled term.
 :ICK:            2
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        Every unfolder design question the author raised while working through minicourse-evaluation.org lesson 8a (2026-10-05) has a recorded decision, and each decision that changes behaviour has its own implementation task.
+:OUTCOME:        Every unfolder design question the author raised while working through docs/minicourses/minicourse-evaluation.org lesson 8a (2026-10-05) has a recorded decision, and each decision that changes behaviour has its own implementation task.
 :VERIFY:         Each child below is DONE or DROPPED with a decision written into it; lesson 8a states the decided behaviour and tests/minicourse/test_evaluation_course.py passes.
 :END:
 
@@ -3062,7 +3062,7 @@ strict phase decides each attack as a defeat. The committed fixtures
 are unchanged. The only visible change there is in the shared route's
 binder numbers: a bare citation draws no site number when a definition
 is built, so lesson 15's printed shared form reads =b5=, =x4=, =b7=
-... where it read =b6=, =x5=, =b8=; minicourse-sharing.org and
+... where it read =b6=, =x5=, =b8=; docs/minicourses/minicourse-sharing.org and
 tests/minicourse/test_sharing_course.py were updated.
 
 Suite after the change: 1444 passed, 3 failed, 2 skipped. All three
@@ -3397,7 +3397,7 @@ prove costly.
 
 Later, if phases 1 and 2 become steps of one normaliser ("What this
 means for a single label-guided normaliser" in
-minicourse-evaluation.org), the substitution route becomes the natural
+docs/minicourses/minicourse-evaluation.org), the substitution route becomes the natural
 one, once the decision pairs survive substitution.
 
 *Implemented 2026-10-07.*
@@ -3431,7 +3431,7 @@ one, once the decision pairs survive substitution.
   alt is left to sigma; with its own continuation it is strict),
   tests/test_pipeline_logging.py, tests/test_unfold_entrypoints.py
   (literal), tests/minicourse/test_evaluation_course.py (all pins).
-  minicourse-evaluation.org lessons 8a-13, closing section and solutions
+  docs/minicourses/minicourse-evaluation.org lessons 8a-13, closing section and solutions
   updated (gitignored).
 - Verdicts against the baseline (every statement and argument of the
   fixtures of tests/test_unfold_entrypoints.py plus lesson14_sharing,
@@ -3504,7 +3504,7 @@ when obligations remain beside the clash).
   presumption (the square still commutes). New regression test:
   tests/test_oracles.py =test_a_clash_is_an_exception_even_with_an_obligation=
   (the old order gives open on it).
-- Course: minicourse-evaluation.org lesson 12 and minicourse.org (the
+- Course: docs/minicourses/minicourse-evaluation.org lesson 12 and docs/minicourses/minicourse.org (the
   defeated-site item) updated (both gitignored).
 - Suite: 1542 passed; the 2 failures are the author's working copy of
   even_loop_lk.fspy on the shared route, unchanged.
@@ -3637,7 +3637,7 @@ form need not be unique. Neither grammar changes.
   tests/minicourse/test_evaluation_course.py (plus the labelled term of
   lesson 9), test_sharing_course.py (both routes now give the same
   string).
-- Course: minicourse-evaluation.org lessons 9, 11, 12, 13, the closing
+- Course: docs/minicourses/minicourse-evaluation.org lessons 9, 11, 12, 13, the closing
   section and a lesson 10 solution.
 - Suite 2026-10-07, runtime check off: 1569 passed, 2 skipped, 3 xfailed,
   2 xpassed (the working copy of even_loop_lk.fspy is stashed).
@@ -4042,9 +4042,9 @@ Implemented 2026-10-06 (evidence):
   skeptical, where the attacker wing is now the contrary's whole debate
   (accepted by the author); the self-attack seen from P[c] gains
   SelfAttack* and the labels P[t] IN (as from P[t]).
-- Course: minicourse-evaluation.org lessons 8a-13 regenerated
+- Course: docs/minicourses/minicourse-evaluation.org lessons 8a-13 regenerated
   (test_evaluation_course.py, 17 pinned values, including attackrule
-  and the limitation it shows); minicourse-sharing.org notes the
+  and the limitation it shows); docs/minicourses/minicourse-sharing.org notes the
   default and its lesson 18 exercise is re-answered.
 - Full suite: 1484 passed; the two remaining failures are the author's
   working copy of even_loop_lk.fspy (aida-discuss-scaffold-binder-scope).
@@ -4112,7 +4112,7 @@ Stretch goal (author, 2026-10-06).
 :DEFERRALS:      0
 :BLOCKED_BY:     id:aida-unfold-entrypoints
 :OUTCOME:        share.py and instances.py build the stacked shape for issue and argument entrypoints, one definition per statement and root kind, and the CLI default pipeline returns to =shared=.
-:VERIFY:         The differential tests of tests/test_share.py compare the shared route with the stacked =unfold= again (no =unfold_legacy= reference left) and pass; minicourse-sharing.org is regenerated; the default pipeline is =shared=.
+:VERIFY:         The differential tests of tests/test_share.py compare the shared route with the stacked =unfold= again (no =unfold_legacy= reference left) and pass; docs/minicourses/minicourse-sharing.org is regenerated; the default pipeline is =shared=.
 :END:
 
 The author wants the unfolded route understood and fixed first
@@ -4694,7 +4694,7 @@ flushed around it, and the proof term held whatever the function sent,
 with no trace of the tactic itself.
 
 Related: no superdeduction task exists yet, here or in the supervision
-repository. =minicourse-superdeduction.org= lesson S8 (AI-drafted and
+repository. =docs/minicourses/minicourse-superdeduction.org= lesson S8 (AI-drafted and
 awaiting the author's review; its connections to AC/DC are proposals, not
 settled) has the wrapper compute super rules by driving the kernel and
 apply them by expanding a super-term node. A registered derived rule is

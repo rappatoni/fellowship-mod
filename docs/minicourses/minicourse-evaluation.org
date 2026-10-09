@@ -26,6 +26,11 @@
 # aida-labelled-sites-delegation-rewrite): lessons 9, 11, 12 and 13 and
 # the closing section; the labelled term of lesson 9 was printed by the
 # code, the normal forms are pinned by the test file.
+#
+# Revised 2026-10-08: lesson 13b added for the author's review of the
+# semantics decisions of 2026-09-25 (tasks.org,
+# aida-review-guard-and-strict-decisions). Its values were produced by
+# running the code and are pinned by tests/minicourse/test_review_course.py.
 
 * About this sequel
 
@@ -50,9 +55,9 @@ The code under study is =_evaluate_under= in =core/comp/evaluate.py=:
 :     v  classify_nf                 core/comp/oracle_terms.py  value / exception / open
 
 *Two routes.* What this sequel describes is the pipeline on the *unfolded*
-term. It is the CLI default (=pipeline unfolded=), since 2026-10-06 again:
+term. It is the CLI default (=pipeline unfolded.=), since 2026-10-06 again:
 only this route builds the stacked shape and the argument entrypoints of
-lesson 8a. The other route, =pipeline shared=, keeps the debate as named
+lesson 8a. The other route, =pipeline shared.=, keeps the debate as named
 sub-debates and runs phases 1-3 one sub-debate at a time; it still builds
 the older, legacy shape (tasks.org, aida-shared-route-stack-shape) and is
 the subject of minicourse-sharing.org (lessons 14-18).
@@ -76,8 +81,8 @@ follow along:
 : .venv/bin/acdc --script tests/minicourse/lesson9_evaluation.fspy   # add `explain pro` at the end
 : .venv/bin/python -m pytest tests/minicourse/test_evaluation_course.py -q
 
-In the CLI, =unfold argument pro= prints the term lessons 9-13 work on,
-=render pro vanilla unfolded= renders it, and =unfold issue :B= prints the
+In the CLI, =unfold argument pro.= prints the term lessons 9-13 work on,
+=render pro vanilla unfolded.= renders it, and =unfold issue :B.= prints the
 canonical term of the issue B (lesson 8a).
 
 =coursekit.py= has four helpers for stepping by hand:
@@ -102,7 +107,7 @@ them, keep their numbers.)
 *The input: the document graph.* Every atomic argument is compiled when
 it is registered (=document_add=, =wrap/prover.py=), with the compiler of
 lesson 2, and its edges are merged into one graph, the document graph
-(=prover.document=; =graph document= prints it). There is one difference
+(=prover.document=; =graph document.= prints it). There is one difference
 from lesson 2: each edge also keeps the *body* it was compiled from
 (=Edge.term=), with the sites still numbered as Fellowship numbered them
 (=!1.2.1:A=). An edge says which statement an argument derives and from
@@ -119,7 +124,7 @@ There are two kinds of entrypoint, and they give two kinds of term:
     *canonical* term of the debate about S. The CLI writes an issue
     =issue :X= (X proved, the term side) or =issue X:= (X refuted);
   - an *argument*: =unfold_argument(graph, edge)= gives the term *biased
-    towards* that argument, the one =evaluate pro= and =explain pro=
+    towards* that argument, the one =evaluate pro.= and =explain pro.=
     work on. It answers "can this argument be defended?" rather than "is
     S acceptable?".
 
@@ -290,8 +295,8 @@ graph - exponentially in the worst case (minicourse-sharing.org, lesson
 document, each with the document's *revision*. Registering an argument
 or adding a declaration makes them stale - a new argument can support or
 attack, a new declaration can make a presumption strict or refuted - and
-the next use unfolds again. =unfold argument NAME= and =unfold issue :X=
-build and print them; =render NAME [style] unfolded= renders one.
+the next use unfolds again. =unfold argument NAME.= and =unfold issue :X.=
+build and print them; =render NAME [style] unfolded.= renders one.
 
 *After unfolding.* The term is replayed through Fellowship (the type
 check), compiled into the issue graph and labelled:
@@ -309,7 +314,7 @@ the end of that pipeline.
 
 ** Example
 
-*The running example.* =graph document= on
+*The running example.* =graph document.= on
 =tests/minicourse/lesson9_evaluation.fspy=:
 
 : Document graph: 5 nodes, 4 edges (every registered atomic argument)
@@ -348,7 +353,7 @@ attackrule OUT - is recorded in tasks.org
 aida-curried-intermediate-conclusions on the graph side). Nothing reports
 that attackrule is unreachable; it is silently left out.
 
-=explain pro= prints the unfolder's steps:
+=explain pro.= prints the unfolder's steps:
 
 : unfold         B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
 : unfold           B[t] +support 'pro' (the argument unfolded, on top)
@@ -401,7 +406,7 @@ The result is the term lesson 9 starts from:
 : μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
 
 Here pro is B's only supporter, so its term is also the canonical term
-of B: =unfold issue :B= prints the same.
+of B: =unfold issue :B.= prints the same.
 
 *Two entrypoints that differ.* =tests/entrypoints.fspy= has three
 arguments for B, =p1=, =p2= and =p3=, each from a presumption of its own,
@@ -411,8 +416,8 @@ differ only in the stack:
 : issue :B    SUP( ?u1:B, SUP( SUP(P1, P2), P3 ) )
 : p1          SUP( ?u1:B, SUP( SUP(P2, P3), P1 ) )
 
-All three are IN, so =evaluate issue :B= returns p3's proof, the top of
-the canonical stack, and =evaluate p1= returns p1's own (lesson 11).
+All three are IN, so =evaluate issue :B.= returns p3's proof, the top of
+the canonical stack, and =evaluate p1.= returns p1's own (lesson 11).
 
 *A capture by b.* =tests/minicourse/lesson8a_cycle.fspy=: =pro= derives B
 from an obligation for A, and =back= derives A from an obligation for B.
@@ -484,7 +489,7 @@ it meets the captured contrary (=captured_default=).
 4. Why does unfolding terminate on every document, and why can the term
    still be exponentially larger than the document graph?
 5. In =tests/entrypoints.fspy=, which argument's proof does =evaluate
-   issue :B= return, and which does =evaluate p2=? What would change if
+   issue :B= return, and which does =evaluate p2.=? What would change if
    p2 were registered last?
 
 * Lesson 9 - The input: a labelled, unfolded term
@@ -608,7 +613,7 @@ The witness labelling (preferred; there is exactly one):
 
 : C[c]=IN  A[c]=OUT  C[t]=OUT  B[t]=IN  A[t]=IN
 
-Written into the term after phase 1 (=explain pro= prints it as
+Written into the term after phase 1 (=explain pro.= prints it as
 =evaluate: the labelled term=; phase 1 has decided C, lesson 10):
 
 : μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
@@ -719,7 +724,7 @@ result is kept; minicourse-sharing.org, lesson 17.)
 
 ** Example
 
-=explain pro=, phase 1:
+=explain pro.=, phase 1:
 
 : strict  C[c] supporter strict
 : strict  C[c] attacker strict: defeat
@@ -795,8 +800,8 @@ alpha-equal to what =strict_resolve= wrote.
    conditions fails for them? Why did the legacy term, with K as the
    attacker itself, give no =killC*= either?
 4. In =tests/entrypoints.fspy= =s1= and =s2= both prove E strictly.
-   Which proof does the strict phase keep for =evaluate issue :E=, and
-   which for =evaluate s1=? What did the rule "t strict first" do?
+   Which proof does the strict phase keep for =evaluate issue :E.=, and
+   which for =evaluate s1.=? What did the rule "t strict first" do?
 
 * Lesson 11 - Phase 2: sigma
 
@@ -854,7 +859,7 @@ The context side is the mirror image.
 
 ** Example
 
-=explain pro=, phase 2:
+=explain pro.=, phase 2:
 
 : sigma  supporter B[t] is IN -> keep the supporter, dropping the original
 : sigma  attacker A[c] is OUT -> keep the original, dropping the attacker and the 1 scaffold(s) inside it
@@ -900,7 +905,7 @@ lead to a different normal form (lesson 12).
 supporters, all IN. The canonical term =SUP( ?u1, SUP( SUP(P1, P2), P3 ) )=
 is decided as: the root scaffold's scion is the whole stack, IN because
 some element is, so the stack is kept; then P3 is IN, so P3 is kept and
-the rest dropped. =evaluate issue :B= returns p3's proof. In p1's term
+the rest dropped. =evaluate issue :B.= returns p3's proof. In p1's term
 =SUP( ?u1, SUP( SUP(P2, P3), P1 ) )= the same walk keeps P1 first. Had
 P1's derivation been OUT, the walk would go on to P3, then P2, and only
 then to the root.
@@ -1136,6 +1141,215 @@ alpha-equal.
 3. In the self-attack's normal form, where did =h= and =alpha= go, and
    which step renamed them?
 
+* Lesson 13b - For review: the two semantics decisions of 2026-09-25
+
+This lesson is a review aid, not a step of the pipeline. Two semantics
+changes were made in one session on 2026-09-25, agreed in conversation
+but not reviewed against the code (tasks.org,
+=aida-review-guard-and-strict-decisions=):
+
+- the *asymmetric contrariness guard* (commit 9820d4e): taught in
+  minicourse.org, lesson 4, "The asymmetric guard";
+- the *settled strict phase* (commit 1a81650): taught in lesson 10 here,
+  and written up in call-by-onus.org, "The strict phase".
+
+The task names eight review points. Each section below says what the code
+does today, shows a run, and ends with the question to decide. Every
+value was produced on 2026-10-08 and is pinned by
+tests/minicourse/test_review_course.py. The graph-level examples are built
+with =coursekit.graph_from_edges=, as in lesson 4, and use its notation:
+=S = phi= is the acceptance condition of S.
+
+** Point 1 - Against a bare default, a defeasible argument defeats as a strict one does
+
+Four graphs over one proposition Q. "Bare default" means a default marker
+and no edge.
+
+| graph | the term side Q[t]   | the context side Q[c]   | Q[t]  | Q[c]  |
+|-------+----------------------+-------------------------+-------+-------|
+| 1a    | bare default         | derived from presumed S | OUT   | IN    |
+| 1b    | bare default         | strict, no sources      | OUT   | IN    |
+| 1c    | derived from presumed R | derived from presumed S | UNDEC | UNDEC |
+| 1d    | derived from presumed R | strict, no sources   | OUT   | IN    |
+
+The conditions:
+
+: 1a  Q[t] = (true & not Q[c])     Q[c] = S[t]
+: 1b  Q[t] = (true & not Q[c])     Q[c] = (true | false)
+: 1c  Q[t] = (R[t] & not Q[c])     Q[c] = (S[t] & not Q[t])
+: 1d  Q[t] = (R[t] & not Q[c])     Q[c] = (true | false)
+
+1a and 1b give the same labels. Strictness separates only 1c from 1d,
+where both sides are derived. Before 2026-09-25, 1a was UNDEC. The reason
+recorded for the change is the onus: the default delegated the burden of
+refutation, and any argument for the contrary discharges it.
+
+*Question.* Is it acceptable that strictness buys nothing against a bare
+default?
+
+** Point 2 - The guard is dropped per disjunct
+
+Graph 2b. Q[t] is presumed *and* argued: =qArg= derives it from R, an
+obligation nobody meets, so R[t] is OUT. Q[c] is a bare default.
+
+: Q[t] = (R[t] | (true & not Q[c]))
+: Q[c] = (true & not Q[t])
+: R[t] = false
+:
+: Q[t] UNDEC   Q[c] UNDEC   R[t] OUT
+
+The argument's disjunct R[t] carries no guard, because its contrary is a
+bare default. The presumption's disjunct keeps its guard. Dropping the
+guard for the whole side instead would give =Q[t] = (R[t] | true)=: Q[t]
+IN, Q[c] OUT, so a dead argument would decide a contest between two
+defaults. (Both sides of Q are presumed here, so this is also the onus
+conflict of point 3, and compiling it warns.)
+
+Found while preparing this lesson, graph 2a: the same dead argument for
+Q[t], with Q[c] derived from presumed S as in 1a.
+
+: Q[t] = ((R[t] | true) & not Q[c])
+: Q[c] = (S[t] & not Q[t])
+:
+: Q[t] UNDEC   Q[c] UNDEC   R[t] OUT   S[t] IN
+
+Without the dead argument this is 1a: Q[t] OUT, Q[c] IN. With it, Q[t]
+has an edge and so counts as derived, and Q[c] keeps its guard against
+it. Adding an argument that is OUT turns a defeat into a stalemate.
+"Derived" is read off the graph's shape: the conditions are compiled
+before any labelling exists.
+
+*Questions.* Is the split drawn in the right place? Should an argument
+whose sources cannot hold make its side count as derived?
+
+** Point 3 - Opposing presumptions keep the old symmetric guard and only warn
+
+Taught in minicourse.org, lesson 4 ("default against default"): with both
+sides of Q bare defaults, both guards stand, Q[t] and Q[c] are UNDEC, and
+=compile_conditions= raises the =OpposingPresumptions= warning. Refusing
+such a presentation is [[file:tasks.org::*Refuse opposing presumptions: track which side holds the onus][aida-onus-delegation-polarity]].
+
+*Question.* Is this the right interim, rather than refusing to label?
+
+** Point 4 - The verdicts that moved
+
+| case | today | before 2026-09-25 |
+|------+-------+-------------------|
+| the multiple-undercut graph (below) | grounded two-valued: A[c] IN, A[t] OUT, B[t] OUT, C[t] IN, D[t] OUT | all UNDEC |
+| even-loop document (tests/rationality/even_loop_lk.fspy) | 2 stable labellings: P IN Q OUT, and P OUT Q IN | 3: also "both refutations IN, neither proof" |
+| tests/rationality/cyclic_undercut.fspy | 1 grounded labelling, two-valued: A[t] IN, Q[t] IN, R[c] IN; B[t], R[t], Q[c] OUT; stable the same | contested |
+| reductio graph: Q[t] <- Q[c], Q[c] a bare default | Q[t] = Q[c], Q[c] = (true & not Q[t]); both UNDEC | Q[t] OUT, Q[c] IN |
+
+For cyclic_undercut, =evaluate d.= gives a VALUE in both modes, argA applied
+to the presumed Q, not the bare presumption of A:
+
+: μargA:A.<qa:Q->A||!IN:Q*argA:A>
+
+*The multiple-undercut graph.* It is pinned as
+tests/test_adf_label.py::TestAsymmetricGuard::test_undercut_of_a_presumed_premise_is_decisive:
+=arg1: B[t] <- A[t]:presumption=, and three refutations of A,
+=counter1 <- B[t]=, =counter2 <- C[t]:presumption= and
+=counter3 <- D[t]:obligation=. The committed tests/multiple_undercuts.fspy
+is a different graph: every premise there is an obligation, and its
+document grounds everything OUT. The presumed version the change was made
+on is not committed; the test builds it by hand.
+
+*Question.* Does each of these verdicts read right?
+
+** Point 5 - A captured presumption is a discharge
+
+*Self-attack* (tests/rationality/self_attack_lk.fspy), =explain SelfAttack
+credulous=, phase 1:
+
+: strict  P[t] supporter strict
+: strict  edge 'SelfAttack*' on P[t] (a closed derivation the framework missed)
+
+Labels: P[t] IN, P[c] OUT, P->false[t] OUT. A VALUE in both modes:
+
+: μalt2:P.<pRule:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+
+*Even loop* (tests/rationality/even_loop_lk.fspy), =explain Pdefault
+credulous=, phase 1:
+
+: strict  Q[t] supporter strict
+: strict  Q[t] attacker strict: defeat
+: strict  P[t] delayed for the labelling (neither the original nor the supporter is strict)
+: strict  no edge for 'Pdefault' on P[t]: not closed (an open site remains)
+: strict  no edge for 'Qdefault' on Q[t]: not closed (free: rule)
+
+=explain Qdefault.= gives the same lines with P and Q exchanged. Grounded,
+every statement is UNDEC from either side. Credulously, each side
+evaluates to a VALUE that holds the other side's delegation:
+
+: μalt4:P.<pRule:(Q->false)->P||λb1:Q.μb2:false.<qRule:(P->false)->Q||λb2:P.μb5:false.<b2:P||alt4:P>*IN:Q!>*alt4:P>
+
+The loop is still symmetric and still has no strict edge, as call-by-onus.org
+recorded on 2026-09-25. But no longer because nothing is decided: since
+the scaffold binders capture (2026-10-07), phase 1 decides two scaffolds
+inside the other side's debate, and no edge results only because neither
+argument is closed.
+
+*Questions.* Does the even loop stay symmetric for the right reason? The
+framework still records the captured presumption as a source, while the
+strict phase treats it as discharged. That is the open discussion
+[[file:tasks.org::*Discuss: a captured site is a source for the labelling but not an assumption for the strict phase][aida-discuss-capture-source-vs-strict]],
+best settled together with this point.
+
+** Point 6 - A site-free clash wins a support scaffold by strict redundancy
+
+Built with the helpers of tests/test_strict.py. The supported term is the
+closed clash =μc:A.<ax:A||nx:A>=, a strict proof facing a strict
+refutation. Two supporters:
+
+| supporter                                 | phase 1           | result                       | class     | strict edge |
+|-------------------------------------------+-------------------+------------------------------+-----------+-------------|
+| (a) strict, =μt1:A.<ax:A‖t1:A>=           | "original strict" | =μd:A.<μc:A.<ax:A‖nx:A>‖d:A>= | exception | none |
+| (b) presumed, =μt2:A.<!p:A‖t2:A>=         | "original strict" | the same                     | exception | none |
+
+(Inside the table, =‖= stands for =||=, which would end an Org table cell.)
+
+In (b) the supporter is live: it rests on a site and could be IN under
+sigma, but it is dropped before sigma sees it. In (a) both wings are
+strict, and the clash wins by the exception rule of lesson 10.
+
+*Question.* Is this the wanted reading of "an uncatchable clash should
+always bubble up"? Or should a clash-free strict wing (a) be preferred
+when one exists, or a live supporter (b) be left to sigma?
+
+** Point 7 - The edge collector: at or below the decision, outermost
+
+*Below.* A support scaffold whose supported term is a presumed proof of A
+attacked by a strict refutation, with the strict supporter
+=μt1:A.<ax:A||t1:A>=, all under =μd=. Phase 1: "attacker strict:
+defeat", then "supporter strict". One edge, =d*=, for the outermost
+closed wrapper. The supporter's own wrapper is closed but contains no
+decision, so it gets none.
+
+*At.* In the self-attack (point 5) the decision at P's root scaffold
+produces the whole term, which gets the edge =SelfAttack*=. Under the
+earlier "strictly below" it would get none, and =label= would say UNDEC
+while =evaluate= said VALUE (call-by-onus.org, "The strict-edge rule").
+
+Lesson 10's example: =killC*= is collected, while pro and con are not,
+because an open site remains in each.
+
+*Question.* Can the outermost rule double-count, or swallow an inner
+closed derivation that deserves its own edge? (A closed decided subterm
+inside a larger closed decided one gets no edge of its own.) The
+proposal to drop the "contains a decision" condition is
+[[file:tasks.org::*Find strict edges directly, not through "contains a decision"][aida-strict-edge-collector-condition]].
+
+** Point 8 - =strict_in_debate='s catcher parameters
+
+Code only, no course material. =strict_in_debate(node, catchers_ids,
+catchers_dis)= (core/dc/strict.py) accepts both parameters and ignores
+them, and no caller passes them. The clash test that used them lives in
+=contains_uncatchable_clash= (core/comp/oracle_terms.py), which takes
+its own.
+
+*Question.* Drop them, or keep them for the abort-propagation work
+([[file:tasks.org::*Design: propagation of an abort through axioms and moxias][aida-abort-propagation]])?
+
 * What this means for a single label-guided normaliser
 
 The lessons show that phases 1 and 2 *are* normalisation. What stands
@@ -1216,8 +1430,8 @@ between the implementation and doing them as normalisation steps:
    With two alternative supporters per level the number of paths
    doubles per level (minicourse-sharing.org, the table in "About this
    sequel").
-5. =evaluate issue :B= returns p3's proof: all three are IN, and p3, the
-   last registered, is the top of the canonical stack. =evaluate p2=
+5. =evaluate issue :B.= returns p3's proof: all three are IN, and p3, the
+   last registered, is the top of the canonical stack. =evaluate p2.=
    returns p2's own: in p2's term p2 is on top. Had p2 been registered
    last, both would return p2.
 

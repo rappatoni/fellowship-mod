@@ -22,7 +22,7 @@ shared route described here still builds the *legacy* shape - the site
 innermost, each supporter and attacker wrapping what came before - and
 compares itself with the legacy unfolding (=unfold_legacy=), until it is
 ported (aida-shared-route-stack-shape). To follow these lessons, select
-it with =pipeline shared= (or =FSP_PIPELINE=shared=); the transcripts
+it with =pipeline shared.= (or =FSP_PIPELINE=shared=); the transcripts
 below were taken on it.
 
 The reason is size. Unfolding copies a statement's debate into every
@@ -69,8 +69,8 @@ is false, since strictness is read off the concrete term and the same
 sub-debate is decided differently under different captures.
 
 The unfolded route remains, in its legacy shape, as the reference the
-shared one is tested against: =pipeline unfolded= (or
-=FSP_PIPELINE=unfolded=) selects the unfolded route, =pipeline shared=
+shared one is tested against: =pipeline unfolded.= (or
+=FSP_PIPELINE=unfolded=) selects the unfolded route, =pipeline shared.=
 this one. Against the legacy unfolding the shared route gives the same
 graph, labels and normal form, up to the names of binders and the
 numbers of sites.
@@ -134,7 +134,7 @@ is the statement, if there is exactly one; otherwise =anon_1=, =anon_2=,
 not shift between commands. =anon_= is a reserved prefix. A sub-debate
 needed once is printed in place, and a trivial one is never named.
 
-*What =share ARG= prints:* the issue's term, in which every named
+*What =share ARG.= prints:* the issue's term, in which every named
 sub-debate is a citation, and then one line
 
 : NAME[open sites] := body
@@ -148,7 +148,7 @@ tests/minicourse/lesson14_sharing.fspy: two alternative supporters per
 level. =a1_0= and =a1_1= both derive P1 from the presumption of P0 (the
 argument =a0=), and =a2_0= and =a2_1= both derive P2 from P1.
 
-=share a2_0=:
+=share a2_0.=:
 
 : Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:
 :   μalt2:P2.<μalt1:P2.<?u1:P2||μ'b2:P2.<μ_:P2.<b2:P2||alt1:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<r2_0:P1->P2||anon_1:P1*th:P2>||a2_0:P2>||alt1:P2>>>||μ'b3:P2.<μ_:P2.<b3:P2||alt2:P2>||μ'_:P2.<μa2_1:P2.<μth_2:P2.<r2_1:P1->P2||anon_1:P1*th_2:P2>||a2_1:P2>||alt2:P2>>>
@@ -187,7 +187,7 @@ under =a2_0= and under =a2_1=, with a1_0 and a1_1 renamed =a1_0_2= and
 
 ** Exercises
 
-1. =share a1_0= on the same document prints one line and names
+1. =share a1_0.= on the same document prints one line and names
    nothing. Why?
 2. Give each level three supporters instead of two. How do the number of
    definitions, the size of the shared form and the size of the unfolded
@@ -243,7 +243,7 @@ tests/minicourse/lesson15_capture.fspy: =p1= and =p2= both derive P
 from "Q fails", presumed; =q= derives Q from "P fails", presumed. The
 even loop of tests/rationality/even_loop_lk.fspy, with P argued twice.
 
-=share p1=:
+=share p1.=:
 
 : Debate about 'p1' (P[t]), 1 sub-debate(s) cited by name:
 :   μalt3:P.<μalt2:P.<μalt1:P.<?u1:P||μ'b2:P.<μ_:P.<b2:P||alt1:P>||μ'_:P.<μp1:P.<μrule:P.<pRule1:(Q->false)->P||λh:Q.μalpha:false.<h:Q||anon_1[rule -> P:!, h -> ?:Q, ?:P]:Q>*rule:P>||p1:P>||alt1:P>>>||μ'b3:P.<μ_:P.<b3:P||alt2:P>||μ'_:P.<μp2:P.<μrule_2:P.<pRule2:(Q->false)->P||λh_2:Q.μalpha_2:false.<h_2:Q||anon_1[rule_2 -> P:!, h_2 -> ?:Q, ?:P]:Q>*rule_2:P>||p2:P>||alt2:P>>>||μ'b5:P.<μ_:P.<b5:P||μ'x4:P.<x4:P||u2:P!>>||μ'_:P.<b5:P||alt3:P>>>
@@ -283,9 +283,9 @@ the same debate, as the test checks, and the labels are the even loop's:
 
 ** Exercises
 
-1. =share q= names nothing. Why is the debate about "P fails" not
+1. =share q.= names nothing. Why is the debate about "P fails" not
    named there, although p1 and p2 both attack it?
-2. Remove =p2= from the fixture. What does =share p1= print?
+2. Remove =p2= from the fixture. What does =share p1.= print?
 3. Inside =anon_1='s definition, "Q fails" under =p1_2= is written
    =rule_3:Q=, not as a citation. Which rule of the unfolder is that?
 
@@ -310,7 +310,7 @@ reachable definitions, skipping the trivial ones, and remembers what
 replayed in the document (=prover.typechecked()=): declarations only
 grow, so a skeleton that type-checked once still does, and a later
 =label= on the same document replays nothing it has seen.
-=typecheck expanded= (or =FSP_TYPECHECK=expanded=) selects the old
+=typecheck expanded.= (or =FSP_TYPECHECK=expanded=) selects the old
 whole-term replay, which is the reference the per-definition check is
 tested against; both accept and reject the same documents.
 
@@ -328,7 +328,7 @@ aida-negation-spelling-in-unfolding; the fallback keeps it as it was.
 
 ** Example
 
-=explain a2_0= on lesson 14's document, the =typecheck= lines:
+=explain a2_0.= on lesson 14's document, the =typecheck= lines:
 
 : typecheck      replaying 'a2_0_1' (theorem P2) as 29 instruction(s)
 : typecheck      'a2_0_1' replayed through Fellowship, the two terms agree up to alpha, site numbering and proposition spelling
@@ -339,7 +339,7 @@ aida-negation-spelling-in-unfolding; the fallback keeps it as it was.
 : ...
 : typecheck      'a2_0' - 2 definition(s) replayed, 1 already checked or bare
 
-The term sent for P2 is the first line of =share a2_0= with the two
+The term sent for P2 is the first line of =share a2_0.= with the two
 citations =anon_1:P1= replaced by the obligations =?u2:P1= and =?u3:P1=.
 P1's skeleton is the second line, with its sites numbered from u1
 again, since it cites nothing. P0's definition is bare and is not
@@ -347,7 +347,7 @@ replayed. Two replays of 29 and 31
 instructions, where the unfolded term needed 89.
 
 tests/minicourse/lesson16_spelling.fspy: =p= needs =~Q=, =nq= derives
-=Q -> false=. =label p=:
+=Q -> false=. =label p.=:
 
 : typecheck: the expanded term is replayed, since the debate spells Q->false in more than one way
 : graph: refused: Fellowship rejected the unfolded term for 'p': This is not trivial. Work some more.
@@ -356,10 +356,10 @@ tests/minicourse/lesson16_spelling.fspy: =p= needs =~Q=, =nq= derives
 
 ** Exercises
 
-1. After =label a2_0=, how many definitions does =label a1_0= replay on
+1. After =label a2_0.=, how many definitions does =label a1_0.= replay on
    the same document?
 2. Change =r= in the spelling fixture to =((Q -> false) -> P)=. Does
-   =label p= go through now, and which route checked it?
+   =label p.= go through now, and which route checked it?
 3. A captured variable in a skeleton is fine, but a two-spelling site is
    not. Both are "something of the statement's type" standing in a hole.
    What is the difference?
@@ -416,14 +416,14 @@ tests/minicourse/lesson17_instances.fspy: lesson 14's document plus a
 strict refutation of P0, the counterargument =k= from the axiom
 =np0 : ~P0=.
 
-=share a2_0= now names two sub-debates. P0's definition is no longer
+=share a2_0.= now names two sub-debates. P0's definition is no longer
 bare - k contests it - and it is needed twice, so it is named; and since
 =a0= is the one argument about P0[t], it is called =a0=:
 
 :   anon_1[?:P1, !:P0] := μalt4:P1.<μalt3:P1.<?u2:P1||...||μ'_:P1.<μa1_0:P1.<μth_3:P1.<r1_0:P0->P1||a0:P0*th_3:P1>||a1_0:P1>||alt3:P1>>>||...>
 :   a0[!:P0] := μalt5:P0.<!u3:P0||μ'b8:P0.<μ_:P0.<b8:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<b8:P0||alt5:P0>>>
 
-=explain a2_0=, the compile and strict stages:
+=explain a2_0.=, the compile and strict stages:
 
 : compile        framework of 'a2_0', one instance of a sub-debate at a time
 : compile        edge 'k' (attacker, strict) P0[c] <- -
@@ -452,7 +452,7 @@ and the stub carries an open site, because the defeat left =!u7= in
 place. So neither supporter of P1 is strict, and both scaffolds are
 delayed. In P2's term the stubs =anon_1= carry P1's open obligation, and
 the same follows. The unfolded term holds P0's attack four times, under
-each of the four supporters, and =pipeline unfolded= decides it four
+each of the four supporters, and =pipeline unfolded.= decides it four
 times:
 
 : strict         4 decision(s), 0 strict edge(s) for 'a2_0'
@@ -500,8 +500,8 @@ instance written out in two places brings the same sites twice, and
 phase 3 normalises as before. What is normalised has the size of the
 answer, not of the debate.
 
-*The two routes.* =pipeline shared= selects this route (the default
-until 2026-10-06; see the note in "About this sequel"); =pipeline unfolded=
+*The two routes.* =pipeline shared.= selects this route (the default
+until 2026-10-06; see the note in "About this sequel"); =pipeline unfolded.=
 (or =FSP_PIPELINE=unfolded=) makes =graph=, =label= and =evaluate= build
 the unfolded term and run the first sequel's pipeline on it. The two
 give the same graph, labels, normal form and class; what differs is the
@@ -520,7 +520,7 @@ debates the shared route is no faster than the unfolded one.
 
 ** Example
 
-Lesson 14's document, =explain a2_0= on the shared route, the sigma
+Lesson 14's document, =explain a2_0.= on the shared route, the sigma
 stage:
 
 : sigma          supporter P2[t] is IN -> keep the supporter, dropping the original and the 1 scaffold(s) inside it
@@ -535,7 +535,7 @@ At P2 the outermost scaffold - a2_1's - is decided first and keeps its
 supporter, which contains a stub for P1; the stub is opened, its
 scaffolds decided, and a1_1's supporter kept. a2_0's support scaffold,
 and the second copy of P1's debate it would have held, are never
-written out. Under =pipeline unfolded= the same two decisions are made on
+written out. Under =pipeline unfolded.= the same two decisions are made on
 the unfolded term, and the normal form is the same up to one site
 number:
 
@@ -544,7 +544,7 @@ number:
 =u11= is the eleventh site the unfolder reached; =u1= is the first site
 of the answer.
 
-Sixteen levels (=bench/gen.py double 16=): =evaluate a16_0= answers
+Sixteen levels (=bench/gen.py double 16=): =evaluate a16_0.= answers
 VALUE in about a second, and the normal form is a chain of sixteen
 arguments with one presumption site at the bottom - 65 nodes, on the
 generated document of the test - where the unfolded term would have
@@ -552,8 +552,8 @@ about 1.8 million.
 
 ** Exercises
 
-1. How many sigma decisions does =explain a2_0= report on lesson 14's
-   document under =pipeline shared=, and how many under =pipeline
+1. How many sigma decisions does =explain a2_0.= report on lesson 14's
+   document under =pipeline shared.=, and how many under =pipeline
    unfolded= (the stacked shape, minicourse-evaluation.org lesson 8a)?
    Why do they differ, and why is it not more on the unfolded route,
    which holds P1's debate twice?
@@ -619,7 +619,7 @@ which should go once the shared route has seen real documents.
 ** Lesson 16
 
 1. None. P1's and P0's definitions were replayed (P0's is bare and
-   never is) when =label a2_0= checked P2, and =prover.typechecked()=
+   never is) when =label a2_0.= checked P2, and =prover.typechecked()=
    remembers them.
 2. Yes: both arguments now spell the statement =Q -> false=,
    =spelling_clashes= is empty, and the per-definition check runs. P

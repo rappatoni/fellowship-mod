@@ -1,4 +1,4 @@
-"""Pins every value quoted in minicourse.org.
+"""Pins every value quoted in docs/minicourses/minicourse.org.
 
 The course quotes real transcripts.  If the implementation changes, these
 assertions fail and the lesson text must be updated -- the material

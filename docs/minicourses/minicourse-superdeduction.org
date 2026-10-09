@@ -863,7 +863,7 @@ tactic it replays.
    declared, so no equations. Fifteen in total.
 3. Phase 3, the type check, lowers the term to tactics first. The
    lowering visitor raises "Unhandled node type" on any node it does not
-   know (core/ac/instructions.py). With =typecheck off= the picture is
+   know (core/ac/instructions.py). With =typecheck off.= the picture is
    worse: the base visitor in core/comp/visitor.py returns an unknown
    node unchanged, so passes built on it would carry a super node along
    silently. Expansion must therefore be a mandatory step, not an

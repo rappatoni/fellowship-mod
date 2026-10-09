@@ -351,7 +351,7 @@ class TestNFClassifier:
         # aida-classify-exception-before-open: an obligation strictly
         # defeated is an exception, not merely open; whether the defeated
         # site is an obligation or a presumption changes nothing.  Lesson
-        # 9 of minicourse-evaluation.org without con's default:
+        # 9 of docs/minicourses/minicourse-evaluation.org without con's default:
         # mu alt1:C.< nc:~C || ?u1:C * _F_ >, alt1 unused.
         for site in (Goal("1", "C"), Deleg("1", "C")):
             clash = Mu(ID("alt1", "C"), "C", DI("nc", "~C"),

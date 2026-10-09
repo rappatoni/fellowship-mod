@@ -65,8 +65,8 @@ tracked in `tasks.org`:
   verbs are gone: a debate is now recorded as a debate object (see
   *Debates*).
 
-Smaller design questions are open as well. `minicourse-evaluation.org` and
-`minicourse-sharing.org` explain the pipeline lesson by lesson; they are
+Smaller design questions are open as well. `docs/minicourses/minicourse-evaluation.org` and
+`docs/minicourses/minicourse-sharing.org` explain the pipeline lesson by lesson; they are
 drafted by an AI agent and pinned by tests, and still await the author's
 review.
 

@@ -46,7 +46,7 @@ together; =conditions_of(graph)= returns just the conditions, rendered in
 the course's notation rather than as the raw nested tuples that
 =compile_conditions= returns.
 
-Course fixtures live in =tests/minicourse/=. Note that =graph ARG show=
+Course fixtures live in =tests/minicourse/=. Note that =graph ARG show.=
 writes an image into the current directory, so run it where you do not
 mind an artifact.
 
@@ -187,7 +187,7 @@ two together:
 
 =support bArg cArg.= is checked - cArg must have a site on B - and adds
 nothing to the document: the conflicts and supports are already there by
-proposition identity. =graph d2=:
+proposition identity. =graph d2.=:
 
 : Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 3 nodes, 3 edges
 :   bArg (supporter, strict): B[t] <- -
@@ -564,7 +564,7 @@ contradicts P[t]. So the precise definition is:
 
 This is what =DebateGraph.is_acyclic= checks. Until 2026-09-16
 =compile_debate= refused it; since the cyclic fragment
-(=aida-cyclic-fragment=) it is a *classifier* - =graph ARG= prints
+(=aida-cyclic-fragment=) it is a *classifier* - =graph ARG.= prints
 "fragment: acyclic" or "fragment: cyclic" - and cyclic debates are
 labelled by adf-bdd like any other. What it classifies:
 
@@ -779,7 +779,7 @@ attacker whose source is an obligation, discarded by the labelling.
 ** Example
 
 From =tests/minicourse/lesson2_graph.fspy=, the term of the debate =d2=
-(=render d2=), its B site formatted here for reading:
+(=render d2.=), its B site formatted here for reading:
 
 : mu alt2:B.< ?u3:B || mu'b2:B.< mu _:B.<b2:B || alt2:B>
 :                             || mu'_:B.< mu bArg:B.<axB:B||bArg:B> || alt2:B > > >
@@ -825,7 +825,7 @@ to preferred. Then
   - *credulous*: sigma is some labelling of that semantics in which the
     issue - the debate's root statement - is IN. Which one changes only
     the normal form, never the verdict; by default the first in the
-    canonical numbering =label ARG SEMANTICS= prints, =evaluate ARG
+    canonical numbering =label ARG SEMANTICS.= prints, =evaluate ARG
     credulous SEMANTICS N= picks labelling N, and =... all= prints one
     normal form per accepting labelling. If none exists the issue is
     credulously rejected: sigma falls back to grounded and the residue
@@ -961,7 +961,7 @@ cases, by what a scion captured:
     : s1* (strict): ((P->Q)->P)->P[t] <- -
 
     the trap as a cycle, every claim in it OUT, and one strict edge for
-    the thesis, IN; =evaluate d5= returns the classical proof term
+    the thesis, IN; =evaluate d5.= returns the classical proof term
     =lambda f. mu alpha.< f || (lambda h. mu _.< h || alpha >) * alpha >=.
     (Until 2026-09-17 the compiler *absorbed* a capturing scion into the
     subargument binding the variable - the same verdicts, computed at
@@ -1029,7 +1029,7 @@ For mode divergence, =tests/rationality/contested.fspy= (everything UNDEC):
 : Evaluated 'datt' (credulous, preferred, base cbn): VALUE
 :   normal form: mu datt:P.<pRule:Q->P||!...:Q*datt:P>
 
-=label datt preferred= shows the two labellings behind this: one with
+=label datt preferred.= shows the two labellings behind this: one with
 P[t], Q[t] IN and Q[c] OUT, one the other way round. Credulous takes the
 first as sigma, the attacker is OUT in it, and the presumption stands.
 Skeptical intersects them (everything UNDEC, here equal to grounded),

@@ -83,7 +83,7 @@ def freshen_binders(node, avoid: set, only=None):
     so it binds nothing and can capture nothing, and the scaffold matcher
     recognises a scaffold's inner pair by it - renamed, a scaffold that
     passed through a substitution was no longer recognisable (lesson 13 of
-    minicourse-evaluation.org; aida-unfold-scaffold-binders-capture).
+    docs/minicourses/minicourse-evaluation.org; aida-unfold-scaffold-binders-capture).
 
     After this, no binder name in the result occurs in ``avoid``, and all
     binder names other than ``_`` are pairwise distinct.

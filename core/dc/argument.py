@@ -414,58 +414,68 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             logger.trace("Batched prover output: %s", output)
             pending_commands.clear()
 
-        stepwise = False        # once something is cited, one instruction at a time
-        for i, instr in enumerate(instr_list):
-            try:
-                cited = citation_target(self.prover, instr)
-            except CitationError as e:
-                flush_pending()
-                self.prover.send_command('discard theorem.')   # leave the prover clean
-                raise CitationRefused(str(e)) from e
-            if cited is not None:
+        try:
+            stepwise = False        # once something is cited, one instruction at a time
+            for i, instr in enumerate(instr_list):
+                try:
+                    cited = citation_target(self.prover, instr)
+                except CitationError as e:
+                    flush_pending()
+                    self.prover.send_command('discard theorem.')   # leave the prover clean
+                    raise CitationRefused(str(e)) from e
+                if cited is not None:
+                    flush_pending()
+                    try:
+                        site, side, prop = self._cite_site(last_output, cited, instr)
+                    except CitationError as e:
+                        self.prover.send_command('discard theorem.')
+                        raise CitationRefused(str(e)) from e
+                    if is_strict_citation(self.prover, cited.name):
+                        # Fellowship holds it: it closes the goal itself.
+                        last_output = self.prover.send_command(
+                            f"{'axiom' if side == 'rhs' else 'moxia'} {cited.name}.")
+                        self.citations.append((site, cited.name, True, prop))
+                        continue
+                    # Defeasible: the site stays open to Fellowship and becomes a
+                    # name leaf afterwards.  Move off it, unless it is the only goal.
+                    self.citations.append((site, cited.name, False, prop))
+                    stepwise = True
+                    if self._goal_count(last_output) > 1:
+                        last_output = self.prover.send_command('next.')
+                    continue
+                if stepwise:
+                    # A cited site is closed from the user's point of view: never
+                    # let a later step land on it.
+                    last_output = self._step_off_cited_sites(last_output, instr)
+                norm = instr.strip().lower()
+                command = instr.strip() + '.'
+                # Preserve the historical special case: if a final "next"
+                # raises, ignore it.  Keep that one command on the old single
+                # command path so we still know exactly which command failed.
+                should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay or stepwise
+                if use_batch_replay and not should_single_step:
+                    pending_commands.append(command)
+                    continue
                 flush_pending()
                 try:
-                    site, side, prop = self._cite_site(last_output, cited, instr)
-                except CitationError as e:
-                    self.prover.send_command('discard theorem.')
-                    raise CitationRefused(str(e)) from e
-                if is_strict_citation(self.prover, cited.name):
-                    # Fellowship holds it: it closes the goal itself.
-                    last_output = self.prover.send_command(
-                        f"{'axiom' if side == 'rhs' else 'moxia'} {cited.name}.")
-                    self.citations.append((site, cited.name, True, prop))
-                    continue
-                # Defeasible: the site stays open to Fellowship and becomes a
-                # name leaf afterwards.  Move off it, unless it is the only goal.
-                self.citations.append((site, cited.name, False, prop))
-                stepwise = True
-                if self._goal_count(last_output) > 1:
-                    last_output = self.prover.send_command('next.')
-                continue
-            if stepwise:
-                # A cited site is closed from the user's point of view: never
-                # let a later step land on it.
-                last_output = self._step_off_cited_sites(last_output, instr)
-            norm = instr.strip().lower()
-            command = instr.strip() + '.'
-            # Preserve the historical special case: if a final "next"
-            # raises, ignore it.  Keep that one command on the old single
-            # command path so we still know exactly which command failed.
-            should_single_step = (i == total - 1 and norm == "next") or not use_batch_replay or stepwise
-            if use_batch_replay and not should_single_step:
-                pending_commands.append(command)
-                continue
+                    output = self.prover.send_command(command)
+                    last_output = output
+                    logger.trace("Prover output: %s", output)
+                except ProverError as e:
+                    if i == total - 1 and norm == "next":
+                        logger.warning("Ignoring ProverError on final 'next': %s", e)
+                        break
+                    raise
             flush_pending()
+        except ProverError:
+            # A failed replay leaves Fellowship inside the theorem it opened;
+            # close it, or the next command is refused ("Finish the proof
+            # before issuing instructions!").
             try:
-                output = self.prover.send_command(command)
-                last_output = output
-                logger.trace("Prover output: %s", output)
-            except ProverError as e:
-                if i == total - 1 and norm == "next":
-                    logger.warning("Ignoring ProverError on final 'next': %s", e)
-                    break
-                raise
-        flush_pending()
+                self.prover.send_command('discard theorem.')
+            except ProverError:
+                pass
+            raise
         # Capture the assumptions (open goals) using the last successful state
         if last_output is None:
             last_output = start_payload

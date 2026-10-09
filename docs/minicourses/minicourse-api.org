@@ -1,0 +1,424 @@
+#+title: AIDA as a Service - A Minicourse on the API
+#+startup: overview
+
+# AI NOTE: Drafted by an AI agent (Claude) at the author's request,
+# 2026-10-09. Teaching material about the implementation, not manuscript
+# prose. Every output quoted below was produced by running the code;
+# tests/minicourse/test_api_course.py pins the quoted values so this file
+# cannot silently go stale. The design decisions it describes are the
+# author's, recorded in tasks.org under aida-dui-api and its phases.
+
+* About this course
+
+Seven short lessons on using AIDA from a program: a server for the
+document UI, a notebook, a test. The other minicourses explain what AIDA
+computes; this one explains how a program asks for it and what comes back.
+It assumes you can read a =.fspy= document; lesson 2 covers the syntax.
+
+The running example is =tests/debates.fspy=: Tweety flies because birds
+fly (=tweety=, a presumed rule); Tweety does not fly because it is a
+penguin (=penguin=, presumed); a photo shows it is no penguin (=photo=,
+presumed); and an unrelated claim (=sings=).
+
+Each lesson has a *definition*, a *worked example* with real output, and
+*exercises*. Solutions are in the appendix - try first.
+
+: .venv/bin/python -m pytest tests/minicourse/test_api_course.py -q   # check the course still holds
+
+* Lesson 1 - Sessions and documents
+
+** Definition
+
+A *session* is one running Fellowship with its settings (=ProverWrapper=,
+=wrap/prover.py=); =wrap.cli.setup_prover()= makes one. A session holds one
+*document* at a time (=wrap/document.py=): the declarations, names,
+arguments, the document graph, the debates, the caches. Two sessions in one
+process share nothing.
+
+A *new document* resets Fellowship (=discard all.=) and chooses the logic:
+=lk= (classical, the default), =lj= (intuitionistic), either one =minimal=
+(no ex falso). The toggles =lk.=, =lj.=, =minimal.=, =full.= are only
+allowed at the *head* of a document, before its first instruction:
+Fellowship fixes the logic there. Later a change is refused; asking for
+the logic in force does nothing.
+
+Every operation on a session holds its lock: calls on one session are
+serialised, calls on different sessions run side by side.
+
+** Example
+
+A fresh session holds a classical document. A new document in minimal
+intuitionistic logic, a declaration, and then a toggle:
+
+#+begin_example
+>>> p = setup_prover(); p.doc.logic_name
+'lk'
+>>> Service.of(p).new_document("lj", True); p.doc.logic_name
+'minimal lj'
+>>> p.send_command("declare A:bool."); p.send_command("lk.")
+ProverError: 'lk.': the logic is chosen when a document starts
+(`new document [minimal] lk|lj.`); this document is minimal lj.
+#+end_example
+
+** Exercises
+
+1. A script starts with =lk.= and is loaded into a session whose document
+   is classical and already holds declarations. What happens at that line?
+2. Why is the document, and not the session, what =new document= replaces?
+   Name one thing that survives.
+3. Two threads call =evaluate= on the same session at once. What does the
+   second one do while the first runs?
+
+* Lesson 2 - The syntax, with positions
+
+** Definition
+
+Scripts, the REPL and a document check read one syntax (=wrap/syntax.py=):
+
+- every command ends in =.=; a command may span lines, several may share
+  one;
+- every =.= outside double quotes ends a command, so what contains dots
+  is double-quoted: proof terms, decoration templates, file names. A
+  single quote is an ordinary character (=A'=, the binder =μ'=);
+- arguments are blocks: =argument N : (P).= or =counterargument N : (P).=,
+  Fellowship tactics, then =dixi.= (shortcut =cr.=, "case rested"); a
+  statement's proof is =prove N.= ... =qed.= (strict) or =dixi.=;
+- debates: =debate pro|con open|closed N : I.=, moves, =cedat tempus.=
+  (shortcut =ct.=);
+- Fellowship's own commands and tactics pass through untouched -
+  Fellowship's parser stays their grammar;
+- =#= lines are narration, =%= lines silent, =%stop= ends a script.
+
+=split= cuts a text into units, each with its *span* (1-based lines and
+columns, the end inclusive); =parse= reads one command. Old forms are
+refused with their replacement.
+
+** Example
+
+#+begin_example
+>>> for u in split('minimal. lk.\nregister t : B := "μ\'x:B.<x||?1.2:B?>".\n# a note\ndeclare A,\n  B : bool.\n'):
+...     print(u.kind, repr(u.text), u.span)
+command 'minimal' 1:1
+command 'lk' 1:10
+command 'register t : B := "μ\'x:B.<x||?1.2:B?>"' 2:1
+narration 'a note' 3:1
+command 'declare A,\n  B : bool' 4:1
+>>> parse("evaluate issue :Flies credulous all").args
+{'target': 'issue :Flies', 'mode': 'credulous', 'semantics': 'preferred', 'base': 'cbn', 'witness': 'all', 'favour': False}
+>>> parse("start argument a A")
+SyntaxRefused: `start argument` is gone: write `argument NAME : (PROPOSITION).` ... `dixi.`
+#+end_example
+
+The dots inside the quoted term (=x:B.<=, =?1.2=) stay inside; the =.= after
+=minimal= ends a command although =lk.= follows on the same line.
+
+** Exercises
+
+1. Why would =register t : B := μx:B.<x||ax>.= be refused, and what is the
+   fix?
+2. The span of =declare A,\n  B : bool.= ends at column 11 of line 5. What
+   character is there?
+3. Where does a template like =@arg1 is a bird. Really.= need quoting, and
+   with which quotes?
+
+* Lesson 3 - The service
+
+** Definition
+
+=Service.of(session)= (=wrap/service.py=) offers the session's operations as
+calls:
+
+- documents: =new_document=, =load=, =inventory=, =check= (lesson 4);
+- content: =command=, =register=, =record_argument=, =state=, =prove=,
+  =adopt=, =decorate=, =start_debate=, =move=, =close_debate=;
+- queries: =graph=, =label=, =evaluate=, =term=, =render=, =unfold=,
+  =share=, =tree= (DOT text; it writes no file);
+- settings: =set_typecheck=, =set_pipeline=.
+
+A *target* is an argument or debate name, =issue :X= (X proved) or
+=issue X:= (X refuted). Each call holds the lock, returns a result object
+carrying the domain objects, and puts the warnings it logged in
+=diagnostics=. A refusal raises an =AidaError= with a stable =code= and the
+=stage= that refused: =not_found=, =invalid=, =logic=, =unfold=,
+=typecheck=, =compile=, =evaluation=, =recursion=, =adf_bdd_missing=,
+=content=. The CLI prints these results; nothing in the service prints.
+
+** Example
+
+After checking =tests/debates.fspy=:
+
+#+begin_example
+>>> e = svc.evaluate("tweety"); type(e).__name__, e.nf_class
+('Evaluation', 'value')
+>>> svc.evaluate("nobody")
+NotFound (code not_found, stage None): Argument 'nobody' not found.
+>>> [(a.name, a.anti, a.in_document) for a in svc.inventory().arguments]
+[('tweety', False, True), ('penguin', True, True), ('photo', True, True), ('sings', False, True)]
+#+end_example
+
+=tweety= is a value: penguin attacks it on a presumption, and photo
+defeats penguin.
+
+** Exercises
+
+1. Which code and stage would a debate command get in an =lj= document?
+2. =svc.graph(...)= succeeded, yet its =diagnostics= are not empty. What
+   might they say? (Hint: lesson 4 of =minicourse.org=, the onus guard.)
+3. Why does =tree= return DOT text instead of writing a picture?
+
+* Lesson 4 - Checking a whole document
+
+** Definition
+
+=svc.check(text)= replays a document in a new document of the session and
+returns a =Report=: one entry per unit, in order - its span, its kind, a
+*status*, a message, the error, and the result. The statuses:
+
+| =ok=       | done; =result= holds what came back        |
+| =refused=  | the document refused it                     |
+| =reported= | a query the pipeline refused                |
+| =error=    | Fellowship refused it                       |
+| =fatal=    | the prover connection broke (the check stops) |
+| =skipped=  | a CLI-only command (=explain=, ...)         |
+| =comment=, =stop= | comment lines, =%stop= (the check stops) |
+
+The check goes on after a problem, so one pass finds them all. A query
+written in the text (=evaluate d.=) brings its result at its own line: that
+is "the state of the debate at line N". =ok= is false when anything was
+refused or failed; a =reported= query does not count.
+
+** Example
+
+=tests/debates.fspy= followed by a debate, two evaluations and a broken
+argument:
+
+#+begin_example
+debate pro closed d : Flies.          % line 41
+tweety.
+rebut penguin tweety.
+rebut photo penguin.                  % line 44
+ct.
+evaluate d.                           % line 46
+evaluate nobody.
+argument broken : (Flies).
+axiom nothing.
+dixi.                                 % line 50
+#+end_example
+
+#+begin_example
+ok False entries 50
+44 move refused debate 'd': rebut: 'photo' concludes Penguin:, but 'penguin' has no obligation on :Penguin to attack.
+47 evaluate reported Argument 'nobody' not found.
+50 dixi refused nothing is neither in your hypothesis nor in your conclusion.
+evaluate at line 46 open
+#+end_example
+
+Line 44 is refused: =rebut= wants an obligation, and penguin *presumes*
+Penguin (=undermine= would fit). So the closed debate never hears photo,
+and at line 46 =d= is open. A failed block leaves Fellowship clean: the
+next command is not refused for an open proof.
+
+** Exercises
+
+1. Change line 44 so that =d= evaluates to a value. Which verb, and why?
+2. Why does a check start a new document every time, and what does it
+   cost?
+3. An editor wants the labels after every move of the debate. How, without
+   a separate query call?
+
+* Lesson 5 - JSON
+
+** Definition
+
+=wrap.serialize.to_json(result, session)= turns any result, error or
+report into a versioned *envelope* ={"aida": "1.0", "kind": ...}=, described
+by =wrap/schemas/aida.schema.json= (JSON Schema 2020-12). The pieces:
+
+- a *statement* is ={prop, side, key}=: the displayed proposition, =term=
+  or =context=, and the canonical key - a deterministic id;
+- a *term* is ={pres, tree}=: the printed term and its tree, every node
+  ={id, node, ...}= (children =binder=, =term=, =context=; scalars as
+  text); =term_from_tree= reads a tree back exactly;
+- a *graph* has nodes, hyperedges (name, the =argument= it came from and
+  that argument's =span= in the text, role, strict, target, sources) and
+  default markers;
+- an *error* is ={code, stage, message, span, cause, diagnostics}=.
+
+Verdicts and labels keep AIDA's words (value / open / exception; IN / OUT /
+UNDEC); colours are the editor's.
+
+** Example
+
+The evaluation of =tweety=:
+
+#+begin_example
+{"aida": "1.0", "kind": "evaluation", "verdict": "value", "mode": "skeptical", "semantics": "preferred"}
+sigma: [{"prop": "Penguin", "side": "context", "key": "S:Penguin", "label": "IN"},
+        {"prop": "Photo", "side": "term", "key": "S:Photo", "label": "IN"}, ...]
+normal form: μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+tree: {"id": 1, "node": "Mu", "prop": "Flies",
+       "binder": {"id": 2, "node": "ID", "name": "tweety", "prop": null},
+       "term": {"id": 3, "node": "Deleg", "number": "IN", "prop": "Bird->Flies"},
+       "context": {"id": 4, "node": "Cons", "prop": "Bird->Flies", ...},
+       "origin": "tweety"}
+#+end_example
+
+An edge of its graph, linked to its argument's block in the text:
+
+#+begin_example
+{"name": "photo", "argument": "photo", "span": {"line": 28, "col": 1, "end_line": 36, "end_col": 5},
+ "role": "attacker", "strict": false, "target": {"prop": "Penguin", "side": "context", "key": "S:Penguin"},
+ "sources": [{"prop": "Photo", "side": "term", "key": "S:Photo", "kind": "presumption"}]}
+#+end_example
+
+And an error:
+
+#+begin_example
+{"aida": "1.0", "kind": "error", "code": "not_found", "stage": null,
+ "message": "Argument 'nobody' not found.", "span": null, "cause": null, "diagnostics": []}
+#+end_example
+
+The presumption =Bird->Flies= became =!IN:Bird->Flies= in the normal form:
+the labelled term names a site by its label (=minicourse-evaluation.org=).
+
+** Exercises
+
+1. Why does a tree node keep its binder under =binder= and not under the
+   attribute name =id= the AST uses?
+2. An editor gets an edge with =span= null. What does that say about the
+   argument?
+3. What changes in the version when a new result kind is added? When a
+   field is renamed?
+
+* Lesson 6 - Importing, with provenance
+
+** Definition
+
+An *importer* translates another formalism into an AIDA document. Importers
+are packages registered under the =acdc.importers= entry point
+(=wrap/importers.py=); scasp-aida is the one for s(CASP). An import result
+gives the document's text (=to_fspy()=) and may give its *provenance*
+(=to_fspy_with_sources()=): each block's span with the source node it came
+from, and each binder of the imported term with its node.
+
+=svc.import_document(language, data, name=...)= translates, checks the
+text (lesson 4) and returns the text, the check and the provenance.
+
+For s(CASP) a source is ={"pointer": a JSON pointer into the s(CASP) output,
+"atom": the node's atom}=. The binders are the link: the imported term goes
+through text, and binder names (=alpha1=, =alpha2=, ...) survive that trip,
+where attributes on the AST would not.
+
+** Example
+
+From scasp-aida's test of an equality justified by an inequality
+(=eq(bob,bob)= because =bob \= mary=; scasp-aida,
+=tests/test_scasp_importer.py=, which pins these values):
+
+#+begin_example
+blocks:  neq_bob_mary                -> {"pointer": "/answers/0/tree/0/children/0", "atom": "neq"}
+         f_Neq_Bob_Mary_Eq_Bob_Bob   -> {"pointer": "/answers/0/tree/0", ...}
+binders: alpha1 -> /answers/0/tree/0/children/0
+         alpha2 -> /answers/0/tree/0
+#+end_example
+
+** Exercises
+
+1. A label on the statement =Neq Bob Mary= should be shown in the s(CASP)
+   source. Which way through the provenance gets there?
+2. Why is the importer free to give no provenance, and what does an editor
+   lose then?
+
+* Lesson 7 - Serving it
+
+** Definition
+
+=examples/http_adapter.py= is a reference server (standard library only):
+one session per client session, every request under that session's lock,
+every response an envelope. Its routes: =POST /sessions=, =DELETE
+/sessions/ID=, =POST /sessions/ID/check=, =POST /sessions/ID/import=, =GET
+/sessions/ID/inventory=, =POST /sessions/ID/query=. A refusal is an =error=
+envelope, HTTP 404 for =not_found= and 422 otherwise.
+
+What a real server has to decide (=docs/dui-integration.md=):
+
+- *Concurrency.* Each session is one Fellowship process; Python threads
+  cover the I/O, but the debate pipeline is pure Python and contends for
+  the GIL. Heavy use wants worker processes, and since a session lives in
+  memory with its process, a client must reach the same worker every time
+  (sticky sessions).
+- *Resources.* Each session holds a process and its pipes: bound their
+  number, close idle ones.
+- *Transport.* Over pipes commands of any length work; one command times
+  out after =ACDC_TIMEOUT= seconds (default 5).
+
+** Exercises
+
+1. Two editors check two documents at once on one server. What must the
+   server do so they never see each other's document?
+2. Why does the adapter create the session on =POST /sessions= instead of
+   on the first =check=?
+
+* Appendix - Solutions
+
+** Lesson 1
+
+1. Nothing: =lk.= asks for the logic in force, which is a no-op after the
+   head. Had the document been =lj=, the line would be refused.
+2. Because Fellowship's state and everything compiled from it belong to one
+   theory, while how the session works does not. The settings survive:
+   =typecheck=, =pipeline=, file output.
+3. It waits for the lock: one Fellowship answers one command at a time.
+
+** Lesson 2
+
+1. The term holds dots outside quotes, so the first one (=x:B.=) ends the
+   command. Double-quote it: =register t : B := "μx:B.<x||ax>".=
+2. The =.= that ends the command: =  B : bool= has ten characters.
+3. Always when it contains a dot, and only in double quotes: single quotes
+   no longer quote.
+
+** Lesson 3
+
+1. =logic=, stage =graph= (the issue of the target could not be debated).
+2. For example "Opposing presumptions on Q: both sides delegate the onus of
+   refutation, so neither side holds it." - a warning, not a refusal.
+3. Writing files and opening viewers is presentation: the service returns
+   material, the client decides what to do with it.
+
+** Lesson 4
+
+1. =undermine photo penguin.=: penguin's site on Penguin is a presumption,
+   and =undermine= is the attack on a presumption. With photo in scope,
+   penguin falls and =d= is a value.
+2. A check must not depend on what an earlier check left behind, and
+   Fellowship cannot roll back. The cost is a replay of the whole text,
+   about 0.1 s for this document.
+3. Write =label d.= after every move: each one reports at its own line.
+
+** Lesson 5
+
+1. =id= is the node's own id in the tree; a binder under =id= would
+   overwrite it.
+2. The interpreter never saw a block for it - registered from code, say,
+   not from the checked text.
+3. A new kind is an addition: the minor version. A renamed field breaks
+   readers: the major version.
+
+** Lesson 6
+
+1. From the statement to the edges that derive or use it, to their
+   =argument= (the registered term), to the binders of that term's
+   subterms, to their =pointer= into the s(CASP) output.
+2. Provenance is optional in the contract (=wrap/importers.py=). Without
+   it, problems and labels can still be shown in the imported text, just
+   not in the source.
+
+** Lesson 7
+
+1. Give each editor its own session (one Fellowship process each) and send
+   every request with that session's id; the locks keep each session's
+   calls in order.
+2. A session is a process: creating it is the expensive step, done once.
+   Every =check= then replays its text in a new *document* of the same
+   session.

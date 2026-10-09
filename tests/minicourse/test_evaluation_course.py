@@ -1,4 +1,4 @@
-"""Pins every value quoted in minicourse-evaluation.org (lessons 8a-13).
+"""Pins every value quoted in docs/minicourses/minicourse-evaluation.org (lessons 8a-13).
 
 Regenerated 2026-10-06 for the stacked shape and argument entrypoints
 (tasks.org, aida-unfold-entrypoints): the term is the one unfolded for

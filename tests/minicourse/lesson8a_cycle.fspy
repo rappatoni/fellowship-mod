@@ -1,4 +1,4 @@
-% Lesson 8a (minicourse-evaluation.org) - unfolding cuts a cycle.
+% Lesson 8a (docs/minicourses/minicourse-evaluation.org) - unfolding cuts a cycle.
 %
 % pro derives B from an obligation for A, back derives A from an
 % obligation for B.  Unfolded for B, the demand for B inside back meets a

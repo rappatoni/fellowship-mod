@@ -304,3 +304,13 @@ def test_an_import_is_checked_with_its_provenance(svc, monkeypatch):
     assert out["sources"]["binders"]["alpha1"]["atom"] == "a"
     with pytest.raises(NotFound):
         svc.import_document("klingon", {})
+
+
+def test_a_failed_block_leaves_fellowship_clean(svc):
+    # the refused replay closes the theorem it opened, so the next command -
+    # here the type check of an evaluation - is not refused for an open proof
+    report = svc.check(open("tests/debates.fspy").read()
+                       + "argument broken : (Flies).\naxiom nothing.\ndixi.\n")
+    assert [(o.kind, o.status) for o in report.entries if o.status not in ("ok", "comment")] == \
+        [("dixi", "refused")]
+    assert svc.evaluate("tweety").nf_class == "value"

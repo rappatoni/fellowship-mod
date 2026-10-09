@@ -1,4 +1,4 @@
-"""Pins every value quoted in minicourse-superdeduction.org.
+"""Pins every value quoted in docs/minicourses/minicourse-superdeduction.org.
 
 The course computes super rules the way the wrapper-side architecture would:
 by letting Fellowship decompose a definition and reading the open goals and

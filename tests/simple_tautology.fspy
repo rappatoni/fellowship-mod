@@ -45,19 +45,18 @@ elim.
 dixi.
 
 argument s4alt : (B).
-cut B gamma.
+cut (B) gamma.
 next.
-elim.
 dixi.
 
 argument p4alt : (B).
-cut A iota.
+cut (A) iota.
 dixi.
 
 # Use here x:A
 
 argument s5alt : (A).
-cut A iota.
+cut (A) iota.
 dixi.
 
 

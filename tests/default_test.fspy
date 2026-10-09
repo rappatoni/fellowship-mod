@@ -17,8 +17,8 @@ axiom alpha.
 qed.
 
 #Should succeed:
-antitheorem delegation_test : (A).
-refute delegation_test.
+antitheorem delegation_test2 : (A).
+refute delegation_test2.
 cut (A-C) x.
 elim.
 by default.
@@ -28,7 +28,7 @@ moxia elur.
 qed.
 
 # Should succeed:
-argument delegation_test : (B).
+argument delegation_test3 : (B).
 cut (A->B) alpha.
 axiom rule.
 elim.
@@ -36,14 +36,15 @@ by default.
 next.
 axiom alpha.
 dixi.
-render delegation_test vanilla.
-render delegation_test argumentation.
+render delegation_test3 vanilla.
+render delegation_test3 argumentation.
 
 #Should succeed:
-counterargument delegation_counter_test : (: (A)).
+counterargument delegation_counter_test : (A).
 cut (A-C) x.
 elim.
 by default.
+next.
 axiom x.
 moxia elur.
 dixi.
@@ -51,8 +52,8 @@ render delegation_counter_test vanilla.
 
 
 # Should fail:
-theorem delegation_test_2 : (B).
-prove delegation_test_2.
+theorem delegation_test_4 : (B).
+prove delegation_test_4.
 cut (A->B) alpha.
 axiom rule.
 elim.

@@ -1,4 +1,4 @@
-"""Pins every value quoted in minicourse-sharing.org (lessons 14-18).
+"""Pins every value quoted in docs/minicourses/minicourse-sharing.org (lessons 14-18).
 
 The lessons show the shared form of a debate, its citations under
 capture, the type check per definition, the strict phase per instance,
