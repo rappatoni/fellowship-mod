@@ -4,11 +4,11 @@ declare A,B,C:bool.
 declare axRoot:(A->B->C).
 declare axScion:(A->B->C).
 
-start argument root A->B->C
+argument root : (A->B->C).
 axiom axRoot.
-end argument
+dixi.
 
-start argument scion A -> B->C
+argument scion : (A -> B->C).
 axiom axScion.
-end argument
+dixi.
 

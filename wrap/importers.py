@@ -10,6 +10,14 @@ importer's ``pyproject.toml``::
 The registered object takes the parsed source JSON and returns an
 `ImportResult`. Translation failures are reported by raising a subclass of
 `SourceImportError`.
+
+An `ImportResult` renders the translation as an AIDA document in the
+command syntax of `wrap/syntax.py`: `to_fspy()` gives the text, `write_fspy()`
+writes it.  It may also offer `to_fspy_with_sources()`, the text with its
+provenance - `{"blocks": [{"span", "kind", "name", "source"}], "binders":
+{binder: source}}`, where a source points into the importer's input - which
+`Service.import_document` passes on, so errors and labels can be shown
+against the source.
 """
 from __future__ import annotations
 
@@ -32,6 +40,8 @@ class ImporterNotFound(LookupError):
 
 
 class ImportResult(Protocol):
+    def to_fspy(self, *, name: str = "imported") -> str: ...
+
     def write_fspy(self, path: str | Path, *, name: str | None = None) -> Path: ...
 
 

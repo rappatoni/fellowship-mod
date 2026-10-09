@@ -10,20 +10,20 @@ declare A,B:bool.
 declare r1: (A -> B).
 declare r3: (B -> A).
 
-start argument pro B
+argument pro : (B).
 cut (A -> B) th.
 axiom r1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument back A
+argument back : (A).
 cut (B -> A) th.
 axiom r3.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-graph document
+graph document.

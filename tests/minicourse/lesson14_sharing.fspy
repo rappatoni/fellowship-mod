@@ -13,42 +13,42 @@ declare r1_1 : (P0 -> P1).
 declare r2_0 : (P1 -> P2).
 declare r2_1 : (P1 -> P2).
 
-start argument a0 P0
+argument a0 : (P0).
 by default.
-end argument
+dixi.
 
-start argument a1_0 P1
+argument a1_0 : (P1).
 cut (P0 -> P1) th.
 axiom r1_0.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument a1_1 P1
+argument a1_1 : (P1).
 cut (P0 -> P1) th.
 axiom r1_1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument a2_0 P2
+argument a2_0 : (P2).
 cut (P1 -> P2) th.
 axiom r2_0.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument a2_1 P2
+argument a2_1 : (P2).
 cut (P1 -> P2) th.
 axiom r2_1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-share a2_0
-label a2_0
-evaluate a2_0
+share a2_0.
+label a2_0.
+evaluate a2_0.

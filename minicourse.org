@@ -183,7 +183,7 @@ two together:
 : debate pro open d2 : C.
 : cArg.
 : support bArg cArg.
-: hora est.
+: cedat tempus.
 
 =support bArg cArg.= is checked - cArg must have a site on B - and adds
 nothing to the document: the conflicts and supports are already there by

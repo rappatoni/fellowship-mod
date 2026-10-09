@@ -8,24 +8,24 @@ declare penguins_are_birds : (Penguin -> Bird).
 declare penguins_dont_fly : (Penguin -> ~Flies).
 declare winged_things_fly : (Wings -> Flies).
 # tweety: Tweety flies, being a bird, since birds fly - by default.
-start argument tweety Flies
+argument tweety : (Flies).
 cut (Bird -> Flies) birds_fly.
 by default.
 next.
 elim.
 axiom bird.
 axiom birds_fly.
-end argument
+dixi.
 # wings: Tweety flies because it has wings - if it has wings, which is owed.
-start argument wings Flies
+argument wings : (Flies).
 cut (Wings -> Flies) rule.
 axiom winged_things_fly.
 elim.
 next.
 axiom rule.
-end argument
+dixi.
 # penguin: Tweety does not fly - it is a penguin.  Presumed.
-start counterargument penguin Flies
+counterargument penguin : (Flies).
 cut (Penguin -> ~Flies) rule.
 axiom penguins_dont_fly.
 elim.
@@ -33,36 +33,36 @@ by default.
 next.
 elim.
 axiom.
-end counterargument
+dixi.
 # Something unrelated, to show the verbs check their target.
 declare Sings : bool.
-start argument sings Sings
+argument sings : (Sings).
 by default.
-end argument
+dixi.
 %stop
 # ---- paste from here ----------------------------------------------------
 # The document already holds every conflict: proposition identity is global.
-graph document
+graph document.
 # A debate names a selection of the document's arguments; its verbs CHECK
 # each move: a supporter must conclude a site of its target, an attacker the
 # contrary of one.  An open debate hears the whole document.
 debate pro open dsup : Flies.
 tweety.
 support wings tweety.
-hora est.
+cedat tempus.
 debate pro open datt : Flies.
 tweety.
 attack penguin tweety.
-hora est.
+cedat tempus.
 debate pro open bad : Flies.
 tweety.
 support sings tweety.
-hora est.
+cedat tempus.
 # The debate about Flies: supported by wings, contested by penguin.
-graph tweety show
-label tweety
+graph tweety show.
+label tweety.
 # wings rests on an obligation nobody meets, so it is OUT.  The presumed rule
 # "birds fly" and the presumed "it is a penguin" contest each other: UNDEC.
 # The modes decide the contest.
-evaluate tweety skeptical
-evaluate tweety credulous
+evaluate tweety skeptical.
+evaluate tweety credulous.

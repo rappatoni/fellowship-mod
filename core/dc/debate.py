@@ -7,7 +7,7 @@ A debate is a *recipe*, recorded in a script as
     arg1.
     [VERB] arg2 arg1.
     ...
-    hora est.
+    cedat tempus.
 
 - The **issue** is ISSUE proved (onus ``pro``) or refuted (``con``); the
   opening move must be an argument for that statement.
@@ -76,7 +76,7 @@ class Debate:
     onus: str
     scope: str
     moves: list = field(default_factory=list)
-    #: False while the debate is being recorded (before ``hora est.``)
+    #: False while the debate is being recorded (before ``cedat tempus.``)
     finished: bool = False
     #: cache: (document revision, number of moves) -> term
     _term: tuple = field(default=None, repr=False, compare=False)

@@ -17,26 +17,26 @@ declare P,Q:bool.
 declare pRule : (Q->P).
 
 % Argument for P with the Q antecedent taken by default.
-start argument pArg P
+argument pArg : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 
 % Challenge to Q, itself delegated.
-start counterargument qAtt Q
+counterargument qAtt : (Q).
 by default.
-end counterargument
+dixi.
 
 debate pro open datt : P.
 pArg.
 attack qAtt pArg.
-hora est.
+cedat tempus.
 
-graph datt
-label datt
-evaluate datt skeptical
-evaluate datt credulous
+graph datt.
+label datt.
+evaluate datt skeptical.
+evaluate datt credulous.

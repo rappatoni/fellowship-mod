@@ -10,27 +10,27 @@ declare pRule : (Q->P).
 declare axQ : (Q).
 
 % Argument for P resting on an open Q obligation.
-start argument pArg P
+argument pArg : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 next.
 axiom rule.
-end argument
+dixi.
 
 % Strict supporter for Q.
-start argument qStrict Q
+argument qStrict : (Q).
 axiom axQ.
-end argument
+dixi.
 
 debate pro open dsup : P.
 pArg.
 support qStrict pArg.
-hora est.
+cedat tempus.
 
 % Compile the debate graph, print the grounded labelling, then evaluate
 % under both modes and base strategies.
-graph dsup
-label dsup
-evaluate dsup
-evaluate dsup credulous cbv
+graph dsup.
+label dsup.
+evaluate dsup.
+evaluate dsup credulous cbv.

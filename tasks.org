@@ -166,6 +166,124 @@ As built:
 - =decorate= and raw Fellowship commands stay direct in the CLI: one-line
   passthroughs that the test fakes also take.
 
+** REVIEW One command syntax, parsed with positions, run by one interpreter
+:PROPERTIES:
+:ID:             aida-command-syntax
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         16:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-service-layer
+:OUTCOME:        Scripts and the REPL share one syntax (wrap/syntax.py: every command ends in ".", only double quotes quote, blocks argument/counterargument ... dixi./cr. and debate ... cedat tempus./ct.) with a span per command, and one interpreter (wrap/interpreter.py) runs them for the CLI and the document check; every fixture, minicourse snippet and the README are migrated.
+:VERIFY:         tests/test_syntax.py; every fixture runs; the suite passes; tools/migrate_syntax.py rewrites an old file.
+:END:
+
+Phase 5a of [[id:aida-dui-api]]. Decisions (author, 2026-10-08/09):
+- full stops everywhere;
+- `argument N : (P).` ... `dixi.`, with `cr.` (case rested) as a
+  shortcut;
+- debates end with `cedat tempus.`, shortcut `ct.`;
+- Fellowship's commands and tactics pass through, `parser.mly` staying
+  their grammar;
+- a hard switch with a migration script;
+- the REPL reads until ".".
+
+Then (2026-10-09) the dot rule: every "." outside *double* quotes ends a
+command. Proof terms, templates and file names are double-quoted; a single
+quote is ordinary (`A'`, `μ'`).
+
+The command language is a table of keyword parsers, not a Lark grammar:
+Lark's Earley parser reads keywords such as `issue` as names as well, so
+every command parsed two ways. Statement keywords and refine verbs stay
+case-insensitive.
+
+Migration:
+- tools/migrate_syntax.py rewrote 57 fixtures;
+- tools/migrate_test_scripts.py rewrote the scripts inline in the tests;
+- tests/test1.fspy now has the `prove` lines its theorems always needed;
+- six scasp-aida fixtures were migrated, and the two that still used the
+  removed verbs were ported to debates.
+
+** REVIEW Check a whole document and report on every command
+:PROPERTIES:
+:ID:             aida-document-check
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-command-syntax
+:OUTCOME:        Service.check(text) replays a document in a new document of the session and returns one entry per command - span, kind, status, message, error, result - going on after problems; the Fellowship connection uses pipes.
+:VERIFY:         tests/test_service.py (the check, a new document per check, %stop, long commands); the report validates against the schema; examples/http_adapter.py checks two documents in two sessions at once (tests/test_http_adapter.py).
+:END:
+
+Phase 5b of [[id:aida-dui-api]]. Decisions (author, 2026-10-08/09):
+- the client sends the whole text and the server replays it;
+- a query in the text brings its result at its own line;
+- no queries outside the text in version 1;
+- the check goes on after errors;
+- pipes instead of a pty.
+
+Measured: 0.09 s for a 51-command document.
+
+Pipes: over pipes Fellowship now and then emits one prompt too many on
+the first exchange (once in 30 fresh processes). Every later reply then
+arrived one command late. The wrapper now waits for the end of the
+machine block *and* the prompt (`REPLY_END`); no lag in 40 fresh
+sessions since.
+
+** REVIEW Import from s(CASP) with provenance
+:PROPERTIES:
+:ID:             aida-scasp-importer-provenance
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:scasp-aida-syntax-and-provenance
+:OUTCOME:        Service.import_document(language, data) translates with the registered importer, checks the document, and returns its text, the check, and the importer's provenance: each block's span and each binder of the imported term with the source node it came from.
+:VERIFY:         tests/test_service.py::test_an_import_is_checked_with_its_provenance (a stub importer); scasp-aida tests/test_scasp_importer.py::test_provenance_links_blocks_and_binders_to_justification_nodes.
+:END:
+
+Phase 5c of [[id:aida-dui-api]].
+- The importer contract (wrap/importers.py) now names `to_fspy()`, the
+  text, and an optional `to_fspy_with_sources()`.
+- scasp-aida emits the new syntax.
+- Binder names link the registered term back to the justification tree:
+  they survive the text round trip, where AST attributes would not.
+
+** REVIEW Hand the API over to the document UI
+:PROPERTIES:
+:ID:             aida-dui-handover
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        docs/dui-integration.md tells the UI side how to use the service (sessions, concurrency, checking, queries, JSON, errors, import, limits) and what changed since the DUI branch; examples/http_adapter.py is a runnable reference server.
+:VERIFY:         The guide is reviewed by the author and handed over; tests/test_http_adapter.py passes.
+:END:
+
+Phase 6 of [[id:aida-dui-api]], re-scoped (author, 2026-10-08): the HTTP
+server, its endpoints and the editor are the UI side's.
+
 ** BACKLOG Prove step by step through the service, with goal feedback
 :PROPERTIES:
 :ID:             aida-live-proving
@@ -187,7 +305,7 @@ whole blocks only. Stepping is a stateful protocol on Fellowship's open
 proof (one per session), so it needs its own design: what a client
 holds, how it is abandoned, and the lock held across calls.
 
-** BACKLOG Specify the JSON format for explanation terms
+** REVIEW Specify the JSON format for explanation terms
 :PROPERTIES:
 :ID:             aida-explanation-term-json-format
 :AREA:           phd
@@ -202,6 +320,18 @@ holds, how it is abandoned, and the lock held across calls.
 :OUTCOME:        A versioned JSON format specifies every supported explanation-term constructor, identifier, binding, and recursive relationship.
 :VERIFY:         Validate representative explanation terms against the schema and confirm lossless serialization and deserialization tests.
 :END:
+
+Done as phase 4 of [[id:aida-dui-api]] (2026-10-09), for every service
+result, not only explanation terms. Evidence:
+- wrap/serialize.py: the envelope `{"aida": "1.0", "kind"}`; statements
+  `{prop, side, key}`; terms as `{pres, tree}`, read back by
+  `term_from_tree`; graphs whose edges name their argument and its span;
+  labellings; verdicts; errors with code, stage, span, cause and
+  diagnostics; the document check's entries.
+- wrap/schemas/aida.schema.json (JSON Schema 2020-12).
+- tests/test_serialize.py: every kind validates; a lossless round trip of
+  every term of four fixtures (debates, Peirce, cyclic undercut, capture),
+  normal forms and labelled terms included.
 
 ** DONE Prepare AIDA for the demo feature freeze
 CLOSED: [2026-10-08 Thu] DEADLINE: <2026-09-04 Fri>
@@ -4946,7 +5076,7 @@ After stage 4 =evaluate= does not unfold either: it evaluates a chain of
 80 arguments (4.2 s) and is refused, again with one line, at 90, where
 the answer itself is too deep for the recursive walks.
 
-** BACKLOG Lift the prover transport's line-length and timeout limits
+** REVIEW Lift the prover transport's line-length and timeout limits
 :PROPERTIES:
 :ID:             aida-transport-limits
 :AREA:           phd
@@ -4961,6 +5091,12 @@ the answer itself is too deep for the recursive walks.
 :OUTCOME:        Commands of any length reach Fellowship, and a long-running command is not mistaken for a hung prover.
 :VERIFY:         A =declare= of 400 names in one line and a =theorem= whose proposition exceeds 2 kB succeed through the wrapper; a test fixes the timeout behaviour.
 :END:
+
+Done with [[id:aida-document-check]] (2026-10-09):
+- pipes instead of a pty (`ACDC_TRANSPORT=pty` keeps the old one);
+- a configurable timeout (`ACDC_TIMEOUT`, default 5 s);
+- tests/test_service.py::test_long_commands_reach_fellowship: a declare of
+  400 names and a 2 kB theorem go through.
 
 Measured 2026-09-30: the wrapper talks to fsp through a pty, whose
 canonical-mode line limit (1024 bytes on macOS) makes any longer command

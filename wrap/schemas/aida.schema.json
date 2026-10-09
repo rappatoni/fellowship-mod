@@ -1,0 +1,835 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://aida.example/schemas/aida-1.0.json",
+ "title": "AIDA service results, version 1.0",
+ "oneOf": [
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "code",
+    "message"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "error"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "graph"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "graph"
+    },
+    "target": {
+     "$ref": "#/$defs/target"
+    },
+    "graph": {
+     "$ref": "#/$defs/graph"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "semantics",
+    "labellings"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "labellings"
+    },
+    "target": {
+     "$ref": "#/$defs/target"
+    },
+    "labellings": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/labelled"
+     }
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "verdict",
+    "normal_form",
+    "sigma",
+    "graph"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "evaluation"
+    },
+    "target": {
+     "$ref": "#/$defs/target"
+    },
+    "verdict": {
+     "$ref": "#/$defs/verdict"
+    },
+    "normal_form": {
+     "$ref": "#/$defs/term"
+    },
+    "sigma": {
+     "$ref": "#/$defs/labelled"
+    },
+    "graph": {
+     "$ref": "#/$defs/graph"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "results"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "evaluations"
+    },
+    "results": {
+     "type": "array"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "which",
+    "term"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "term"
+    },
+    "term": {
+     "$ref": "#/$defs/term"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "text"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "rendering"
+    },
+    "text": {
+     "type": "string"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "text",
+    "named"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "shared"
+    },
+    "text": {
+     "type": "string"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "target",
+    "dot"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "tree"
+    },
+    "dot": {
+     "type": "string"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "logic",
+    "declarations",
+    "arguments",
+    "debates",
+    "names"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "inventory"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "message"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "done"
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "entries",
+    "ok"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "report"
+    },
+    "entries": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/entry"
+     }
+    },
+    "ok": {
+     "type": "boolean"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "language",
+    "text",
+    "sources",
+    "ok",
+    "entries"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.0"
+    },
+    "kind": {
+     "const": "import"
+    },
+    "language": {
+     "type": "string"
+    },
+    "text": {
+     "type": "string"
+    },
+    "sources": {
+     "anyOf": [
+      {
+       "type": "null"
+      },
+      {
+       "type": "object",
+       "required": [
+        "blocks",
+        "binders"
+       ],
+       "properties": {
+        "blocks": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "required": [
+           "span",
+           "kind",
+           "name",
+           "source"
+          ],
+          "properties": {
+           "span": {
+            "$ref": "#/$defs/span"
+           }
+          }
+         }
+        },
+        "binders": {
+         "type": "object"
+        }
+       }
+      }
+     ]
+    },
+    "ok": {
+     "type": "boolean"
+    },
+    "entries": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/entry"
+     }
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  }
+ ],
+ "$defs": {
+  "span": {
+   "type": "object",
+   "required": [
+    "line",
+    "col",
+    "end_line",
+    "end_col"
+   ],
+   "properties": {
+    "line": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "col": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "end_line": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "end_col": {
+     "type": "integer",
+     "minimum": 1
+    }
+   },
+   "additionalProperties": false
+  },
+  "side": {
+   "enum": [
+    "term",
+    "context"
+   ]
+  },
+  "label": {
+   "enum": [
+    "IN",
+    "OUT",
+    "UNDEC"
+   ]
+  },
+  "statement": {
+   "type": "object",
+   "required": [
+    "prop",
+    "side",
+    "key"
+   ],
+   "properties": {
+    "prop": {
+     "type": "string"
+    },
+    "side": {
+     "$ref": "#/$defs/side"
+    },
+    "key": {
+     "type": "string"
+    },
+    "label": {
+     "$ref": "#/$defs/label"
+    }
+   }
+  },
+  "diagnostic": {
+   "type": "object",
+   "required": [
+    "level",
+    "logger",
+    "message"
+   ],
+   "properties": {
+    "level": {
+     "type": "string"
+    },
+    "logger": {
+     "type": "string"
+    },
+    "message": {
+     "type": "string"
+    }
+   },
+   "additionalProperties": false
+  },
+  "diagnostics": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/diagnostic"
+   }
+  },
+  "error": {
+   "type": "object",
+   "required": [
+    "code",
+    "stage",
+    "message",
+    "span",
+    "cause",
+    "diagnostics"
+   ],
+   "properties": {
+    "code": {
+     "type": "string"
+    },
+    "stage": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "message": {
+     "type": "string"
+    },
+    "span": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/span"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "cause": {
+     "anyOf": [
+      {
+       "type": "object",
+       "required": [
+        "type",
+        "message"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  "node": {
+   "type": "object",
+   "required": [
+    "id",
+    "node"
+   ],
+   "properties": {
+    "id": {
+     "type": "integer"
+    },
+    "node": {
+     "enum": [
+      "Mu",
+      "Mutilde",
+      "Lamda",
+      "Admal",
+      "Hyp",
+      "Pyh",
+      "Cons",
+      "Sonc",
+      "Goal",
+      "Laog",
+      "Deleg",
+      "Geled",
+      "ID",
+      "DI",
+      "LamdaFO",
+      "ConsFO",
+      "TermsPairFO",
+      "DestructTermsPairFO"
+     ]
+    },
+    "prop": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "number": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "name": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "label": {
+     "$ref": "#/$defs/label"
+    },
+    "term": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/node"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "context": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/node"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "binder": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/node"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "additionalProperties": true
+  },
+  "term": {
+   "type": "object",
+   "required": [
+    "pres",
+    "tree"
+   ],
+   "properties": {
+    "pres": {
+     "type": "string"
+    },
+    "tree": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/node"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   }
+  },
+  "target": {
+   "type": "object",
+   "required": [
+    "kind",
+    "text"
+   ],
+   "properties": {
+    "kind": {
+     "enum": [
+      "argument",
+      "debate",
+      "issue",
+      "document"
+     ]
+    },
+    "text": {
+     "type": "string"
+    },
+    "issue": {
+     "type": "object",
+     "required": [
+      "key",
+      "side"
+     ]
+    }
+   }
+  },
+  "graph": {
+   "type": "object",
+   "required": [
+    "nodes",
+    "edges",
+    "defaults"
+   ],
+   "properties": {
+    "nodes": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/statement"
+     }
+    },
+    "edges": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": [
+       "name",
+       "argument",
+       "span",
+       "role",
+       "strict",
+       "target",
+       "sources"
+      ],
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "argument": {
+        "type": "string"
+       },
+       "span": {
+        "anyOf": [
+         {
+          "$ref": "#/$defs/span"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "role": {
+        "type": "string"
+       },
+       "strict": {
+        "type": "boolean"
+       },
+       "target": {
+        "$ref": "#/$defs/statement"
+       },
+       "sources": {
+        "type": "array",
+        "items": {
+         "allOf": [
+          {
+           "$ref": "#/$defs/statement"
+          },
+          {
+           "type": "object",
+           "required": [
+            "kind"
+           ]
+          }
+         ]
+        }
+       }
+      }
+     }
+    },
+    "defaults": {
+     "type": "array",
+     "items": {
+      "allOf": [
+       {
+        "$ref": "#/$defs/statement"
+       },
+       {
+        "type": "object",
+        "required": [
+         "kinds"
+        ]
+       }
+      ]
+     }
+    }
+   }
+  },
+  "labelled": {
+   "type": "array",
+   "items": {
+    "allOf": [
+     {
+      "$ref": "#/$defs/statement"
+     },
+     {
+      "type": "object",
+      "required": [
+       "label"
+      ]
+     }
+    ]
+   }
+  },
+  "verdict": {
+   "enum": [
+    "value",
+    "open",
+    "exception"
+   ]
+  },
+  "entry": {
+   "type": "object",
+   "required": [
+    "span",
+    "text",
+    "command",
+    "status",
+    "message",
+    "error",
+    "result",
+    "diagnostics"
+   ],
+   "properties": {
+    "span": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/span"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "status": {
+     "enum": [
+      "ok",
+      "refused",
+      "reported",
+      "error",
+      "fatal",
+      "cli",
+      "comment",
+      "stop",
+      "skipped"
+     ]
+    },
+    "error": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/error"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  }
+ }
+}

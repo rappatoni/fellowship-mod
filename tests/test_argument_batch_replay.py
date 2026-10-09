@@ -19,11 +19,12 @@ class _SpawnFakeChild:
 
 def test_prover_wrapper_disables_pexpect_send_delay_after_initial_prompt(monkeypatch):
     child = _SpawnFakeChild()
-    monkeypatch.setattr("wrap.prover.pexpect.spawn", lambda *args, **kwargs: child)
+    monkeypatch.setattr("wrap.prover._spawn", lambda *args, **kwargs: child)
 
     ProverWrapper("fsp")
 
-    assert child.expected == ["fsp <"]
+    from wrap.prover import REPLY_END
+    assert child.expected == [REPLY_END]
     assert child.delaybeforesend is None
 
 

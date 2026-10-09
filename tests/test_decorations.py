@@ -68,21 +68,23 @@ def test_natural_language_and_tree_renderers_consume_decorations():
 def test_execute_script_handles_decorate_wrapper_only(tmp_path):
     class FakeProver:
         def __init__(self):
+            import threading
             self.echo_notes = False
             self.decorations = {}
             self.commands = []
+            self.lock = threading.RLock()
 
         def register_decoration(self, name, template):
             self.decorations[name] = template
 
-        def send_command(self, command):
+        def send_command(self, command, **kwargs):
             self.commands.append(command)
             return {}
 
     script = tmp_path / "decorations.fspy"
     script.write_text(
         "decorate Bird : '@arg1 is a bird'.\n"
-        'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste}"\n'
+        'decorate Bird_list : "@arg1 ist eine \\\\sn{Liste}".\n'
         "declare A:bool.\n"
     )
     prover = FakeProver()

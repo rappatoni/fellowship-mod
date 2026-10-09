@@ -8,7 +8,7 @@ deny alpha : (A_h-C).
 deny beta : (A_h-D).
 
 # First in one go:
-start argument arg0 A
+argument arg0 : (A).
 cut (A) alt. 
 cut (A) _.
 cut (B -> A) h.
@@ -44,58 +44,58 @@ axiom att2.
 moxia beta.
 axiom h.
 axiom.
-end argument
-render arg1 vanilla
-render arg1
+dixi.
+render arg1 vanilla.
+render arg1.
 
 #Then via argument operations:
 
-start argument arg1 A
+argument arg1 : (A).
 cut (A_h -> A) h.
 axiom f_h.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument sup1 A
+argument sup1 : (A).
 cut (B -> A) h.
 axiom f.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start counterargument counter1 A_h
+counterargument counter1 : (A_h).
 cut (A_h - C) att.
 elim.
 next.
 axiom.
 moxia alpha.
-end argument
+dixi.
 
-start counterargument counter2 A_h
+counterargument counter2 : (A_h).
 cut (A_h - D) att.
 elim.
 next.
 axiom.
 moxia beta.
-end argument
+dixi.
 
 debate pro open first : A.
 sup1.
 support arg1 sup1.
-hora est.
+cedat tempus.
 debate con open second : A_h.
 counter2.
 support counter1 counter2.
-hora est.
+cedat tempus.
 debate pro open third : A.
 sup1.
 support arg1 sup1.
 rebut counter2 arg1.
 support counter1 counter2.
-hora est.
+cedat tempus.
 
-render third vanilla
-label third
+render third vanilla.
+label third.

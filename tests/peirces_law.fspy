@@ -24,54 +24,54 @@ declare P,Q : bool.
 
 # Option1:
 
-start argument p1 ((P -> Q)->P)->P
-end argument
+argument p1 : (((P -> Q)->P)->P).
+dixi.
 
-start argument s1 ((P -> Q)->P)->P
+argument s1 : (((P -> Q)->P)->P).
 elim f.
-end argument
+dixi.
 
 debate pro open d1 : ((P -> Q)->P)->P.
 p1.
 reinforce s1 p1.
-hora est.
+cedat tempus.
 
-render d1 vanilla
-evaluate d1
+render d1 vanilla.
+evaluate d1.
 
-start argument p2 P
+argument p2 : (P).
 cut ((P -> Q)->P) alpha.
 elim g.
 next.
 elim.
 next.
 axiom alpha.
-end argument
+dixi.
 
 debate pro open d2 : ((P -> Q)->P)->P.
 p1.
 reinforce s1 p1.
 reinforce p2 s1.
-hora est.
+cedat tempus.
 
-render d2 vanilla
+render d2 vanilla.
 
-start argument s2 P
+argument s2 : (P).
 cut (P->Q) beta.
 elim h.
-end argument
+dixi.
 
 debate pro open d3 : ((P -> Q)->P)->P.
 p1.
 reinforce s1 p1.
 reinforce p2 s1.
 reinforce s2 p2.
-hora est.
-render d3 vanilla
+cedat tempus.
+render d3 vanilla.
 
-start argument p3 Q
+argument p3 : (Q).
 cut (P) gamma.
-end argument
+dixi.
 
 debate pro open d4 : ((P -> Q)->P)->P.
 p1.
@@ -79,17 +79,17 @@ reinforce s1 p1.
 reinforce p2 s1.
 reinforce s2 p2.
 buttress p3 s2.
-hora est.
-render d4 vanilla
-evaluate d4
-render d4 vanilla evaluated
+cedat tempus.
+render d4 vanilla.
+evaluate d4.
+render d4 vanilla evaluated.
 
-start counterargument s3 P->Q
+counterargument s3 : (P->Q).
 cut ((P->Q)->P) theta.
 next.
 elim.
 axiom theta.
-end argument
+dixi.
 
 debate pro open d5 : ((P -> Q)->P)->P.
 p1.
@@ -98,13 +98,13 @@ reinforce p2 s1.
 reinforce s2 p2.
 buttress p3 s2.
 buttress s3 s2.
-hora est.
-render d5 vanilla
-evaluate d5
-render d5 vanilla evaluated
-label d5
-evaluate d5
-render d5 dialectical evaluated
+cedat tempus.
+render d5 vanilla.
+evaluate d5.
+render d5 vanilla evaluated.
+label d5.
+evaluate d5.
+render d5 dialectical evaluated.
 
 # start argument p1 ((P -> Q)->P)->P
 # end argument

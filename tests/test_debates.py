@@ -3,7 +3,7 @@ ordered selection of the document's arguments, recorded as
 
     debate pro|con open|closed NAME : ISSUE.
     ARG.  /  [VERB] ARG TARGET.
-    hora est.
+    cedat tempus.
 
 compiled on demand, and never part of the document graph."""
 
@@ -46,14 +46,14 @@ def script(prover, text):
 
 FEATHERS = """declare Feathers : bool.
 declare feathered : (Feathers -> Flies).
-start argument feathers Flies
+argument feathers : (Flies).
 cut (Feathers -> Flies) rule.
 axiom feathered.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 """
 
 
@@ -82,12 +82,12 @@ def test_a_closed_debate_hears_only_its_moves(prover):
     assert verdict(prover, "d") == ("open", "UNDEC")        # photo is not in the scope
     record(prover, "undermine photo penguin.")
     assert verdict(prover, "d") == ("value", "IN")
-    record(prover, "hora est.")
+    record(prover, "cedat tempus.")
     assert prover.debates["d"].finished and prover.recording_debate is None
 
 
 def test_an_open_debate_hears_the_document(prover):
-    record(prover, "debate pro open o : Flies.", "tweety.", "hora est.")
+    record(prover, "debate pro open o : Flies.", "tweety.", "cedat tempus.")
     # penguin and photo are registered, so the open debate hears both
     assert verdict(prover, "o") == ("value", "IN")
     graph = prover.debate_graph(prover.debates["o"])
@@ -96,7 +96,7 @@ def test_an_open_debate_hears_the_document(prover):
 
 def test_a_debate_adds_nothing_to_the_document(prover):
     before = (list(prover.graph.edges), dict(prover.graph.defaults))
-    record(prover, "debate pro closed d : Flies.", "tweety.", "rebut penguin tweety.", "hora est.")
+    record(prover, "debate pro closed d : Flies.", "tweety.", "rebut penguin tweety.", "cedat tempus.")
     verdict(prover, "d")
     assert (list(prover.graph.edges), dict(prover.graph.defaults)) == before
     assert "d" not in prover.arguments and prover.names["d"] == "debate"
@@ -111,7 +111,7 @@ def test_a_closed_scope_presumes_only_what_its_arguments_presume(prover):
 
 
 def test_a_citation_brings_the_cited_argument_into_the_scope(prover):
-    script(prover, "start argument citer Flies\ncite tweety.\nend argument\n")
+    script(prover, "argument citer : (Flies).\ncite tweety.\ndixi.\n")
     record(prover, "debate pro closed c : Flies.", "citer.")
     # citer is the bare citation - an identity edge, a default marker only;
     # the argument it cites is in the scope with its edge
@@ -120,7 +120,7 @@ def test_a_citation_brings_the_cited_argument_into_the_scope(prover):
 
 
 def test_a_non_sequitur_is_in_the_scope_but_not_in_the_issue_graph(prover):
-    record(prover, "debate pro closed d : Flies.", "tweety.", "sings.", "hora est.")
+    record(prover, "debate pro closed d : Flies.", "tweety.", "sings.", "cedat tempus.")
     scope = prover.debate_graph(prover.debates["d"])
     assert (K("Sings"), "term") in scope.defaults
     assert "Sings" not in pres_str(prover.debate_term(prover.debates["d"]))
@@ -132,14 +132,14 @@ def test_a_non_sequitur_is_in_the_scope_but_not_in_the_issue_graph(prover):
 
 WINGS = """declare Wings : bool.
 declare winged : (Wings -> Flies).
-start argument wings Flies
+argument wings : (Flies).
 cut (Wings -> Flies) rule.
 axiom winged.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 """
 
 
@@ -147,9 +147,9 @@ def test_the_opening_is_on_top_and_the_rest_in_utterance_order(prover):
     # In the printed term the outermost supporter of a stack comes last.
     script(prover, FEATHERS + WINGS)
     record(prover, "debate pro closed one : Flies.", "tweety.",
-           "support feathers tweety.", "support wings tweety.", "hora est.")
+           "support feathers tweety.", "support wings tweety.", "cedat tempus.")
     record(prover, "debate pro closed two : Flies.", "tweety.",
-           "support wings tweety.", "support feathers tweety.", "hora est.")
+           "support wings tweety.", "support feathers tweety.", "cedat tempus.")
     one = pres_str(prover.debate_term(prover.debates["one"]))
     two = pres_str(prover.debate_term(prover.debates["two"]))
     assert one.rindex("μtweety") > one.rindex("μwings") > one.rindex("μfeathers")

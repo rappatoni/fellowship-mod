@@ -350,6 +350,30 @@ class Done:
     diagnostics: List[Diagnostic] = field(default_factory=list)
 
 
+@dataclass
+class Report:
+    """A document check: one entry per unit of the text, in order - the
+    interpreter's Outcome (wrap/interpreter.py) with its span, status,
+    message, error and result.  ``ok`` holds when nothing was refused or
+    failed; a query the pipeline refused (``reported``) does not count."""
+    entries: List[Any]
+    ok: bool
+    seconds: float
+    diagnostics: List[Diagnostic] = field(default_factory=list)
+
+
+@dataclass
+class ImportReport:
+    """A document imported from another formalism (wrap/importers.py): the
+    text the importer wrote, its provenance (None if the importer gives
+    none) and the check of that text."""
+    language: str
+    text: str
+    sources: Optional[Dict]
+    report: Report
+    diagnostics: List[Diagnostic] = field(default_factory=list)
+
+
 #: Which of an argument's terms `term`/`render`/`tree` can show
 #: (aida-unfold-entrypoints).
 TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
@@ -439,6 +463,56 @@ class Service:
         execute_script(self.session, path, strict=False, stop_on_error=False, isolate=False,
                        new_document=True)
         return Done(f"Loaded {path}.", self.session.doc)
+
+    @_operation
+    def check(self, text: str) -> Report:
+        """Check a whole document: replay ``text`` in a new document of this
+        session and report on every command (tasks.org,
+        aida-document-check).  The check goes on after a refusal or an
+        error, so one pass shows every problem; it stops at ``%stop`` and at
+        a broken prover connection.  Commands only the CLI runs (explain,
+        the deprecated term-level commands, tactic, load) are skipped."""
+        import time
+        from wrap.interpreter import Interpreter
+        from wrap.syntax import parse_units
+        started = time.monotonic()
+        self.session.new_document()
+        interpreter = Interpreter(self.session)
+        entries = []
+        for item in parse_units(text):
+            o = interpreter.execute(item)
+            if o.status == "cli":
+                o.status, o.message = "skipped", "a command only the CLI runs"
+            entries.append(o)
+            if o.status in ("stop", "fatal"):
+                break
+        if interpreter.recording is not None:
+            logger.warning("'%s' was not closed with `dixi.`; it is not registered.",
+                           interpreter.recording["name"])
+        ok = all(o.status not in ("refused", "error", "fatal") for o in entries)
+        return Report(entries, ok, time.monotonic() - started)
+
+    @_operation
+    def import_document(self, language: str, data: Any, *, name: str = "imported") -> ImportReport:
+        """Translate ``data`` (the importer's input, e.g. s(CASP) JSON) with
+        the importer for ``language`` and check the resulting document in
+        a new document of this session.  The provenance, where the importer
+        gives it, maps the document's blocks and binders back to ``data``."""
+        from wrap.importers import (ImporterNotFound, SourceImportError, load_importer,
+                                    missing_importer_message)
+        try:
+            translate = load_importer(language)
+        except ImporterNotFound:
+            raise NotFound(missing_importer_message(language), stage="import")
+        try:
+            result = translate(data)
+        except SourceImportError as e:
+            raise ContentRefused(str(e), stage="import", cause=e)
+        if hasattr(result, "to_fspy_with_sources"):
+            text, sources = result.to_fspy_with_sources(name=name)
+        else:
+            text, sources = result.to_fspy(name=name), None
+        return ImportReport(language, text, sources, self.check(text))
 
     @_operation
     def set_typecheck(self, mode: str) -> Done:
@@ -618,7 +692,7 @@ class Service:
         s = self.session
         if s.recording_debate is not None:
             raise ContentRefused(f"debate '{s.recording_debate}' is still being recorded; "
-                                 f"close it with `hora est.` first.", stage="debate")
+                                 f"close it with `cedat tempus.` first.", stage="debate")
         try:
             debate = Debate(name, issue, onus, scope)
             debate.issue                       # refuse an unreadable issue before claiming the name
@@ -674,7 +748,7 @@ class Service:
         s = self.session
         name = s.recording_debate
         if name is None:
-            raise ContentRefused("hora est: no debate is being recorded.", stage="debate")
+            raise ContentRefused("cedat tempus: no debate is being recorded.", stage="debate")
         debate = s.debates[name]
         if not debate.moves:
             raise ContentRefused(f"debate '{name}' has no move yet; open it with an argument.",

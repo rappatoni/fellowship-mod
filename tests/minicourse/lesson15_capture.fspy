@@ -13,7 +13,7 @@ declare pRule1 : ((Q -> false) -> P).
 declare pRule2 : ((Q -> false) -> P).
 declare qRule : ((P -> false) -> Q).
 
-start argument p1 P
+argument p1 : (P).
 cut ((Q -> false) -> P) rule.
 axiom pRule1.
 elim.
@@ -23,9 +23,9 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-start argument p2 P
+argument p2 : (P).
 cut ((Q -> false) -> P) rule.
 axiom pRule2.
 elim.
@@ -35,9 +35,9 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-start argument q Q
+argument q : (Q).
 cut ((P -> false) -> Q) rule.
 axiom qRule.
 elim.
@@ -47,7 +47,7 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-share p1
-label p1
+share p1.
+label p1.

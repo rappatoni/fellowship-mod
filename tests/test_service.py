@@ -215,3 +215,92 @@ def test_operations_hold_the_session_lock(svc):
     worker.join(5)
     t.join(5)
     assert done
+
+
+# -- checking a whole document (aida-document-check) --------------------------
+
+CHECKED = open("tests/debates.fspy").read() + """debate pro closed d : Flies.
+tweety.
+rebut penguin tweety.
+rebut photo penguin.
+ct.
+evaluate d.
+evaluate nobody.
+explain d.
+argument broken : (Flies).
+axiom nothing.
+dixi.
+"""
+
+
+def test_a_document_check_reports_every_command(svc):
+    import json
+    import jsonschema
+    from wrap.serialize import to_json
+    report = svc.check(CHECKED)
+    out = to_json(report, svc.session)
+    jsonschema.validate(out, json.load(open("wrap/schemas/aida.schema.json")))
+    assert out["kind"] == "report" and out["ok"] is False
+    problems = {(e["span"]["line"], e["command"], e["status"]) for e in out["entries"]
+                if e["status"] not in ("ok", "comment")}
+    assert problems == {(44, "move", "refused"), (47, "evaluate", "reported"),
+                        (48, "explain", "skipped"), (51, "dixi", "refused")}
+    evaluation = next(e for e in out["entries"] if e["command"] == "evaluate" and e["status"] == "ok")
+    assert evaluation["span"]["line"] == 46 and evaluation["result"]["verdict"] == "open"
+
+
+def test_a_check_starts_a_new_document_each_time(svc):
+    first = svc.check("lk.\ndeclare A : bool.\n")
+    second = svc.check("lk.\ndeclare A : bool.\n")
+    assert first.ok and second.ok                        # no "already declared"
+
+
+def test_a_check_stops_at_stop(svc):
+    report = svc.check("lk.\n%stop\ndeclare A : bool.\n")
+    assert [o.status for o in report.entries] == ["ok", "stop"]
+
+
+# -- the transport (aida-transport-limits) -------------------------------------
+
+def test_long_commands_reach_fellowship(svc):
+    s = svc.session
+    names = ",".join(f"X{i}" for i in range(400))
+    svc.command(f"declare {names} : bool.")
+    assert "X399" in s.declarations
+    prop = " -> ".join(f"X{i}" for i in range(300)) + " -> X0"
+    assert len(prop) > 2000
+    state = s.send_command(f"theorem long : ({prop}).", include_ui=True)   # Fellowship itself
+    assert "goal" in str(state.get("goals")) or state.get("goals")
+    s.send_command("discard theorem.")
+
+
+# -- importing (aida-scasp-importer-provenance) -----------------------------------
+
+class _StubImport:
+    def to_fspy_with_sources(self, *, name="imported"):
+        text = 'lk.\ndeclare A:bool.\ndeclare a:(A).\nregister ' + name + ' : A := "μalpha1:A.<a||alpha1>".\n'
+        return text, {"blocks": [{"span": {"line": 4, "col": 1, "end_line": 4, "end_col": 52},
+                                  "kind": "argument", "name": name,
+                                  "source": {"pointer": "/answers/0/tree/0", "atom": "a"}}],
+                      "binders": {"alpha1": {"pointer": "/answers/0/tree/0", "atom": "a"}}}
+
+    def to_fspy(self, *, name="imported"):
+        return self.to_fspy_with_sources(name=name)[0]
+
+
+def test_an_import_is_checked_with_its_provenance(svc, monkeypatch):
+    import json
+    import jsonschema
+    from wrap import importers
+    from wrap.serialize import to_json
+    monkeypatch.setattr(importers, "load_importer",
+                        lambda language: (lambda data: _StubImport()) if language == "stub"
+                        else (_ for _ in ()).throw(importers.ImporterNotFound(language)))
+    report = svc.import_document("stub", {"answers": []}, name="from_stub")
+    out = to_json(report, svc.session)
+    jsonschema.validate(out, json.load(open("wrap/schemas/aida.schema.json")))
+    assert out["kind"] == "import" and out["ok"] is True
+    assert "from_stub" in svc.session.arguments
+    assert out["sources"]["binders"]["alpha1"]["atom"] == "a"
+    with pytest.raises(NotFound):
+        svc.import_document("klingon", {})

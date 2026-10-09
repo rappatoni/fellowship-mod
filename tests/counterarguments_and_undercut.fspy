@@ -10,17 +10,17 @@ declare r2: (StrikeMetro -> ~EfficientMetro).
 #
 # Then an argument to use the metro.
 #
-start argument arg1 UseMetro
+argument arg1 : (UseMetro).
 cut (EfficientMetro -> UseMetro) th.
 axiom r1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 # Next, a counterargument
 #
-start counterargument arg2 EfficientMetro
+counterargument arg2 : (EfficientMetro).
 
 cut (~EfficientMetro) x.
 cut (StrikeMetro -> ~EfficientMetro) th.
@@ -30,25 +30,25 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 # Now we test if arg2 undercuts arg1 on EfficientMetro as intended: 
 #
 debate pro open u1 : UseMetro.
 arg1.
 rebut arg2 arg1.
-hora est.
+cedat tempus.
 #
 # Next, we reduce the resulting argument to confirm that arg1 is defeated and color it.
-evaluate u1
-label u1
+evaluate u1.
+label u1.
 #
 #We add an attacker to the counterargument to test that the original conclusion is restored as intended.
 #
 #
 declare r3: (DealMetro -> ~StrikeMetro).
 #
-start counterargument arg3 StrikeMetro
+counterargument arg3 : (StrikeMetro).
 cut (~StrikeMetro) x.
 cut (DealMetro -> ~StrikeMetro) th.
 axiom r3.
@@ -57,22 +57,22 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 # Introduce the attacker, normalize and color:
 debate pro open u2 : UseMetro.
 arg1.
 rebut arg2 arg1.
 rebut arg3 arg2.
-hora est.
-evaluate u2
-label u2
+cedat tempus.
+evaluate u2.
+label u2.
 #
 # And one last undercut
 #
 declare r4: (LowballOffer -> ~DealMetro).
 #
-start counterargument arg4 DealMetro
+counterargument arg4 : (DealMetro).
 cut (~DealMetro) x.
 cut (LowballOffer -> ~DealMetro) th.
 axiom r4.
@@ -81,7 +81,7 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 # Introduce the attacker, normalize and color:
 debate pro open u3 : UseMetro.
@@ -89,40 +89,40 @@ arg1.
 rebut arg2 arg1.
 rebut arg3 arg2.
 rebut arg4 arg3.
-hora est.
-evaluate u3
-label u3
-tree u3 nl
+cedat tempus.
+evaluate u3.
+label u3.
+tree u3 nl.
 #
 # Now we test an undercut on a laog assumption
 #
 declare BadNegotiations : bool.
 deny r5: (LowballOffer - BadNegotiations).
-start counterargument arg5 LowballOffer
+counterargument arg5 : (LowballOffer).
 cut (LowballOffer - BadNegotiations) th.
 elim.
 next.
 axiom th.
 moxia r5.
-end argument
+dixi.
 #
 # Undercutter
 #
 declare NoCoffee : bool.
 declare r6 : (NoCoffee -> BadNegotiations).
-start argument arg6 BadNegotiations
+argument arg6 : (BadNegotiations).
 cut (NoCoffee -> BadNegotiations) th.
 axiom r6.
 elim.
 next.
 axiom.
-end argument
+dixi.
 # Constructing undercut
 debate con open u4 : LowballOffer.
 arg5.
 rebut arg6 arg5.
-hora est.
+cedat tempus.
 # Reduce, color
-evaluate u4
-render u4 vanilla
-label u4
+evaluate u4.
+render u4 vanilla.
+label u4.

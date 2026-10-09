@@ -475,8 +475,8 @@ class TestWiringNamesDoNotClash:
         script = tmp_path / "wiring.fspy"
         script.write_text("\n".join([
             "lk.", "declare P, Q : bool.", "declare r : (Q -> P).",
-            "start argument p P", "cut (Q -> P) alt1.", "axiom r.", "elim.", "next.", "axiom.",
-            "end argument", ""]))
+            "argument p : (P).", "cut (Q -> P) alt1.", "axiom r.", "elim.", "next.", "axiom.",
+            "dixi.", ""]))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             execute_script(prover, str(script), strict=True, stop_on_error=True, isolate=False)

@@ -12,24 +12,24 @@ declare P, Q, S : bool.
 declare r : (~Q -> P).
 declare n : (S -> (Q -> false)).
 
-start argument s S
+argument s : (S).
 by default.
-end argument
+dixi.
 
-start argument nq (Q -> false)
+argument nq : (Q -> false).
 cut (S -> (Q -> false)) th.
 axiom n.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument p P
+argument p : (P).
 cut (~Q -> P) th.
 axiom r.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-label p
+label p.

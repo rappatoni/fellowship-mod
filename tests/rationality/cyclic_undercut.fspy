@@ -31,36 +31,36 @@ declare rb : (R->B).
 declare bnq : (B->~Q).
 declare anr : (A->~R).
 
-start argument argA A
+argument argA : (A).
 cut (Q->A) r.
 axiom qa.
 elim.
 by default.
 next.
 axiom r.
-end argument
+dixi.
 
-start argument argB B
+argument argB : (B).
 cut (R->B) r.
 axiom rb.
 elim.
 by default.
 next.
 axiom r.
-end argument
+dixi.
 
 % Refute Q from B, B left as an obligation.
-start counterargument cQ Q
+counterargument cQ : (Q).
 cut (B->~Q) th.
 axiom bnq.
 elim.
 next.
 elim.
 axiom.
-end counterargument
+dixi.
 
 % Refute R from A, A taken by default.
-start counterargument cR R
+counterargument cR : (R).
 cut (A->~R) th.
 axiom anr.
 elim.
@@ -68,26 +68,26 @@ by default.
 next.
 elim.
 axiom.
-end counterargument
+dixi.
 
 debate pro open aB : B.
 argB.
 attack cR argB.
-hora est.
+cedat tempus.
 debate con open cQs : Q.
 cQ.
 support argB cQ.
 attack cR argB.
-hora est.
+cedat tempus.
 debate pro open d : A.
 argA.
 attack cQ argA.
 support argB cQ.
 attack cR argB.
-hora est.
+cedat tempus.
 
-graph d
-label d
-label d preferred
-evaluate d credulous
-evaluate d skeptical
+graph d.
+label d.
+label d preferred.
+evaluate d credulous.
+evaluate d skeptical.

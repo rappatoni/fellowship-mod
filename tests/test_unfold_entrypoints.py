@@ -264,8 +264,8 @@ def test_an_unfolded_term_is_cached_until_the_document_changes(fresh, tmp_path):
     run(fresh, script)
     after_declaration = fresh.unfolded_term(p1)
     assert after_declaration is not first                        # a declaration makes it stale
-    script.write_text("start argument p4 B\ncut (A -> B) th.\naxiom r1.\nelim.\nby default.\n"
-                      "next.\naxiom.\nend argument\n")
+    script.write_text("argument p4 : (B).\ncut (A -> B) th.\naxiom r1.\nelim.\nby default.\n"
+                      "next.\naxiom.\ndixi.\n")
     run(fresh, script)
     term = fresh.unfolded_term(p1)
     assert term is not after_declaration and "p4" in pres_str(term)   # so does an argument
@@ -274,15 +274,15 @@ def test_an_unfolded_term_is_cached_until_the_document_changes(fresh, tmp_path):
 def test_the_cli(fresh, tmp_path, caplog):
     script = tmp_path / "cli.fspy"
     script.write_text(open(ENTRYPOINTS).read() + "\n".join([
-        "unfold argument p1",
-        "unfold issue :B",
-        "unfold debate whatever",
-        "evaluate p1 credulous",
-        "evaluate issue :B credulous",
-        "evaluate issue F: skeptical",
-        "evaluate p1 credulous favour",
-        "render p1 evaluated",
-        "label issue :B",
+        "unfold argument p1.",
+        "unfold issue :B.",
+        "unfold debate whatever.",
+        "evaluate p1 credulous.",
+        "evaluate issue :B credulous.",
+        "evaluate issue F: skeptical.",
+        "evaluate p1 credulous favour.",
+        "render p1 evaluated.",
+        "label issue :B.",
     ]) + "\n")
     with caplog.at_level(logging.INFO):
         run(fresh, script)

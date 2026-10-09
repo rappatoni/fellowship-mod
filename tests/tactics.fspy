@@ -4,18 +4,18 @@ lk.
 
 declare A,B,C : bool.
 
-start argument implication_elimination B
+argument implication_elimination : (B).
 cut (A->B) H.
 next.
 elim.
 next.
 axiom.
 
-end argument
+dixi.
 
 # A -> \bar{B}, \bar{B} -> A connective definitions.
 
-start counterargument mixed_impl B
+counterargument mixed_impl : (B).
 cut (false) x.
 cut (B->false) y.
 cut (A->B->false) z.
@@ -27,4 +27,4 @@ elim.
 axiom.
 axiom.
 elim.
-end counterargument
+dixi.

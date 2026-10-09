@@ -11,24 +11,24 @@ lk.
 declare P,Q:bool.
 declare pRule : (Q->P).
 
-start argument pOpen P
+argument pOpen : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 next.
 axiom rule.
-end argument
+dixi.
 
-start argument pPres P
+argument pPres : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 
-label pOpen
-evaluate pOpen
-label pPres
-evaluate pPres
+label pOpen.
+evaluate pOpen.
+label pPres.
+evaluate pPres.

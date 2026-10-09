@@ -13,51 +13,51 @@ declare A,B:bool.
 # S4': A:!
 # P4': A! A:! -| 
 
-start argument p1 A -> B -> A
-end argument
+argument p1 : (A -> B -> A).
+dixi.
 
-start argument s1  A -> B -> A
+argument s1 : (A -> B -> A).
 elim x.
-end argument
+dixi.
 
 debate pro open d1 : A -> B -> A.
 p1.
 reinforce s1 p1.
-hora est.
+cedat tempus.
 
-start argument p2 B -> A
+argument p2 : (B -> A).
 cut ( B -> A ) alpha.
-end argument
+dixi.
 
-start argument s2 B -> A
+argument s2 : (B -> A).
 elim y.
-end argument
+dixi.
 
-start argument p3 A
+argument p3 : (A).
 cut (A) gamma.
-end argument
+dixi.
 
-start counterargument s2alt B -> A
-end counterargument
+counterargument s2alt : (B -> A).
+dixi.
 
-start counterargument p3alt B -> A
+counterargument p3alt : (B -> A).
 elim.
-end counterargument
+dixi.
 
-start argument s4alt B
+argument s4alt : (B).
 cut B gamma.
 next.
 elim.
-end argument
+dixi.
 
-start argument p4alt B
+argument p4alt : (B).
 cut A iota.
-end argument
+dixi.
 
 # Use here x:A
 
-start argument s5alt A
+argument s5alt : (A).
 cut A iota.
-end argument
+dixi.
 
 

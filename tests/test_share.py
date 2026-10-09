@@ -265,18 +265,18 @@ def chain_script(levels):
     for i in range(1, levels + 1):
         for a in range(2):
             lines.append(f"declare r{i}_{a} : (P{i-1} -> P{i}).")
-    lines += ["start argument a0 P0", "by default.", "end argument"]
+    lines += ["argument a0 : (P0).", "by default.", "dixi."]
     for i in range(1, levels + 1):
         for a in range(2):
-            lines += [f"start argument a{i}_{a} P{i}", f"cut (P{i-1} -> P{i}) th.",
-                      f"axiom r{i}_{a}.", "elim.", "next.", "axiom.", "end argument"]
+            lines += [f"argument a{i}_{a} : (P{i}).", f"cut (P{i-1} -> P{i}) th.",
+                      f"axiom r{i}_{a}.", "elim.", "next.", "axiom.", "dixi."]
     return "\n".join(lines) + "\n"
 
 
 class TestShareCommand:
     def test_share_prints_the_named_sub_debate(self, fresh, tmp_path, capsys):
         script = tmp_path / "double.fspy"
-        script.write_text(chain_script(2) + "share a2_0\n")
+        script.write_text(chain_script(2) + "share a2_0.\n")
         run(fresh, script)
         out = capsys.readouterr().out
         assert "Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:" in out
@@ -285,7 +285,7 @@ class TestShareCommand:
 
     def test_an_authors_citation_keeps_its_name(self, fresh, tmp_path, capsys):
         script = tmp_path / "cited.fspy"
-        script.write_text(open("tests/statements_and_citations.fspy").read() + "\nshare use\n")
+        script.write_text(open("tests/statements_and_citations.fspy").read() + "\nshare use.\n")
         run(fresh, script)
         out = capsys.readouterr().out
         assert "efficient:EfficientMetro*th:UseMetro" in out
@@ -308,7 +308,7 @@ class TestShareCommand:
 
     def test_label_is_unchanged_by_sharing(self, fresh, tmp_path, capsys, caplog):
         script = tmp_path / "double.fspy"
-        script.write_text(chain_script(2) + "label a2_0\ndebate a2_0\nlabel a2_0\n")
+        script.write_text(chain_script(2) + "label a2_0.\ndebate a2_0.\nlabel a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records
@@ -325,23 +325,23 @@ SPELLINGS = """lk.
 declare P, Q, S : bool.
 declare r : (~Q -> P).
 declare n : (S -> (Q -> false)).
-start argument s S
+argument s : (S).
 by default.
-end argument
-start argument nq (Q -> false)
+dixi.
+argument nq : (Q -> false).
 cut (S -> (Q -> false)) th.
 axiom n.
 elim.
 next.
 axiom.
-end argument
-start argument p P
+dixi.
+argument p : (P).
 cut (~Q -> P) th.
 axiom r.
 elim.
 next.
 axiom.
-end argument
+dixi.
 """
 
 
@@ -413,7 +413,7 @@ class TestTypeCheckPerDefinition:
         # per-definition check alone would accept what the replay of the
         # expanded term refuses; spelling_clashes makes the CLI replay that.
         script = tmp_path / "spellings.fspy"
-        script.write_text(SPELLINGS + "label p\n")
+        script.write_text(SPELLINGS + "label p.\n")
         run(fresh, script)
         out = capsys.readouterr().out
         doc = fresh.graph
@@ -434,13 +434,13 @@ class TestTypeCheckPerDefinition:
 
     def test_the_typecheck_command_selects_the_mode(self, fresh, tmp_path, capsys):
         script = tmp_path / "modes.fspy"
-        script.write_text("lk.\ntypecheck expanded\n")
+        script.write_text("lk.\ntypecheck expanded.\n")
         run(fresh, script)
         assert fresh.typecheck_enabled and fresh.typecheck_expanded
-        script.write_text("typecheck on\n")
+        script.write_text("typecheck on.\n")
         run(fresh, script)
         assert fresh.typecheck_enabled and not fresh.typecheck_expanded
-        script.write_text("typecheck off\nlk.\n")
+        script.write_text("typecheck off.\nlk.\n")
         run(fresh, script)
         assert not fresh.typecheck_enabled        # the switch survives a new document
 
@@ -577,7 +577,7 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("pipeline shared\nlabel a12_0\ngraph a12_0\n")
+        script.write_text("pipeline shared.\nlabel a12_0.\ngraph a12_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records if r.getMessage().strip().endswith(" IN")]
@@ -594,7 +594,7 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.dc.instances, "compile_issue_shared", broken)
-        script.write_text("pipeline shared\nlabel a2_0\n")
+        script.write_text("pipeline shared.\nlabel a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
@@ -733,7 +733,7 @@ class TestEvaluateCommand:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("pipeline shared\nevaluate a12_0 skeptical grounded\n")
+        script.write_text("pipeline shared.\nevaluate a12_0 skeptical grounded.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
@@ -762,15 +762,15 @@ class TestEvaluateCommand:
             return [r.getMessage() for r in caplog.records
                     if "Evaluated 'a2_0'" in r.getMessage() or r.getMessage().strip().endswith(" IN")]
 
-        shared = evaluated("pipeline shared\nevaluate a2_0\nlabel a2_0\n")
+        shared = evaluated("pipeline shared.\nevaluate a2_0.\nlabel a2_0.\n")
         assert calls == []
-        unfolded = evaluated("pipeline unfolded\nevaluate a2_0\nlabel a2_0\n")
+        unfolded = evaluated("pipeline unfolded.\nevaluate a2_0.\nlabel a2_0.\n")
         # the argument's term is unfolded once and kept: label reuses it
         # (aida-unfold-entrypoints)
         assert calls == ["a2_0"]
         assert fresh.pipeline_unfolded
         assert shared == unfolded and len(shared) == 4      # the verdict and three labels
-        evaluated("pipeline shared\nevaluate a2_0\n")
+        evaluated("pipeline shared.\nevaluate a2_0.\n")
         assert calls == ["a2_0"] and not fresh.pipeline_unfolded
 
     def test_a_failure_of_the_shared_evaluator_falls_back_to_the_unfolded_term(
@@ -784,7 +784,7 @@ class TestEvaluateCommand:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.comp.evaluate, "evaluate_shared", broken)
-        script.write_text("pipeline shared\nevaluate a2_0\n")
+        script.write_text("pipeline shared.\nevaluate a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]

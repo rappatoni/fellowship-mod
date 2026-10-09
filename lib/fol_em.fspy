@@ -15,7 +15,7 @@ declare implfi : (forall p:form, forall q:form, (truef [p] -> truef [q]) -> true
 declare Q : form.
 
 theorem em : (truef [orf Q (implf Q botf)]).
-prove em
+prove em.
 cut (forall p:form, forall q:form, truef [q] -> truef [orf p q]) th.
 axiom orfi2.
 elim [Q].

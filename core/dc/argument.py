@@ -517,7 +517,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             raise StrictnessRefused(
                 f"'{self.name}' is not strict, so it cannot be a theorem: "
                 + "; ".join(open_sites)
-                + ". Discharge them, or end with `end argument` to keep it as a defeasible argument."
+                + ". Discharge them, or end with `dixi.` to keep it as a defeasible argument."
             )
         if declare is True or (declare == "auto" and not open_sites):
             try:

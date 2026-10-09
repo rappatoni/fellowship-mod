@@ -48,11 +48,29 @@ _REFINABLE = {"recording", "statement"}
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
 
+#: The end of one reply in machine mode: the machine block's end, then the
+#: prompt.  Waiting for both, not for the prompt alone, keeps a stray prompt
+#: (seen once in a while on the first exchange over pipes) from shifting
+#: every later reply by one command.
+REPLY_END = re.compile(r";;END_ML_DATA;;\s*fsp <")
+
 #: Fellowship's logic toggles: valid only before a document's first
 #: instruction.
 LOGIC_TOGGLES = ("lk", "lj", "minimal", "full")
 _LOGIC_REPLY = re.compile(r"Current logic:\s*(minimal\s+)?\s*(intuitionistic|classic)")
 _TOO_LATE = "Only the first instructions can be used to specify a logical setting"
+
+
+def _spawn(prover_cmd: str, env: dict):
+    """The Fellowship process.  Pipes by default: a pty limits a line to
+    1024 bytes in canonical mode (macOS), so a long command used to hang
+    until the timeout (aida-transport-limits).  ACDC_TRANSPORT=pty keeps the
+    old pty; ACDC_TIMEOUT (seconds, default 5) bounds one command."""
+    timeout = float(os.getenv("ACDC_TIMEOUT", "5"))
+    if os.getenv("ACDC_TRANSPORT", "pipe").lower() == "pty":
+        return pexpect.spawn(prover_cmd, encoding='utf-8', timeout=timeout, env=env)
+    from pexpect.popen_spawn import PopenSpawn
+    return PopenSpawn(prover_cmd, encoding='utf-8', timeout=timeout, env=env)
 
 
 def _env_flag(name: str, default: str, true_values=("1", "true", "yes", "on")) -> bool:
@@ -73,8 +91,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         env_used = (env or os.environ).copy()
         env_used.setdefault("FSP_MACHINE", "1")
 
-        self.prover = pexpect.spawn(prover_cmd, encoding='utf-8', timeout=5, env=env_used)
-        self.prover.expect('fsp <')
+        self.prover = _spawn(prover_cmd, env_used)
+        self.prover.expect(REPLY_END)
         # Pexpect sleeps for 50 ms before every send by default.  Fellowship is
         # already at a stable prompt here and does not perform password-style
         # terminal echo negotiation, so that defensive delay only adds linear
@@ -214,12 +232,19 @@ TODO: Mechanism to declare a scenario of default assumptions.
             state.pop("_ui", None)
         return state
 
+    def _reply(self) -> str:
+        """The text of the reply just read: what came before the match and
+        the matched machine-block end, without the prompt."""
+        after = getattr(self.prover, "after", None)
+        after = after if isinstance(after, str) else ""
+        return self.prover.before + after[: after.rfind("fsp <")] if after else self.prover.before
+
     def _send(self, command: str, silent: int = 1, *, include_ui: bool = False, allow_incomplete: bool = False) -> Dict[str, Any]:
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
             self.prover.sendline(command)
-            self.prover.expect('fsp <')
+            self.prover.expect(REPLY_END)
         except PexpectTIMEOUT as e:
             if allow_incomplete:
                 # The prover may be waiting for a continuation line / trailing '.'
@@ -235,7 +260,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
             logger.error("pexpect EOF on command %r: %s", command, e)
             raise ProverError(f"Prover I/O EOF: {e}") from e
 
-        output = self.prover.before
+        output = self._reply()
         logger.log(5, "<< %s", output)
         return self._finalize_state_from_output(
             output,
@@ -270,8 +295,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         try:
             self.prover.send(block + "\n")
             for _cmd in cleaned:
-                self.prover.expect('fsp <')
-                outputs.append(self.prover.before)
+                self.prover.expect(REPLY_END)
+                outputs.append(self._reply())
         except PexpectTIMEOUT as e:
             logger.error("pexpect timeout on command batch %r: %s", cleaned, e)
             raise ProverError(f"Prover I/O timeout during command batch: {e}") from e
@@ -746,7 +771,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
     @property
     def recording_debate(self) -> Optional[str]:
         """The name of the debate being recorded (between its header and
-        ``hora est.``), or None."""
+        ``cedat tempus.``), or None."""
         return self.doc.recording_debate
 
     @recording_debate.setter
@@ -877,4 +902,12 @@ TODO: Mechanism to declare a scenario of default assumptions.
         try:
             self.prover.sendline('quit.')
         finally:
-            self.prover.close()
+            close = getattr(self.prover, "close", None)
+            if close is not None:
+                close()
+            else:                                  # a pipe process
+                proc = self.prover.proc
+                try:
+                    proc.wait(timeout=2)
+                except Exception:
+                    proc.kill()

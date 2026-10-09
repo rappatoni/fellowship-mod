@@ -23,7 +23,7 @@ declare A,B,C:bool.
 declare abc : (A->(B->C)).
 declare axA : (A).
 
-start argument cArg C
+argument cArg : (C).
 cut (A->(B->C)) r.
 axiom abc.
 elim.
@@ -32,20 +32,20 @@ elim.
 by default.
 next.
 axiom r.
-end argument
+dixi.
 
-start argument aArg A
+argument aArg : (A).
 axiom axA.
-end argument
+dixi.
 
 debate pro open d5 : C.
 cArg.
 support aArg cArg.
-hora est.
+cedat tempus.
 
-start counterargument test (B->C)
+counterargument test : (B->C).
 by default.
-end counterargument
+dixi.
 
 debate pro open d6 : C.
 cArg.
@@ -53,6 +53,6 @@ support aArg cArg.
 % was `attack test cArg.`: B->C: is not a node of 'cArg' yet (an intermediate
 % conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
 test cArg.
-hora est.
-label d6
-graph d6
+cedat tempus.
+label d6.
+graph d6.

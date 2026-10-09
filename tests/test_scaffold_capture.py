@@ -149,8 +149,8 @@ def test_the_attacker_wing_root_is_the_attacks_alt(fresh):
 def reordered(tmp_path):
     """tests/circular_supporter.fspy with other registered last."""
     text = open(CIRCULAR).read()
-    other = re.search(r"start argument other A.*?end argument\n", text, re.S).group(0)
-    back = re.search(r"start argument back A.*?end argument\n", text, re.S).group(0)
+    other = re.search(r"argument other : \(A\)\..*?dixi\.\n", text, re.S).group(0)
+    back = re.search(r"argument back : \(A\)\..*?dixi\.\n", text, re.S).group(0)
     path = tmp_path / "other_last.fspy"
     path.write_text(text.replace(other, "@@").replace(back, other).replace("@@", back))
     return path

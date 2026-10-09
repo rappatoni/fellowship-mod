@@ -15,29 +15,29 @@ declare axB:(A).
 
 
 % base: A proved by axiom (we want a well-typed closed term to support)
-start argument base A
-end argument
+argument base : (A).
+dixi.
 
 % supporter 1: prove A by using declared constant a:A
-start argument s1 A
+argument s1 : (A).
 axiom axA.
-end argument
+dixi.
 
 % supporter 2: prove A by using declared constant a:A
-start argument s2 A
+argument s2 : (A).
 axiom axB.
-end argument
+dixi.
 
 % Apply supports sequentially
 debate pro open base_s1 : A.
 base.
 support s1 base.
-hora est.
+cedat tempus.
 debate pro open base_s1_s2 : A.
 base.
 support s1 base.
 support s2 s1.
-hora est.
+cedat tempus.
 
 % Normalize and render proof-term (cached in python objects)
-evaluate base_s1_s2
+evaluate base_s1_s2.

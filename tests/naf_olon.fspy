@@ -10,7 +10,7 @@ declare rRule : (P -> R).
 # assumption each argument rests on.
 
 # argument Pfirst derives P from geled R
-start argument Pfirst P
+argument Pfirst : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
@@ -24,10 +24,10 @@ by default.
 next.
 axiom.
 axiom rule.
-end argument
+dixi.
 
 # argument Qfirst derives Q from geled R
-start argument Qfirst Q
+argument Qfirst : (Q).
 cut ((R->false)->Q) rule.
 axiom qRule.
 elim.
@@ -37,10 +37,10 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
 # argument Rfirst derives R from geled R
-start argument Rfirst R
+argument Rfirst : (R).
 cut (P->R) rule.
 axiom rRule.
 elim.
@@ -58,4 +58,4 @@ next.
 axiom.
 axiom rule2.
 axiom rule.
-end argument
+dixi.

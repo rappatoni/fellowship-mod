@@ -8,37 +8,37 @@ declare r2: (C -> A).
 #
 # Supported Argument
 #
-start argument arg1 B
+argument arg1 : (B).
 cut (A -> B) th.
 axiom r1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 # Supporter
 #
-start argument sup1 A
+argument sup1 : (A).
 cut (C -> A) th.
 axiom r2.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 # Construct support, reduce, color.
 debate pro open first : B.
 arg1.
 support sup1 arg1.
-hora est.
-render first vanilla
-evaluate first
-label first
+cedat tempus.
+render first vanilla.
+evaluate first.
+label first.
 #
 # Now we test a defeated supporter
 #
 declare r3: (D -> ~C).
-start counterargument counter C
+counterargument counter : (C).
 cut (~C) x.
 cut (D -> ~C) th.
 axiom r3.
@@ -47,7 +47,7 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 # Applying undercut to debate "first"
 #
@@ -55,9 +55,9 @@ debate pro open second : B.
 arg1.
 support sup1 arg1.
 rebut counter sup1.
-hora est.
+cedat tempus.
 #
 # Render, reduce, color
-render second vanilla
-evaluate second
-label second
+render second vanilla.
+evaluate second.
+label second.

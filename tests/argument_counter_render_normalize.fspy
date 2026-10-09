@@ -1,9 +1,9 @@
 declare A : bool.
 deny mA : (A).
-start counterargument notA A
-moxia mA
-end argument
+counterargument notA : (A).
+moxia mA.
+dixi.
 #TODO: Rendering still needs to cover moxia use.
-render notA
-normalize notA
-render-nf notA
+render notA.
+normalize notA.
+render-nf notA.

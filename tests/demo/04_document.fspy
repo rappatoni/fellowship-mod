@@ -6,32 +6,32 @@ declare Bird, Penguin, Flies : bool.
 declare bird : (Bird).
 declare penguins_dont_fly : (Penguin -> ~Flies).
 # tweety: Tweety flies, being a bird, since birds fly - by default.
-start argument tweety Flies
+argument tweety : (Flies).
 cut (Bird -> Flies) birds_fly.
 by default.
 next.
 elim.
 axiom bird.
 axiom birds_fly.
-end argument
+dixi.
 # Before anyone objects, Tweety flies:
-label tweety
+label tweety.
 %stop
 # ---- paste from here ----------------------------------------------------
 # Now the fact comes in: Tweety is a penguin.  Register the counterargument.
 # No verb, no composition - just another argument in the file.
 declare penguin : (Penguin).
-start counterargument grounded_penguin Flies
+counterargument grounded_penguin : (Flies).
 cut (Penguin -> ~Flies) rule.
 axiom penguins_dont_fly.
 elim.
 axiom penguin.
 elim.
 axiom.
-end counterargument
+dixi.
 # Proposition identity is global to the document: every use of Flies is
 # contested, and this refutation is strict - two axioms.  Tweety is grounded.
-graph document
-label tweety
-evaluate tweety skeptical
-evaluate tweety credulous
+graph document.
+label tweety.
+evaluate tweety skeptical.
+evaluate tweety credulous.

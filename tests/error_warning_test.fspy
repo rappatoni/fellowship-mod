@@ -13,7 +13,7 @@ declare axAB: (A->B).
 #This should prompt the user to specify a name/body.
 #theorem test (A).
 theorem test : (A).
-prove test
+prove test.
 #This should inform the user that there is nothing to elim:
 #elim.
 #This should prompt the user to work some more:

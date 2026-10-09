@@ -25,42 +25,42 @@ declare pRule : (Q->P).
 declare sq : (S->Q).
 
 % P from Q, Q taken by default.
-start argument pArg P
+argument pArg : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 
 % Q from S, S taken by default.
-start argument yQ Q
+argument yQ : (Q).
 cut (S->Q) r.
 axiom sq.
 elim.
 by default.
 next.
 axiom r.
-end argument
+dixi.
 
 % A by-default challenge to S.
-start counterargument sChal S
+counterargument sChal : (S).
 by default.
-end counterargument
+dixi.
 
 debate pro open yAtt : Q.
 yQ.
 attack sChal yQ.
-hora est.
+cedat tempus.
 debate pro open d : P.
 pArg.
 support yQ pArg.
 attack sChal yQ.
-hora est.
+cedat tempus.
 
-graph d show
-label d preferred
-evaluate d credulous 2
-evaluate d credulous 1
-evaluate d credulous all
+graph d show.
+label d preferred.
+evaluate d credulous 2.
+evaluate d credulous 1.
+evaluate d credulous all.

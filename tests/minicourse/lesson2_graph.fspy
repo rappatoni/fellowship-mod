@@ -10,7 +10,7 @@ declare A,B,C:bool.
 declare abc : (A->(B->C)).
 declare axB : (B).
 
-start argument cArg C
+argument cArg : (C).
 cut (A->(B->C)) r.
 axiom abc.
 elim.
@@ -18,15 +18,15 @@ next.
 elim.
 next.
 axiom r.
-end argument
+dixi.
 
-start argument bArg B
+argument bArg : (B).
 axiom axB.
-end argument
+dixi.
 
 debate pro open d2 : C.
 cArg.
 support bArg cArg.
-hora est.
+cedat tempus.
 
-graph d2 show
+graph d2 show.

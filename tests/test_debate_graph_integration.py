@@ -37,7 +37,7 @@ def _debate_graph(prover, *lines):
     for line in lines:
         assert debate_line(prover, line), line
     debate = prover.debates[prover.recording_debate]
-    assert debate_line(prover, "hora est.")
+    assert debate_line(prover, "cedat tempus.")
     _arg, _issue, term, _shared = _debate_issue(prover, debate)
     return compile_issue(term, debate.name, strict_names=prover.declarations.keys(),
                          strict_kinds=declaration_kinds(prover.declarations))

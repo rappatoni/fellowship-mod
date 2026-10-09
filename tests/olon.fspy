@@ -6,47 +6,47 @@ deny rule2 : (B - C).
 declare rule3 : (A -> C).
 declare rule4: (A -> C -> false).
 
-start argument first A
+argument first : (A).
 cut (B->A) rule.
 axiom rule1.
 elim.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-start counterargument second B
+counterargument second : (B).
 cut (B-C) rule.
 elim.
 by default.
 next.
 axiom.
 moxia rule2.
-end argument
+dixi.
 
-start argument third C
+argument third : (C).
 cut (A->C) rule.
 axiom rule3.
 elim.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
 # This is an example of a positive loop: A can defend itself against C by counter attacking.
 debate pro open intermediate : A.
 first.
 attack second first.
-hora est.
+cedat tempus.
 debate pro open final : A.
 first.
 attack second first.
 attack third second.
-hora est.
+cedat tempus.
 # But we want to prevent infinite loops where first is now again introduced as a supporter for third. How to do this?
 
 
-start counterargument olonMaker C
+counterargument olonMaker : (C).
 cut (A->C->false) rule.
 axiom rule4.
 elim.
@@ -55,17 +55,17 @@ next.
 elim.
 axiom.
 elim.
-end counterargument
+dixi.
 
-register olonMaker2 : C := μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>
+register olonMaker2 : C := "μ'test:C.<test:C||μ'rule:C.<rule4:A->C->false||!1.2.1:A*rule:C*_F_>>".
 # register test : C := μ'olon_maker:C.<olon_maker:C||μ'rule:C.<rule4:A->C->false||1.2.1:A!*rule:C*_F_>>
 
-start counterargument neg_tester ~A
+counterargument neg_tester : (~A).
 elim.
-end argument
+dixi.
 
 deny elur1: (true - A - B).
-start argument tester A
+argument tester : (A).
 cut (true - A - B) elur.
 elim.
 by default.
@@ -74,12 +74,12 @@ elim.
 axiom.
 elim.
 moxia elur1.
-end argument
+dixi.
 
-register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
+register tester2 : A := "μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>".
 
 debate pro open olon : A.
 first.
 attack second first.
 support olonMaker second.
-hora est.
+cedat tempus.

@@ -389,6 +389,10 @@ environment variable for the whole session so a run leaves no files behind.
 
 - `FSP_ECHO_NOTES` (default `1`, i.e. on) — set to `0`/`false`/`no` to
   suppress echoing Fellowship's informational notes.
+- `ACDC_TIMEOUT` (default `5`) — seconds one Fellowship command may take.
+- `ACDC_TRANSPORT` (default `pipe`) — how AIDA talks to Fellowship: pipes,
+  where commands of any length work; `pty` restores the old terminal, whose
+  lines are limited to 1024 bytes on macOS.
 - `FSP_BATCH_REPLAY` (default `1`, i.e. on) — set to `0`/`false`/`no` to send
   each instruction of a recorded argument to Fellowship one at a time instead
   of batching them into fewer round-trips. Mainly useful for debugging replay
@@ -429,6 +433,13 @@ declarations, names, arguments, document graph, debates and caches.
 
 ### The service layer
 
+For a program serving AIDA - the document UI, say - read
+`docs/dui-integration.md`: sessions and concurrency, checking a whole
+document (`Service.check`: one entry per command, with its span, status and
+result), the queries, the JSON formats (`wrap/serialize.py`, described by
+`wrap/schemas/aida.schema.json`), errors, and importing from s(CASP) with
+provenance. `examples/http_adapter.py` is a runnable reference server.
+
 `wrap/service.py` is what a program (the coming HTTP API for the document
 UI, a notebook, a test) calls instead of the CLI. `Service.of(session)`
 offers the documents (`new_document`, `load`, `inventory`), the settings,
@@ -443,26 +454,48 @@ stable `code` and the stage that refused. The CLI prints these results.
 The deprecated term-level commands, `tactic` and `explain` stay CLI-only,
 and proofs are recorded as whole blocks.
 
+## Command syntax
+
+Scripts and the REPL share one syntax (`wrap/syntax.py`), run by one
+interpreter (`wrap/interpreter.py`):
+
+- **Every command ends with a `.`**, wrapper commands included
+  (`evaluate tweety.`). A command may span several lines, and several may
+  share one (`minimal. lk.`). The command lists below leave the final `.`
+  out.
+- **Every `.` outside double quotes ends a command**, so what contains dots
+  is double-quoted: proof terms (`register t : B := "μx:B.<ax||x>".`),
+  decoration templates and file names (`load "tests/demo/01_arguments.fspy".`,
+  `graph d "out.dot" show.`). A single quote is an ordinary character
+  (`A'`, the binder `μ'`).
+- **Blocks:** `argument NAME : (PROP).` or `counterargument NAME : (PROP).`,
+  then Fellowship tactics (and `cite NAME.`), closed by `dixi.`; a statement's
+  proof, `prove NAME.` ... `qed.` (strict) or `dixi.` (registered either
+  way); a debate, `debate ... : ISSUE.`, its moves, `cedat tempus.`.
+- **Fellowship's own commands and tactics** (`declare`, `deny`, `cut`,
+  `axiom`, `elim`, `by default`, ...) pass through unchanged: Fellowship's
+  parser stays their only grammar.
+- Lines starting with `#` are narration (shown), with `%` silent; `%stop`
+  ends a script.
+- The forms this syntax replaced (`start argument`, `end argument`,
+  `hora est.`) are refused with their replacement; `tools/migrate_syntax.py`
+  rewrites old files.
+
 ## Interactive commands
 
-Interactive mode accepts:
-- ordinary Fellowship commands
-- wrapper commands for recording, normalization, rendering, and debate building
-
-Many Fellowship commands are dot-terminated. If a command is incomplete,
-`acdc` prompts for continuation with `...`.
+Interactive mode accepts the commands of scripts. A command without its
+final `.` asks for more with `...`; `exit` or `quit` leaves.
 
 Syntax/prover errors are non-fatal in the interactive wrapper unless the wrapper
 detects a machine-mode desynchronization.
 
 ### Recording commands
 
-- `start argument NAME CONCLUSION`
-  - begin recording a theorem-backed argument
-- `start counterargument NAME CONCLUSION`
-- `start antitheorem NAME CONCLUSION`
-  - begin recording a counterargument / antitheorem-backed argument
-- `end argument`
+- `argument NAME : (CONCLUSION)`
+  - begin recording an argument
+- `counterargument NAME : (CONCLUSION)`
+  - begin recording a counterargument (an argument against CONCLUSION)
+- `dixi`
   - finish recording, execute the proof against Fellowship, and register it;
     if its body is closed, Fellowship also keeps it as a theorem, so
     `axiom NAME` cites it
@@ -499,7 +532,7 @@ everywhere, so it never holds a defeasible argument.
   be collected first and proved later.
 - **Refinement.** `prove foo` reopens foo, replaying what it has so far, so the
   proof continues from its open goals, presumptions included. It ends with
-  `qed.`, which demands a strict witness, or `end argument`, which registers
+  `qed.`, which demands a strict witness, or `dixi.`, which registers
   the result either way. Proving a claim is refining its enthymeme; any
   defeasible argument can be refined the same way. The result replaces the
   argument in place, keeping its position in registration order, and the
@@ -560,7 +593,7 @@ everywhere, so it never holds a defeasible argument.
 
 ### Debate-graph commands
 
-Every atomic argument you register (`start argument ... end argument`,
+Every atomic argument you register (`argument ... dixi.`,
 `register`) adds its hyperedges to one **document graph** for the whole
 file; proposition identity is global to it, so a counterargument to Q
 registered anywhere contests every use of Q. A debate (see *Debates*)
@@ -671,10 +704,10 @@ worked examples of every shape.
 
 ### Registering proof terms directly
 
-- `register NAME [strict] : TYPE := PROOF_TERM`
+- `register NAME [strict] : TYPE := "PROOF_TERM"`
   - replay a hand-written proof term against Fellowship and register the
-    result as a named argument, without going through `start argument` /
-    `end argument`. `TYPE` is the conclusion proposition; `PROOF_TERM` is
+    result as a named argument, without going through `argument` /
+    `dixi.`. The term is double-quoted: it contains dots. `TYPE` is the conclusion proposition; `PROOF_TERM` is
     parsed with the same proof-term grammar used elsewhere in AIDA (see
     *First-order logic* and `pres/` for term syntax). Without `strict`, the
     replayed theorem is discarded after the wrapper extracts the argument
@@ -682,7 +715,7 @@ worked examples of every shape.
     actually declares the theorem/antitheorem.
 
   ```text
-  register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
+  register tester2 : A := "μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>".
   ```
 
   (from `tests/olon.fspy`, which also shows the `μ'`-headed dual form)
@@ -699,7 +732,7 @@ debate pro|con open|closed NAME : ISSUE.
 ARG.
 [VERB] ARG TARGET.
 ...
-hora est.
+cedat tempus.
 ```
 
 - The **onus** says who opens: `pro`, an argument for ISSUE; `con`, a
@@ -749,10 +782,10 @@ Representative examples live in `tests/*.fspy`.
 
 Typical script commands include:
 - Fellowship commands such as `lk.`, `declare ...`, `deny ...`, `qed.`
-- wrapper recording commands such as `start argument ...` / `end argument`
+- wrapper recording commands such as `argument NAME : (P).` ... `dixi.`
 - normalization / rendering commands
-- debates: `debate pro|con open|closed NAME : ISSUE.`, moves, `hora est.`
-- wrapper-only decoration commands such as `decorate NAME : 'template'`
+- debates: `debate pro|con open|closed NAME : ISSUE.`, moves, `cedat tempus.`
+- wrapper-only decoration commands such as `decorate NAME : "template".`
 
 Lines starting with:
 - `#` are echoed as user-facing comments
@@ -833,9 +866,9 @@ The wrapper intercepts these: `theorem NAME : (P).` only states a claim, and
 `prove NAME` opens its proof, which the wrapper replays and checks at `qed.`
 (see "Statements, refinement and citation"). Scripts written in Fellowship's
 own idiom, `theorem X : (A).` followed directly by tactics and `qed.`, need a
-`prove X` line after the statement. The recording commands
-`start argument ...`, `start counterargument ...` and `start antitheorem ...`
-open the same kind of recording without stating a claim.
+`prove X.` line after the statement. The blocks `argument NAME : (P).` and
+`counterargument NAME : (P).` open the same kind of recording without stating
+a claim.
 
 ### `deny`
 
@@ -1007,17 +1040,17 @@ declare A,B:bool.
 declare axA: (A).
 declare axAB: (A->B).
 
-start argument argA B
+argument argA : (B).
 cut (A->B) h.
 axiom axAB.
 elim.
 axiom axA.
 axiom.
-end argument
+dixi.
 
-render argA
-reduce argA
-render-nf argA
+render argA.
+reduce argA.
+render-nf argA.
 ```
 
 ### Counterargument and undercut example
@@ -1025,8 +1058,8 @@ render-nf argA
 File: `tests/counterarguments_and_undercut.fspy`
 
 This script demonstrates:
-- `start counterargument ...`
-- debates (`debate ... hora est.`) with `undercut` moves
+- `counterargument ... dixi.`
+- debates (`debate ... cedat tempus.`) with `undercut` moves
 - `evaluate`
 - `label`
 - `tree ... nl`

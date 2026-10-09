@@ -9,7 +9,7 @@ lj.
 declare P:bool.
 declare pRule : ((P->false)->P).
 
-start argument SelfAttack P
+argument SelfAttack : (P).
 cut ((P->false)->P) rule.
 axiom pRule.
 elim.
@@ -19,5 +19,5 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 

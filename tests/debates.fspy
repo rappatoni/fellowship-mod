@@ -6,16 +6,16 @@ declare bird : (Bird).
 declare penguins_dont_fly : (Penguin -> ~Flies).
 declare photos_show : (Photo -> ~Penguin).
 # tweety: Tweety flies, being a bird - birds fly, by default.
-start argument tweety Flies
+argument tweety : (Flies).
 cut (Bird -> Flies) birds_fly.
 by default.
 next.
 elim.
 axiom bird.
 axiom birds_fly.
-end argument
+dixi.
 # penguin: Tweety does not fly - it is a penguin, presumed.
-start counterargument penguin Flies
+counterargument penguin : (Flies).
 cut (Penguin -> ~Flies) rule.
 axiom penguins_dont_fly.
 elim.
@@ -23,9 +23,9 @@ by default.
 next.
 elim.
 axiom.
-end counterargument
+dixi.
 # photo: it is not a penguin - a photo shows it, presumed.
-start counterargument photo Penguin
+counterargument photo : (Penguin).
 cut (Photo -> ~Penguin) rule.
 axiom photos_show.
 elim.
@@ -33,8 +33,8 @@ by default.
 next.
 elim.
 axiom.
-end counterargument
+dixi.
 # Something unrelated.
-start argument sings Sings
+argument sings : (Sings).
 by default.
-end argument
+dixi.

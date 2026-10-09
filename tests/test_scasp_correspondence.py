@@ -140,20 +140,20 @@ def prop(atom):
 def to_fspy(rules):
     universe = atoms(rules)
     lines = ["lk.", f"declare {','.join(prop(a) for a in universe)}:bool."]
-    registers = [f"register cwa_{a} : {prop(a)} := μ'cwa_{a}:{prop(a)}.<cwa_{a}||1:{prop(a)}!>"
+    registers = [f"register cwa_{a} : {prop(a)} := \"μ'cwa_{a}:{prop(a)}.<cwa_{a}||1:{prop(a)}!>\"."
                  for a in universe]
     for i, (head, pos, neg) in enumerate(rules, 1):
         name, h = f"a{i}_{head}", prop(head)
         if not pos and not neg:
             lines.append(f"declare f{i}:({h}).")
-            registers.append(f"register {name} : {h} := μ{name}:{h}.<f{i}||{name}>")
+            registers.append(f"register {name} : {h} := \"μ{name}:{h}.<f{i}||{name}>\".")
             continue
         premises = [prop(a) for a in pos] + [f"({prop(b)}->false)" for b in neg]
         lines.append(f"declare r{i}:({' -> '.join(premises + [h])}).")
         sites = itertools.count(1)
         args = ([f"?{next(sites)}:{prop(a)}" for a in pos]
                 + [f"λx:{prop(b)}.μz:false.<x||{next(sites)}:{prop(b)}!>" for b in neg])
-        registers.append(f"register {name} : {h} := μ{name}:{h}.<r{i}||{'*'.join(args + [name])}>")
+        registers.append(f"register {name} : {h} := \"μ{name}:{h}.<r{i}||{'*'.join(args + [name])}>\".")
     return "\n".join(lines + registers) + "\n"
 
 

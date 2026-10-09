@@ -5,51 +5,51 @@
 lk.
 declare P,Q : bool.
 # P: I claim the thesis.
-start argument p1 ((P -> Q)->P)->P
-end argument
+argument p1 : (((P -> Q)->P)->P).
+dixi.
 # S: then derive P from (P->Q)->P.
-start argument s1 ((P -> Q)->P)->P
+argument s1 : (((P -> Q)->P)->P).
 elim f.
-end argument
+dixi.
 # P: I will use the lemma (P->Q)->P; you owe me P->Q.
-start argument p2 P
+argument p2 : (P).
 cut ((P -> Q)->P) alpha.
 elim g.
 next.
 elim.
 next.
 axiom alpha.
-end argument
+dixi.
 # S: to get P->Q I offer you P - now prove Q.
-start argument s2 P
+argument s2 : (P).
 cut (P->Q) beta.
 elim h.
-end argument
+dixi.
 # P: you offered P; that is all I needed.  (The trap.)
-start argument p3 Q
+argument p3 : (Q).
 cut (P) gamma.
-end argument
+dixi.
 # S: refute P->Q from the lemma, then.
-start counterargument s3 P->Q
+counterargument s3 : (P->Q).
 cut ((P->Q)->P) theta.
 next.
 elim.
 axiom theta.
-end argument
+dixi.
 %stop
 # ---- paste from here ----------------------------------------------------
 # The document: a cycle through P - the skeptic's offer of P is the very
 # point at issue.  As a framework, nothing here is established.
-graph document
-label document
+graph document.
+label document.
 # The debate about the thesis, unfolded: the trap is sprung by capture, and
 # strictness read off the term adds one strict edge, s1*, for the thesis.
-graph p1
-label p1
+graph p1.
+label p1.
 # The value is the classical proof term of Peirce's law.
-evaluate p1
+evaluate p1.
 # Every unfolded term is replayed through Fellowship first (the type oracle);
 # `typecheck off` skips that for speed.
-typecheck off
-evaluate p1
-typecheck on
+typecheck off.
+evaluate p1.
+typecheck on.

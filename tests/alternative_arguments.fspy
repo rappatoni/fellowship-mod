@@ -9,7 +9,7 @@ declare r3: (D -> A).
 #
 # Supported Argument
 #
-start argument arg1 B
+argument arg1 : (B).
 cut (A -> B) th.
 axiom r1.
 elim.
@@ -18,17 +18,17 @@ axiom r2.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 # Supporter
 #
-start argument sup1 A
+argument sup1 : (A).
 cut (D -> A) th.
 axiom r3.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 # Construct support, reduce, color.
 debate pro open first : B.
@@ -36,9 +36,9 @@ arg1.
 % was `support sup1 arg1.`: :A is not a node of 'arg1' yet (an intermediate
 % conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
 sup1 arg1.
-hora est.
-evaluate first
-label first
+cedat tempus.
+evaluate first.
+label first.
 #
 #Next we try alternative counterarguments:
 #
@@ -48,27 +48,27 @@ deny r6: (A - D).
 #
 # Supported Counterargument
 #
-start counterargument c1 B
+counterargument c1 : (B).
 cut (B - A) th.
 elim.
 cut (A - C) bla.
 elim.
 next.
 axiom bla.
-moxia r5
+moxia r5.
 axiom th.
 moxia r4.
-end argument
+dixi.
 #
 # Supporter
 #
-start counterargument csup1 A
+counterargument csup1 : (A).
 cut (A - D) th.
-elim
+elim.
 next.
 axiom th.
 moxia r6.
-end argument
+dixi.
 #
 # Construct support, reduce, color.
 debate con open second : B.
@@ -76,18 +76,18 @@ c1.
 % was `support csup1 c1.`: A: is not a node of 'c1' yet (an intermediate
 % conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
 csup1 c1.
-hora est.
-evaluate second
-label second
+cedat tempus.
+evaluate second.
+label second.
 #
 #Testing admal
 declare r7: (A - D).
-start argument admaltest A
+argument admaltest : (A).
 cut (A-D) th.
 axiom r7.
 elim alpha.
 axiom th.
-end argument
+dixi.
 #
 #Supporting arg1
 #
@@ -96,4 +96,4 @@ arg1.
 % was `support admaltest arg1.`: :A is not a node of 'arg1' yet (an intermediate
 % conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
 admaltest arg1.
-hora est.
+cedat tempus.

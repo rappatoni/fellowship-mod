@@ -14,23 +14,23 @@ declare P,Q:bool.
 declare pRule : (Q->P).
 deny notP : (P).
 
-start argument tp P
+argument tp : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 
-start counterargument t P
+counterargument t : (P).
 moxia notP.
-end counterargument
+dixi.
 
 debate pro open d : P.
 tp.
 attack t tp.
-hora est.
+cedat tempus.
 
-graph d
-label d
+graph d.
+label d.
