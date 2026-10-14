@@ -526,7 +526,8 @@ Questions the design has to answer first: statement identity (is
 =forall x, P x= one node, and is an instance =P a= a statement of its
 own that the general one derives); sites under a binder (a site for
 =P x= with x bound); capture across instantiation; the intermediate
-conclusions of an instantiation spine (=ConsFO=; see
+conclusions of an instantiation spine (=ConsFO=; in the propositional
+case they are not exposed, by decision:
 [[id:aida-curried-intermediate-conclusions]]); and the reduction rules
 for the quantifier stacks.
 
@@ -715,9 +716,8 @@ the verbs (name + assert, no edge). Done:
   captured a binder of an enclosing one is absorbed into it and kept on
   record. Alternative derivations (a site's own route vs an absorbed
   scion's) are separate records. NOT done: decomposition of elimination
-  spines into intermediate conclusions - that is
-  aida-curried-intermediate-conclusions (WAITING by the author's
-  decision) and stays with it.
+  spines into intermediate conclusions - decided against on 2026-10-13
+  (aida-curried-intermediate-conclusions, DONE).
 - B2: the verbs still build their composed term for the term-level
   commands (render/reduce/tree) but add nothing to the graph; they
   assert reachability (ProverWrapper.check_reachable) and error
@@ -2494,8 +2494,9 @@ Raised by the author 2026-10-07: part of the original specification
 ("Rational closure (attacks/supports propagate to and from
 subarguments)"), not implemented - today only sites are attack and
 support points. Blocked on the discussion
-[[id:aida-discuss-non-site-attack-points]]; related to
-[[id:aida-curried-intermediate-conclusions]].
+[[id:aida-discuss-non-site-attack-points]]. Not in scope: the
+intermediate conclusions of curried applications, which stay unexposed
+by decision ([[id:aida-curried-intermediate-conclusions]], 2026-10-13).
 
 *** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
@@ -2703,7 +2704,8 @@ can produce. Related: =aida-strict-refutation-edges= (declared
 refutations are dropped; the same "strict references carry no side"
 problem at the leaf level).
 
-*** BACKLOG Design: should the intermediate conclusions of curried implications be attack points?
+*** DONE Design: should the intermediate conclusions of curried implications be attack points?
+CLOSED: [2026-10-13 Tue]
 :PROPERTIES:
 :ID:             aida-curried-intermediate-conclusions
 :AREA:           phd
@@ -2719,8 +2721,26 @@ problem at the leaf level).
 :VERIFY:         The decision is written here with its reasons. If adopted: on tests/minicourse/lesson5_labels.fspy a move of the challenge to B->C against cArg is accepted, and with A and B presumed and a strict refutation of B->C, =label= prints B->C context IN and C term OUT; the graph has C[t] <- B->C[t], B[t] and B->C[t] <- A[t]; every expanded term replays in Fellowship. If not: the refused move (tests/rationality/test_postulates.py) is pinned with the decision as its reason.
 :END:
 
-Needs design (the author, 2026-10-08): not obviously a bug, and leaving
-it as is may be fine. Earlier status (2026-09-16): recorded as a bug, but
+*Decision (the author, 2026-10-13): no.* The status quo is intended.
+The AIDA compiler does no logical inference. In the fixture, the attacks
+a counterargument against B->C could stand for are attacks on A->B->C
+with A true, or on C; but =cArg= itself does not expose an intermediate
+conclusion B->C, so it is fine that it cannot be attacked on it. What a
+debate can still say about B->C: attack what the argument exposes (A,
+or its conclusion C), or have the argument take the implication as a
+premise (=cut (B -> C)=), which gives it a site.
+
+Evidence: tests/rationality/test_postulates.py::TestCurriedAttack pins
+the refusal with this decision as its reason - =attack=, =rebut= and
+=undermine= of =test= against =cArg= are refused ("'cArg' has no
+obligation on :B->C to attack", likewise site and presumption), and
+the cause (no term-side node typed B->C) - 4 passed, 2026-10-13; the
+strict xfail is gone. The fixture header, tests/rationality/README.org,
+core/dc/debate.py (=target_nodes=) and lesson 8a of
+docs/minicourses/minicourse-evaluation.org record the decision.
+
+Earlier: needs design (the author, 2026-10-08): not obviously a bug, and
+leaving it as is may be fine. Earlier status (2026-09-16): recorded as a bug, but
 deliberately not part of the follow-up implementation plan
 (fragment-followups-plan.org phase D2 is withdrawn).
 
@@ -2978,6 +2998,59 @@ question is *which* rules exist, not congruence order, which is
 irrelevant under a uniform strategy (minicourse lesson 8 item 14). Not
 a compiler bug. Left as is for now.
 
+*** BACKLOG Align "uncatchable exception" with its definition: no open site, no free variable
+:PROPERTIES:
+:ID:             aida-uncatchable-exception-terminology
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The code and the teaching material use the author's definitions: an exception is a clash (an affine mu/mu' whose command no enclosing binder catches), whatever sites it holds; an *uncatchable* exception is the special kind that contains no open site and no free variable. =contains_uncatchable_clash= (core/comp/oracle_terms.py) and its uses (classify_nf, core/dc/strict.py, core/comp/evaluate.py) are renamed or redefined accordingly, the log lines and docstrings say which kind they mean, and it is decided whether the class (and the JSON verdict) distinguishes the two kinds.
+:VERIFY:         Tests pin both kinds: the normal form a defeasible attacker gets when a strict argument defeats it, =μ'alt2:A.<ax:A||OUT:A?>= (it holds the open site OUT:A?), is an exception and not uncatchable; the strict-against-strict clash =μalt2:A.<nA:~A||μb1:A.<ax:A||b1:A>*_F_>= is uncatchable; the lambda-bound case below is pinned with its decision. Lessons 10 and 12 of docs/minicourses/minicourse-evaluation.org use the two terms as defined; tests/minicourse and the documented suite pass.
+:END:
+
+Raised by the author 2026-10-13, while comparing the strict-attack
+behaviour against the rule "a defeasible attacker of a strict argument
+loses; an attack between two strict arguments gives an uncatchable
+exception". The classifications themselves are right; the definition
+the code calls "uncatchable" is not the author's.
+
+*What the code says.* =contains_uncatchable_clash= calls a clash
+uncatchable when no enclosing mu/mu' binder binds one of its command's
+free variables. It ignores sites. So =classify_nf=, its log line
+("EXCEPTION (an uncatchable clash...)"), the docstrings of
+=classify_nf= and core/comp/evaluate.py, and lesson 12 call every
+exception uncatchable, including one that still holds an obligation or
+a delegation.
+
+*The author's definitions.* An exception can hold an obligation or a
+delegation. An uncatchable exception is the special kind that contains
+no open site and no free variable: it is uncatchable because nothing in
+it is open.
+
+*Where the code relies on uncatchability* - phase 1's "an uncaught
+strict contradiction always wins" (core/dc/strict.py, the support rule)
+and the third condition on a strict edge - it applies the test to
+strict subterms only, which hold no site, so there it agrees with the
+definition. One difference remains to decide: the code (after COMMA
+2026: only a mu-abstraction can catch) does not count a lambda- or
+lambda-bar-bound variable as a catcher, whereas "no free variable"
+would make a clash over such a variable catchable.
+
+The runs behind this (2026-10-13, scratch documents): a strict =s : A=
+by a declared axiom, a defeasible =d= refuting A from presumed B, a
+strict =k= refuting A by a declared refutation. =evaluate d.= gives
+the exception above; =evaluate s.=, =evaluate k.= and =evaluate issue
+:A.= give the strict clash; =label issue :A.= gives A[t] and A[c] both
+IN, which the author accepts: a strict contradiction means the theory
+is inconsistent, and the labelling of a pathological document is not
+fixed.
+
 *** BACKLOG Express the married-bachelor and contamination fixtures as .fspy
 :PROPERTIES:
 :ID:             aida-postulate-fixtures-fspy
@@ -3119,6 +3192,126 @@ directly in an argument entrypoint's own body keep the kind the argument
 wrote, and where it demands a statement presumed elsewhere the presumption
 becomes the bottom of that statement's supporter stack.
 
+*** BACKLOG Design: should a site be wrapped as a supporter of a fresh root, or stay the root of its debate?
+:PROPERTIES:
+:ID:             aida-site-exposure-design
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided, with reasons, whether the generalised unfolder treats a site in an argument body as the root of its statement's debate (today's behaviour, kept for now) or exposes it like any other node, as a supporter under a fresh obligation root (SUP(?A, !A) for a presumption site); if the latter, the canonical rule for the root's kind is restated and its effect on the pinned verdicts is known.
+:VERIFY:         The decision is written here. If the wrapping is adopted: every pinned verdict of tests/minicourse, tests/rationality and tests/demo is unchanged or its change is justified, and tests/entrypoints.fspy's =q= (an own obligation against another argument's presumption) gives the same class under both rules.
+:END:
+
+Raised 2026-10-14 while generalising the compiler and unfolder to all
+logically progressing nodes ([[id:aida-discuss-non-site-attack-points]]).
+The author agreed to keep today's behaviour for now and may revisit it.
+
+*Today.* A site in an argument body is replaced by its statement's
+debate: the debate's root takes the site's place, and the site does not
+survive as an element of its own. The root is a presumption if any edge
+of the document presumes the statement, an obligation otherwise; in the
+body of an argument entrypoint it keeps the kind the argument wrote, and
+where that argument demands a statement somebody else presumes, the
+presumption goes to the bottom of the stack (=SUP(?u2:A, !u3:A)= for
+=q= in tests/entrypoints.fspy). With no supporters and no attackers the
+site stays a plain site.
+
+*The alternative.* Expose a site like every other node: wrap it as the
+first supporter of a fresh obligation root, =SUP(?A, site)=. For an
+obligation site that is redundant (=SUP(?A, ?A)=, the bureaucratic
+redex of paper2's obligation-eta long form); for a presumption site it
+is meaningful and generalises the entrypoint's "presumption at the
+bottom" to every site. Consequences: the root would always be an
+obligation and presumptions would always be supporters, replacing the
+canonical rule for the root's kind; under sigma a presumption supporter
+that is IN wins, so the verdicts should agree, but that is unverified.
+
+*** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
+:PROPERTIES:
+:ID:             aida-circular-support-design
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        It is decided, with reasons, how the system treats an argument that supports a statement through the statement itself (P from Q from P): kept as a legitimate argument; generated but discarded during normalisation (sigma included); or never generated by the unfolder. The decision covers both sources of such arguments - circularity the author wrote through sites, and circularity the unfolder creates by capturing an internal node - and fixes what the differential test between the preserve- and share-subarguments unfoldings compares.
+:VERIFY:         The decision is written here with a fixture for each source: tests/minicourse/lesson8a_cycle.fspy (author-written: back demands B inside B's debate) and the E2 probe of 2026-10-14 (argQ's internal P captured; with R strictly refuted, sharing gives argQ a value through P's root while preserving gives argQ OUT and Q falls back to its presumption). Under the decision, both fixtures have stated expected labels and classes, and the differential test asserts them.
+:END:
+
+Raised by the author 2026-10-14. Self-attacks are handled by capture
+(lesson 8a, self_attack_lk); self-support is not addressed anywhere.
+
+*Where circular support comes from.*
+- Written by the author, through sites: in lesson8a_cycle =pro= derives
+  B from A and =back= derives A from B; inside B's debate =back='s
+  demand for B is captured by =b1= and shares the root =?u1=. Every
+  unfolding option generates this.
+- Created by capture, when the generalised unfolder exposes internal
+  nodes ([[id:aida-discuss-non-site-attack-points]]): sharing (option a)
+  replaces an internal derivation of P that lies inside P's debate by
+  the scaffold's =b=; in canonical order that is P's root, which sigma
+  discharges by P[t]'s label. The captured occurrence therefore succeeds
+  whenever the preserved derivation would, and also through circular
+  support. Preserving (option c) never creates these.
+
+*Options.* Keep them (they are arguments, the defaults are the last
+fallback anyway); drop them in normalisation, sigma included (needs a
+criterion for "circular" on the labelled term); suppress them at
+unfolding (no capture of a derivation by a =b= that does not contain
+it). Related: option d of the 2026-10-14 discussion,
+SUP(own derivation, b1), which keeps both and orders them.
+
+*** BACKLOG Specify the commutation property: compile-and-unfold against theta-expand-and-substitute
+:PROPERTIES:
+:ID:             aida-unfold-commutation-spec
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        Once the compiler and unfolder are generalised to every logically progressing node, a task exists that states the commutation property precisely - graph compilation followed by unfolding gives the same debate term as theta-expansion (obligation-eta long form, restated for the current scaffold and stack shapes) followed by universal substitution (grafting), up to a stated equivalence (at least: reordering of subarguments) - with an OUTCOME and VERIFY for checking it by differential testing between the unfolder and a separately implemented theta-expander/grafter.
+:VERIFY:         The follow-up task is recorded in tasks.org with its equivalence relation written out and each point below either covered by the equivalence or excluded with a reason; its fixtures include E1-E7 of the 2026-10-13/14 discussion (lesson9_evaluation with attackrule, the argQ internal node, lesson8a_cycle, entrypoints, self_attack_lk, two sites for one statement, curried_attack).
+:END:
+
+Raised by the author 2026-10-14: the graph compiler and the unfolder
+were introduced to replace theta-expansion followed by grafting, which
+had needed many ad-hoc fixes; the goal is a theorem, simulated for now
+by differential testing, that the two routes commute. Blocked on the
+generalisation ([[id:aida-discuss-non-site-attack-points]]); to be
+specified, not implemented, once that lands.
+
+Points the specification must settle (from the 2026-10-14 comparison of
+the unfolder's behaviour):
+- the exposure set of the theta-expander equals the compiler's source
+  set (today both are the sites; after the generalisation, every
+  logically progressing node except variables and the same-issue child
+  of a bureaucratic binder);
+- grafting substitutes at every exposure with one copy per occurrence,
+  as the unfolder does on its default route (not the sharing route);
+- capture corresponds to grafting into a scope where the statement is
+  already bound, including the preserve/share choice for internal nodes
+  ([[id:aida-circular-support-design]]);
+- stack order: the unfolder's left-nested registration order against
+  the right-nested order of successive grafting;
+- the root's kind ([[id:aida-site-exposure-design]]) and the
+  presumption at the bottom of an entrypoint's stack;
+- the entrypoint bias (the argument on top, its own site kinds), which
+  only the unfolder has.
+
 *** BACKLOG Discuss: what can be attacked and supported besides sites
 :PROPERTIES:
 :ID:             aida-discuss-non-site-attack-points
@@ -3140,7 +3333,8 @@ statements that occur as sites can be attacked or supported inside a
 body. Not attackable: declared axioms (strict leaves), lambda
 subarguments (their edges are in the document with role
 =subargument= but =_by_target= skips them, so they are never scions
-either), intermediate conclusions of curried applications.
+either), intermediate conclusions of curried applications (the last
+intended: decided 2026-10-13, [[id:aida-curried-intermediate-conclusions]]).
 
 The author's example (2026-10-05): lesson9_evaluation.fspy extended by
 =attackrule=, a refutation of A->B from a presumption of D. The
@@ -3149,12 +3343,11 @@ is =B[t] <- A[t]:pres=, since r1 is a declared name and no source; so
 attackrule is not reachable from pro's issue and silently takes no
 part. Nothing reports that.
 
-Points: in ASPIC+ terms a declared axiom is strict and cannot be
-attacked, but it can rebut (attackrule OUT); the workaround today is to
+Points: one option is that a declared axiom cannot be attacked but can
+attack (attackrule OUT); the workaround today is to
 take the implication as a premise (=cut (A -> B) th. by default.=).
 Graph-side work exists: [[id:aida-strict-layer]] (an edge for every
-applied implication, declared or not) and
-[[id:aida-curried-intermediate-conclusions]]. Even with those edges the
+applied implication, declared or not). Even with those edges the
 unfolder has no site to wrap at =r1=; it would need to wrap a leaf or a
 lambda as the original of a statement's scaffolds.
 

@@ -143,8 +143,8 @@ def target_nodes(graph: DebateGraph, name: str, conclusion=None) -> set:
     root (a presumption if something in ``graph`` presumes it).  An
     argument that is a bare claim compiles to no edge, only a default
     marker; its ``conclusion`` is then given by the caller.
-    Intermediate conclusions and strict leaves are not nodes yet
-    (rational closure; aida-curried-intermediate-conclusions)."""
+    Strict leaves are not nodes yet (aida-rational-closure); intermediate
+    conclusions are not, by decision (aida-curried-intermediate-conclusions)."""
     nodes = set()
     for edge in _own_edges(graph, name):
         for source in edge.sources:

@@ -46,6 +46,16 @@ Use critique outside the manuscript or an explicitly marked AI note instead.
 The detailed authorship policy in the supervision repository controls when it
 is available.
 
+## Design stance
+
+AIDA makes its own design decisions; it is not an implementation of
+ASPIC+ or of any other structured-argumentation framework, and it
+deliberately departs from them (for instance, every implication
+contraposes, defeasible ones included). Do not use ASPIC+, or what
+another framework does, as a reason, a default, or a yardstick in design
+proposals, task notes, or teaching material. Argue from AIDA's own
+calculus, specification and recorded decisions in `tasks.org`.
+
 ## Working rules
 
 - Preserve unrelated user changes and inspect the dirty worktree before edits.

@@ -1,23 +1,16 @@
-% Attack on the intermediate conclusion of a curried implication.
-% Exposes a known defect (task aida-curried-intermediate-conclusions).
+% A challenge to the intermediate conclusion of a curried implication.
 %
 % cArg derives C from A (obligation) and B (presumption) via the axiom
-% abc : A->(B->C).  The elimination stack applies abc to A and then to B,
-% so the step that eliminates A concludes B->C - a logically progressing
-% node in the sense of debate-graph-spec.org.  A challenge to B->C ought
-% to attack it.
+% abc : A->(B->C).  B->C occurs in cArg's term only as the type of the
+% elimination stack's tail, a context: cArg does not expose it, so a
+% challenge to B->C has nothing in cArg to attack.  Intended (the author,
+% 2026-10-13, tasks.org aida-curried-intermediate-conclusions): the
+% compiler does no logical inference, and an argument is attacked only on
+% what it exposes - here A and C.  An argument that wants B->C to be
+% attackable takes it as a premise.
 %
-% Today the attack FAILS: B->C occurs in cArg's term only as the type of
-% the elimination stack's tail, a context, so theta-expansion finds no
-% term-side target and Argument.attack raises
-%   "no target with proposition 'B->C' found for mode=term".
-% The fix has two halves: theta-expansion must name the partial
-% application (mu b:B->C.<abc || ?A * b>) and the compiler must emit one
-% hyperedge per elimination step (C[t] <- B->C[t], B[t] and
-% B->C[t] <- A[t]), so that a refutation of B->C actually reaches C.
-%
-% Not in DEFAULT_SCRIPTS (strict replay would fail); its compiled form is
-% pinned as a strict xfail in test_postulates.py::TestCurriedAttack.
+% Not in DEFAULT_SCRIPTS; the refused moves are pinned in
+% test_postulates.py::TestCurriedAttack.
 lk.
 declare A,B,C:bool.
 declare abc : (A->(B->C)).
@@ -50,8 +43,8 @@ dixi.
 debate pro open d6 : C.
 cArg.
 support aArg cArg.
-% was `attack test cArg.`: B->C: is not a node of 'cArg' yet (an intermediate
-% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
+% `rebut test cArg.` is refused: B->C is no node of 'cArg' (an intermediate
+% conclusion it does not expose), so the move carries no verb.
 test cArg.
 cedat tempus.
 label d6.

@@ -344,14 +344,16 @@ but only its context side. In the current implementation the only
 points at which an argument can be attacked (or supported) are its sites
 and its conclusion: not the declared axioms it uses, not the lambda
 subarguments inside it, not the intermediate conclusions of a curried
-rule. To make r1 attackable today, pro has to take the rule as a premise
-(=cut (A -> B) th. by default.=), which gives the site =!:A->B=. Whether
-a declared axiom should be attackable at all - in ASPIC+ terms a strict
-premise cannot be attacked, but it can rebut, which would make
-attackrule OUT - is recorded in tasks.org
-(aida-discuss-non-site-attack-points, with aida-strict-layer and
-aida-curried-intermediate-conclusions on the graph side). Nothing reports
-that attackrule is unreachable; it is silently left out.
+rule. The last is intended (decided 2026-10-13, tasks.org
+aida-curried-intermediate-conclusions): the compiler does no logical
+inference, and an argument that does not expose an intermediate
+conclusion is not attackable on it. To make r1 attackable today, pro has
+to take the rule as a premise (=cut (A -> B) th. by default.=), which
+gives the site =!:A->B=. Whether a declared axiom should be attackable
+at all, or only able to attack (which would make attackrule OUT), is
+open in tasks.org (aida-discuss-non-site-attack-points, with
+aida-strict-layer on the graph side). Nothing reports that attackrule is
+unreachable; it is silently left out.
 
 =explain pro.= prints the unfolder's steps:
 

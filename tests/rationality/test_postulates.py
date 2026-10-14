@@ -223,8 +223,11 @@ class TestCurriedAttack:
 
     A challenge to B->C cannot attack an argument that derives C from A
     and B via A->(B->C): the intermediate conclusion B->C occurs only as
-    a context type in the elimination stack. Strict xfail; flips when
-    aida-curried-intermediate-conclusions lands.
+    a context type in the elimination stack. Intended (the author,
+    2026-10-13, aida-curried-intermediate-conclusions): the compiler does
+    no logical inference, and an argument that does not expose B->C is
+    not attackable on it. A counterargument to B->C is answered by
+    attacking what the argument does expose: A, or its conclusion C.
     """
 
     def _host(self, prover):
@@ -262,9 +265,12 @@ class TestCurriedAttack:
         walk(host.body)
         assert "B->C" not in term_props
 
-    @pytest.mark.xfail(strict=True, reason="curried intermediate conclusions not exposed (aida-curried-intermediate-conclusions)")
-    def test_challenge_to_intermediate_conclusion_attacks(self, curried_prover):
+    @pytest.mark.parametrize("verb, what", [("attack", "site"), ("rebut", "obligation"),
+                                            ("undermine", "presumption")])
+    def test_challenge_to_intermediate_conclusion_is_refused(self, curried_prover, verb, what):
+        """By decision, not a defect: B->C is no attack point of cArg."""
         from core.dc.argument import Argument
+        from core.dc.debate import DebateError
         from wrap.cli import debate_line
         host = self._host(curried_prover)
         curried_prover.register_argument(host)
@@ -273,7 +279,8 @@ class TestCurriedAttack:
         curried_prover.register_argument(challenge)
         debate_line(curried_prover, "debate pro closed d6 : C.")
         debate_line(curried_prover, "cArg.")
-        debate_line(curried_prover, "attack test cArg.")   # refused today: B->C is no node
+        with pytest.raises(DebateError, match=f"'cArg' has no {what} on :B->C to attack"):
+            debate_line(curried_prover, f"{verb} test cArg.")
 
 
 class TestCaptureIsACycle:
