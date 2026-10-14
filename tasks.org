@@ -2498,6 +2498,14 @@ support points. Blocked on the discussion
 intermediate conclusions of curried applications, which stay unexposed
 by decision ([[id:aida-curried-intermediate-conclusions]], 2026-10-13).
 
+Plan (2026-10-14): implemented after
+[[id:aida-discuss-issue-graph-from-document]], with the decisions recorded
+in [[id:aida-discuss-non-site-attack-points]] and
+[[id:aida-circular-support-design]]; it opens with a design discussion of
+the questions still open there, and includes the E1-E7 fixtures, the
+(a)-against-d2 differential test, Fellowship replay of every unfolded
+term, and the minicourse updates (lesson 8a above all).
+
 *** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
 :ID:             aida-review-minicourse-evaluation
@@ -3271,6 +3279,37 @@ unfolding (no capture of a derivation by a =b= that does not contain
 it). Related: option d of the 2026-10-14 discussion,
 SUP(own derivation, b1), which keeps both and orders them.
 
+*Decision (the author, 2026-10-14): circular support exists at graph
+level; for an internal node whose statement is bound in scope, d2.*
+d2 is SUP(captured variable, own derivation): the own derivation is the
+scion, judged first, and the captured variable is the fallback. Option
+(a), the captured variable alone, is offered to save size. Defaults:
+(a) for canonical issue terms, d2 for argument and debate terms;
+=share-subarguments= / =preserve-subarguments= override. The cycle
+through the statement (Q <- P <- Q in E2) belongs in the graph: as on
+tests/minicourse/lesson8a_cycle.fspy today, an unfounded loop is
+credulously IN under preferred (labellings {A,B IN} and {A,B OUT};
+grounded UNDEC; stable OUT).
+
+Evidence (2026-10-14, scratch probes, nothing committed): E2 written as
+the generalised compiler would produce it (argQ demands P; argQown : P
+<- R as its own edge), four variants (argP presumes or demands Q; R
+refuted or not), entrypoints issue :P, argP, issue :Q, argQ, both
+modes. All 64 terms replay through Fellowship. With the subargument
+holding, all options agree up to alpha. With it refuted, (a) = d2 and
+(c) = SUP(own, var) agree pairwise in labels, classes and normal
+forms; between the pairs, the normal form differs (P from Q from P
+against P from presumed Q) and, with argP demanding Q, the labels
+(P, Q UNDEC against OUT). The labels differed only because the issue
+graph is compiled from the term: SUP(own, var) compiles its scion to
+an identity edge and drops it. With the issue graph taken from the
+document graph ([[id:aida-discuss-issue-graph-from-document]]) the
+options are presentational by construction. Sizes (issue :P): (a)
+43/67 nodes, (c) 47/95, d 55/103 (subargument holding/refuted).
+
+Still to do for VERIFY: the differential test of (a) against d2, in
+[[id:aida-rational-closure]].
+
 *** BACKLOG Specify the commutation property: compile-and-unfold against theta-expand-and-substitute
 :PROPERTIES:
 :ID:             aida-unfold-commutation-spec
@@ -3351,6 +3390,43 @@ applied implication, declared or not). Even with those edges the
 unfolder has no site to wrap at =r1=; it would need to wrap a leaf or a
 lambda as the original of a statement's scaffolds.
 
+*Decisions (the author, 2026-10-13/14).*
+- Logically progressing nodes are attack and support points: a mu/mu'
+  whose binder type differs from its cut type, lambda and lambda-bar,
+  and declared axioms. A mu/mu' whose binder type equals its cut type is
+  bureaucratic.
+- A node is expanded only if its parent makes logical progress; more
+  precisely, the same-issue child of a bureaucratic binder is not
+  expanded (it is that binder's exposure; for an argument's last step,
+  the argument's place in its statement's stack). The inverted child of
+  a bureaucratic binder is expanded unless it is a variable.
+- Variables are never expanded: the issue appears with inverted polarity
+  at a mu/mu' binder, and a lambda's hypothesis is attacked through the
+  argument v of the redex <lambda x.t || v * E> -> <v || mu'x.<t||E>>;
+  an unapplied lambda is attacked only as the implication.
+- Cons/Sonc cells are not nodes ([[id:aida-curried-intermediate-conclusions]]).
+- Sites stay the root of their debate for now ([[id:aida-site-exposure-design]]).
+- An internal node whose statement is bound in scope: d2, with (a) as
+  an option ([[id:aida-circular-support-design]]).
+- The compiler makes one node per issue in the AST; the sources of an
+  edge are exactly the points the unfolder exposes.
+- The issue graph is taken from the document graph
+  ([[id:aida-discuss-issue-graph-from-document]]) before the
+  generalisation is implemented ([[id:aida-rational-closure]]).
+
+*Still open, for the start of the implementation:* how an exposed
+internal node is attacked (the innermost binder of its contrary is the
+enclosing argument's continuation, not a scaffold's alt); where an
+internal node's own derivation goes in its statement's stack when the
+statement is not bound (on top, as for an argument entrypoint, or
+registration order); the root kind of an exposed internal node.
+
+The background is in the conversation of 2026-10-13/14: theta-long
+normal form (paper2's obligation-eta long form, .cecli.notes.md
+"Default-eta-long semantics", debate-graph-spec.org's theta-normal
+form) is the starting point, restated for the current scaffold and
+stack shapes ([[id:aida-unfold-commutation-spec]]).
+
 *** BACKLOG Discuss: take the issue graph from the document graph, not from the term
 :PROPERTIES:
 :ID:             aida-discuss-issue-graph-from-document
@@ -3377,6 +3453,37 @@ the source (=Qdefault: Q[t] <- P[c]:pres=). This is a remnant of the
 term-first design. Not checked: whether the reachable subgraph plus
 strict edges equals today's issue graph on every fixture (copies,
 lambda edges, cut sites).
+
+*Decision (the author, 2026-10-14): adopt, after the differential check.*
+The probes for [[id:aida-circular-support-design]] showed the cost of the
+term-first issue graph: an unfolding option for internal nodes changed
+the labels. Order: this first, then [[id:aida-rational-closure]].
+
+What the change involves (2026-10-14):
+1. Strict edges still come from the term (strict_resolve after
+   capture); the term is still needed before labelling.
+2. Captured sources: the =captured_presumption= mark exists only to
+   restore the onus a captured site lost; the document graph has the
+   source with its kind.
+3. Occurrence copies (=fold_occurrences=, bd6259b) disappear; pinned
+   =graph= outputs with copy names change.
+4. Debate scope: a closed debate's subgraph must be cut to its scope
+   (=prover.debate_graph=, wrap/prover.py).
+5. Argument entrypoints: the term keeps the argument's own site kinds
+   and may put a presumption at the bottom; check that the default
+   markers and labels agree (tests/entrypoints.fspy).
+6. Lambda subargument edges: held by the document graph, skipped as
+   stack elements, compiled per occurrence today.
+7. The shared route (=compile_issue_shared=, core/dc/instances.py)
+   switches too.
+8. With the generalised compiler, an exposed internal node is a source
+   of its statement, so the cycle through it is in the graph (d2's
+   semantics).
+9. Adequacy (the class the evaluation finds is the one the label
+   predicts) becomes a check between two independent artefacts.
+Sigma still reads scion records compiled per scaffold from the labelled
+term (=derivation_status=), so every statement of the term needs a
+label from the document subgraph.
 
 *** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
 :PROPERTIES:
