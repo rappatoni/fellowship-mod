@@ -48,7 +48,7 @@ The pipeline on the default route:
 :   document graph, issue
 :     |  share               core/dc/share.py         one definition per statement, citations
 :     |  typecheck_shared    core/dc/typecheck.py     replay each definition once
-:     |  IssueResolver       core/dc/instances.py     compile and resolve each INSTANCE once
+:     |  IssueResolver       core/dc/instances.py     resolve each INSTANCE once (its strict edges)
 :     |  labellings          core/comp/adf_label.py   as before, on the same issue graph
 :     |  evaluate_shared     core/comp/evaluate.py    sigma opens a sub-debate only where it is kept
 :     v  normalize_strong, classify_nf                as before
@@ -392,7 +392,11 @@ citation leaf that the compiler reads as a *source* of the cited
 statement, of the kind the statement's own site has. Meeting that leaf,
 the compiler first compiles the cited instance (a hook on the compiler's
 citation branch), so the edges come out in the order the unfolded term
-would give them, each once. The issue graph is the union.
+would give them, each once. The issue graph is the union. Since
+2026-10-15 this is the older route (=issue-graph term.=): by default the
+issue graph is the part of the document graph reachable from the issue
+(minicourse-evaluation.org, lesson 8a), and the instances contribute
+only their strict edges.
 
 *Resolve.* =strict_resolve= is unchanged. It runs on an instance's term
 in which each cited instance is a *stub*: a chain of leaves holding
@@ -423,7 +427,10 @@ bare - k contests it - and it is needed twice, so it is named; and since
 :   anon_1[?:P1, !:P0] := μalt4:P1.<μalt3:P1.<?u2:P1||...||μ'_:P1.<μa1_0:P1.<μth_3:P1.<r1_0:P0->P1||a0:P0*th_3:P1>||a1_0:P1>||alt3:P1>>>||...>
 :   a0[!:P0] := μalt5:P0.<!u3:P0||μ'b8:P0.<μ_:P0.<b8:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<b8:P0||alt5:P0>>>
 
-=explain a2_0.=, the compile and strict stages:
+=explain a2_0.= with =pipeline shared.= and =issue-graph term.=, the
+compile and strict stages (by default the compile stage shows only the
+framework taken from the document, and the strict stage ends with
+=issue graph from the document: 4 of 4 statement(s) reachable, 5 edge(s), 0 strict edge(s) from the term=):
 
 : compile        framework of 'a2_0', one instance of a sub-debate at a time
 : compile        edge 'k' (attacker, strict) P0[c] <- -

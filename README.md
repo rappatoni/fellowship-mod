@@ -277,29 +277,36 @@ through the document graph.
    `A -> false` are one statement but two propositions for Fellowship); then
    the whole term is replayed. `typecheck expanded` always replays the whole
    term, whose size grows with the number of paths through the graph.
-4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
-   propositions, hyperedges carry a name, a target statement and sources with
-   their kinds, and statements get default markers. It is a separate data
-   structure, not a marked-up term. The compiler finds the sub-arguments by
-   matching *scaffold shapes*: the four support and attack shapes of the
-   COMMA 2026 paper, which the unfolder produces. A match
-   says "here is a scion and here is the original", so the scion becomes an
-   edge of its own and the walk continues into the original. Out: the
-   argumentation framework, printed as an indented tree.
+4. **compile** — take the issue's argumentation framework from the document
+   graph: the part reachable from the issue (the sources of every edge
+   deriving a reached statement, and the contrary of a reached statement),
+   for a debate the part of its own graph, which holds only its scope.
+   Nodes are canonical propositions, hyperedges carry a name, a target
+   statement and sources with their kinds, and statements get default
+   markers. Out: the argumentation framework, printed as an indented tree.
+   `issue-graph term` (or `FSP_ISSUE_GRAPH=term`) compiles it from the
+   unfolded term instead, the route before 2026-10-15, kept as the
+   reference: the compiler then finds the sub-arguments by matching
+   *scaffold shapes*, the four support and attack shapes of the COMMA 2026
+   paper, which the unfolder produces; `issue-graph document` switches back.
+   The two differ in labels only on an issue that only a lambda
+   subargument derives (tasks.org, aida-discuss-issue-graph-from-document).
 5. **strict** — read strictness off the term. A subterm is strict in the
    debate if it rests on nothing, that is, it has no open site. Where one wing
    of a scaffold is strict and the other is not, the scaffold is decided here
    and the losing wing is dropped; everything else is delayed. In: the
    unfolded term. Out: a rewritten, usually smaller term, plus a strict,
    source-less edge for every closed derivation the framework did not have.
-   The issue graph is the framework of phase 4 plus those edges.
+   The issue graph is the framework of phase 4 plus those edges; they still
+   come from the issue's own term, so they can differ between issues.
 
    `graph ARG` and `label ARG` need only the issue graph, and get it without
    building the unfolded term. The debate is kept as one definition per
-   statement (see `share ARG`), and phases 4 and 5 run on one *instance* of
+   statement (see `share ARG`), and phase 5 (with `issue-graph term`, phase 4
+   too) runs on one *instance* of
    a sub-debate at a time: a statement together with the statements captured
    and cut in it, which is all that the copy of that sub-debate at a site
-   depends on. Each instance is compiled and strictness-resolved once; a
+   depends on. Each instance is strictness-resolved (and compiled) once; a
    cited instance shows the scaffolds around it only whether a site is still
    open in it, which captured variables are still free in it, and whether a
    decision was made inside. The result is the graph the unfolded term gives

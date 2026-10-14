@@ -190,21 +190,24 @@ nothing to the document: the conflicts and supports are already there by
 proposition identity. =graph d2.=:
 
 : Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 3 nodes, 3 edges
-:   bArg (supporter, strict): B[t] <- -
 :   cArg (supporter, defeasible): C[t] <- A[t:obli], B[t:obli]
+:   bArg (supporter, strict): B[t] <- -
 :   bArg* (strict, strict): B[t] <- -
 :   default A[t]: obligation
 :   default B[t]: obligation
-:   default C[t]: obligation
 
 Read it: =cArg= is one edge with *two* sources, both term-side obligations.
 =bArg= is strict with no sources - an axiom needs nothing. =bArg*= is the
 same derivation once more, the strict edge the strict phase contributes
 (=minicourse-evaluation.org=, lesson 10). Edges are named after the
-argument or subargument they record (task =aida-host-edge-naming=), and
-the role is read off the debate term: both arguments sit on support
-stacks there. The default markers record that A, B and C are obligations
-wherever they are referenced.
+argument or subargument they record (task =aida-host-edge-naming=). The
+graph is the part of the document graph reachable from the issue C[t],
+plus the strict edge (since 2026-10-15; =issue-graph term.= compiles it
+from the debate term instead, the older route). An edge is a *supporter*
+when it concludes the issue or a source of another edge, an *attacker*
+when it concludes the contrary of one; both arguments here are
+supporters. The default markers record that A and B occur as obligation
+sites in some argument; no argument has a site for C.
 
 ** Exercises
 

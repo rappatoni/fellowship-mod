@@ -175,3 +175,36 @@ def lambda_only_statements(graph):
     for edge in graph.edges:
         by_role.setdefault((edge.target_key, edge.target_side), set()).add(edge.role == "subargument")
     return {statement for statement, roles in by_role.items() if roles == {True}}
+
+
+def test_the_setting_selects_the_issue_graph():
+    """`issue-graph document` (the default) and `issue-graph term` through
+    the service, on the example of the lambda class: the document labels
+    P->false UNDEC, the term (a bare site) OUT."""
+    from wrap.service import InvalidRequest
+    prover = setup_prover()
+    try:
+        svc = Service.of(prover)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            svc.check((TESTS / "rationality" / "self_attack_lk.fspy").read_text())
+            assert prover.issue_graph_from_document
+            target = svc.target("issue :P->false")
+            from core.dc.debate_graph import canonical_prop
+            key = (canonical_prop("P->false"), "term")
+            assert svc.label(target, semantics="grounded").labellings[0][key] == "UNDEC"
+            svc.set_issue_graph("term")
+            assert not prover.issue_graph_from_document
+            assert svc.label(target, semantics="grounded").labellings[0][key] == "OUT"
+            with pytest.raises(InvalidRequest):
+                svc.set_issue_graph("both")
+    finally:
+        prover.close()
+
+
+def test_the_command_parses():
+    from wrap.syntax import SyntaxRefused, parse
+    assert parse("issue-graph term").args == {"mode": "term"}
+    assert parse("issue-graph document").kind == "issue_graph"
+    with pytest.raises(SyntaxRefused, match=r"Use: issue-graph document\|term\."):
+        parse("issue-graph both")

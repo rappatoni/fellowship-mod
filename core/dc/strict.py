@@ -436,18 +436,23 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     (compile_debate, cycles through captured obligations included) plus
     the strict edges strictness on the term contributes."""
     graph = compile_debate(term, name, strict_names=strict_names, strict_kinds=strict_kinds)
-    trace = []
-    _, edges = strict_resolve(term, strict_names or (), trace=trace)
-    logger.debug("strict: %d decision(s), %d strict edge(s) for '%s'",
-                 len(trace), len(edges), name)
-    for edge in edges:
+    for edge in issue_strict_edges(term, name, strict_names):
         graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)
     return graph
 
 
-def document_issue_graph(source: DebateGraph, issue, strict_edges=()) -> DebateGraph:
+def issue_strict_edges(term: ProofTerm, name: str, strict_names=None) -> list:
+    """The strict edges strictness on an issue's term contributes."""
+    trace = []
+    _, edges = strict_resolve(term, strict_names or (), trace=trace)
+    logger.debug("strict: %d decision(s), %d strict edge(s) for '%s'",
+                 len(trace), len(edges), name)
+    return edges
+
+
+def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str = "issue") -> DebateGraph:
     """The issue graph taken from the document instead of the term: the
     part of ``source`` reachable from ``issue`` (``DebateGraph.reachable``,
     the rational closure), with its default markers, plus the strict
@@ -459,11 +464,19 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=()) -> DebateG
     holds only its scope.  Built beside ``compile_issue`` and checked
     against it (tasks.org, aida-discuss-issue-graph-from-document)."""
     keep = source.reachable(issue)
+    kept = [e for e in source.edges if (e.target_key, e.target_side) in keep]
+    # The document calls an atomic argument's edge an "argument"; in the
+    # issue graph it is a supporter of a statement the debate uses (the
+    # issue, or a source of one of its edges) or an attacker (it concludes
+    # the contrary of one), as the term route names them.
+    used = {issue} | {(s.key, s.side) for e in kept for s in e.sources}
     graph = DebateGraph()
     graph.quiet = True                     # copied edges were logged when compiled
-    for edge in source.edges:
-        if (edge.target_key, edge.target_side) in keep:
-            graph.edges.append(edge)
+    for edge in kept:
+        if edge.role == "argument":
+            role = "supporter" if (edge.target_key, edge.target_side) in used else "attacker"
+            edge = replace(edge, role=role)
+        graph.edges.append(edge)
     for (key, side), kinds in source.defaults.items():
         if (key, side) in keep:
             graph.defaults.setdefault((key, side), set()).update(kinds)
@@ -477,6 +490,9 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=()) -> DebateG
     logger.debug("issue graph from the document: %d of %d statement(s) reachable, %d edge(s), "
                  "%d strict edge(s) from the term", len(keep), len(source.statements()),
                  len(graph.edges), len(strict_edges))
+    if logger.isEnabledFor(logging.DEBUG):
+        artifact(logger, "compile: the argumentation framework of '%s', from the document" % name,
+                 graph.to_text())
     return graph
 
 

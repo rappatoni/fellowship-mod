@@ -129,8 +129,8 @@ def test_lesson5_json(prover, svc):
     assert (out["aida"], out["kind"], out["verdict"], out["mode"], out["semantics"]) == (
         "1.0", "evaluation", "value", "skeptical", "preferred")
     assert out["sigma"][:2] == [
-        {"prop": "Penguin", "side": "context", "key": "S:Penguin", "label": "IN"},
-        {"prop": "Photo", "side": "term", "key": "S:Photo", "label": "IN"}]
+        {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"},
+        {"prop": "Bird->Flies", "side": "term", "key": "B(S:Bird,->,S:Flies)", "label": "IN"}]
     nf = out["normal_form"]
     assert nf["pres"] == "μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>"
     tree = nf["tree"]

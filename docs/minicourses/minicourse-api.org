@@ -253,8 +253,8 @@ The evaluation of =tweety=:
 
 #+begin_example
 {"aida": "1.0", "kind": "evaluation", "verdict": "value", "mode": "skeptical", "semantics": "preferred"}
-sigma: [{"prop": "Penguin", "side": "context", "key": "S:Penguin", "label": "IN"},
-        {"prop": "Photo", "side": "term", "key": "S:Photo", "label": "IN"}, ...]
+sigma: [{"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"},
+        {"prop": "Bird->Flies", "side": "term", "key": "B(S:Bird,->,S:Flies)", "label": "IN"}, ...]
 normal form: μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
 tree: {"id": 1, "node": "Mu", "prop": "Flies",
        "binder": {"id": 2, "node": "ID", "name": "tweety", "prop": null},

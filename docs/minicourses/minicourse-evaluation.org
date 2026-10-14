@@ -271,16 +271,16 @@ the contrary's root is captured in the same way (=_bare=).
 
 The variable that replaces the site no longer shows which onus the hole
 had. A captured presumption is therefore marked (=captured_presumption=).
-On this route the issue graph is compiled again from the unfolded term
-(=compile_issue=), and the compiler records a captured variable as a
-source of the binder's statement, a presumption source if it is marked
-and an obligation source otherwise. The document graph already holds
-that source; the mark is only needed for the round trip from the term
-back to a graph. Whether the issue graph should be taken from the
-document graph instead, and how a captured site that stays a source
-fits with the strict phase, which does not count it as an assumption
-(lesson 10), are open questions in tasks.org. Lesson 13 follows the
-consequences.
+Wherever a graph is compiled from a term - the issue graph on the older
+route (=issue-graph term.=, =compile_issue=) and the record sigma reads
+for each scaffold (=scion_record=, lesson 11) - the compiler records a captured variable
+as a source of the binder's statement, a presumption source if it is
+marked and an obligation source otherwise. Since 2026-10-15 the issue
+graph itself is taken from the document graph, which holds that source
+already (see "After unfolding" below). How a captured site that stays a
+source fits with the strict phase, which does not count it as an
+assumption (lesson 10), is an open question in tasks.org. Lesson 13
+follows the consequences.
 
 *Termination and size.* A statement is expanded at most once on any path
 (the spine): below its debate it is bound, so every later demand for it
@@ -299,18 +299,32 @@ the next use unfolds again. =unfold argument NAME.= and =unfold issue :X.=
 build and print them; =render NAME [style] unfolded.= renders one.
 
 *After unfolding.* The term is replayed through Fellowship (the type
-check), compiled into the issue graph and labelled:
+check). The issue graph is the part of the document graph reachable from
+the issue (=DebateGraph.reachable=: the sources of every edge deriving a
+reached statement, and the contrary of a reached statement), plus the
+strict edges the strict phase finds in the term (lesson 10); a debate
+takes the part of its own graph, which holds only its scope. That graph
+is labelled:
 
 :   document graph, entrypoint
-:     |  unfold          core/dc/unfold.py          this lesson
-:     |  type check      core/dc/typecheck.py       Fellowship replays the term
-:     |  compile_issue   core/dc/strict.py          lesson 2, plus strict edges (lesson 10)
-:     |  labellings      core/comp/adf_label.py     lessons 3-5
-:     v  sigma           core/comp/evaluate.py      lesson 7 (witness_labelling)
+:     |  unfold                 core/dc/unfold.py        this lesson
+:     |  type check             core/dc/typecheck.py     Fellowship replays the term
+:     |  document_issue_graph   core/dc/strict.py        reachable part, plus strict edges (lesson 10)
+:     |  labellings             core/comp/adf_label.py   lessons 3-5
+:     v  sigma                  core/comp/evaluate.py    lesson 7 (witness_labelling)
 
-The issue graph and its labels are the same from every entrypoint; only
-the term, and so the normal form, depends on it. Lesson 9 starts from
-the end of that pipeline.
+Until 2026-10-15 the issue graph was compiled from the term instead
+(=compile_issue=); =issue-graph term.= still selects that route, and
+tests/test_issue_graph_from_document.py compares the two on every
+fixture. They agree on the labels except where an issue is a statement
+only a lambda subargument derives: the unfolder never puts a lambda's
+own edge on a stack, so such an issue is a bare site in the term, while
+the document graph has the lambda's derivation (tasks.org,
+aida-discuss-issue-graph-from-document).
+
+The reachable part of the document graph is the same from every
+entrypoint; the strict edges come from the entrypoint's term, and so
+does the normal form. Lesson 9 starts from the end of that pipeline.
 
 ** Example
 
@@ -718,8 +732,9 @@ sigma cannot contradict a strict decision. After normalisation,
 =check_conservativity= requires that an input with no site at all
 normalises to a term with no open obligation.
 
-*Phase 1 runs twice.* =compile_issue= runs it to collect the strict
-edges for the labelling and discards the rewritten term.
+*Phase 1 runs twice.* Building the issue graph runs it to collect the
+strict edges for the labelling (=issue_strict_edges=) and discards the
+rewritten term.
 =_evaluate_under= then runs it again to obtain that term. The results
 are identical. (On the shared route it runs once per sub-debate and the
 result is kept; minicourse-sharing.org, lesson 17.)

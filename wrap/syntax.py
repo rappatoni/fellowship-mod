@@ -388,7 +388,7 @@ def _p_one_name(kind, usage):
 def _p_choice(kind, choices):
     def parse(words, rest, text):
         if len(words) != 1 or words[0] not in choices:
-            raise SyntaxRefused(f"Use: {kind} {'|'.join(choices)}.")
+            raise SyntaxRefused(f"Use: {kind.replace('_', '-')} {'|'.join(choices)}.")
         return Command(kind, text, args={"mode": words[0]})
     return parse
 
@@ -467,6 +467,7 @@ COMMANDS = {
     "normalize": _p_one_name("normalize", "Use: normalize ARG."),
     "typecheck": _p_choice("typecheck", ("on", "off", "expanded")),
     "pipeline": _p_choice("pipeline", ("shared", "unfolded")),
+    "issue-graph": _p_choice("issue_graph", ("document", "term")),
     "load": _p_load,
     "tactic": _p_tactic,
     "start": _p_start,

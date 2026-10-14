@@ -118,7 +118,7 @@ from core.dc.cite import binder_names
 from core.dc.instances import IssueResolver, Stub, issue_graph
 from core.logging_util import TRACE, artifact
 from core.dc.strict import (
-    strict_resolve, compile_issue,
+    strict_resolve, compile_issue, document_issue_graph, issue_strict_edges,
     keep_orig as _keep_orig, keep_scion_support as _keep_scion_support,
     keep_attack_wing as _keep_attack_wing,
 )
@@ -441,6 +441,7 @@ def evaluate_debate(
     semantics: str = "preferred",
     witness=None,
     favour=None,
+    source=None,
 ):
     """Compile, label, choose the witness sigma, resolve, normalize,
     classify.
@@ -450,9 +451,10 @@ def evaluate_debate(
     labelling semantics the modes range over; ``witness`` the number of
     the credulous witness to use (default: the first accepting one);
     ``favour`` the argument whose derivation a credulous witness should
-    accept if it can (``witness_labelling``).
+    accept if it can (``witness_labelling``); ``source`` the graph the issue
+    graph is taken from (``_compile_for_evaluation``).
     """
-    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds, source)
     issue = issue_of(body)
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
@@ -472,6 +474,7 @@ def evaluate_witnesses(
     strict_kinds=None,
     base: str = "cbn",
     semantics: str = "preferred",
+    source=None,
 ):
     """Credulous evaluation under every accepting witness.
 
@@ -481,7 +484,7 @@ def evaluate_witnesses(
     rejected.  The verdict is the same for all (a value); the normal
     forms differ in which supporters and presumptions survive.
     """
-    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds, source)
     results = []
     for number, sigma in accepting_witnesses(graph, issue_of(body), semantics):
         nf = _evaluate_under(body, name, sigma, "credulous", strict_names, base)
@@ -489,12 +492,19 @@ def evaluate_witnesses(
     return results, graph
 
 
-def _compile_for_evaluation(body, name, strict_names, strict_kinds):
-    """The issue graph: the framework plus the strict edges the term
-    contributes (core/dc/strict.py)."""
+def _compile_for_evaluation(body, name, strict_names, strict_kinds, source=None):
+    """The issue graph: with a ``source`` graph (the document's, or a
+    debate's scope), the part of it reachable from the issue plus the
+    strict edges the term contributes (``document_issue_graph``); without
+    one, the framework compiled from the term plus those strict edges
+    (``compile_issue``, the reference until the generalisation lands;
+    tasks.org, aida-discuss-issue-graph-from-document)."""
     found = first_order_node(body)
     if found is not None:
         raise FirstOrderNotSupported("Debate evaluation", found)
+    if source is not None:
+        return document_issue_graph(source, issue_of(body),
+                                    issue_strict_edges(body, name, strict_names), name)
     return compile_issue(body, name, strict_names=strict_names, strict_kinds=strict_kinds)
 
 
@@ -548,6 +558,7 @@ def evaluate_shared(
     base: str = "cbn",
     semantics: str = "preferred",
     witness=None,
+    source=None,
 ):
     """``evaluate_debate`` for a ``SharedDebate`` (core/dc/share.py): what
     ``evaluate_debate(shared.expand(), ...)`` returns, up to the names of
@@ -559,10 +570,11 @@ def evaluate_shared(
     sub-debate is written out only inside a wing that is kept.  What is
     normalised is therefore the resolved term, whose size is that of the
     answer, not of the debate.  ``evaluate_debate`` on the unfolded term is
-    the reference this is tested against.
+    the reference this is tested against.  ``source``: as for
+    ``evaluate_debate``.
     """
     resolver = IssueResolver(shared, strict_names, strict_kinds)
-    graph = issue_graph(resolver, name)
+    graph = _shared_issue_graph(resolver, name, source)
     issue = shared.issue
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
@@ -582,17 +594,29 @@ def evaluate_witnesses_shared(
     strict_kinds=None,
     base: str = "cbn",
     semantics: str = "preferred",
+    source=None,
 ):
     """``evaluate_witnesses`` for a ``SharedDebate``: credulous evaluation
     under every accepting witness.  The instances are resolved by
     strictness once and shared by all witnesses."""
     resolver = IssueResolver(shared, strict_names, strict_kinds)
-    graph = issue_graph(resolver, name)
+    graph = _shared_issue_graph(resolver, name, source)
     results = []
     for number, sigma in accepting_witnesses(graph, shared.issue, semantics):
         nf = _evaluate_shared_under(resolver, name, sigma, "credulous", base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
+
+
+def _shared_issue_graph(resolver, name, source):
+    """``_compile_for_evaluation`` on the shared route: the strict edges
+    come from the resolved instances."""
+    if source is not None:
+        edges = resolver.strict_edges()
+        logger.debug("strict: %d decision(s), %d strict edge(s) for '%s' over %d instance(s)",
+                     len(resolver.decisions()), len(edges), name, len(resolver.instances))
+        return document_issue_graph(source, resolver.shared.issue, edges, name)
+    return issue_graph(resolver, name)
 
 
 def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):

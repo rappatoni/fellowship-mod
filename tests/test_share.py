@@ -594,6 +594,28 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.dc.instances, "compile_issue_shared", broken)
+        # the instance compiler builds the issue graph only on the reference
+        # route (aida-discuss-issue-graph-from-document)
+        script.write_text("pipeline shared.\nissue-graph term.\nlabel a2_0.\n")
+        with caplog.at_level(logging.INFO):
+            run(fresh, script)
+        said = [r.getMessage() for r in caplog.records]
+        assert any("compiling the unfolded term instead" in m for m in said)
+        assert len([m for m in said if m.strip().endswith(" IN")]) == 3
+
+    def test_a_failure_of_the_instances_strict_edges_falls_back_to_the_unfolded_term(
+            self, fresh, tmp_path, capsys, caplog, monkeypatch):
+        """On the document route the instances give only the strict edges;
+        should that fail, the unfolded term gives them."""
+        import core.comp.evaluate
+
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("no instances today")
+
+        script = tmp_path / "double.fspy"
+        script.write_text(chain_script(2))
+        run(fresh, script)
+        monkeypatch.setattr(core.comp.evaluate, "_shared_issue_graph", broken)
         script.write_text("pipeline shared.\nlabel a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)

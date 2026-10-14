@@ -3535,6 +3535,49 @@ SelfAttack* from P's term), =issue :P->false= has P[t] UNDEC (its term
 is the root site alone). Today's behaviour is the same; the alternative
 is to collect the strict derivations once per document.
 
+*Steps 4-6, the switch (2026-10-15).* =graph=, =label= and =evaluate=
+(unfolded and shared routes, single witness and =all=) take the issue
+graph from the document (=_compile_for_evaluation= and
+=_shared_issue_graph=, core/comp/evaluate.py; =Service._issue_source=):
+the document graph for an argument or issue, =prover.debate_graph= for
+a debate, and the term's own graph only for an argument the document
+refused. The setting =issue-graph document|term.= (FSP_ISSUE_GRAPH,
+default document) keeps =compile_issue= as the reference until
+[[id:aida-rational-closure]] is done. =issue_strict_edges= (core/dc/strict.py)
+is the one place the strict edges of a term are collected, with the log
+line both routes print. On the document route an argument's edge is
+named a supporter when it concludes the issue or a source of a kept
+edge, an attacker otherwise, so =graph= output and the API's edge
+=role= keep their words; where both hold (Peirce's =s3=, which concludes
+P->Q[c], a source of s2, and attacks P->Q[t]) it is a supporter.
+
+Not removed, with the reason: the =captured_presumption= mark is still
+read wherever a graph is compiled from a term - the reference route and
+the record sigma compiles for each scaffold (=scion_record=); and
+=fold_occurrences= still folds the strict edges a term gives once per
+occurrence (killR* twice).
+
+Pinned outputs that changed, regenerated from runs: the first two sigma
+entries of the API course's evaluation of tweety (same entries, document
+order; tests/minicourse/test_api_course.py); lesson 2's =graph d2=
+(edges in registration order, no obligation marker on C). The fallback
+test of tests/test_share.py now runs on =issue-graph term.=, and a
+second one covers the instances failing on the document route.
+Minicourses updated: minicourse.org lesson 2; minicourse-evaluation.org
+lesson 8a (capture, "After unfolding") and lesson 10 ("Phase 1 runs
+twice"); minicourse-sharing.org (the pipeline, lesson 17).
+
+Verification: tests/test_issue_graph_from_document.py 98 passed (the
+differential check plus the setting and its syntax); tests/minicourse
+130 passed; full suite 1968 passed, 2 skipped, 2 xfailed, 1 xpassed
+(159.9 s, against 148.5 s before the switch).
+
+Found, older than this task: =label= or =evaluate= of an issue about a
+compound proposition the document does not hold (=issue :P->false= in a
+document with only declarations) raises a parse error, on both routes
+and before the switch: the unfolder uses the canonical key as the
+proposition of the bare site.
+
 *** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
 :PROPERTIES:
 :ID:             aida-discuss-capture-source-vs-strict
