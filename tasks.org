@@ -3427,7 +3427,7 @@ normal form (paper2's obligation-eta long form, .cecli.notes.md
 form) is the starting point, restated for the current scaffold and
 stack shapes ([[id:aida-unfold-commutation-spec]]).
 
-*** BACKLOG Discuss: take the issue graph from the document graph, not from the term
+*** DOING Discuss: take the issue graph from the document graph, not from the term
 :PROPERTIES:
 :ID:             aida-discuss-issue-graph-from-document
 :AREA:           phd
@@ -3484,6 +3484,56 @@ What the change involves (2026-10-14):
 Sigma still reads scion records compiled per scaffold from the labelled
 term (=derivation_status=), so every statement of the term needs a
 label from the document subgraph.
+
+*Step 2, the differential check (2026-10-14), nothing switched.*
+=document_issue_graph= (core/dc/strict.py): the part of the source graph
+reachable from the issue (=DebateGraph.reachable=) with its default
+markers, plus the strict edges of =strict_resolve= on the term, folded;
+the source is the document graph, or =prover.debate_graph= for a debate.
+tests/test_issue_graph_from_document.py compares it with =compile_issue=
+for every argument, statement and debate of 33 fixtures (DEFAULT_SCRIPTS,
+tests/minicourse, tests/demo, tests/rationality, entrypoints, debates;
+256 entry points) and every statement of the 60 random documents of
+tests/test_share.py: 96 passed. Labels compared under grounded,
+preferred and stable (grounded only beyond 10 statements; grounded and
+complete on the random documents). 63 entry points agree exactly; the
+other 193 differ in three classes only:
+- markers (181): the term has an obligation marker the document lacks,
+  from the unfolder's own roots (an issue nobody presumes is ?u1). An
+  obligation marker contributes nothing to an acceptance condition; no
+  label changes.
+- kinds (18): the same edge with a source of another kind - the term
+  shows a site with its statement's root kind (a presumption if anybody
+  presumes it; lesson7_evaluate, lesson14/16/17, entrypoints q), the
+  document as written. The labeller ignores source kinds; no label
+  changes.
+- lambda (11): edges only the document has, around a lambda subargument;
+  the unfolder never stacks a lambda edge, so an issue only a lambda
+  derives (P->false, Q->false) is a bare site in the term. Labels change
+  on 10 entry points: =issue P->false= / =Q->false= in demo/05,
+  lesson15_capture, even_loop(_lk), self_attack(_lk) - OUT from the term,
+  UNDEC (even loop, self-attack: grounded) from the document; on the
+  random documents exactly at statements only a lambda derives.
+Every statement the term's graph references is referenced by the
+document subgraph (0 gaps), so sigma will find a label for every site.
+Full suite 1965 passed, 2 skipped, 2 xfailed, 1 xpassed.
+
+To decide (step 3) before switching: accept each class; for lambda, the
+document's verdict (the lambda's derivation counts) is the one the
+generalisation ([[id:aida-rational-closure]]) will give the term too.
+
+*Step 3 (the author, 2026-10-15): all three classes accepted.* The
+extra obligation entries and the obligation/presumption difference on a
+source are presentation; for lambda-subterm derivations the document's
+verdict holds (the lambda's derivation counts).
+
+Open, recorded with the decision: the strict derivations the strictness
+phase adds (lesson 10) still come from each issue's own term, so one
+document can label a statement differently depending on the issue
+asked - self_attack_lk: =issue :P= has P[t] IN (strict derivation
+SelfAttack* from P's term), =issue :P->false= has P[t] UNDEC (its term
+is the root site alone). Today's behaviour is the same; the alternative
+is to collect the strict derivations once per document.
 
 *** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
 :PROPERTIES:

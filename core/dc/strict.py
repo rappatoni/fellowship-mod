@@ -447,6 +447,39 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     return graph
 
 
+def document_issue_graph(source: DebateGraph, issue, strict_edges=()) -> DebateGraph:
+    """The issue graph taken from the document instead of the term: the
+    part of ``source`` reachable from ``issue`` (``DebateGraph.reachable``,
+    the rational closure), with its default markers, plus the strict
+    edges strictness on the issue's term contributes (``strict_resolve``,
+    or ``IssueResolver.strict_edges`` on the shared route).
+
+    ``source`` is the document graph for an issue or an argument, and a
+    debate's graph (``ProverWrapper.debate_graph``) for a debate, which
+    holds only its scope.  Built beside ``compile_issue`` and checked
+    against it (tasks.org, aida-discuss-issue-graph-from-document)."""
+    keep = source.reachable(issue)
+    graph = DebateGraph()
+    graph.quiet = True                     # copied edges were logged when compiled
+    for edge in source.edges:
+        if (edge.target_key, edge.target_side) in keep:
+            graph.edges.append(edge)
+    for (key, side), kinds in source.defaults.items():
+        if (key, side) in keep:
+            graph.defaults.setdefault((key, side), set()).update(kinds)
+    for key, side in graph.statements():
+        graph.nodes.setdefault(key, source.nodes.get(key, key))
+    graph.quiet = False
+    for edge in strict_edges:
+        graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))
+        graph.add_edge(edge)
+    fold_occurrences(graph)
+    logger.debug("issue graph from the document: %d of %d statement(s) reachable, %d edge(s), "
+                 "%d strict edge(s) from the term", len(keep), len(source.statements()),
+                 len(graph.edges), len(strict_edges))
+    return graph
+
+
 def fold_occurrences(graph: DebateGraph) -> None:
     """Unfolding copies a document edge into every site of its statement,
     and the compiler makes one edge per copy (s3 and s3_2 on Peirce).
