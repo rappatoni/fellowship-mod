@@ -3255,6 +3255,15 @@ obligation and presumptions would always be supporters, replacing the
 canonical rule for the root's kind; under sigma a presumption supporter
 that is IN wins, so the verdicts should agree, but that is unverified.
 
+Since Q3 of 2026-10-15 ([[id:aida-discuss-non-site-attack-points]])
+the root of an *exposed node's* debate is always an obligation site,
+with a foreign presumption at the bottom of the stack, while a *site*
+keeps the canonical kind (a presumption if any argument presumes the
+statement; an entry point's own kind in its own body). The two ought
+to be unified; the author's inclination of 2026-10-15 is towards the
+obligation root with presumptions as supporters for sites too, which
+this task is to decide.
+
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
 :ID:             aida-circular-support-design
@@ -3324,6 +3333,12 @@ options are presentational by construction. Sizes (issue :P): (a)
 
 Still to do for VERIFY: the differential test of (a) against d2, in
 [[id:aida-rational-closure]].
+
+Refined 2026-10-15 with Q2: d2 where the node's argument has primacy
+(the entry point and its subarguments; a debate's moved arguments and
+theirs), (a) elsewhere, including everywhere in a canonical issue term;
+=share-subarguments= / =preserve-subarguments= force (a) / d2
+everywhere. See [[id:aida-discuss-non-site-attack-points]].
 
 *** BACKLOG Specify the commutation property: compile-and-unfold against theta-expand-and-substitute
 :PROPERTIES:
@@ -3608,6 +3623,55 @@ Scope: the rule needs a single spine, i.e. linear arguments (levels 1
 and 2 of [[id:aida-argument-lj-restriction]]); the generalised compiler
 refuses the rest, and a forked spine (level 3, Peirce's trap) is a
 separate question.
+
+*Q2 and the bound case, aligned (the author, 2026-10-15): primacy
+follows the entry point and the moves, extends to subarguments, and
+no further.* In a canonical issue term no argument and no subargument
+has primacy: everything is decompiled and stands at its registered
+position. In an argument term the entry point is on top of its
+conclusion's stack and its own exposed nodes are on top of their
+statements' stacks; other registered arguments and their nodes keep
+registration order. In a debate term the moved arguments and their
+subarguments get the moves' priority. For an exposed node this means:
+not bound - on top of the stack if its argument has primacy, else at
+its registered position; bound - SUP(captured, own) (d2) if its
+argument has primacy, else the captured variable alone ((a)). The
+earlier defaults "(a) canonical, d2 argument and debate" are refined to
+this; the share/preserve settings override uniformly ((a) everywhere /
+d2 everywhere). The E2 probe's canonical-order difference between (a)
+and d2 (argQ's P from P's root) is the canonical semantics, not a
+defect.
+
+*Q3, decided (the author, 2026-10-15): the root of an exposed node's
+debate is always an obligation site*, with a foreign presumption at the
+bottom of the stack (the entrypoint mechanism), as the obligation-eta
+expansion t:A -> mu a.<?A || ... t ...> introduces it. Since the issue
+graph comes from the document graph this is presentational: after
+discharge both roots read the same. Sites keep the canonical kind rule
+for now; the two treatments differ and should be unified
+([[id:aida-site-exposure-design]]).
+
+*Q1, decided (the author, 2026-10-15): share = no attack scaffold at a
+bound node (the node is inside the attacked stack; a refutation of P
+defeats everything in its scope, which is universal substitution by
+enclosure); preserve = a copy of P's attackers at the node,
+ATT(node, SUP~(altN, attackers')), under the preserve-subarguments
+setting.* The variant ATT(node, alt4) is not an attack: alt4 is the
+acceptance continuation of P's debate, and no binder in scope stands
+for the attackers' refutation; it is inert in consistent documents and
+wrong in meaning. The duality with support is imperfect because SUP's
+original is the stack below and its scion one alternative (sharing
+needs b), while ATT's original is the whole stack (sharing is by
+enclosure). Refinement: the copy is made only where P's attack scaffold
+encloses the node (the binder of P is a scaffold's alt/b); where P is
+bound by the argument's own binder - a lambda hypothesis h:P, or a mu
+continuation for a refutation node - nothing is copied under either
+setting: a hypothesis is attacked at the lambda's application site,
+and refuting P inside lambda h:P does not touch P->B. To probe before
+implementing: capture of a horn (not a site) by the argument's own
+continuation, e.g. a refutation node inside a proof by contradiction,
+where capture by the continuation would turn an ex falso into a plain
+proof; sites are captured so today (the sprung trap, lesson 8a).
 
 *** DONE Discuss: take the issue graph from the document graph, not from the term
 CLOSED: [2026-10-15 Thu]
