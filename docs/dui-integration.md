@@ -93,6 +93,12 @@ report = svc.check(text)
  ]}
 ```
 
+A `dixi` entry can be refused with `"stage": "record"` when the recorded
+term is not an argument of the pure level (README, *Recording commands*):
+the message names the argument and the continuation or hypothesis used
+twice, or the pure command that is a debate scaffold. The editor should
+show it at the block's span; nothing was registered.
+
 - `status` is `ok`, `refused` (the document refused it: underline it),
   `reported` (a query the pipeline refused: show the message), `error`
   (Fellowship refused it), `fatal` (the connection broke), `skipped`

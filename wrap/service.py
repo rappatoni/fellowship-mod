@@ -612,8 +612,11 @@ class Service:
             # clashing name.
             s.claim_name(name, "argument", dry_run=True)
             # Not `strict`: registered either way, and held by Fellowship if
-            # it turns out closed - the same rule as `end argument`.
-            arg.execute(declare=True if strict else "auto", preserve_input_body=True)
+            # it turns out closed - the same rule as `end argument`, and the
+            # same argument discipline (wrap/registry.py).
+            from wrap.registry import enforce_discipline
+            arg.execute(declare=True if strict else "auto", preserve_input_body=True,
+                        accept=enforce_discipline)
             s.register_argument(arg)
         except ProverError as e:
             raise ContentRefused(str(e), stage="register", cause=e)
@@ -697,6 +700,10 @@ class Service:
             s.claim_name(name, "argument", dry_run=True)
             arg = Argument(s, name=name, conclusion=conclusion, is_anti=edge.target_side == "context")
             arg.body = copy.deepcopy(edge.term)
+            # No argument discipline here: a strict edge of a debate may be
+            # classical (Peirce's s1*), and adopting it is how a debate's
+            # result becomes a theorem.  Fellowship checks it; the compiler
+            # reads a theorem as a strict leaf (aida-rational-closure).
             arg.execute(declare=True, preserve_input_body=True)
             s.register_argument(arg)
         except ProverError as e:

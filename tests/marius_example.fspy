@@ -8,6 +8,10 @@ deny alpha : (A_h-C).
 deny beta : (A_h-D).
 
 # First in one go:
+# Refused at `dixi.` since 2026-10-15: arg0 is a debate term written as an
+# argument (two support scaffolds, the continuation alt used twice), which
+# the pure level refuses (tasks.org aida-argument-lj-restriction); kept as
+# the fixture of that refusal (tests/test_discipline.py).
 argument arg0 : (A).
 cut (A) alt. 
 cut (A) _.

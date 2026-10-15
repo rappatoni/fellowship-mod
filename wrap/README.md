@@ -20,7 +20,9 @@ Files
     decorations, names, arguments, the document graph, debates, caches.
     Nothing module-global: two sessions never share one.
 - registry.py
-  - Statements, refinement and citation: the wrapper's registry of every
+  - The argument discipline at `dixi` (`enforce_discipline`,
+    `DisciplineRefused`; the checks are core/dc/discipline.py), and
+    statements, refinement and citation: the wrapper's registry of every
     statement and argument; Fellowship keeps the strict proofs only.
 - syntax.py
   - The one command syntax of scripts, the REPL and document checks:

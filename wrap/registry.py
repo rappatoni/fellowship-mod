@@ -56,6 +56,33 @@ _STATEMENT = re.compile(
 _REFINE = re.compile(r"^\s*(" + "|".join(REFINE_VERBS) + r")\s+([^\s.]+)\s*\.?\s*$", re.IGNORECASE)
 
 
+class DisciplineRefused(ProverError):
+    """The recorded term is not an argument of the pure level
+    (core/dc/discipline.py): not linear, not dual-linear, or holding a
+    debate scaffold."""
+
+
+def enforce_discipline(argument) -> None:
+    """Refuse ``argument`` unless its body is at the pure level (tasks.org,
+    aida-argument-lj-restriction).  Called by ``Argument.execute`` before
+    Fellowship is asked to hold the argument."""
+    from core.dc.discipline import violations
+    body = getattr(argument, "body", None)
+    if body is None:
+        return
+    anti = getattr(argument, "is_anti", False)
+    found = violations(body, anti)
+    if found:
+        what = "counterargument" if anti else "argument"
+        raise DisciplineRefused(
+            f"'{argument.name}' is not a {what} of the pure level: " + "; ".join(found)
+            + ". " + ("A counterargument is dual-linear: each hypothesis used once, with no "
+                      "second hypothesis binder between." if anti else
+                      "An argument is linear: each continuation used once, with no second "
+                      "continuation binder between.")
+            + " Debates, not arguments, may be classical.")
+
+
 class RefinementRefused(ProverError):
     """`refine NAME` on something that cannot be reopened."""
 
@@ -181,7 +208,7 @@ def finish_recording(prover, current: dict, *, demand_strict: bool):
         instructions=current["instructions"],
         is_anti=current.get("is_anti", False),
     )
-    arg.execute(declare=True if demand_strict else "auto")
+    arg.execute(declare=True if demand_strict else "auto", accept=enforce_discipline)
     if before is not None and getattr(before, "statement_kind", None):
         arg.statement_kind = before.statement_kind
     prover.register_argument(arg)
@@ -229,6 +256,7 @@ def is_qed(command: str) -> bool:
 
 __all__ = [
     "STATEMENT_KEYWORDS", "ANTI_KEYWORDS", "REFINE_VERBS", "RefinementRefused",
+    "DisciplineRefused", "enforce_discipline",
     "parse_statement", "enthymeme", "state", "parse_refine", "start_recording",
     "reopen", "abandon", "finish_recording", "propagate_strictness", "is_qed",
     "strip_outer_parens", "ProverError", "StrictnessRefused",

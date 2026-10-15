@@ -82,6 +82,11 @@ label second.
 #
 #Testing admal
 declare r7: (A - D).
+% Refused at `dixi.` since 2026-10-15: the lambda-bar body uses the outer
+% continuation th, so the argument is not linear (the pure level,
+% tasks.org aida-argument-lj-restriction); eliminating a difference on the
+% term side is classical.  Kept as the fixture of that refusal
+% (tests/test_discipline.py).
 argument admaltest : (A).
 cut (A-D) th.
 axiom r7.
@@ -93,7 +98,5 @@ dixi.
 #
 debate pro open third : B.
 arg1.
-% was `support admaltest arg1.`: :A is not a node of 'arg1' yet (an intermediate
-% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
-admaltest arg1.
+% was `admaltest arg1.`: admaltest is refused above and so not registered.
 cedat tempus.

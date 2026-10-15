@@ -435,7 +435,9 @@ declarations, names, arguments, document graph, debates and caches.
 - A session starts with a classical document, and `load FILE` replaces the
   document with the file's.
 - Debates are classical: in an `lj` or a `minimal` document the debate
-  commands are refused.
+  commands are refused. Arguments are not: whatever the document's logic,
+  `dixi` holds a recorded argument to the pure level (see *Recording
+  commands*).
 
 ### The service layer
 
@@ -505,7 +507,17 @@ detects a machine-mode desynchronization.
 - `dixi`, also `cr` and `case rested`
   - finish recording, execute the proof against Fellowship, and register it;
     if its body is closed, Fellowship also keeps it as a theorem, so
-    `axiom NAME` cites it
+    `axiom NAME` cites it. The term must be an argument of the *pure level*
+    (`core/dc/discipline.py`): an argument is linear (each continuation,
+    bound by `mu` or a lambda-bar, used at most once, with no second such
+    binder between), a counterargument dual-linear (the same for
+    hypotheses, bound by `mu'` or a lambda), and neither holds a debate
+    scaffold (a pure command `<mu v.c || mu' w.c'>`, `v` and `w` unused,
+    whose halves share a variable). Otherwise `dixi` is refused with the
+    variable named and nothing is registered. Peirce's law is refused as an
+    argument; a refutation through a proved negation (`cut (~A) x. ...
+    elim. axiom.`) passes; debates stay classical (`adopt` brings a
+    classical strict edge in as a theorem)
 - `theorem NAME : (PROP).`, also `lemma`, `proposition`, `claim`, and
   `antitheorem`, `antilemma`, `antiproposition`, `anticlaim`
   - record a claim, and nothing more (see below)

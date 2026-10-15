@@ -349,7 +349,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             return getattr(getattr(self.body, "di", None), "name", None)
         return None
 
-    def execute(self, *, declare: bool = False, preserve_input_body: bool = False) -> None:
+    def execute(self, *, declare: bool = False, preserve_input_body: bool = False,
+                accept=None) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
 
         If *declare* is true, finish the replay with ``qed.`` so Fellowship
@@ -360,6 +361,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         If *preserve_input_body* is true, replay is used as a checker: after
         successful replay, keep the parsed input AST instead of replacing it
         with Fellowship's reconstructed proof term.
+
+        *accept*, if given, is called with the argument once its body is
+        built and before Fellowship is asked to hold it (``qed.``); if it
+        raises, the open theorem is discarded and the exception propagates,
+        so a refused argument leaves the prover clean (the argument
+        discipline, wrap/registry.py).
         """
         logger.info("Executing argument '%s'.", self.name)
         if self.executed:
@@ -522,6 +529,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         elif self.rendering == "pruefschema":
             self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
         open_sites = self.open_sites()
+        if accept is not None:
+            try:
+                accept(self)
+            except Exception:
+                self.prover.send_command('discard theorem.')
+                raise
         if declare is True and open_sites:
             self.prover.send_command('discard theorem.')
             raise StrictnessRefused(

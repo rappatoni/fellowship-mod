@@ -3,6 +3,8 @@
 Files
 - argument.py
   - Argument: a recorded or registered argument. execute() replays its instructions against Fellowship and reads back its proof term; open sites, enrichment and rendering.
+- discipline.py
+  - The argument discipline of the pure level: linear arguments, dual-linear counterarguments, no debate scaffold (tasks.org, aida-argument-lj-restriction); `violations(body, anti)`, enforced by wrap/registry.py at `dixi`.
 - debate.py
   - Debate, Move: debates as named, ordered, scoped selections of the document's arguments; the verb checks; unfold_debate.
 - debate_graph.py
