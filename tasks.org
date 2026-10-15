@@ -2474,7 +2474,7 @@ unfolding and replaying it, doubles. No test covered it. A lambda
 subargument is compiled per parent, so presumably duplicated alike (not
 checked). The author: "The status quo might also be fine. Needs design."
 
-*** BACKLOG Implement rational closure: attack and support points beyond sites
+*** DOING Implement rational closure: attack and support points beyond sites
 :PROPERTIES:
 :ID:             aida-rational-closure
 :AREA:           phd
@@ -2505,6 +2505,10 @@ in [[id:aida-discuss-non-site-attack-points]] and
 the questions still open there, and includes the E1-E7 fixtures, the
 (a)-against-d2 differential test, Fellowship replay of every unfolded
 term, and the minicourse updates (lesson 8a above all).
+
+Started 2026-10-15. Also in scope: retire the reference route of
+[[id:aida-discuss-issue-graph-from-document]] (=issue-graph term=) once
+the generalised compiler is the ground truth.
 
 *** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
@@ -2829,6 +2833,17 @@ C[t] <- B->C[t], B[t] and B->C[t] <- A[t].
 - The compiler must recognise the named partial application as a
   subargument (a mu-bound term with a proposition, not a scaffold),
   which it currently has no shape for.
+
+*Scope of the decision (the author, 2026-10-15).* It concerns an axiom
+that masks intermediate conclusions under one AST node: r : A->(B->C)
+concludes C from A and B without any term-side node of type B->C. The
+context side is different: the nested cells of the elimination stack
+(?A * (!B * r)) are AST nodes for A->B->C and B->C, and they are
+exposure points ([[id:aida-discuss-non-site-attack-points]]). The pinned
+refusals in tests/rationality/test_postulates.py stay right - attack,
+rebut and undermine of =test= need a term-side B->C - but once the
+cells are exposed, =test= (concluding B->C refuted) is a supporter of
+cArg's cell for B->C.
 
 *** NEXT Refuse opposing presumptions: track which side holds the onus
 :PROPERTIES:
@@ -3404,7 +3419,11 @@ lambda as the original of a statement's scaffolds.
   at a mu/mu' binder, and a lambda's hypothesis is attacked through the
   argument v of the redex <lambda x.t || v * E> -> <v || mu'x.<t||E>>;
   an unapplied lambda is attacked only as the implication.
-- Cons/Sonc cells are not nodes ([[id:aida-curried-intermediate-conclusions]]).
+- Cons/Sonc cells are logically progressing nodes like any other: the
+  context side of <r || A * (B * k)> has nodes for A->B->C, B->C (and A,
+  B, C below them), created by the nested cells, and the compiler and
+  unfolder treat them as exposure points (the author, 2026-10-15,
+  correcting an earlier note here that excluded them).
 - Sites stay the root of their debate for now ([[id:aida-site-exposure-design]]).
 - An internal node whose statement is bound in scope: d2, with (a) as
   an option ([[id:aida-circular-support-design]]).
@@ -3427,7 +3446,129 @@ normal form (paper2's obligation-eta long form, .cecli.notes.md
 form) is the starting point, restated for the current scaffold and
 stack shapes ([[id:aida-unfold-commutation-spec]]).
 
-*** DOING Discuss: take the issue graph from the document graph, not from the term
+*Question 1 (attacks at a bound node), still under discussion
+(2026-10-15).* Probe on E2 plus refP (a counterargument concluding P[c]),
+unfolded for argP, d2 at argQ's internal node: no attack at the node, an
+attack whose wing is the outer attack scaffold's alt (alt4), one whose
+wing is a support scaffold's alt (alt2), and the preserved copy
+SUP~(altN, refP') all replay and give the same labels, classes and
+normal forms (up to the name of the outermost binder); a wing captured
+by the innermost P[c] binder (th, argP's own) gives the same labels but
+a different credulous normal form (argQ dropped, Q from its
+presumption). Between alt4 and the node, alt1, alt2, argP and th all
+bind P[c]. Not decided.
+
+*Cuts, raised 2026-10-15 with the Cons/Sonc correction; under
+investigation.* A command <t || e> cuts a term-side node X[t] against a
+context-side node X[c]. With both exposed as sources of the mu/mu' above
+(pro: B[t] <- A->B[t], A->B[c]), the guard between contraries makes the
+conclusion OUT; and the cell's tail is the continuation the mu binds, a
+hypothesis the mu discharges. Candidate under discussion: the mu node's
+derivation takes the term half's statement plus the context half's own
+sources minus the discharged hypothesis (pro: B[t] <- A->B[t], A[t]),
+the cell keeping its own derivation A->B[c] <- A[t], B[c] (modus tollens,
+which makes every use of an implication a derivation cycle).
+
+*Cuts, state of the investigation (2026-10-15).*
+What the plans say: debate-graph-spec.org reads an edge as the sequent of
+a subargument (sources = open sites and free variables, kind
+"assumption", with scope(e)); an individual hyperedge is linear, Delta
+restricted to the stoup successor, so the continuation a mu binds is
+not a source; paper2's arguments are intuitionistic. "One exposed site
+per logically-progressing node" read literally makes both halves of a
+command sources, which the spec does not address. The assumption kind
+and scope(e) were never given acceptance conditions; 2026-09-17 replaced
+them by capture-as-obligation (strictness read off the term).
+call-by-onus.org reads mu a:P.<v:Q || E> as "prove P from the lemma Q
+(v), then P from Q (E)". The cell's derivation A->B[c] <- A[t], B[c] is a
+transposal of the application edge B[t] <- A->B[t], A[t], which D1/D2 of
+fragment-followups-plan.org planned to generate by closure.
+
+Probes (scratch, 2026-10-15; today's compiler run, the proposal built by
+hand and labelled by the labeller), with r : A->B and ax : A declared:
+- mu a:B.<r || !A * a>, mu a:B.<r || ax * a>, and the lambda forms
+  mu a:B.<lambda x:A.t || v * a> work as intended under the proposal:
+  arg: B[t] <- A->B[t], A[t]; the cell is the transposal; a is no source.
+- Their beta-reducts mu a:B.<v || mu'x:A.<t || a>> (v, t axioms or
+  presumptions) fail under the first proposal (a context half that is
+  not a cell taken as a premise): arg: B[t] <- A[t], A[c], dead by the
+  contrariness guard. The graph must not change under beta.
+- The duals (Sonc/lambda-bar, <E1 * v || lambda-bar a.E2> -> <mu a.<v||E2> || E1>)
+  behave as mirror images: the lambda-bar forms work, the reducts
+  mu'x:B.<mu a:A.<x || e> || f> fail the same way.
+- Today's compiler gives a lambda that is not an argument's root an edge
+  of its own, but walks through a lambda-bar: an asymmetry the
+  generalisation must remove (lambda-bar is a progress node).
+
+Candidate criterion: in a command under a mu/mu' root, the half that
+contains the root binder's own variable is the rest of the proof - its
+own sources go to the root (minus the variables bound inside it and the
+root's variable) and it gets its own edge as an exposure point (the
+transposal); the other half is the premise and gives the root its
+statement. This reproduces today's root edges on all the probes above
+and gives Peirce's s2 (neither half contains the binder) its two
+contrary premises, as today. To probe: both halves contain the root's
+variable; the variable only deep inside a half (inside a lambda in an
+argument position); after a nested cut; the K-combinator shape (B a
+source of its own derivation).
+
+*Cuts, probes of 2026-10-15 (continued).* Linearity (COMMA 2026,
+Definition "Linear Expressions"): a context variable bound by mu occurs
+exactly once, with no mu between its binder and its occurrence;
+arguments are linear terms, counterarguments dual-linear contexts. So in
+an argument the continuation is in exactly one half of the command under
+its mu, and the cases "both halves hold it" and "it occurs inside a
+lambda body" cannot occur (they arise only in debate terms).
+- K-combinator, mu a:B.<lambda x:A.!B || !A * a> against its reduct
+  mu a:B.<!A || mu'x:A.<!B || a>>: the labels of B agree with no
+  attacker, a defeasible and a strict refutation of B.
+- Nested cut, N = mu a:B.<!A || mu'y:A.<mu d:C.<!A->C || y*d> ||
+  mu'z:C.<mu e:B.<!C->B || z*e> || a>>> against the application it
+  reduces to, P = mu a:B.<!C->B || (mu d:C.<!A->C || !A*d>) * a>. Split
+  at each binder by the half that holds the binder's own variable (for
+  mu'z the half holding z is the rest: mu'z: C[c] <- C->B[t], B[c], a
+  transposal; taking the half holding the outer continuation instead
+  gave C[c] <- B[t], B[c], ex falso, which is wrong). Labels agree with
+  no attacker and with a strict refutation of C, but not with a
+  defeasible refutation of B: grounded leaves C and A->C UNDEC in N, IN
+  in P. Cause: the edges the rest-of-proof pieces get are transposals,
+  and which transposal the term shows depends on its shape - P's cells
+  give the implication attacks (C->B[c] <- C[t], B[c]), N's mu' nodes
+  the premise attacks (C[c] <- C->B[t], B[c]). Under beta they swap, so
+  the labelling is not invariant.
+- Both of these restore agreement in all three scenarios: (a) no edges
+  for the rest-of-proof pieces (cells, and mu/mu' holding the
+  continuation), only for nodes in premise positions; (b) every
+  transposal of every application edge in both forms, as the strict
+  layer's closure would ([[id:aida-strict-layer]]).
+
+*Linearity in practice (experiments, 2026-10-15; scratch, through the
+wrapper and Fellowship).*
+- Peirce's law as an argument (=elim f. cut ((P->Q)->P) a. axiom f. elim.
+  elim h. cut (P) z. axiom h. axiom a. axiom a.=): under lk it registers
+  as μpeirce.<λf.μa:P.<f || λh:P.μz:Q.<h || a> * a> || peirce>, =a= used
+  twice and once under =μz=; under lj it is refused at =dixi.= ("a is
+  neither in your hypothesis nor in your conclusion").
+- tests/alternative_arguments.fspy's =admaltest= (λ̄ whose body is the
+  outer continuation, μth.<r7 || λ̄alpha.th>): lk accepts, lj refuses.
+- Counterarguments built through ~A (=cut (~A) x. … elim. axiom.=, e.g.
+  lesson 9's =con= and =killC=): lj accepts them. Their terms are linear
+  (every context variable once, no μ between) but not dual-linear in the
+  sense of COMMA 2026 (=x= occurs under a second μ̃, =μ'H1=): Fellowship's
+  lj checks counterarguments for linearity, not dual-linearity.
+- An intuitionistic chain of cuts (B from A, A->C, C->B) is linear and
+  accepted under both.
+- Census of the 173 arguments the fixtures register (all lk documents):
+  122 linear; 29 whose only defect is an unused binder (μ_, "exactly
+  once" by the letter); 2 non-linear arguments for a proposition
+  (admaltest; marius_example's arg0, a composed term); of the 47
+  counterarguments all are linear and 20 are not dual-linear.
+Consequence for the compiler: the cut criterion (the half holding the
+binder's variable) assumes linear arguments, which AIDA does not enforce
+- documents with debates are lk ([[id:aida-argument-lj-restriction]]).
+
+*** DONE Discuss: take the issue graph from the document graph, not from the term
+CLOSED: [2026-10-15 Thu]
 :PROPERTIES:
 :ID:             aida-discuss-issue-graph-from-document
 :AREA:           phd
@@ -3577,6 +3718,13 @@ compound proposition the document does not hold (=issue :P->false= in a
 document with only declarations) raises a parse error, on both routes
 and before the switch: the unfolder uses the canonical key as the
 proposition of the bare site.
+
+Closed 2026-10-15 (commits d593000, 42cf6f0): the decision is written
+above, the differential check ran before the switch and is pinned
+(tests/test_issue_graph_from_document.py), and the mark question is
+answered (still needed while graphs are compiled from terms). Retiring
+the reference route (=issue-graph term=, =compile_issue= for the issue
+graph) moves to [[id:aida-rational-closure]].
 
 *** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
 :PROPERTIES:
@@ -5631,6 +5779,87 @@ day, not implemented or tested:
   against the paper before fixtures are refused.
 - Fixtures that are classical as single arguments today have not been
   surveyed.
+
+Experiments of 2026-10-15 (Peirce's law, admaltest, the ~A
+counterarguments, a fixture census): recorded under
+[[id:aida-discuss-non-site-attack-points]]. Two findings bear on this
+task: lj accepts the counterarguments built through ~A, which are linear
+but not dual-linear as COMMA 2026 defines counterarguments; and two
+fixtures register non-linear arguments for a proposition under lk
+(tests/alternative_arguments.fspy admaltest, tests/marius_example.fspy arg0).
+
+*The criterion is wrong as stated (the author, 2026-10-15).* Dual
+linearity admits excluded middle but not non-contradiction (A, ~A |- false
+needs two hypotheses in scope), so refutations through ~A - 20 of the 47
+fixture counterarguments - are not dual-linear although lj accepts them.
+The author's direction: arguments and counterarguments are intuitionistic
+on the term side and dual-intuitionistic on the context side, and no
+debate scaffold may be constructed on either side.
+
+Readings tested (scratch, 2026-10-15) on the scaffold shapes, Peirce's
+law, admaltest, a contraction refutation =twice= (μ'h:A.<rr || h*h*?false>,
+accepted by lj) and the 173 fixture arguments:
+- R1, what lj enforces: every continuation (bound by μ or λ̄) used at
+  most once, with no μ/λ̄ between binder and occurrence. Excludes Peirce,
+  admaltest, SUP and ATT~; lets ATT and SUP~ through (they reuse a term
+  variable); all 47 counterarguments and 124 of 126 arguments pass.
+- R2, R1 plus every μ̃-bound variable used at most once: excludes all
+  scaffolds, but also =twice=, a valid intuitionistic refutation.
+- R3, R1 plus no variable free in both halves of one command: excludes
+  all four scaffolds (each reuses its variable across the two
+  alternatives of a command), Peirce and admaltest; accepts =twice=, all
+  47 counterarguments, and 124 of 126 arguments (the two that fail are
+  admaltest and marius_example's composed arg0). Candidate, not decided.
+
+*The both-sides restriction alone (S: no bound variable free in both
+halves of a command), experiments of 2026-10-15.*
+- S admits classical proofs: Peirce's term μpeirce.<λf.μa.<f || λh.μz.<h||a> * a> || peirce>
+  has no variable on both sides (only the reuse of the continuation
+  =a= makes it classical, which S does not look at). Reading: on cut-free
+  terms S only forbids the head variable of a command inside its own
+  argument, i.e. contraction on the principal formula of a left
+  implication rule; Kleene's G3c is complete without it, so S alone
+  should give classical logic, not intuitionistic + dual-intuitionistic
+  (bi-intuitionistic logic does not prove Peirce).
+- S rejects intuitionistic proofs that lj accepts: the cut (let) form
+  λx.μal.<μbe.<g||x*be> || μ'y.<h||x*y*al>> (its application form
+  passes); and λk.k(λf.f(λp.k(λu.p))) for ((((P->Q)->P)->P)->Q)->Q, where
+  k is the head of the outer command and occurs in its argument - G3i
+  needs exactly that contraction, so S together with linearity (R3)
+  appears strictly weaker than intuitionistic logic. Not proved
+  exhaustively; no fixture argument is affected.
+- What S was found for - excluding the scaffolds - rests on a narrower
+  feature: each scaffold shares its variable between the two halves of a
+  command whose halves are both affine abstractions (μ_.c || μ'_.c'), the
+  pure commands of call-by-onus.org. Untested candidate: restrict S to
+  those commands.
+
+*Options (the author, 2026-10-15).*
+1. Pure: arguments intuitionistic, counterarguments dual-intuitionistic.
+   Refutations through ~A (non-contradiction) are lost - 20 of the 47
+   fixture counterarguments; refutations of mixed implications like
+   A->~B need the context side (B-A) or new mixed connectives
+   (A->bar B and its dual), i.e. an extension of the logic and of
+   Fellowship, hard to read for non-experts.
+2. Counterarguments not constructive: both sides intuitionistic in the
+   continuation sense (what lj enforces today). A refutation of A and B
+   no longer needs a witness against one of them (P and not P can be
+   refuted without one), an advantage for the skeptic.
+3. Fully classical on both sides, excluding only the scaffolds.
+The author's characterisation: theoretically pure (e.g. Lorenzen games)
+-> computationally useful (ACDC as a logical framework) -> logically
+most convenient (formalising argumentation directly).
+
+*Every option needs the scaffold exclusion (experiment, 2026-10-15).*
+The four scaffold shapes over open sites, replayed through Fellowship:
+under lk all four are accepted; under lj ATT (as an argument for P) and
+SUP~ (as a counterargument) are accepted, SUP and ATT~ refused. By the
+definitions: linearity leaves ATT through (it reuses the term variable
+b), dual-linearity leaves ATT~ through (it reuses the context variable
+b). So option 1 admits ATT and ATT~, option 2 (lj) ATT and SUP~, option
+3 all four - the restriction excluding scaffolds (S on pure commands,
+untested) is common to all three, and the options differ only in the
+linearity check on top.
 
 ** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
 :PROPERTIES:
