@@ -546,6 +546,24 @@ class Service:
         return Done("from the document graph" if self.session.issue_graph_from_document
                     else "compiled from the term")
 
+    @_operation
+    def set_subarguments(self, mode: str) -> Done:
+        """At an exposed node whose statement is already bound: ``default``
+        keeps the node's own derivation iff its argument has primacy,
+        ``share`` never (the captured variable alone, the smallest term),
+        ``preserve`` always, with a copy of the attackers where a scaffold
+        binds the statement (core/dc/unfold.py).  The class of every
+        verdict is the same under all three, and the labels but for the
+        strict phase on a preserved copy (tests/test_unfold_exposure.py);
+        the unfolded terms are not, so the caches are dropped."""
+        if mode not in ("default", "share", "preserve"):
+            raise InvalidRequest(f"subarguments: default, share or preserve, not '{mode}'")
+        if self.session.subarguments != mode:
+            self.session.subarguments = mode
+            self.session.bump_revision()
+        return Done({"default": "by primacy", "share": "shared (captured)",
+                     "preserve": "preserved (kept on top of the captured)"}[mode])
+
     def _issue_source(self, found):
         """The graph ``found``'s issue graph is taken from: the document
         graph, a debate's own graph (its scope), or None - compile from the

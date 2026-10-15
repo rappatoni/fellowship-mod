@@ -1,0 +1,34 @@
+% A cell on the spine is not exposed (tasks.org,
+% aida-curried-intermediate-conclusions, decided 2026-10-13; the horn
+% rule of aida-discuss-non-site-attack-points): cArg derives C from
+% abc : A->(B->C), an obligation for A and a presumption of B.  B->C
+% occurs in cArg's body only as the type of the elimination stack's
+% tail, a cell carrying cArg's own continuation r, so it is on the spine
+% and no node of cArg.  The counterargument test, a bare presumption
+% against B->C, is reachable from nothing and takes no part in cArg's
+% term.
+lk.
+declare A,B,C:bool.
+declare abc : (A->(B->C)).
+declare axA : (A).
+
+argument cArg : (C).
+cut (A->(B->C)) r.
+axiom abc.
+elim.
+next.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+argument aArg : (A).
+axiom axA.
+dixi.
+
+counterargument test : (B->C).
+by default.
+dixi.
+
+evaluate cArg.

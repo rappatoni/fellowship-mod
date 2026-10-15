@@ -107,8 +107,10 @@ class _Builder(Unfolder):
     not unfolded in place but cited."""
 
     #: The shared route keeps the legacy shape until
-    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``).
+    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``), and
+    #: with it the old exposure (sites only; ``Unfolder.expose``).
     stacked = False
+    expose = False
 
     def __init__(self, graph: DebateGraph):
         super().__init__(graph)

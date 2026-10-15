@@ -2555,6 +2555,70 @@ changed. The issue-graph check's accepted "lambda" class now covers
 every statement only subargument-role edges derive (axioms, lemmas),
 since the unfolder does not stack those yet - step 2.
 
+*Step 2 done 2026-10-16: the unfolder exposes every horn.*
+=Unfolder= (core/dc/unfold.py) looks up each node of a body it copies
+in the document's subargument edges (by identity: the compiler's
+sub-edge terms are the nodes of the parent's compiled copy); an exposed
+node becomes, where it stands, the debate about its statement
+(=_exposed=): an obligation root (Q3), the statement's other
+derivations as the stack, the node's own derivation on top iff its
+argument has primacy (Q2: =Unfolder(primacy=...)=, the entry point for
+=unfold_argument=, the moved arguments for =unfold_debate=, nobody for
+a canonical issue term; primacy extends to the exposed nodes of those
+arguments), the attack scaffold and wing as for a site; nobody
+engaging the statement, the node stays as written (decision 5); the
+statement bound in scope, the captured variable, with the node's own
+derivation on top of it (d2) iff primacy ("default"), never ("share")
+or always ("preserve", then also a copy of the attackers where a
+scaffold binds the statement; Q1). Subargument edges are stack
+elements now (=_by_target=), so an issue only a lambda, a lemma or an
+axiom derives stacks that edge. New setting =subarguments default |
+share | preserve.= (=FSP_SUBARGUMENTS=; the service bumps the revision
+so cached terms are dropped). =pres_scaffolds= (pres/gen.py) prints a
+term with every scaffold as =SUP[alt,b](orig, scion)= / =ATT[...]=.
+The shared route keeps the old exposure (=_Builder.expose = False=,
+core/dc/share.py) until its own step, so the pipeline's per-statement
+replay (=typecheck_shared=) does not yet cover the exposed nodes'
+debates; tests/test_unfold_exposure.py replays every unfolded fixture
+term whole, and =typecheck expanded= does so in the pipeline.
+
+Evidence: tests/test_unfold_exposure.py (28 tests: the attackrule
+fixture - the debate about A->B stands where r1 stood, attackrule in
+its wing loses in phase 1, =evaluate attackrule.= is an exception;
+tests/exposure/lemma_captured.fspy - argQ's lemma is a stack element
+of P's canonical term and of argQ's term, the captured variable alone
+inside argP's term, d2 under preserve; tests/exposure/site_variant.fspy
+- the same terms with a site, the exception for argP included;
+tests/exposure/two_sites.fspy - an unengaged axiom stays as written;
+tests/exposure/curried_cell.fspy - a spine cell is not exposed;
+lesson8a_cycle unchanged; entrypoints - primacy extends to c1's axiom
+n1; self_attack_lk - the lambda edge stacked at =issue :P->false=,
+UNDEC; every unfolded term of every fixture replays through Fellowship
+under all three settings; the differential test: the settings agree on
+every class and on every label but one, recorded under
+[[id:aida-discuss-capture-source-vs-strict]]).
+tests/minicourse/test_evaluation_course.py::TestLesson8aUnfold::test_an_axiom_is_exposed
+pins the trace, the term, phase 1's decisions ("A->B[t] supporter
+strict", "A->B[c] original strict") and the verdicts. Full suite 2069
+passed, 2 skipped, 2 xfailed, 1 xpassed. Found on the way
+and recorded as [[id:aida-entrypoint-capture-adequacy]]: the exception
+for =evaluate argP.= is the entry-point shape's, not the exposure's
+(the site variant gives it on the committed code too).
+
+Fixtures: attackrule moved from lesson9_evaluation.fspy to
+tests/minicourse/lesson8a_attackrule.fspy, so that lessons 9-13 keep
+their walkthrough term (without attackrule the unfolding of lesson 9 is
+unchanged, decision 5). Test updates: tests/test_unfold_entrypoints.py's
+shape test compares the stacked shape with exposure off against the
+legacy term (the exposed terms are checked against the document graph
+instead); tests/test_issue_graph_from_document.py's "lambda" class
+became "captured" (a bound exposed node captured, no label change) and
+gained "exposed" (an exposed strict node under an obligation root
+compiles defeasible from the term; labels differ on such statements
+only where the strict phase's collector records no starred edge for it,
+tests/test1.fspy); the two routes now agree on every former
+LABEL_CHANGES issue.
+
 *** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
 :ID:             aida-review-minicourse-evaluation
@@ -3309,6 +3373,40 @@ to be unified; the author's inclination of 2026-10-15 is towards the
 obligation root with presumptions as supporters for sites too, which
 this task is to decide.
 
+*** BACKLOG Discuss: an argument on top of its stack captures only the stack below it
+:PROPERTIES:
+:ID:             aida-entrypoint-capture-adequacy
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A decision on what a supporter of S that needs S captures in an argument term: today the scaffold's b, which for the argument on top of S's stack is the stack below it, the root excluded; so where the labels accept that supporter through the argument on top, the term gives an exception. Either the shape changes (the captured variable reaches the root, or the whole stack), or sigma falls back at a captured variable whose stack is OUT, or the exception is accepted as the reading of "can this argument be defended on its own".
+:VERIFY:         The decision is written here; tests/exposure/lemma_captured.fspy and tests/exposure/site_variant.fspy have the stated classes for =evaluate argP.= (today: exception), pinned in tests/test_unfold_exposure.py; lesson 8a's capture-by-b paragraph agrees.
+:END:
+
+Found 2026-10-16 while testing the exposure of horns
+([[id:aida-rational-closure]], step 2), and older than it: the site
+variant (argQ demands P as an obligation site; argP2 derives P from a
+presumption of R, which killR refutes strictly) gives the same
+exception on the committed code before step 2. The labels (document
+graph): P, Q IN, R[t] OUT - argP IN through its presumed Q, argQ IN
+through P. The canonical term of P: argP first registered, so argQ's
+demand for P is captured by the root scaffold's =b1=, the root =?u1:P=,
+which sigma reads as IN: a value. The term for argP: argP on top of P's
+stack, so inside it argQ's demand is captured by the inner scaffold's
+=b2=, the stack below argP - argP2 (or argQ's lemma) alone, OUT - and
+sigma, which follows the labels (argQ IN), walks into argQ and ends at
+the refuted presumption: =μargP:P.<qp||μb1:Q.<pq||μb8:P.<rp||μb9:R.<nR||
+?OUT:R*_F_>*b8>*b1>*argP>=, an exception, while =issue :P= and =argQ=
+are values. Nothing in the exposure step is to blame; the question is
+what the stack below an argument on top should mean for its own
+statement. All three =subarguments= settings agree on the class.
+
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
 :ID:             aida-circular-support-design
@@ -3385,6 +3483,22 @@ theirs), (a) elsewhere, including everywhere in a canonical issue term;
 =share-subarguments= / =preserve-subarguments= force (a) / d2
 everywhere. See [[id:aida-discuss-non-site-attack-points]].
 
+Implemented 2026-10-16 ([[id:aida-rational-closure]], step 2) with the
+fixtures of VERIFY: tests/minicourse/lesson8a_cycle.fspy unchanged (pro
+and back open, UNDEC), and the E2 probe as
+tests/exposure/lemma_captured.fspy (argQ's lemma is the edge =argQ.μ1=;
+labels P, Q IN, R[t] OUT; =issue :P= a value through argP, =argQ= a
+value through argP's presumed Q captured at the root, =argP= an
+exception - argQ captures the stack below argP, the refuted lemma; see
+[[id:aida-entrypoint-capture-adequacy]]). The differential test
+(tests/test_unfold_exposure.py::test_the_settings_agree_on_classes_and_labels)
+runs default, share and preserve over every argument and statement of
+eight fixtures: the classes agree everywhere; the labels agree
+everywhere but on self_attack_lk's =issue :P->false= under preserve,
+where the preserved copy of SelfAttack's lambda, closed by the captured
+=rule=, is counted strict by phase 1
+([[id:aida-discuss-capture-source-vs-strict]]). Every term replays.
+
 *** BACKLOG Specify the commutation property: compile-and-unfold against theta-expand-and-substitute
 :PROPERTIES:
 :ID:             aida-unfold-commutation-spec
@@ -3439,7 +3553,7 @@ the unfolder's behaviour):
 :EFFORT:         2:00
 :DEFERRALS:      0
 :OUTCOME:        A decision on which subterms of an argument other than its sites are attack and support points in an unfolded debate - declared axioms, lambda subarguments, intermediate conclusions - and on what happens to an argument whose conclusion contradicts a declared axiom.
-:VERIFY:         The decision is written here; the extended tests/minicourse/lesson9_evaluation.fspy (=attackrule= refuting A->B, which pro applies as the declared axiom r1) has a stated expected issue graph and verdict, and implementation tasks exist for the unfolder side of whatever is decided.
+:VERIFY:         The decision is written here; the extended lesson 9 fixture (=attackrule= refuting A->B, which pro applies as the declared axiom r1; since 2026-10-16 tests/minicourse/lesson8a_attackrule.fspy) has a stated expected issue graph and verdict, and implementation tasks exist for the unfolder side of whatever is decided.
 :END:
 
 Today the unfolder expands only sites (and =cite NAME= leaves), so only
@@ -3451,7 +3565,12 @@ either), intermediate conclusions of curried applications (the last
 intended: decided 2026-10-13, [[id:aida-curried-intermediate-conclusions]]).
 
 The author's example (2026-10-05): lesson9_evaluation.fspy extended by
-=attackrule=, a refutation of A->B from a presumption of D. The
+=attackrule=, a refutation of A->B from a presumption of D (moved
+2026-10-16 to tests/minicourse/lesson8a_attackrule.fspy, so that the
+walkthrough of lessons 9-13 keeps its term; expected since then: the
+debate about A->B stands where r1 stood in pro's term, attackrule in
+its attacker wing loses to the strict axiom in phase 1, =evaluate
+attackrule.= is an exception, pro's verdict is unchanged). The
 document graph has the node A->B, but only its context side; pro's edge
 is =B[t] <- A[t]:pres=, since r1 is a declared name and no source; so
 attackrule is not reachable from pro's issue and silently takes no
@@ -3930,6 +4049,16 @@ presumption as a source, so the labelling sees the loop (the even loop's
 two models). In the self-attack the strict edge =SelfAttack*= overrides
 the framework; in the even loop an uncaptured site keeps it defeasible.
 Decide whether the source should remain, and if so what it means.
+
+A third instance (2026-10-16, [[id:aida-rational-closure]] step 2):
+under =subarguments preserve.= the term for =issue :P->false= of
+tests/rationality/self_attack_lk.fspy keeps a copy of SelfAttack's
+lambda on top of the captured =b1=; the copy is closed by the captured
+continuation =rule=, so phase 1 decides "supporter strict", then P's
+scaffolds, and adds =SelfAttack*=: P->false[t] OUT and P[t] IN, where
+the default and share settings (the captured variable alone) leave
+both UNDEC. The one place the settings disagree on labels
+(tests/test_unfold_exposure.py, =LABELS_DIFFER=).
 
 *** DONE Discuss: should the scaffold binders alt and b capture?
 CLOSED: [2026-10-06 Tue]

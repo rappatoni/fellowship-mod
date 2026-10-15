@@ -3,7 +3,9 @@
 Regenerated 2026-10-06 for the stacked shape and argument entrypoints
 (tasks.org, aida-unfold-entrypoints): the term is the one unfolded for
 the argument `pro`.  Regenerated 2026-10-07 for capture by the
-scaffolds' own binders (aida-unfold-scaffold-binders-capture).
+scaffolds' own binders (aida-unfold-scaffold-binders-capture).  Since
+2026-10-16 attackrule, which the exposure of horns puts into pro's term,
+lives in lesson8a_attackrule.fspy, so that lessons 9-13 keep their term.
 
 The lessons walk one labelled debate term through the evaluator phase by
 phase, and then replay each scaffold decision as single reduction steps
@@ -39,6 +41,17 @@ UNFOLDED = (
     "alt1:B>>>"
 )
 AFTER_STRICT_C = "μalt4:C.<!u3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>"
+# lesson 8a, "What attackrule shows": the same document plus attackrule
+# (lesson8a_attackrule.fspy), unfolded for pro; the debate about A->B
+# stands where the exposed axiom r1 stood
+ATTACKRULE_UNFOLDED = (
+    "SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<ATT[alt3,b3](SUP[alt2,b2](?u2:A->B, r1), "
+    "SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!u3:D*"
+    "μ'H1:~(A->B).<H1||th_2*_F_>>>))||ATT[alt5,b5](!u4:A, SUP~[alt6,b6](alt5, "
+    "μ'con:A.<con||μ'x:A.<μth_3:~A.<r2||ATT[alt7,b7](!u5:C, SUP~[alt8,b8](alt7, "
+    "μ'killC:C.<killC||μ'x_2:C.<nc||μ'H1_2:~C.<H1_2||x_2*_F_>>>))*th_3>||"
+    "μ'H1_3:~A.<H1_3||x*_F_>>>))*th>||pro>)"
+)
 # sigma resolves the labelled term (core/comp/labelled.py): B[t] and A[t]
 # are IN; B[c] has no node, so pro's continuation is unlabelled
 RESOLVED = "μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||!u2:A{IN}*th:B>||pro:B>"
@@ -106,27 +119,56 @@ class TestLesson8aUnfold:
                 ("con", "A[c]", False, [("~A[t]", "subargument")]),
                 ("nc", "~C[t]", True, []),
                 ("killC", "C[c]", True, [("~C[t]", "subargument")]),
-                ("r3", "D->~(A->B)[t]", True, []),
-                ("attackrule", "A->B[c]", False, [("D->~(A->B)[t]", "subargument"), ("D[t]", "presumption")]),
             ]
             assert {show(k, s): kinds for (k, s), kinds in g.defaults.items()} == {
-                "A[t]": {"presumption"}, "C[t]": {"presumption"}, "D[t]": {"presumption"}}
+                "A[t]": {"presumption"}, "C[t]": {"presumption"}}
             assert pres_str(g.edges[1].term) == "μpro:B.<μth:B.<r1:A->B||!1.2.1:A*th:B>||pro:B>"
         finally:
             prover.close()
 
-    def test_attackrule_takes_no_part(self):
-        # Since the horn rule (2026-10-15) the axiom r1 is a derivation of
-        # A->B[t] in the document graph, so attackrule is reachable from pro's
-        # issue and labelled (and loses to the strict axiom); the unfolder does
-        # not yet put the debate about A->B at r1, so the term has no trace of
-        # it (aida-rational-closure, step 2).
-        prover, term = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
+    def test_an_axiom_is_exposed(self, caplog):
+        """lesson8a_attackrule.fspy: attackrule refutes A->B, the axiom pro
+        applies.  Since 2026-10-16 r1 is an exposed node of pro: the debate
+        about A->B stands where r1 stood, with attackrule in its attacker
+        wing, and phase 1 decides it for the strict axiom."""
+        from core.dc.strict import strict_resolve
+        from pres.gen import pres_scaffolds
+        from wrap.service import Service
+        prover, _ = debate_term(HERE / "lesson8a_attackrule.fspy", "pro")
         try:
-            assert "attackrule" not in pres_str(term) and "D" not in pres_str(term)
-            assert ("B(S:A,->,S:B)", "term") in set(prover.graph.statements())
-            from wrap.service import Service
-            labels = Service.of(prover).label(Service.of(prover).target("pro")).labellings[0]
+            g = prover.graph
+            show = lambda k, s: f"{g.nodes.get(k, k)}[{s[0]}]"
+            assert [(e.name, show(e.target_key, e.target_side)) for e in g.edges[7:]] == [
+                ("r3", "D->~(A->B)[t]"), ("attackrule", "A->B[c]")]
+            lines, term = _unfold_trace(prover, "pro", caplog)
+            assert lines[:9] == [
+                "unfold: B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top",
+                "unfold: B[t] +support 'pro' (the argument unfolded, on top)",
+                "unfold: node 'r1' exposed as A->B[t] (its derivation on top)",
+                "unfold: A->B[t] expanded, root u2 (Goal), 1 supporter(s), 'r1' on top",
+                "unfold: A->B[t] +support 'r1' (the argument unfolded, on top)",
+                "unfold: A->B[t] attacked by the debate about A->B[c], 1 supporter(s) (alt alt3, b b3)",
+                "unfold: the bare A->B[c] captured as 'alt3'",
+                "unfold: A->B[c], the attacker wing, root 'alt3'",
+                "unfold: A->B[c] +support 'attackrule'",
+            ]
+            assert pres_scaffolds(term) == ATTACKRULE_UNFOLDED
+            names = list(prover.declarations.keys())
+            trace = []
+            out, edges = strict_resolve(term, names, trace=trace)
+            assert [(show(*k), what) for k, what in trace] == [
+                ("A->B[t]", "supporter strict"), ("A->B[c]", "original strict"),
+                ("C[c]", "supporter strict"), ("C[c]", "attacker strict: defeat")]
+            assert [e.name for e in edges] == ["killC*"]
+            # after phase 1 the debate about A->B is r1 again: UNFOLDED's shape
+            assert pres_scaffolds(out).startswith("SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<r1||ATT[alt5,b5](!u4:A, ")
+            svc = Service.of(prover)
+            assert svc.evaluate(svc.target("pro")).nf_class == "value"
+            assert pres_str(svc.evaluate(svc.target("pro")).normal_form) == NORMAL_FORM
+            lost = svc.evaluate(svc.target("attackrule"))
+            assert lost.nf_class == "exception"
+            assert pres_str(lost.normal_form) == "μ'alt2:A->B.<r1:A->B||OUT:A->B?>"
+            labels = svc.label(svc.target("pro")).labellings[0]
             assert labels[("B(S:A,->,S:B)", "term")] == "IN" and labels[("B(S:A,->,S:B)", "context")] == "OUT"
         finally:
             prover.close()

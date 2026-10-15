@@ -133,6 +133,12 @@ TODO: Mechanism to declare a scenario of default assumptions.
         #: the document since 2026-10-15 (aida-discuss-issue-graph-from-document);
         #: FSP_ISSUE_GRAPH=term or `issue-graph term` selects the reference.
         self.issue_graph_from_document = os.getenv("FSP_ISSUE_GRAPH", "document") == "document"
+        #: At an exposed node whose statement is already bound: "default"
+        #: keeps the node's own derivation iff its argument has primacy,
+        #: "share" never, "preserve" always (core/dc/unfold.py,
+        #: ``Unfolder``; tasks.org, aida-circular-support-design).
+        #: FSP_SUBARGUMENTS or `subarguments MODE` selects it.
+        self.subarguments = os.getenv("FSP_SUBARGUMENTS", "default")
         #: The current document (wrap/document.py).  Fellowship starts in a
         #: fresh theory; ``new_document`` sets its logic (setup_prover).
         self.doc = Document()
@@ -818,7 +824,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         key = (self.revision, tuple(str(m) for m in debate.moves))
         if debate._term is not None and debate._term[0] == key:
             return report_cached(debate._term[1], f"the term of debate '{debate.name}'", self.revision)
-        term = unfold_debate(self.debate_graph(debate), debate)
+        term = unfold_debate(self.debate_graph(debate), debate, self.subarguments)
         debate._term = (key, term)
         return term
 
@@ -879,7 +885,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         edge = argument_edge(self.graph, argument.name)
         if edge is None:
             return None
-        argument.unfolded_body = unfold_argument(self.graph, edge)
+        argument.unfolded_body = unfold_argument(self.graph, edge, self.subarguments)
         argument.unfolded_revision = self.revision
         return argument.unfolded_body
 
@@ -891,7 +897,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         found = cache.get(statement)
         if found is not None and found[0] == self.revision:
             return report_cached(found[1], "the issue's canonical term", self.revision)
-        term = unfold(self.graph, statement)
+        term = unfold(self.graph, statement, self.subarguments)
         cache[statement] = (self.revision, term)
         return term
 

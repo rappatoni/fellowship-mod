@@ -73,10 +73,11 @@ individual steps they abbreviate, and lesson 13 explains why the
 implementation cannot currently take them one at a time.
 
 One worked example runs through all six lessons:
-=tests/minicourse/lesson9_evaluation.fspy=. Lesson 8a adds three small
+=tests/minicourse/lesson9_evaluation.fspy=. Lesson 8a adds five small
 ones, =tests/minicourse/lesson8a_cycle.fspy=,
-=tests/rationality/self_attack_lk.fspy= and =tests/entrypoints.fspy=. To
-follow along:
+=tests/rationality/self_attack_lk.fspy=, =tests/entrypoints.fspy=,
+=tests/minicourse/lesson8a_attackrule.fspy= and
+=tests/exposure/lemma_captured.fspy=. To follow along:
 
 : .venv/bin/acdc --script tests/minicourse/lesson9_evaluation.fspy   # add `explain pro` at the end
 : .venv/bin/python -m pytest tests/minicourse/test_evaluation_course.py -q
@@ -198,9 +199,45 @@ one ever be on the spine without a binder, =statement= logs a warning
 ("no binder in scope") and leaves a bare site; on the fixtures this
 never happens (=tests/test_scaffold_capture.py=).
 
-Only argument edges become stack elements. A lambda's own subargument
-edge (=SelfAttack.λ1= below) is a piece of its parent's body, and
-appears where the parent is unfolded.
+*Exposed nodes* (since 2026-10-16; tasks.org,
+aida-discuss-non-site-attack-points and aida-rational-closure). A body
+is more than its sites. Its *spine* is the part that carries the
+argument's own continuation (a counterargument's own hypothesis);
+everything else is a *horn*, and a horn that makes logical progress - a
+declared axiom applied, a lemma (a =mu= or =mu'= cut on another
+statement), a lambda or lambda-bar - is an *exposed node*. The compiler
+gives it an edge of its own (=r1=, =con.μ1=, =SelfAttack.λ1=; lesson 2),
+and the unfolder treats it as it treats a site, with the node's own
+derivation as one more stack element. For an exposed node with
+statement S:
+
+  - S not bound in =env=, and nobody else deriving, contesting or
+    presuming S: the node stays as written. Empty parts are left out, so
+    a document in which nothing engages a horn unfolds exactly as it did
+    before;
+  - S not bound otherwise: the debate about S stands where the node
+    stood. Its root is an *obligation* site even for an axiom (a
+    presumption of S elsewhere goes to the bottom of the stack); the
+    stack holds S's derivations in registration order, the node's own
+    on top iff its argument has *primacy*;
+  - S bound in =env= (the node proves the very statement its debate is
+    about, or one an enclosing argument binds): the captured variable,
+    as for a site - with the node's own derivation kept on top of it,
+    =SUP(captured, own)=, iff primacy. No attack scaffold is added
+    there: the enclosing one covers the node.
+
+*Primacy* belongs to the entrypoint: the argument =unfold_argument= is
+called for, and the exposed nodes inside it; for a debate, the moved
+arguments and theirs. A canonical issue term gives it to nobody. The
+setting =subarguments share.= never keeps the own derivation at a bound
+node, =subarguments preserve.= always (then also with a copy of the
+statement's attackers where a scaffold binds it), and =default= follows
+primacy. The labels never depend on this setting: the issue graph comes
+from the document.
+
+Subargument edges are stack elements like argument edges: an issue that
+only a lambda or a lemma derives (=issue :P->false= in the self-attack
+below) stacks that edge.
 
 *A stack element* is an edge's body unfolded in place (=_edge=). The body
 is copied, and while it is copied:
@@ -209,7 +246,7 @@ is copied, and while it is copied:
     =statement= for that site's statement: whatever the body had there,
     the debate about that statement takes its place. A =cite NAME= leaf
     is handled the same way, as a site for the cited argument's
-    statement;
+    statement, and so is every exposed node (above);
   - every binder puts its statement into =env= for its own body: a
     lambda's hypothesis =h:P= and a =mu'x:P= bind P[t] (a proof of P is
     in scope), a =mu a:P= and a lambda-bar bind P[c] (a refutation of P
@@ -295,7 +332,7 @@ graph - exponentially in the worst case (minicourse-sharing.org, lesson
 document, each with the document's *revision*. Registering an argument
 or adding a declaration makes them stale - a new argument can support or
 attack, a new declaration can make a presumption strict or refuted - and
-the next use unfolds again. =unfold argument NAME.= and =unfold issue :X.=
+so does changing =subarguments=; the next use unfolds again. =unfold argument NAME.= and =unfold issue :X.=
 build and print them; =render NAME [style] unfolded.= renders one.
 
 *After unfolding.* The term is replayed through Fellowship (the type
@@ -316,11 +353,10 @@ is labelled:
 Until 2026-10-15 the issue graph was compiled from the term instead
 (=compile_issue=); =issue-graph term.= still selects that route, and
 tests/test_issue_graph_from_document.py compares the two on every
-fixture. They agree on the labels except where an issue is a statement
-only subargument edges derive - a lambda, and since 2026-10-15 an
-argument's lemmas and the axioms it applies: the unfolder does not yet
-put those edges on a stack, so such an issue is a bare site in the term,
-while the document graph has the derivation (tasks.org,
+fixture. They agree on the labels; what differs is markers, source
+kinds, a bound exposed node captured where the document has its edge,
+and the obligation root of an exposed strict node, which the term's
+compiler reads as a defeasible edge (tasks.org,
 aida-discuss-issue-graph-from-document).
 
 The reachable part of the document graph is the same from every
@@ -332,7 +368,7 @@ does the normal form. Lesson 9 starts from the end of that pipeline.
 *The running example.* =graph document.= on
 =tests/minicourse/lesson9_evaluation.fspy=:
 
-: Document graph: 9 nodes, 9 edges (every registered atomic argument)
+: Document graph: 7 nodes, 7 edges (every registered atomic argument)
 :   r1 (subargument, strict): A->B[t] <- -
 :   pro (argument, defeasible): B[t] <- A->B[t:suba], A[t:pres]
 :   r2 (subargument, strict): C->~A[t] <- -
@@ -340,19 +376,17 @@ does the normal form. Lesson 9 starts from the end of that pipeline.
 :   con (argument, defeasible): A[c] <- ~A[t:suba]
 :   nc (subargument, strict): ~C[t] <- -
 :   killC (argument, strict): C[c] <- ~C[t:suba]
-:   r3 (subargument, strict): D->~(A->B)[t] <- -
-:   attackrule (argument, defeasible): A->B[c] <- D->~(A->B)[t:suba], D[t:pres]
 :   default A[t]: presumption
 :   default C[t]: presumption
-:   default D[t]: presumption
 
 Since 2026-10-15 the compiler exposes every *horn* of an argument
 (tasks.org, aida-discuss-non-site-attack-points): a declared axiom it
 applies is a strict, source-less edge named after the axiom and a
 =suba= source of the argument, and a lemma it proves on the way - con's
-~A from C - is an edge of its own (=con.μ1=). The unfolder does not yet
-build debates at these edges (that is the next step of
-aida-rational-closure), so the terms below are unchanged.
+~A from C - is an edge of its own (=con.μ1=). In this document nobody
+engages those statements, so the unfolder leaves the nodes as written
+and the term below has no debate at them; the attackrule example at
+the end of this lesson engages one.
 
 and the bodies the first three edges keep:
 
@@ -360,28 +394,70 @@ and the bodies the first three edges keep:
 : con    μ'con:A.<con:A||μ'x:A.<μth:~A.<r2:C->~A||!1.1.2.1:C*th:~A>||μ'H1:~A.<H1:~A||x:A*_F_>>>
 : killC  μ'killC:C.<killC:C||μ'x:C.<nc:~C||μ'H1:~C.<H1:~C||x:C*_F_>>>
 
-*What attackrule shows: only sites can be attacked.* =attackrule= refutes
-=A -> B= from a presumption of D. It is meant to attack the rule pro
-applies, =r1: A -> B=, but it takes no part in pro's debate: the term
-below has no trace of it. The reason is that =r1= is a declared axiom.
-In pro's body it is a leaf, a strict name, not a site; pro's edge is
-=B[t] <- A[t]= and has no source A->B[t]; so nothing the unfolder walks
-stands for the statement "A -> B is proved", and the refutation of that
-statement is never reached. The document graph does have the node A->B,
-but only its context side. In the current implementation the only
-points at which an argument can be attacked (or supported) are its sites
-and its conclusion: not the declared axioms it uses, not the lambda
-subarguments inside it, not the intermediate conclusions of a curried
-rule. The last is intended (decided 2026-10-13, tasks.org
-aida-curried-intermediate-conclusions): the compiler does no logical
-inference, and an argument that does not expose an intermediate
-conclusion is not attackable on it. To make r1 attackable today, pro has
-to take the rule as a premise (=cut (A -> B) th. by default.=), which
-gives the site =!:A->B=. Whether a declared axiom should be attackable
-at all, or only able to attack (which would make attackrule OUT), is
-open in tasks.org (aida-discuss-non-site-attack-points, with
-aida-strict-layer on the graph side). Nothing reports that attackrule is
-unreachable; it is silently left out.
+*What attackrule shows: an axiom is exposed.* The fixture
+=tests/minicourse/lesson8a_attackrule.fspy= has the same three arguments
+and, after them, =attackrule=, which refutes =A -> B= from a presumption
+of D (the author's example of 2026-10-05; kept apart from the lesson 9
+fixture so that lessons 9-13 keep the term below). It is meant to
+attack the rule pro applies, the declared axiom =r1: A -> B=. Until
+2026-10-16 only sites were expanded, r1 was a leaf in pro's body, and
+attackrule silently took no part. Now r1 is an exposed node of pro: the
+document graph has the edges =r3: D->~(A->B)[t] <- -= and
+=attackrule: A->B[c] <- D->~(A->B)[t:suba], D[t:pres]= (9 nodes, 9
+edges), and =explain pro.= begins
+
+: unfold         B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold           B[t] +support 'pro' (the argument unfolded, on top)
+: unfold         node 'r1' exposed as A->B[t] (its derivation on top)
+: unfold         A->B[t] expanded, root u2 (Goal), 1 supporter(s), 'r1' on top
+: unfold           A->B[t] +support 'r1' (the argument unfolded, on top)
+: unfold           A->B[t] attacked by the debate about A->B[c], 1 supporter(s) (alt alt3, b b3)
+: unfold         the bare A->B[c] captured as 'alt3'
+: unfold         A->B[c], the attacker wing, root 'alt3'
+: unfold           A->B[c] +support 'attackrule'
+: unfold         D[t] expanded, root u3 (Deleg), 0 supporter(s)
+
+and goes on as below with A's root u4 and C's u5. With every scaffold
+written =SUP[alt,b](original, scion)= / =ATT[alt,b](original, wing)=
+(=pres_scaffolds=, pres/gen.py), the term is
+
+: SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<
+:     ATT[alt3,b3](SUP[alt2,b2](?u2:A->B, r1),
+:                  SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!u3:D*μ'H1:~(A->B).<H1||th_2*_F_>>>))
+:   || ATT[alt5,b5](!u4:A, SUP~[alt6,b6](alt5, con's body as below)) * th> || pro>)
+
+Three things to see. The debate about A->B stands where r1 stood, and
+its root is the obligation ?u2 although r1 is an axiom: the root of an
+exposed node's debate is always an obligation; r1 itself is the stack,
+on top since pro, the entrypoint, has primacy and that extends to its
+nodes. attackrule stands in the attacker wing, as con does in A's. And
+phase 1 (lesson 10) decides the whole of it: "A->B[t] supporter strict"
+(r1 has no site), then "A->B[c] original strict" (the attacked term is
+now r1, and attackrule rests on the site u3): both scaffolds go and r1
+stands where it stood, so pro's verdict is unchanged,
+=μpro:B.<r1:A->B||!IN:A*pro:B>=, while =evaluate attackrule.= is the
+exception =μ'alt2:A->B.<r1:A->B||OUT:A->B?>=. The other axioms of the
+document (r2, nc, r3) are exposed nodes too, but nobody engages their
+statements, so they stay as written.
+
+*A node whose statement is bound.* =tests/exposure/lemma_captured.fspy=:
+=argP= derives P from =qp: Q->P= and a presumption of Q; =argQ= derives
+Q from =pq: P->Q= and a lemma for P it proves from =rp: R->P= and a
+presumption of R; =killR= refutes R strictly. The lemma is the edge
+=argQ.μ1: P[t] <- R->P[t:suba], R[t:pres]=, a second derivation of P.
+The canonical term of P stacks argP and the lemma in registration order
+(=SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP, lemma))=), and inside argP the
+demand for Q brings in argQ, whose lemma proves the statement the whole
+debate is about: P is bound by the root scaffold's =b1=, argQ has no
+primacy, so the lemma is =b1= - the root, which sigma reads as IN. Under
+=subarguments preserve.= it is =SUP[alt4,b4](b1, lemma)= instead, the
+lemma on top of the captured variable. In the term for argP the stack
+is =SUP(lemma, argP)= and the lemma inside argQ is =b2=, the stack below
+argP - the refuted lemma alone - which makes =evaluate argP.= an
+exception while =issue :P= and =argQ= are values. That is the
+entrypoint shape's doing, not the exposure's: the site variant
+(=tests/exposure/site_variant.fspy=) gives the same (tasks.org,
+aida-entrypoint-capture-adequacy).
 
 =explain pro.= prints the unfolder's steps:
 
@@ -485,8 +561,11 @@ SelfAttack:
 
 Inside the body, at the site for P[c], =env= is {P[c]: rule, P[t]: h,
 false[c]: alpha}: =mu rule:P= is a continuation for P, so the
-presumption "P fails" becomes =rule=. Only SelfAttack is a supporter;
-its lambda edge is inside it. And because the document presumes P[c],
+presumption "P fails" becomes =rule=. Only SelfAttack derives P; its
+lambda, an exposed node deriving P->false, stays as written inside it,
+since nobody else engages P->false (the canonical term of =issue
+:P->false= does stack that edge, with SelfAttack inside it captured by
+the root's =b1=). And because the document presumes P[c],
 the issue is attacked by the debate about P[c]: nobody derives "P
 fails", so the wing is its root alone, and the root is captured by the
 attack's own =alt2=. Both halves of the attack's wiring are then the
@@ -605,8 +684,9 @@ reads nothing but the base strategy.
 
 The fixture's arguments: =pro= proves B from =r1: A -> B= and a
 presumption of A. =con= refutes A from =r2: C -> ~A= and a presumption
-of C. =killC= refutes C strictly, from the axiom =nc: ~C=. (=attackrule=
-takes no part; lesson 8a.) Unfolded for =pro=:
+of C. =killC= refutes C strictly, from the axiom =nc: ~C=. (The
+attackrule example of lesson 8a is a fixture of its own.) Unfolded for
+=pro=:
 
 : μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
 

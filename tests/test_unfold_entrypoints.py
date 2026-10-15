@@ -18,7 +18,7 @@ import pytest
 from core.comp.adf_label import labellings
 from core.dc.debate_graph import declaration_kinds
 from core.dc.strict import compile_issue
-from core.dc.unfold import argument_edge, unfold, unfold_argument, unfold_legacy
+from core.dc.unfold import Unfolder, argument_edge, unfold, unfold_argument, unfold_legacy
 from wrap.cli import execute_script, setup_prover
 
 FIXTURES = [
@@ -109,17 +109,24 @@ def test_the_shape_does_not_change_the_framework(fresh, script, capsys):
     names and source kinds, presumption markers, nodes).  The strict edges
     can only grow (MORE_STRICT_EDGES); where they are equal, so are the
     labellings.  Obligation markers may differ: the labeller reads only
-    presumptions."""
+    presumptions.
+
+    The shape alone: both terms expand sites only (``expose=False``).  With
+    the exposure of horns (2026-10-16) the stacked term holds more - the
+    debates about the axioms and lemmas an argument applies - and is
+    checked against the document graph instead
+    (tests/test_issue_graph_from_document.py)."""
     run(fresh, script)
     doc = fresh.graph
     names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
     for statement in doc.statements():
         reference = issue_graph(unfold_legacy(doc, statement), names, kinds)
-        compare(script, statement, reference, issue_graph(unfold(doc, statement), names, kinds), doc)
+        stacked = Unfolder(doc, expose=False).unfold(statement)
+        compare(script, statement, reference, issue_graph(stacked, names, kinds), doc)
         for edge in doc.edges:
             if (edge.target_key, edge.target_side) == statement and edge.role != "subargument":
-                compare(script, statement, reference,
-                        issue_graph(unfold_argument(doc, edge), names, kinds), doc)
+                biased = Unfolder(doc, expose=False, primacy={edge.name}).unfold_argument(edge)
+                compare(script, statement, reference, issue_graph(biased, names, kinds), doc)
 
 
 # ---------------------------------------------------------------------------
@@ -306,7 +313,8 @@ def test_argument_names_ending_in_digits_stay_apart(fresh):
     run(fresh, "tests/minicourse/lesson14_sharing.fspy")
     doc = fresh.graph
     graph = issue_graph(unfold(doc, (K("P2"), "term")), *options(fresh).values())
-    assert sorted(e.name for e in graph.edges if e.role != "subargument") == ["a1_0", "a1_1", "a2_0", "a2_1"]
+    # the axioms' own edges (r1_0, ...; the horn rule) have no sources
+    assert sorted(e.name for e in graph.edges if e.sources) == ["a1_0", "a1_1", "a2_0", "a2_1"]
 
 
 def test_unfolding_copies_still_fold_under_their_argument(fresh):

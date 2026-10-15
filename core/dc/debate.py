@@ -198,7 +198,7 @@ def check_move(debate: Debate, graph: DebateGraph, move: Move, statement_of) -> 
             f"{_show(graph, wanted)} to {relation}.")
 
 
-def unfold_debate(graph: DebateGraph, debate: Debate):
+def unfold_debate(graph: DebateGraph, debate: Debate, subarguments="default"):
     """The debate's term, unfolded from ``graph`` (the scope's graph) for
     its opening argument: the opening on top of the issue's stack, the
     sites of its body keeping the kinds it wrote (as ``unfold argument``),
@@ -206,7 +206,8 @@ def unfold_debate(graph: DebateGraph, debate: Debate):
     uttered outermost.  An opening that is a bare claim has no edge (only
     a default marker): the term is then the issue's, ordered alike."""
     from core.dc.unfold import _shown, argument_edge
-    unfolder = Unfolder(graph, order=debate.order())
+    unfolder = Unfolder(graph, order=debate.order(), subarguments=subarguments,
+                        primacy={m.argument for m in debate.moves})
     edge = argument_edge(graph, debate.moves[0].argument) if debate.moves else None
     if edge is not None and (edge.target_key, edge.target_side) == debate.issue:
         return _shown(unfolder.unfold_argument(edge))

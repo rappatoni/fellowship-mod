@@ -42,14 +42,3 @@ axiom.
 dixi.
 
 evaluate pro.
-declare D : bool.
-declare r3 : (D-> ~(A->B)).
-counterargument attackrule : (A->B).
-cut (D-> ~(A->B)) th.
-axiom r3.
-elim.
-by default.
-next.
-elim.
-axiom.
-dixi.

@@ -138,6 +138,8 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
         logger.info("Pipeline: %s", o.message)
     elif k == "issue_graph":
         logger.info("Issue graph: %s", o.message)
+    elif k == "subarguments":
+        logger.info("Subarguments: %s", o.message)
     elif k in ("fellowship", "instruction"):
         return
     elif k in ("statement", "register", "adopt", "debate", "move", "close_debate") and not interactive:

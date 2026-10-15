@@ -10,7 +10,7 @@ Files
 - debate_graph.py
   - Debate-graph compilation (debate-graph-spec.org, layers 2-3): DebateGraph, the document graph. Since 2026-10-15 by the horn rule: a binder's derivation has every horn of its command as a source, a horn that is a declared axiom or a progress node is an edge of its own, the spine (what carries the binder's own variable) gets none.
 - unfold.py
-  - Unfolding: document graph -> debate term, for an issue or an argument entrypoint.
+  - Unfolding: document graph -> debate term, for an issue or an argument entrypoint; every exposed node (an axiom applied, a lemma, a lambda) becomes the debate about its statement where it stands.
 - strict.py
   - Strictness, read off the concrete debate term.
 - typecheck.py

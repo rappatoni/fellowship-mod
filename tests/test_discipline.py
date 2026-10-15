@@ -123,7 +123,7 @@ def test_the_four_scaffold_shapes_are_refused_on_both_sides():
 def test_refutations_through_a_proved_negation_are_dual_linear():
     """Lesson 9's con and killC: one hypothesis each once the negation
     wrapper is seen through."""
-    text = (TESTS / "minicourse" / "lesson9_evaluation.fspy").read_text()
+    text = (TESTS / "minicourse" / "lesson8a_attackrule.fspy").read_text()
     found, registered = refusals(text)
     assert found == []
     assert {"pro", "con", "killC", "attackrule"} <= set(registered)

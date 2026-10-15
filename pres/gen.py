@@ -211,3 +211,43 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_unhandled(self, node):
         return node
+
+
+def pres_scaffolds(node) -> str:
+    """A compact rendering of a debate term: every support or attack
+    scaffold as ``SUP[alt,b](original, scion)`` / ``ATT[alt,b](original,
+    wing)`` (``SUP~``, ``ATT~`` on the context side), everything else in
+    the proof-term syntax.  For tests and lessons about unfolding."""
+    from core.ac.ast import Mu, Mutilde, Cons, Sonc, Lamda, Admal, Goal, Deleg, Laog, Geled, ID, DI
+    from core.dc.debate_graph import _match_paper_scaffold
+
+    def c(n):
+        m = _match_paper_scaffold(n) if isinstance(n, (Mu, Mutilde)) else None
+        if m is not None:
+            role, side, _prop, orig, scion, alt, _kind = m
+            name = ("SUP" if role == "supporter" else "ATT") + ("" if side == "term" else "~")
+            return f"{name}[{alt},{m.beta}]({c(orig)}, {c(scion)})"
+        if isinstance(n, Mu):
+            return f"μ{n.id.name}:{n.prop}.<{c(n.term)}||{c(n.context)}>"
+        if isinstance(n, Mutilde):
+            return f"μ'{n.di.name}:{n.prop}.<{c(n.term)}||{c(n.context)}>"
+        if isinstance(n, Cons):
+            return f"{c(n.term)}*{c(n.context)}"
+        if isinstance(n, Sonc):
+            return f"{c(n.context)}*{c(n.term)}"
+        if isinstance(n, Lamda):
+            return f"λ{n.di.di.name}:{n.di.prop}.{c(n.term)}"
+        if isinstance(n, Admal):
+            return f"λ̄{n.id.id.name}:{n.id.prop}.{c(n.context)}"
+        if isinstance(n, Goal):
+            return f"?{n.number}:{n.prop}"
+        if isinstance(n, Deleg):
+            return f"!{n.number}:{n.prop}"
+        if isinstance(n, Laog):
+            return f"{n.prop}:?{n.number}"
+        if isinstance(n, Geled):
+            return f"{n.prop}:!{n.number}"
+        if isinstance(n, (ID, DI)):
+            return n.name
+        return pres_str(n)
+    return c(node)

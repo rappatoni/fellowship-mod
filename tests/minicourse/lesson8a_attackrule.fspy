@@ -1,0 +1,57 @@
+% Lesson 8a (docs/minicourses/minicourse-evaluation.org) - an axiom is
+% exposed.  The three arguments of lesson9_evaluation.fspy and, after
+% them, attackrule (the author's example, 2026-10-05): a refutation of
+% A->B from a presumption of D, meant to attack the rule pro applies, the
+% declared axiom r1.  Until 2026-10-16 the unfolder expanded sites only
+% and attackrule took no part in pro's debate; since the horn rule
+% (tasks.org, aida-rational-closure) r1 is an exposed node of pro, its
+% statement A->B gets its debate inside pro, attackrule stands in that
+% debate's attacker wing, and loses to the strict axiom in phase 1.
+lk.
+declare A,B,C:bool.
+declare r1: (A -> B).
+declare r2: (C -> ~A).
+declare nc: (~C).
+
+argument pro : (B).
+cut (A -> B) th.
+axiom r1.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+counterargument con : (A).
+cut (~A) x.
+cut (C -> ~A) th.
+axiom r2.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+
+counterargument killC : (C).
+cut (~C) x.
+axiom nc.
+elim.
+axiom.
+dixi.
+
+declare D : bool.
+declare r3 : (D-> ~(A->B)).
+counterargument attackrule : (A->B).
+cut (D-> ~(A->B)) th.
+axiom r3.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+evaluate pro.
+evaluate attackrule.

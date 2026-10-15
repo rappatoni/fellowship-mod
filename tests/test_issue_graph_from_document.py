@@ -1,9 +1,9 @@
 """The issue graph taken from the document graph, checked against the one
 compiled from the term (tasks.org, aida-discuss-issue-graph-from-document).
 
-Nothing is switched yet: ``document_issue_graph`` is built beside
-``compile_issue`` and every difference between the two is classified.
-The classes found on 2026-10-14:
+``document_issue_graph`` is the issue graph since 2026-10-15;
+``compile_issue`` stays as the reference, and every difference between the
+two is classified:
 
 - ``markers``: the term has an obligation marker the document lacks -
   the unfolder's own roots (an issue nobody presumes is the obligation
@@ -13,15 +13,29 @@ The classes found on 2026-10-14:
   a site with the kind of its statement's root (a presumption if anybody
   presumes it), the document as the argument wrote it.  The labeller
   ignores source kinds;
-- ``lambda``: edges only the document has, for a subargument - a lambda,
-  and since the horn rule (2026-10-15) every exposed node and declared
-  axiom.  The unfolder does not yet stack those edges, so an issue whose
-  statement only such edges derive is a bare site in the term.  This is
-  the one class that changes labels: on the issues of ``LABEL_CHANGES``
-  and, since the horn rule, on every issue about an axiom's statement.
+- ``exposed`` (since 2026-10-16, the exposure of horns): the same edge,
+  strict in the document and defeasible in the term - the debate about
+  an exposed node has an obligation root (tasks.org,
+  aida-discuss-non-site-attack-points, Q3), which the term's compiler
+  reads as an obligation source where the document has the node's own
+  strict edge as a ``subargument`` source.  The strict phase restores
+  the strict edge where it decides that scaffold (``c1*``); where the
+  decision is made further out (tests/test1.fspy: arg1 is decided whole,
+  so the exposed strict node inconsistency.μ'1 under it gets no starred
+  edge; and for the issue EfficientMetro[c] itself the attack's two
+  wings are both strict, which phase 1 leaves to the labelling), the
+  term route labels the node's statement without its strictness.  The
+  labels may differ on such statements only (the inconsistent test1.fspy
+  is the one fixture where they do);
+- ``captured``: edges only the document has, for an exposed node whose
+  statement was bound where the node stood: the term has the captured
+  variable instead (decision 2 of aida-discuss-non-site-attack-points:
+  without primacy, the captured variable alone).  No label changes.
 
-Any other difference fails the test.  The shared route is checked equal
-to the unfolded one in tests/test_share.py.
+Until 2026-10-16 the ``captured`` class was ``lambda``, and it changed
+labels: the unfolder stacked no subargument edge, so a statement only a
+lambda, a lemma or an axiom derived was a bare site in the term.  The
+shared route is checked equal to the unfolded one in tests/test_share.py.
 """
 
 import glob
@@ -46,26 +60,26 @@ FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
                   | set(glob.glob(str(TESTS / "rationality" / "*.fspy")))
                   | {str(TESTS / "entrypoints.fspy"), str(TESTS / "debates.fspy")})
 
-#: (fixture, issue) where the labels differ: an issue only a lambda derives.
-LABEL_CHANGES = {
-    ("demo/05_even_loop.fspy", "issue P->false[t]"), ("demo/05_even_loop.fspy", "issue Q->false[t]"),
-    ("minicourse/lesson15_capture.fspy", "issue P->false[t]"),
-    ("minicourse/lesson15_capture.fspy", "issue Q->false[t]"),
-    ("rationality/even_loop.fspy", "issue P->false[t]"), ("rationality/even_loop.fspy", "issue Q->false[t]"),
-    ("rationality/even_loop_lk.fspy", "issue P->false[t]"),
-    ("rationality/even_loop_lk.fspy", "issue Q->false[t]"),
-    ("rationality/self_attack.fspy", "issue P->false[t]"),
-    ("rationality/self_attack_lk.fspy", "issue P->false[t]"),
-}
-
 SMALL = ("grounded", "preferred", "stable")
+ACCEPTED = {"markers", "kinds", "exposed", "captured"}
 
 
-def edge_key(edge, kinds=True):
+def edge_key(edge, kinds=True, strict=True):
     """An edge up to its name and role: the term names occurrence copies
     apart and calls its edges supporters and attackers."""
     sources = sorted((s.key, s.side, s.kind) if kinds else (s.key, s.side) for s in edge.sources)
-    return (edge.target_key, edge.target_side, edge.strict, tuple(sources))
+    return (edge.target_key, edge.target_side, edge.strict if strict else None, tuple(sources))
+
+
+def exposed_only(term_graph, doc_graph) -> bool:
+    """Whether the edges differ only by the term's being defeasible where
+    the document's is strict (the ``exposed`` class)."""
+    term_edges = {edge_key(e, False, False): e.strict for e in term_graph.edges}
+    doc_edges = {edge_key(e, False, False): e.strict for e in doc_graph.edges}
+    if set(term_edges) != set(doc_edges):
+        return False
+    return all(term_edges[k] == doc_edges[k] or (doc_edges[k] and not term_edges[k])
+               for k in term_edges)
 
 
 def classify(term_graph, doc_graph):
@@ -77,8 +91,10 @@ def classify(term_graph, doc_graph):
     if term_edges != doc_edges:
         if {edge_key(e, False) for e in term_graph.edges} == {edge_key(e, False) for e in doc_graph.edges}:
             found.add("kinds")
+        elif exposed_only(term_graph, doc_graph):
+            found.add("exposed")
         elif any(e.role == "subargument" for e in doc_graph.edges if edge_key(e) not in term_edges):
-            found.add("lambda")
+            found.add("captured")
         else:
             found.add("other edges")
     statements = set(term_graph.defaults) | set(doc_graph.defaults)
@@ -89,15 +105,17 @@ def classify(term_graph, doc_graph):
             continue
         if (term_kinds - doc_kinds) <= {"obligation"} and (doc_kinds - term_kinds) <= {"obligation"}:
             found.add("markers")
-        elif "lambda" in found:
-            pass                         # a lambda edge's own presumption markers
+        elif "captured" in found or "exposed" in found:
+            pass                         # a subargument edge's own presumption markers
         else:
             found.add("other markers")
     return found
 
 
 def labels_differ(term_graph, doc_graph, semantics):
-    """Whether the two graphs label the statements they share differently."""
+    """The statements the two graphs share and label differently, under
+    any of the semantics (every shared statement if the two give a
+    different number of labellings)."""
     common = set(referenced_statements(term_graph)) & set(referenced_statements(doc_graph))
     if len(common) > 10:
         semantics = ("grounded",)        # the multi-extension solver is slow beyond that
@@ -106,7 +124,22 @@ def labels_differ(term_graph, doc_graph, semantics):
         return sorted(sorted((k, v) for k, v in labelling.items() if k in common)
                       for labelling in labellings(graph, chosen))
 
-    return [s for s in semantics if projected(term_graph, s) != projected(doc_graph, s)]
+    differing = set()
+    for s in semantics:
+        left, right = projected(term_graph, s), projected(doc_graph, s)
+        if len(left) != len(right):
+            differing |= common
+        else:
+            for a, b in zip(left, right):
+                differing |= {k for (k, v), (_, w) in zip(a, b) if v != w}
+    return differing
+
+
+def exposed_statements(term_graph, doc_graph):
+    """The targets of the edges of the ``exposed`` class."""
+    strict_in_doc = {edge_key(e, False, False) for e in doc_graph.edges if e.strict}
+    return {(e.target_key, e.target_side) for e in term_graph.edges
+            if not e.strict and edge_key(e, False, False) in strict_in_doc}
 
 
 def entries(prover):
@@ -142,17 +175,16 @@ def test_fixture(script):
             Service.of(prover).check(Path(script).read_text())
             strict_names = list(prover.declarations.keys())
             strict_kinds = declaration_kinds(prover.declarations)
-            changed = set()
             for label, issue, term_of, source in entries(prover):
                 term_graph, doc_graph = both(term_of(), source, issue, strict_names, strict_kinds)
                 classes = classify(term_graph, doc_graph)
-                assert classes <= {"markers", "kinds", "lambda"}, (label, classes)
-                if labels_differ(term_graph, doc_graph, SMALL):
-                    assert "lambda" in classes, label
-                    changed.add((name, label))
+                assert classes <= ACCEPTED, (label, classes)
+                differing = labels_differ(term_graph, doc_graph, SMALL)
+                if differing:
+                    assert "exposed" in classes, (label, differing)
+                    assert differing <= exposed_statements(term_graph, doc_graph), (label, differing)
     finally:
         prover.close()
-    assert {c for c in LABEL_CHANGES if c[0] == name} <= changed
 
 
 @pytest.mark.parametrize("seed", range(60))
@@ -161,28 +193,22 @@ def test_random_documents(seed):
     strict = {f"ax{n}" for n in range(1, 40)}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        lambda_only = lambda_only_statements(doc)
         for statement in doc.statements():
             term_graph, doc_graph = both(unfold(doc, statement), doc, statement, strict)
             classes = classify(term_graph, doc_graph)
-            assert classes <= {"markers", "kinds", "lambda"}, statement
-            if labels_differ(term_graph, doc_graph, ("grounded", "complete")):
-                assert "lambda" in classes and statement in lambda_only, statement
-
-
-def lambda_only_statements(graph):
-    """Statements only a lambda subargument derives: the unfolder stacks no
-    lambda edge, so their issue is a bare site in the term."""
-    by_role = {}
-    for edge in graph.edges:
-        by_role.setdefault((edge.target_key, edge.target_side), set()).add(edge.role == "subargument")
-    return {statement for statement, roles in by_role.items() if roles == {True}}
+            assert classes <= ACCEPTED, statement
+            differing = labels_differ(term_graph, doc_graph, ("grounded", "complete"))
+            if differing:
+                assert "exposed" in classes, (statement, differing)
+                assert differing <= exposed_statements(term_graph, doc_graph), (statement, differing)
 
 
 def test_the_setting_selects_the_issue_graph():
     """`issue-graph document` (the default) and `issue-graph term` through
-    the service, on the example of the lambda class: the document labels
-    P->false UNDEC, the term (a bare site) OUT."""
+    the service, on the former example of the lambda class: P->false, which
+    only SelfAttack's lambda derives, is UNDEC on both routes now that the
+    unfolder stacks the lambda's edge (until 2026-10-16 the term had a
+    bare site there, OUT)."""
     from wrap.service import InvalidRequest
     prover = setup_prover()
     try:
@@ -197,7 +223,7 @@ def test_the_setting_selects_the_issue_graph():
             assert svc.label(target, semantics="grounded").labellings[0][key] == "UNDEC"
             svc.set_issue_graph("term")
             assert not prover.issue_graph_from_document
-            assert svc.label(target, semantics="grounded").labellings[0][key] == "OUT"
+            assert svc.label(target, semantics="grounded").labellings[0][key] == "UNDEC"
             with pytest.raises(InvalidRequest):
                 svc.set_issue_graph("both")
     finally:

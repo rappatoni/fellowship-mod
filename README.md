@@ -49,16 +49,18 @@ main line of development. It covers the quantifier-free fragment,
 derivation cycles included, and is still incomplete. Known gaps, each
 tracked in `tasks.org`:
 
-- **Only sites can be attacked or supported.** The specification
-  (`debate-graph-spec.org`, rational closure) lets attacks and supports
-  reach subarguments and intermediate conclusions too.
+- **Moves do not reach exposed nodes yet.** The document graph and the
+  unfolded term expose every horn of an argument (the axioms it applies,
+  its lemmas, its lambdas), but a debate's `attack` and `support` verbs
+  still name sites and conclusions only (tasks.org, aida-rational-closure).
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
 - **No first-order debates.** Normalisation and the debate operations
   refuse first-order terms (see *First-order logic*).
 - **The shared route lags behind.** `pipeline shared` still builds the
-  earlier scaffold shape and has not been ported to the stacked shape and
-  the argument entrypoints, so the default route is `unfolded`.
+  earlier scaffold shape and has not been ported to the stacked shape,
+  the argument entrypoints and the exposure of horns, so the default
+  route is `unfolded`.
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
@@ -263,7 +265,17 @@ through the document graph.
    edge's body expanded the same way. A demand for a statement that a binder
    in scope already stands for - an argument's own or a scaffold's - is
    captured by that binder instead of being expanded again, which is what
-   makes this terminate. Out: one proof term standing for the whole debate.
+   makes this terminate. Every *exposed node* of a body - a declared axiom
+   it applies, a lemma, a lambda: the horns of phase 4 - is expanded like a
+   site: where it stands, the debate about its statement, with an
+   obligation root, the statement's derivations stacked and the node's own
+   on top if its argument has *primacy* (the entrypoint and a debate's
+   moved arguments, their exposed nodes included); a node nobody engages
+   stays as written; a node whose statement is bound in scope is the
+   captured variable, with its own derivation kept on top of it under
+   primacy (`subarguments default`), never (`share`) or always
+   (`preserve`; `FSP_SUBARGUMENTS`). The labels never depend on that
+   setting. Out: one proof term standing for the whole debate.
 3. **typecheck** — replay that term through Fellowship as a throwaway theorem
    and compare what Fellowship rebuilds with what was sent, up to
    alpha-equivalence, site numbering and proposition spelling. This is the
@@ -276,7 +288,11 @@ through the document graph.
    type - unless the debate spells a statement in two ways (`~A` and
    `A -> false` are one statement but two propositions for Fellowship); then
    the whole term is replayed. `typecheck expanded` always replays the whole
-   term, whose size grows with the number of paths through the graph.
+   term, whose size grows with the number of paths through the graph. The
+   sub-debates come from the shared route, which does not expose horns
+   yet, so the debates the unfolded term holds at exposed nodes are
+   replayed only by `typecheck expanded` (tests/test_unfold_exposure.py
+   replays every fixture term whole).
 4. **compile** — take the issue's argumentation framework from the document
    graph: the part reachable from the issue (the sources of every edge
    deriving a reached statement, and the contrary of a reached statement),
@@ -294,8 +310,10 @@ through the document graph.
    reference: the compiler then finds the sub-arguments by matching
    *scaffold shapes*, the four support and attack shapes of the COMMA 2026
    paper, which the unfolder produces; `issue-graph document` switches back.
-   The two differ in labels only on an issue that only a lambda
-   subargument derives (tasks.org, aida-discuss-issue-graph-from-document).
+   The two agree in labels on every fixture (tasks.org,
+   aida-discuss-issue-graph-from-document), except where the term's
+   obligation root of an exposed strict node loses the strictness that
+   phase 5 does not restore.
 5. **strict** — read strictness off the term. A subterm is strict in the
    debate if it rests on nothing, that is, it has no open site. Where one wing
    of a scaffold is strict and the other is not, the scaffold is decided here

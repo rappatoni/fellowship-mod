@@ -57,9 +57,15 @@ which LJ forbids, so there are no lj debates (author, 2026-09-17) and
 unfolding always captures continuations.  The CLI refuses the debate
 commands while the file is in lj.
 
-Only argument edges attach as supporters and attackers: a lambda
-subargument edge is a piece of its parent's body and appears inline
-where the parent is unfolded, never as a scion elsewhere.
+Every horn of a body is exposed (author, 2026-10-13/16; tasks.org,
+aida-discuss-non-site-attack-points, aida-rational-closure): a declared
+axiom applied, a lemma, a lambda - the nodes the compiler gives an edge
+of their own (core/dc/debate_graph.py) - become, where they stand, the
+debate about their statement, with an obligation root and the node's
+own derivation on top iff its argument has primacy (``_exposed``).  So
+subargument edges are stack elements like argument edges.  A node
+nobody engages stays as written; one whose statement is bound in scope
+is the captured variable (``subarguments``).
 
 The term this produces is evaluated by the term-first pipeline
 (core/comp/evaluate.py): compiled, labelled, resolved by sigma.
@@ -97,13 +103,36 @@ class Unfolder:
     #: still builds (core/dc/share.py) until aida-shared-route-stack-shape.
     stacked = True
 
-    def __init__(self, graph: DebateGraph, *, stacked=None, order=None):
+    #: Whether the horns of a body - a lemma, a lambda, an axiom applied -
+    #: are unfolded into the debate about their statement where they
+    #: stand (tasks.org, aida-rational-closure, 2026-10-16).  Only on the
+    #: stacked shape; the shared route (core/dc/share.py) keeps the old
+    #: exposure until its own step.
+    expose = True
+
+    def __init__(self, graph: DebateGraph, *, stacked=None, order=None,
+                 subarguments="default", primacy=(), expose=None):
         """``order`` ({argument name: rank}, a debate's utterance order,
         core/dc/debate.py): at every statement the edges of the ranked
         arguments go above the others, in rank order - the last uttered
-        outermost, judged first; the rest keep registration order below."""
+        outermost, judged first; the rest keep registration order below.
+        ``primacy``: the arguments whose own derivations go first (the
+        entry point; a debate's moved arguments), which extends to their
+        subarguments.  ``subarguments``: at an exposed node whose
+        statement is already bound, "default" keeps the node's own
+        derivation (SUP(captured, own)) iff its argument has primacy,
+        "share" never (the captured variable alone), "preserve" always,
+        with a copy of the statement's attackers where a scaffold binds
+        it (tasks.org, aida-circular-support-design).  ``expose`` False:
+        the old exposure, sites only (tests of the shape alone)."""
         if stacked is not None:
             self.stacked = stacked
+        if expose is not None:
+            self.expose = expose
+        self.expose = self.expose and self.stacked
+        self.subarguments = subarguments
+        self.primacy = set(primacy)
+        self._order = dict(order or {})
         self.graph = graph
         self._sites = count(1)
         self._alts = count(1)
@@ -115,9 +144,14 @@ class Unfolder:
         self._used = set()
         self._by_target = {}
         for edge in graph.edges:
-            if edge.role == "subargument":
+            if edge.role == "subargument" and not self.expose:
                 continue
             self._by_target.setdefault((edge.target_key, edge.target_side), []).append(edge)
+        #: The exposed nodes, by identity: a subargument edge's term is a
+        #: node of the body it was compiled from (core/dc/debate_graph.py).
+        self._node_edge = ({id(e.term): e for e in graph.edges
+                            if e.role == "subargument" and e.term is not None} if self.expose else {})
+        self._scaffold_vars = set()
         if order:
             for edges in self._by_target.values():
                 # stable: unranked edges keep registration order
@@ -172,10 +206,20 @@ class Unfolder:
                 return name
 
     def _fresh_alt(self):
-        return self._wiring("alt", self._alts)
+        name = self._wiring("alt", self._alts)
+        self._scaffold_vars.add(name)
+        return name
 
     def _fresh_beta(self):
-        return self._wiring("b", self._betas)
+        name = self._wiring("b", self._betas)
+        self._scaffold_vars.add(name)
+        return name
+
+    def _has_primacy(self, edge) -> bool:
+        """Whether ``edge``'s argument has primacy: the entry point or a
+        moved argument, their subarguments included (``name.μ1``)."""
+        return any(edge.name == p or edge.name.startswith(p + ".")
+                   for p in (*self.primacy, *self._order))
 
     @staticmethod
     def _scaffold_scope(statement, alt, beta, env):
@@ -480,9 +524,12 @@ class Unfolder:
     def _edge(self, edge, env, spine, own=False):
         """An edge's body with every site unfolded in scope.  ``own``: the
         body of the argument the term is unfolded for, whose sites keep the
-        kind it wrote."""
+        kind it wrote.  An exposed node of the body (a lemma, a lambda, an
+        axiom applied: ``_node_edge``) becomes the debate about its
+        statement (``_exposed``)."""
         if edge.term is None:
             raise UnfoldError(f"Edge '{edge.name}' carries no term; it cannot be unfolded.")
+        primary = own or self._has_primacy(edge)
         root_lambda = _peel_eta(edge.term)
         if not isinstance(root_lambda, Lamda):
             root_lambda = None
@@ -509,7 +556,12 @@ class Unfolder:
             # only the stacked shape knows the argument being unfolded
             return {"own_kind": presumed} if own else {}
 
-        def walk(node, env, names):
+        def walk(node, env, names, expose=True):
+            """``expose``: whether this node itself may be exposed; its
+            children are checked either way."""
+            exposed = self._node_edge.get(id(node)) if expose else None
+            if exposed is not None and node is not edge.term:
+                return self._exposed(node, exposed, env, spine, names, primary, walk)
             if isinstance(node, (Goal, Deleg)):
                 presumed = isinstance(node, Deleg)
                 return self.statement((canonical_prop(node.prop), "term"), env, spine,
@@ -574,19 +626,71 @@ class Unfolder:
             copy.origin = edge.name
         return copy
 
+    def _exposed(self, node, sub, env, spine, names, primary, walk):
+        """An exposed node where it stands in a body (the horn rule,
+        tasks.org aida-discuss-non-site-attack-points):
 
-def unfold(graph: DebateGraph, issue) -> ProofTerm:
+        - its statement S bound in scope: the captured variable, with the
+          node's own derivation kept on top of it, SUP(captured, own), iff
+          its argument has primacy ("default"), never ("share") or always
+          ("preserve", then also a copy of S's attackers where a scaffold
+          binds S); no attack scaffold otherwise - the enclosing one
+          covers the node;
+        - S not bound, and nobody else derives, contests or presumes S:
+          the node as written (empty parts are left out);
+        - S not bound otherwise: the debate about S, its root an
+          obligation site (a presumption of S elsewhere at the bottom of
+          the stack), the node's own derivation on top iff primacy, else
+          at its registered position."""
+        statement = (sub.target_key, sub.target_side)
+        contra = contrary(statement)
+        if statement in env:
+            keep = (self.subarguments == "preserve"
+                    or (self.subarguments == "default" and primary))
+            captured = self._variable(statement, env[statement])
+            if not keep:
+                logger.debug("unfold: node '%s' (%s) captured as '%s'",
+                             sub.name, self._show(statement), env[statement])
+                return captured
+            alt, beta = self._fresh_alt(), self._fresh_beta()
+            logger.debug("unfold: node '%s' (%s) kept on top of the captured '%s' (alt %s, b %s)",
+                         sub.name, self._show(statement), env[statement], alt, beta)
+            own = walk(node, self._scaffold_scope(statement, alt, beta, env), names, False)
+            term = self._support(statement, captured, own, alt, beta)
+            if (self.subarguments == "preserve" and env[statement] in self._scaffold_vars
+                    and (self._by_target.get(contra) or self.graph.defaults.get(contra))):
+                alt2, beta2 = self._fresh_alt(), self._fresh_beta()
+                logger.debug("unfold: node '%s' also attacked by a copy of the debate about %s "
+                             "(alt %s, b %s)", sub.name, self._show(contra), alt2, beta2)
+                wing = self._wing(contra, self._scaffold_scope(statement, alt2, beta2, env),
+                                  spine | {contra})
+                term = self._attack(statement, term, wing, alt2, beta2)
+            return term
+        others = [e for e in self._by_target.get(statement, []) if e is not sub]
+        engaged = others or self._by_target.get(contra) or self.graph.defaults.get(contra)
+        if not engaged:
+            logger.log(TRACE, "  unfold: node '%s' (%s) stays as written: nobody engages it",
+                       sub.name, self._show(statement))
+            return walk(node, env, names, False)
+        logger.debug("unfold: node '%s' exposed as %s%s", sub.name, self._show(statement),
+                     " (its derivation on top)" if primary else "")
+        return self._debate(statement, env, spine | {statement}, own_kind=False,
+                            top=sub if primary else None)
+
+
+def unfold(graph: DebateGraph, issue, subarguments="default") -> ProofTerm:
     """The canonical debate term for ``issue`` = (canonical key, side)."""
-    return _shown(Unfolder(graph).unfold(issue))
+    return _shown(Unfolder(graph, subarguments=subarguments).unfold(issue))
 
 
 unfold_issue = unfold
 
 
-def unfold_argument(graph: DebateGraph, edge) -> ProofTerm:
+def unfold_argument(graph: DebateGraph, edge, subarguments="default") -> ProofTerm:
     """The debate term for the argument whose document edge is ``edge``,
-    biased towards it (aida-unfold-entrypoints)."""
-    return _shown(Unfolder(graph).unfold_argument(edge))
+    biased towards it (aida-unfold-entrypoints): primacy is its, and its
+    subarguments'."""
+    return _shown(Unfolder(graph, subarguments=subarguments, primacy={edge.name}).unfold_argument(edge))
 
 
 def unfold_legacy(graph: DebateGraph, issue) -> ProofTerm:

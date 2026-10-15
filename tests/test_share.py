@@ -769,9 +769,9 @@ class TestEvaluateCommand:
         calls = []
         real = core.dc.unfold.unfold_argument
 
-        def counting(graph, edge):
+        def counting(graph, edge, subarguments="default"):
             calls.append(edge.name)
-            return real(graph, edge)
+            return real(graph, edge, subarguments)
 
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))

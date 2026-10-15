@@ -1,0 +1,52 @@
+% Exposure of horns (tasks.org, aida-rational-closure; the E2 probe of
+% 2026-10-14): a lemma proved inside an argument is a node of its own.
+%
+%   argP  : P from the axiom qp : Q->P and a presumption of Q
+%   argQ  : Q from pq : P->Q and its own lemma for P, proved from
+%           rp : R->P and a presumption of R
+%   killR : refutes R strictly, from nR : ~R
+%
+% argQ's lemma is the edge argQ.μ1 : P[t] <- R->P[t], R[t]:pres, a
+% second derivation of P beside argP.  Inside argP's term the lemma's P
+% is argP's own statement, bound by the support scaffold's b: without
+% primacy (argQ is not the entrypoint) it is the captured variable alone,
+% the stack below argP.  Labels: P, Q IN; R[t] OUT, so the lemma is OUT.
+lk.
+declare P,Q,R:bool.
+declare rp:(R->P).
+declare pq:(P->Q).
+declare qp:(Q->P).
+declare nR:(~R).
+
+argument argP : (P).
+cut (Q->P) th.
+axiom qp.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+argument argQ : (Q).
+cut (P->Q) th.
+axiom pq.
+elim.
+cut (R->P) th2.
+axiom rp.
+elim.
+by default.
+next.
+axiom.
+axiom.
+dixi.
+
+counterargument killR : (R).
+cut (~R) x.
+axiom nR.
+elim.
+axiom.
+dixi.
+
+evaluate issue :P.
+evaluate argQ.
+evaluate argP.
