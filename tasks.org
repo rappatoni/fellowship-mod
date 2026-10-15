@@ -3673,6 +3673,35 @@ continuation, e.g. a refutation node inside a proof by contradiction,
 where capture by the continuation would turn an ex falso into a plain
 proof; sites are captured so today (the sprung trap, lesson 8a).
 
+*The probe of capture by the argument's own continuation (2026-10-15):
+the rule stands; capturing the horn is required, not harmful.* The
+argument =cut (P) v. by default. next. cut (~P) n. by default. next.
+elim. axiom.= registers as mu argP:P.<mu v:P.<!P || mu'n:P.<!~P ||
+mu'H1:~P.<H1 || n*_F_>>> || argP>, a proof of P by contradiction with
+v unused (legal at the pure level): the refutation node mu'n is a horn
+whose statement P[c] is bound by v. With the generalised compiler's
+edges (argP: P[t] <- P[t]:pres, P[c]:suba; argP.n: P[c] <- ~P[t]:pres)
+and labels from the document graph:
+- n presumed (P contested; grounded UNDEC, preferred {P IN} and {P OUT}):
+  as written (today's unfolder copies the node) the credulous witness
+  with P[t] IN gives an EXCEPTION, mu argP.<!IN:~P || !IN:P*_F_> - the
+  labelling defeated the refutation but the term has no place for that
+  verdict to act, so the clash stays; (a) (the node replaced by v) and
+  d2 (SUP~(v, node)) give the value mu argP.<!IN:P || argP>, as the
+  label says. Skeptically all three are open.
+- n strictly refuted: all three give values (as written: the root site
+  !IN:P, sigma having dropped argP's own derivation; (a) and d2: argP
+  itself).
+So the worry that capture "turns an ex falso into a plain proof" is the
+labelling's own verdict: a reductio whose refutation loses contributes
+nothing, and P stands by its presumption. The horn must be exposed
+(captured or d2) for the labelling to reach it; left as written, term
+and labels diverge. Horns bound by the argument's own binder are
+therefore treated exactly like horns bound by a scaffold's: capture or
+d2 by primacy, no copy of attackers (Q1). The lemma-under-lambda case
+(a proof of P inside lambda h:P, P bound by h) replays and evaluates
+to the same value under all three treatments.
+
 *** DONE Discuss: take the issue graph from the document graph, not from the term
 CLOSED: [2026-10-15 Thu]
 :PROPERTIES:
