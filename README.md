@@ -283,7 +283,12 @@ through the document graph.
    for a debate the part of its own graph, which holds only its scope.
    Nodes are canonical propositions, hyperedges carry a name, a target
    statement and sources with their kinds, and statements get default
-   markers. Out: the argumentation framework, printed as an indented tree.
+   markers. An argument's edge is compiled by the *horn rule*: its sources
+   are the maximal subterms of its proof that do not carry its own
+   continuation - its open sites, the declared axioms it applies (each a
+   strict, source-less edge named after the axiom) and the lemmas it
+   proves on the way (each an edge of its own, `NAME.μ1`, like a lambda's
+   `NAME.λ1`); the spine, which carries the continuation, gets no edge. Out: the argumentation framework, printed as an indented tree.
    `issue-graph term` (or `FSP_ISSUE_GRAPH=term`) compiles it from the
    unfolded term instead, the route before 2026-10-15, kept as the
    reference: the compiler then finds the sub-arguments by matching

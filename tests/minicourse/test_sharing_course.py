@@ -180,7 +180,7 @@ class TestLesson14Definitions:
     def test_labels_and_normal_form(self, fresh):
         doc, issue, names, kinds, shared = load(fresh, "lesson14_sharing.fspy", "P2")
         nf, cls, sigma, graph = evaluate_shared(shared, "a2_0", strict_names=names, strict_kinds=kinds)
-        assert labels(graph) == {"P1[t]": "IN", "P0[t]": "IN", "P2[t]": "IN"}
+        assert labels(graph) == {"P1->P2[t]": "IN", "P0->P1[t]": "IN", "P1[t]": "IN", "P0[t]": "IN", "P2[t]": "IN"}
         assert (pres_str(nf), cls) == (NF14, "value")
 
     def test_the_issue_p1_names_nothing(self, fresh):                # exercise 1
@@ -218,7 +218,9 @@ class TestLesson15Captures:
     def test_the_even_loop_labels(self, fresh):
         doc, issue, names, kinds, shared = load(fresh, "lesson15_capture.fspy", "P")
         _nf, _cls, _sigma, graph = evaluate_shared(shared, "p1", strict_names=names, strict_kinds=kinds)
-        assert set(labels(graph).values()) == {"UNDEC"} and len(labels(graph)) == 6
+        found = labels(graph)
+        assert len(found) == 8 and {v for k, v in found.items() if "->P" not in k and "->Q" not in k} == {"UNDEC"}
+        assert found["(Q->false)->P[t]"] == "IN" and found["(P->false)->Q[t]"] == "IN"     # the axioms
 
     def test_the_issue_q_names_nothing(self, fresh):                 # exercise 1
         run(fresh, HERE / "lesson15_capture.fspy")
@@ -270,9 +272,11 @@ class TestLesson17Instances:
         doc, issue, names, kinds, shared = load(fresh, "lesson17_instances.fspy", "P2")
         resolver = IssueResolver(shared, names, kinds)
         graph = resolver.compile("a2_0")
-        assert [(e.name, e.role, e.strict) for e in graph.edges] == [
+        assert [(e.name, e.role, e.strict) for e in graph.edges if e.role != "subargument"] == [
             ("k", "attacker", True), ("a1_1", "supporter", False), ("a1_0", "supporter", False),
             ("a2_1", "supporter", False), ("a2_0", "supporter", False)]
+        assert sorted(e.name for e in graph.edges if e.role == "subargument") == [
+            "np0", "r1_0", "r1_1", "r2_0", "r2_1"]                       # the axioms applied
         assert resolver.strict_edges() == []
         assert len(resolver.instances) == 3
         assert [what for _, what in resolver.decisions()] == ["attacker strict: defeat"]
@@ -289,7 +293,8 @@ class TestLesson17Instances:
     def test_labels_and_evaluation(self, fresh):
         doc, issue, names, kinds, shared = load(fresh, "lesson17_instances.fspy", "P2")
         nf, cls, sigma, graph = evaluate_shared(shared, "a2_0", strict_names=names, strict_kinds=kinds)
-        assert labels(graph, "preferred") == {"P0[c]": "IN", "P1[t]": "OUT", "P0[t]": "OUT", "P2[t]": "OUT"}
+        assert labels(graph, "preferred") == {"P1->P2[t]": "IN", "P0->P1[t]": "IN", "~P0[t]": "IN",
+                                              "P0[c]": "IN", "P1[t]": "OUT", "P0[t]": "OUT", "P2[t]": "OUT"}
         assert (pres_str(nf), cls) == ("?OUT:P2", "open")
 
     def test_lesson15_has_two_instances_and_one_decision(self, fresh):   # exercises 1 and 2

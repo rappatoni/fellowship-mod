@@ -31,6 +31,7 @@ from core.ac.prop import (
     Prop, PTrue, PFalse, PSym, PApp, PNeg, PBin, PQuant, BinOp, PropError,
 )
 from core.logging_util import TRACE, artifact
+from core.dc.discipline import free_variables, _is_negation_wrapper, _occurrences
 
 logger = logging.getLogger(__name__)
 
@@ -207,11 +208,23 @@ class DebateGraph:
                 logger.debug("compile: '%s' is an identity edge on %s; kept as a default marker only",
                              edge.name, self._show_edge_target(edge))
             return  # identity edge: default marker only
+        if self._holds(edge):
+            return                              # the same axiom used twice
         if not getattr(self, "quiet", False):
             logger.debug("compile: edge '%s' (%s, %s) %s <- %s", edge.name, edge.role,
                          "strict" if edge.strict else "defeasible",
                          self._show_edge_target(edge), self._show_sources(edge))
         self.edges.append(edge)
+
+    def _holds(self, edge: Edge) -> bool:
+        """Whether an edge of the same name, statement, sources and
+        strictness is already present: a declared name used in several
+        places is one axiom edge."""
+        return any(e.name == edge.name and e.target_key == edge.target_key
+                   and e.target_side == edge.target_side and e.strict == edge.strict
+                   and [(s.key, s.side, s.kind) for s in e.sources]
+                   == [(s.key, s.side, s.kind) for s in edge.sources]
+                   for e in self.edges)
 
     # -- rendering for log messages ----------------------------------------
 
@@ -233,7 +246,7 @@ class DebateGraph:
             self.nodes.setdefault(key, display)
         for (key, side), kinds in other.defaults.items():
             self.defaults.setdefault((key, side), set()).update(kinds)
-        self.edges.extend(other.edges)
+        self.edges.extend(e for e in other.edges if not self._holds(e))
 
     # -- structure ----------------------------------------------------------
 
@@ -889,12 +902,14 @@ class _Compiler:
     """Term -> hyperedges: the abstract argumentation framework of a term.
 
     One edge per subargument: the body of an argument, every scion of a
-    scaffold, and every lambda (a proof of an implication under a
-    hypothesis).  A subargument's sources are its open sites and every
-    variable it uses that an *enclosing* subargument binds - a captured
-    obligation (a demand met by a hypothesis or continuation in scope) is
-    an obligation source at that binder's statement, a captured
-    presumption a presumption source.  So a cycle a capture closes is a
+    scaffold, and every *horn* of a body - a declared axiom it applies, a
+    lemma it proves on the way (a mu/mu' node), a lambda or lambda-bar,
+    an elimination cell off the spine (``compile_body``, 2026-10-15).  A
+    subargument's sources are its horns: its open sites, the statements
+    of the subarguments it applies, and every variable it uses that an
+    *enclosing* subargument binds - a captured obligation (a demand met
+    by a hypothesis or continuation in scope) is an obligation source at
+    that binder's statement, a captured presumption a presumption source.  So a cycle a capture closes is a
     cycle here, obligations included: the framework does not know that a
     demand was met inside a scope.  That is the debate term's business -
     strictness is read off the unfolded term, not the framework
@@ -935,11 +950,29 @@ class _Compiler:
     # -- one subargument ----------------------------------------------------
 
     def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None):
-        """Compile one subargument body into its edge.
+        """Compile one subargument body into its edge, by the horn rule
+        (tasks.org, aida-discuss-non-site-attack-points, 2026-10-15).
+
+        The *spine* of the body is what carries its own variable: the
+        root binder's variable, and, accumulating, the variables of the
+        same kind - continuations of a term-side edge, hypotheses of a
+        context-side one - that binders on the spine introduce.  A subterm
+        that contains no spine variable is a *horn*: a site is a source
+        with its kind, a declared name a strict source-less edge of its
+        own and a ``subargument`` source, a progress node (mu/mu',
+        lambda/lambda-bar, a cell) an edge of its own by the same rule and
+        a ``subargument`` source, a variable a binder of this edge binds
+        nothing, one an enclosing edge binds a captured source (the sprung
+        trap, shown as a cycle).  A horn with this edge's own statement is
+        inlined: the eta chain and the bureaucratic cuts around a body are
+        its exposure, not separate ones.  Spine nodes get no edge: their
+        statement is mirrored by the horn they are cut against.  A
+        scaffold (an unfolded debate term) is decomposed as before: its
+        scion is an edge, its original continues this one.
 
         ``outer`` maps the variables bound by enclosing subarguments to
-        (prop, side, owner).  Nested subarguments (scions, lambdas) are
-        added to the graph here; the body's own edge is returned.
+        (prop, side, owner).  Nested subarguments are added to the graph
+        here; the body's own edge is returned.
         """
         side, prop = self._root_statement(body, name)
         if expect_side is not None and side != expect_side:
@@ -953,14 +986,115 @@ class _Compiler:
                 f"issue is '{expect_prop}'."
             )
         target_key = self.graph.add_node(prop)
-        root_lambda = _peel_eta(body)
-        if not isinstance(root_lambda, Lamda):
-            root_lambda = None
+        own = (target_key, side)
+        # the kind of variable that carries this edge's proof on: a
+        # continuation (ID) for a proof, a hypothesis (DI) for a refutation
+        spine_kind = "c" if side == "term" else "t"
+        spine_binders = (Mu, Admal) if side == "term" else (Mutilde, Lamda)
 
-        def bind(env, names):
-            return {**env, **names}
+        def statement_of(node):
+            p = getattr(node, "prop", None)
+            if not p:
+                return None
+            if isinstance(node, (Mu, Goal, Deleg, DI, Lamda, Sonc)):
+                return (canonical_prop(p), "term")
+            return (canonical_prop(p), "context")
 
-        def walk(node, env, spine):
+        def on_spine(node, spine):
+            """Whether ``node`` carries this edge's proof on: a spine
+            variable occurs in it with no binder of the spine kind between.
+            An occurrence under such a binder is a capture the unfolder
+            made (a site met by the continuation, the sprung trap), which
+            a horn records as a source; the original occurrence has no
+            same-kind binder between its binder and itself (the argument
+            is linear)."""
+            var_type = ID if spine_kind == "c" else DI
+            return any(0 in _occurrences(node, vname, var_type, spine_binders, through_affine=True)
+                       for _kind, vname in spine)
+
+        def bind(env, node):
+            """``env`` plus the binder ``node`` introduces, and whether that
+            variable is of the spine kind."""
+            stmts = binder_statements(node)
+            if not stmts:
+                return env, None
+            (vname, (vprop, vside)), = stmts.items()
+            vkind = "c" if vside == "context" else "t"
+            return {**env, vname: (vprop, vside)}, ((vkind, vname) if vkind == spine_kind else None)
+
+        def sub_edge(node, label, env):
+            sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
+            rec = self.compile_body(node, label, "subargument", sub_outer)
+            self.graph.add_edge(rec)
+            return _Acc((Source(rec.target_key, rec.target_side, "subargument", label, (),
+                                rec.target_label),), not rec.strict)
+
+        def axiom_edge(node, vside, env):
+            """A declared name as a horn: its own strict edge, named after
+            it, and a ``subargument`` source."""
+            self._check_kind(node.name, vside, name)
+            if node.name in BUILTIN_LEAVES:
+                return _EMPTY                       # _F_, _T_: never sources
+            key = self.graph.add_node(node.prop) if getattr(node, "prop", None) else None
+            if key is None:
+                raise DebateCompileError(
+                    f"Edge '{name}': the declared name '{node.name}' has no proposition; "
+                    f"run enrichment first.")
+            self.graph.add_edge(Edge(name=node.name, target_key=key, target_side=vside,
+                                     sources=(), strict=True, role="subargument", term=node,
+                                     target_label=getattr(node, "label", None)))
+            return _Acc((Source(key, vside, "subargument", node.name, (), getattr(node, "label", None)),))
+
+        def variable(node, env, scope):
+            vside = "context" if isinstance(node, ID) else "term"
+            bound = env.get(node.name)
+            if bound is not None and bound[1] == vside:
+                for kind in getattr(node, "captured_default", ()):
+                    # The bare contrary captured within the same body (an
+                    # attack whose wing is nothing but it): no source, but
+                    # the default somebody holds on the contrary is marked.
+                    self.graph.mark_default(self.graph.add_node(bound[0]), vside, kind)
+                return _EMPTY
+            if node.name in self.strict_names:
+                if statement_of(node) == own:
+                    self._check_kind(node.name, vside, name)
+                    return _EMPTY                   # the edge is the axiom's own
+                return axiom_edge(node, vside, env)
+            if getattr(node, "cites", None):
+                # A citation of a registered argument Fellowship does not
+                # hold, i.e. a defeasible one: an obligation on the cited
+                # conclusion, which the cited argument's own edge derives
+                # (core/dc/cite.py).  A strict citation took the branch above.
+                if not node.prop:
+                    raise DebateCompileError(
+                        f"Edge '{name}': the citation of '{node.name}' has no proposition."
+                    )
+                if self.on_citation is not None:
+                    self.on_citation(node, name)
+                return _Acc((Source(self.graph.add_node(node.prop), vside,
+                                    getattr(node, "source_kind", "obligation"),
+                                    node.name, scope, getattr(node, "label", None)),))
+            enclosing = outer.get(node.name)
+            if enclosing is not None and enclosing[1] == vside:
+                kind = "presumption" if getattr(node, "captured_presumption", False) else "obligation"
+                captured_key = self.graph.add_node(enclosing[0])
+                logger.debug("  compile: '%s' captured '%s' -> %s source at %s "
+                             "(the sprung trap, shown as a cycle)",
+                             name, node.name, kind, self.graph._show(captured_key, vside))
+                return _Acc((Source(captured_key, vside, kind, node.name, scope,
+                                    getattr(node, "label", None)),))
+            raise DebateCompileError(
+                f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
+                f"variable '{node.name}' is neither bound nor a declared axiom; "
+                f"express assumptions as open sites."
+            )
+
+        def visit(node, env, spine, scope, *, rest=False, parent=None):
+            """``rest``: the node is the continuation of the proof whatever
+            it contains (a lambda's body).  ``parent``: the node this is a
+            half or child of; the same-issue half of a *bureaucratic*
+            parent (binder type = cut type: an eta wrapper, a cut on the
+            statement itself) is that parent's exposure and is inlined."""
             for leaf_type, (lside, kind) in _LEAF_INFO.items():
                 if isinstance(node, leaf_type):
                     if not node.prop:
@@ -969,57 +1103,12 @@ class _Compiler:
                             f"proposition; run enrichment first."
                         )
                     return _Acc((Source(self.graph.add_node(node.prop), lside, kind,
-                                        str(node.number), spine,
+                                        str(node.number), scope,
                                         getattr(node, "label", None)),))
             if isinstance(node, (ID, DI)):
-                vside = "context" if isinstance(node, ID) else "term"
-                bound = env.get(node.name)
-                if bound is not None and bound[1] == vside:
-                    for kind in getattr(node, "captured_default", ()):
-                        # The bare contrary captured within the same body
-                        # (an attack whose wing is nothing but it): no
-                        # source, but the default somebody holds on the
-                        # contrary is still marked, as the legacy term's
-                        # bare site marked it.
-                        self.graph.mark_default(self.graph.add_node(bound[0]), vside, kind)
-                    return _EMPTY
-                if node.name in self.strict_names:
-                    self._check_kind(node.name, vside, name)
-                    return _EMPTY
-                if getattr(node, "cites", None):
-                    # A citation of a registered argument Fellowship does not
-                    # hold, i.e. a defeasible one: an obligation on the cited
-                    # conclusion, which the cited argument's own edge derives
-                    # (core/dc/cite.py).  A strict citation took the branch above.
-                    if not node.prop:
-                        raise DebateCompileError(
-                            f"Edge '{name}': the citation of '{node.name}' has no proposition."
-                        )
-                    # A citation of a statement's debate (core/dc/instances.py)
-                    # stands where unfolding puts that debate: the cited
-                    # instance's own edges come first (``on_citation``), and
-                    # the source has the kind the site there would have.
-                    if self.on_citation is not None:
-                        self.on_citation(node, name)
-                    return _Acc((Source(self.graph.add_node(node.prop), vside,
-                                        getattr(node, "source_kind", "obligation"),
-                                        node.name, spine, getattr(node, "label", None)),))
-                enclosing = outer.get(node.name)
-                if enclosing is not None and enclosing[1] == vside:
-                    # Captured from an enclosing subargument: a source at
-                    # that binder's statement, of the kind the site had.
-                    kind = "presumption" if getattr(node, "captured_presumption", False) else "obligation"
-                    captured_key = self.graph.add_node(enclosing[0])
-                    logger.debug("  compile: '%s' captured '%s' -> %s source at %s "
-                                 "(the sprung trap, shown as a cycle)",
-                                 name, node.name, kind, self.graph._show(captured_key, vside))
-                    return _Acc((Source(captured_key, vside, kind, node.name, spine,
-                                        getattr(node, "label", None)),))
-                raise DebateCompileError(
-                    f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
-                    f"variable '{node.name}' is neither bound nor a declared axiom; "
-                    f"express assumptions as open sites."
-                )
+                return variable(node, env, scope)
+            if _is_negation_wrapper(node):
+                return visit(node.context, env, spine, scope, rest=rest)
             match = _match_scaffold(node, self.strict_names)
             if match is not None:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match
@@ -1044,35 +1133,60 @@ class _Compiler:
                                                           expect_side=target_side, expect_prop=sprop))
                 # the site stays a source of this derivation; the scion is
                 # its own edge
-                return walk(orig, env, spine)
-            if isinstance(node, Lamda) and node is not root_lambda:
-                lname = f"{name}.\u03bb{next(self._fresh)}"
-                sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
-                rec = self.compile_body(node, lname, "subargument", sub_outer)
-                self.graph.add_edge(rec)
-                return _Acc((Source(rec.target_key, "term", "subargument", lname, spine,
-                                    rec.target_label),),
-                            not rec.strict)
-            if isinstance(node, Lamda):
-                return walk(node.term, bind(env, {node.di.di.name: (node.di.prop, "term")}), spine)
-            if isinstance(node, Mu):
-                inner = bind(env, {node.id.name: (node.prop, "context")})
-                spine2 = spine if _is_affine_binder(node.id.name) else spine + ((node.prop, "context"),)
-                return walk(node.term, inner, spine2) + walk(node.context, inner, spine2)
-            if isinstance(node, Mutilde):
-                inner = bind(env, {node.di.name: (node.prop, "term")})
-                spine2 = spine if _is_affine_binder(node.di.name) else spine + ((node.prop, "term"),)
-                return walk(node.term, inner, spine2) + walk(node.context, inner, spine2)
-            if isinstance(node, Admal):
-                return walk(node.context, bind(env, {node.id.id.name: (node.id.prop, "context")}), spine)
+                return visit(orig, env, spine, scope, rest=rest, parent=node)
+            same_issue = (statement_of(node) == own and isinstance(parent, (Mu, Mutilde))
+                          and getattr(parent, "prop", None)
+                          and canonical_prop(parent.prop) == own[0])
+            spine_node = rest or node is content or on_spine(node, spine) or same_issue
+            if isinstance(node, (Mu, Mutilde)):
+                if not spine_node:
+                    tag = "\u03bc" if isinstance(node, Mu) else "\u03bc'"
+                    return sub_edge(node, f"{name}.{tag}{next(self._fresh)}", env)
+                env2, var = bind(env, node)
+                spine2 = spine | {var} if var else spine
+                vname = node.id.name if isinstance(node, Mu) else node.di.name
+                scope2 = scope if _is_affine_binder(vname) else scope + ((node.prop, "context" if isinstance(node, Mu) else "term"),)
+                return (visit(node.term, env2, spine2, scope2, parent=node)
+                        + visit(node.context, env2, spine2, scope2, parent=node))
+            if isinstance(node, (Lamda, Admal)):
+                if not spine_node:
+                    tag = "\u03bb" if isinstance(node, Lamda) else "\u03bb\u0304"
+                    return sub_edge(node, f"{name}.{tag}{next(self._fresh)}", env)
+                env2, var = bind(env, node)
+                spine2 = spine | {var} if var else spine
+                body_ = node.term if isinstance(node, Lamda) else node.context
+                return visit(body_, env2, spine2, scope, rest=True, parent=node)
             if isinstance(node, (Cons, Sonc)):
-                return walk(node.term, env, spine) + walk(node.context, env, spine)
+                if not spine_node:
+                    return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
+                return (visit(node.term, env, spine, scope, parent=node)
+                        + visit(node.context, env, spine, scope, parent=node))
             raise DebateCompileError(
                 f"Edge '{name}': unhandled node {type(node).__name__} during "
                 f"source collection."
             )
 
-        acc = walk(body, {}, ())
+        root = body
+        content = _peel_eta(body)                  # the body under its eta chain: inline
+        env, spine = {}, frozenset()
+        if isinstance(root, (Mu, Mutilde)) and _match_scaffold(root, self.strict_names) is None:
+            env, var = bind(env, root)
+            if var:
+                spine = frozenset({var})
+            vname = root.id.name if isinstance(root, Mu) else root.di.name
+            scope = () if _is_affine_binder(vname) else ((root.prop, "context" if isinstance(root, Mu) else "term"),)
+            acc = (visit(root.term, env, spine, scope, parent=root)
+                   + visit(root.context, env, spine, scope, parent=root))
+        elif isinstance(root, (Lamda, Admal)):
+            env, var = bind(env, root)
+            if var:
+                spine = frozenset({var})
+            body_ = root.term if isinstance(root, Lamda) else root.context
+            acc = visit(body_, env, spine, (), rest=True, parent=root)
+        elif isinstance(root, (Cons, Sonc)):
+            acc = visit(root.term, env, spine, (), parent=root) + visit(root.context, env, spine, (), parent=root)
+        else:
+            acc = visit(root, env, spine, ())
         # Strict = the derivation uses no indeterminate anywhere: none among
         # its own sites, and none inside the subarguments it applies.
         strict = (not any(s.kind in ("obligation", "presumption") for s in acc.sources)
@@ -1094,6 +1208,14 @@ class _Compiler:
             side = "term"
             if not body.prop and body.di.prop and getattr(body.term, "prop", None):
                 body.prop = f"{body.di.prop}->{body.term.prop}"
+        elif isinstance(body, Admal):
+            side = "context"
+            if not body.prop and body.id.prop and getattr(body.context, "prop", None):
+                body.prop = f"{body.context.prop}-{body.id.prop}"
+        elif isinstance(body, Cons):
+            side = "context"                   # an elimination cell as a horn
+        elif isinstance(body, Sonc):
+            side = "term"
         elif isinstance(body, DI) and body.name in self.strict_names:
             # A bare declared proof: a strict, source-less edge for its side.
             side = "term"

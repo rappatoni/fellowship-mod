@@ -8,7 +8,7 @@ Files
 - debate.py
   - Debate, Move: debates as named, ordered, scoped selections of the document's arguments; the verb checks; unfold_debate.
 - debate_graph.py
-  - Debate-graph compilation (debate-graph-spec.org, layers 2-3): DebateGraph, the document graph.
+  - Debate-graph compilation (debate-graph-spec.org, layers 2-3): DebateGraph, the document graph. Since 2026-10-15 by the horn rule: a binder's derivation has every horn of its command as a source, a horn that is a declared axiom or a progress node is an edge of its own, the spine (what carries the binder's own variable) gets none.
 - unfold.py
   - Unfolding: document graph -> debate term, for an issue or an argument entrypoint.
 - strict.py

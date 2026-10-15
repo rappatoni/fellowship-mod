@@ -147,7 +147,8 @@ class TestCitation:
         execute_script(fresh, FIXTURE, strict=False, stop_on_error=False, isolate=False)
         g = fresh.graph
         edge = next(e for e in g.edges if e.name == "use")
-        assert [(g.nodes[s.key], s.kind) for s in edge.sources] == [("EfficientMetro", "obligation")]
+        assert [(g.nodes[s.key], s.kind) for s in edge.sources] == [
+            ("EfficientMetro->UseMetro", "subargument"), ("EfficientMetro", "obligation")]
         term = unfold(g, fresh.issue_of(fresh.get_argument("use")))
         assert contains(term, lambda n: isinstance(n, Deleg) and n.prop == "EfficientMetro")
         assert not contains(term, lambda n: getattr(n, "cites", None))   # expanded

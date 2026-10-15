@@ -2510,6 +2510,51 @@ Started 2026-10-15. Also in scope: retire the reference route of
 [[id:aida-discuss-issue-graph-from-document]] (=issue-graph term=) once
 the generalised compiler is the ground truth.
 
+*Step 1 done 2026-10-16: the compiler by the horn rule.*
+=_Compiler.compile_body= (core/dc/debate_graph.py) is rewritten: from
+the root binder, the spine is what carries the binder's own variable
+(and, accumulating, the variables of the same kind - continuations of a
+term-side edge, hypotheses of a context-side one - that binders on the
+spine introduce; hypothesis variables are not spine variables, so a
+lemma using one is a horn with a captured source); every horn is a
+source: a site with its kind, a declared axiom as a strict source-less
+edge named after it plus a =subargument= source, a progress node
+(mu/mu', lambda, lambda-bar, an off-spine cell) as an edge of its own
+(=NAME.μ1=, =NAME.μ'1=, =NAME.λ1=, =NAME.λ̄1=, =NAME.c1=) plus a
+=subargument= source; spine nodes get nothing; the same-issue half of a
+bureaucratic parent (the eta chain, a cut on the statement itself) is
+inlined; a scaffold is decomposed as before. Lambda-bar is treated like
+lambda. Two subtleties the fixtures taught: a captured occurrence of a
+continuation (the unfolder's sprung trap) lies under a same-kind binder
+and does not put its horn on the spine, and affine binders (scaffold
+wiring, the degenerate attack) are passed through; Fellowship's
+negation wrapper is transparent (=_occurrences= in core/dc/discipline.py
+serves both the check and the spine walk). =DebateGraph.add_edge= and
+=merge= drop an identical edge (one axiom edge per declared name).
+Adopted theorems are still walked (a strict leaf reading is for the
+unfolder step).
+
+Evidence: tests/test_debate_graph.py::TestHornRule (the application,
+cArg's cells not exposed, the author's three shapes, the beta pair with
+equal root labels, the nested cut N against its application form P with
+equal labels of A, B, C, the reductio, a captured occurrence); the
+whole module 71 passed. Full suite 2038 passed, 2 skipped, 2 xfailed,
+1 xpassed. Pinned outputs regenerated from runs: the document graphs
+and transcripts now list the axioms applied and the lemmas (lesson 2,
+lesson 8a, lesson 17, the API course's edge), the acceptance conditions
+of lesson 4 carry the axiom's statement (=P[t] = (Q->P[t] & Q[t])=), the
+labelled terms of lesson 11 label the axiom leaf (=r1:A->B{IN}=), label
+listings count the axioms' statements. Verdicts that moved, all by the
+circular-support decision: tests/test_unfold.py's bare-contrary
+document - qArg's lemma "P from P via pp" is now a derivation of P
+(circular: UNDEC grounded, admissible credulously), so R is open
+skeptically and a value credulously (before: a value both ways) and Q a
+value credulously (before: open). No fixture verdict of tests/minicourse,
+tests/rationality, tests/demo or tests/test_scasp_correspondence.py
+changed. The issue-graph check's accepted "lambda" class now covers
+every statement only subargument-role edges derive (axioms, lemmas),
+since the unfolder does not stack those yet - step 2.
+
 *** NEXT Review docs/minicourses/minicourse-evaluation.org
 :PROPERTIES:
 :ID:             aida-review-minicourse-evaluation

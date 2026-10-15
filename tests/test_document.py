@@ -37,7 +37,7 @@ def test_attack_registered_elsewhere_counts(prover):
         execute_script(prover, "tests/rationality/document_attack.fspy",
                        strict=True, stop_on_error=True, isolate=False)
     doc = prover.graph
-    assert {e.name for e in doc.edges} == {"pArg"}
+    assert {e.name for e in doc.edges if e.role != "subargument"} == {"pArg"}
     assert doc.defaults[(K("Q"), "context")] == {"presumption"}      # qAtt's presumption, no verb
     labels = grounded_labels(issue_graph(prover, "pArg"))
     assert labels[(K("Q"), "term")] == "UNDEC" and labels[(K("P"), "term")] == "UNDEC"

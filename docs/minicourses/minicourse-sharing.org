@@ -433,11 +433,16 @@ framework taken from the document, and the strict stage ends with
 =issue graph from the document: 4 of 4 statement(s) reachable, 5 edge(s), 0 strict edge(s) from the term=):
 
 : compile        framework of 'a2_0', one instance of a sub-debate at a time
-: compile        edge 'k' (attacker, strict) P0[c] <- -
-: compile        edge 'a1_1' (supporter, defeasible) P1[t] <- P0[t]:pres@§4
-: compile        edge 'a1_0' (supporter, defeasible) P1[t] <- P0[t]:pres@§3
-: compile        edge 'a2_1' (supporter, defeasible) P2[t] <- P1[t]:obli@§2
-: compile        edge 'a2_0' (supporter, defeasible) P2[t] <- P1[t]:obli@§1
+: compile        edge 'r2_1' (subargument, strict) P1->P2[t] <- -
+: compile        edge 'r1_1' (subargument, strict) P0->P1[t] <- -
+: compile        edge 'np0' (subargument, strict) ~P0[t] <- -
+: compile        edge 'k' (attacker, strict) P0[c] <- ~P0[t]:suba@np0
+: compile        edge 'a1_1' (supporter, defeasible) P1[t] <- P0->P1[t]:suba@r1_1, P0[t]:pres@§4
+: compile        edge 'r1_0' (subargument, strict) P0->P1[t] <- -
+: compile        edge 'a1_0' (supporter, defeasible) P1[t] <- P0->P1[t]:suba@r1_0, P0[t]:pres@§3
+: compile        edge 'a2_1' (supporter, defeasible) P2[t] <- P1->P2[t]:suba@r2_1, P1[t]:obli@§2
+: compile        edge 'r2_0' (subargument, strict) P1->P2[t] <- -
+: compile        edge 'a2_0' (supporter, defeasible) P2[t] <- P1->P2[t]:suba@r2_0, P1[t]:obli@§1
 : strict         the term going in:
 : strict           μalt5:P0.<!u7:P0||μ'b8:P0.<μ_:P0.<b8:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<b8:P0||alt5:P0>>>
 : strict         P0[c] attacker strict: defeat

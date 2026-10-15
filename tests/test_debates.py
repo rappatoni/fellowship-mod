@@ -105,7 +105,9 @@ def test_a_debate_adds_nothing_to_the_document(prover):
 def test_a_closed_scope_presumes_only_what_its_arguments_presume(prover):
     record(prover, "debate pro closed d : Flies.", "tweety.")
     graph = prover.debate_graph(prover.debates["d"])
-    assert {e.name for e in graph.edges} == {"tweety"}
+    # tweety's own edge and the axiom it applies (a horn, 2026-10-15)
+    assert {e.name for e in graph.edges} == {"tweety", "bird"}
+    assert {e.name for e in graph.edges if e.role != "subargument"} == {"tweety"}
     assert (K("Penguin"), "term") not in graph.defaults
     assert (K("Penguin"), "term") in prover.graph.defaults
 
@@ -115,7 +117,7 @@ def test_a_citation_brings_the_cited_argument_into_the_scope(prover):
     record(prover, "debate pro closed c : Flies.", "citer.")
     # citer is the bare citation - an identity edge, a default marker only;
     # the argument it cites is in the scope with its edge
-    names = {e.name for e in prover.debate_graph(prover.debates["c"]).edges}
+    names = {e.name for e in prover.debate_graph(prover.debates["c"]).edges if e.role != "subargument"}
     assert names == {"tweety"}
 
 

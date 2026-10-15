@@ -253,8 +253,8 @@ The evaluation of =tweety=:
 
 #+begin_example
 {"aida": "1.0", "kind": "evaluation", "verdict": "value", "mode": "skeptical", "semantics": "preferred"}
-sigma: [{"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"},
-        {"prop": "Bird->Flies", "side": "term", "key": "B(S:Bird,->,S:Flies)", "label": "IN"}, ...]
+sigma: [{"prop": "Bird", "side": "term", "key": "S:Bird", "label": "IN"},
+        {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"}, ...]
 normal form: μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
 tree: {"id": 1, "node": "Mu", "prop": "Flies",
        "binder": {"id": 2, "node": "ID", "name": "tweety", "prop": null},
@@ -268,7 +268,9 @@ An edge of its graph, linked to its argument's block in the text:
 #+begin_example
 {"name": "photo", "argument": "photo", "span": {"line": 28, "col": 1, "end_line": 36, "end_col": 5},
  "role": "attacker", "strict": false, "target": {"prop": "Penguin", "side": "context", "key": "S:Penguin"},
- "sources": [{"prop": "Photo", "side": "term", "key": "S:Photo", "kind": "presumption"}]}
+ "sources": [{"prop": "Photo->~Penguin", "side": "term", "key": "B(S:Photo,->,B(S:Penguin,->,false))",
+              "kind": "subargument"},
+             {"prop": "Photo", "side": "term", "key": "S:Photo", "kind": "presumption"}]}
 #+end_example
 
 And an error:

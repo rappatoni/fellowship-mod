@@ -129,8 +129,8 @@ def test_lesson5_json(prover, svc):
     assert (out["aida"], out["kind"], out["verdict"], out["mode"], out["semantics"]) == (
         "1.0", "evaluation", "value", "skeptical", "preferred")
     assert out["sigma"][:2] == [
-        {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"},
-        {"prop": "Bird->Flies", "side": "term", "key": "B(S:Bird,->,S:Flies)", "label": "IN"}]
+        {"prop": "Bird", "side": "term", "key": "S:Bird", "label": "IN"},
+        {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"}]
     nf = out["normal_form"]
     assert nf["pres"] == "μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>"
     tree = nf["tree"]
@@ -145,8 +145,10 @@ def test_lesson5_json(prover, svc):
     assert photo["argument"] == "photo" and photo["role"] == "attacker" and not photo["strict"]
     assert photo["span"] == {"line": 28, "col": 1, "end_line": 36, "end_col": 5}
     assert photo["target"] == {"prop": "Penguin", "side": "context", "key": "S:Penguin"}
-    assert photo["sources"] == [{"prop": "Photo", "side": "term", "key": "S:Photo",
-                                 "kind": "presumption"}]
+    assert photo["sources"] == [
+        {"prop": "Photo->~Penguin", "side": "term", "key": "B(S:Photo,->,B(S:Penguin,->,false))",
+         "kind": "subargument"},                                   # the axiom applied, a horn
+        {"prop": "Photo", "side": "term", "key": "S:Photo", "kind": "presumption"}]
 
 
 def test_lesson5_error(svc):

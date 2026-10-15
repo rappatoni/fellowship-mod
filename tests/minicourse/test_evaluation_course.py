@@ -41,14 +41,14 @@ UNFOLDED = (
 AFTER_STRICT_C = "μalt4:C.<!u3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>"
 # sigma resolves the labelled term (core/comp/labelled.py): B[t] and A[t]
 # are IN; B[c] has no node, so pro's continuation is unlabelled
-RESOLVED = "μpro:B{IN}.<μth:B{IN}.<r1:A->B||!u2:A{IN}*th:B>||pro:B>"
+RESOLVED = "μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||!u2:A{IN}*th:B>||pro:B>"
 NORMAL_FORM = "μpro:B.<r1:A->B||!IN:A*pro:B>"   # the site named by its label
 # lesson 9: sigma written into the term after phase 1
-LABELLED = ("μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||"
+LABELLED = ("μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||"
             "μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<"
-            "alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||"
-            "μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||"
-            "μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||"
+            "alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A{OUT}.<r2:C->~A{IN}||μalt4:C{OUT}.<!u3:C{OUT}||"
+            "μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C{IN}||μ'H1:~C.<H1:~C{IN}||x_2:C{OUT}*_F_>>>>*th_2:~A>||"
+            "μ'H1_2:~A.<H1_2:~A{OUT}||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||"
             "μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>")
 
 
@@ -99,26 +99,35 @@ class TestLesson8aUnfold:
             show = lambda k, s: f"{g.nodes.get(k, k)}[{s[0]}]"
             assert [(e.name, show(e.target_key, e.target_side), e.strict,
                      [(show(s.key, s.side), s.kind) for s in e.sources]) for e in g.edges] == [
-                ("pro", "B[t]", False, [("A[t]", "presumption")]),
-                ("con", "A[c]", False, [("C[t]", "presumption")]),
-                ("killC", "C[c]", True, []),
-                ("attackrule", "A->B[c]", False, [("D[t]", "presumption")]),
+                ("r1", "A->B[t]", True, []),
+                ("pro", "B[t]", False, [("A->B[t]", "subargument"), ("A[t]", "presumption")]),
+                ("r2", "C->~A[t]", True, []),
+                ("con.\u03bc1", "~A[t]", False, [("C->~A[t]", "subargument"), ("C[t]", "presumption")]),
+                ("con", "A[c]", False, [("~A[t]", "subargument")]),
+                ("nc", "~C[t]", True, []),
+                ("killC", "C[c]", True, [("~C[t]", "subargument")]),
+                ("r3", "D->~(A->B)[t]", True, []),
+                ("attackrule", "A->B[c]", False, [("D->~(A->B)[t]", "subargument"), ("D[t]", "presumption")]),
             ]
             assert {show(k, s): kinds for (k, s), kinds in g.defaults.items()} == {
                 "A[t]": {"presumption"}, "C[t]": {"presumption"}, "D[t]": {"presumption"}}
-            assert pres_str(g.edges[0].term) == "μpro:B.<μth:B.<r1:A->B||!1.2.1:A*th:B>||pro:B>"
+            assert pres_str(g.edges[1].term) == "μpro:B.<μth:B.<r1:A->B||!1.2.1:A*th:B>||pro:B>"
         finally:
             prover.close()
 
     def test_attackrule_takes_no_part(self):
-        # The limitation the fixture's last argument shows: r1 is a declared
-        # axiom, a leaf of pro's body and no site, so nothing in pro's debate
-        # stands for A->B[t] and the refutation of A->B is never reached.
+        # Since the horn rule (2026-10-15) the axiom r1 is a derivation of
+        # A->B[t] in the document graph, so attackrule is reachable from pro's
+        # issue and labelled (and loses to the strict axiom); the unfolder does
+        # not yet put the debate about A->B at r1, so the term has no trace of
+        # it (aida-rational-closure, step 2).
         prover, term = debate_term(HERE / "lesson9_evaluation.fspy", "pro")
         try:
             assert "attackrule" not in pres_str(term) and "D" not in pres_str(term)
-            assert (prover.graph.nodes and
-                    ("B(S:A,->,S:B)", "term") not in set(prover.graph.statements()))
+            assert ("B(S:A,->,S:B)", "term") in set(prover.graph.statements())
+            from wrap.service import Service
+            labels = Service.of(prover).label(Service.of(prover).target("pro")).labellings[0]
+            assert labels[("B(S:A,->,S:B)", "term")] == "IN" and labels[("B(S:A,->,S:B)", "context")] == "OUT"
         finally:
             prover.close()
 
@@ -174,7 +183,7 @@ class TestLesson8aUnfold:
             ]
             assert pres_str(term) == SELF_ATTACK_UNFOLDED
             # the lambda's own edge is in the document but never a scion
-            assert [e.name for e in prover.graph.edges] == ["SelfAttack.λ1", "SelfAttack"]
+            assert [e.name for e in prover.graph.edges] == ["pRule", "SelfAttack.λ1", "SelfAttack"]
         finally:
             prover.close()
 
@@ -188,7 +197,9 @@ class TestLesson9Input:
         term, names, kinds = debate
         graph = compile_issue(term, "pro", strict_names=names, strict_kinds=kinds)
         assert _labels(graph) == {"C[c]": "IN", "A[c]": "OUT", "C[t]": "OUT",
-                                  "B[t]": "IN", "A[t]": "IN"}
+                                  "B[t]": "IN", "A[t]": "IN",
+                                  # the axioms' statements and con's lemma ~A
+                                  "A->B[t]": "IN", "C->~A[t]": "IN", "~C[t]": "IN", "~A[t]": "OUT"}
         assert [e.name for e in graph.edges if e.name.endswith("*")] == ["killC*"]
 
     def test_the_attack_on_a_is_read_disjunctively(self, debate):
@@ -198,7 +209,7 @@ class TestLesson9Input:
         records = scion_record(match, {}, names)
         assert [(r.name, r.target_side, [(s.side, s.kind) for s in r.sources]) for r in records] == [
             ("x", "context", [("context", "obligation")]),       # A[c]'s root, alt2
-            ("con", "context", [("term", "presumption")]),       # con: A[c] <- C[t]
+            ("con", "context", [("term", "subargument")]),       # con: A[c] <- ~A[t] (its lemma)
         ]
 
 

@@ -189,15 +189,19 @@ two together:
 nothing to the document: the conflicts and supports are already there by
 proposition identity. =graph d2.=:
 
-: Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 3 nodes, 3 edges
-:   cArg (supporter, defeasible): C[t] <- A[t:obli], B[t:obli]
+: Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 4 edges
+:   abc (subargument, strict): A->B->C[t] <- -
+:   cArg (supporter, defeasible): C[t] <- A->B->C[t:suba], A[t:obli], B[t:obli]
 :   bArg (supporter, strict): B[t] <- -
 :   bArg* (strict, strict): B[t] <- -
 :   default A[t]: obligation
 :   default B[t]: obligation
 
-Read it: =cArg= is one edge with *two* sources, both term-side obligations.
-=bArg= is strict with no sources - an axiom needs nothing. =bArg*= is the
+Read it: =cArg= is one edge with *three* sources: the axiom =abc= it
+applies, which is a strict, source-less edge of its own (since
+2026-10-15 every declared axiom an argument applies is one; lesson 8a of
+minicourse-evaluation.org), and two term-side obligations. =bArg= is
+strict with no sources - an axiom needs nothing. =bArg*= is the
 same derivation once more, the strict edge the strict phase contributes
 (=minicourse-evaluation.org=, lesson 10). Edges are named after the
 argument or subargument they record (task =aida-host-edge-naming=). The
@@ -431,25 +435,29 @@ two only when both sides are derived.
 *Notation.* In the blocks below, a line =S = phi= means "the statement S
 has acceptance condition phi" - it is AC_S written with the subscript
 moved to the left, not an equation. Occurrences of statements *inside*
-phi are variables standing for those statements' values. So =P[t] = Q[t]=
-reads: the acceptance condition of (P, term) is the formula "(Q, term)
-holds". Compare =Gamma(v) = v= in lesson 3, where = really is equality.
+phi are variables standing for those statements' values. So =P[t] = (Q->P[t] & Q[t])=
+reads: the acceptance condition of (P, term) is the formula "(Q->P, term)
+and (Q, term) hold" - the axiom pArg applies and the site it leaves open. Compare =Gamma(v) = v= in lesson 3, where = really is equality.
 
 Same argument, three variants. With the site an *obligation*:
 
-:   P[t] = Q[t]
+:   Q->P[t] = (true | false)
+:   P[t] = (Q->P[t] & Q[t])
 :   Q[t] = false
 
-P inherits Q, and Q has nothing to stand on - so both are OUT. Change the
-site to a *presumption*:
+The axiom's statement Q->P has a strict derivation and nothing against
+it, so it is IN whatever happens; P inherits Q, and Q has nothing to
+stand on - so P and Q are OUT. Change the site to a *presumption*:
 
-:   P[t] = Q[t]
+:   Q->P[t] = (true | false)
+:   P[t] = (Q->P[t] & Q[t])
 :   Q[t] = true
 
-Both IN. Now add a presumption-backed challenge to Q, so both sides of Q
+All IN. Now add a presumption-backed challenge to Q, so both sides of Q
 are materialised:
 
-:   P[t] = Q[t]
+:   Q->P[t] = (true | false)
+:   P[t] = (Q->P[t] & Q[t])
 :   Q[t] = (true & not Q[c])
 :   Q[c] = (true & not Q[t])
 

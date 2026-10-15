@@ -57,13 +57,13 @@ def test_support_debate_compiles(rules_prover):
                     ['cut ((R->false)->Q) rule', 'axiom qRule', 'elim', 'next', 'axiom rule'])
     _register(prover, pArg, qArg)
     g = _debate_graph(prover, "debate pro closed dsup : P.", "pArg.", "support qArg pArg.")
-    by_name = {e.name: e for e in g.edges}
+    by_name = {e.name: e for e in g.edges if e.role != "subargument"}
     assert set(by_name) == {"pArg", "qArg"}
     host, scion = by_name["pArg"], by_name["qArg"]
     assert (host.target_key, host.target_side) == (canonical_prop("P"), "term")
-    assert [s.key for s in host.sources] == [canonical_prop("Q")]
+    assert [s.key for s in host.sources] == [canonical_prop("Q->P"), canonical_prop("Q")]
     assert (scion.target_key, scion.target_side) == (canonical_prop("Q"), "term")
-    assert [s.key for s in scion.sources] == [canonical_prop("R->false")]
+    assert [s.key for s in scion.sources] == [canonical_prop("(R->false)->Q"), canonical_prop("R->false")]
     assert g.defaults[(canonical_prop("Q"), "term")] == {"obligation"}
 
 
@@ -76,8 +76,9 @@ def test_attack_debate_compiles(rules_prover):
     g = _debate_graph(prover, "debate pro closed datt : P.", "pArg2.", "rebut qAtt pArg2.")
     # The attacker is a bare challenge (identity edge): it leaves a
     # context-side obligation marker on Q instead of an edge.
-    assert {e.name for e in g.edges} == {"pArg2"}
-    assert [s.key for s in g.edges[0].sources] == [canonical_prop("Q")]
+    assert {e.name for e in g.edges if e.role != "subargument"} == {"pArg2"}
+    host = next(e for e in g.edges if e.name == "pArg2")
+    assert [s.key for s in host.sources] == [canonical_prop("Q->P"), canonical_prop("Q")]
     assert g.defaults[(canonical_prop("Q"), "context")] == {"obligation"}
     assert g.defaults[(canonical_prop("Q"), "term")] == {"obligation"}
 
@@ -128,7 +129,8 @@ def test_even_loop_document_is_cyclic_and_has_two_stable_labellings(even_loop_pr
     bodies = [(n, prover.get_argument(n).body) for n in ("Pdefault", "Qdefault")]
     g = compile_document(bodies, strict_names=names, strict_kinds=kinds)
     assert not g.is_acyclic()                      # P[t] <- Q[c] ~ Q[t] <- P[c] ~ P[t]
-    assert set(grounded_labels(g).values()) == {"UNDEC"}
+    loop = {k: v for k, v in grounded_labels(g).items() if k[0] in (canonical_prop("P"), canonical_prop("Q"))}
+    assert set(loop.values()) == {"UNDEC"}         # the axioms' statements are IN
     assert grounded_labels(g) == grounded_labels_via_oracle(g)
     # The Dung even loop, two labellings.  The fixture's refutations are
     # bare PRESUMPTIONS, and since the asymmetric guard (2026-09-25) a bare

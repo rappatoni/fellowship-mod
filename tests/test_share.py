@@ -313,8 +313,9 @@ class TestShareCommand:
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records
                   if r.getMessage().strip().endswith((" IN", " OUT", " UNDEC"))]
-        # three statements, labelled before and after the debate command
-        assert len(labels) == 6 and labels[:3] == labels[3:]
+        # three statements and the two axioms', labelled before and after
+        # the debate command
+        assert len(labels) == 10 and labels[:5] == labels[5:]
 
 
 # -- stage 2: the type check, one definition at a time ----------------------------
@@ -581,7 +582,8 @@ class TestLabelDoesNotUnfold:
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records if r.getMessage().strip().endswith(" IN")]
-        assert len(labels) == 13                     # P0 .. P12, all accepted
+        assert len([l for l in labels if "->" not in l]) == 13     # P0 .. P12, all accepted
+        assert len(labels) == 25                     # and the twelve axioms
 
     def test_a_failure_of_the_instance_compiler_falls_back_to_the_unfolded_term(
             self, fresh, tmp_path, capsys, caplog, monkeypatch):
@@ -601,7 +603,7 @@ class TestLabelDoesNotUnfold:
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
         assert any("compiling the unfolded term instead" in m for m in said)
-        assert len([m for m in said if m.strip().endswith(" IN")]) == 3
+        assert len([m for m in said if m.strip().endswith(" IN") and "->" not in m]) == 3
 
     def test_a_failure_of_the_instances_strict_edges_falls_back_to_the_unfolded_term(
             self, fresh, tmp_path, capsys, caplog, monkeypatch):
@@ -621,7 +623,7 @@ class TestLabelDoesNotUnfold:
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
         assert any("compiling the unfolded term instead" in m for m in said)
-        assert len([m for m in said if m.strip().endswith(" IN")]) == 3
+        assert len([m for m in said if m.strip().endswith(" IN") and "->" not in m]) == 3
 
 
 # -- stage 4: evaluation, opening a sub-debate only where it is kept ----------------
@@ -791,7 +793,7 @@ class TestEvaluateCommand:
         # (aida-unfold-entrypoints)
         assert calls == ["a2_0"]
         assert fresh.pipeline_unfolded
-        assert shared == unfolded and len(shared) == 4      # the verdict and three labels
+        assert shared == unfolded and len(shared) == 6      # the verdict, three labels, two axioms
         evaluated("pipeline shared.\nevaluate a2_0.\n")
         assert calls == ["a2_0"] and not fresh.pipeline_unfolded
 

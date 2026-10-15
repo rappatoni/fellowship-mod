@@ -317,9 +317,10 @@ Until 2026-10-15 the issue graph was compiled from the term instead
 (=compile_issue=); =issue-graph term.= still selects that route, and
 tests/test_issue_graph_from_document.py compares the two on every
 fixture. They agree on the labels except where an issue is a statement
-only a lambda subargument derives: the unfolder never puts a lambda's
-own edge on a stack, so such an issue is a bare site in the term, while
-the document graph has the lambda's derivation (tasks.org,
+only subargument edges derive - a lambda, and since 2026-10-15 an
+argument's lemmas and the axioms it applies: the unfolder does not yet
+put those edges on a stack, so such an issue is a bare site in the term,
+while the document graph has the derivation (tasks.org,
 aida-discuss-issue-graph-from-document).
 
 The reachable part of the document graph is the same from every
@@ -331,14 +332,27 @@ does the normal form. Lesson 9 starts from the end of that pipeline.
 *The running example.* =graph document.= on
 =tests/minicourse/lesson9_evaluation.fspy=:
 
-: Document graph: 5 nodes, 4 edges (every registered atomic argument)
-:   pro (argument, defeasible): B[t] <- A[t:pres]
-:   con (argument, defeasible): A[c] <- C[t:pres]
-:   killC (argument, strict): C[c] <- -
-:   attackrule (argument, defeasible): A->B[c] <- D[t:pres]
+: Document graph: 9 nodes, 9 edges (every registered atomic argument)
+:   r1 (subargument, strict): A->B[t] <- -
+:   pro (argument, defeasible): B[t] <- A->B[t:suba], A[t:pres]
+:   r2 (subargument, strict): C->~A[t] <- -
+:   con.μ1 (subargument, defeasible): ~A[t] <- C->~A[t:suba], C[t:pres]
+:   con (argument, defeasible): A[c] <- ~A[t:suba]
+:   nc (subargument, strict): ~C[t] <- -
+:   killC (argument, strict): C[c] <- ~C[t:suba]
+:   r3 (subargument, strict): D->~(A->B)[t] <- -
+:   attackrule (argument, defeasible): A->B[c] <- D->~(A->B)[t:suba], D[t:pres]
 :   default A[t]: presumption
 :   default C[t]: presumption
 :   default D[t]: presumption
+
+Since 2026-10-15 the compiler exposes every *horn* of an argument
+(tasks.org, aida-discuss-non-site-attack-points): a declared axiom it
+applies is a strict, source-less edge named after the axiom and a
+=suba= source of the argument, and a lemma it proves on the way - con's
+~A from C - is an edge of its own (=con.μ1=). The unfolder does not yet
+build debates at these edges (that is the next step of
+aida-rational-closure), so the terms below are unchanged.
 
 and the bodies the first three edges keep:
 
@@ -628,11 +642,12 @@ so on down to killC, which has no site left.
 The witness labelling (preferred; there is exactly one):
 
 : C[c]=IN  A[c]=OUT  C[t]=OUT  B[t]=IN  A[t]=IN
+: A->B[t]=IN  C->~A[t]=IN  ~C[t]=IN  ~A[t]=OUT        (the axioms, and con's lemma)
 
 Written into the term after phase 1 (=explain pro.= prints it as
 =evaluate: the labelled term=; phase 1 has decided C, lesson 10):
 
-: μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A.<r2:C->~A||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
+: μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A{OUT}.<r2:C->~A{IN}||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C{IN}||μ'H1:~C.<H1:~C{IN}||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A{OUT}||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
 
 Three things to read off it. The labels follow the sort, not the
 binder: =alt2= is a continuation for A, so it carries A[c]'s label,
@@ -893,7 +908,7 @@ anything inside AW: the support scaffold there (the "1 scaffold inside
 it") and the debate about C go with it, and phase 1's decisions on C
 were work for nothing. The result, still labelled:
 
-: μpro:B{IN}.<μth:B{IN}.<r1:A->B||!u2:A{IN}*th:B>||pro:B>
+: μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||!u2:A{IN}*th:B>||pro:B>
 
 *The same two decisions as reduction steps:*
 

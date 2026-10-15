@@ -306,7 +306,7 @@ def test_argument_names_ending_in_digits_stay_apart(fresh):
     run(fresh, "tests/minicourse/lesson14_sharing.fspy")
     doc = fresh.graph
     graph = issue_graph(unfold(doc, (K("P2"), "term")), *options(fresh).values())
-    assert sorted(e.name for e in graph.edges) == ["a1_0", "a1_1", "a2_0", "a2_1"]
+    assert sorted(e.name for e in graph.edges if e.role != "subargument") == ["a1_0", "a1_1", "a2_0", "a2_1"]
 
 
 def test_unfolding_copies_still_fold_under_their_argument(fresh):

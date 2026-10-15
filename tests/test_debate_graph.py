@@ -3,7 +3,7 @@
 
 import pytest
 
-from core.ac.ast import Mu, Mutilde, Lamda, Hyp, Cons, Goal, Laog, Deleg, ID, DI
+from core.ac.ast import Mu, Mutilde, Lamda, Hyp, Cons, Goal, Laog, Deleg, ID, DI, Sonc
 from core.ac.prop import Prop, PropError
 from core.dc.debate_graph import (
     canonical_prop, display_prop,
@@ -132,22 +132,36 @@ def t_att(prop, orig, scion_ctx):
 STRICT = {"pRule", "qRule"}
 
 
+def arguments(g):
+    """The edges other than the axioms' own (a declared name used as a
+    horn is a strict, source-less edge named after it, 2026-10-15)."""
+    return [e for e in g.edges if e.name not in STRICT]
+
+
+def source(edge, prop):
+    return next(s for s in edge.sources if s.key == canonical_prop(prop))
+
+
 class TestSingleArgumentEdge:
     def test_edge_and_sources(self):
         g = compile_debate(parg_body(Goal("1", "Q")), "pArg", strict_names=STRICT)
-        assert len(g.edges) == 1
-        e = g.edges[0]
+        assert len(arguments(g)) == 1
+        e = arguments(g)[0]
         assert e.target_key == canonical_prop("P")
         assert e.target_side == "term"
+        # the axiom pRule is a horn: a strict edge of its own and a source
         assert [(s.key, s.side, s.kind) for s in e.sources] == [
-            (canonical_prop("Q"), "term", "obligation")
+            (canonical_prop("Q->P"), "term", "subargument"),
+            (canonical_prop("Q"), "term", "obligation"),
         ]
         assert not e.strict
+        axiom = next(e for e in g.edges if e.name == "pRule")
+        assert axiom.strict and axiom.sources == () and axiom.target_key == canonical_prop("Q->P")
         assert g.defaults[(canonical_prop("Q"), "term")] == {"obligation"}
 
     def test_presumption_site(self):
         g = compile_debate(parg_body(Deleg("1", "Q")), "pArg", strict_names=STRICT)
-        assert g.edges[0].sources[0].kind == "presumption"
+        assert source(arguments(g)[0], "Q").kind == "presumption"
         assert g.defaults[(canonical_prop("Q"), "term")] == {"presumption"}
 
     def test_strict_edge(self):
@@ -178,12 +192,17 @@ class TestSingleArgumentEdge:
         2026-09-16)."""
         neg_elim = Mutilde(DI("H", "~A"), "~A", DI("H", "~A"),
                            Cons(Goal("1", "A"), ID("_F_", "false")))
-        body = Mutilde(DI("c", "~A"), "~A", DI("nA", "~A"), neg_elim)
+        # a counterargument to A: apply the declared nA to the hypothesis
+        body = Mutilde(DI("x", "A"), "A", DI("nA", "~A"),
+                       Mutilde(DI("H", "~A"), "~A", DI("H", "~A"),
+                               Cons(DI("x", "A"), ID("_F_", "false"))))
         g = compile_debate(body, "c", strict_names={"nA"})
-        assert [(s.key, s.side, s.kind) for e in g.edges for s in e.sources] == [
-            (canonical_prop("A"), "term", "obligation")
+        c = next(e for e in g.edges if e.name == "c")
+        assert [(s.key, s.side, s.kind) for s in c.sources] == [
+            (canonical_prop("~A"), "term", "subargument")
         ]
         assert not any(k.endswith("_F_") for k in g.nodes)
+        assert neg_elim.prop == "~A"                 # the wrapper itself is transparent
 
     def test_falsum_leaf_on_the_wrong_side_is_refused(self):
         body = eta_term("a", "false", DI("_F_", "false"))
@@ -195,15 +214,15 @@ class TestScaffoldDecomposition:
     def test_term_support(self):
         body = parg_body(t_sup("Q", Goal("1", "Q"), qarg_body()))
         g = compile_debate(body, "dsup", strict_names=STRICT)
-        by_role = {e.role: e for e in g.edges}
+        by_role = {e.role: e for e in arguments(g)}
         assert set(by_role) == {"argument", "supporter"}
         host, scion = by_role["argument"], by_role["supporter"]
         assert host.target_key == canonical_prop("P")
-        assert host.sources[0].key == canonical_prop("Q")  # site kept open
+        assert source(host, "Q").kind == "obligation"      # site kept open
         assert scion.name == "qArg"
         assert scion.target_key == canonical_prop("Q")
         assert scion.target_side == "term"
-        assert scion.sources[0].key == canonical_prop("R->false")
+        assert source(scion, "R->false").kind == "obligation"
         g.assert_acyclic()
 
     def test_term_attack(self):
@@ -212,9 +231,9 @@ class TestScaffoldDecomposition:
         scion_ctx = Mutilde(DI("qAtt", "Q"), "Q", DI("qAtt", "Q"), Laog("c", "Q"))
         body = parg_body(t_att("Q", Goal("1", "Q"), scion_ctx))
         g = compile_debate(body, "datt", strict_names=STRICT)
-        by_role = {e.role: e for e in g.edges}
+        by_role = {e.role: e for e in arguments(g)}
         host = by_role["argument"]
-        assert host.sources[0].key == canonical_prop("Q")
+        assert source(host, "Q").kind == "obligation"
         # The attacker's edge is an identity edge (challenge-to-Q only):
         # it contributes a context-side obligation marker, not an edge.
         assert "attacker" not in by_role
@@ -229,8 +248,8 @@ class TestScaffoldDecomposition:
         inner.term.context.term = t_sup("R->false", Goal("2.1", "R->false"), rarg)
         body = parg_body(t_sup("Q", Goal("1", "Q"), inner))
         g = compile_debate(body, "deep", strict_names=STRICT)
-        assert len(g.edges) == 3
-        names = {e.name for e in g.edges}
+        assert len(arguments(g)) == 3
+        names = {e.name for e in arguments(g)}
         # The host edge is named after the subargument it records (pArg),
         # not after the debate ("deep"): aida-host-edge-naming.
         assert names == {"pArg", "qArg", "rArg"}
@@ -245,7 +264,7 @@ class TestScaffoldDecomposition:
         body = parg_body(t_sup("Q", Goal("1", "Q"), qfromp))
         g = compile_debate(body, "cyc", strict_names=STRICT)
         assert not g.is_acyclic()
-        assert {e.name for e in g.edges} == {"pArg", "qFromP"}
+        assert {e.name for e in arguments(g)} == {"pArg", "qFromP"}
         with pytest.raises(CyclicDebateNotSupported):
             g.assert_acyclic()      # the initial fragment's guard, on request
 
@@ -258,7 +277,17 @@ class TestScaffoldDecomposition:
 
     def test_unknown_root_refused(self):
         with pytest.raises(DebateCompileError, match="refusing"):
+            compile_debate(Hyp(DI("x", "A"), "A"), "hyp")
+
+    def test_a_cell_is_a_root_with_its_proposition(self):
+        # an elimination cell as a horn is an edge of its own (2026-10-15)
+        with pytest.raises(DebateCompileError, match="root proposition missing"):
             compile_debate(Cons(Goal("1", "A"), Laog("2", "B")), "cons")
+        cell = Cons(Goal("1", "A"), Laog("2", "B"))
+        cell.prop = "A->B"
+        g = compile_debate(cell, "cons")
+        assert [(g.nodes[e.target_key], e.target_side) for e in g.edges] == [("A->B", "context")]
+        assert {(g.nodes[s.key], s.side) for s in g.edges[0].sources} == {("A", "term"), ("B", "context")}
 
 
 class TestDocument:
@@ -270,7 +299,7 @@ class TestDocument:
             ],
             strict_names=STRICT,
         )
-        assert len(g.edges) == 2
+        assert len(arguments(g)) == 2 and len(g.edges) == 4     # plus the two axioms
         assert canonical_prop("Q") in g.parents(canonical_prop("P"))
         assert canonical_prop("R->false") in g.parents(canonical_prop("Q"))
 
@@ -352,7 +381,8 @@ class TestHostEdgeNaming:
 
     def test_edges_are_named_after_the_constituents(self):
         g = compile_debate(self.composite(), "d2", strict_names=STRICT)
-        assert {e.name for e in g.edges} == {"pArg", "qArg"}
+        assert {e.name for e in arguments(g)} == {"pArg", "qArg"}
+        assert {e.name for e in g.edges} == {"pArg", "qArg", "pRule", "qRule"}
 
     def test_no_synthetic_name_reaches_an_edge(self):
         g = compile_debate(self.composite(), "d2", strict_names=STRICT)
@@ -366,7 +396,7 @@ class TestHostEdgeNaming:
     def test_bare_body_falls_back_to_the_debate_name(self):
         body = Mu(ID("k", "P"), "P", DI("pRule", "Q->P"), Cons(Goal("1", "Q"), ID("k", "P")))
         g = compile_debate(body, "solo", strict_names=STRICT)
-        assert g.edges[0].name == "solo"
+        assert arguments(g)[0].name == "solo"
 
 
 class TestCapturedObligationsAreSources:
@@ -448,3 +478,115 @@ class TestCapturedObligationsAreSources:
     def test_truly_free_variable_still_refused(self):
         with pytest.raises(DebateCompileError, match="mystery"):
             compile_debate(eta_term("a", "P", DI("mystery", "P")), "a", strict_names=STRICT)
+
+
+class TestHornRule:
+    """The horn rule (tasks.org, aida-discuss-non-site-attack-points,
+    2026-10-15): a binder's derivation has its horns as sources - the
+    maximal subterms not carrying the binder's own variable - and the
+    spine gets nothing.  Declared axioms and lemmas are edges of their
+    own; the labels are invariant under beta and the (-) rule."""
+
+    @staticmethod
+    def cons(t, e, prop):
+        n = Cons(t, e)
+        n.prop = prop
+        return n
+
+    @staticmethod
+    def sonc(e, t, prop):
+        n = Sonc(e, t)
+        n.prop = prop
+        return n
+
+    @staticmethod
+    def lam(x, xprop, body, prop):
+        n = Lamda(Hyp(DI(x, xprop), xprop), body)
+        n.prop = prop
+        return n
+
+    @staticmethod
+    def shape(g):
+        return {(e.name, g.nodes[e.target_key], e.target_side, e.strict,
+                 tuple((g.nodes[s.key], s.side, s.kind) for s in e.sources)) for e in g.edges}
+
+    def test_an_application_exposes_the_function_and_the_argument(self):
+        # pro: B from A (presumed) via the axiom r : A->B
+        body = Mu(ID("al", "B"), "B", DI("r", "A->B"), self.cons(Deleg("1", "A"), ID("al", "B"), "A->B"))
+        g = compile_debate(body, "pro", strict_names={"r"})
+        assert self.shape(g) == {
+            ("r", "A->B", "term", True, ()),
+            ("pro", "B", "term", False, (("A->B", "term", "subargument"), ("A", "term", "presumption")))}
+
+    def test_the_cell_is_the_spine_and_gets_no_edge(self):
+        # cArg: C from A and B via abc : A->B->C; the cells A*(B*r) carry r
+        body = Mu(ID("r", "C"), "C", DI("abc", "A->B->C"),
+                  self.cons(Goal("1", "A"), self.cons(Deleg("2", "B"), ID("r", "C"), "B->C"), "A->B->C"))
+        g = compile_debate(body, "cArg", strict_names={"abc"})
+        assert {e.name for e in g.edges} == {"abc", "cArg"}
+        assert ("B->C" not in {g.nodes[k] for k in g.nodes})
+
+    def test_the_authors_three_shapes(self):
+        strict = {"ax", "r", "r2", "na", "nb"}
+        stronger = Mu(ID("al", "B"), "B", self.sonc(ID("al", "B"), DI("ax", "A"), "A-B"), ID("r", "A-B"))
+        g = compile_debate(stronger, "s", strict_names=strict)
+        assert self.shape(g) >= {("s", "B", "term", True, (("A", "term", "subargument"), ("A-B", "context", "subargument")))}
+        tollens = Mutilde(DI("x", "A"), "A", DI("r2", "A->B"), self.cons(DI("x", "A"), ID("nb", "B"), "A->B"))
+        g = compile_debate(tollens, "mt", strict_names=strict)
+        assert self.shape(g) >= {("mt", "A", "context", True, (("A->B", "term", "subargument"), ("B", "context", "subargument")))}
+
+    def test_beta_does_not_change_the_root_edge(self):
+        # mu a:B.<lambda x:A.!B || !A * a>  and its reduct  mu a:B.<!A || mu'x:A.<!B || a>>
+        before = Mu(ID("al", "B"), "B", self.lam("x", "A", Deleg("2", "B"), "A->B"),
+                    self.cons(Deleg("1", "A"), ID("al", "B"), "A->B"))
+        after = Mu(ID("al", "B"), "B", Deleg("1", "A"), Mutilde(DI("x", "A"), "A", Deleg("2", "B"), ID("al", "B")))
+        gb, ga = compile_debate(before, "k"), compile_debate(after, "k")
+        root = lambda g: next(e for e in g.edges if e.name == "k")
+        assert [(g.nodes[s.key], s.side) for g in (gb,) for s in root(gb).sources] == [("A->B", "term"), ("A", "term")]
+        assert [(ga.nodes[s.key], s.side) for s in root(ga).sources] == [("A", "term"), ("B", "term")]
+        from core.comp.adf_label import grounded_labels
+        B = (canonical_prop("B"), "term")
+        assert grounded_labels(gb)[B] == grounded_labels(ga)[B] == "IN"
+
+    def test_a_nested_cut_and_its_application_form_label_alike(self):
+        # N = mu a:B.<!A || mu'y:A.<mu d:C.<!A->C || y*d> || mu'z:C.<mu e:B.<!C->B || z*e> || a>>>
+        # P = mu a:B.<!C->B || (mu d:C.<!A->C || !A*d>) * a>
+        from core.comp.adf_label import grounded_labels
+        N = Mu(ID("al", "B"), "B", Deleg("1", "A"),
+               Mutilde(DI("y", "A"), "A",
+                       Mu(ID("de", "C"), "C", Deleg("2", "A->C"), self.cons(DI("y", "A"), ID("de", "C"), "A->C")),
+                       Mutilde(DI("z", "C"), "C",
+                               Mu(ID("ep", "B"), "B", Deleg("3", "C->B"), self.cons(DI("z", "C"), ID("ep", "B"), "C->B")),
+                               ID("al", "B"))))
+        P = Mu(ID("al", "B"), "B", Deleg("3", "C->B"),
+               self.cons(Mu(ID("de", "C"), "C", Deleg("2", "A->C"), self.cons(Deleg("1", "A"), ID("de", "C"), "A->C")),
+                         ID("al", "B"), "C->B"))
+        gn, gp = compile_debate(N, "n"), compile_debate(P, "p")
+        # the lemmas are horns with captured hypotheses; the spine mu' nodes are not edges
+        assert {e.name for e in gn.edges} == {"n", "n.μ1", "n.μ2"}
+        assert {e.name for e in gp.edges} == {"p", "p.μ1"}
+        for stmt in (("B", "term"), ("C", "term"), ("A", "term")):
+            key = (canonical_prop(stmt[0]), stmt[1])
+            assert grounded_labels(gn)[key] == grounded_labels(gp)[key] == "IN"
+
+    def test_a_reductio_exposes_its_refutation(self):
+        # mu v:P.<!P || mu'n:P.<!~P || n*_F_>>, v unused: the refutation is a horn
+        body = Mu(ID("v", "P"), "P", Deleg("1", "P"),
+                  Mutilde(DI("n", "P"), "P", Deleg("2", "~P"), self.cons(DI("n", "P"), ID("_F_", "false"), "~P")))
+        g = compile_debate(body, "argP")
+        assert self.shape(g) == {
+            ("argP.μ'1", "P", "context", False, (("~P", "term", "presumption"),)),
+            ("argP", "P", "term", False, (("P", "term", "presumption"), ("P", "context", "subargument")))}
+
+    def test_a_captured_occurrence_does_not_make_a_horn_the_spine(self):
+        # the unfolder's capture: a site inside a lemma met by the argument's
+        # own continuation `rule`; the lemda is still a horn, rule a source
+        body = Mu(ID("rule", "P"), "P", DI("r", "A->P"),
+                  self.cons(Mu(ID("k", "A"), "A", DI("f", "B->A"), self.cons(Goal("1", "B"), ID("k", "A"), "B->A")),
+                            ID("rule", "P"), "A->P"))
+        inner = body.context.term
+        inner.context.term = ID("rule", "P") if False else Goal("1", "B")   # unchanged: a plain lemma
+        g = compile_debate(body, "a", strict_names={"r", "f"})
+        assert {e.name for e in g.edges} == {"r", "f", "a.μ1", "a"}
+        lemma = next(e for e in g.edges if e.name == "a.μ1")
+        assert [(g.nodes[s.key], s.kind) for s in lemma.sources] == [("B->A", "subargument"), ("B", "obligation")]

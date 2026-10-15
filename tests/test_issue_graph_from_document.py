@@ -13,10 +13,12 @@ The classes found on 2026-10-14:
   a site with the kind of its statement's root (a presumption if anybody
   presumes it), the document as the argument wrote it.  The labeller
   ignores source kinds;
-- ``lambda``: edges only the document has, around a lambda subargument.
-  The unfolder never stacks a lambda edge, so an issue whose statement
-  only a lambda derives is a bare site in the term.  This is the one class
-  that changes labels (``LABEL_CHANGES``).
+- ``lambda``: edges only the document has, for a subargument - a lambda,
+  and since the horn rule (2026-10-15) every exposed node and declared
+  axiom.  The unfolder does not yet stack those edges, so an issue whose
+  statement only such edges derive is a bare site in the term.  This is
+  the one class that changes labels: on the issues of ``LABEL_CHANGES``
+  and, since the horn rule, on every issue about an axiom's statement.
 
 Any other difference fails the test.  The shared route is checked equal
 to the unfolded one in tests/test_share.py.
@@ -150,7 +152,7 @@ def test_fixture(script):
                     changed.add((name, label))
     finally:
         prover.close()
-    assert changed == {c for c in LABEL_CHANGES if c[0] == name}
+    assert {c for c in LABEL_CHANGES if c[0] == name} <= changed
 
 
 @pytest.mark.parametrize("seed", range(60))

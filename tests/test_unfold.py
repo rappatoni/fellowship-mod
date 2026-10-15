@@ -66,8 +66,9 @@ class TestShapes:
         assert isinstance(match[3], Goal) and match[3].prop == "P"
         assert isinstance(match[4], Mu) and match[4].id.name == "pArg"
         g = compile_debate(term, "u", strict_names=STRICT)
-        assert [(e.name, e.role, [(g.nodes[s.key], s.side, s.kind) for s in e.sources]) for e in g.edges] == [
-            ("pArg", "supporter", [("Q", "term", "obligation")])]
+        assert [(e.name, e.role, [(g.nodes[s.key], s.side, s.kind) for s in e.sources])
+                for e in g.edges if e.name not in STRICT] == [
+            ("pArg", "supporter", [("Q->P", "term", "subargument"), ("Q", "term", "obligation")])]
         assert g.defaults[(K("P"), "term")] == {"obligation"}
         # and it evaluates to pArg once pArg's derivation is judged
         nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=STRICT, mode="credulous")
@@ -82,7 +83,7 @@ class TestShapes:
         match = _match_scaffold(site, STRICT)
         assert match is not None and match[0] == "supporter" and match[2] == "Q"
         g = compile_debate(term, "u", strict_names=STRICT)
-        assert {e.name for e in g.edges} == {"pArg", "qArg"}
+        assert {e.name for e in g.edges if e.name not in STRICT} == {"pArg", "qArg"}
 
     def test_presumed_contrary_becomes_an_attack_scaffold(self):
         doc = document(("pArg", parg(Deleg("1", "Q"))),
@@ -127,9 +128,10 @@ class TestShapes:
         # a positive cycle with no foundation: grounded undecided; complete
         # admits both-IN and both-OUT (two preferred), but only both-OUT
         # is stable - self-support is unfounded.  The ADF's verdict.
-        assert set(grounded_labels(g).values()) == {"UNDEC"}
+        loop = lambda L: {v for k, v in L.items() if k[0] in (K("P"), K("Q"))}   # the axiom pRule is IN
+        assert loop(grounded_labels(g)) == {"UNDEC"}
         assert len(labellings(g, "preferred")) == 2
-        assert [set(l.values()) for l in labellings(g, "stable")] == [{"OUT"}]
+        assert [loop(l) for l in labellings(g, "stable")] == [{"OUT"}]
 
     def test_hypothesis_is_captured(self):
         # Q from P (obligation) supporting the Q site inside lambda h:P.
@@ -222,16 +224,20 @@ class TestShapes:
         # the attack's own alt, the innermost binder of the contrary,
         # captures it (aida-unfold-scaffold-binders-capture).  The attack is
         # then nothing but its fallback; strictness leaves it to
-        # normalisation, and the verdicts are those of the legacy shape.
-        for issue, wing, verdict in (((K("Q"), "term"), "μ_:P.<b2:P||alt2:P>", "open"),
-                                     ((K("R"), "term"), "μ_:P.<alt2:P||b2:P>", "value")):
+        # normalisation.  Since the horn rule (2026-10-15) qArg's lemma
+        # "P from P via pp" is a derivation of P (qArg.μ1, circular, so
+        # UNDEC grounded and admissible credulously), which contests rArg's
+        # presumption "P fails": both issues are open skeptically and
+        # values credulously (before: Q open, R a value, in both modes).
+        for issue, wing in (((K("Q"), "term"), "μ_:P.<b2:P||alt2:P>"),
+                            ((K("R"), "term"), "μ_:P.<alt2:P||b2:P>")):
             term = unfold(doc, issue)
             assert wing in pres_str(term)
             trace = []
             strict_resolve(term, strict, trace=trace)
             assert trace == []
-            for mode in ("skeptical", "credulous"):
-                assert evaluate_debate(term, "u", strict_names=strict, mode=mode)[1] == verdict
+            for mode, verdict in (("skeptical", "open"), ("credulous", "value")):
+                assert evaluate_debate(term, "u", strict_names=strict, mode=mode, source=doc)[1] == verdict
 
 
 def bare_contrary_document():
@@ -395,7 +401,7 @@ def test_even_loop_is_symmetric(prover):
                                                  mode="credulous", semantics="grounded")
         assert cred_grounded != "value"
         g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
-        assert set(grounded_labels(g).values()) == {"UNDEC"}
+        assert {v for k, v in grounded_labels(g).items() if "->" not in g.nodes[k[0]]} == {"UNDEC"}
         _, skeptical, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="skeptical")
         _, credulous, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="credulous")
         assert skeptical != "value" and credulous == "value"

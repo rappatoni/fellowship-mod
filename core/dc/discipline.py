@@ -113,19 +113,26 @@ def without_negation_wrappers(body):
     return walk(deepcopy(body))
 
 
-def _occurrences(node, name, var_type, binders, between=0):
+def _occurrences(node, name, var_type, binders, between=0, *, through_affine=False):
     """For each free occurrence of the variable ``name`` (of ``var_type``)
-    below ``node``: how many binders of the same kind stand between."""
+    below ``node``: how many binders of the same kind stand between.
+    With ``through_affine`` an affine binder (``_``, which binds nothing)
+    does not count: the compiler's spine walk passes through scaffold
+    wiring; the discipline counts it, as COMMA 2026 does."""
     if not isinstance(node, ProofTerm):
         return []
     if isinstance(node, var_type) and node.name == name:
         return [between]
+    if _is_negation_wrapper(node):                 # representation, not a binder
+        return _occurrences(node.context, name, var_type, binders, between,
+                            through_affine=through_affine)
     if isinstance(node, binders) and binder_name(node) == name:
         return []                                   # shadowed
-    step = 1 if isinstance(node, binders) else 0
+    step = 1 if isinstance(node, binders) and not (through_affine and binder_name(node) == "_") else 0
     found = []
     for child in _children(node):
-        found += _occurrences(child, name, var_type, binders, between + step)
+        found += _occurrences(child, name, var_type, binders, between + step,
+                              through_affine=through_affine)
     return found
 
 

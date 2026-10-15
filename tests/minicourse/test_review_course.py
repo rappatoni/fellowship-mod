@@ -147,9 +147,12 @@ def test_point4_cyclic_undercut(tmp_path):
     out = run_cli(tmp_path, "tests/rationality/cyclic_undercut.fspy",
                   ["label document.", "evaluate d credulous.", "evaluate d skeptical."])
     grounded = out.split("Grounded labelling for 'document':")[1].split("Evaluated")[0].split()
-    rows = {(grounded[i], grounded[i + 1]): grounded[i + 2] for i in range(0, 18, 3)}
-    assert rows == {("A", "term"): "IN", ("Q", "term"): "IN", ("B", "term"): "OUT",
-                    ("R", "term"): "OUT", ("Q", "context"): "OUT", ("R", "context"): "IN"}
+    rows = {(grounded[i], grounded[i + 1]): grounded[i + 2] for i in range(0, len(grounded) - 2, 3)
+            if grounded[i + 2] in ("IN", "OUT", "UNDEC")}
+    assert {k: v for k, v in rows.items() if "->" not in k[0]} == {
+        ("A", "term"): "IN", ("Q", "term"): "IN", ("B", "term"): "OUT",
+        ("R", "term"): "OUT", ("Q", "context"): "OUT", ("R", "context"): "IN"}
+    assert all(v == "IN" for k, v in rows.items() if "->" in k[0])       # the four axioms
     assert out.count("normal form: μargA:A.<qa:Q->A||!IN:Q*argA:A>") == 2
 
 
@@ -160,7 +163,7 @@ def test_point5_the_self_attack(tmp_path):
                   ["label SelfAttack.", "explain SelfAttack credulous."])
     assert "P[t] supporter strict" in out
     assert "edge 'SelfAttack*' on P[t] (a closed derivation the framework missed)" in out
-    assert "[1] P->false[t]=OUT  P[c]=OUT  P[t]=IN" in out
+    assert "[1] (P->false)->P[t]=IN  P->false[t]=OUT  P[c]=OUT  P[t]=IN" in out
     assert "normal form: μalt2:P.<pRule:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>" in out
 
 
