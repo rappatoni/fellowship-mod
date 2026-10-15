@@ -5718,7 +5718,7 @@ also fails the final full snapshot of large debates (doubled chain from 9
 levels). Use pipes or a framed protocol; overlaps
 [[id:aida-certificate-checking-architecture]].
 
-** BACKLOG Restrict arguments to the intuitionistic fragment
+** NEXT Enforce the pure level: arguments linear, counterarguments dual-linear, no scaffolds
 :PROPERTIES:
 :ID:             aida-argument-lj-restriction
 :AREA:           phd
@@ -5730,8 +5730,8 @@ levels). Use pipes or a framed protocol; overlaps
 :ICK:            2
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        An argument whose proof term is classical is refused when it is constructed, with a message naming the argument and the conclusion that is used more than once; debates remain classical. An argument against a proposition is held to the dual restriction.
-:VERIFY:         The proof in lib/fol_em.fspy (object-level excluded middle, conclusion =th= used twice) is refused as an argument in a default session; the three proofs in lib/fol.fspy and tests/fo_forall.fspy are accepted; a debate fixture for Peirce's law (tests/peirces_law.fspy) still evaluates as before; every fixture that the new check refuses is listed with the reason; the documented test suite passes.
+:OUTCOME:        The wrapper refuses, at `dixi.`, an argument whose term is not linear (every continuation bound by mu or lambda-bar occurs at most once, with no mu/lambda-bar between binder and occurrence) or a counterargument whose term is not dual-linear (the same for term variables bound by mu' or lambda), and either whose term holds a pure command <mu v.c || mu' w.c'> (v, w unused) with a variable free in both halves; the message names the argument and the offending variable or command. Fellowship's negation-elimination wrapper mu'H:~A.<H || chain*_F_> is treated as transparent. The check is the level "pure" of the 2026-10-15 options; it is a precondition of the generalised compiler (aida-rational-closure), whose spine rule needs a single spine.
+:VERIFY:         Peirce's law as an argument (the 2026-10-15 script) and tests/alternative_arguments.fspy's admaltest are refused with the variable named; the four scaffold shapes over open sites are refused as arguments and as counterarguments; lesson 9's con and killC, the contraction refutation mu'h:A.<rr || h*h*?false> written as a counterargument, the let form and the double-negated Peirce proof (built terms, replayed) are accepted; of the 173 fixture arguments exactly admaltest and marius_example.fspy's arg0 are refused and those fixtures are re-expressed or their refusal pinned; the documented suite passes.
 :END:
 
 Requested by the author 2026-10-01. The COMMA paper defines an argument for
@@ -5950,6 +5950,13 @@ dual-linearity is the right reading.
   constructive: it needs ~(P/\~P), whose destructor (x:A, y:~A) binds two
   term variables live in one command (read from the author's term; our
   AST has no propositional conjunction, not run).
+
+*Decided (the author, 2026-10-15): the pure level, enforced in the
+wrapper.* See the options and probes above; the census says the fixtures
+are already at this level except admaltest and arg0. The dual-linearity
+probe that counted the 20 refutations through ~A as failing was wrong
+only because of the representational wrapper, which the check treats as
+transparent.
 
 ** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
 :PROPERTIES:
