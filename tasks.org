@@ -3419,11 +3419,9 @@ lambda as the original of a statement's scaffolds.
   at a mu/mu' binder, and a lambda's hypothesis is attacked through the
   argument v of the redex <lambda x.t || v * E> -> <v || mu'x.<t||E>>;
   an unapplied lambda is attacked only as the implication.
-- Cons/Sonc cells are logically progressing nodes like any other: the
-  context side of <r || A * (B * k)> has nodes for A->B->C, B->C (and A,
-  B, C below them), created by the nested cells, and the compiler and
-  unfolder treat them as exposure points (the author, 2026-10-15,
-  correcting an earlier note here that excluded them).
+- Cons/Sonc cells: exposure points iff they are horns (below, the cut
+  decision of 2026-10-15); a cell on the spine is control flow and gets
+  nothing, its off-spine children are horns.
 - Sites stay the root of their debate for now ([[id:aida-site-exposure-design]]).
 - An internal node whose statement is bound in scope: d2, with (a) as
   an option ([[id:aida-circular-support-design]]).
@@ -3566,6 +3564,50 @@ wrapper and Fellowship).*
 Consequence for the compiler: the cut criterion (the half holding the
 binder's variable) assumes linear arguments, which AIDA does not enforce
 - documents with debates are lk ([[id:aida-argument-lj-restriction]]).
+
+*The cut question, decided (the author, 2026-10-15): exposure points
+are the horns; the spine is control flow.* A command <t || e> under a
+binder is a contradiction between X[t] and X[c]. Its *horns* are the
+maximal subterms that do not contain the binder's own variable (a
+continuation for an argument, a hypothesis for a counterargument); the
+discharged horn is that variable. The binder's derivation has every
+other horn as a source (a site with its kind, a declared name strict, a
+progress node as a subargument); every horn is an exposure point and,
+if a progress node, gets its own derivation by the same rule with
+itself as root. The *spine* - the nodes containing the discharged
+variable: cells, mu-tilde nodes (for an argument), a lambda only via a
+Sonc in its body - gets no derivation and no debate: its statement is
+mirrored by the horn it is cut against, so a graft on it would be
+duplicated. Horns inside a spine cell (ax in mu a:B.<a*ax || r>, !A in
+mu a:B.<r || !A*a>, nb in mu'x:A.<r2 || x*nb>) are horns like any other.
+The polarity flips by itself between arguments and counterarguments.
+Lambda and lambda-bar are treated alike: a derivation when a horn, none
+on the spine (today's compiler walks through a lambda-bar; that
+changes). This retires the per-binder criterion above (at an inner
+mu-tilde whose variable is a hypothesis it took the lemma using the
+hypothesis for the rest of the proof) and option (b); it keeps today's
+root derivations, the curry decision, and today's absence of
+transposals. Transposals are the orientations the author did not write
+(the dual modus tollens mu'x:A.<r2 || x*nb> is one written by hand) and
+belong to the closure of [[id:aida-strict-layer]].
+
+Evidence: exposing cArg's inner cell !B*r : B->C[c] with test stacked
+on it replays through Fellowship but breaks adequacy - with labels from
+the document graph the evaluation is refused (no label for B->C[c],
+unreachable from C); with labels compiled from the term, C[t] is IN and
+the normal form mu cArg:C.<abc || mu b1:A.<axA||b1> * mu'b2.<b2 || IN:B->C!>>
+is an exception: supporting a spine node replaces the continuation and
+the proof dies. The nested-cut probe's variant (a) was this rule (it
+kept the lemmas mu d, mu e and dropped the spine mu'y, mu'z), so its
+agreement with the application form stands. The three shapes of the
+author (prove something stronger, its dual, dual modus tollens) give
+the expected horns; the first and third replay, the second did not
+replay in the probe harness (a tactic-generation defect of the harness).
+
+Scope: the rule needs a single spine, i.e. linear arguments (levels 1
+and 2 of [[id:aida-argument-lj-restriction]]); the generalised compiler
+refuses the rest, and a forked spine (level 3, Peirce's trap) is a
+separate question.
 
 *** DONE Discuss: take the issue graph from the document graph, not from the term
 CLOSED: [2026-10-15 Thu]
