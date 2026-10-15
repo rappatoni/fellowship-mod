@@ -5861,6 +5861,28 @@ b). So option 1 admits ATT and ATT~, option 2 (lj) ATT and SUP~, option
 untested) is common to all three, and the options differ only in the
 linearity check on top.
 
+*S on pure commands, probed at the three levels (2026-10-15, scratch).*
+S-pure: no variable free in both halves of a command <μv.c || μ'w.c'>
+whose binders v, w are unused (affine, detected by occurrence, not by
+name). Levels: 1 pure = arguments linear, counterarguments dual-linear,
+plus S-pure; 2 = both linear (lj), plus S-pure; 3 = S-pure only.
+| case                                   | 1    | 2    | 3    |
+| SUP, ATT, SUP~, ATT~                   | no   | no   | no   |
+| Peirce, admaltest                      | no   | no   | yes  |
+| let form, ¬¬Peirce (intuitionistic)    | yes  | yes  | yes  |
+| twice, con (refutations, lj accepts)   | no   | yes  | yes  |
+All four scaffolds are refused at every level by S-pure alone (ATT and
+SUP~ by nothing else at level 2, ATT and ATT~ by nothing else at level
+1). Fixture census, 173 arguments: level 1 refuses 22 (admaltest and the
+20 refutations through ~A, plus marius_example's arg0), level 2 refuses
+2 (admaltest, arg0), level 3 refuses 1 (arg0, a composed debate term
+registered as an argument). Two near-variants with one alternative's
+binder used were eta-degenerate (μ'y.<y||alt> is alt), not scaffolds,
+and pass - correct, but no evidence of robustness. S on all critical
+pairs (affine or not) refuses the intuitionistic let form as well, with
+the same fixture results; S-pure is the less restrictive choice. Open:
+whether a non-pure command can emulate a scaffold.
+
 ** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
 :PROPERTIES:
 :ID:             aida-negation-spelling-in-unfolding
