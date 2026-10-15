@@ -5883,6 +5883,32 @@ pairs (affine or not) refuses the intuitionistic let form as well, with
 the same fixture results; S-pure is the less restrictive choice. Open:
 whether a non-pure command can emulate a scaffold.
 
+*Refutations through negation are dual-linear (2026-10-15, with the
+author).* Dual-intuitionistic logic may have implication, as
+intuitionistic logic may have difference; it is minimal logic without
+non-contradiction and with excluded middle. COMMA's variable-based
+dual-linearity is the right reading.
+- The =μ'H1= that made the 20 fixture refutations through ~A fail
+  dual-linearity is Fellowship's representation of negation elimination
+  (=μ'H:~A.<H || chain*_F_>=; core/ac/instructions.py treats it as
+  representation and emits no tactic). With it removed all 20 are
+  dual-linear (and linear); the pure level then refuses only admaltest
+  and marius_example's arg0. The pure-level check must treat the
+  wrapper as transparent.
+- A refutation from a proved negation is constructive: a refutation of
+  B from r : A->~B is μ'x:B.<r || !A*(x*_F_)> (the normal form of the
+  registered refB, one (μ<) step), one hypothesis, dual-linear. A
+  counterdebate built from an argument for ~B collapses into this term;
+  today the debate is refused because nothing links ~B[t] to B[c] (the
+  negation bridge of [[id:aida-strict-layer]]).
+- Not derivable dual-linearly: false from the hypotheses B, A,
+  B->A->false - in every binding order some binder of the same kind lies
+  between a binder and its occurrence (checked); with A and the rule as
+  constants it is fine. A refutation of A from A->(P/\~P) is not
+  constructive: it needs ~(P/\~P), whose destructor (x:A, y:~A) binds two
+  term variables live in one command (read from the author's term; our
+  AST has no propositional conjunction, not run).
+
 ** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
 :PROPERTIES:
 :ID:             aida-negation-spelling-in-unfolding
