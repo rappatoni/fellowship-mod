@@ -648,6 +648,14 @@ class Service:
             body = ProofTermTransformer().transform(Grammar().parser.parse(proof_term))
         except Exception as e:
             raise InvalidRequest(f"register: cannot read the proof term: {e}", cause=e)
+        # The first-order reading of the ambiguous constructors, strict: a
+        # name the declarations do not account for is refused, not guessed
+        # (tasks.org, aida-fo-resolve-unwired).
+        from core.ac.resolve import resolve, ResolutionError
+        try:
+            body = resolve(body, s.declarations)
+        except ResolutionError as e:
+            raise InvalidRequest(f"register: {e}", cause=e)
         # A term typed as a string has lost its citation marks: a free leaf
         # naming a registered argument is a citation (core/dc/cite.py).
         mark_citations(body, lambda n: n in s.arguments and n != name)

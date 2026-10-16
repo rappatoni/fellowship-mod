@@ -488,7 +488,7 @@ Five prover-side defects were found and fixed on the way:
 - The Python side read =¬A= as a symbol *named* =¬A= rather than as a
   negation, and =⊥= likewise.
 
-** BACKLOG Extend the debate compiler to first-order arguments
+** NEXT Extend the debate compiler to first-order arguments
 :PROPERTIES:
 :ID:             aida-first-order-reduction
 :AREA:           phd
@@ -563,6 +563,20 @@ introduction) are refused, each with the misleading kind message
 hand-instantiated schemata such as =(forall x, P x) -> P c= are a
 working stopgap (fo_opaque.fspy gives adaptive inductive
 generalisation's verdicts).
+
+2026-10-16, the foundations fixed before the expansion (author's plan of
+2026-10-16): the resolution pass is wired in
+([[id:aida-fo-resolve-unwired]]), so a quantifier step is now a first-order
+node and is refused with =FirstOrderNotSupported= naming it ("... contains a
+ConsFO ...") at registration - on its =dixi= entry
+([[id:aida-check-dropped-argument]]) - and at =graph=, =label= and
+=evaluate=; the misleading "kind 'sort'" message of bug 8 no longer
+appears. Still to settle with the expansion: core/ac/signature.py files
+every non-proposition declaration - sorts, constants (=tweety=) and
+predicates - under the kind "sort". The starting state is pinned in
+tests/test_first_order_baseline.py (opaque quantified statements label
+and evaluate: tests/first_order/). Next: the design questions above,
+agreed with the author before any code.
 
 * Specification and verification
 
@@ -6776,7 +6790,8 @@ no =.fspy= script uses =focus=. The manual expansion reaches =qed= on the
 exact goal where =focus= aborts, which is how both first-order fixtures are
 written. It also no-ops silently when applied to a conclusion.
 
-** BACKLOG Run the first-order resolution pass on parsed proof terms
+** DONE Run the first-order resolution pass on parsed proof terms
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-fo-resolve-unwired
 :AREA:           phd
@@ -6819,6 +6834,20 @@ the pass was verified, its wiring was not. Its commit (220235b) names
 Fix sketch: =resolve(body, prover.declarations)= after both parses (no
 =env= at the root). Tests that relied on the propositional reading may
 need updating.
+
+*Done 2026-10-16.* =resolve= runs after both production parses:
+=Argument.execute= (core/dc/argument.py; Fellowship's term, with the
+prover's declarations) and =Service.register= (wrap/service.py; the
+user's term, strict, a =ResolutionError= refused as =InvalidRequest=).
+Evidence: tests/test_first_order_baseline.py (6 tests): fo_forall.fspy
+registers a body with =ConsFO=, fo_exists_forall.fspy one with =LamdaFO=,
+=ConsFO=, =TermsPairFO= and =DestructTermsPairFO=, both still replay
+(=report.ok=); =register= of a term heading an application with the
+undeclared =Zed= is refused ("neither bound nor declared"). The focused
+first-order tests (tests/test_fo_*.py, test_resolve.py,
+test_enrich_prop.py): 98 passed. Suite: 2172 passed, 8 skipped, 2
+xfailed, 1 xpassed; no existing pin moved, so no test relied on the
+propositional reading.
 
 ** BACKLOG Regenerate the Fellowship documentation transcripts
 :PROPERTIES:
