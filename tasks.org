@@ -3619,6 +3619,97 @@ the unfolder's behaviour):
 - the entrypoint bias (the argument on top, its own site kinds), which
   only the unfolder has.
 
+*Specified 2026-10-16* as [[id:aida-unfold-commutation-check]]: theta-
+expansion and grafting restated for the stacked shapes, the equivalence
+(alpha and site numbers, eta of an empty exposure, permutation within a
+stack respecting primacy), each point above covered, and the fixtures
+E1-E7 as committed. The definitions are the agent's restatement of the
+recorded decisions; VERIFY is met once the author accepts them.
+
+*** BACKLOG Check that compile-and-unfold commutes with theta-expand-and-graft
+:PROPERTIES:
+:ID:             aida-unfold-commutation-check
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A theta-expander and grafter written independently of =Unfolder= (a new module, core/dc/theta.py; the old =ThetaExpander= of core/comp/reduce.py may be read, not called) builds, for every document and entry point, the term graft(theta(D), E); a differential test shows it equal to unfold(compile(D), E) up to the equivalence below, and the labels and classes of the two equal.
+:VERIFY:         tests/test_unfold_commutation.py passes on the fixtures listed below and on the 60 random documents of tests/test_share.py, for every argument and statement as entry point, under all three =subarguments= settings; every difference it finds is either inside the equivalence or recorded here; the suite passes.
+:END:
+
+Specified 2026-10-16 ([[id:aida-unfold-commutation-spec]]) with the
+generalised compiler and unfolder as the ground truth
+([[id:aida-rational-closure]]). Proposed by the agent; the definitions
+below restate the recorded decisions and await the author's review.
+
+*Theta-expansion* (obligation-eta long form, restated for the stacked
+shapes). For an argument body B: every horn of B in the sense of the
+horn rule ([[id:aida-discuss-non-site-attack-points]]) - a site, a
+declared axiom applied, a lemma, a lambda or lambda-bar; not a spine
+node, not the same-statement half of a bureaucratic binder, not a
+variable - is replaced by its *exposure* at its statement S:
+=t -> mu alpha:S.< t || [S:] >= on the term side, =e -> mu'x:S.< [:S] || e >=
+on the context side, where =[S:]= / =[:S]= is a slot. A site t is its own
+exposure's original; an exposed node's original is the node, and the
+slot's root is an obligation (Q3).
+
+*Grafting* (universal substitution). Starting from the entry point's
+statement, fill each slot for S, in the scope of the binders around it:
+- S bound in scope: the binder's variable; under primacy (or
+  =preserve=) the node's own derivation kept on top of it (d2), never
+  under =share= - the capture decision of
+  [[id:aida-circular-support-design]];
+- otherwise, if nobody but the node itself derives, contests or presumes
+  S: nothing (the exposure is then removed by eta);
+- otherwise: the debate about S - the root (a presumption if somebody
+  presumes S and the original is a site, an obligation otherwise), the
+  theta-expanded bodies of S's derivations stacked, and the theta-
+  expanded bodies of the contrary's derivations as the attacker wing -
+  grafted recursively, one copy per occurrence.
+The entry point's argument and a debate's moved arguments have primacy
+(their derivations on top of their statements' stacks, their own sites
+keeping the kinds they wrote, a presumption elsewhere at the bottom).
+
+*The claim.* For every document D and entry point E,
+unfold(compile(D), E) and graft(theta(D), E) are equivalent, where two
+terms are *equivalent* if they are equal up to
+1. alpha-renaming of every binder and renumbering of sites;
+2. eta of an exposure whose slot was left empty;
+3. a permutation of the elements of one stack (the reordering of
+   subarguments), provided primacy is respected: the elements with
+   primacy stay on top, in the same order.
+Labels and classes must be equal outright (they are read off the
+document graph and the term's decisions, which the equivalence
+preserves up to the order sigma reads a stack in; the test also
+compares the classes with the order normalised).
+
+*The points of 2026-10-14, each covered or excluded.*
+- Exposure set: covered by construction - theta exposes exactly the
+  compiler's sources (the horn rule).
+- One copy per occurrence: covered; grafting copies as the unfolder
+  does. The shared route is outside the claim (it expands to the
+  unfolded term, tests/test_share.py).
+- Capture: covered - grafting into a scope where S is bound is the
+  capture rule, the =subarguments= setting a parameter of both sides.
+- Stack order: covered by point 3 of the equivalence.
+- The root's kind and the presumption at the bottom: covered - the
+  root rule above, sites' kinds as the canonical kind rule
+  ([[id:aida-site-exposure-design]]).
+- The entrypoint bias: covered as a parameter (primacy) of grafting,
+  not excluded.
+
+*Fixtures* (the 2026-10-13/14 examples as committed):
+tests/minicourse/lesson8a_attackrule.fspy (E1), tests/exposure/lemma_captured.fspy
+and tests/exposure/site_variant.fspy (E2), tests/minicourse/lesson8a_cycle.fspy
+(E3), tests/entrypoints.fspy (E4), tests/rationality/self_attack_lk.fspy
+(E5), tests/exposure/two_sites.fspy (E6), tests/exposure/curried_cell.fspy
+and tests/rationality/curried_attack.fspy (E7).
+
 *** DONE Discuss: what can be attacked and supported besides sites
 CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
