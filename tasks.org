@@ -3541,6 +3541,25 @@ terms replay through Fellowship):
   P from the presumed Q, the answer one expects of argP. Sigma would
   need to read a supporter's status off the term where a captured
   variable stands for a stack whose derivations are all OUT.
+  The presumption is not lost to the substitution: it is the original
+  of Q's scaffold =SUP[alt3,b3](!u2:Q, argQ)=, which is intact when
+  sigma reaches it; =b2= is substituted only inside argQ. B restores
+  the route through the presumed Q, not the circular one (the author,
+  2026-10-16).
+- (D, the author's proposal 2026-10-16) argQ's demand for P becomes an
+  attack that throws to the stack's or the root's continuation,
+  =ATT[altN,bN](?v1:P, alt2)= (or =alt1=), so that the debate's own
+  result is what comes back. Scratch experiment on argP's term: well
+  typed (replays) with alt2 and alt1; sigma refuses it ("No label for
+  scaffold issue P[c]": the wing is read as "P fails", which nobody in
+  the document derives); decided by hand for the attacker, the
+  computation of argQ is abandoned and the *site* is thrown, so the
+  debate's result becomes =?v1:P=, discharged by P's label:
+  : value: μalt2:P.<qp:Q->P||μb5:Q.<pq:P->Q||μb1:P.<!IN:P||alt2:P>*b5:Q>*alt2:P>
+  decided for the site, it is option A's normal form exactly. What is
+  thrown is the demand, not the debate's value; the information that
+  comes back is P's label, as with =b1=. Plain cbn keeps =?v1= in place
+  (open), plain cbv returns the root (open).
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
