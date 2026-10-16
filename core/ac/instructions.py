@@ -110,7 +110,15 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_Mu(self, node: Mu):
         # Exact neg-elim scaffold on the right:
         # μ H1:¬A . < λ H2:A . μ H3:⊥ . < H2 || X > || H1 >
-        if not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda):
+        # This is what `elim H1` builds for a primitive negation only (for
+        # A->false it builds λH2:A.?:⊥), and only with H1 itself on the
+        # right: a scaffold whose original is such a lambda has its wiring
+        # there, which the shortcut would drop (tasks.org,
+        # aida-replay-neg-elim-shortcut).
+        context = getattr(node, "context", None)
+        if (not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda)
+                and is_primitive_negation_prop(getattr(node, "prop", None))
+                and isinstance(context, ID) and context.name == node.id.name):
             lam = node.term
             h2_name = getattr(getattr(lam, "di", None), "di", None)
             h2_name = getattr(h2_name, "name", None)
