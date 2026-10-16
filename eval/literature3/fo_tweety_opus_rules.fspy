@@ -1,0 +1,50 @@
+# Tweety and Opus with rule schemas, as ASPIC+, DeLP and defeasible logic
+# write them: bird(X) => flies(X), penguin(X) => ~flies(X),
+# penguin(X) -> bird(X); tweety a bird, opus a penguin. Those systems
+# instantiate the schemas per individual; with the penguin rule preferred
+# (specificity, superiority) they conclude flies(tweety), ~flies(opus);
+# without a preference flies(tweety) and opus undecided.
+# Encoding 1: both rules are presumed universal statements; each argument
+# instantiates them at its individual. The rules are not attacked, only the
+# conclusions about opus.
+lk.
+declare Animal : type.
+declare tweety, opus : Animal.
+declare Bird, Penguin, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare penguin_opus : (Penguin [opus]).
+declare penguins_birds : (forall x:Animal, Penguin [x] -> Bird [x]).
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+by default.
+next.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.
+argument flies_opus : (Flies [opus]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+by default.
+next.
+elim [opus].
+elim.
+cut (forall x:Animal, Penguin [x] -> Bird [x]) s.
+axiom penguins_birds.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom s.
+axiom r.
+dixi.
+counterargument opus_grounded : (Flies [opus]).
+cut (forall x:Animal, Penguin [x] -> Flies [x] -> false) r.
+by default.
+next.
+elim [opus].
+elim.
+axiom penguin_opus.
+elim.
+axiom.
+elim.
+dixi.

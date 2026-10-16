@@ -1,0 +1,41 @@
+== literature3/fo_rio_complied.fspy: check ok=True (0.1s)
+-- obliged: issue Obliged ctrl subj[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Process e1 ctrl subj[t]=IN Obliged ctrl subj[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+      credulous -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+   preferred issue: ['IN']
+      [1] Process e1 ctrl subj[t]=IN Obliged ctrl subj[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+      credulous -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+   stable    issue: ['IN']
+      [1] Process e1 ctrl subj[t]=IN Obliged ctrl subj[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+      credulous -> value     μobliged:Obliged ctrl subj.<norm:forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y||e1*ctrl*subj*process:Process e1 ctrl subj*obliged:Obliged ctrl subj>
+-- violated: issue Violated ctrl subj[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] Process e1 ctrl subj[t]=IN RInform e2 ctrl subj[t]=IN Obliged ctrl subj[t]=IN Violated ctrl subj[t]=OUT (exists e:Ev,RInform e ctrl subj)->false[t]=OUT exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN forall x:Ag,forall y:Ag,Obliged x y->((exists e:Ev,RInform e x y)->false)->Violated x y[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> open      ?OUT:Violated ctrl subj
+      credulous -> open      ?OUT:Violated ctrl subj
+   preferred issue: ['OUT']
+      [1] Process e1 ctrl subj[t]=IN RInform e2 ctrl subj[t]=IN Obliged ctrl subj[t]=IN Violated ctrl subj[t]=OUT (exists e:Ev,RInform e ctrl subj)->false[t]=OUT exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN forall x:Ag,forall y:Ag,Obliged x y->((exists e:Ev,RInform e x y)->false)->Violated x y[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> open      ?OUT:Violated ctrl subj
+      credulous -> open      ?OUT:Violated ctrl subj
+   stable    issue: ['OUT']
+      [1] Process e1 ctrl subj[t]=IN RInform e2 ctrl subj[t]=IN Obliged ctrl subj[t]=IN Violated ctrl subj[t]=OUT (exists e:Ev,RInform e ctrl subj)->false[t]=OUT exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN forall x:Ag,forall y:Ag,Obliged x y->((exists e:Ev,RInform e x y)->false)->Violated x y[t]=IN forall e:Ev,forall x:Ag,forall y:Ag,Process e x y->Obliged x y[t]=IN
+      skeptical -> open      ?OUT:Violated ctrl subj
+      credulous -> open      ?OUT:Violated ctrl subj
+-- complied: issue exists e:Ev,RInform e ctrl subj[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] RInform e2 ctrl subj[t]=IN exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN
+      skeptical -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+      credulous -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+   preferred issue: ['IN']
+      [1] RInform e2 ctrl subj[t]=IN exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN
+      skeptical -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+      credulous -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+   stable    issue: ['IN']
+      [1] RInform e2 ctrl subj[t]=IN exists e:Ev,RInform e ctrl subj[c]=OUT exists e:Ev,RInform e ctrl subj[t]=IN
+      skeptical -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+      credulous -> value     μalt2:exists e:Ev,RInform e ctrl subj.<(e2,informed:RInform e2 ctrl subj)||alt2:exists e:Ev,RInform e ctrl subj>
+== done in 0.3s

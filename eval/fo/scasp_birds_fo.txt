@@ -1,0 +1,4 @@
+?- flies(X) : MODEL: BINDINGS:  X = tweety 
+?- flies(opus) : no models 
+?- not flies(opus) : MODEL: BINDINGS: 
+?- ab(X) : MODEL: BINDINGS:  X = opus 

@@ -1,0 +1,50 @@
+# Sequent-based argumentation over first-order classical logic (Arieli &
+# Strasser 2015): premises forall x, P x; ~P a; P b, each from a presumed
+# source. Maximal consistent subsets: {forall x P x, P b} and {~P a, P b};
+# so P b is accepted skeptically, forall x P x and ~P a credulously.
+lk.
+declare D : type.
+declare a, b : D.
+declare P : D -> bool.
+declare S1, S2, S3 : bool.
+declare src_all : (S1 -> (forall x:D, P [x])).
+declare src_npa : (S2 -> P [a] -> false).
+declare src_pb : (S3 -> P [b]).
+argument all_p : (forall x:D, P [x]).
+cut (S1 -> (forall x:D, P [x])) t.
+axiom src_all.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument npa : (P [a]).
+cut (S2 -> P [a] -> false) t.
+axiom src_npa.
+elim.
+by default.
+next.
+elim.
+axiom.
+elim.
+dixi.
+argument pb : (P [b]).
+cut (S3 -> P [b]) t.
+axiom src_pb.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+# {forall x P x} => P a, attacking ~P a.
+argument pa : (P [a]).
+cut (forall x:D, P [x]) r.
+next.
+elim [a].
+axiom r.
+dixi.
+# {~P a} => ~forall x P x, a counter-instance.
+counterargument not_all : (forall x:D, P [x]).
+elim [a].
+next.
+dixi.

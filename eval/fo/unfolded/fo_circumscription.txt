@@ -1,0 +1,41 @@
+== literature3/fo_circumscription.fspy: check ok=True (0.1s)
+-- minimised: issue forall x:Animal,Ab x->false[t]; 4 edges
+   grounded  issue: ['OUT']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+      credulous -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+   preferred issue: ['OUT']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+      credulous -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+   stable    issue: ['OUT']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+      credulous -> exception μalt1:forall x:Animal,Ab x->false.<?OUT:forall x:Animal,Ab x->false||opus*μb1:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b1:Ab opus>*_F_>
+-- flies_tweety: issue Flies tweety[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] Ab opus[t]=IN Bird tweety[t]=IN Flies tweety[t]=OUT Penguin opus[t]=IN Ab tweety->false[t]=OUT forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+   preferred issue: ['OUT']
+      [1] Ab opus[t]=IN Bird tweety[t]=IN Flies tweety[t]=OUT Penguin opus[t]=IN Ab tweety->false[t]=OUT forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+   stable    issue: ['OUT']
+      [1] Ab opus[t]=IN Bird tweety[t]=IN Flies tweety[t]=OUT Penguin opus[t]=IN Ab tweety->false[t]=OUT forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+-- ab_opus: issue forall x:Animal,Ab x->false[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+      credulous -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+   preferred issue: ['IN']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+      credulous -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+   stable    issue: ['IN']
+      [1] Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Ab x->false[c]=IN forall x:Animal,Ab x->false[t]=OUT forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+      credulous -> value     μ'alt2:forall x:Animal,Ab x->false.<alt2:forall x:Animal,Ab x->false||opus*μb2:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*b2:Ab opus>*_F_>
+== done in 0.3s

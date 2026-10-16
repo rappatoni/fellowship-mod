@@ -47,6 +47,24 @@ The headline results:
   variable while the issue is labelled OUT (bug 2); and credulous
   evaluation under grounded semantics can be OPEN where skeptical is a
   value (bug 3).
+- *Part 2* (sequent-based argumentation, adaptive logic, defeasible and
+  defeasible deontic logic, default justification logic,
+  circumscription, the event calculus, I/O and reified I/O logic; 26
+  more documents): no new bug class, but two new consistency failures on
+  [[id:aida-strict-layer]], a second reproduction of bug 2, and a map of
+  the first-order gaps.
+- *Part 3* (re-run after the fixes): bugs 1-8 verified fixed; the
+  cross-checks unchanged; two new bugs (9: a scaffold on an elimination
+  cell gets no label; 10: the subarguments setting changes labels and
+  verdicts, contrary to the README).
+- *Part 4* (first order, after first-order debates were added; 16
+  documents): event calculus, reified I/O logic, inductive
+  generalisation and the abnormality reading of rule schemas give the
+  literature's verdicts on both routes; a counter-instance refutes a
+  universal rule for everyone (by design); classical first-order
+  theorems that throw an open statement cannot be argued; two new bugs
+  (11: an exposed horn with an open source labels a strict theorem OUT;
+  12: keyword names give a bare parse error).
 
 * How the testing was done
 
@@ -648,7 +666,7 @@ so an obligation can be about an eventuality that does not exist.
   Reification's other features - eventualities of obligations, Rexist
   over nested eventualities - need the same first-order machinery.
 
-** First-order requirements, collected
+** First-order requirements, collected (superseded by part 4)
 
 - Quantified propositions are accepted as opaque statements: they can
   be presumed, owed, refuted and used through declared rules
@@ -757,6 +775,133 @@ specification questions 1, 3, 4 and 5 give the same results as before.
   stable labelling, strictly inconsistent fixtures).
 - Scaling: unchanged within noise (n=11: label 3.7 s, evaluate 8.4 s).
 
+* Part 4: first order
+
+Run 2026-10-17 on branch =eval-fo= at =1c26b78= ("First-order debates on
+both routes"), after the decisions Q1-Q5 of
+[[id:aida-first-order-reduction]]: statements up to renaming of bound
+variables, capture by identical statement (no unification), a general
+rule stands or falls as one statement (instantiation is a spine step),
+only closed statements presumed or owed, and two strict reduction rules
+for forall and exists. Documents in =eval/literature3/= (16), outputs in
+=eval/fo/= (=fo/literature3/= the shared route, the default;
+=fo/unfolded/= the unfolded route; =fo/old_*= part 2's first-order
+probes re-run). Each header states the system's documented answer.
+
+** Summary of part 4
+
+- Both routes give identical labels and verdicts on all 16 documents.
+- Part 2's first-order probes now evaluate: the quantified Tweety rule,
+  inductive generalisation, the event-calculus axiom, the existential
+  obligation; =circ_fo='s Tweety is OPEN because it owes the instance
+  =Ab tweety -> false= while the minimisation presumes the universal -
+  by design (Q3: no unification).
+- Literature verdicts reproduced: event-calculus Yale shooting (fully
+  quantified), reified I/O logic with an existential obligation and its
+  witness, inductive generalisation (refuted and unrefuted),
+  s(CASP)/circumscription/defeasible-logic Tweety and Opus with an
+  abnormality per individual, the intuitionistic quantifier exchange.
+- Differences by design (Q4): a counter-instance refutes a universal
+  rule for everyone, where ASPIC+, DeLP, defeasible logic, s(CASP) and
+  circumscription keep the rule for the other individuals.
+- Two bugs (11: an exposed horn with an open source mislabels a strict
+  theorem OUT; 12: keyword names give a bare parse error) and one design
+  question (classical first-order theorems that throw an open
+  statement cannot be argued).
+
+** Dialectical first-order theorems
+
+| file              | theorem                                         | result                                                                 |
+|-------------------+-------------------------------------------------+------------------------------------------------------------------------|
+| fo_t_exchange     | (exists y forall x R) -> (forall x exists y R)  | one argument: VALUE; the skeptic's forall-challenge as its own move is refused (it owes =exists y, R x y=, open) |
+| fo_t_negation (a) | ~(exists x P) -> forall x ~P                    | one strict argument: VALUE, but labelled OUT (bug 11)                  |
+| fo_t_negation (b) | ~(forall x P) -> exists x ~P (classical)        | not arguable: the throw of =P y= is not linear and cannot be owed      |
+| fo_t_drinker      | exists x (D x -> forall y D y) (classical)      | not arguable, the same reason; claim OUT                               |
+| fo_t_nontheorem   | (forall x exists y R) -> (exists y forall x R)  | OUT, OPEN                                                              |
+
+Peirce's law and double negation elimination are arguable because their
+classical throw goes to the continuation of a closed statement, which
+another move can owe. The first-order classical theorems throw a
+statement that mentions a bound variable; an argument cannot do it
+(linearity) and cannot leave it to another move (Q2). Lorenzen's
+dialogue move "prove it for an a of my choice" has no counterpart for
+the same reason. Design task [[id:aida-fo-classical-dialectics]].
+
+** Rule schemas: Tweety and Opus
+
+| file                            | encoding                                         | Tweety  | Opus                 | ASPIC+/DeLP/DL, s(CASP), circumscription |
+|---------------------------------+--------------------------------------------------+---------+----------------------+------------------------------------------|
+| fo_tweety_opus_rules            | both rules presumed universals, instantiated     | IN      | UNDEC (rebuttal)     | with preference/specificity: Opus OUT    |
+| fo_tweety_opus_counterinstance  | Opus refutes the universal bird rule             | OUT     | -                    | Tweety stays IN                          |
+| fo_tweety_opus_ab               | strict universal rule, ~Ab presumed per instance | IN      | OUT                  | the same                                 |
+
+=fo_tweety_opus_ab= also argues s(CASP)'s query =?- flies(X)= as
+=exists x, Flies x= with the witness tweety (VALUE); s(CASP) 0.25 finds
+=X = tweety= itself (=eval/fo/scasp_birds_fo.txt=), AIDA needs the
+witness supplied. Defeasible logic, DeLP, ASPIC+ and ABA with
+assumption schemata ground rule schemas per individual; AIDA's universal
+statement is one node, so the per-individual reading needs the
+abnormality pattern.
+
+** Other systems
+
+| file                         | system                     | AIDA                                                       | literature                                  |
+|------------------------------+----------------------------+------------------------------------------------------------+---------------------------------------------|
+| fo_circumscription           | predicate circumscription  | the minimised =forall x, ~Ab x= refuted by Opus; Tweety OUT | Ab = {opus}; Tweety flies                   |
+| fo_ec_yale                   | event calculus, quantified | loaded at 2 IN; clipped at 2 IN; alive at 3 OUT            | the same                                    |
+| fo_rio / fo_rio_complied     | reified I/O logic          | violated IN; with the witness e2, OUT                      | the same                                    |
+| fo_il / fo_il_unrefuted      | adaptive logic IL          | generalisation and prediction fall / stand                 | the same                                    |
+| fo_seq                       | sequent-based, first order | three preferred labellings, one with forall x P x and ~P a both IN | two maximal consistent subsets       |
+
+- Circumscription minimises an extension; AIDA presumes one universal
+  statement. Owing and instantiating it works (Tweety IN until Opus), but
+  any abnormal individual refutes the whole minimisation. The
+  circumscriptive reading needs the abnormality per individual, as in
+  =fo_tweety_opus_ab=, which is also how circumscription's answer
+  comes out.
+- The event calculus needs no arithmetic here because the successor of
+  a time point is a declared relation; an ordering =t1 < t2= over all
+  earlier points, durations, or numeric fluents cannot be written.
+- Reified I/O logic: =RInform e x y= abbreviates =inform'(e,x,y) &
+  Rexist(e)= because AIDA has no conjunction. The existential obligation
+  is a statement of its own; compliance is an argument for it with a
+  witness, violation presumes its refutation.
+- IL: AIDA's generalisation is presumed outright, not conditioned on
+  the observed instances; IL's inductive base would have to be written
+  as an argument from them.
+- The sequent-based result repeats part 2's finding at first order
+  (note on [[id:aida-strict-layer]]).
+
+** Not expressible at first order
+
+- Unification-based capture: =forall x, ~Ab x= does not meet an owed
+  =~Ab tweety= (Q3, by design).
+- Per-individual exceptions to a universal rule, other than through an
+  explicit abnormality predicate (Q4, by design, with an alternative
+  recorded).
+- Answer substitutions: an existential query needs its witness given.
+- Sites under a quantifier (Q2): an argument cannot leave an open
+  formula to others; dialectical splits of quantified proofs, and the
+  classical theorems above, are therefore out of reach.
+- Conjunction and disjunction (unchanged), arithmetic and orders
+  (event calculus, Catala's amounts, s(CASP)'s constraints),
+  higher-order schemes (Carneades' argumentation schemes quantify over
+  propositions).
+- Quantifier operands need parentheses on the right of =->=
+  (=A -> forall y, D y= is accepted by Fellowship and refused, with a
+  clear parse message, by AIDA), as the README says.
+
+** New bugs
+
+11. *A horn with an open source mislabels a strict theorem.*
+    =bug_fo_open_source.fspy=: the strict argument for
+    =~(exists x, P x) -> forall x, ~P x= is labelled OUT (VALUE when
+    evaluated); its cell =(x, p) * _F_= becomes an edge with the open
+    source =P x= as an obligation. Task [[id:aida-fo-open-source-horn]].
+12. *A keyword as a name.* =bug_reserved_name.fspy=: arguments named
+    =minimal= or =all= fail at =dixi= with "Line 1, character 8: Parse
+    error". Task [[id:aida-reserved-names]].
+
 * Task changes made (tasks.org on this branch)
 
 New tasks, each citing its reproduction: [[id:aida-negation-cell-horn]]
@@ -781,13 +926,18 @@ INFO message); the married-bachelor and non-interference documents into
 [[id:aida-strict-layer]] and the tasks above. No status was changed. Part 3 added [[id:aida-cell-scaffold-label]] and
 [[id:aida-subarguments-setting-labels]], and notes on
 [[id:aida-strict-layer]], [[id:aida-uncatchable-exception-terminology]]
-and [[id:aida-transport-limits]].
+and [[id:aida-transport-limits]]. Part 4 added
+[[id:aida-fo-open-source-horn]], [[id:aida-reserved-names]] and
+[[id:aida-fo-classical-dialectics]], and notes on
+[[id:aida-first-order-reduction]] and [[id:aida-strict-layer]].
 
 * Files
 
 - =eval/literature/*.fspy= - part 1's documents (48 with the two
   non-contradiction files); =eval/literature2/*.fspy= - part 2's (26);
   =eval/scasp/*.pl= - the s(CASP) programs.
+- =eval/literature3/*.fspy= - part 4's first-order documents (16);
+  =eval/fo/= - their outputs on both routes, and part 2's probes re-run.
 - =eval/results2/= - part 2's harness output; =eval/rerun/= - part 3's
   (=sub_share/=, =sub_preserve/=: the same under the other settings).
 - =eval/results/= - harness output for every document, the cross-checks,

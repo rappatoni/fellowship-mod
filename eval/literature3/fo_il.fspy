@@ -1,0 +1,28 @@
+# Inductive generalisation (Batens' adaptive logic IL): from Pr a, Pr b
+# infer forall x, Pr x unless a counter-instance is derivable; here
+# ~Pr d is, so the generalisation and the prediction Pr c fall. Real
+# quantifier steps (cf. tests/first_order/generalisation.fspy).
+lk.
+declare D : type.
+declare a, b, c, d : D.
+declare Pr : D -> bool.
+declare pa : (Pr [a]).
+declare pb : (Pr [b]).
+declare not_pd : (Pr [d] -> false).
+argument gen : (forall x:D, Pr [x]).
+by default.
+dixi.
+argument pc : (Pr [c]).
+cut (forall x:D, Pr [x]) r.
+next.
+elim [c].
+axiom r.
+dixi.
+counterargument refuted : (forall x:D, Pr [x]).
+elim [d].
+cut (Pr [d] -> false) g.
+axiom not_pd.
+elim g.
+axiom.
+elim.
+dixi.

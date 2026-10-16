@@ -579,6 +579,21 @@ tests/test_first_order_baseline.py (opaque quantified statements label
 and evaluate: tests/first_order/). Next: the design questions above,
 agreed with the author before any code.
 
+2026-10-17, the first-order literature evaluation (eval/REPORT.org part
+4, eval/literature3/, branch eval-fo): the event-calculus Yale shooting,
+reified I/O logic with an existential obligation and its witness, the
+intuitionistic quantifier exchange, inductive generalisation and the
+abnormality reading of Tweety and Opus give the literature's verdicts,
+identically on the shared and the unfolded route. Q4 in practice: a
+counter-instance brings a universal rule down for every individual
+(fo_tweety_opus_counterinstance: Tweety stops flying because of Opus;
+fo_circumscription: the minimised =forall x, ~Ab x= falls with Opus,
+where circumscription keeps Tweety flying); per-individual exceptions
+need the abnormality encoding (fo_tweety_opus_ab), which matches
+s(CASP), defeasible logic with superiority and circumscription. An
+existential query (s(CASP)'s =?- flies(X)=) needs its witness supplied
+by hand.
+
 *Design decisions (the author, 2026-10-16).*
 - Q1, statement identity: as the spec says. A node is a proposition up
   to renaming of bound first-order variables, never the printed string;
@@ -706,6 +721,87 @@ Found 2026-10-16 with the literature evaluation's bug 8: the misleading
 "declared name 'tweety' has kind 'sort'" message. Since the first-order
 debates no compiler path reaches the kind check with a first-order name,
 so this is cosmetic.
+** BACKLOG Do not expose a horn whose sources mention a first-order bound variable
+:PROPERTIES:
+:ID:             aida-fo-open-source-horn
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A horn whose statement is closed but whose content uses a first-order variable bound by the argument (or a hypothesis bound under it) is part of its argument, not an exposed node, so no node of the graph is open and a strict argument has no defeasible source.
+:VERIFY:         eval/literature3/bug_fo_open_source.fspy (branch eval-fo): =graph a= has no node =P x= and no obligation; =label a= is IN under every semantics, agreeing with its VALUE; a test asserts every node of every first-order literature document is closed.
+:END:
+
+Found 2026-10-17 by the first-order literature evaluation
+(eval/REPORT.org part 4). =a : ~(exists x, P x) -> forall x, ~P x= is
+strict - Fellowship holds it as a theorem - and evaluates to a value,
+but its issue is labelled OUT: the cell =(x, p) * _F_= (the pair
+introduces =exists x, P x= from the bound x and the lambda-bound
+hypothesis p) becomes the edge =a.c1 : (exists x, P x)->false[c] <-
+P x[t:obli]=, with the open statement =P x= as an owed source. The
+decision of [[id:aida-first-order-reduction]] keeps every node closed
+by not exposing a horn whose *statement* is open; this horn's statement
+is closed, its source is not.
+
+** BACKLOG Refuse a name that Fellowship reserves, with a message
+:PROPERTIES:
+:ID:             aida-reserved-names
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        An argument, statement or declaration named after a Fellowship keyword (=minimal=, =all=, =next=, =proof=, ...) is refused on its own line with a message naming the keyword, before anything reaches the prover.
+:VERIFY:         eval/literature3/bug_reserved_name.fspy: both arguments are refused on their =argument= lines with the keyword named, not with "Line 1, character 8: Parse error: syntactical analysis" on =dixi=.
+:END:
+
+Found 2026-10-17 (eval/REPORT.org part 4): =argument minimal : (A).=
+and =argument all : (A).= are recorded and fail at =dixi= with
+Fellowship's bare parse error. The names are checked for uniqueness
+already (README, "Names are unique per document"); the keyword list is
+in wrap/fellowship/lexer.mll.
+
+** BACKLOG Design: classical first-order theorems that throw an open statement
+:PROPERTIES:
+:ID:             aida-fo-classical-dialectics
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether the classical first-order theorems that throw a statement mentioning a bound variable (the drinker paradox, ~(forall x, P x) -> exists x, ~P x) should be arguable, and how - an argument can neither do the throw (not linear) nor leave it to another move (the statement is open, Q2) - and records the decision with its effect on the two examples.
+:VERIFY:         The decision is written here; eval/literature3/fo_t_drinker.fspy and fo_t_negation.fspy give the verdicts it states.
+:END:
+
+Raised 2026-10-17 by the first-order literature evaluation
+(eval/REPORT.org part 4). Peirce's law and double negation elimination
+are argued dialectically because the classical throw goes to a closed
+statement's continuation, captured across moves. In the drinker
+paradox, =exists x, D x -> forall y, D y=, the throw is of =D y= to its
+own continuation inside the second witness: =p3= is refused at the pure
+level ("the continuation 'k' is used under a second continuation
+binder"), and splitting off the throw would owe =D y=. The same for
+=~(forall x, P x) -> exists x, ~P x= (=b_p2=). Relatedly, the skeptic's
+challenge of a universal (Lorenzen's "prove it for an a of my choice")
+cannot be a move of its own: =s1= of fo_t_exchange.fspy owes
+=exists y, R x y= and is left out of the graph. The intuitionistic
+quantifier theorems are argued in one argument (fo_t_exchange =whole=,
+fo_t_negation =a=, the latter mislabelled by
+[[id:aida-fo-open-source-horn]]).
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
@@ -3008,6 +3104,12 @@ Re-run (2026-10-16, eval/REPORT.org part 3): with the rule spelled
 [[id:aida-negation-cell-horn]]) preferred and stable give five
 labellings: the three maximal consistent subsets, the one with all
 premises IN, and one with all premises IN and both Q and =~Q= IN.
+
+First order too (2026-10-17, eval/literature3/fo_seq.fspy): premises
+=forall x, P x=, =~P a=, =P b= from sources, with the instance and the
+counter-instance written; preferred has three labellings where the
+maximal consistent subsets give two - the extra one accepts both
+=forall x, P x= and =~P a=.
 *derivation*, and a strict rule applied to a defeasible premise is a
 strict rule: the premise is what is defeasible. The compiler merges the
 two into one edge and lets the premise decide its strictness, so no

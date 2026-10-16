@@ -1,0 +1,16 @@
+== literature3/fo_il_unrefuted.fspy: check ok=True (0.0s)
+-- gen: issue forall x:D,Pr x[t]; 0 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μx1:forall x:D,Pr x.<!IN:forall x:D,Pr x||x1:forall x:D,Pr x>
+      credulous -> value     μx1:forall x:D,Pr x.<!IN:forall x:D,Pr x||x1:forall x:D,Pr x>
+   preferred issue: ['IN']
+      skeptical -> value     μx1:forall x:D,Pr x.<!IN:forall x:D,Pr x||x1:forall x:D,Pr x>
+      credulous -> value     μx1:forall x:D,Pr x.<!IN:forall x:D,Pr x||x1:forall x:D,Pr x>
+-- pc: issue Pr c[t]; 1 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μpc:Pr c.<!IN:forall x:D,Pr x||c*pc:Pr c>
+      credulous -> value     μpc:Pr c.<!IN:forall x:D,Pr x||c*pc:Pr c>
+   preferred issue: ['IN']
+      skeptical -> value     μpc:Pr c.<!IN:forall x:D,Pr x||c*pc:Pr c>
+      credulous -> value     μpc:Pr c.<!IN:forall x:D,Pr x||c*pc:Pr c>
+== done in 0.1s

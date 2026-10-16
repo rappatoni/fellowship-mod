@@ -1,0 +1,73 @@
+# Encoding 3, abnormality per individual (McCarthy; the s(CASP) program
+# flies(X) :- bird(X), not ab(X). ab(X) :- penguin(X).): a strict universal
+# rule with an abnormality premise; each argument presumes "not abnormal"
+# for its own individual - a closed statement after instantiation - and a
+# penguin is abnormal by a strict universal rule. Expected (s(CASP),
+# circumscription, defeasible logic with superiority): flies(tweety) yes,
+# flies(opus) no.
+lk.
+declare Animal : type.
+declare tweety, opus : Animal.
+declare Bird, Penguin, Ab, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare penguin_opus : (Penguin [opus]).
+declare penguins_birds : (forall x:Animal, Penguin [x] -> Bird [x]).
+declare birds_fly : (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]).
+declare penguins_ab : (forall x:Animal, Penguin [x] -> Ab [x]).
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]) r.
+axiom birds_fly.
+elim [tweety].
+elim.
+axiom bird_tweety.
+elim.
+elim h.
+cut (Ab [tweety]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument flies_opus : (Flies [opus]).
+cut (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]) r.
+axiom birds_fly.
+elim [opus].
+elim.
+cut (forall x:Animal, Penguin [x] -> Bird [x]) s.
+axiom penguins_birds.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom s.
+elim.
+elim h.
+cut (Ab [opus]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument ab_opus : (Ab [opus]).
+cut (forall x:Animal, Penguin [x] -> Ab [x]) r.
+axiom penguins_ab.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom r.
+dixi.
+# s(CASP)'s ?- flies(X): an existential claim with a witness.
+argument some_flier : (exists x:Animal, Flies [x]).
+elim [tweety].
+cut (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]) r.
+axiom birds_fly.
+elim [tweety].
+elim.
+axiom bird_tweety.
+elim.
+elim h.
+cut (Ab [tweety]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.

@@ -1,0 +1,41 @@
+== literature3/fo_il.fspy: check ok=True (0.0s)
+-- gen: issue forall x:D,Pr x[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+      credulous -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+   preferred issue: ['OUT']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+      credulous -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+   stable    issue: ['OUT']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+      credulous -> exception μalt1:forall x:D,Pr x.<?OUT:forall x:D,Pr x||d*μ'b1:Pr d.<not_pd:Pr d->false||b1:Pr d*_F_>>
+-- pc: issue Pr c[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] Pr c[t]=OUT Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> open      ?OUT:Pr c
+      credulous -> open      ?OUT:Pr c
+   preferred issue: ['OUT']
+      [1] Pr c[t]=OUT Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> open      ?OUT:Pr c
+      credulous -> open      ?OUT:Pr c
+   stable    issue: ['OUT']
+      [1] Pr c[t]=OUT Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> open      ?OUT:Pr c
+      credulous -> open      ?OUT:Pr c
+-- refuted: issue forall x:D,Pr x[c]; 2 edges
+   grounded  issue: ['IN']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+      credulous -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+   preferred issue: ['IN']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+      credulous -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+   stable    issue: ['IN']
+      [1] Pr d->false[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+      credulous -> value     μ'alt2:forall x:D,Pr x.<alt2:forall x:D,Pr x||d*μ'b2:Pr d.<not_pd:Pr d->false||b2:Pr d*_F_>>
+== done in 0.3s

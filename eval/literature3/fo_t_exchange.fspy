@@ -1,0 +1,28 @@
+# Quantifier exchange, (exists y, forall x, R x y) -> (forall x, exists y,
+# R x y), intuitionistically valid. First as one argument, then the
+# skeptic's challenge as a separate move: introducing forall x leaves the
+# open goal exists y, R x y, which mentions x - a site under a first-order
+# binder, which AIDA refuses (only closed statements are owed).
+lk.
+declare D : type.
+declare R : D -> D -> bool.
+argument whole : ((exists y:D, forall x:D, R [x] [y]) -> (forall x:D, exists y:D, R [x] [y])).
+elim H.
+elim.
+cut (exists y:D, forall x:D, R [x] [y]) th.
+axiom H.
+elim.
+cut (exists y:D, R [x] [y]) K.
+elim [y].
+cut (forall x:D, R [x] [y]) K2.
+axiom K.
+elim [x].
+axiom.
+axiom th.
+dixi.
+argument p1 : ((exists y:D, forall x:D, R [x] [y]) -> (forall x:D, exists y:D, R [x] [y])).
+dixi.
+argument s1 : ((exists y:D, forall x:D, R [x] [y]) -> (forall x:D, exists y:D, R [x] [y])).
+elim h.
+elim x.
+dixi.

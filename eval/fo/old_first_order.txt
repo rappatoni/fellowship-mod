@@ -1,0 +1,9 @@
+== literature/first_order.fspy: check ok=True (0.0s)
+-- flies_tweety: issue Flies tweety[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+   preferred issue: ['IN']
+      skeptical -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+== done in 0.1s

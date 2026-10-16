@@ -1,0 +1,44 @@
+# Predicate circumscription (McCarthy 1980, 1986): minimise Ab over the
+# domain, with forall x, Bird x & ~Ab x -> Flies x. Circumscribing Ab in
+# {Bird tweety, Penguin opus, forall x, Penguin x -> Ab x} gives
+# Ab = {opus}: Tweety flies, and the universal conclusion
+# forall x, (Penguin x -> false) -> Ab x -> false ("only penguins are
+# abnormal") holds in every minimal model.
+# AIDA (decision Q4): the minimisation is a presumed universal statement,
+# forall x, ~Ab x, owed and instantiated; a counter-instance (Ab opus)
+# refutes it as a whole, and with it Tweety's flying.
+lk.
+declare Animal : type.
+declare tweety, opus : Animal.
+declare Bird, Penguin, Ab, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare penguin_opus : (Penguin [opus]).
+declare birds_fly : (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]).
+declare penguins_ab : (forall x:Animal, Penguin [x] -> Ab [x]).
+argument minimised : (forall x:Animal, Ab [x] -> false).
+by default.
+dixi.
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> (Ab [x] -> false) -> Flies [x]) r.
+axiom birds_fly.
+elim [tweety].
+elim.
+axiom bird_tweety.
+elim.
+cut (forall x:Animal, Ab [x] -> false) m.
+next.
+elim [tweety].
+axiom m.
+axiom r.
+dixi.
+counterargument ab_opus : (forall x:Animal, Ab [x] -> false).
+elim [opus].
+elim.
+cut (forall x:Animal, Penguin [x] -> Ab [x]) r.
+axiom penguins_ab.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom r.
+elim.
+dixi.

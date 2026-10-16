@@ -1,0 +1,31 @@
+# Encoding 2: the exception for Opus written against the rule itself - a
+# counter-instance refutes forall x, Bird x -> Flies x (AIDA's decision Q4:
+# a general rule stands or falls as one statement). Opus then brings the
+# rule down for Tweety too, which no system that instantiates schemas per
+# individual does (ASPIC+, DeLP, defeasible logic, s(CASP)).
+lk.
+declare Animal : type.
+declare tweety, opus : Animal.
+declare Bird, Penguin, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare bird_opus : (Bird [opus]).
+declare opus_grounded : (Flies [opus] -> false).
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+by default.
+next.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.
+counterargument rule_fails : (forall x:Animal, Bird [x] -> Flies [x]).
+elim [opus].
+elim.
+axiom bird_opus.
+cut (Flies [opus] -> false) g.
+axiom opus_grounded.
+elim g.
+axiom.
+elim.
+dixi.
