@@ -3608,7 +3608,7 @@ Implementation: [[id:aida-judge-by-what-it-stands-for]].
 :EFFORT:         12:00
 :DEFERRALS:      0
 :OUTCOME:        Sigma (phase 2) and the discharge (phase 3) judge every leaf of a supporter or attacker wing by what it stands for in the term - a captured stack by its derivations, a captured obligation root of the debate being decided as unmet, a nested sub-debate by its own outcome in this term - and fall back to the statement's label only where the term cannot decide (a loop, a presumption nobody contests); the unfolded and the shared route alike.
-:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (scratch: site_variant with argP's =by default.= removed) gives an open result credulously, not =!IN:Q=; lesson8a_cycle's credulous result is the one recorded here and accepted by the author; every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
+:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture: site_variant with argP's =by default.= removed) is open credulously, its surviving root an unmet obligation (not =!IN:Q=, not =!IN:P=); lesson8a_cycle's credulous result is =μpro:B.<r1:A->B||!IN:A*pro:B>= (accepted by the author 2026-10-16); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
 :END:
 
 Decided by the author 2026-10-16 ([[id:aida-entrypoint-capture-adequacy]],
@@ -3647,6 +3647,25 @@ reads that statement's label off the labelled term. The survey of
    unless opened: case 2 on the shared route; the instance resolver
    must compute the same bottom-up status.
 
+*The argP-demands-Q variant, run 2026-10-16* (scratch, credulous; P and
+Q IN through the loop), each decision taken by hand from the term,
+bottom-up:
+| step | decision from the term | result |
+| today | - | exception (argQ's P is the refuted argP2) |
+| 1 | Q's scaffold keeps its root =?u2:Q=: argQ rests on =b2= = argP2, OUT | value =μargP:P.<qp||!IN:Q*argP>= |
+| 2 | the stack keeps argP2: argP rests on the unmet =?u2:Q= | value =!IN:P= with today's discharge |
+| 2 | ... and the surviving root =?u1:P= discharged as unmet | open =?OUT:P= |
+Steps 1 and 2 under today's discharge each return a "value" that is an
+obligation rewritten by its label (case 3): the bottom-up decisions and
+the changed discharge are needed together. Open naming point: the run
+printed the unmet root as =?OUT:P= while P's credulous label is IN; an
+unmet obligation needs a name that does not read as its statement's
+label.
+
+The unfounded loop (lesson8a_cycle, credulous) losing its loop in the
+proof is accepted for now (the author, 2026-10-16); bringing the full
+loop back is [[id:aida-evaluate-keep-supporters-of-in-obligations]].
+
 Case 4 (a variable captured by an argument's own binder: the sprung
 trap, Peirce, the self-attack, the captured presumptions that close the
 even loop) is folded into [[id:aida-discuss-capture-source-vs-strict]],
@@ -3668,6 +3687,10 @@ Checked and not violations (2026-10-16):
   =μalt.<T || alt>=, eta T). Only the word in the trace differs. In an
   issue's own debate the root cannot decide at all: a credulous witness
   accepts the issue, so its contrary is OUT.
+- 5, applied anyway (the author, 2026-10-16): for consistency the wing's
+  root is judged as what it stands for, by the same rule as =b1=: a
+  captured obligation root counts as unmet, a captured presumption
+  root keeps its label. The runs above show this changes no verdict.
 - 6. A citation =cite pArg= unfolds into the debate about pArg's
   conclusion and is judged by that statement, as intended. The
   author's wrinkle - the cited debate may reduce to a strict term -
@@ -3677,6 +3700,27 @@ Checked and not violations (2026-10-16):
   all IN; =evaluate use.= gives the strict proof through the cited
   debate, =μuse:U.<rp||μb1:P.<rq||μb4:Q.<aq||b4>*b1>*use>=; pArg stays
   defeasible in the document.
+
+*** BACKLOG Evaluation option: keep the supporters of an obligation labelled IN
+:PROPERTIES:
+:ID:             aida-evaluate-keep-supporters-of-in-obligations
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        An evaluation option (beside mode, semantics and base) under which sigma keeps a supporter whose captured obligation root is labelled IN, instead of counting that root unmet ([[id:aida-judge-by-what-it-stands-for]]), so that an unfounded loop accepted credulously shows the loop in its proof again.
+:VERIFY:         With the option, tests/minicourse/lesson8a_cycle.fspy evaluates credulously to =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>= (the result before the principle); without it, to =μpro:B.<r1:A->B||!IN:A*pro:B>=; the CLI, the service and the JSON schema carry the option; the suite passes.
+:END:
+
+Proposed by the author 2026-10-16, after deciding that an expression is
+judged by what it stands for: a captured obligation root then counts as
+unmet, which drops the loop from the credulous proof of an unfounded
+loop. To be added after [[id:aida-judge-by-what-it-stands-for]].
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
