@@ -105,9 +105,8 @@ class Unfolder:
 
     #: Whether the horns of a body - a lemma, a lambda, an axiom applied -
     #: are unfolded into the debate about their statement where they
-    #: stand (tasks.org, aida-rational-closure, 2026-10-16).  Only on the
-    #: stacked shape; the shared route (core/dc/share.py) keeps the old
-    #: exposure until its own step.
+    #: stand (tasks.org, aida-rational-closure, 2026-10-16), on either
+    #: shape.  False: sites only, the exposure before that date.
     expose = True
 
     def __init__(self, graph: DebateGraph, *, stacked=None, order=None,
@@ -129,7 +128,6 @@ class Unfolder:
             self.stacked = stacked
         if expose is not None:
             self.expose = expose
-        self.expose = self.expose and self.stacked
         self.subarguments = subarguments
         self.primacy = set(primacy)
         self._order = dict(order or {})
@@ -641,7 +639,13 @@ class Unfolder:
         - S not bound otherwise: the debate about S, its root an
           obligation site (a presumption of S elsewhere at the bottom of
           the stack), the node's own derivation on top iff primacy, else
-          at its registered position."""
+          at its registered position.
+
+        The legacy shape (``stacked`` False) has no primacy and no
+        scaffold scope: an engaged node is the statement's debate as
+        ``_wrap`` builds it, with the canonical root, and a node whose
+        statement is already being expanded is cut to a bare site, as a
+        site is."""
         statement = (sub.target_key, sub.target_side)
         contra = contrary(statement)
         if statement in env:
@@ -657,7 +661,7 @@ class Unfolder:
                          sub.name, self._show(statement), env[statement], alt, beta)
             own = walk(node, self._scaffold_scope(statement, alt, beta, env), names, False)
             term = self._support(statement, captured, own, alt, beta)
-            if (self.subarguments == "preserve" and env[statement] in self._scaffold_vars
+            if (self.stacked and self.subarguments == "preserve" and env[statement] in self._scaffold_vars
                     and (self._by_target.get(contra) or self.graph.defaults.get(contra))):
                 alt2, beta2 = self._fresh_alt(), self._fresh_beta()
                 logger.debug("unfold: node '%s' also attacked by a copy of the debate about %s "
@@ -666,16 +670,30 @@ class Unfolder:
                                   spine | {contra})
                 term = self._attack(statement, term, wing, alt2, beta2)
             return term
-        others = [e for e in self._by_target.get(statement, []) if e is not sub]
-        engaged = others or self._by_target.get(contra) or self.graph.defaults.get(contra)
-        if not engaged:
+        if not self._engaged(statement, sub):
             logger.log(TRACE, "  unfold: node '%s' (%s) stays as written: nobody engages it",
                        sub.name, self._show(statement))
             return walk(node, env, names, False)
+        if not self.stacked:
+            if statement in spine:
+                site = self._site(statement)
+                logger.debug("unfold: node '%s' (%s) already on the spine, left as the bare site %s",
+                             sub.name, self._show(statement), getattr(site, "number", "?"))
+                return site
+            logger.debug("unfold: node '%s' exposed as %s", sub.name, self._show(statement))
+            return self._wrap(statement, self._site(statement), self._by_target.get(statement, []),
+                              env, spine | {statement})
         logger.debug("unfold: node '%s' exposed as %s%s", sub.name, self._show(statement),
                      " (its derivation on top)" if primary else "")
         return self._debate(statement, env, spine | {statement}, own_kind=False,
                             top=sub if primary else None)
+
+    def _engaged(self, statement, sub) -> bool:
+        """Whether anybody but the node's own edge ``sub`` derives, contests
+        or presumes ``statement``."""
+        contra = contrary(statement)
+        others = [e for e in self._by_target.get(statement, []) if e is not sub]
+        return bool(others or self._by_target.get(contra) or self.graph.defaults.get(contra))
 
 
 def unfold(graph: DebateGraph, issue, subarguments="default") -> ProofTerm:
@@ -694,8 +712,8 @@ def unfold_argument(graph: DebateGraph, edge, subarguments="default") -> ProofTe
 
 
 def unfold_legacy(graph: DebateGraph, issue) -> ProofTerm:
-    """The issue's term in the legacy shape: the reference the shared
-    route (core/dc/share.py) is tested against until
+    """The issue's term in the legacy shape (exposed nodes included): the
+    reference the shared route (core/dc/share.py) is tested against until
     aida-shared-route-stack-shape."""
     return _shown(Unfolder(graph, stacked=False).unfold(issue))
 

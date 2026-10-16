@@ -903,7 +903,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
     def shared_debate(self, issue) -> SharedDebate:
         """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
-        return share(self.graph, issue, self.debate_names(), self.anon_name)
+        return share(self.graph, issue, self.debate_names(), self.anon_name, self.subarguments)
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

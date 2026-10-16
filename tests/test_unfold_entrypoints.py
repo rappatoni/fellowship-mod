@@ -120,7 +120,7 @@ def test_the_shape_does_not_change_the_framework(fresh, script, capsys):
     doc = fresh.graph
     names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
     for statement in doc.statements():
-        reference = issue_graph(unfold_legacy(doc, statement), names, kinds)
+        reference = issue_graph(Unfolder(doc, stacked=False, expose=False).unfold(statement), names, kinds)
         stacked = Unfolder(doc, expose=False).unfold(statement)
         compare(script, statement, reference, issue_graph(stacked, names, kinds), doc)
         for edge in doc.edges:

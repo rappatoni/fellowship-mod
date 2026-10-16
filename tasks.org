@@ -2582,6 +2582,28 @@ replay (=typecheck_shared=) does not yet cover the exposed nodes'
 debates; tests/test_unfold_exposure.py replays every unfolded fixture
 term whole, and =typecheck expanded= does so in the pipeline.
 
+*The shared route, 2026-10-16.* The legacy shape exposes horns too (an
+engaged node is its statement's debate as =_wrap= builds it, a node on
+the spine a bare site), and the sharing builder (=_Builder._exposed=,
+core/dc/share.py) cites an engaged node's statement like a site's; an
+unengaged node stays as written but is marked (=exposed_as=), so that
+expansion and the instance resolver (=_rebuild=, core/dc/instances.py)
+still capture it when a binder of an enclosing definition binds its
+statement (Peirce's law: p2's lambda captured by s1's hypothesis =f=;
+found by the expansion-is-unfolding gate). So the per-statement replay
+covers the exposed nodes' debates. tests/test_share.py and
+tests/minicourse/test_sharing_course.py re-pinned: the fixtures of
+lessons 14-18 have two different axioms per implication (r1_0, r1_1)
+and in lesson 15 two equal lambdas, so each implication and the lambda
+are sub-debates of their own (sizes, names, replay and instance counts
+grow; the recurrence is size(n) = 2 size(n-1) + 59); the ill-typed
+axiom of test_an_ill_typed_argument_is_rejected_by_both is now caught in
+the debate about P0->P1, where the axiom stands. Verdicts and labels of
+the course unchanged. minicourse-sharing.org regenerated from runs. A
+pre-existing gap noticed on the way: =pres_tree= prints a stub as
+"Unhandled term type" in =explain= on the shared route (also on the
+code before this step).
+
 Evidence: tests/test_unfold_exposure.py (28 tests: the attackrule
 fixture - the debate about A->B stands where r1 stood, attackrule in
 its wing loses in phase 1, =evaluate attackrule.= is an exception;

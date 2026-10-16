@@ -203,14 +203,18 @@ class TestShapes:
         # and so gives P[c] a presumption marker, and qArg's demand gives
         # P[t] an obligation marker.  Each bare contrary meets a binder.
         doc, strict = bare_contrary_document()
-        # legacy shape: the captured contrary in an eta wrapper
-        term = unfold_legacy(doc, (K("Q"), "term"))
+        # legacy shape, sites only: the captured contrary in an eta wrapper.
+        # (With the exposure of horns, 2026-10-16, qArg's lemma "P from P
+        # via pp" is itself P's debate, which puts the site out of s's
+        # scope; the capture rule tested here is the same.)
+        legacy = lambda issue: Unfolder(doc, stacked=False, expose=False).unfold(issue)
+        term = legacy((K("Q"), "term"))
         # P[t] inside qArg: attacked by "P fails", which is s
         assert _contains(term, lambda n: isinstance(n, Mutilde) and isinstance(n.term, DI)
                          and n.term.name == n.di.name and isinstance(n.context, ID)
                          and n.context.name == "s" and n.context.captured_presumption)
         assert not _contains(term, lambda n: isinstance(n, Geled))
-        term = unfold_legacy(doc, (K("R"), "term"))
+        term = legacy((K("R"), "term"))
         # P[c] inside rArg's lambda: attacked by the demand for P, which is h
         assert _contains(term, lambda n: isinstance(n, Mu) and isinstance(n.context, ID)
                          and n.context.name == n.id.name and isinstance(n.term, DI)

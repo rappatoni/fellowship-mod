@@ -146,16 +146,20 @@ class TestSharing:
         assert term8 > 12 * term4               # the term doubles per level
 
     def test_a_sub_debate_needed_twice_is_named_once(self):
+        # Since the exposure of horns (2026-10-16) each level's two axioms
+        # engage each other, so the implications are sub-debates too.
         doc, issue = doubled_chain(2)
         shared = share(doc, issue)
-        assert shared.named() == {(K("P1"), "term"): f"{ANON_PREFIX}1"}
+        a1, a2, a3 = (f"{ANON_PREFIX}{n}" for n in (1, 2, 3))
+        assert shared.named() == {(K("P1->P2"), "term"): a1, (K("P1"), "term"): a2,
+                                  (K("P0->P1"), "term"): a3}
         root, rows = shared.presented()
         cites = [leaf for leaf in _leaves(root) if is_cite(leaf)]
-        assert [c.name for c in cites] == [f"{ANON_PREFIX}1", f"{ANON_PREFIX}1"]
-        assert [name for name, _sites, _body in rows] == [f"{ANON_PREFIX}1"]
+        assert [c.name for c in cites] == [a1, a2, a1, a2]
+        assert [name for name, _sites, _body in rows] == [a1, a2, a3]
         text = shared.to_text()
-        assert text.count(f"{ANON_PREFIX}1:P1") == 2
-        assert f"{ANON_PREFIX}1[?:P1, !:P0] := " in text
+        assert text.count(f"{a2}:P1") == 2
+        assert f"{a2}[?:P1, ?:P0->P1, !:P0] := " in text
 
     def test_a_sub_debate_needed_once_stays_inline(self):
         doc = compile_document(
@@ -180,7 +184,11 @@ class TestSharing:
     def test_a_citation_says_what_its_site_captures(self):
         # Two derivations of P from "Q fails": the debate about "Q fails" is
         # needed twice, each time under a hypothesis for Q and P's
-        # continuation, and Q in turn rests on "P fails".
+        # continuation, and Q in turn rests on "P fails".  Since the
+        # exposure of horns (2026-10-16) p1's and p2's lambdas both derive
+        # Q->false and their axioms both (Q->false)->P, so those are
+        # sub-debates too: the lambdas' citation carries P's continuation,
+        # the citations of "Q fails" inside them the hypothesis.
         doc = compile_document(
             [("p1", from_failure("p1", "P", "ax1", "Q")),
              ("p2", from_failure("p2", "P", "ax2", "Q")),
@@ -188,15 +196,22 @@ class TestSharing:
             strict_names={"ax1", "ax2", "ax3"})
         issue = (K("P"), "term")
         shared = share(doc, issue)
-        assert shared.named() == {(K("Q"), "context"): f"{ANON_PREFIX}1"}
-        root, _rows = shared.presented()
-        cites = [leaf for leaf in _leaves(root) if is_cite(leaf)]
-        assert len(cites) == 2
-        for leaf in cites:
-            # the continuation of P captures "P fails", the hypothesis captures Q
+        lam, q_fails = (K("Q->false"), "term"), (K("Q"), "context")
+        assert shared.named() == {(K("(Q->false)->P"), "term"): f"{ANON_PREFIX}1",
+                                  lam: f"{ANON_PREFIX}2", q_fails: f"{ANON_PREFIX}3"}
+        root, rows = shared.presented()
+        lambdas = [leaf for leaf in _leaves(root) if is_cite(leaf) and leaf.debate == lam]
+        assert len(lambdas) == 2
+        for leaf in lambdas:
+            # the continuation of P captures "P fails"
             assert leaf.captures[(K("P"), "context")].startswith("rule")
-            assert leaf.captures[(K("Q"), "term")].startswith("h")
             assert "rule" in leaf.bracket and " -> P:!" in leaf.bracket
+        body = dict((name, body) for name, _sites, body in rows)[f"{ANON_PREFIX}2"]
+        inner = [leaf for leaf in _leaves(body) if is_cite(leaf) and leaf.debate == q_fails]
+        assert len(inner) == 2
+        for leaf in inner:
+            # the hypothesis captures Q
+            assert leaf.captures[(K("Q"), "term")].startswith("h")
             assert " -> ?:Q" in leaf.bracket
         assert same_term(doc, issue)
 
@@ -209,9 +224,13 @@ class TestSharing:
             return table.setdefault(statement, f"{ANON_PREFIX}{len(table) + 1}")
 
         shared = share(doc, issue, user_names={p2: "middle"}, anon=anon)
-        assert shared.named() == {p2: "middle", p1: f"{ANON_PREFIX}1"}
+        named = shared.named()
+        assert named[p2] == "middle" and named[p1].startswith(ANON_PREFIX)
+        # the implications are sub-debates too (the exposure of horns)
+        assert set(named) == {p1, p2, (K("P0->P1"), "term"), (K("P1->P2"), "term"),
+                              (K("P2->P3"), "term")}
         # the same table gives the same number on the next command
-        assert share(doc, issue, anon=anon).named()[p1] == f"{ANON_PREFIX}1"
+        assert share(doc, issue, anon=anon).named()[p1] == named[p1]
 
 
 # -- real documents -----------------------------------------------------------
@@ -279,9 +298,9 @@ class TestShareCommand:
         script.write_text(chain_script(2) + "share a2_0.\n")
         run(fresh, script)
         out = capsys.readouterr().out
-        assert "Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:" in out
-        assert out.count(f"{ANON_PREFIX}1:P1") == 2
-        assert f"{ANON_PREFIX}1[?:P1, !:P0] := " in out
+        assert "Debate about 'a2_0' (P2[t]), 3 sub-debate(s) cited by name:" in out
+        assert out.count(f"{ANON_PREFIX}2:P1") == 2
+        assert f"{ANON_PREFIX}2[?:P1, ?:P0->P1, !:P0] := " in out
 
     def test_an_authors_citation_keeps_its_name(self, fresh, tmp_path, capsys):
         script = tmp_path / "cited.fspy"
@@ -297,10 +316,11 @@ class TestShareCommand:
         run(fresh, script)
         p1, p2 = (K("P1"), "term"), (K("P2"), "term")
         first = fresh.shared_debate((K("P2"), "term")).named()
-        assert first == {p1: f"{ANON_PREFIX}1"}
-        # a larger debate later: P1 keeps its number, P2 gets the next one
-        assert fresh.shared_debate((K("P3"), "term")).named() == {
-            p1: f"{ANON_PREFIX}1", p2: f"{ANON_PREFIX}2"}
+        assert first[p1] == f"{ANON_PREFIX}2"
+        # a larger debate later: P1 keeps its number, P2 gets a new one
+        later = fresh.shared_debate((K("P3"), "term")).named()
+        assert later[p1] == f"{ANON_PREFIX}2"
+        assert later[p2] not in first.values()
 
     def test_the_anonymous_prefix_is_reserved(self, fresh):
         with pytest.raises(NameClash):
@@ -387,8 +407,9 @@ class TestTypeCheckPerDefinition:
         run(fresh, script)
         shared = fresh.shared_debate((K("P3"), "term"))
         checked = {}
-        # P3, P2 and P1 have debates; P0 is a bare presumption
-        assert typecheck_shared(fresh, shared, "a3_0", checked) == 3
+        # P3, P2, P1 and the three implications have debates; P0 is a
+        # bare presumption
+        assert typecheck_shared(fresh, shared, "a3_0", checked) == 6
         assert typecheck_shared(fresh, shared, "a3_0", checked) == 0
         # a smaller debate of the same document is already covered
         assert typecheck_shared(fresh, fresh.shared_debate((K("P2"), "term")), "a2_0", checked) == 0
@@ -405,7 +426,9 @@ class TestTypeCheckPerDefinition:
         assert both_checks(fresh, doc, issue) == (False, False)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            with pytest.raises(TypeCheckFailed, match=r"in the debate about P1\[t\]"):
+            # the axiom is an exposed node (tasks.org, aida-rational-closure):
+            # it stands in the debate about its own statement
+            with pytest.raises(TypeCheckFailed, match=r"in the debate about P0->P1\[t\]"):
                 typecheck_shared(fresh, share(doc, issue), "a2_0")
 
     def test_two_spellings_of_a_statement_fall_back_to_the_expanded_check(self, fresh, tmp_path, capsys):
@@ -544,8 +567,9 @@ class TestIssueGraphFromInstances:
         resolver = IssueResolver(share(doc, issue), strict)
         resolver.compile("x")
         resolver.strict_edges()
-        # P12 .. P1 have debates; P0 is cited as an instance too (a bare site)
-        assert len(resolver.instances) == 13
+        # P12 .. P1 and the twelve implications have debates; P0 is cited as
+        # an instance too (a bare site)
+        assert len(resolver.instances) == 25
         assert all(not i.captured for i in resolver.instances.values())
 
     def test_a_capture_makes_its_own_instance(self):

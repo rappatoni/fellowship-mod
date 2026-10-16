@@ -58,9 +58,9 @@ tracked in `tasks.org`:
 - **No first-order debates.** Normalisation and the debate operations
   refuse first-order terms (see *First-order logic*).
 - **The shared route lags behind.** `pipeline shared` still builds the
-  earlier scaffold shape and has not been ported to the stacked shape,
-  the argument entrypoints and the exposure of horns, so the default
-  route is `unfolded`.
+  earlier scaffold shape and has not been ported to the stacked shape and
+  the argument entrypoints (it does expose horns), so the default route
+  is `unfolded`.
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
@@ -288,11 +288,9 @@ through the document graph.
    type - unless the debate spells a statement in two ways (`~A` and
    `A -> false` are one statement but two propositions for Fellowship); then
    the whole term is replayed. `typecheck expanded` always replays the whole
-   term, whose size grows with the number of paths through the graph. The
-   sub-debates come from the shared route, which does not expose horns
-   yet, so the debates the unfolded term holds at exposed nodes are
-   replayed only by `typecheck expanded` (tests/test_unfold_exposure.py
-   replays every fixture term whole).
+   term, whose size grows with the number of paths through the graph. An
+   exposed node whose statement is engaged is a sub-debate like a site's,
+   so its debate is replayed once too.
 4. **compile** — take the issue's argumentation framework from the document
    graph: the part reachable from the issue (the sources of every edge
    deriving a reached statement, and the contrary of a reached statement),

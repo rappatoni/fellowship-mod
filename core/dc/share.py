@@ -107,13 +107,11 @@ class _Builder(Unfolder):
     not unfolded in place but cited."""
 
     #: The shared route keeps the legacy shape until
-    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``), and
-    #: with it the old exposure (sites only; ``Unfolder.expose``).
+    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``).
     stacked = False
-    expose = False
 
-    def __init__(self, graph: DebateGraph):
-        super().__init__(graph)
+    def __init__(self, graph: DebateGraph, subarguments="default"):
+        super().__init__(graph, subarguments=subarguments)
         self.defs = {}
         self._todo = []
 
@@ -122,6 +120,27 @@ class _Builder(Unfolder):
             return super().statement(statement, env, spine, presumed)
         self._todo.append(statement)
         return _cite(statement, self._prop(statement[0]), presumed, env, spine)
+
+    def _exposed(self, node, sub, env, spine, names, primary, walk):
+        """An exposed node (core/dc/unfold.py, ``Unfolder._exposed``):
+        engaged by nobody, as written; otherwise a citation of its
+        statement's definition, which holds the node's own edge in its
+        stack like any derivation.  A definition is built without the
+        scope of its citing sites, so whether the statement is captured is
+        decided where the citation is written out, as for a site; the
+        shared route has no entrypoints, so no node has primacy and a
+        captured node is the captured variable alone."""
+        statement = (sub.target_key, sub.target_side)
+        if not self._engaged(statement, sub):
+            out = super()._exposed(node, sub, env, spine, names, primary, walk)
+            if statement not in env:
+                # As written - unless a binder of an enclosing definition
+                # binds the statement, which only expansion can see.
+                out.exposed_as = statement
+            return out
+        logger.debug("share: node '%s' exposed as a citation of %s", sub.name, self._show(statement))
+        self._todo.append(statement)
+        return _cite(statement, self._prop(statement[0]), False, env, spine)
 
     def _bare(self, statement, env):
         # A definition is built without the scope of its citing sites, so
@@ -232,6 +251,11 @@ class SharedDebate:
                 return site(node)
             if is_cite(node):
                 return cite(node, names)
+            bound = getattr(node, "exposed_as", None)
+            if bound is not None and bound in env:
+                # an unengaged exposed node an enclosing binder captures
+                key, side = bound
+                return (DI if side == "term" else ID)(env[bound], self._prop(key))
             if isinstance(node, ID):
                 out = ID(names.get(("context", node.name), node.name), node.prop)
             elif isinstance(node, DI):
@@ -540,9 +564,9 @@ def _author_citations(graph: DebateGraph) -> dict:
     return {s: n for s, n in found.items() if s not in clash}
 
 
-def share(graph: DebateGraph, issue, user_names=None, anon=None) -> SharedDebate:
+def share(graph: DebateGraph, issue, user_names=None, anon=None, subarguments="default") -> SharedDebate:
     """The debate of ``issue`` = (canonical key, side) as named sub-debates."""
-    shared = SharedDebate(graph, issue, _Builder(graph).build(issue))
+    shared = SharedDebate(graph, issue, _Builder(graph, subarguments).build(issue))
     shared.assign_names(user_names, anon)
     logger.debug("share: issue %s has %d definition(s), %d shown by name",
                  issue, len(shared.defs), len(shared.named()))

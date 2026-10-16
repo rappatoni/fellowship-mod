@@ -113,17 +113,25 @@ def _param(statement) -> str:
     return f"{PARAM}{statement[1][0]}:{statement[0]}"
 
 
-def _rebuild(node, leaf):
-    """A copy of ``node`` with every citation replaced by ``leaf(citation)``."""
+def _rebuild(node, leaf, captured=None):
+    """A copy of ``node`` with every citation replaced by ``leaf(citation)``,
+    and every unengaged exposed node whose statement the instance captures
+    (``captured(statement)``: the variable, or None) by that variable
+    (core/dc/share.py, ``exposed_as``)."""
     if is_cite(node):
         return leaf(node)
     if not isinstance(node, ProofTerm):
         return node
+    bound = getattr(node, "exposed_as", None)
+    if bound is not None and captured is not None:
+        var = captured(bound)
+        if var is not None:
+            return var
     out = copy(node)
     for slot in ("term", "context"):
         child = getattr(node, slot, None)
         if isinstance(child, ProofTerm):
-            setattr(out, slot, _rebuild(child, leaf))
+            setattr(out, slot, _rebuild(child, leaf, captured))
     return out
 
 
@@ -177,6 +185,20 @@ class IssueResolver:
             return "cut", None, names
         return "instance", self.instance(target, names, path), names
 
+    def _capturer(self, instance, compiled=False):
+        """For ``_rebuild``: the variable of a statement the instance
+        captures, else None; for the compiler marked as a captured
+        citation is (an obligation source of the statement)."""
+        def captured(statement):
+            if statement not in instance.captured:
+                return None
+            out = self._variable(statement, _param(statement), False)
+            if compiled:
+                out.cites = out.name
+                out.source_kind = "obligation"
+            return out
+        return captured
+
     def _variable(self, statement, name, presumed):
         key, side = statement
         leaf = (DI if side == "term" else ID)(name, self.shared._prop(key))
@@ -213,7 +235,8 @@ class IssueResolver:
             out.instance = value
             return out
 
-        term = _rebuild(self.shared.defs[instance.statement].body, leaf)
+        term = _rebuild(self.shared.defs[instance.statement].body, leaf,
+                        self._capturer(instance, compiled=True))
         found = first_order_node(term)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
@@ -260,7 +283,7 @@ class IssueResolver:
                 return self._variable(target, value, citation.presumed)
             return self._stub(self.resolve(value), names)
 
-        term = _rebuild(self.shared.defs[instance.statement].body, leaf)
+        term = _rebuild(self.shared.defs[instance.statement].body, leaf, self._capturer(instance))
         instance.resolved, _ = strict_resolve(term, self.strict_names, trace=instance.trace,
                                               edges=False)
         instance.open = _contains_assumption(instance.resolved)
