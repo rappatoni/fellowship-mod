@@ -543,6 +543,27 @@ to the front end. (The 2026-08-19 list of seven refusing entry points and
 of the comparison sites in =reduce.py=, =graft.py=, =argument.py= and
 =color.py= predates the compiler; the current list is above.)
 
+2026-10-16, the literature evaluation (eval/REPORT.org, bug 8;
+eval/literature/first_order.fspy on branch eval-literature): a presumed
+=forall x:Animal, Bird [x] -> Flies [x]= instantiated at =tweety= is
+refused, but with "declared name 'tweety' has kind 'sort' but occurs as
+a term-side leaf, which needs kind 'prop'" - at registration (the
+argument silently leaves the graph) and on every query - instead of
+=FirstOrderNotSupported= naming the construct; tweety is a constant, not
+a sort. Ground atoms in predicate syntax (=Bird [tweety]=, no
+quantifier) already work through the whole pipeline
+(grounded_predicate.fspy).
+
+2026-10-16, second round (eval/REPORT.org part 2): a quantified
+proposition is accepted as an opaque statement - presumed, owed,
+refuted, used through a declared rule - and labels and evaluates
+(rio_fo.fspy, fo_opaque.fspy); only the quantifier tactics (=elim [t]=,
+introduction) are refused, each with the misleading kind message
+(adapt_induction_fo.fspy, circ_fo.fspy, ec_fo.fspy). Declared,
+hand-instantiated schemata such as =(forall x, P x) -> P c= are a
+working stopgap (fo_opaque.fspy gives adaptive inductive
+generalisation's verdicts).
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
@@ -2818,6 +2839,22 @@ The earlier note (and the docstring in core/comp/adf_label.py) called
 the closure "vacuous in the fragment" as though that were a property of
 the fragment. It is not; it is a symptom of the rule/premise fusion
 described below. The spec's =strict(e)= is a property of the
+
+Evidence from the second literature round (2026-10-16, eval/REPORT.org
+part 2, branch eval-literature):
+- eval/literature2/seq_mcs_closed.fspy: premises p, q, p->~q (each from
+  a presumed source) with all three attacks classical logic gives,
+  written as arguments. Besides the three labellings of the maximal
+  consistent subsets, preferred and stable have a fourth: all three
+  premises IN, all three attacks OUT. Each attack owes its premises, so
+  its edge is defeasible and the premise it attacks rebuts it; a strict
+  rule applied to defeasible premises is not protected from rebuttal.
+  The fusion described above, with every transposal present by hand.
+- eval/literature2/adapt_minab.fspy (type check off; the file mixes ~P
+  and P->false): r and s are IN under grounded, because the derived
+  =~P[t]= is never contested by a derivation of P[t]; the
+  inconsistency-adaptive strategies (reliability, minimal abnormality)
+  derive neither. The missing negation bridge.
 *derivation*, and a strict rule applied to a defeasible premise is a
 strict rule: the premise is what is defeasible. The compiler merges the
 two into one edge and lets the premise decide its strictness, so no
@@ -3246,6 +3283,14 @@ loses; an attack between two strict arguments gives an uncatchable
 exception". The classifications themselves are right; the definition
 the code calls "uncatchable" is not the author's.
 
+2026-10-16, the literature evaluation (eval/REPORT.org, specification
+question 4): rationality_crash.fspy, catala_conflict.fspy and
+tests/default_test.fspy show both sides IN and EXCEPTION, as accepted
+above. Two consequences to record: adequacy as the minicourses state it
+("IN implies a value") needs the exception for strictly contradictory
+documents, and nothing above DEBUG tells the user that the document is
+inconsistent (see [[id:aida-issue-relative-strict-labels]]).
+
 *What the code says.* =contains_uncatchable_clash= calls a clash
 uncatchable when no enclosing mu/mu' binder binds one of its command's
 free variables. It ignores sites. So =classify_nf=, its log line
@@ -3297,6 +3342,13 @@ Blocked in substance on strict edges with premises (the transposal
 closure is vacuous in the current fragment; see the transposal note in
 core/comp/adf_label.py) - the strict bridge of married-bachelor cannot
 yet be expressed as a compiled term.
+
+2026-10-16: eval/literature/married_john.fspy (branch eval-literature)
+is the married-bachelor scenario as compiled terms with declared strict
+rules; today Married and Bachelor are both IN and, in the second
+preferred labelling, HasWife and =~HasWife= both IN.
+rationality_crash.fspy is a non-interference case (an unrelated strict
+contradiction leaves Tweety's label unchanged).
 
 ** BACKLOG Review the unfolder's design choices raised by lesson 8a
 :PROPERTIES:
@@ -5311,6 +5363,17 @@ a program, and drops the wrappers =not=, =forall=, =proved= but not
 =chs= (=_atom_from_json=, src/scasp_aida/importer.py in the scasp-aida
 repository; the importer moved there on 2026-10-08).
 
+2026-10-16, the literature evaluation (eval/REPORT.org, branch
+eval-literature): eval/literature/scasp_*.fspy encode, in this task's
+mapping, the birds program, the even loop, the odd loop with an
+independent fact, the positive loop, the positive loop with a founded
+alternative and the even loop with a constraint (a denied atom); the
+programs are in eval/scasp/ and s(CASP) 0.25's answers in the report.
+Agreement except: the odd loop (AIDA proves p from =(~p->p)->p=, s(CASP)
+has no model), locality (the fact r stands beside the odd loop, where
+s(CASP)'s global check fails every query), and the positive loop under
+preferred (credulously accepted).
+
 *Findings 2026-10-07* (tests/test_scasp_correspondence.py, 199 checks;
 8 programs, every atom queried as =a= and =not a=, both modes, stable
 and preferred; s(CASP) rows run when s(CASP) is installed, =SCASP_BIN=
@@ -5573,6 +5636,231 @@ earlier and is the one the value shows).
 :END:
 
 Stretch goal (author, 2026-10-06).
+
+*** BACKLOG Keep an exposed lemma inside the binders its hypotheses come from
+:PROPERTIES:
+:ID:             aida-lemma-exposure-scope
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A lemma that uses a hypothesis bound by its own argument (a lambda or mu-tilde of that argument) is never placed, as an exposed node or a stack element, where that binder is out of scope, so every unfolded term is closed and the strict phase never counts a subterm with a free variable as strict.
+:VERIFY:         eval/literature/t_cases.fspy (branch eval-literature): =graph p1= passes the type check, and =evaluate p1= is a value with no free variable whose verdict agrees with the label of the issue in both modes, with the type check on and off; a test asserts that every unfolded fixture term is closed.
+:END:
+
+Found 2026-10-16 by the literature evaluation (eval/REPORT.org, bug 2).
+In t_cases.fspy, =p3 : ~A= is =λh:A.μk:false.<μy:B.<?:A->B || h*y> || ?:B>=.
+Its lemma =p3.μ1= (B from A->B and A) is compiled with A as an
+obligation and stacked in B's debate at the top of the term, outside
+=λh=, so =h= is free there. Type check on: every query refused ("h is
+neither in your hypothesis nor in your conclusion"). Type check off:
+both modes give the VALUE
+=μs1:...<λf.λg.μalt5:B.<f:A->B || h:A*alt5:B> || s1>= while the issue
+is labelled OUT, because the strict phase counts the lifted lemma as
+strict. This breaks the premise of the strict-phase decision of
+2026-09-25 ("the unfolded term is closed as a whole") and adequacy.
+Recent: exposure of lemmas dates from 2026-10-15/16
+([[id:aida-discuss-non-site-attack-points]]).
+
+Second reproduction (2026-10-16, eval/literature2/io_cases.fspy):
+input/output logic's reasoning by cases, argued dialectically. =not_a=
+is =λh:A.μk:false.<(n_a h) || ?Ox[c]>=; its lemma Ox from A is stacked
+in Ox's debate outside =λh=. Type check on: refused; off: =claim= is
+=VALUE μalt5:Ox.<n_a || h:A*alt5>= while Ox is labelled OUT.
+
+*** BACKLOG Make credulous evaluation under grounded agree with skeptical
+:PROPERTIES:
+:ID:             aida-credulous-tiebreak-grounded
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Under a semantics with a single labelling (grounded) credulous and skeptical evaluation give the same verdict, and in every mode a supporter whose standing is UNDEC is never kept over an original that stands IN; a credulous normal form never keeps a derivation whose statement the witness does not accept while dropping its attacker.
+:VERIFY:         eval/literature/bug_credulous_tiebreak2.fspy and tests/olon.fspy (=first=, =tester=, =final=, =olon=): =evaluate ARG credulous grounded= is a VALUE, as skeptical is; bug_credulous_tiebreak_value.fspy: the credulous grounded normal form holds no derivation of B; the harness of the literature evaluation reports no adequacy mismatch on the fixture suite under grounded.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 3). A is presumed and IN in the
+one grounded labelling; another supporter of A rests on a presumption of
+B, and B is UNDEC (refuted from a presumption of R, R and S an even
+loop). Skeptical: =VALUE !IN:A=. Credulous: =explain= says "supporter
+A[t] is UNDEC -> keep the supporter (credulous tiebreak), dropping the
+original"; B's presumption, labelled UNDEC, becomes =?UNDEC:B= and the
+verdict is OPEN. core/comp/evaluate.py's docstring says the witness
+"only affects the normal form ..., never the verdict", and the record of
+2026-09-16 says grounded makes credulous coincide with skeptical. A
+second symptom: with B contested by two derivations, the credulous
+grounded value keeps pb's derivation of B and drops nb's attack, though
+grounded does not accept B. Related:
+[[id:aida-circular-supporter-judged-in]] (another supporter kept on a
+standing it does not have).
+
+*** BACKLOG Compile an elimination cell that ends in the falsum context
+:PROPERTIES:
+:ID:             aida-negation-cell-horn
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        An argument that applies a negation (~A, or A->false closed by =elim=) to an open site joins the document graph: the cell =?:A * _F_= gets its proposition and compiles as a horn, or is seen through like the negation wrapper.
+:VERIFY:         eval/literature/bug_falsum_cell.fspy: x1 and x2 register without "not added to the document graph", and =graph document= shows their edges with A owed; the direct dialectical proof of ~~A->A (written with ~ and =elim= on falsum) unfolds and evaluates to the classical proof.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 1). =cut (~A) g. next. elim.
+next.= leaves =μg:B.<?:~A || μ'H1:~A.<H1 || ?:A*_F_>>=; the horn rule
+reaches the cell =?:A * _F_=, =_root_statement= (core/dc/debate_graph.py)
+finds no =prop= on it and raises "root proposition missing; run
+enrichment first", and registration catches it: the argument is checked
+by Fellowship and silently left out of the graph. Also with =~A= a
+declared axiom, and with =(A->false)->false= once falsum is closed by
+=elim=. This blocked the direct dialectical proof of double negation
+elimination (t_dne.fspy now works around it by leaving falsum owed).
+Distinct from [[id:aida-instructions-falsum-closing-elim]] (instruction
+generation).
+
+Further cases (2026-10-16, eval/literature2/seq_mcs_closed.fspy): the
+modus tollens attacks of sequent-based argumentation,
+={q, p->~q} => ~p= and ={p, q} => ~(p->~q)=, written with =~Q=, are
+both dropped; the file now spells the rule =P -> Q -> false= and leaves
+falsum owed.
+
+*** BACKLOG Replay the dialectical classical proofs the type check refuses
+:PROPERTIES:
+:ID:             aida-typecheck-dialectical-classical
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The per-sub-debate and the expanded type check accept the unfolded debates of the dialectical proofs of double negation elimination and consequentia mirabilis, whose evaluation with the check off is the classical proof term; or, if the term is at fault, the defect is named and fixed in the unfolder.
+:VERIFY:         eval/literature/t_dne.fspy and t_mirabilis.fspy: =evaluate p1= is a VALUE with =typecheck on= and with =typecheck expanded=, with the normal forms of eval/results/t_dne_typecheck_off.txt.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 4). Per sub-debate: "Fellowship
+reconstructed a different term for 'p1_1' than the one unfolded; the
+instructions do not encode the term. The shapes first differ at
+mu/3/mutilde/3/mutilde/2", in the debate about A->false; expanded:
+"This is not trivial. Work some more." The move =p3 : A->false= is
+=λh:A.μk:false.<h || ?:A[c]>=, whose owed refutation of A is captured
+by an enclosing continuation. Peirce's law, with a capture of the same
+kind, passes (t_peirce.fspy), so instruction generation is the first
+suspect. Possibly related: [[id:aida-instructions-falsum-closing-elim]].
+
+*** BACKLOG Design: labels that depend on the issue asked, in a strict document
+:PROPERTIES:
+:ID:             aida-issue-relative-strict-labels
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether two issue graphs of one document may label the same statement differently when the document has no presumption at all, and the decision is recorded here with its consequence for catala_conflict.fspy; if not, a strict argument meeting an obligation makes the edge strict for every issue (or the document graph gains the strict edges), and a strict contradiction is reported at INFO.
+:VERIFY:         eval/literature/catala_conflict.fspy: =label exc1=, =label exc2= and =label document= agree on Rate15[c] and Rate10[c], or the recorded decision explains why they need not; =label= on a strictly contradictory document says so without raising the log level.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, specification question 1). Facts and
+declared rules only: two exceptions apply and exclude each other's
+value. Rate15[c] is IN in the issue graph of =exc1=, OUT in that of
+=exc2= and in the document graph. Cause: =not15= has an obligation on
+Rate10, so its edge is defeasible though a strict argument meets it; the
+strict phase adds a strict edge only for closed derivations of the
+issue's own term. The README allows issue graphs to differ; here two
+queries contradict each other. =strict_contradictions= is logged at
+DEBUG only. Related: [[id:aida-strict-layer]].
+
+*** BACKLOG Design: a self-attack labelled per document and per issue
+:PROPERTIES:
+:ID:             aida-self-attack-document-vs-issue
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether =label document= and =label ARG= may disagree on a self-attacking argument (UNDEC and no stable labelling in the document, OUT with its targets IN from an issue), and the decision is recorded with its consequence for the comparison with Dung, ABA and s(CASP).
+:VERIFY:         The decision is written here; eval/literature/af_selfattacker_target.fspy, aba_selfattack.fspy and scasp_odd.fspy give the labels it states, at document and issue level.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, specification question 2). The
+classical reading of self-attack (the strict-phase decision of
+2026-09-25, =SelfAttack*=) applies per issue only. For =a -> a, a -> b=
+the document agrees with Dung (a, b UNDEC, no stable labelling);
+=evaluate b= is a VALUE with b IN, and a stable labelling exists in the
+issue graph. Over 60 random frameworks (eval/results/af_eval.txt) 101
+issue labels differ from Dung for this reason, 15 more because stable
+semantics is not local.
+
+*** BACKLOG Design: what skeptical evaluation of a floating conclusion returns
+:PROPERTIES:
+:ID:             aida-floating-conclusion-witness
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides what the skeptical normal form of a statement that is IN in every labelling but has no supporter IN in their intersection should be - the bare delegation =!IN:S= of today, a classical case split on the contested statement, or OPEN - and records it.
+:VERIFY:         eval/literature/nixon_floating.fspy: =evaluate pol1= skeptical preferred gives the recorded normal form.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, specification question 3). Political
+follows from Dove and from not-Dove; it is IN in both preferred
+labellings, and skeptical evaluation gives =VALUE !IN:Political=: the
+root obligation is discharged as a delegation by its label, and the
+value holds no argument. A case split on Dove,
+=μα.<hawks_political || (λd.μ_.<doves_political || d*α>) * α>=, would
+be a proof term. Under grounded the same statement is UNDEC, which is
+also why 6 of 161 random ADFs with a condition "b or not b" differ from
+the ADF semantics (eval/results/adf_rand.txt).
+
+*** BACKLOG Name the label the credulous fallback evaluates under
+:PROPERTIES:
+:ID:             aida-credulous-fallback-label
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        When credulous evaluation falls back to the grounded labelling, its output says so next to the normal form, so a site labelled by grounded (=?UNDEC:A=) is not read as a label of the semantics asked for.
+:VERIFY:         eval/literature/scasp_positive.fspy: =evaluate arg_a credulous stable= prints the fallback beside =?UNDEC:A=, and the service result marks it.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, specification question 5): under
+stable A is OUT, and the credulous stable normal form shows =?UNDEC:A=,
+the grounded label of the documented fallback. The fallback is logged at
+INFO by the CLI, but the result object and its JSON do not mark it.
 
 *** BACKLOG Port the shared route to the stacked shape and the entrypoints
 :PROPERTIES:
@@ -6044,6 +6332,11 @@ Measured shapes of 2026-09-30, to re-establish:
 
 Prerequisite for the evidence of [[id:aida-shared-subarguments]] and the
 tasks below.
+
+2026-10-16, eval/scaling.py (branch eval-literature): diamond chains
+with 2^n paths, type check on, median of three: n=8 label 0.72 s,
+evaluate 0.89 s; n=11 label 3.56 s, evaluate 8.80 s. Evaluation about
+doubles per level (eval/results/scaling.txt).
 
 ** BACKLOG Remove the quadratic hot spots of the pipeline
 :PROPERTIES:
@@ -6547,6 +6840,97 @@ restricted to symbols and substituted as =PSym=, or the term language grows.
 Compound witnesses such as =[A -> B]= are not terms at all and cannot be
 written. Separately, the =Quant= case substitutes under a binder that
 rebinds the substituted name.
+
+** BACKLOG Keep a binder named _ apart from the unfolder's unused binders
+:PROPERTIES:
+:ID:             aida-underscore-binder
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A user binder named =_= (=cut (P) _.=, which Fellowship accepts) no longer breaks the debates about its statement: it is renamed on registration, or refused with a message.
+:VERIFY:         eval/literature/bug_underscore_binder.fspy: =graph b= and =evaluate b= succeed with the type check on and off (or =a= is refused at =dixi=); every argument of tests/thetaexpander_bureaucratic_cases.fspy can be graphed.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 5). With =a : P= written
+=cut (P) _.=, every query about P, of every argument, is refused by the
+type check ("_ is neither in your hypothesis nor in your conclusion");
+with the check off, evaluation fails ("free context variable '_' is
+neither bound nor a declared axiom"). The unfolder writes =_= for its own
+unused binders. All nine arguments of
+tests/thetaexpander_bureaucratic_cases.fspy are unqueryable this way.
+
+** BACKLOG Refuse an argument over a conjunction or disjunction in one line
+:PROPERTIES:
+:ID:             aida-unsupported-connective-crash
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        An argument whose conclusion or tactics mention =/\= or =\/= is refused at =dixi= with a one-line message naming the connective, the CLI goes on with the script rule it applies to refusals, and =Service.check= reports the entry and continues.
+:VERIFY:         eval/literature/expressivity_connectives.fspy: the CLI exits without a traceback; =Service.check= returns a report with the three =dixi= entries refused.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 6). =dixi= raises
+=SyntaxErrorInSource= ("cannot parse 'A /\ B' as a prop", core/ac/syntax.py):
+the CLI exits 1 with a traceback, and =Service.check= raises instead of
+reporting ([[id:aida-document-check]]). The README says such
+propositions can be declared but not argued about.
+
+** BACKLOG Name an argument's edge after the argument when it starts with an introduction
+:PROPERTIES:
+:ID:             aida-negation-edge-provenance
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The edge of =argument negA : (~A). elim h. ... dixi.= is named =negA= and its JSON carries =argument: "negA"= and its span, not Fellowship's wrapper binder =H1= and a null span.
+:VERIFY:         eval/literature/bug_negation_edge_name.fspy: =graph document= shows =negA (argument, ...)=; =to_json= of the graph gives negA's span.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 7). The registered term is
+=μnegA:~A.<μH1:~A.<λH2:A....||H1>||negA>=; the bureaucratic =μH1= is
+not peeled before naming, so a document UI cannot link the edge to its
+block ([[id:aida-dui-api]]).
+
+Also the skeptic's challenge =s1 : ~(P - P)= (eval/literature/
+t_lnc_dialectical.fspy): =elim h.= on a negated goal gives the same
+=μH1= wrapper.
+
+** BACKLOG Report an argument left out of the document graph at its own line
+:PROPERTIES:
+:ID:             aida-check-dropped-argument
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        When registration checks an argument but cannot add it to the document graph, =Service.check= marks that =dixi= entry (a status or a diagnostic on the entry), not only the report.
+:VERIFY:         eval/literature/bug_falsum_cell.fspy and first_order.fspy: the =dixi= entries of the dropped arguments carry the warning.
+:END:
+
+Found 2026-10-16 (eval/REPORT.org, bug 1): the entry is =ok= and the
+warning appears only in the report-level diagnostics, so an editor shows
+the block as fine ([[id:aida-document-check]]).
 
 ** BACKLOG Remove the recursion-depth limit from term traversals
 :PROPERTIES:
