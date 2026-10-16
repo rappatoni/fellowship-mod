@@ -2760,6 +2760,11 @@ The author's review. The shared route lags behind the stacked shape
 ([[id:aida-shared-route-stack-shape]]), so parts of the course describe
 a route that is due for rework; best reviewed together with that task.
 
+2026-10-16: the port is done and the course regenerated from runs for the
+stacked shape; it now introduces the variants of a debate (lesson 14),
+which change decision 2 of the sharing design - worth the author's
+attention first.
+
 *** DONE Design note: contrariness as a synthesised guard is adequate; an edge kind would be provenance only
 CLOSED: [2026-10-08 Thu]
 - State "DONE"       from "BACKLOG"    [2026-10-08 Thu] \\
@@ -5875,7 +5880,8 @@ stable A is OUT, and the credulous stable normal form shows =?UNDEC:A=,
 the grounded label of the documented fallback. The fallback is logged at
 INFO by the CLI, but the result object and its JSON do not mark it.
 
-*** BACKLOG Port the shared route to the stacked shape and the entrypoints
+*** DONE Port the shared route to the stacked shape and the entrypoints
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-shared-route-stack-shape
 :AREA:           phd
@@ -5896,6 +5902,104 @@ The author wants the unfolded route understood and fixed first
 (2026-10-06). Expected complication: an argument entrypoint's own body
 keeps the kinds it wrote, so a statement can need a second definition
 (root obligation with a presumption supporter at the bottom).
+
+*Done 2026-10-16* (branch shared-route-stack-shape: 4cc09c3, 0f74c03,
+b75ae82, 60429fb, 26683e2; plan ~/.claude/plans/ok-make-a-plan-toasty-storm.md).
+What it took, beyond building each definition with =Unfolder._debate=
+(which alone already expanded to the stacked unfolding everywhere):
+- *Variants.* A definition is keyed by its statement or by (statement,
+  root kind, argument on top) - the parameters of =_debate=: an exposed
+  node's debate (obligation root, the presumption of the statement at
+  the bottom, the node on top iff primacy), an argument's root, the
+  sites of its own body (=debate_statement=, =_Builder._key=,
+  core/dc/share.py). Citations and instances carry the key beside the
+  statement. *For the author:* decision 2 of aida-shared-subarguments
+  ("one debate per statement") now reads one debate per statement and
+  variant; the anonymous names number variants like any debate, an
+  author's =cite NAME= names the variant its citation stands for.
+- *The compiler's reading.* A cited debate whose root is no scaffold the
+  compiler matches (an attack whose wing is only its own alt) is read
+  by the compiler as an off-spine sub-argument; the instance compiler
+  writes such an instance out one level (=IssueResolver._sub_argument=).
+  A stand-in leaf is a source of the kind of its debate's root.
+- *What captures, for strictness.* Instances record which captured
+  statements stand for something not strict where they are written out
+  (an attack's alt; a b whose original is not strict); =strict_resolve=
+  takes an initial scope and a hook for pending citations, so the
+  parent chooses the child instance where it meets it. These strictness
+  variants are kept apart from the instance count.
+- *Stubs follow substitution.* A stub reads its captured variables off
+  its leaves, so the outer step b := the original reaches it (the free
+  =b1= of the even loops); a stub's standing passes an argument's own
+  binder on as plumbing, so the instance's scaffolds read it by its
+  label as its copy does (lesson 15's credulous P).
+- *The settings.* Where "preserve", or "default" with primacy, keeps an
+  exposed node's own derivation on top of a capture from outside the
+  definition, the builder attaches the kept forms and expansion and the
+  resolver choose where the capture is known (under "preserve" the
+  instance key records which captures are by scaffold variables).
+- *Entrypoints and the pipeline.* =share(..., top=edge)=;
+  =evaluate_shared(favour=)=; the session shares the argument's debate
+  (graph, label, evaluate, =share ARG=, the per-definition type check);
+  the fallbacks use the stacked term; =favour= on either route; the
+  default pipeline is =shared= again. The instance collector of strict
+  edges speaks as =strict_resolve='s (a captured parameter shown as its
+  statement).
+- *Legacy shape removed* (=stacked=, =_wrap=, =statement_site_only=,
+  =unfold_legacy=) with the tests that compared against it.
+- The evaluation course and its tests (lesson 8a, 13b, the exposure
+  tests) now select =pipeline unfolded=, the route they describe; the
+  sharing course is regenerated from runs.
+
+Evidence:
+- tests/test_share.py (no =unfold_legacy= reference): expansion, issue
+  graph and labellings, evaluation (both modes, grounded/preferred,
+  cbn/cbv) against the stacked unfolding on the doubled chains, 60 random
+  documents, the even loop, a presumed horn (the variant), and 29
+  fixtures (rationality, demo, peirce, naf, entrypoints, the exposure
+  fixtures, lessons 8a-17); argument terms against =unfold_argument= on
+  every fixture, with and without =favour=; =preserve= and =share= on the
+  fixtures where they change the term; both type checks on issue and
+  argument terms. Before the fixes, 8 of 149 issue graphs and 20 of 596
+  evaluations differed and 18 of 149 expansions under =preserve=.
+- tests/minicourse/test_sharing_course.py pins the regenerated course
+  (31 tests, none marked stale).
+- Full suite, default type check: 2230 passed, 7 skipped, 2 xfailed, 1
+  xpassed; its rejected type checks are the intended ones only (lesson
+  16's spellings, the ill-typed argument). With =FSP_TYPECHECK=expanded=:
+  the same rejections, and the 12-level chain's whole-term replay past
+  the prover's I/O timeout (a size limit of that check, as before).
+- Cost, doubled chain, median of 5, grounded, the issue P_n (scratch
+  script; API level, no Fellowship): definitions and instances 5, 9, 13,
+  17, 21, 25, 33 for 2-16 levels, the same before (main 0033fd6, legacy
+  shared route) and after; shared route 0.005-0.04 s before and after;
+  the unfolded term 0.008, 0.03, 0.16, 0.93, 4.8 s for 2-10 levels;
+  verdicts (class and normal form up to names) equal on both routes at
+  every level where both ran.
+- Not shared: composed debates (=support deb1 arg2 arg1=), which keep
+  their unfolded term - [[id:aida-share-composed-debates]].
+
+** BACKLOG Share composed debates
+:PROPERTIES:
+:ID:             aida-share-composed-debates
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-shared-route-stack-shape
+:OUTCOME:        A composed debate (core/dc/debate.py) is evaluated on the shared route: its definitions built under the debate's utterance order and the primacy of every moved argument, as =unfold_debate= builds its term.
+:VERIFY:         Differential tests compare =share= for a debate with =unfold_debate= (expansion, issue graph, evaluation) on tests/test_debates.py's fixtures; =evaluate DEBATE= no longer builds the unfolded term on the shared route.
+:END:
+
+Left out of [[id:aida-shared-route-stack-shape]] by the author's choice
+(2026-10-16). The machinery carries over: =Unfolder(order=...)= sorts the
+stacks and =primacy= covers the moved arguments; a debate's definitions
+would be keyed by the same variants.
 
 ** DROPPED Prove well-definedness of label-guided reduction (T1, T6)
 CLOSED: [2026-10-08 Thu]
@@ -6319,9 +6423,9 @@ record no labellings, and know only the 2026-09-30 architecture. Checked
 
 What the architecture has gained since, and the harness must measure:
 - the shared route and per-instance compilation
-  ([[id:aida-shared-subarguments]]), now off by default: the default route
-  is =unfolded=, whose cost grows with the number of paths, until
-  [[id:aida-shared-route-stack-shape]];
+  ([[id:aida-shared-subarguments]]), off by default from 2026-10-06 until
+  [[id:aida-shared-route-stack-shape]] made it the default again
+  (2026-10-16);
 - the stacked shape and argument entrypoints
   ([[id:aida-unfold-entrypoints]]): issue and argument terms are cached
   per document revision;
