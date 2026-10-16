@@ -309,7 +309,7 @@ the contrary's root is captured in the same way (=_bare=).
 The variable that replaces the site no longer shows which onus the hole
 had. A captured presumption is therefore marked (=captured_presumption=).
 Wherever a graph is compiled from a term - the issue graph on the older
-route (=issue-graph term.=, =compile_issue=) and the record sigma reads
+route (=compile_issue=) and the record sigma reads
 for each scaffold (=scion_record=, lesson 11) - the compiler records a captured variable
 as a source of the binder's statement, a presumption source if it is
 marked and an obligation source otherwise. Since 2026-10-15 the issue
@@ -351,9 +351,9 @@ is labelled:
 :     v  sigma                  core/comp/evaluate.py    lesson 7 (witness_labelling)
 
 Until 2026-10-15 the issue graph was compiled from the term instead
-(=compile_issue=); =issue-graph term.= still selects that route, and
-tests/test_issue_graph_from_document.py compares the two on every
-fixture. They agree on the labels; what differs is markers, source
+(=compile_issue=; the setting =issue-graph term.= that kept selecting it
+is retired since 2026-10-16), and tests/test_issue_graph_from_document.py
+still compares the two on every fixture, as a check of the unfolder. They agree on the labels; what differs is markers, source
 kinds, a bound exposed node captured where the document has its edge,
 and the obligation root of an exposed strict node, which the term's
 compiler reads as a defeasible edge (tasks.org,

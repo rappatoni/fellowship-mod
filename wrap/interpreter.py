@@ -130,8 +130,6 @@ class Interpreter:
             return self._service(c, svc.set_typecheck, c["mode"])
         if c.kind == "pipeline":
             return self._service(c, svc.set_pipeline, c["mode"])
-        if c.kind == "issue_graph":
-            return self._service(c, svc.set_issue_graph, c["mode"])
         if c.kind == "subarguments":
             return self._service(c, svc.set_subarguments, c["mode"])
         if c.kind in QUERIES:

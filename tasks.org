@@ -2621,6 +2621,21 @@ axiom's name and a null span (docs/dui-integration.md, which also
 updates its known limits). README's verb table and minicourse.org's
 move check say "node".
 
+*Step 4 done 2026-10-16: the reference route is retired.* The setting
+=issue-graph document|term= (=FSP_ISSUE_GRAPH=, =Service.set_issue_graph=,
+=prover.issue_graph_from_document=, its syntax, interpreter and CLI
+lines) is removed; the issue graph always comes from the document graph
+(a debate's from its scope). =compile_issue= stays for an argument the
+document refused (its own term) and as the test reference;
+=compile_issue_shared= is no longer reached from the service, and its
+fallback test in tests/test_share.py went with it (the strict-edge
+fallback test stays). tests/test_issue_graph_from_document.py keeps the
+fixture and random-document comparison as a check of the unfolder and
+replaces the setting tests by =test_the_reference_route_is_retired=
+(=issue-graph term= now parses as an opaque word). README phase 4/5,
+lessons 8a, 17 (the instance compiler's log is now from Python) and
+minicourse.org updated.
+
 Evidence: tests/test_unfold_exposure.py (28 tests: the attackrule
 fixture - the debate about A->B stands where r1 stood, attackrule in
 its wing loses in phase 1, =evaluate attackrule.= is an exception;

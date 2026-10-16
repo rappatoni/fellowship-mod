@@ -127,12 +127,6 @@ TODO: Mechanism to declare a scenario of default assumptions.
         #: and the argument entrypoints (aida-unfold-entrypoints).
         #: FSP_PIPELINE=shared or `pipeline shared` selects the shared route.
         self.pipeline_unfolded = os.getenv("FSP_PIPELINE", "unfolded") == "unfolded"
-        #: Whether the issue graph that graph, label and evaluate label is
-        #: the part of the document graph reachable from the issue (plus the
-        #: strict edges of its term), or compiled from the term.  Default
-        #: the document since 2026-10-15 (aida-discuss-issue-graph-from-document);
-        #: FSP_ISSUE_GRAPH=term or `issue-graph term` selects the reference.
-        self.issue_graph_from_document = os.getenv("FSP_ISSUE_GRAPH", "document") == "document"
         #: At an exposed node whose statement is already bound: "default"
         #: keeps the node's own derivation iff its argument has primacy,
         #: "share" never, "preserve" always (core/dc/unfold.py,

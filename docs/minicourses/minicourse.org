@@ -207,8 +207,8 @@ same derivation once more, the strict edge the strict phase contributes
 (=minicourse-evaluation.org=, lesson 10). Edges are named after the
 argument or subargument they record (task =aida-host-edge-naming=). The
 graph is the part of the document graph reachable from the issue C[t],
-plus the strict edge (since 2026-10-15; =issue-graph term.= compiles it
-from the debate term instead, the older route). An edge is a *supporter*
+plus the strict edge (since 2026-10-15; until then it was compiled from
+the debate term). An edge is a *supporter*
 when it concludes the issue or a source of another edge, an *attacker*
 when it concludes the contrary of one; both arguments here are
 supporters. The default markers record that A and B occur as obligation

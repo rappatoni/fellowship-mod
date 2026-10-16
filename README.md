@@ -299,15 +299,13 @@ through the document graph.
    strict, source-less edge named after the axiom) and the lemmas it
    proves on the way (each an edge of its own, `NAME.μ1`, like a lambda's
    `NAME.λ1`); the spine, which carries the continuation, gets no edge. Out: the argumentation framework, printed as an indented tree.
-   `issue-graph term` (or `FSP_ISSUE_GRAPH=term`) compiles it from the
-   unfolded term instead, the route before 2026-10-15, kept as the
-   reference: the compiler then finds the sub-arguments by matching
-   *scaffold shapes*, the four support and attack shapes of the COMMA 2026
-   paper, which the unfolder produces; `issue-graph document` switches back.
-   The two agree in labels on every fixture (tasks.org,
-   aida-discuss-issue-graph-from-document), except where the term's
-   obligation root of an exposed strict node loses the strictness that
-   phase 5 does not restore.
+   Until 2026-10-15 the framework was compiled from the unfolded term,
+   finding the sub-arguments by matching *scaffold shapes*, the four
+   support and attack shapes of the COMMA 2026 paper; that compiler
+   (`compile_issue`) remains for an argument the document refused, and
+   tests/test_issue_graph_from_document.py checks every unfolded fixture
+   term against the document graph with it. The `issue-graph term`
+   setting that selected it is retired (2026-10-16).
 5. **strict** — read strictness off the term. A subterm is strict in the
    debate if it rests on nothing, that is, it has no open site. Where one wing
    of a scaffold is strict and the other is not, the scaffold is decided here
@@ -319,8 +317,7 @@ through the document graph.
 
    `graph ARG` and `label ARG` need only the issue graph, and get it without
    building the unfolded term. The debate is kept as one definition per
-   statement (see `share ARG`), and phase 5 (with `issue-graph term`, phase 4
-   too) runs on one *instance* of
+   statement (see `share ARG`), and phase 5 runs on one *instance* of
    a sub-debate at a time: a statement together with the statements captured
    and cut in it, which is all that the copy of that sub-debate at a site
    depends on. Each instance is strictness-resolved (and compiled) once; a

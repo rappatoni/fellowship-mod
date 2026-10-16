@@ -433,11 +433,13 @@ citation leaf that the compiler reads as a *source* of the cited
 statement, of the kind the statement's own site has. Meeting that leaf,
 the compiler first compiles the cited instance (a hook on the compiler's
 citation branch), so the edges come out in the order the unfolded term
-would give them, each once. The issue graph is the union. Since
-2026-10-15 this is the older route (=issue-graph term.=): by default the
-issue graph is the part of the document graph reachable from the issue
-(minicourse-evaluation.org, lesson 8a), and the instances contribute
-only their strict edges.
+would give them, each once. The issue graph was the union until
+2026-10-15. Since then the issue graph is the part of the document graph
+reachable from the issue (minicourse-evaluation.org, lesson 8a), the
+instances contribute only their strict edges, and the instance compiler
+is called from Python only (=IssueResolver(shared, names).compile(name)=;
+the CLI setting =issue-graph term.= that selected it is retired since
+2026-10-16).
 
 *Resolve.* =strict_resolve= is unchanged. It runs on an instance's term
 in which each cited instance is a *stub*: a chain of leaves holding
@@ -468,10 +470,10 @@ bare - k contests it - and it is needed twice, so it is named; and since
 :   anon_2[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<μalt5:P1.<?u3:P1||...||μ'_:P1.<μa1_0:P1.<μth_3:P1.<anon_3:P0->P1||a0:P0*th_3:P1>||a1_0:P1>||alt5:P1>>>||...>
 :   a0[!:P0] := μalt9:P0.<!u5:P0||μ'b14:P0.<μ_:P0.<b14:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<b14:P0||alt9:P0>>>
 
-=explain a2_0.= with =pipeline shared.= and =issue-graph term.=, the
-compile and strict stages without the terms (by default the compile
-stage shows only the framework taken from the document). The axioms are
-supporters now, each in its implication's debate:
+The instance compiler's DEBUG log (=IssueResolver(...).compile("a2_0")=),
+then the strict stage of =explain a2_0.= with =pipeline shared.=,
+without the terms. The axioms are supporters, each in its implication's
+debate:
 
 : compile        framework of 'a2_0', one instance of a sub-debate at a time
 : compile        edge 'r2_1' (supporter, strict) P1->P2[t] <- -

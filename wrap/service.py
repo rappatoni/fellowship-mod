@@ -535,18 +535,6 @@ class Service:
         return Done("unfolded term" if self.session.pipeline_unfolded else "shared debate")
 
     @_operation
-    def set_issue_graph(self, mode: str) -> Done:
-        """``document`` (the default) labels the part of the document graph
-        reachable from the issue, plus the strict edges of its term;
-        ``term`` the graph compiled from the term, the reference
-        (tasks.org, aida-discuss-issue-graph-from-document)."""
-        if mode not in ("document", "term"):
-            raise InvalidRequest(f"issue-graph: document or term, not '{mode}'")
-        self.session.issue_graph_from_document = mode == "document"
-        return Done("from the document graph" if self.session.issue_graph_from_document
-                    else "compiled from the term")
-
-    @_operation
     def set_subarguments(self, mode: str) -> Done:
         """At an exposed node whose statement is already bound: ``default``
         keeps the node's own derivation iff its argument has primacy,
@@ -567,10 +555,12 @@ class Service:
     def _issue_source(self, found):
         """The graph ``found``'s issue graph is taken from: the document
         graph, a debate's own graph (its scope), or None - compile from the
-        term - when the setting says so or the term is an argument's own
-        (refused by the document, so not in its graph)."""
+        term - when the term is an argument's own (refused by the document,
+        so not in its graph).  Compiling from the term was selectable as
+        `issue-graph term` until 2026-10-16 (tasks.org,
+        aida-discuss-issue-graph-from-document)."""
         s = self.session
-        if not s.issue_graph_from_document or found.own_term or found.issue is None:
+        if found.own_term or found.issue is None:
             return None
         return s.debate_graph(found.debate) if found.debate is not None else s.graph
 
@@ -969,7 +959,7 @@ class Service:
         unfolded term; ``document``: the document graph itself; with
         ``whole``, a debate's whole scope.  ``labels`` adds the grounded
         overlay (None, with the reason, if adf-bdd is missing)."""
-        from core.dc.instances import IssueResolver, compile_issue_shared
+        from core.dc.instances import IssueResolver
         from core.dc.strict import compile_issue, document_issue_graph, issue_strict_edges
         from core.comp.evaluate import _shared_issue_graph
         from core.dc.unfold import unfold_legacy
@@ -994,13 +984,10 @@ class Service:
             source = self._issue_source(found)
             try:
                 graph = None
-                if shared is not None:
+                if shared is not None and source is not None:
                     try:
-                        if source is not None:
-                            graph = _shared_issue_graph(IssueResolver(shared, options["strict_names"],
-                                                                      options["strict_kinds"]), name, source)
-                        else:
-                            graph = compile_issue_shared(shared, name, **options)
+                        graph = _shared_issue_graph(IssueResolver(shared, options["strict_names"],
+                                                                  options["strict_kinds"]), name, source)
                     except (DebateCompileError, FirstOrderNotSupported, RecursionError):
                         raise                      # the unfolded term is deeper still
                     except Exception as e:
@@ -1015,6 +1002,8 @@ class Service:
                     graph = document_issue_graph(
                         source, found.issue, issue_strict_edges(term, name, options["strict_names"]), name)
                 if graph is None:
+                    if term is None:                # not expected: a shared form always has a source
+                        term = unfold_legacy(s.graph, found.issue)
                     graph = compile_issue(term, name, **options)
             except (DebateCompileError, FirstOrderNotSupported) as e:
                 logger.warning("Debate graph compilation refused for '%s': %s", name, e)

@@ -1,9 +1,11 @@
 """The issue graph taken from the document graph, checked against the one
 compiled from the term (tasks.org, aida-discuss-issue-graph-from-document).
 
-``document_issue_graph`` is the issue graph since 2026-10-15;
-``compile_issue`` stays as the reference, and every difference between the
-two is classified:
+``document_issue_graph`` is the issue graph since 2026-10-15, and the only
+one since 2026-10-16 (the `issue-graph term` setting is retired).
+``compile_issue`` stays - for an argument the document refused, and here
+as a check of the unfolder: the framework of every unfolded term agrees
+with the document graph up to these classes of difference:
 
 - ``markers``: the term has an obligation marker the document lacks -
   the unfolder's own roots (an issue nobody presumes is the obligation
@@ -203,36 +205,16 @@ def test_random_documents(seed):
                 assert differing <= exposed_statements(term_graph, doc_graph), (statement, differing)
 
 
-def test_the_setting_selects_the_issue_graph():
-    """`issue-graph document` (the default) and `issue-graph term` through
-    the service, on the former example of the lambda class: P->false, which
-    only SelfAttack's lambda derives, is UNDEC on both routes now that the
-    unfolder stacks the lambda's edge (until 2026-10-16 the term had a
-    bare site there, OUT)."""
-    from wrap.service import InvalidRequest
+def test_the_reference_route_is_retired():
+    """`issue-graph term` selected this comparison's reference as the
+    issue graph until 2026-10-16; the issue graph always comes from the
+    document now (aida-rational-closure, step 4), and the comparison above
+    stays as a check of the unfolder."""
+    from wrap.syntax import parse
+    assert parse("issue-graph term").kind == "opaque"
     prover = setup_prover()
     try:
-        svc = Service.of(prover)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            svc.check((TESTS / "rationality" / "self_attack_lk.fspy").read_text())
-            assert prover.issue_graph_from_document
-            target = svc.target("issue :P->false")
-            from core.dc.debate_graph import canonical_prop
-            key = (canonical_prop("P->false"), "term")
-            assert svc.label(target, semantics="grounded").labellings[0][key] == "UNDEC"
-            svc.set_issue_graph("term")
-            assert not prover.issue_graph_from_document
-            assert svc.label(target, semantics="grounded").labellings[0][key] == "UNDEC"
-            with pytest.raises(InvalidRequest):
-                svc.set_issue_graph("both")
+        assert not hasattr(prover, "issue_graph_from_document")
+        assert not hasattr(Service.of(prover), "set_issue_graph")
     finally:
         prover.close()
-
-
-def test_the_command_parses():
-    from wrap.syntax import SyntaxRefused, parse
-    assert parse("issue-graph term").args == {"mode": "term"}
-    assert parse("issue-graph document").kind == "issue_graph"
-    with pytest.raises(SyntaxRefused, match=r"Use: issue-graph document\|term\."):
-        parse("issue-graph both")

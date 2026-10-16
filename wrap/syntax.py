@@ -467,7 +467,6 @@ COMMANDS = {
     "normalize": _p_one_name("normalize", "Use: normalize ARG."),
     "typecheck": _p_choice("typecheck", ("on", "off", "expanded")),
     "pipeline": _p_choice("pipeline", ("shared", "unfolded")),
-    "issue-graph": _p_choice("issue_graph", ("document", "term")),
     "subarguments": _p_choice("subarguments", ("default", "share", "preserve")),
     "load": _p_load,
     "tactic": _p_tactic,
