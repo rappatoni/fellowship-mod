@@ -1108,7 +1108,14 @@ class _Compiler:
             if isinstance(node, (ID, DI)):
                 return variable(node, env, scope)
             if _is_negation_wrapper(node):
-                return visit(node.context, env, spine, scope, rest=rest)
+                if rest or node is content or on_spine(node.context, spine):
+                    return visit(node.context, env, spine, scope, rest=rest)
+                # Off the spine, the wrapper is the horn, not the bare cell
+                # inside it: ``?:A * _F_`` alone is no refutation of ~A
+                # Fellowship can rebuild, the wrapper is (tasks.org,
+                # aida-negation-cell-horn).  The cell is then the wrapper's
+                # own exposure and is inlined there.
+                return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
             match = _match_scaffold(node, self.strict_names)
             if match is not None:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match

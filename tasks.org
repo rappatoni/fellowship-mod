@@ -5760,7 +5760,8 @@ reproduces both old results; preferred unchanged. Suite: 2157 passed, 8
 skipped, 2 xfailed, 1 xpassed; no existing pin moved
 (=TestLocalPolicyWasUnsound= calls =resolve_scaffolds= with the
 credulous tiebreak directly and still passes).
-*** BACKLOG Compile an elimination cell that ends in the falsum context
+*** DONE Compile an elimination cell that ends in the falsum context
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-negation-cell-horn
 :AREA:           phd
@@ -5794,6 +5795,29 @@ modus tollens attacks of sequent-based argumentation,
 both dropped; the file now spells the rule =P -> Q -> false= and leaves
 falsum owed.
 
+
+*Done 2026-10-16.* Two causes. (1) The cell =?:A * _F_= had no
+proposition: falsum is flagged, not typed, so enrichment could not build
+=A -> false= from the halves. =_cell_from_command= (core/comp/enrich.py)
+gives a cell without a type the type of the command it is cut against,
+in the spelling the argument wrote (~A). (2) With the type, the bare cell
+became the horn, and the exposed debate did not replay: Fellowship
+rebuilt it inside its negation wrapper, =μ'H1:~A.<H1 || ?:A*_F_>=, since
+a bare =?:A * _F_= is no refutation of ~A it can write. Off the spine the
+wrapper is now the horn (=compile_body=, core/dc/debate_graph.py), and
+the cell is its own exposure, inlined. On the spine it is seen through
+as before.
+
+Evidence: tests/exposure/negation_cell.fspy (copy of bug_falsum_cell),
+tests/test_negation_cell.py (3 tests): x1 and x2 are in the document
+graph, with edges x1.c1 and x2.c1 deriving ~A[c] from A[t] owed, each
+term the wrapper; every debate replays and evaluates (OPEN: A owed)
+with the type check on and expanded. The direct dialectical proof of
+double negation elimination - t_dne.fspy's p2 with falsum closed by
+=elim= instead of owed - evaluates to the classical proof in both modes
+(scratch). Suite: 2161 passed, 8 skipped, 2 xfailed, 1 xpassed; no
+existing pin moved. Not re-run: seq_mcs_closed.fspy's modus tollens
+attacks rewritten with =~Q=.
 *** DONE Replay the dialectical classical proofs the type check refuses
 CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
