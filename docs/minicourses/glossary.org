@@ -1,0 +1,303 @@
+#+title: Glossary - the Terminology of the Minicourses
+#+startup: overview
+
+# AI NOTE: Drafted by an AI agent (Claude) at the author's request,
+# 2026-10-16. Teaching material about the implementation, not manuscript
+# prose. Each entry restates in plain words a definition the minicourses
+# or tasks.org already give, and says where; where the two differ, the
+# lesson and the decision recorded in tasks.org are authoritative. Terms
+# that are still open (an "uncatchable exception", the strict layer) are
+# marked as such rather than defined.
+
+* How to use this glossary
+
+The entries are grouped by the order in which the courses introduce them:
+the calculus and the document, the graph and its labels, unfolding,
+evaluation, sharing, and the argument discipline. Each entry gives the
+meaning, the code that realises it where that helps, and the lesson that
+introduces it. The courses are:
+
+- =minicourse.org= - lessons 1-8: sites, graphs, labels, evaluation;
+- =minicourse-evaluation.org= - lessons 8a-13: unfolding and evaluation
+  step by step;
+- =minicourse-sharing.org= - lessons 14-18: sub-debates shared by name;
+- =minicourse-api.org= and =minicourse-superdeduction.org=.
+
+Words in /italics/ inside an entry have an entry of their own.
+
+* The calculus and the document
+
+- Proof term :: A term of the calculus (lambda-mu-mu-tilde with the
+  connectives AIDA adds). A /command/ =<t || e>= puts a term =t=, which
+  proves a proposition, against a context =e=, which refutes it. Lesson 1.
+
+- Mu, mu-tilde (mu') :: The two binders of a command. =mu a:A.c= binds a
+  *continuation* =a= - a variable standing for a refutation of A - and
+  proves A; =mu'x:A.c= binds a *hypothesis* =x= - a variable standing
+  for a proof of A - and refutes A. Lambda binds a hypothesis too,
+  lambda-bar a continuation.
+
+- Statement :: A proposition together with a /side/: =A[t]= (A proved,
+  the term side) or =A[c]= (A refuted, the context side). One statement
+  is one node of the graph. The CLI writes =issue :A= and =issue A:=.
+  Propositions are compared up to =canonical_prop=, which identifies
+  =~A= with =A -> false=. Lesson 1.
+
+- Contrary :: The statement on the other side: A[c] for A[t], and back.
+
+- Site :: A hole in an argument: a leaf that stands for a proof or a
+  refutation nobody has given. Two kinds, by /onus/:
+  - an *obligation* (=?1:A=, =A:?1=): the author owes the proof;
+  - a *presumption* or *delegation* (=!1:A=, =A:!1=): the burden is
+    handed to the opponent, and A counts as given until refuted.
+  Written by the tactics =by default.= (a presumption) and by leaving a
+  goal open (an obligation). Lesson 1.
+
+- Onus :: Who bears the burden at a site: the author (obligation) or the
+  opponent (presumption). Also the =pro= / =con= of a debate.
+
+- Argument, counterargument :: A registered proof term for a statement:
+  an argument proves its conclusion, a counterargument refutes it. Both
+  may have sites. An argument is *strict* when it has none (Fellowship
+  then holds it as a theorem) and *defeasible* otherwise.
+
+- Declared axiom :: A name declared with =declare r : (A -> B).=; a strict
+  leaf every argument may apply. Since 2026-10-15 each declared axiom an
+  argument applies is an edge of its own in the graph (/exposed node/).
+
+- Statement keywords, refinement, citation :: =theorem=, =lemma=, ... only
+  record a claim (an /obligation/ on it); =prove NAME= / =refine NAME=
+  reopens it; =cite NAME= uses a registered argument by name. README,
+  "Statements".
+
+- Document :: Everything a script has registered. Its arguments, compiled
+  and merged, form the /document graph/.
+
+* The graph and its labels
+
+- Hyperedge, edge, derivation :: One argument (or part of one) seen as
+  "this statement follows from those": a target statement and a list of
+  /sources/. Printed =pro (argument, defeasible): B[t] <- A->B[t:suba],
+  A[t:pres]=. Lesson 2.
+
+- Source :: One input of an edge, with a kind: =obli= (an obligation
+  site), =pres= (a presumption site), =suba= (a /subargument/: another
+  edge of the same argument, or a declared axiom).
+
+- Subargument :: An edge compiled from a part of an argument's body - a
+  lemma (=NAME.μ1=), a lambda (=NAME.λ1=), a declared axiom it applies
+  (named after the axiom). See /horn/. Lesson 2, lesson 8a.
+
+- Default marker :: For a statement, the record that some edge uses it as
+  an obligation or as a presumption site (=default A[t]: presumption=).
+  The labeller reads presumption markers: a presumed statement is IN
+  unless its contrary is. Lessons 2 and 4.
+
+- Document graph :: All registered arguments compiled and merged
+  (=graph document.=). Lesson 8a.
+
+- Issue :: The statement a question is about: an argument's conclusion,
+  =issue :X= / =issue X:=, or a debate's statement.
+
+- Issue graph :: The part of the document graph reachable from the issue
+  (the sources of every edge deriving a reached statement, and the
+  contrary of a reached statement), plus the strict edges the /strict
+  phase/ finds in the term. A debate takes the part of its own scope.
+  This is what is labelled. Since 2026-10-15 always taken from the
+  document graph. Lesson 8a.
+
+- Acceptance condition :: For each statement, a propositional formula over
+  the others saying when it is accepted: some deriving edge has all its
+  sources accepted, and (for a presumption) the contrary is not. Together
+  they form an abstract dialectical framework (ADF). Lessons 3-4.
+
+- Labelling; IN, OUT, UNDEC :: An assignment of IN (accepted), OUT
+  (rejected) or UNDEC (undecided) to every statement, consistent with the
+  acceptance conditions. Semantics choose among labellings: *grounded*
+  (the one most cautious labelling), *preferred*, *complete*, *stable*.
+  Lesson 5.
+
+- Skeptical, credulous :: Two modes of reading several labellings: a
+  statement is accepted skeptically if every labelling has it IN,
+  credulously if some does. Lesson 7.
+
+- Witness, sigma :: The labelling that guides evaluation ("sigma"), chosen
+  from those the semantics and mode allow. Lessons 7 and 11.
+
+- Strict, defeasible :: An edge or a subterm is strict when it rests on no
+  site; otherwise defeasible.
+
+- Strict layer :: Open (tasks.org, aida-strict-layer): which attacks
+  between strict and defeasible derivations succeed, and transposition of
+  strict rules. Not defined here.
+
+* Unfolding: from the document to a debate term
+
+- Unfolding :: Building one proof term, the /debate term/, for an issue
+  out of the document graph: every site, and every engaged /exposed node/,
+  is replaced by the debate about its statement. =core/dc/unfold.py=.
+  Lesson 8a.
+
+- Entry point (entrypoint) :: What a debate term is unfolded for: an
+  /issue/ (the *canonical* term) or an argument (the term *biased towards*
+  it: the argument on top of its statement's /stack/, its own sites
+  keeping the kinds it wrote). Lesson 8a.
+
+- Scaffold :: The shape of one support or attack, from the COMMA 2026
+  paper: =SUP(T, S)= puts a supporter S over a supported term T, =ATT(T,
+  E)= an attacker wing E against T; =SUP~= and =ATT~= are the context-side
+  mirror images. Each scaffold has two binders of its own, =alt= (binds
+  the /contrary/ of its statement) and =b= (binds the statement itself).
+  =pres_scaffolds= prints a term scaffold by scaffold. Lessons 6 and 8a.
+
+- Root :: The statement's own site at the bottom of its debate: a
+  presumption if somebody presumes the statement, an obligation
+  otherwise. What is left if no supporter is accepted. Lesson 8a.
+
+- Stack :: The arguments deriving a statement, as nested support
+  scaffolds, the last registered outermost and so judged first. Lesson 8a.
+
+- Attacker wing :: The debate about the contrary without its own
+  attackers, standing as the scion of the one attack scaffold. Its root
+  is the contrary, always captured by the attack's own =alt=. Lesson 8a.
+
+- Debate about S :: =ATT( SUP(ROOT_S, STACK_S), SUP~(ROOT_S̄, STACK_S̄) )=;
+  empty parts are left out (no supporters: no support scaffold; no
+  attackers and no marker on the contrary: no attack scaffold). Lesson 8a.
+
+- env :: While unfolding, the map from statements to the binders in scope
+  at the current place - the argument's own binders and the scaffolds'.
+  Lesson 8a.
+
+- Capture :: A demand for a statement that a binder in scope already
+  stands for becomes that binder's variable instead of being unfolded
+  again. Capture alone ends the unfolding. A captured presumption is
+  marked (=captured_presumption=). Lessons 8a and 13.
+
+- Spine (of unfolding) :: The statements being expanded on the path from
+  the root to the current place. Not to be confused with the /spine/ of
+  the horn rule below.
+
+- Horn :: Of a binder in an argument: a maximal subterm of its command
+  that does not contain the binder's own variable (a continuation for an
+  argument, a hypothesis for a counterargument). Every horn is a source
+  of the argument's edge. Decided 2026-10-15 (tasks.org,
+  aida-discuss-non-site-attack-points). Lesson 8a.
+
+- Spine (of the horn rule) :: The part of an argument's body that carries
+  the argument's own variable: control flow, which gets no edge. A cell
+  on the spine - the tail of a curried application - is no attack point,
+  by decision (aida-curried-intermediate-conclusions).
+
+- Bureaucratic node :: A node that makes no logical progress: a binder
+  whose bound statement is the same as the statement of its command (an
+  eta wrapper, a cut on the statement itself). Its same-statement half is
+  inlined, not exposed.
+
+- Exposed node :: A horn that makes logical progress: a declared axiom
+  applied, a lemma (a mu or mu' cut on another statement), a lambda or
+  lambda-bar. It has an edge of its own and is an attack and support
+  point, like a site (move target kind =derivation=). Lesson 8a.
+
+- Engaged :: An exposed node's statement is engaged when somebody else
+  derives, contests or presumes it. A node nobody engages stays as
+  written in the term. Lesson 8a.
+
+- Primacy :: The privilege of the entry point (and of a debate's moved
+  arguments), extended to their exposed nodes: their own derivation goes
+  on top of its statement's stack, and at a bound exposed node it is kept
+  on top of the captured variable. A canonical issue term gives primacy
+  to nobody. Lesson 8a.
+
+- subarguments default / share / preserve :: The setting for an exposed
+  node whose statement is bound in scope: keep the node's own derivation
+  over the captured variable by primacy (=default=), never (=share=), or
+  always (=preserve=). The verdict's class never depends on it. Lesson 8a.
+
+* Evaluation
+
+- Type check (replay) :: Fellowship replays the unfolded term as a
+  throwaway theorem; the term must type-check if the arguments did.
+  Lesson 8a, README phase 3.
+
+- Strict phase :: Phase 1 of evaluation: a scaffold one of whose wings is
+  strict and the other not is decided by strictness ("supporter strict",
+  "attacker strict: defeat"); the rest is delayed for the labelling. It
+  also contributes strict edges (=killC*=) for closed derivations the
+  graph missed. Lesson 10.
+
+- Sigma phase :: Phase 2: the remaining scaffolds are decided top-down by
+  the labels of the witness: keep the supporter if its derivation is IN,
+  the attacked term if the attacker is OUT. Lesson 11.
+
+- Critical pair :: A command =<mu a.c || mu'x.c'>= where two reduction
+  rules apply, (mu<) and (>mu); every scaffold decision is the choice of
+  one of them. Lessons 6 and 12.
+
+- Normal form; value, open, exception :: The term after phase 3
+  (normalisation), and its class: an *exception* if it holds an
+  uncatchable clash (an affine mu/mu' whose command no enclosing binder
+  can catch); otherwise *open* if an obligation remains; otherwise a
+  *value* - a proof, modulo the presumptions that remain. Lesson 12.
+
+- Uncatchable exception :: Open terminology (tasks.org,
+  aida-uncatchable-exception-terminology): the author's working reading
+  is an exception that contains no open site and no free variable.
+
+- Discharge :: Writing the witness labels into the remaining sites
+  (=!IN:A=, =?OUT:R=). Lessons 9 and 12.
+
+* Debates
+
+- Debate :: A named, ordered selection of the document's arguments:
+  =debate pro|con open|closed NAME : ISSUE.= then moves, then =cedat
+  tempus.= Never part of the document graph. README, "Debates".
+
+- Scope :: =open=: the whole document; =closed=: the moved arguments and
+  what they cite. The strict store is always in scope.
+
+- Move, verb, node :: A move adds an argument to the scope and orders the
+  term. A verb only checks it: the target must be an earlier move with a
+  *node* the mover's conclusion reaches - a site, the conclusion, or an
+  exposed node - of the verb's kind (=attack=, =rebut= an obligation,
+  =undermine= a presumption, =support=, ...).
+
+* Sharing
+
+- Shared form :: The debate of an issue kept as one *definition* per
+  statement, with *citations* where the unfolded term would hold a copy.
+  =share ARG.= prints it. Lesson 14.
+
+- Citation, captures, cuts :: A citation names a statement's definition
+  and records what its site's scope does to it: which statements are
+  captured, by which binders (=rule -> P:!=), and which are cut (=?:P=).
+  Lesson 15.
+
+- Skeleton :: A definition with every citation left as an open site; the
+  unit of the per-definition type check. Lesson 16.
+
+- Instance, stub :: An instance is a statement together with the
+  statements captured and cut in it: the unit the strict phase is run on
+  once. A stub stands for a resolved instance inside another. Lesson 17.
+
+- Pipeline unfolded / shared :: The two routes through evaluation: the
+  unfolded term (the default) or the shared form. Lesson 18.
+
+* The argument discipline
+
+- Pure level :: What a registered argument must be (decided 2026-10-15,
+  tasks.org aida-argument-lj-restriction): an argument is *linear*, a
+  counterargument *dual-linear*, and neither holds a debate scaffold.
+  Debates, not arguments, may be classical.
+
+- Linear :: Every continuation (bound by mu or lambda-bar) is used at most
+  once, with no second continuation binder between its binder and its
+  use: the intuitionistic fragment, what Fellowship's =lj= enforces.
+
+- Dual-linear :: The same for hypotheses (bound by mu' or lambda): the
+  dual-intuitionistic fragment. A refutation through a proved negation
+  passes; deriving false from two hypotheses does not.
+
+- Negation wrapper :: Fellowship's encoding of negation elimination,
+  =mu'H:~A.<H || chain*_F_>=; representation, not a cut anybody made, so
+  the discipline and the horn rule see through it.

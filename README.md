@@ -68,7 +68,7 @@ exercises: `minicourse.org` (arguments, graphs and labels),
 `minicourse-evaluation.org` (the evaluation pipeline),
 `minicourse-sharing.org` (sub-debates shared by name),
 `minicourse-superdeduction.org` and `minicourse-api.org` (AIDA from a
-program). They are drafted by an AI agent, pinned by the tests under
+program), and `glossary.org` explains their terminology. They are drafted by an AI agent, pinned by the tests under
 `tests/minicourse/`, and still await the author's review.
 
 ## Requirements
