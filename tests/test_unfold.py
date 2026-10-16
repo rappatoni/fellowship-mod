@@ -31,7 +31,7 @@ from core.dc.debate_graph import (
     compile_debate, compile_document, declaration_kinds, canonical_prop,
     DebateGraph, Edge, Source, _match_scaffold,
 )
-from core.dc.unfold import unfold, unfold_legacy, Unfolder, contrary
+from core.dc.unfold import unfold, contrary
 from pres.gen import pres_str
 from core.dc.strict import compile_issue, strict_resolve
 from core.dc.typecheck import typecheck, TypeCheckFailed
@@ -203,30 +203,11 @@ class TestShapes:
         # and so gives P[c] a presumption marker, and qArg's demand gives
         # P[t] an obligation marker.  Each bare contrary meets a binder.
         doc, strict = bare_contrary_document()
-        # legacy shape, sites only: the captured contrary in an eta wrapper.
-        # (With the exposure of horns, 2026-10-16, qArg's lemma "P from P
-        # via pp" is itself P's debate, which puts the site out of s's
-        # scope; the capture rule tested here is the same.)
-        legacy = lambda issue: Unfolder(doc, stacked=False, expose=False).unfold(issue)
-        term = legacy((K("Q"), "term"))
-        # P[t] inside qArg: attacked by "P fails", which is s
-        assert _contains(term, lambda n: isinstance(n, Mutilde) and isinstance(n.term, DI)
-                         and n.term.name == n.di.name and isinstance(n.context, ID)
-                         and n.context.name == "s" and n.context.captured_presumption)
-        assert not _contains(term, lambda n: isinstance(n, Geled))
-        term = legacy((K("R"), "term"))
-        # P[c] inside rArg's lambda: attacked by the demand for P, which is h
-        assert _contains(term, lambda n: isinstance(n, Mu) and isinstance(n.context, ID)
-                         and n.context.name == n.id.name and isinstance(n.term, DI)
-                         and n.term.name == "h" and not getattr(n.term, "captured_presumption", False))
-        assert not _contains(term, lambda n: isinstance(n, Goal) and n.prop == "P")
-        # the captured scion has no site left: the strict phase decides it
-        trace = []
-        strict_resolve(term, strict, trace=trace)
-        assert [(s, what) for (_, s), what in trace] == [("term", "attacker strict: defeat")]
-        # stacked shape: the contrary's root is the attack scion itself, and
-        # the attack's own alt, the innermost binder of the contrary,
-        # captures it (aida-unfold-scaffold-binders-capture).  The attack is
+        # The contrary's root is the attack scion itself, and the attack's
+        # own alt, the innermost binder of the contrary, captures it before
+        # s or h can (aida-unfold-scaffold-binders-capture; the legacy shape,
+        # which let s and h capture it, is gone with
+        # aida-shared-route-stack-shape).  The attack is
         # then nothing but its fallback; strictness leaves it to
         # normalisation.  Since the horn rule (2026-10-15) qArg's lemma
         # "P from P via pp" is a derivation of P (qArg.μ1, circular, so
@@ -431,15 +412,12 @@ def test_a_strict_edge_does_not_depend_on_where_the_argument_stands(prover):
     records a closed copy of an argument defeasible as registered, whether
     or not a scaffold in or around it was decided by strictness.  The
     self-attack is closed wherever it stands, so it gets SelfAttack* from
-    P[t] and from P[c], in the stacked and the legacy shape; before, the
-    legacy term for P[c] had SelfAttack as the attacker itself, decided
-    outside its wrapper, and no edge."""
+    P[t] and from P[c]."""
     from core.dc.strict import issue_strict_edges
     doc, _issue, sn, _sk = load(prover, "tests/rationality/self_attack_lk.fspy")
     for statement in ((K("P"), "term"), (K("P"), "context")):
-        for build in (unfold, unfold_legacy):
-            edges = issue_strict_edges(build(doc, statement), "u", sn)
-            assert [e.name for e in edges] == ["SelfAttack*"], (statement, build.__name__)
+        edges = issue_strict_edges(unfold(doc, statement), "u", sn)
+        assert [e.name for e in edges] == ["SelfAttack*"], statement
 
 
 def test_a_strict_argument_gets_no_duplicate_edge(prover):

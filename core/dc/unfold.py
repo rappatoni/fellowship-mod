@@ -2,17 +2,21 @@
 interface"; fragment-followups-plan.org B3).
 
 Given a document graph and an issue (a statement), build the debate term
-for that issue: start from the issue's site, wrap every edge deriving the
-statement as a support scaffold and every edge deriving its contrary as
-an attack scaffold, and expand each edge's body with its own sites
-unfolded the same way.  Rational closure is reachability: whatever the
-graph connects to the issue ends up in the term.
+for that issue (aida-unfold-entrypoints): the statement's root under one
+support scaffold whose scion is the stack of the edges deriving it, and
+one attack scaffold whose scion is the contrary's debate; each edge's
+body is expanded with its own sites unfolded the same way.  Rational
+closure is reachability: whatever the graph connects to the issue ends
+up in the term.
 
-Order is registration order (author, 2026-09-17): the first-registered
-supporter is innermost, attackers are outside all supporters (an attack
-contests the statement after all its alternatives), and the site itself
-- an obligation unless the statement is presumed somewhere in the
-document - is the innermost original everywhere, the root included.
+    issue term     ATT( SUP(ROOT, STACK), SUP~(ROOT_c, STACK_c) )
+    STACK          SUP( SUP(P1, P2), P3 )      last registered outermost
+
+The root is a presumption if some argument of the document presumes the
+statement, an obligation otherwise.  Order is registration order
+(author, 2026-09-17), the last registered supporter outermost, judged
+first.  An argument entrypoint (``unfold_argument``) puts the argument on
+top of its stack, and the sites of its own body keep the kind it wrote.
 The scaffolds are the paper's shapes (COMMA 2026), see the catalogue in
 core/dc/debate_graph.py.
 
@@ -48,9 +52,7 @@ supports gets ``b`` - after the outer step the supported term, so it
 shares the root instead of a copy - and the attacker wing's root, the
 contrary, is the attack's ``alt``.  Every statement being expanded has
 such a binder in scope below its debate, so capture alone ends the
-unfolding: each statement is expanded at most once per path (T6).  The
-legacy shape (``stacked = False``) keeps its scaffold variables out of
-scope and leaves a statement already being expanded as a bare site.
+unfolding: each statement is expanded at most once per path (T6).
 
 Debates are classical: the scaffolds throw to a second conclusion,
 which LJ forbids, so there are no lj debates (author, 2026-09-17) and
@@ -95,21 +97,13 @@ def contrary(statement):
 
 
 class Unfolder:
-    #: The term's shape.  True: the stacked shape of aida-unfold-entrypoints
-    #: (the root on top, one support scaffold whose scion is the supporter
-    #: stack, one attack scaffold whose scion is the contrary's debate).
-    #: False: the legacy shape (the site innermost, each supporter and then
-    #: each attacker wrapping what came before), which the shared route
-    #: still builds (core/dc/share.py) until aida-shared-route-stack-shape.
-    stacked = True
-
     #: Whether the horns of a body - a lemma, a lambda, an axiom applied -
     #: are unfolded into the debate about their statement where they
-    #: stand (tasks.org, aida-rational-closure, 2026-10-16), on either
-    #: shape.  False: sites only, the exposure before that date.
+    #: stand (tasks.org, aida-rational-closure, 2026-10-16).  False: sites
+    #: only, the exposure before that date.
     expose = True
 
-    def __init__(self, graph: DebateGraph, *, stacked=None, order=None,
+    def __init__(self, graph: DebateGraph, *, order=None,
                  subarguments="default", primacy=(), expose=None):
         """``order`` ({argument name: rank}, a debate's utterance order,
         core/dc/debate.py): at every statement the edges of the ranked
@@ -124,8 +118,6 @@ class Unfolder:
         with a copy of the statement's attackers where a scaffold binds
         it (tasks.org, aida-circular-support-design).  ``expose`` False:
         the old exposure, sites only (tests of the shape alone)."""
-        if stacked is not None:
-            self.stacked = stacked
         if expose is not None:
             self.expose = expose
         self.subarguments = subarguments
@@ -134,11 +126,10 @@ class Unfolder:
         self.graph = graph
         self._sites = count(1)
         self._alts = count(1)
-        # stacked shape: b has its own series, so that the sites of the
-        # argument unfolded keep the lowest numbers although every b is
-        # drawn before its scion is built; the legacy shape numbers b with
-        # the sites (the shared route's names stay as they were)
-        self._betas = count(1) if self.stacked else self._sites
+        # b has its own series, so that the sites of the argument unfolded
+        # keep the lowest numbers although every b is drawn before its
+        # scion is built
+        self._betas = count(1)
         self._used = set()
         self._by_target = {}
         for edge in graph.edges:
@@ -221,7 +212,7 @@ class Unfolder:
 
     @staticmethod
     def _scaffold_scope(statement, alt, beta, env):
-        """The scope inside a scaffold's scion (stacked shape): on either
+        """The scope inside a scaffold's scion: on either
         side ``alt`` binds the contrary and ``b`` the statement itself, so
         a demand for either in the scion is captured by them like by any
         binder (aida-unfold-scaffold-binders-capture)."""
@@ -303,8 +294,8 @@ class Unfolder:
         """The term (or context) for a statement in scope ``env``.  A
         captured presumption (``presumed``: the edge body had a
         Deleg/Geled there) is marked so the compiler keeps it a
-        presumption source.  ``own_kind`` (stacked shape only): the site is
-        in the body of the argument the term is unfolded for, and its root
+        presumption source.  ``own_kind``: the site is in the body of the
+        argument the term is unfolded for, and its root
         keeps the kind the argument wrote (True: a presumption)."""
         if logger.isEnabledFor(TRACE):
             logger.log(TRACE, "  unfold: at %s  env={%s}  spine={%s}",
@@ -319,56 +310,17 @@ class Unfolder:
                          env[statement], " (presumption)" if presumed else "")
             return var
         if statement in spine:
-            if self.stacked:
-                # Every statement being unfolded has a binder in scope
-                # below its debate (the scaffold's alt and b), so capture
-                # alone ends the unfolding; this is a defensive fallback.
-                site = self._site(statement, own_kind)
-                logger.warning("unfold: no binder in scope for %s, a statement already being "
-                               "unfolded; left as the site %s",
-                               self._show(statement), getattr(site, "number", "?"))
-                return site
-            # circular: the route through it stays open (T6)
-            site = self._site(statement)
-            logger.debug("unfold: %s already on the spine, left as the bare site %s",
-                         self._show(statement), getattr(site, "number", "?"))
+            # Every statement being unfolded has a binder in scope below its
+            # debate (the scaffold's alt and b), so capture alone ends the
+            # unfolding; this is a defensive fallback.
+            site = self._site(statement, own_kind)
+            logger.warning("unfold: no binder in scope for %s, a statement already being "
+                           "unfolded; left as the site %s",
+                           self._show(statement), getattr(site, "number", "?"))
             return site
-        spine = spine | {statement}
-        if self.stacked:
-            return self._debate(statement, env, spine, own_kind=own_kind)
-        edges = self._by_target.get(statement, [])
-        site = self._site(statement)
-        logger.debug("unfold: %s expanded, site %s (%s), %d deriving edge(s)",
-                     self._show(statement), getattr(site, "number", "?"),
-                     type(site).__name__, len(edges))
-        return self._wrap(statement, site, edges, env, spine)
+        return self._debate(statement, env, spine | {statement}, own_kind=own_kind)
 
-    def _wrap(self, statement, base, supporters, env, spine):
-        """Wrap ``base`` in a support scaffold per deriving edge and an
-        attack scaffold per edge (or default marker) of the contrary."""
-        term = base
-        contra = contrary(statement)
-        # Registration order is the nesting order: supporters innermost, then
-        # attackers, each wrapping what came before (author, 2026-09-17).
-        for edge in supporters:
-            alt = self._fresh_alt()
-            logger.debug("  unfold: %s +support '%s' (alt %s)", self._show(statement), edge.name, alt)
-            term = self._support(statement, term, self._edge(edge, env, spine), alt)
-        for edge in self._by_target.get(contra, []):
-            alt = self._fresh_alt()
-            logger.debug("  unfold: %s +attack '%s' via %s (alt %s)",
-                         self._show(statement), edge.name, self._show(contra), alt)
-            term = self._attack(statement, term, self._edge(edge, env, spine | {contra}), alt)
-        if self.graph.defaults.get(contra):
-            # somebody presumes or demands the contrary outright
-            alt = self._fresh_alt()
-            logger.debug("  unfold: %s +attack by the bare %s (%s) (alt %s)",
-                         self._show(statement), self._show(contra),
-                         "/".join(sorted(self.graph.defaults.get(contra))), alt)
-            term = self._attack(statement, term, self.statement_site_only(contra, env), alt)
-        return term
-
-    # -- the stacked shape (aida-unfold-entrypoints) ------------------------
+    # -- the debate about a statement (aida-unfold-entrypoints) --------------
 
     def _debate(self, statement, env, spine, *, own_kind=None, top=None):
         """The debate about ``statement`` (already on ``spine``):
@@ -485,27 +437,13 @@ class Unfolder:
                          self._show(contra), root.name)
         return self._supported(contra, root, self._by_target.get(contra, []), env, spine)
 
-    def statement_site_only(self, statement, env=None):
-        """The contrary's own bare site as an attacking scion, in the
-        eta-wrapped form the debate operators produce (mu x.<t || x>): a
-        presumed contrary stands as its presumption; a merely demanded one
-        is the trivial challenge, an identity edge that labels OUT.  The
-        site is looked up in scope like any other (``_bare``)."""
-        key, side = statement
-        prop = self._prop(key)
-        inner = self._bare(statement, env or {})
-        name = self._wiring("x", self._sites)
-        if side == "term":
-            return Mu(ID(name, prop), prop, inner, ID(name, prop))
-        return Mutilde(DI(name, prop), prop, DI(name, prop), inner)
-
     def _bare(self, statement, env):
         """The bare contrary's site, or the binder in scope that captures
         it (author, 2026-10-05).  The bare contrary stands for the default
         somebody holds on that statement, and a default meets a binder in
         scope exactly as a site in an edge body does: the binder takes it.
-        It is never expanded - its debate is the attack being built.  In
-        the stacked shape the attack's own ``alt`` is always in scope."""
+        It is never expanded - its debate is the attack being built.  The
+        attack's own ``alt`` is always in scope."""
         if statement in env:
             var = self._variable(statement, env[statement])
             defaults = self.graph.defaults.get(statement, ())
@@ -551,7 +489,7 @@ class Unfolder:
             return candidate
 
         def own_kind(presumed):
-            # only the stacked shape knows the argument being unfolded
+            # the sites of the argument unfolded keep the kind it wrote
             return {"own_kind": presumed} if own else {}
 
         def walk(node, env, names, expose=True):
@@ -639,13 +577,7 @@ class Unfolder:
         - S not bound otherwise: the debate about S, its root an
           obligation site (a presumption of S elsewhere at the bottom of
           the stack), the node's own derivation on top iff primacy, else
-          at its registered position.
-
-        The legacy shape (``stacked`` False) has no primacy and no
-        scaffold scope: an engaged node is the statement's debate as
-        ``_wrap`` builds it, with the canonical root, and a node whose
-        statement is already being expanded is cut to a bare site, as a
-        site is."""
+          at its registered position."""
         statement = (sub.target_key, sub.target_side)
         contra = contrary(statement)
         if statement in env:
@@ -661,7 +593,7 @@ class Unfolder:
                          sub.name, self._show(statement), env[statement], alt, beta)
             own = walk(node, self._scaffold_scope(statement, alt, beta, env), names, False)
             term = self._support(statement, captured, own, alt, beta)
-            if (self.stacked and self.subarguments == "preserve" and env[statement] in self._scaffold_vars
+            if (self.subarguments == "preserve" and env[statement] in self._scaffold_vars
                     and (self._by_target.get(contra) or self.graph.defaults.get(contra))):
                 alt2, beta2 = self._fresh_alt(), self._fresh_beta()
                 logger.debug("unfold: node '%s' also attacked by a copy of the debate about %s "
@@ -674,15 +606,6 @@ class Unfolder:
             logger.log(TRACE, "  unfold: node '%s' (%s) stays as written: nobody engages it",
                        sub.name, self._show(statement))
             return walk(node, env, names, False)
-        if not self.stacked:
-            if statement in spine:
-                site = self._site(statement)
-                logger.debug("unfold: node '%s' (%s) already on the spine, left as the bare site %s",
-                             sub.name, self._show(statement), getattr(site, "number", "?"))
-                return site
-            logger.debug("unfold: node '%s' exposed as %s", sub.name, self._show(statement))
-            return self._wrap(statement, self._site(statement), self._by_target.get(statement, []),
-                              env, spine | {statement})
         logger.debug("unfold: node '%s' exposed as %s%s", sub.name, self._show(statement),
                      " (its derivation on top)" if primary else "")
         return self._debate(statement, env, spine | {statement}, own_kind=False,
@@ -709,13 +632,6 @@ def unfold_argument(graph: DebateGraph, edge, subarguments="default") -> ProofTe
     biased towards it (aida-unfold-entrypoints): primacy is its, and its
     subarguments'."""
     return _shown(Unfolder(graph, subarguments=subarguments, primacy={edge.name}).unfold_argument(edge))
-
-
-def unfold_legacy(graph: DebateGraph, issue) -> ProofTerm:
-    """The issue's term in the legacy shape (exposed nodes included): the
-    reference the shared route (core/dc/share.py) is tested against until
-    aida-shared-route-stack-shape."""
-    return _shown(Unfolder(graph, stacked=False).unfold(issue))
 
 
 def argument_edge(graph: DebateGraph, name: str):

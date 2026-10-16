@@ -7,18 +7,18 @@ itself on top of its supporter stack:
     STACK          SUP( SUP(P1, P2), P3 )        last registered outermost
     argument P1    SUP( ROOT, SUP( SUP(P2, P3), P1 ) )
 
-The shape is presentation: the issue graph and its labellings are those of
-the legacy term, whichever entrypoint the term is unfolded from.
+The shape is presentation: the issue graph and its labellings are the
+document graph's, whichever entrypoint the term is unfolded from
+(tests/test_issue_graph_from_document.py).
 """
 
 import warnings
 
 import pytest
 
-from core.comp.adf_label import labellings
 from core.dc.debate_graph import declaration_kinds
 from core.dc.strict import compile_issue
-from core.dc.unfold import Unfolder, argument_edge, unfold, unfold_argument, unfold_legacy
+from core.dc.unfold import argument_edge, unfold, unfold_argument
 from wrap.cli import execute_script, setup_prover
 
 FIXTURES = [
@@ -56,77 +56,10 @@ def run(prover, script):
                        render_files=False, stop_marker=False)
 
 
-def edge_key(edge):
-    """An edge up to its name (copies are named apart) and the kinds of its
-    sources (an argument entrypoint's own sites keep the kind it wrote;
-    acceptance conditions do not read source kinds)."""
-    return (edge.target_key, edge.target_side, edge.strict,
-            tuple(sorted((s.key, s.side) for s in edge.sources)))
-
-
 def issue_graph(term, names, kinds):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
-
-
-def presumed(graph):
-    return {s for s, kinds in graph.defaults.items() if "presumption" in kinds}
-
-
-def framework(graph):
-    return {edge_key(e) for e in graph.edges if not e.name.endswith("*")}
-
-
-def strict_edges(graph):
-    return {edge_key(e) for e in graph.edges if e.name.endswith("*")}
-
-
-#: Where the stacked term finds strict edges the legacy term missed, seen
-#: from the contrary's side: the attacker wing is now the contrary's whole
-#: debate, so a strict decision inside it is made from either side.  The
-#: legacy term made it only from the statement's own side (self-attack:
-#: SelfAttack* for P[t] but not for P[c]).  {script: {(prop, side)}}.
-MORE_STRICT_EDGES = {}
-
-
-def compare(script, statement, reference, graph, doc):
-    assert framework(graph) == framework(reference)
-    assert presumed(graph) == presumed(reference)
-    assert set(graph.nodes) == set(reference.nodes)
-    assert strict_edges(graph) >= strict_edges(reference)
-    if strict_edges(graph) != strict_edges(reference):
-        MORE_STRICT_EDGES.setdefault(script, set()).add((doc.nodes[statement[0]], statement[1]))
-        return
-    for semantics in ("grounded", "preferred"):
-        assert labellings(graph, semantics) == labellings(reference, semantics), semantics
-
-
-@pytest.mark.parametrize("script", FIXTURES)
-def test_the_shape_does_not_change_the_framework(fresh, script, capsys):
-    """For every statement: the canonical term, and the term of every
-    argument for it, compile to the legacy term's framework (edges up to
-    names and source kinds, presumption markers, nodes).  The strict edges
-    can only grow (MORE_STRICT_EDGES); where they are equal, so are the
-    labellings.  Obligation markers may differ: the labeller reads only
-    presumptions.
-
-    The shape alone: both terms expand sites only (``expose=False``).  With
-    the exposure of horns (2026-10-16) the stacked term holds more - the
-    debates about the axioms and lemmas an argument applies - and is
-    checked against the document graph instead
-    (tests/test_issue_graph_from_document.py)."""
-    run(fresh, script)
-    doc = fresh.graph
-    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
-    for statement in doc.statements():
-        reference = issue_graph(Unfolder(doc, stacked=False, expose=False).unfold(statement), names, kinds)
-        stacked = Unfolder(doc, expose=False).unfold(statement)
-        compare(script, statement, reference, issue_graph(stacked, names, kinds), doc)
-        for edge in doc.edges:
-            if (edge.target_key, edge.target_side) == statement and edge.role != "subargument":
-                biased = Unfolder(doc, expose=False, primacy={edge.name}).unfold_argument(edge)
-                compare(script, statement, reference, issue_graph(biased, names, kinds), doc)
 
 
 # ---------------------------------------------------------------------------
