@@ -3686,8 +3686,8 @@ fixpoint stages of sigma. T3 now reads "for founded witness
 labellings": every IN statement IN by a derivation whose IN sources are
 reached in earlier stages (the grounded labelling always is). The
 spec's T3 carries the restriction with a dated note (debate-graph-spec.org
-is a local file, not versioned: root-level files are ignored by
-.gitignore). Consequences:
+is versioned since c627d7b, with the original T3; the restriction is
+5bc09dd). Consequences:
 - skeptical and grounded evaluation: unchanged by the restriction;
 - credulous evaluation under a founded witness: adequate;
 - credulous evaluation under an unfounded witness: open, the label
