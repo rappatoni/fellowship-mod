@@ -3774,6 +3774,27 @@ Checked and not violations (2026-10-16):
   debate, =μuse:U.<rp||μb1:P.<rq||μb4:Q.<aq||b4>*b1>*use>=; pArg stays
   defeasible in the document.
 
+*** BACKLOG Design idea: sigma delays evaluation at a variable instead of computing standings
+:PROPERTIES:
+:ID:             aida-sigma-delay-at-variables
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A worked-out answer to the author's idea of 2026-10-16: instead of computing what a captured variable stands for in advance (core/comp/standing.py, [[id:aida-judge-by-what-it-stands-for]]), sigma could delay deciding a scaffold whose scion rests on a variable until reduction has substituted what the variable is bound to. Either the idea is specified (when sigma delays, what resumes it, what it decides on, how it terminates) and compared with the standing module on the fixtures, or it is set aside with a reason.
+:VERIFY:         The idea is written up here with a worked example (tests/exposure/lemma_captured.fspy or lesson8a_cycle) giving the decisions and the normal form under each approach, and a recommendation the author accepts.
+:END:
+
+Raised by the author 2026-10-16, while accepting the standing module:
+"I am not sure if the standing module is exactly the right way to go
+rather than sigma delaying evaluation when confronted with a
+variable." Vague by the author's own account and not urgent.
+
 *** BACKLOG Evaluation option: keep the supporters of an obligation labelled IN
 :PROPERTIES:
 :ID:             aida-evaluate-keep-supporters-of-in-obligations
