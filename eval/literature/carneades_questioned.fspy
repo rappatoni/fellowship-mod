@@ -1,0 +1,35 @@
+# Carneades, an assumption questioned: no exception, but the opponent
+# questions Consideration. Carneades: the assumption no longer holds by
+# itself, so Contract is not acceptable until Consideration is proved.
+lk.
+declare Agreement, Consideration, Minor, Contract, Witness : bool.
+declare witness_rule : (Witness -> Agreement).
+argument a1 : (Contract).
+cut (Agreement -> Consideration -> (Minor -> false) -> Contract) r.
+by default.
+next.
+elim.
+next.
+elim.
+by default.
+next.
+elim.
+elim h.
+cut (Minor) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument a2 : (Agreement).
+cut (Witness -> Agreement) th.
+axiom witness_rule.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+# The opponent questions Consideration: a bare presumption of its refutation.
+counterargument question : (Consideration).
+by default.
+dixi.

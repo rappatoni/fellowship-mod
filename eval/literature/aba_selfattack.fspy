@@ -1,0 +1,36 @@
+# Flat ABA with a self-attacking assumption: x <- a, a~ = x. ABA: a is in
+# no admissible set; grounded and preferred are empty and there is no
+# stable extension. A second, independent assumption b with b~ = y and no
+# rule for y is accepted throughout.
+lk.
+declare X, A, B, Y, G : bool.
+declare rule_x : (A -> X).
+declare contrary_a : (X -> ~A).
+declare contrary_b : (Y -> ~B).
+declare rule_g : (B -> G).
+argument arg_x : (X).
+cut (A -> X) th.
+axiom rule_x.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+counterargument att_a : (A).
+cut (~A) x.
+cut (X -> ~A) th.
+axiom contrary_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+argument arg_g : (G).
+cut (B -> G) th.
+axiom rule_g.
+elim.
+by default.
+next.
+axiom th.
+dixi.

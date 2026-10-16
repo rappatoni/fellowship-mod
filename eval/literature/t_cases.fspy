@@ -1,0 +1,30 @@
+# Classical proof by cases on A, (A->B) -> (((A->false)->B) -> B),
+# proved dialectically.
+lk.
+declare A, B : bool.
+argument p1 : ((A->B) -> (((A->false)->B) -> B)).
+dixi.
+# S: assume A->B (f) and ~A->B (g); derive B.
+argument s1 : ((A->B) -> (((A->false)->B) -> B)).
+elim f.
+elim g.
+dixi.
+# P: B from ~A->B (owed) applied to ~A (owed).
+argument p2 : (B).
+cut ((A->false)->B) x.
+next.
+elim.
+next.
+axiom x.
+dixi.
+# P: ~A: assume A (h); then B by A->B, thrown to B's continuation (owed).
+argument p3 : (A->false).
+elim h.
+cut (B) k.
+cut (A->B) y.
+next.
+elim.
+axiom h.
+axiom y.
+next.
+dixi.

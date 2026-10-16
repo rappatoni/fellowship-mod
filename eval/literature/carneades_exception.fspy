@@ -1,0 +1,43 @@
+# Carneades, the exception proved: a birth certificate shows a party is a
+# minor, so the scheme for Contract does not apply. Carneades: Contract
+# not acceptable under any proof standard (the only pro argument is
+# inapplicable). Then the assumption Consideration is questioned (a bare
+# counter-presumption): in Carneades a questioned assumption must be
+# proved like an ordinary premise.
+lk.
+declare Agreement, Consideration, Minor, Contract, Witness, BirthCert : bool.
+declare witness_rule : (Witness -> Agreement).
+declare certificate_rule : (BirthCert -> Minor).
+argument a1 : (Contract).
+cut (Agreement -> Consideration -> (Minor -> false) -> Contract) r.
+by default.
+next.
+elim.
+next.
+elim.
+by default.
+next.
+elim.
+elim h.
+cut (Minor) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument a2 : (Agreement).
+cut (Witness -> Agreement) th.
+axiom witness_rule.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+argument a3 : (Minor).
+cut (BirthCert -> Minor) th.
+axiom certificate_rule.
+elim.
+by default.
+next.
+axiom th.
+dixi.

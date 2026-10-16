@@ -1,0 +1,69 @@
+# Defeasible logic, team defeat (Antoniou et al. 2001). Facts monotreme,
+# hasFur, laysEggs, hasBill; r1: monotreme => mammal, r2: hasFur => mammal,
+# r3: laysEggs => ~mammal, r4: hasBill => ~mammal; r1 > r3, r2 > r4.
+# DL: +d mammal - every attacking rule is beaten by some supporting rule,
+# though no single supporting rule beats both. AIDA has no superiority
+# relation; r1 > r3 is written as an undercut of r3 that applies when r1's
+# body holds, and r2 > r4 likewise.
+lk.
+declare Monotreme, HasFur, LaysEggs, HasBill, Mammal : bool.
+declare monotreme : (Monotreme).
+declare hasfur : (HasFur).
+declare layseggs : (LaysEggs).
+declare hasbill : (HasBill).
+declare r1_over_r3 : (Monotreme -> ~(LaysEggs -> ~Mammal)).
+declare r2_over_r4 : (HasFur -> ~(HasBill -> ~Mammal)).
+argument r1 : (Mammal).
+cut (Monotreme -> Mammal) r.
+by default.
+next.
+elim.
+axiom monotreme.
+axiom r.
+dixi.
+argument r2 : (Mammal).
+cut (HasFur -> Mammal) r.
+by default.
+next.
+elim.
+axiom hasfur.
+axiom r.
+dixi.
+counterargument r3 : (Mammal).
+cut (LaysEggs -> ~Mammal) r.
+by default.
+next.
+elim.
+axiom layseggs.
+elim.
+axiom.
+dixi.
+counterargument r4 : (Mammal).
+cut (HasBill -> ~Mammal) r.
+by default.
+next.
+elim.
+axiom hasbill.
+elim.
+axiom.
+dixi.
+counterargument sup13 : (LaysEggs -> ~Mammal).
+cut (~(LaysEggs -> ~Mammal)) x.
+cut (Monotreme -> ~(LaysEggs -> ~Mammal)) th.
+axiom r1_over_r3.
+elim.
+axiom monotreme.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument sup24 : (HasBill -> ~Mammal).
+cut (~(HasBill -> ~Mammal)) x.
+cut (HasFur -> ~(HasBill -> ~Mammal)) th.
+axiom r2_over_r4.
+elim.
+axiom hasfur.
+axiom.
+elim.
+axiom.
+dixi.

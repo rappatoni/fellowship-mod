@@ -1,0 +1,75 @@
+# Tweety again, with the exception written as an undercutter (Pollock):
+# being a penguin is a reason against applying "birds fly" to Tweety. The
+# undercutter refutes the presumed rule Bird->Flies, strictly.
+lk.
+declare Bird, Penguin, Flies : bool.
+declare penguin : (Penguin).
+declare penguins_are_birds : (Penguin -> Bird).
+declare penguin_exception : (Penguin -> ~(Bird -> Flies)).
+argument birdsfly : (Flies).
+cut (Bird -> Flies) r.
+by default.
+next.
+elim.
+cut (Penguin -> Bird) s.
+axiom penguins_are_birds.
+elim.
+axiom penguin.
+axiom s.
+axiom r.
+dixi.
+counterargument penguinsdont : (Flies).
+cut (Penguin -> ~Flies) r.
+by default.
+next.
+elim.
+axiom penguin.
+elim.
+axiom.
+dixi.
+# exception: the rule "birds fly" does not apply to a penguin.
+counterargument exception : (Bird -> Flies).
+cut (~(Bird -> Flies)) x.
+cut (Penguin -> ~(Bird -> Flies)) th.
+axiom penguin_exception.
+elim.
+axiom penguin.
+axiom.
+elim.
+axiom.
+dixi.
+# A closed debate that hears only the rebuttal: the contest stays open.
+debate pro closed d_rebut : Flies.
+birdsfly.
+attack penguinsdont birdsfly.
+cedat tempus.
+# The same with the undercutter: undermine targets birdsfly's presumption.
+debate pro closed d_full : Flies.
+birdsfly.
+attack penguinsdont birdsfly.
+undermine exception birdsfly.
+cedat tempus.
+# A wrong verb: penguinsdont concludes against Flies; support is refused.
+debate pro closed d_bad : Flies.
+birdsfly.
+support penguinsdont birdsfly.
+cedat tempus.
+# rebut needs an obligation; birdsfly's conclusion counts as one.
+debate pro closed d_rebut2 : Flies.
+birdsfly.
+rebut penguinsdont birdsfly.
+cedat tempus.
+# undermine on a non-presumption is refused.
+debate pro closed d_bad2 : Flies.
+birdsfly.
+undermine penguinsdont birdsfly.
+cedat tempus.
+# The con side opens.
+debate con closed d_con : Flies.
+penguinsdont.
+attack birdsfly penguinsdont.
+cedat tempus.
+# A closed debate with only the opening argument.
+debate pro closed d_alone : Flies.
+birdsfly.
+cedat tempus.

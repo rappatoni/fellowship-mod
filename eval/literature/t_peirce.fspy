@@ -1,0 +1,29 @@
+# Peirce's law, ((P->Q)->P)->P, the dialogue of tests/demo/06_peirce.fspy.
+lk.
+declare P,Q : bool.
+argument p1 : (((P -> Q)->P)->P).
+dixi.
+argument s1 : (((P -> Q)->P)->P).
+elim f.
+dixi.
+argument p2 : (P).
+cut ((P -> Q)->P) alpha.
+elim g.
+next.
+elim.
+next.
+axiom alpha.
+dixi.
+argument s2 : (P).
+cut (P->Q) beta.
+elim h.
+dixi.
+argument p3 : (Q).
+cut (P) gamma.
+dixi.
+counterargument s3 : (P->Q).
+cut ((P->Q)->P) theta.
+next.
+elim.
+axiom theta.
+dixi.

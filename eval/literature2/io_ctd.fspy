@@ -1,0 +1,23 @@
+# Constrained input/output logic (Makinson & van der Torre 2001), the
+# contrary-to-duty case: G = {(T, ~kill), (kill, gently)}, input {kill}.
+# Outputs must be consistent with the input: the maxfamily drops
+# (T, ~kill); the output is {gently}.
+# Encoding: outputs are plain statements; (T, ~kill) a presumed refutation
+# of Kill, (kill, gently) a rule; the input kill a fact.
+lk.
+declare Kill, Gently : bool.
+declare kill : (Kill).
+declare n_gently : (Kill -> Gently).
+counterargument dont_kill : (Kill).
+by default.
+dixi.
+argument gently : (Gently).
+cut (Kill -> Gently) t.
+axiom n_gently.
+elim.
+axiom kill.
+axiom t.
+dixi.
+argument kill_fact : (Kill).
+axiom kill.
+dixi.

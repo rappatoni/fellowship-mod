@@ -1,0 +1,23 @@
+# Minimal reproduction: a presumed issue A with an extra supporter sa that
+# rests on a presumption of B, and B contested by a presumption of its
+# refutation (B UNDEC). Grounded has one labelling, with A IN. Skeptical
+# evaluation gives a value; credulous gives an OPEN term: the credulous
+# tiebreak keeps the UNDEC supporter over the root presumption, which is IN,
+# and B's presumption, labelled UNDEC, becomes an obligation.
+lk.
+declare A, B : bool.
+declare b_a : (B -> A).
+argument pa : (A).
+by default.
+dixi.
+argument sa : (A).
+cut (B -> A) t.
+axiom b_a.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument nb : (B).
+by default.
+dixi.

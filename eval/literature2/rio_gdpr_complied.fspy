@@ -1,0 +1,31 @@
+# rio_gdpr.fspy with the information given: inform'(e2, x, y) really
+# exists, so the violation is defeated.
+lk.
+declare RexistProcess_e1, OInform_e1, RexistInform_e2, Violation_e1 : bool.
+declare process_e1 : (RexistProcess_e1).
+declare informed : (RexistInform_e2).
+declare norm : (RexistProcess_e1 -> OInform_e1).
+declare violation_rule : (OInform_e1 -> (RexistInform_e2 -> false) -> Violation_e1).
+argument obliged : (OInform_e1).
+cut (RexistProcess_e1 -> OInform_e1) t.
+axiom norm.
+elim.
+axiom process_e1.
+axiom t.
+dixi.
+argument violation : (Violation_e1).
+cut (OInform_e1 -> (RexistInform_e2 -> false) -> Violation_e1) th.
+axiom violation_rule.
+elim.
+next.
+elim.
+elim h.
+cut (RexistInform_e2) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument inform : (RexistInform_e2).
+axiom informed.
+dixi.

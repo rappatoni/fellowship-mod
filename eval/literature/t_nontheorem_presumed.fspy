@@ -1,0 +1,17 @@
+# The same non-theorem, but the proponent presumes A outright: a value
+# modulo the presumption, which a skeptic may contest.
+lk.
+declare A, B : bool.
+argument p1 : ((A->B) -> (B->A)).
+dixi.
+argument s1 : ((A->B) -> (B->A)).
+elim f.
+elim b.
+dixi.
+argument p2 : (A).
+by default.
+dixi.
+# The skeptic contests the presumption with a bare counter-presumption.
+counterargument q : (A).
+by default.
+dixi.

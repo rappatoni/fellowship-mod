@@ -1,0 +1,32 @@
+# s(CASP): p :- not q.  q :- not p.  :- p.   ?- q succeeds {q, not p};
+# ?- p has no models. The constraint is a denied P (a strict refutation).
+lk.
+declare P, Q : bool.
+declare rule_p : ((Q -> false) -> P).
+declare rule_q : ((P -> false) -> Q).
+deny constraint_p : (P).
+argument arg_p : (P).
+cut ((Q -> false) -> P) th.
+axiom rule_p.
+elim.
+elim h.
+cut (Q) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument arg_q : (Q).
+cut ((P -> false) -> Q) th.
+axiom rule_q.
+elim.
+elim h.
+cut (P) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+counterargument kill_p : (P).
+moxia constraint_p.
+dixi.

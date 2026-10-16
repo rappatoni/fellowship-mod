@@ -1,0 +1,13 @@
+# Refuting an invalid formula, A -> B, by a countermodel: the skeptic
+# presumes A and presumes the refutation of B. The proponent's claim is an
+# obligation nobody meets.
+lk.
+declare A, B : bool.
+argument claim : (A -> B).
+dixi.
+counterargument countermodel : (A -> B).
+elim.
+by default.
+next.
+by default.
+dixi.

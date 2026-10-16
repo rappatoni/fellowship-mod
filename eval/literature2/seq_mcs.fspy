@@ -1,0 +1,51 @@
+# Sequent-based argumentation (Arieli & Strasser 2015; Arieli, Borg &
+# Strasser 2018): arguments are sequents Gamma => psi of a base logic,
+# attacks are sequent elimination rules (Defeat, Undercut, ...). For
+# classical logic with Undercut, the stable and preferred extensions of
+# S = {p, q, p -> ~q} correspond to its maximal consistent subsets:
+# {p, q}, {p, p->~q}, {q, p->~q}; skeptically none of the three premises
+# is accepted, credulously each is.
+# Encoding: each premise is derived from a presumed source (so that two
+# premises in conflict are two derivations, not an onus conflict); every
+# attack the base logic gives is written as an argument - the base logic's
+# closure is not built in.
+lk.
+declare P, Q, S1, S2, S3 : bool.
+declare src_p : (S1 -> P).
+declare src_q : (S2 -> Q).
+declare src_r : (S3 -> (P -> ~Q)).
+argument p : (P).
+cut (S1 -> P) t.
+axiom src_p.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument q : (Q).
+cut (S2 -> Q) t.
+axiom src_q.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument r : (P -> ~Q).
+cut (S3 -> (P -> ~Q)) t.
+axiom src_r.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+# {p, p->~q} => ~q : refutes q (owes p and the rule).
+counterargument att_q : (Q).
+cut (~Q) x.
+cut (P -> ~Q) th.
+next.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

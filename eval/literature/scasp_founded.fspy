@@ -1,0 +1,32 @@
+# s(CASP): a :- b.  b :- a.  a :- not c.   ?- b succeeds {b, a}, passing
+# over the loop to the founded a :- not c; ?- a succeeds {a}.
+lk.
+declare A, B, C : bool.
+declare rule_a : (B -> A).
+declare rule_b : (A -> B).
+declare rule_a2 : ((C -> false) -> A).
+argument arg_a : (A).
+cut (B -> A) th.
+axiom rule_a.
+elim.
+next.
+axiom th.
+dixi.
+argument arg_b : (B).
+cut (A -> B) th.
+axiom rule_b.
+elim.
+next.
+axiom th.
+dixi.
+argument arg_a2 : (A).
+cut ((C -> false) -> A) th.
+axiom rule_a2.
+elim.
+elim h.
+cut (C) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.

@@ -1,0 +1,22 @@
+# A non-theorem, (A->B) -> (B->A): the proponent cannot discharge the
+# obligation on A. A second document shows what a presumption buys.
+lk.
+declare A, B : bool.
+argument p1 : ((A->B) -> (B->A)).
+dixi.
+argument s1 : ((A->B) -> (B->A)).
+elim f.
+elim b.
+dixi.
+# P: A - but only as a bare claim (an obligation nobody meets).
+argument p2 : (A).
+dixi.
+# A tries to get A from B via A->B: wrong direction, so P applies the
+# converse, which is owed and never supplied.
+argument p3 : (A).
+cut (B->A) y.
+next.
+elim.
+next.
+axiom y.
+dixi.

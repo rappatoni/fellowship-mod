@@ -1,0 +1,31 @@
+# Defeasible deontic logic, a strong permission as an exception:
+# r1: => O ~smoke, r2: smokingArea => P smoke, r2 > r1 (Governatori,
+# Olivieri, Rotolo, Scannapieco 2013). Fact smokingArea. DDL: +d P smoke,
+# -d O ~smoke. Encoding: the permission refutes the prohibition, and is
+# itself derived; no built-in link between P and O (O x -> P x, or
+# O ~x against P x) exists.
+lk.
+declare SmokingArea, ONotSmoke, PSmoke : bool.
+declare area : (SmokingArea).
+declare perm_rule : (SmokingArea -> PSmoke).
+declare perm_excludes : (PSmoke -> ~ONotSmoke).
+argument prohibition : (ONotSmoke).
+by default.
+dixi.
+argument permission : (PSmoke).
+cut (SmokingArea -> PSmoke) t.
+axiom perm_rule.
+elim.
+axiom area.
+axiom t.
+dixi.
+counterargument exception : (ONotSmoke).
+cut (~ONotSmoke) x.
+cut (PSmoke -> ~ONotSmoke) th.
+axiom perm_excludes.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

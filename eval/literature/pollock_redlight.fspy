@@ -1,0 +1,41 @@
+# Pollock's red-light example (1987): an object looks red, so it is red
+# (prima facie reason); but it is illuminated by red light, which undercuts
+# the reason without supporting "not red". Then a further rebuttal: a
+# reliable witness says the light is white (presumed).
+lk.
+declare LooksRed, Red, RedLight, WhiteLightTestimony : bool.
+declare looks_red : (LooksRed).
+declare red_light_undercuts : (RedLight -> ~(LooksRed -> Red)).
+declare testimony_says_white : (WhiteLightTestimony -> ~RedLight).
+argument red : (Red).
+cut (LooksRed -> Red) r.
+by default.
+next.
+elim.
+axiom looks_red.
+axiom r.
+dixi.
+# undercut: under red light, looking red is no reason for being red.
+counterargument undercut : (LooksRed -> Red).
+cut (~(LooksRed -> Red)) x.
+cut (RedLight -> ~(LooksRed -> Red)) th.
+axiom red_light_undercuts.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+# witness: the light is white, as a witness testified (presumed).
+counterargument witness : (RedLight).
+cut (~RedLight) x.
+cut (WhiteLightTestimony -> ~RedLight) th.
+axiom testimony_says_white.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.

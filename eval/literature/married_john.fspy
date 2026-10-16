@@ -1,0 +1,46 @@
+# Caminada & Amgoud (2007), the married-bachelor example that motivates the
+# rationality postulates. Facts: John wears a ring, John is a party animal.
+# Defeasible: ring => married, party animal => bachelor. Strict:
+# married -> has wife, bachelor -> not has wife.
+# With the strict rules closed under transposition (ASPIC+, Caminada &
+# Amgoud's fix) married and bachelor are not both accepted; without it the
+# accepted conclusions {married, bachelor} are strictly inconsistent.
+lk.
+declare Ring, Party, Married, Bachelor, HasWife : bool.
+declare ring : (Ring).
+declare party : (Party).
+declare married_wife : (Married -> HasWife).
+declare bachelor_nowife : (Bachelor -> ~HasWife).
+argument married : (Married).
+cut (Ring -> Married) r.
+by default.
+next.
+elim.
+axiom ring.
+axiom r.
+dixi.
+argument bachelor : (Bachelor).
+cut (Party -> Bachelor) r.
+by default.
+next.
+elim.
+axiom party.
+axiom r.
+dixi.
+argument haswife : (HasWife).
+cut (Married -> HasWife) th.
+axiom married_wife.
+elim.
+next.
+axiom th.
+dixi.
+counterargument nowife : (HasWife).
+cut (~HasWife) x.
+cut (Bachelor -> ~HasWife) th.
+axiom bachelor_nowife.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

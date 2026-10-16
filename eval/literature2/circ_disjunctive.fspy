@@ -1,0 +1,60 @@
+# Circumscription (McCarthy 1980, 1986), propositional instance: two birds,
+# flies_i <- bird_i & ~ab_i, and one of them is abnormal (ab1 v ab2).
+# Circumscribing ab: minimal models {ab1} and {ab2}. Every minimal model
+# satisfies flies1 v flies2; neither flies1 nor flies2 holds in all.
+# Encoding: ~ab_i presumed (the minimisation), ab1 v ab2 as the two rules
+# (~ab1 -> ab2) and (~ab2 -> ab1).
+lk.
+declare Bird1, Bird2, Ab1, Ab2, Flies1, Flies2 : bool.
+declare bird1 : (Bird1).
+declare bird2 : (Bird2).
+declare f1 : (Bird1 -> (Ab1 -> false) -> Flies1).
+declare f2 : (Bird2 -> (Ab2 -> false) -> Flies2).
+declare d12 : ((Ab1 -> false) -> Ab2).
+declare d21 : ((Ab2 -> false) -> Ab1).
+argument flies1 : (Flies1).
+cut (Bird1 -> (Ab1 -> false) -> Flies1) th.
+axiom f1.
+elim.
+axiom bird1.
+elim.
+elim h.
+cut (Ab1) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument flies2 : (Flies2).
+cut (Bird2 -> (Ab2 -> false) -> Flies2) th.
+axiom f2.
+elim.
+axiom bird2.
+elim.
+elim h.
+cut (Ab2) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument ab2 : (Ab2).
+cut ((Ab1 -> false) -> Ab2) th.
+axiom d12.
+elim.
+elim h.
+cut (Ab1) k.
+axiom h.
+next.
+axiom th.
+dixi.
+argument ab1 : (Ab1).
+cut ((Ab2 -> false) -> Ab1) th.
+axiom d21.
+elim.
+elim h.
+cut (Ab2) k.
+axiom h.
+next.
+axiom th.
+dixi.

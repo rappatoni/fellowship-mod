@@ -1,0 +1,25 @@
+# Statements, refinement and citation: a claim is an obligation until
+# proved; a citer follows the cited argument as it is refined (late
+# binding); qed refuses while a presumption remains.
+lk.
+declare A, B : bool.
+declare ab : (A -> B).
+lemma la : (A).
+argument usesA : (B).
+cut (A -> B) th.
+axiom ab.
+elim.
+cite la.
+axiom th.
+dixi.
+# la is an open claim: B is not established yet.
+label usesA.
+# Refine la with a presumption: B now follows by default.
+prove la.
+by default.
+dixi.
+label usesA.
+evaluate usesA.
+# qed must refuse: la still rests on a presumption.
+prove la.
+qed.

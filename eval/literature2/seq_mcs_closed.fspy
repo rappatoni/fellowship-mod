@@ -1,0 +1,66 @@
+# The same premise set with all three attacks the base logic gives:
+# {p, p->~q} => ~q, {q, p->~q} => ~p (modus tollens), {p, q} => ~(p->~q).
+# Expected (maximal consistent subsets): three preferred = stable
+# labellings, each rejecting exactly one premise; grounded rejects nothing
+# and accepts nothing of the three.
+lk.
+declare P, Q, S1, S2, S3 : bool.
+declare src_p : (S1 -> P).
+declare src_q : (S2 -> Q).
+declare src_r : (S3 -> (P -> Q -> false)).
+argument p : (P).
+cut (S1 -> P) t.
+axiom src_p.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument q : (Q).
+cut (S2 -> Q) t.
+axiom src_q.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument r : (P -> Q -> false).
+cut (S3 -> (P -> Q -> false)) t.
+axiom src_r.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument att_q : (Q).
+cut (P -> Q -> false) th.
+next.
+elim.
+next.
+elim.
+axiom th.
+next.
+dixi.
+# {q, p->~q} => ~p   (falsum is left owed and met by nofalse: the
+# direct spelling with ~Q is dropped from the graph, tasks.org
+# aida-negation-cell-horn)
+counterargument att_p : (P).
+cut (P -> Q -> false) th.
+next.
+elim.
+axiom th.
+elim.
+next.
+next.
+dixi.
+# {p, q} => ~(p->~q)
+counterargument att_r : (P -> Q -> false).
+elim.
+next.
+elim.
+next.
+next.
+dixi.
+counterargument nofalse : (false).
+elim.
+dixi.

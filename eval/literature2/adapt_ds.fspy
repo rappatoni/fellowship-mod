@@ -1,0 +1,54 @@
+# Inconsistency-adaptive logic (Batens; ACLuN1/ACLuNm): disjunctive
+# syllogism holds unless its premise is abnormal (p & ~p derivable).
+# Gamma = {p, ~p v q, r, ~r, ~r v s}. Both strategies (reliability and
+# minimal abnormality) finally derive q but not s, since r & ~r is an
+# abnormality. Encoding: each premise from a presumed source; ~x v y as
+# the rule x -> y (applied only when x stands); ~r as a refutation of r.
+lk.
+declare P, Q, R, S, Sp, Sr, Snr : bool.
+declare src_p : (Sp -> P).
+declare src_r : (Sr -> R).
+declare src_nr : (Snr -> ~R).
+declare ds_q : (P -> Q).
+declare ds_s : (R -> S).
+argument p : (P).
+cut (Sp -> P) t.
+axiom src_p.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument r : (R).
+cut (Sr -> R) t.
+axiom src_r.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument nr : (R).
+cut (~R) x.
+cut (Snr -> ~R) th.
+axiom src_nr.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+argument q : (Q).
+cut (P -> Q) t.
+axiom ds_q.
+elim.
+next.
+axiom t.
+dixi.
+argument s : (S).
+cut (R -> S) t.
+axiom ds_s.
+elim.
+next.
+axiom t.
+dixi.

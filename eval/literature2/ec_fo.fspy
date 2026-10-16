@@ -1,0 +1,29 @@
+# The event calculus axiom of persistence is quantified over time points
+# and fluents and uses the order on time:
+#   forall t1 t2 f e, Happens(e,t1) & Initiates(e,f,t1) & t1 < t2 &
+#                      ~Clipped(t1,f,t2) -> HoldsAt(f,t2).
+# A ground use of the quantified axiom, to see what the pipeline does.
+lk.
+declare T, F, E : type.
+declare t0, t1 : T.
+declare alive : F.
+declare birth : E.
+declare Happens : E -> T -> bool.
+declare Initiates : E -> F -> T -> bool.
+declare HoldsAt : F -> T -> bool.
+declare happens : (Happens [birth] [t0]).
+declare initiates : (Initiates [birth] [alive] [t0]).
+declare ec1 : (forall e:E, forall f:F, forall s:T, forall t:T, Happens [e] [s] -> Initiates [e] [f] [s] -> HoldsAt [f] [t]).
+argument holds : (HoldsAt [alive] [t1]).
+cut (forall e:E, forall f:F, forall s:T, forall t:T, Happens [e] [s] -> Initiates [e] [f] [s] -> HoldsAt [f] [t]) r.
+axiom ec1.
+elim [birth].
+elim [alive].
+elim [t0].
+elim [t1].
+elim.
+axiom happens.
+elim.
+axiom initiates.
+axiom r.
+dixi.

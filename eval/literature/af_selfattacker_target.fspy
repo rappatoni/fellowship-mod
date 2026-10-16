@@ -1,0 +1,32 @@
+# Abstract AF a->a, a->b (Dung: a and b UNDEC in grounded and preferred; no stable extension),
+# encoded as in eval/dung.py.
+lk.
+declare A, B : bool.
+declare att_a_a : (A -> ~A).
+declare att_a_b : (A -> ~B).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+counterargument a_on_a : (A).
+cut (~A) x.
+cut (A -> ~A) th.
+axiom att_a_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

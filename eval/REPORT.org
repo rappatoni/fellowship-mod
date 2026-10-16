@@ -1,0 +1,717 @@
+#+title: AIDA against the literature: a test report
+#+date: 2026-10-16
+
+# AI NOTE: Written by an AI agent (Claude) at the author's request,
+# 2026-10-16 (part 2 the same day, on request), on the worktree branch eval-literature (from main at dc8deb8).
+# A test report about the implementation, not manuscript prose. Every
+# verdict quoted here was produced by running the code; the evidence is in
+# eval/results/ and every example in eval/literature/ runs as is. Where
+# AIDA differs from another system the report says so and does not treat
+# the other system as right: bugs are judged only against AIDA's own
+# README, minicourses, glossary and tasks.org decisions.
+
+* Summary
+
+I wrote 48 =.fspy= documents (=eval/literature/=): dialectical proofs of
+propositional theorems and the standard examples from abstract
+argumentation, ADFs, structured argumentation (ASPIC+-style examples),
+ABA, Carneades, s(CASP) and Catala. I ran each through a harness
+(=eval/harness.py=) that labels every argument under grounded, preferred
+and stable semantics, evaluates it skeptically and credulously, and
+checks *adequacy*: a credulous value exactly when some labelling has the
+issue IN, a skeptical value exactly when every labelling has. I compared
+the labels with independent brute-force solvers for Dung frameworks and
+ADFs and with s(CASP) 0.25 itself, and I swept the same checks over the
+repository's 60 fixture scripts.
+
+The headline results:
+
+- *Labelling of the document graph is sound against Dung and ADF
+  semantics.* 161/161 abstract frameworks (11 from the literature, 150
+  random) agree with Dung on grounded, complete, preferred and stable.
+  155/161 ADFs agree with the ADF semantics of Brewka et al. (2013); the
+  six that do not all have a condition containing "b or not b", which
+  AIDA cannot see as a tautology because b and its refutation are two
+  statements.
+- *Adequacy held in 912 of 912 evaluations* of encoded abstract
+  frameworks, and in all literature examples except the bugs below.
+- *Dialectical proofs work.* Transitivity, contraposition and Peirce's law
+  evaluate to their proof terms with the type check on; double negation
+  elimination and consequentia mirabilis evaluate to the correct classical
+  proof terms only with the type check off (bug 4); proof by cases hits
+  bug 2.
+- *Eight bugs and five specification questions*, listed in [[*Bugs][Bugs]] and
+  [[*Specification questions][Specification questions]], each with a minimal reproduction.
+  The most serious: an exposed lemma is lifted out of the lambda that
+  binds its hypothesis, so evaluation returns a "value" with a free
+  variable while the issue is labelled OUT (bug 2); and credulous
+  evaluation under grounded semantics can be OPEN where skeptical is a
+  value (bug 3).
+
+* How the testing was done
+
+- Worktree =../fellowship-mod-eval=, branch =eval-literature=, created
+  from =main= at =dc8deb8=. No source file was changed. The main
+  checkout's virtualenv is used through a symlink =.venv= (ignored by
+  git); =eval/run.sh= runs the CLI and =eval/h= the harness from the
+  worktree's code.
+- =eval/harness.py FILE= replays the document with =Service.check= and,
+  for every argument and debate, prints the labels of its issue under each
+  semantics and the verdict and normal form of =evaluate= in both modes,
+  marking every adequacy mismatch. =--typecheck off= switches the replay
+  oracle off; =--labels= prints whole labellings.
+- =eval/dung.py= and =eval/af_crosscheck.py=: a brute-force Dung solver
+  over three-valued labellings and an encoding of an abstract framework as
+  a document (every argument a presumed atom, every attack =y -> x= a
+  declared axiom =Y -> ~X= applied by a counterargument that owes Y).
+  =eval/af_eval_check.py= checks the issue-level labels and adequacy for
+  every argument of random frameworks.
+- =eval/adf.py= and =eval/adf_crosscheck.py=: a brute-force ADF solver
+  (the approximating operator; complete = fixpoints, grounded = least,
+  preferred = information-maximal complete, stable via the reduct) and a
+  generic encoding of a condition in disjunctive normal form: one
+  argument per disjunct, a positive literal an obligation, a negative
+  literal the presumed refutation of its atom.
+- s(CASP) answers come from =/Users/maxrapp/Work/Uni/scasp/scasp= (version
+  0.25.12.04), on the programs in =eval/scasp/=.
+- =eval/scaling.py= times =label= and =evaluate= on diamond chains.
+
+* Results by source
+
+** Dialectical proofs of propositional theorems
+
+Each proof is a sequence of one-inference moves: the proponent claims the
+thesis, the skeptic introduces the hypotheses and demands the conclusion,
+each further move owes what it uses. Unfolding composes the moves by
+capture (a demand met by a binder already in scope).
+
+| file                   | theorem                              | type check on                | type check off            |
+|------------------------+--------------------------------------+------------------------------+---------------------------|
+| t_transitivity         | (A->B)->(B->C)->A->C                 | VALUE, the proof term        | same                      |
+| t_contraposition       | (A->B)->(~B->~A)                     | VALUE, the proof term        | same                      |
+| t_peirce               | ((P->Q)->P)->P                       | VALUE, classical proof       | same                      |
+| t_dne                  | ~~A->A                               | refused by the type check    | VALUE, classical proof    |
+| t_mirabilis            | (~A->A)->A                           | refused by the type check    | VALUE, classical proof    |
+| t_cases                | (A->B)->((~A->B)->B)                 | refused (free variable h)    | VALUE with free h, label OUT (bug 2) |
+| t_subtraction          | refute A-A; refute B-B dialectically | VALUE                        | same                      |
+| t_lnc, t_lnc_dialectical | ~(P-P), outright and dialectically | VALUE                        | same                      |
+| t_nontheorem           | (A->B)->(B->A)                       | OPEN, issue OUT              | same                      |
+| t_nontheorem_presumed  | same, A presumed and counter-presumed| credulous VALUE, skeptical OPEN | same                   |
+| t_refute_invalid       | refute A->B by a countermodel        | refutation VALUE, claim EXCEPTION | same                 |
+
+Two restrictions of the term language shaped these proofs: =~~A= had to
+be written =(A->false)->false= and falsum left as an obligation met by a
+separate refutation of =false= (bug 1), and excluded middle has no
+statement of its own, since disjunction is not in AIDA's fragment.
+
+** Abstract argumentation (Dung)
+
+- *Document graph:* the 11 literature frameworks (unattacked, self-attack,
+  reinstatement chain, mutual attack, odd 3-cycle, even 4-cycle, floating
+  reinstatement, a self-attacker attacking another, an odd cycle attacking
+  out, Dung's 1995 example, a framework with a preferred but no stable
+  extension) and 150 random ones (up to 5 arguments) agree with Dung on
+  all four semantics: 161/161 (=results/af_literature.txt=,
+  =results/af_random.txt=).
+- *Issue graphs:* over 60 random frameworks (=results/af_eval.txt=),
+  912 evaluations, 0 adequacy mismatches; 116 issue labels differ from
+  Dung, every one of them explained by two causes: a self-attacking
+  argument reachable from the issue (69 under grounded and preferred, 32
+  under stable), which the issue graph labels OUT where Dung says UNDEC
+  (specification question 2), and stable semantics not being local (15:
+  a self-attacker elsewhere leaves Dung without a stable extension, while
+  the issue graph does not see it). =af_selfattacker_target.fspy=: for
+  =a -> a, a -> b= Dung and the document say a, b UNDEC and no stable
+  extension; =evaluate b= gives a VALUE, b IN.
+
+** Abstract dialectical frameworks
+
+=results/adf_literature.txt=: support chain, attack chain, joint attack,
+joint support, mixed conditions, a non-bipolar condition (exclusive or),
+self-support, a support cycle, a support cycle with a founded base, odd
+and even negative loops: 11/11 agree with the reference on all four
+semantics. =results/adf_rand.txt=: 155/161 with the random ones. The six
+disagreements all contain a tautologous condition (=a: a | ~a=,
+=a: ~b | b&c= with c true, ...): the reference evaluates "b or not b" as
+true when b is undecided; AIDA's ADF is over statements, b and its
+refutation are separate statements, and the disjunction of two undecided
+statements is undecided. Under stable semantics =a: a | ~a= has the
+model {a} in the ADF semantics and none in AIDA (which here agrees with
+answer set programming).
+
+So AIDA expresses every ADF condition up to this point: bipolar or not,
+joint attacks and supports, through presumed refutations as negative
+literals.
+
+** Structured argumentation: the standard examples
+
+| file                    | example                               | AIDA                                                       | literature                                   |
+|-------------------------+---------------------------------------+------------------------------------------------------------+----------------------------------------------|
+| tweety_specificity      | penguin vs bird rule, no priority     | Flies UNDEC (grounded); two preferred                      | not-fly with specificity or rule priority    |
+| tweety_undercut         | penguin as an undercutter of the rule | Flies OUT, not-Flies IN; birdsfly EXCEPTION                | not-fly (Pollock, ASPIC+ undercut)           |
+| nixon_floating          | Nixon diamond, floating Political     | grounded UNDEC; IN in both preferred; skeptical VALUE =!IN:Political= | floating conclusion: preferred-skeptical yes, grounded no |
+| married_john            | Caminada & Amgoud 2007                | Married IN, Bachelor IN, HasWife UNDEC; in preferred [2] HasWife and ~HasWife both IN | consistency postulates require not both     |
+| pollock_redlight        | looks red, red light, witness         | Red IN (undercutter defeated)                              | Red IN                                       |
+| aspic_snores(_undercut) | snoring professor                     | Denied UNDEC without preference; OUT with the undercutter  | resolved by preferences                      |
+| rationality_crash       | unrelated Z and not-Z, both strict    | Tweety unaffected; Z both sides IN, EXCEPTION              | crash resistance holds                       |
+
+AIDA has no preference relation, so every example that the literature
+resolves by priority or specificity stays contested unless the exception
+is written as an undercutter of the presumed rule. The married-bachelor
+result is the known gap =aida-strict-layer= (no transposition and no
+bridge between =~K= proved and K refuted): in the second preferred
+labelling both HasWife and =~HasWife= are IN.
+
+** ABA
+
+| file           | framework                                  | AIDA                                               | ABA                                    |
+|----------------+--------------------------------------------+----------------------------------------------------+----------------------------------------|
+| aba_toni       | Toni's tutorial example                    | a OUT, p OUT, r IN, b, c IN                        | same (grounded)                        |
+| aba_mutual     | p <- a, q <- b, a~ = q, b~ = p             | grounded all UNDEC; two preferred = stable         | same                                   |
+| aba_selfattack | x <- a, a~ = x; independent b              | document: a, x UNDEC, no stable; issue ~a: a refuted (VALUE) | a in no extension, no stable extension |
+
+Encoding: a rule a declared implication, an assumption a presumption, the
+contrary of an assumption a declared =x~ -> ~x=. The self-attacking
+assumption agrees with ABA at the document level and from the issue x;
+from the issue "a refuted" it is refuted classically (specification
+question 2).
+
+** Carneades
+
+| file                 | situation                                        | AIDA                                       | Carneades                                         |
+|----------------------+--------------------------------------------------+--------------------------------------------+---------------------------------------------------|
+| carneades_contract   | pro (agreement, consideration, no minor) vs con (statute of frauds) | credulous VALUE, skeptical OPEN | scintilla: acceptable; dialectical validity: not; preponderance: by weights |
+| carneades_exception  | exception (minor) proved                         | Contract OUT                               | not acceptable                                    |
+| carneades_questioned | assumption questioned                            | onus-conflict warning, Contract UNDEC; credulous VALUE | not acceptable until proved              |
+
+Premise types map directly: an ordinary premise is an obligation, an
+assumption a presumption, an exception the presumed refutation of the
+exception. Proof standards map only at the two ends (scintilla of
+evidence to credulous, dialectical validity to skeptical); weights and
+audiences cannot be written. Questioning has no counterpart: the closest
+is a counter-presumption, which AIDA reports as an onus conflict.
+
+** s(CASP)
+
+Rules are declared implications, an atom premise an obligation, =not b=
+the presumed refutation of b, a constraint =:- p= a denied P
+(=moxia=). Grounded by hand to propositional atoms.
+
+| program              | query               | s(CASP) 0.25           | AIDA (issue)                                   |
+|----------------------+---------------------+------------------------+------------------------------------------------|
+| birds (=scasp_birds=) | flies(tweety)      | {flies(tweety), not ab(tweety)} | IN, VALUE                             |
+|                      | flies(sam)          | no models              | OUT, OPEN                                      |
+| even loop            | p                   | {p, not q}             | credulous VALUE, skeptical OPEN                |
+| odd loop + fact r    | p                   | no models              | IN under every semantics, VALUE                |
+|                      | r                   | no models (global check) | IN, VALUE                                    |
+| positive loop        | a                   | no models              | grounded UNDEC; one preferred labelling IN (credulous VALUE =!IN:A=); stable OUT |
+| loop with founded base | b, a              | {b, a}, {a}            | IN, VALUE                                      |
+| even loop + =:- p=   | q / p               | {q, not p} / no models | IN, VALUE / OUT, EXCEPTION                     |
+
+Agreement on the normal cases. Differences: the odd loop =p :- not p= is
+read classically, as =(~P->P)->P=, so P is proved (the author's decision
+for self-attack; at the document level P is UNDEC and there is no stable
+labelling, as in s(CASP)); and AIDA answers locally, so the fact r
+stands beside an inconsistent part, where s(CASP)'s global check fails
+every query. The positive loop agrees under stable semantics only; under
+preferred an unfounded loop is accepted credulously, as documented.
+
+** Catala
+
+| file             | situation                               | AIDA                                        | Catala                    |
+|------------------+-----------------------------------------+---------------------------------------------+---------------------------|
+| catala_exception | base rate, applicable exception         | Rate15 IN, Rate20 OUT                       | 15%                       |
+| catala_nested    | exception to an exception               | Eligible OUT, refutation VALUE              | false                     |
+| catala_empty     | no base, exception not applicable       | Rate15 OUT, OPEN                            | NoValueProvided error     |
+| catala_conflict  | two applicable exceptions               | EXCEPTION for both                          | ConflictError             |
+
+A base definition is a bare presumption, an exception a derivation from
+its condition, a variable's single value a strict exclusion between the
+propositions for its values. Catala's two run-time errors have
+counterparts: an empty default is OPEN, a conflict an EXCEPTION. Values
+other than truth values (amounts, dates) and arithmetic cannot be
+written. =catala_conflict= also shows specification question 1.
+
+** Grounded predicate logic and first-order rules
+
+Ground atoms in predicate syntax (=Bird [tweety]=) work throughout:
+=grounded_predicate.fspy= labels and evaluates like its propositional
+twin. A quantified defeasible rule (=first_order.fspy=, =forall x, Bird
+[x] -> Flies [x]= presumed and instantiated at tweety) is refused, as the
+README says, but with the wrong message (bug 8).
+
+** Debates
+
+=debates_tweety.fspy= exercises open and closed debates, both onus sides
+and the verbs. Every move is checked as documented: =attack= and =rebut=
+on the conclusion pass, =undermine= reaches the presumed rule, =support=
+of a refutation and =undermine= of a non-presumption are refused with
+clear messages; a closed debate hears only its moves (the rebuttal alone
+leaves the contest open, adding the undercutter decides it).
+
+** Refinement, citation, adoption
+
+=refinement_citation.fspy=: a lemma is an obligation until refined; a
+citer follows the refinement (late binding: B goes from OUT to IN); =qed=
+refuses while a presumption remains, with a clear message.
+
+** Scaling
+
+Diamond chains (each level two statements, each derived from both
+statements of the level below; presumed rules), median of three runs,
+type check on (=results/scaling.txt=):
+
+| levels | paths | label  | evaluate |
+|--------+-------+--------+----------|
+|      4 |    16 | 0.25 s | 0.03 s   |
+|      8 |   256 | 0.72 s | 0.89 s   |
+|     10 |  1024 | 1.70 s | 3.75 s   |
+|     11 |  2048 | 3.56 s | 8.80 s   |
+
+Evaluation roughly doubles per level, as the README predicts for the
+unfolded route; labelling grows more slowly.
+
+** Repository fixtures and test suite
+
+The harness over the 60 fixture scripts (=results/sweep.txt=) found
+nothing new beyond the bugs below, except for these, all documented or
+intended: the lj fixtures refuse debates; =naf_olon.fspy= has no stable
+labelling; =lesson16_spelling.fspy= hits the known two-spellings task;
+=default_test.fspy= is strictly inconsistent and evaluates to EXCEPTION.
+It did find bug 3 in =olon.fspy= and bug 5 in
+=thetaexpander_bureaucratic_cases.fspy=.
+
+Test suite (=pytest tests=, worktree with the main virtualenv):
+2119 passed, 7 skipped, 2 xfailed, 1 xpassed in 351 s
+(=results/pytest.txt=). The suite is green while bugs 1-8 stand, so none
+of them is covered by an existing test.
+
+* Expressivity: what can and cannot be written
+
+Can be written today:
+- abstract frameworks (exactly, at the document level);
+- ADFs whose conditions are in disjunctive normal form, bipolar or not
+  (exactly up to tautologous conditions);
+- rebuttals, undercuts (refuting a presumed rule), undermining
+  (refuting a presumed premise), and attacks on the conclusion of a
+  strict rule by a strict refutation;
+- burden of proof: obligations against presumptions, which gives
+  Carneades' premise types and Catala's base-and-exception structure;
+- normal logic programs with negation as failure and constraints,
+  grounded to atoms;
+- ground predicate atoms;
+- dialectical proofs in the implicational fragment with negation and
+  subtraction, classical ones included.
+
+Cannot be written today:
+- preferences, priorities, specificity, weights, proof standards beyond
+  the credulous/skeptical pair, audiences;
+- conjunction and disjunction (and a document that uses them crashes,
+  bug 6), hence no excluded middle as a statement;
+- quantified rules in debates (refused);
+- data values and arithmetic (Catala's amounts, s(CASP)'s constraints
+  over numbers);
+- contraposition of rules and the bridge between =~K= proved and K
+  refuted (=aida-strict-layer=), so the consistency postulates fail on
+  the married-bachelor example;
+- Carneades' "questioning" of an assumption as a speech act.
+
+* Bugs
+
+Each is judged against AIDA's own documentation. Files are in
+=eval/literature/=, outputs in =eval/results/=.
+
+1. *An argument that applies a negation to an open site is silently left
+   out of the document graph.* =bug_falsum_cell.fspy=: =cut (~A) g. next.
+   elim. next.= (A owed) leaves the cell =?:A * _F_=; the compiler finds
+   no proposition on it ("Edge 'x1.c1': root proposition missing; run
+   enrichment first") and drops the argument, also when =~A= is a
+   declared axiom. A user sees only a warning at registration, and
+   =Service.check= reports the =dixi= as =ok= (the warning is in the
+   report-level diagnostics only). The same happens with
+   =(A->false)->false= once the falsum context is closed by =elim=. This
+   is what blocked the direct dialectical proof of double negation
+   elimination. Where: =_root_statement= in =core/dc/debate_graph.py=,
+   reached for a =Cons= horn whose tail is =_F_=.
+
+2. *An exposed lemma is lifted out of the lambda that binds its
+   hypothesis.* =t_cases.fspy=, =p3=: =λh:A. ... μy:B.<f || h*y> ...=.
+   The lemma =p3.μ1= (B from A->B and A) is compiled with A as an
+   obligation and then placed in B's stack at the top of the debate,
+   outside =λh=, so =h= is free. With the type check on, every query is
+   refused ("h is neither in your hypothesis nor in your conclusion");
+   with it off, both modes return =VALUE=
+   =μs1:...<λf.λg.μalt5:B.<f || h:A*alt5:B> || s1>= although the issue
+   is labelled OUT, because the strict phase counts the lifted lemma as
+   strict. This breaks the stated invariant that the unfolded term is
+   closed (tasks.org, the strict-phase decision of 2026-09-25) and
+   adequacy. Recent: exposure of lemmas is from 2026-10-15/16.
+
+3. *Credulous evaluation under grounded semantics can be OPEN where
+   skeptical is a value.* =bug_credulous_tiebreak2.fspy= (no warnings
+   involved) and the repository's own =tests/olon.fspy= (=first=,
+   =tester=, =final= ...): A is presumed and IN in the single grounded
+   labelling; a further supporter of A rests on a presumption of an UNDEC
+   statement B. Skeptical: =VALUE !IN:A=. Credulous: the trace says
+   "supporter A[t] is UNDEC -> keep the supporter (credulous tiebreak),
+   dropping the original", B's presumption, labelled UNDEC, becomes an
+   obligation, and the verdict is =OPEN=. =core/comp/evaluate.py= says
+   the choice of witness "only affects the normal form ..., never the
+   verdict", and the 2026-09-16 record says grounded makes credulous
+   coincide with skeptical. A second symptom
+   (=bug_credulous_tiebreak_value.fspy=): with B contested by two
+   derivations, credulous grounded evaluation returns a value whose term
+   keeps the derivation of B and drops its attacker, although grounded
+   does not accept B.
+
+4. *The type check refuses dialectical proofs whose evaluation is
+   correct.* =t_dne.fspy= and =t_mirabilis.fspy=: per sub-debate,
+   "Fellowship reconstructed a different term for 'p1_1' than the one
+   unfolded; the instructions do not encode the term. The shapes first
+   differ at mu/3/mutilde/3/mutilde/2"; with =typecheck expanded=, "This
+   is not trivial. Work some more." With the check off both evaluate to
+   the textbook classical proofs (=results/t_dne_typecheck_off.txt=). The
+   sub-debate in question is the one about =A->false=, in which the
+   refutation of A owed by =λh:A.μk:false.<h || ?>= is captured by an
+   enclosing continuation. Peirce's law, with the same kind of capture,
+   passes; so the replay's instruction generator, not the term, looks at
+   fault.
+
+5. *A binder named =_= poisons every debate that reaches its statement.*
+   =bug_underscore_binder.fspy=: =cut (P) _.= is accepted by Fellowship
+   and registered; every query about P, of every argument, is then
+   refused by the type check ("_ is neither in your hypothesis nor in
+   your conclusion"), and with the check off evaluation fails ("free
+   context variable '_' is neither bound nor a declared axiom"). The
+   unfolder uses =_= for its own unused binders. The repository's
+   =tests/thetaexpander_bureaucratic_cases.fspy= (=affine_parent=) makes
+   all nine of its arguments unqueryable this way.
+
+6. *A conjunction in an argument crashes the CLI and =Service.check=.*
+   =expressivity_connectives.fspy=: =dixi= on an argument whose
+   conclusion or a cut mentions =/\= raises =SyntaxErrorInSource=
+   ("cannot parse 'A /\ B' as a prop"): the CLI exits 1 with a traceback
+   and =Service.check= raises instead of reporting the entry and going
+   on. The README says such propositions can be declared but not argued
+   about; the expected behaviour is a one-line refusal.
+
+7. *An argument for a negation can lose its name and provenance.*
+   =bug_negation_edge_name.fspy=: =argument negA : (~A). elim h. next.
+   dixi.= gives the edge =H1 (argument, defeasible): ~A[t] <- A[c:obli]=;
+   the JSON graph says ="argument": "H1", "span": null=, so a document UI
+   cannot link the edge to negA's block. =H1= is Fellowship's wrapper
+   binder (=μH1:~A=), which is not peeled before naming.
+
+8. *The first-order refusal has the wrong message and the argument
+   silently leaves the graph.* =first_order.fspy=: instantiating a
+   presumed =forall x:Animal, Bird [x] -> Flies [x]= at =tweety= gives
+   "declared name 'tweety' has kind 'sort' but occurs as a term-side
+   leaf, which needs kind 'prop'" at registration (a warning; the
+   argument is not in the graph) and on every query. tweety is a
+   constant of sort Animal, not a sort, and the README promises
+   =FirstOrderNotSupported= naming the construct.
+
+* Specification questions
+
+These follow from documented decisions but give results the author may
+want to look at.
+
+1. *Labels depend on the issue asked even in a purely strict document.*
+   =catala_conflict.fspy= has facts and declared rules only. The
+   statement "Rate15 refuted" is IN in the issue graph of =exc1=, OUT in
+   that of =exc2= and in the document graph. The cause: an argument with
+   an obligation is a defeasible edge even when a strict argument meets
+   the obligation, and the strict phase adds a strict edge only for the
+   closed derivations of the issue's own term. The README allows issue
+   graphs to differ; here two queries contradict each other about one
+   statement. The strict contradiction (both sides of Rate15 strictly
+   derivable) is visible only at DEBUG.
+2. *Self-attack is read classically per issue, not per document.* For a
+   self-attacking argument the document graph agrees with Dung, ABA and
+   s(CASP) (UNDEC, no stable labelling); an issue graph that reaches it
+   labels it OUT, and its targets IN (=af_selfattacker_target.fspy=,
+   =aba_selfattack.fspy=, =scasp_odd.fspy=). This is the decided
+   classical reading (=(A->~A)->~A=), but it means that =label document=
+   and =label ARG= answer differently, and that a framework without a
+   stable labelling has issues with one.
+3. *A floating conclusion evaluates skeptically to a bare delegation.*
+   =nixon_floating.fspy=: Political is IN in both preferred labellings and
+   skeptical evaluation gives =VALUE !IN:Political=: the root obligation
+   is discharged as a delegation by its label, and the value holds no
+   argument. A classical case split on Dove would be a proof term for
+   it. The six ADF disagreements are the same phenomenon under grounded.
+4. *A strict contradiction labels both sides IN.* =rationality_crash.fspy=,
+   =catala_conflict.fspy=, =tests/default_test.fspy=: both sides IN and
+   evaluation EXCEPTION, so "IN implies a value" does not hold there.
+   Defensible (Catala raises an error in the same place), but adequacy as
+   stated in the minicourses does not mention it, and nothing above DEBUG
+   says the document is inconsistent.
+5. *The credulous fallback can name a label the chosen semantics does not
+   give.* =scasp_positive.fspy=: under stable the issue is OUT, and
+   credulous stable evaluation prints =?UNDEC:A=, the grounded label of
+   the documented fallback. Documented; it may confuse a reader of the
+   normal form.
+
+* Known issues this run confirmed
+
+- No transposition and no negation bridge (=aida-strict-layer=):
+  married-bachelor, and =~HasWife= IN beside HasWife IN.
+- Opposing presumptions only warn (=aida-onus-delegation-polarity=):
+  Carneades' questioning, =t_nontheorem_presumed.fspy=.
+- A debate that spells a negation two ways is refused by the replay
+  (=lesson16_spelling.fspy=).
+- Debates are refused in lj documents.
+
+* Part 2: further systems
+
+Documents in =eval/literature2/=, harness output in =eval/results2/=
+(grounded, preferred and stable; both modes). Each header states the
+system's documented answer. None of these systems was run; their answers
+are taken from the cited papers, and where I give a structural claim
+about them (for example the maximal consistent subsets) it is the
+published characterisation, not a computation of mine.
+
+** Summary of part 2
+
+| system                                | document(s)                             | agreement                                                        | gap                                                    |
+|---------------------------------------+-----------------------------------------+------------------------------------------------------------------+--------------------------------------------------------|
+| sequent-based argumentation           | seq_mcs, seq_mcs_closed                 | the three maximal consistent subsets appear as labellings          | a fourth labelling accepts all three premises; no logical closure |
+| adaptive logic                        | adapt_ds, adapt_minab, adapt_induction_fo, fo_opaque | disjunctive syllogism on a normal premise, blocked on an abnormal one | r, s over-accepted (negation bridge); minimal abnormality's r v s not a statement; inductive generalisation first order |
+| defeasible logic                      | dl_ambiguity, dl_team(_nosup), dl_defeater | team defeat, defeaters, no-superiority cases                     | ambiguity blocking not available; superiority only as undercuts |
+| defeasible deontic logic              | ddl_gentle_murderer, ddl_permission     | reparation chain, permission as exception                        | no deontic operators or axioms                         |
+| default justification logic           | djl_reasons, djl_reasons_own            | undercutting one reason among two                                | reasons are not statements; attacks reach statements only |
+| circumscription                       | circ_disjunctive, circ_fo               | minimal models as preferred labellings                           | disjunctive conclusions; predicate minimisation is first order |
+| event calculus                        | ec_yale_naive, ec_yale, ec_fo           | Yale shooting solved with presumed "not clipped"                 | time, order and the axioms are first order             |
+| input/output logic                    | io_out1_out3, io_out3, io_cases, io_ctd | out1 and out3 by choice of rules; constrained output             | no output operations or closure; reasoning by cases hits bug 2 |
+| reified input/output logic            | rio_gdpr(_complied), rio_fo             | ground obligations, violations, compliance                       | quantified, existential norms over eventualities       |
+
+** Sequent-based argumentation
+
+Arieli & Straßer (2015) and Arieli, Borg & Straßer (2018) relate the
+stable and preferred extensions of sequent-based frameworks over
+classical logic (with, among others, the Undercut rule) to the maximal
+consistent subsets (MCS) of the premises. For S = {p, q, p -> ~q} the
+MCS are {p, q}, {p, p->~q} and {q, p->~q}.
+
+- =seq_mcs.fspy= writes only the attack that applies the rule forwards
+  ({p, p->~q} => ~q). AIDA: p and the rule IN, q contested (two
+  preferred). The attacks a classical base logic adds, on p by modus
+  tollens and on the rule, are absent: AIDA builds no attack it was
+  not given (no closure under the base logic).
+- =seq_mcs_closed.fspy= writes all three attacks. Preferred and stable
+  give *four* labellings: the three MCS and one in which p, q and
+  p->~q are all IN and every attack OUT. Each attack owes its
+  premises, so its edge is defeasible, and the premise it attacks
+  rebuts it. The accepted set is classically inconsistent: indirect
+  consistency fails even with every contraposition written by hand.
+  Recorded under [[id:aida-strict-layer]].
+- Writing the modus tollens attacks with =~Q= drops them from the graph
+  (bug 1); the file spells the rule =P -> Q -> false=.
+
+** Adaptive logic
+
+- =adapt_ds.fspy=, Γ = {p, ~p v q, r, ~r, ~r v s}: both adaptive
+  strategies finally derive q, not s. AIDA: q IN; r and s contested (s
+  credulously only). Agreement, reading a disjunction with a negated
+  disjunct as the rule it licenses.
+- =adapt_minab.fspy=, Γ = {~p, ~q, p v q, p v r, q v s}: reliability
+  derives none of r, s, r v s; minimal abnormality derives r v s only.
+  AIDA (type check off; the file mixes =~P= and =P->false=, the known
+  two-spellings refusal): r and s are IN even under grounded. The derived
+  =~P[t]= (from the source of ~p) is never contested by the derivation
+  of P[t] (from ~q and p v q), so r stands. The missing negation bridge,
+  [[id:aida-strict-layer]]. With the bridge, r and s would be contested,
+  which matches reliability; minimal abnormality's disjunction r v s has
+  no statement in AIDA (no disjunction; =~r -> s= would need a case
+  split).
+- Inductive generalisation (Batens' IL, first order):
+  =adapt_induction_fo.fspy= presumes =forall x, Pr x= and instantiates it
+  with =elim [c]=: refused (bug 8's message). =fo_opaque.fspy= keeps the
+  universal statement opaque and supplies instantiation and the
+  counter-instance as declared schema instances; then the
+  generalisation is refuted by the counter-instance at d and the
+  instance at c is not derived, as in IL.
+
+** Defeasible logic
+
+- =dl_ambiguity.fspy= (Quaker/Republican/Chicago): standard DL is
+  ambiguity blocking and derives hasGun; ambiguity propagating DL and
+  the grounded semantics of DL's argumentation framework (Governatori,
+  Maher, Antoniou & Billington 2004) do not. AIDA: hasGun UNDEC
+  (grounded), three preferred labellings. AIDA propagates ambiguity; the
+  blocking variant cannot be had.
+- =dl_team.fspy= (platypus, r1 > r3, r2 > r4): team defeat derives
+  mammal. AIDA has no superiority relation; written as two undercuts
+  (each superior rule's body refutes the inferior rule), mammal is IN in
+  every semantics. =dl_team_nosup.fspy= without them: UNDEC, as DL
+  without superiority derives neither side.
+- =dl_defeater.fspy=: a defeater blocks flies without supporting
+  ~flies. Written as an undercut: Flies OUT and no statement for its
+  refutation. Agreement.
+- Superiority in general (a priority between two rules that applies
+  only when both are applicable, and its interplay with team defeat)
+  must be compiled into undercuts by hand.
+
+** Defeasible deontic logic
+
+- =ddl_gentle_murderer.fspy= (Forrester as the reparation chain
+  O~kill (x) O gently, kill): the prohibition stays in force, is
+  violated, and the reparation obligation is triggered - all three IN,
+  as in DDL. Obligations are atoms; there is no deontic operator, so the
+  standard-deontic-logic paradox cannot arise and no deontic inference
+  (O x -> P x, O x and O ~x in conflict, ...) is available unless
+  written as rules.
+- =ddl_permission.fspy=: a strong permission as an exception to a
+  prohibition (r2 > r1): prohibition OUT, permission IN. Agreement.
+
+** Default justification logic
+
+Pischke (2017, 2018) builds Reiter-style defaults over justification
+logic: reasons are terms (t : F), and an undercutter attacks a reason,
+not its conclusion. AIDA's arguments are proof terms too, but a term is
+not a statement, so no proposition says "t is a reason for F", and the
+debate verbs reach statements, not arguments.
+- =djl_reasons.fspy=: two witnesses share one presumption of
+  reliability; undercutting the first witness refutes the shared
+  statement and Robbery goes OUT with both arguments.
+- =djl_reasons_own.fspy=: one presumption per witness; the undercutter
+  hits only the first, Robbery stays IN through the second, as in
+  justification logic. The modeller must anticipate which reasons may be
+  attacked separately.
+- Not expressible: justifications of justifications (t : (s : F)),
+  operations on reasons inside formulas, the proof checker !.
+
+** Circumscription
+
+- =circ_disjunctive.fspy=: two birds, one of them abnormal. The minimal
+  models of circumscribing ab are {ab1}, {ab2}; AIDA's preferred and
+  stable labellings are exactly these two (flies1 in one, flies2 in the
+  other), grounded leaves all UNDEC. Circumscription also concludes
+  flies1 v flies2, which has no statement in AIDA; it is the floating
+  conclusion of question 3 again.
+- =circ_fo.fspy=: predicate circumscription minimises the extension of
+  Ab over the domain and concludes universal statements (here, nothing
+  is abnormal). The presumed =forall x, ~Ab x= is accepted as an opaque
+  statement; applying the quantified rule to tweety is refused. Grounding
+  needs a finite, named domain and unique names, which circumscription
+  does not assume.
+
+** Event calculus
+
+- =ec_yale_naive.fspy= (Yale shooting, persistence as presumed rules):
+  Alive3 UNDEC, two preferred labellings - the ambiguity of the
+  frame problem that the default-logic formalisation also shows (its
+  anomalous extension), here located at Alive3 itself (no transposition
+  carries the conflict back to Loaded2).
+- =ec_yale.fspy= (persistence unless clipped, "not clipped" presumed,
+  as the event calculus's negation as failure): Alive3 OUT, its
+  refutation IN under every semantics: the event calculus's answer.
+- =ec_fo.fspy=: the event-calculus axioms quantify over events, fluents
+  and time points and use the order on time; using the quantified
+  axiom is refused. Without arithmetic or an order on time, a timeline
+  must be grounded by hand, one atom per fluent and time point, with
+  one persistence rule per step.
+
+** Input/output logic
+
+- =io_out1_out3.fspy= and =io_out3.fspy=, G = {(a,b), (b,c)}, A = {a}:
+  out1 outputs b only, out3 also c. A norm (a,x) is a rule from input a
+  to an output atom; with the rule for (b,c) reading its input from
+  Ob only in io_out3, AIDA reproduces out1 and out3 respectively. The
+  output operation is fixed by which rules the modeller writes; AIDA
+  has no closure Cn on inputs or outputs.
+- =io_cases.fspy=, G = {(a,x), (b,x)}, input a v b: basic output (out2)
+  gives x by cases. A case split is classical, so it has to be argued
+  across moves; the unfolding hits bug 2 (the lemma for x from a is
+  lifted out of =λh:a=): refused with the type check on, a VALUE with a
+  free variable and x labelled OUT with it off.
+- =io_ctd.fspy= (constrained output, the contrary-to-duty case
+  G = {(T, ~kill), (kill, gently)}, input kill): the output ~kill,
+  inconsistent with the input, is dropped and gently is output.
+  Agreement: the input's strict derivation defeats the presumed
+  refutation.
+
+** Reified input/output logic
+
+Robaldo & Sun (2017) combine I/O logic with Hobbs' reification: norms
+quantify over eventualities, and Rexist(e) says that e really happens,
+so an obligation can be about an eventuality that does not exist.
+- =rio_gdpr.fspy= / =rio_gdpr_complied.fspy=: a ground instance
+  (processing e1 obliges informing; "no inform eventuality exists" is
+  presumed over the named candidate e2): violation IN without the
+  information, OUT with it. Agreement for the ground case.
+- =rio_fo.fspy=: the norm as written is universally quantified with an
+  existential obligation, =exists e, Inform e ctrl subj=. The
+  existential statement can be presumed and evaluates as an opaque
+  statement (VALUE =!IN:exists e:Ev, ...=); deriving it from a
+  witness eventuality, or instantiating the universal norm, is refused.
+  Reification's other features - eventualities of obligations, Rexist
+  over nested eventualities - need the same first-order machinery.
+
+** First-order requirements, collected
+
+- Quantified propositions are accepted as opaque statements: they can
+  be presumed, owed, refuted and used through declared rules
+  (=rio_fo=, =fo_opaque=).
+- Every quantifier step (=elim [t]=, introduction) is refused, with the
+  misleading "kind 'sort'" message of bug 8 (=adapt_induction_fo=,
+  =circ_fo=, =ec_fo=, =first_order= in part 1).
+- Hand-instantiated schemata as declared axioms are a working stopgap
+  for finite, named domains (=fo_opaque=), at the cost of one axiom per
+  instance.
+- Needed by: inductive generalisation (adaptive logic), predicate
+  circumscription, the event calculus, reified I/O logic, and the
+  universally quantified rules of s(CASP), defeasible logic with
+  variables, and Catala scopes over collections; also arithmetic and an
+  order on time points (event calculus, Catala, s(CASP) constraints),
+  which no AIDA statement can express.
+
+** New findings in part 2 (recorded in tasks.org)
+
+- The fourth labelling of =seq_mcs_closed.fspy= (all premises IN):
+  [[id:aida-strict-layer]].
+- =adapt_minab.fspy= over-accepts through the missing negation bridge:
+  [[id:aida-strict-layer]].
+- Bug 2 in a second, independent document (=io_cases.fspy=):
+  [[id:aida-lemma-exposure-scope]].
+- Bug 1 blocks modus tollens attacks written with =~=:
+  [[id:aida-negation-cell-horn]].
+- Opaque quantified statements work; quantifier steps do not:
+  [[id:aida-first-order-reduction]].
+- Bug 7 also in the skeptic's challenge of =t_lnc_dialectical.fspy=:
+  [[id:aida-negation-edge-provenance]].
+
+* Task changes made (tasks.org on this branch)
+
+New tasks, each citing its reproduction: [[id:aida-negation-cell-horn]]
+(bug 1), [[id:aida-lemma-exposure-scope]] (bug 2),
+[[id:aida-credulous-tiebreak-grounded]] (bug 3),
+[[id:aida-typecheck-dialectical-classical]] (bug 4),
+[[id:aida-underscore-binder]] (bug 5),
+[[id:aida-unsupported-connective-crash]] (bug 6),
+[[id:aida-negation-edge-provenance]] (bug 7),
+[[id:aida-check-dropped-argument]] (bug 1's reporting),
+[[id:aida-issue-relative-strict-labels]] (question 1),
+[[id:aida-self-attack-document-vs-issue]] (question 2),
+[[id:aida-floating-conclusion-witness]] (question 3),
+[[id:aida-credulous-fallback-label]] (question 5). Merged as notes into
+existing tasks: bug 8 into [[id:aida-first-order-reduction]]; question 4
+into [[id:aida-uncatchable-exception-terminology]] (the author accepted
+both sides IN; the note records adequacy's exception and the missing
+INFO message); the married-bachelor and non-interference documents into
+[[id:aida-postulate-fixtures-fspy]]; the s(CASP) documents into
+[[id:aida-scasp-stable-correspondence]]; the scaling run into
+[[id:aida-scaling-benchmarks]]; part 2's evidence into
+[[id:aida-strict-layer]] and the tasks above. No status was changed.
+
+* Files
+
+- =eval/literature/*.fspy= - part 1's documents (48 with the two
+  non-contradiction files); =eval/literature2/*.fspy= - part 2's (26);
+  =eval/scasp/*.pl= - the s(CASP) programs.
+- =eval/results2/= - part 2's harness output.
+- =eval/results/= - harness output for every document, the cross-checks,
+  the fixture sweep, the scaling run.
+- =eval/harness.py=, =eval/af_crosscheck.py=, =eval/af_eval_check.py=,
+  =eval/adf_crosscheck.py=, =eval/dung.py=, =eval/adf.py=,
+  =eval/scaling.py=, =eval/aida_env.py=, =eval/run.sh=, =eval/h=.

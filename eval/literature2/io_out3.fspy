@@ -1,0 +1,22 @@
+# The reusable reading (out3) of io_out1_out3.fspy: an output may serve as
+# input, written as the extra rule Ob -> Oc for the norm (b,c).
+lk.
+declare A, B, Ob, Oc : bool.
+declare a : (A).
+declare n_ab : (A -> Ob).
+declare n_bc : (B -> Oc).
+declare n_bc_reuse : (Ob -> Oc).
+argument ob : (Ob).
+cut (A -> Ob) t.
+axiom n_ab.
+elim.
+axiom a.
+axiom t.
+dixi.
+argument oc : (Oc).
+cut (Ob -> Oc) t.
+axiom n_bc_reuse.
+elim.
+next.
+axiom t.
+dixi.

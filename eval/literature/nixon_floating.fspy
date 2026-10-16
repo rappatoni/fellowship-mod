@@ -1,0 +1,47 @@
+# The extended Nixon diamond with a floating conclusion (Makinson &
+# Schlechta 1991; Horty 2002). Quakers are doves, Republicans are hawks
+# (= not doves), both by default; doves are politically active and so are
+# hawks (strict). Political activism "floats": it follows in every
+# preferred extension but not in the grounded one.
+lk.
+declare Quaker, Republican, Dove, Political : bool.
+declare quaker : (Quaker).
+declare republican : (Republican).
+declare doves_political : (Dove -> Political).
+declare hawks_political : ((Dove -> false) -> Political).
+argument dove : (Dove).
+cut (Quaker -> Dove) r.
+by default.
+next.
+elim.
+axiom quaker.
+axiom r.
+dixi.
+counterargument hawk : (Dove).
+cut (Republican -> ~Dove) r.
+by default.
+next.
+elim.
+axiom republican.
+elim.
+axiom.
+dixi.
+# pol1: Political, from Dove (owed).
+argument pol1 : (Political).
+cut (Dove -> Political) th.
+axiom doves_political.
+elim.
+next.
+axiom th.
+dixi.
+# pol2: Political, from not-Dove; not-Dove is built from a refutation of Dove (owed).
+argument pol2 : (Political).
+cut ((Dove -> false) -> Political) th.
+axiom hawks_political.
+elim.
+elim h.
+cut (Dove) k.
+axiom h.
+next.
+axiom th.
+dixi.

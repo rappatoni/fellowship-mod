@@ -1,0 +1,35 @@
+# Reified input/output logic (Robaldo & Sun 2017): norms over reified
+# eventualities with Hobbs' Rexist ("really exists"). A norm in the style of
+# the GDPR: if a controller x processes personal data of a subject y
+# (an eventuality e1 that really exists), x is obliged to inform y
+# (some eventuality e2, inform'(e2,x,y), ought to really exist). Compliance:
+# such an e2 exists; violation: none does.
+# Ground encoding: e1 and the candidate e2 are named in advance; the
+# obligation is an atom about e1; "no inform eventuality exists" is the
+# presumed refutation of RexistInform_e2 (closed-world over the named
+# candidates).
+lk.
+declare RexistProcess_e1, OInform_e1, RexistInform_e2, Violation_e1 : bool.
+declare process_e1 : (RexistProcess_e1).
+declare norm : (RexistProcess_e1 -> OInform_e1).
+declare violation_rule : (OInform_e1 -> (RexistInform_e2 -> false) -> Violation_e1).
+argument obliged : (OInform_e1).
+cut (RexistProcess_e1 -> OInform_e1) t.
+axiom norm.
+elim.
+axiom process_e1.
+axiom t.
+dixi.
+argument violation : (Violation_e1).
+cut (OInform_e1 -> (RexistInform_e2 -> false) -> Violation_e1) th.
+axiom violation_rule.
+elim.
+next.
+elim.
+elim h.
+cut (RexistInform_e2) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
