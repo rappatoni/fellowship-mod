@@ -1,0 +1,12 @@
+== literature2/circ_fo.fspy: check ok=True (0.1s)
+-- none_abnormal: issue forall x:D,Ab x->false[t]; 0 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+      credulous -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+   preferred issue: ['IN']
+      skeptical -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+      credulous -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+   stable    issue: ['IN']
+      skeptical -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+      credulous -> value     μx2:forall x:D,Ab x->false.<!IN:forall x:D,Ab x->false||x2:forall x:D,Ab x->false>
+== done in 0.1s

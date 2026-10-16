@@ -1,0 +1,8 @@
+== literature2/adapt_minab.fspy: check ok=True (0.2s)
+-- np: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'np': This is not trivial. Work some more.
+-- nq: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'nq': This is not trivial. Work some more.
+-- q: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'q': This is not trivial. Work some more.
+-- p: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'p': This is not trivial. Work some more.
+-- r: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'r': This is not trivial. Work some more.
+-- s: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 's': This is not trivial. Work some more.
+== done in 0.9s

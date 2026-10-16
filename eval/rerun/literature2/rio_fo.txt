@@ -1,0 +1,15 @@
+== literature2/rio_fo.fspy: check ok=True (0.2s)
+-- obliged: issue exists e:Ev,Inform e ctrl subj[t]; 0 edges
+   grounded  issue: ['IN']
+      [1] exists e:Ev,Inform e ctrl subj[t]=IN
+      skeptical -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+      credulous -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+   preferred issue: ['IN']
+      [1] exists e:Ev,Inform e ctrl subj[t]=IN
+      skeptical -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+      credulous -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+   stable    issue: ['IN']
+      [1] exists e:Ev,Inform e ctrl subj[t]=IN
+      skeptical -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+      credulous -> value     μx2:exists e:Ev,Inform e ctrl subj.<!IN:exists e:Ev,Inform e ctrl subj||x2:exists e:Ev,Inform e ctrl subj>
+== done in 0.4s

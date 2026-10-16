@@ -1,0 +1,54 @@
+== literature/aspic_snores_undercut.fspy: check ok=True (0.1s)
+-- misbehaves: issue Misbehaves[t]; 5 edges
+   grounded  issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Misbehaves[t]=OUT Snores[t]=IN
+      skeptical -> open      ?OUT:Misbehaves
+      credulous -> open      ?OUT:Misbehaves
+   preferred issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Misbehaves[t]=OUT Snores[t]=IN
+      skeptical -> open      ?OUT:Misbehaves
+      credulous -> open      ?OUT:Misbehaves
+   stable    issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Misbehaves[t]=OUT Snores[t]=IN
+      skeptical -> open      ?OUT:Misbehaves
+      credulous -> open      ?OUT:Misbehaves
+-- denied: issue Denied[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+      credulous -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+   preferred issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+      credulous -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+   stable    issue: ['OUT']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+      credulous -> exception μalt5:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b3:~Denied.<b3:~Denied||?OUT:Denied*_F_>>
+-- allowed: issue Denied[c]; 8 edges
+   grounded  issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+   preferred issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+   stable    issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=OUT Professor[t]=IN Snores[t]=IN
+      skeptical -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+-- asleep: issue Snores->Misbehaves[c]; 3 edges
+   grounded  issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN
+      skeptical -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+      credulous -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+   preferred issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN
+      skeptical -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+      credulous -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+   stable    issue: ['IN']
+      [1] ~(Snores->Misbehaves)[t]=IN Asleep->~(Snores->Misbehaves)[t]=IN Snores->Misbehaves[c]=IN Snores->Misbehaves[t]=OUT Asleep[t]=IN
+      skeptical -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+      credulous -> value     μ'alt2:Snores->Misbehaves.<asleep_undercuts:Asleep->~(Snores->Misbehaves)||!IN:Asleep*μb1:Snores->Misbehaves.<alt2:Snores->Misbehaves||b1:Snores->Misbehaves>*_F_>
+== done in 0.7s

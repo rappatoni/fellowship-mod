@@ -1,0 +1,42 @@
+== literature/married_john.fspy: check ok=True (0.1s)
+-- married: issue Married[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+   preferred issue: ['IN']
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+   stable    issue: ['IN']
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+-- bachelor: issue Bachelor[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+   preferred issue: ['IN']
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+   stable    issue: ['IN']
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+-- haswife: issue HasWife[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> open      ?UNDEC:HasWife
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> value     μhaswife:HasWife.<married_wife:Married->HasWife||μb1:Married.<!IN:Ring->Married||ring:Ring*b1:Married>*haswife:HasWife>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> value     μhaswife:HasWife.<married_wife:Married->HasWife||μb1:Married.<!IN:Ring->Married||ring:Ring*b1:Married>*haswife:HasWife>
+-- nowife: issue HasWife[c]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> open      UNDEC:HasWife?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> value     μ'nowife:HasWife.<bachelor_nowife:Bachelor->~HasWife||μb4:Bachelor.<!IN:Party->Bachelor||party:Party*b4:Bachelor>*nowife:HasWife*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> value     μ'nowife:HasWife.<bachelor_nowife:Bachelor->~HasWife||μb4:Bachelor.<!IN:Party->Bachelor||party:Party*b4:Bachelor>*nowife:HasWife*_F_>
+== done in 0.6s

@@ -1,0 +1,12 @@
+== literature2/bug_scaffold_label.fspy: check ok=True (0.1s)
+-- att_p: issue P[c]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   preferred issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   stable    issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+== done in 0.5s

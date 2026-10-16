@@ -1,0 +1,41 @@
+== literature/scasp_founded.fspy: check ok=True (0.1s)
+-- arg_a: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+      credulous -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+   preferred issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+      credulous -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+   stable    issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+      credulous -> value     μarg_a:A.<rule_a:B->A||μb1:B.<rule_b:A->B||μb7:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*b7:A>*b1:B>*arg_a:A>
+-- arg_b: issue B[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+      credulous -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+   preferred issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+      credulous -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+   stable    issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+      credulous -> value     μarg_b:B.<rule_b:A->B||μb1:A.<rule_a2:(C->false)->A||λb5:C.μb6:false.<b5:C||IN:C!>*b1:A>*arg_b:B>
+-- arg_a2: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+      credulous -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+   preferred issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+      credulous -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+   stable    issue: ['IN']
+      [1] (C->false)->A[t]=IN A->B[t]=IN B->A[t]=IN C->false[t]=IN A[t]=IN B[t]=IN C[c]=IN
+      skeptical -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+      credulous -> value     μarg_a2:A.<rule_a2:(C->false)->A||λb1:C.μb2:false.<b1:C||IN:C!>*arg_a2:A>
+== done in 0.4s

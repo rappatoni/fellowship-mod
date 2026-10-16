@@ -1,0 +1,23 @@
+== literature/t_dne.fspy: check ok=True (0.3s)
+   line 32: reported: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_5' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+   line 33: reported: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+   line 34: reported: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+   line 35: reported: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- p1: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- s1: graph refused: TypeCheckRefused: in the debate about A->false[t], which 's1' reaches: Fellowship reconstructed a different term for 's1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- p2: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p2' reaches: Fellowship reconstructed a different term for 'p2_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- nofalse: issue false[c]; 1 edges
+   grounded  issue: ['IN']
+      [1] false[c]=IN
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   preferred issue: ['IN']
+      [1] false[c]=IN
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   stable    issue: ['IN']
+      [1] false[c]=IN
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+-- p3: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p3' reaches: Fellowship reconstructed a different term for 'p3_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+== done in 0.4s

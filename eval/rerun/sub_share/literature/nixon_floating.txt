@@ -1,0 +1,42 @@
+== literature/nixon_floating.fspy: check ok=True (0.1s)
+-- dove: issue Dove[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> open      ?UNDEC:Dove
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> value     μdove:Dove.<!IN:Quaker->Dove||quaker:Quaker*dove:Dove>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> value     μdove:Dove.<!IN:Quaker->Dove||quaker:Quaker*dove:Dove>
+-- hawk: issue Dove[c]; 4 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Dove?
+      credulous -> open      UNDEC:Dove?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Dove?
+      credulous -> value     μ'hawk:Dove.<!IN:Republican->~Dove||republican:Republican*μ'b1:~Dove.<b1:~Dove||hawk:Dove*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Dove?
+      credulous -> value     μ'hawk:Dove.<!IN:Republican->~Dove||republican:Republican*μ'b1:~Dove.<b1:~Dove||hawk:Dove*_F_>>
+-- pol1: issue Political[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Political
+      credulous -> open      ?UNDEC:Political
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+-- pol2: issue Political[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Political
+      credulous -> open      ?UNDEC:Political
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+== done in 0.7s

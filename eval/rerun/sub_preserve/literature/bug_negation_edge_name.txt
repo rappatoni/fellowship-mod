@@ -1,0 +1,12 @@
+== literature/bug_negation_edge_name.fspy: check ok=True (0.1s)
+-- negA: issue ~A[t]; 1 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+== done in 0.4s

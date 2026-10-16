@@ -1,0 +1,38 @@
+== literature2/io_cases.fspy: check ok=True (0.1s)
+-- claim: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> value     μalt5:Ox.<n_a:A->Ox||h:A*alt5:Ox>   <-- ADEQUACY MISMATCH
+      credulous -> value     μalt5:Ox.<n_a:A->Ox||h:A*alt5:Ox>   <-- ADEQUACY MISMATCH
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> value     μalt5:Ox.<n_a:A->Ox||h:A*alt5:Ox>   <-- ADEQUACY MISMATCH
+      credulous -> value     μalt5:Ox.<n_a:A->Ox||h:A*alt5:Ox>   <-- ADEQUACY MISMATCH
+-- from_b: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> value     μalt5:Ox.<n_b:B->Ox||μb2:B.<input:(A->false)->B||μb1:A->false.<λb8:A.μb9:false.<n_a:A->Ox||h:A*alt5:Ox>||b1:A->false>*b2:B>*alt5:Ox>   <-- ADEQUACY MISMATCH
+      credulous -> value     μalt5:Ox.<n_b:B->Ox||μb2:B.<input:(A->false)->B||μb1:A->false.<λb8:A.μb9:false.<n_a:A->Ox||h:A*alt5:Ox>||b1:A->false>*b2:B>*alt5:Ox>   <-- ADEQUACY MISMATCH
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> value     μalt5:Ox.<n_b:B->Ox||μb2:B.<input:(A->false)->B||μb1:A->false.<λb8:A.μb9:false.<n_a:A->Ox||h:A*alt5:Ox>||b1:A->false>*b2:B>*alt5:Ox>   <-- ADEQUACY MISMATCH
+      credulous -> value     μalt5:Ox.<n_b:B->Ox||μb2:B.<input:(A->false)->B||μb1:A->false.<λb8:A.μb9:false.<n_a:A->Ox||h:A*alt5:Ox>||b1:A->false>*b2:B>*alt5:Ox>   <-- ADEQUACY MISMATCH
+-- b_from_input: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+-- not_a: issue A->false[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=IN A->Ox[t]=IN A->false[t]=OUT B->Ox[t]=IN A[t]=OUT B[t]=OUT Ox[c]=OUT Ox[t]=OUT
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+== done in 0.3s

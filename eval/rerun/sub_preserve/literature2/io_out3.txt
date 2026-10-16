@@ -1,0 +1,22 @@
+== literature2/io_out3.fspy: check ok=True (0.1s)
+-- ob: issue Ob[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+   preferred issue: ['IN']
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+   stable    issue: ['IN']
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+-- oc: issue Oc[t]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+      credulous -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+   preferred issue: ['IN']
+      skeptical -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+      credulous -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+   stable    issue: ['IN']
+      skeptical -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+      credulous -> value     μoc:Oc.<n_bc_reuse:Ob->Oc||μb1:Ob.<n_ab:A->Ob||a:A*b1:Ob>*oc:Oc>
+== done in 0.3s

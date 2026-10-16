@@ -1,0 +1,46 @@
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on A: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on A: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+== literature/t_nontheorem_presumed.fspy: check ok=True (0.1s)
+-- p1: issue (A->B)->B->A[t]; 1 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> open      ?UNDEC:(A->B)->B->A
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> value     μs1:(A->B)->B->A.<λf:A->B.λb:B.μalt2:A.<!IN:A||alt2:A>||s1:(A->B)->B->A>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> value     μs1:(A->B)->B->A.<λf:A->B.λb:B.μalt2:A.<!IN:A||alt2:A>||s1:(A->B)->B->A>
+-- s1: issue (A->B)->B->A[t]; 1 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> open      ?UNDEC:(A->B)->B->A
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> value     μs1:(A->B)->B->A.<λf:A->B.λb:B.μalt3:A.<!IN:A||alt3:A>||s1:(A->B)->B->A>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:(A->B)->B->A
+      credulous -> value     μs1:(A->B)->B->A.<λf:A->B.λb:B.μalt3:A.<!IN:A||alt3:A>||s1:(A->B)->B->A>
+-- p2: issue A[t]; 0 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μalt1:A.<?UNDEC:A||alt1:A>
+      credulous -> open      μalt1:A.<?UNDEC:A||alt1:A>
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      μalt1:A.<?UNDEC:A||alt1:A>
+      credulous -> value     μalt1:A.<!IN:A||alt1:A>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      μalt1:A.<?UNDEC:A||alt1:A>
+      credulous -> value     μalt1:A.<!IN:A||alt1:A>
+-- q: issue A[c]; 0 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt1:A.<alt1:A||UNDEC:A?>
+      credulous -> open      μ'alt1:A.<alt1:A||UNDEC:A?>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:A.<alt1:A||UNDEC:A?>
+      credulous -> value     μ'alt1:A.<alt1:A||IN:A!>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:A.<alt1:A||UNDEC:A?>
+      credulous -> value     μ'alt1:A.<alt1:A||IN:A!>
+== done in 0.5s

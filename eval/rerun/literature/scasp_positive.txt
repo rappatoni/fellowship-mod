@@ -1,0 +1,30 @@
+== literature/scasp_positive.fspy: check ok=True (0.1s)
+-- arg_a: issue A[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=UNDEC B[t]=UNDEC
+      skeptical -> open      ?UNDEC:A
+      credulous -> open      ?UNDEC:A
+   preferred issue: ['IN', 'OUT']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=IN B[t]=IN
+      [2] A->B[t]=IN B->A[t]=IN A[t]=OUT B[t]=OUT
+      skeptical -> open      ?UNDEC:A
+      credulous -> value     !IN:A
+   stable    issue: ['OUT']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?UNDEC:A
+-- arg_b: issue B[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=UNDEC B[t]=UNDEC
+      skeptical -> open      ?UNDEC:B
+      credulous -> open      ?UNDEC:B
+   preferred issue: ['IN', 'OUT']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=IN B[t]=IN
+      [2] A->B[t]=IN B->A[t]=IN A[t]=OUT B[t]=OUT
+      skeptical -> open      ?UNDEC:B
+      credulous -> value     !IN:B
+   stable    issue: ['OUT']
+      [1] A->B[t]=IN B->A[t]=IN A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?UNDEC:B
+== done in 0.3s

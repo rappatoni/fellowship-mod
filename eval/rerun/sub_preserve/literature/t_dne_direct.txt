@@ -1,0 +1,42 @@
+== literature/t_dne_direct.fspy: check ok=True (0.1s)
+-- p1: issue ~~A->A[t]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+-- s1: issue ~~A->A[t]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+-- p2: issue A[t]; 3 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μalt8:A.<?OUT:A||alt8:A>
+      credulous -> open      μalt8:A.<?OUT:A||alt8:A>
+   preferred issue: ['OUT']
+      skeptical -> open      μalt8:A.<?OUT:A||alt8:A>
+      credulous -> open      μalt8:A.<?OUT:A||alt8:A>
+   stable    issue: ['OUT']
+      skeptical -> open      μalt8:A.<?OUT:A||alt8:A>
+      credulous -> open      μalt8:A.<?OUT:A||alt8:A>
+-- p3: issue ~A[t]; 3 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:~A
+      credulous -> open      ?OUT:~A
+== done in 5.6s

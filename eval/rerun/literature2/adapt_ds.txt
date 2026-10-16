@@ -1,0 +1,73 @@
+== literature2/adapt_ds.fspy: check ok=True (0.1s)
+-- p: issue P[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Sp->P[t]=IN P[t]=IN Sp[t]=IN
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+   preferred issue: ['IN']
+      [1] Sp->P[t]=IN P[t]=IN Sp[t]=IN
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+   stable    issue: ['IN']
+      [1] Sp->P[t]=IN P[t]=IN Sp[t]=IN
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+-- r: issue R[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=UNDEC R[t]=UNDEC Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:R
+      credulous -> open      ?UNDEC:R
+   preferred issue: ['OUT', 'IN']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:R
+      credulous -> value     μr:R.<src_r:Sr->R||!IN:Sr*r:R>
+   stable    issue: ['OUT', 'IN']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:R
+      credulous -> value     μr:R.<src_r:Sr->R||!IN:Sr*r:R>
+-- nr: issue R[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=UNDEC R[t]=UNDEC Snr[t]=IN Sr[t]=IN
+      skeptical -> open      UNDEC:R?
+      credulous -> open      UNDEC:R?
+   preferred issue: ['IN', 'OUT']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      UNDEC:R?
+      credulous -> value     μ'nr:R.<src_nr:Snr->~R||!IN:Snr*nr:R*_F_>
+   stable    issue: ['IN', 'OUT']
+      [1] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      UNDEC:R?
+      credulous -> value     μ'nr:R.<src_nr:Snr->~R||!IN:Snr*nr:R*_F_>
+-- q: issue Q[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] P->Q[t]=IN Sp->P[t]=IN P[t]=IN Q[t]=IN Sp[t]=IN
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+   preferred issue: ['IN']
+      [1] P->Q[t]=IN Sp->P[t]=IN P[t]=IN Q[t]=IN Sp[t]=IN
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+   stable    issue: ['IN']
+      [1] P->Q[t]=IN Sp->P[t]=IN P[t]=IN Q[t]=IN Sp[t]=IN
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+-- s: issue S[t]; 7 edges
+   grounded  issue: ['UNDEC']
+      [1] R->S[t]=IN ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=UNDEC R[t]=UNDEC S[t]=UNDEC Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:S
+      credulous -> open      ?UNDEC:S
+   preferred issue: ['OUT', 'IN']
+      [1] R->S[t]=IN ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT S[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] R->S[t]=IN ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN S[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:S
+      credulous -> value     μs:S.<ds_s:R->S||μb1:R.<src_r:Sr->R||!IN:Sr*b1:R>*s:S>
+   stable    issue: ['OUT', 'IN']
+      [1] R->S[t]=IN ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=IN R[t]=OUT S[t]=OUT Snr[t]=IN Sr[t]=IN
+      [2] R->S[t]=IN ~R[t]=IN Snr->~R[t]=IN Sr->R[t]=IN R[c]=OUT R[t]=IN S[t]=IN Snr[t]=IN Sr[t]=IN
+      skeptical -> open      ?UNDEC:S
+      credulous -> value     μs:S.<ds_s:R->S||μb1:R.<src_r:Sr->R||!IN:Sr*b1:R>*s:S>
+== done in 0.8s

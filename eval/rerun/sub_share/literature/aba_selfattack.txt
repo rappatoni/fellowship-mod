@@ -1,0 +1,32 @@
+== literature/aba_selfattack.fspy: check ok=True (0.1s)
+-- arg_x: issue X[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:X
+      credulous -> open      ?UNDEC:X
+   preferred issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:X
+      credulous -> open      ?UNDEC:X
+   stable    issue: []
+      skeptical -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+      credulous -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+-- att_a: issue A[c]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:X->~A||μb2:X.<rule_x:A->X||μb1:A.<alt3:A||b1:A>*b2:X>*μb1:A.<alt3:A||b1:A>*_F_>
+-- arg_g: issue G[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+      credulous -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+   preferred issue: ['IN']
+      skeptical -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+      credulous -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+   stable    issue: ['IN']
+      skeptical -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+      credulous -> value     μarg_g:G.<rule_g:B->G||!IN:B*arg_g:G>
+== done in 0.5s

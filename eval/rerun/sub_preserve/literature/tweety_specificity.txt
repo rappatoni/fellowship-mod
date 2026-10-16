@@ -1,0 +1,22 @@
+== literature/tweety_specificity.fspy: check ok=True (0.1s)
+-- birdsfly: issue Flies[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> open      ?UNDEC:Flies
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- penguinsdont: issue Flies[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Flies?
+      credulous -> open      UNDEC:Flies?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+== done in 0.4s

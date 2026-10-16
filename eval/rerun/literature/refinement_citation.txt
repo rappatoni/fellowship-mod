@@ -1,0 +1,31 @@
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:292: UserWarning: Enrichment of node la not possible.
+  warnings.warn(f'Enrichment of node {node.name} not possible.')
+== literature/refinement_citation.fspy: check ok=False (0.2s)
+   line 25: refused: 'la' is not strict, so it cannot be a theorem: presumption !1:A. Discharge them, or end with `dixi.` to keep it as a defeasible argument.
+-- la: issue A[t]; 0 edges
+   grounded  issue: ['IN']
+      [1] A[t]=IN
+      skeptical -> value     μx2:A.<!IN:A||x2:A>
+      credulous -> value     μx2:A.<!IN:A||x2:A>
+   preferred issue: ['IN']
+      [1] A[t]=IN
+      skeptical -> value     μx2:A.<!IN:A||x2:A>
+      credulous -> value     μx2:A.<!IN:A||x2:A>
+   stable    issue: ['IN']
+      [1] A[t]=IN
+      skeptical -> value     μx2:A.<!IN:A||x2:A>
+      credulous -> value     μx2:A.<!IN:A||x2:A>
+-- usesA: issue B[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] A->B[t]=IN A[t]=IN B[t]=IN
+      skeptical -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+      credulous -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+   preferred issue: ['IN']
+      [1] A->B[t]=IN A[t]=IN B[t]=IN
+      skeptical -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+      credulous -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+   stable    issue: ['IN']
+      [1] A->B[t]=IN A[t]=IN B[t]=IN
+      skeptical -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+      credulous -> value     μusesA:B.<ab:A->B||!IN:A*usesA:B>
+== done in 0.4s

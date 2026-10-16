@@ -1,0 +1,6 @@
+== literature/t_mirabilis.fspy: check ok=True (0.1s)
+-- p1: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p1' reaches: Fellowship reconstructed a different term for 'p1_3' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- s1: graph refused: TypeCheckRefused: in the debate about A->false[t], which 's1' reaches: Fellowship reconstructed a different term for 's1_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- p2: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p2' reaches: Fellowship reconstructed a different term for 'p2_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+-- p3: graph refused: TypeCheckRefused: in the debate about A->false[t], which 'p3' reaches: Fellowship reconstructed a different term for 'p3_1' than the one unfolded; the instructions do not encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2.
+== done in 0.2s
