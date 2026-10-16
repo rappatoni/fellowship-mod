@@ -1,0 +1,400 @@
+#+title: Debate Graph Compilation and Labelling Specification
+#+startup: overview
+
+# AI NOTE: This specification was drafted by an AI agent (Claude) from the
+# approved critique plan of 2026-08-29, at the author's request. It is a
+# technical implementation specification, not manuscript prose. Scholarly
+# claims derived from it must be re-authored before entering papers/.
+
+This file specifies Layers 2 and 3 of the AC/DC stack: the compilation of a
+.fspy document into a debate presentation, and the labelling of that
+presentation by argumentation semantics. It supersedes the propagation tables
+in [[file:labeller-spec.org]]. Layer 4 (label-guided evaluation) is specified in
+[[file:call-by-onus.org]], section "Layer 4".
+
+* Layer architecture
+
+The stack separates five layers. Conflating them (in particular 2 and the
+semantic side of 1) was the main defect of the earlier drafts.
+
+- Layer 0 :: the AC/DC *equational theory*: the reductions of the calculus
+  that count as equations (bureaucratic/pure expansions, theta-expansion,
+  eta for mu binders) versus mere strategy steps (critical-pair
+  resolutions). Owner: reduction-spec.org.
+- Layer 1 :: the *base category* C: the classifying category of the
+  delegation-free fragment, terms modulo the Layer-0 theory under a fixed
+  uniform strategy. Target theorem: the CBN quotient is a control category,
+  the CBV quotient a co-control category (via the Matilda <-> lambda-mu
+  translations).
+- Layer 2 :: the *document presentation*: a poly-quiver with scope
+  annotations compiled from a .fspy file (this file, section 2). Its
+  generated category is the polynomial extension C[X], one indeterminate per
+  obligation and presumption. The presentation is syntax; C[X] is semantics;
+  the two must never be identified.
+- Layer 3 :: the *labelling*: an ADF (abstract dialectical framework)
+  compiled from the presentation; strict layer first, then grounded /
+  preferred / stable labellings (this file, section 3).
+- Layer 4 :: *evaluation*: a witness labelling induces a polarity
+  assignment; label-guided reduction is focused reduction under that
+  polarization (call-by-onus.org).
+
+* Layer 2: the debate presentation
+
+** Nodes
+
+A node is a proposition. Node identity is the parsed Prop AST modulo
+alpha-equivalence of bound first-order variables - never the printed string.
+(Prerequisite: threading Prop objects onto AST nodes, tracked as
+=aida-first-order-reduction= in tasks.org.) Each node carries a polarity
+pair: it can appear on the term side (as a conclusion to prove) and on the
+context side (as a claim to refute); these are the same node, not two nodes.
+
+Design decision (recorded, deliberate): one node per proposition collapses
+argument identity - attack and support are claim-centric, targeting every
+use of the proposition. Attacking one argument's use of A but not another's
+is not expressible. This matches the universal-substitution reading of
+rational closure.
+
+** Hyperedges
+
+One node per proposition and one *binary* edge per subargument is too
+coarse: an argument with several premises is not single-source. A
+subargument in theta-normal form exposes exactly one open site per
+logically-progressing (non-bureaucratic) AST node; those sites are its
+sources.
+
+A *hyperedge* e consists of:
+
+- =term(e)= :: the argument term (a linear or dual-linear AC expression in
+  obligation-eta long form, cf. constructing_enthymemes Def. of arguments);
+- =target(e)= :: the conclusion node, with side (term/context);
+- =sources(e)= :: the finite multiset of open sites of term(e): its
+  obligations (Goal/Laog), presumptions (Deleg/Geled), and free assumption
+  variables, each a (node, side, kind) triple with
+  kind in {obligation, presumption, assumption};
+- =scope(e)= :: the binder-scope annotation: for every source site, the list
+  of propositions mu/mu'-bound on the spine between the root of term(e) and
+  that site, with binding side. This is the VARS data of labeller-spec.org,
+  made part of the graph. A bare proposition multigraph cannot detect
+  capture; scope(e) is what makes question-begging capture (section 2.4)
+  decidable on the graph.
+- =strict(e)= :: true iff sources(e) contains no presumption and no
+  obligation, i.e. the derivation uses no indeterminates. Strictness is a
+  property of edges, never a truth value of nodes.
+
+The presentation of a .fspy document is the poly-quiver of all nodes and
+hyperedges of its registered arguments, attacks and supports, closed under
+subarguments (every subargument of a registered argument contributes its own
+hyperedge).
+
+** Why hyperedges and not product objects
+
+Categorical semantics normally absorbs multi-source morphisms into product
+objects. That is exactly what Layer 1 does; the hyperedges are the Layer-2
+presentation of the same data before representation.
+
+- Presentation vs representation. A hyperedge is a multicategory /
+  polycategory arrow; "use products instead" is the statement that the
+  multicategory is representable. The free representable multicategory on a
+  multigraph is (equivalent to) the free monoidal category, so the two
+  encodings generate equivalent categories. In the model, products absorb
+  the sources on the domain and the par-like connective absorbs the
+  succedent on the codomain: a judgment Gamma |- sigma -| Delta denotes a
+  morphism [Gamma] -> [sigma] par [Delta]. The presentation defers both
+  representations, for two reasons: the object fragment has no
+  conjunction/product syntax (product nodes would be propositions nobody
+  asserted, attacked or supported), and under Layer-4 polarization "the"
+  product splits into positive tensor vs negative with (CBV tuples values,
+  CBN projects from lazy pairs) - bunching premises at Layer 2 would commit
+  a polarity before the labelling decides it.
+- Argumentation-layer reasons. Attack, support and rational closure target
+  propositions; premise sharing across arguments must be visible as
+  node-sharing (a PxQ node hides the shared P); and a product node's only
+  sensible label is the meet of its factors, which is precisely the
+  conjunction-over-sources acceptance condition the hyperedge already
+  carries.
+- The stoup reading. The dialectical ND transposition of the calculus
+  (COMMA paper, after Herbelin / Lovas-Crary / Harper) keeps the succedent:
+  judgments are Sigma |- v:sigma -| Delta with a single active stoup
+  formula, not single-conclusion ND. The transposition preserves
+  derivability and the equational theory, so the classifying category is
+  unchanged up to equivalence. A hyperedge is exactly a stoup judgment, in
+  the following sense: target(e) is the stoup formula with its side, and
+  sources(e) is Sigma ⊎ Delta of the *variable-ified* argument - name each
+  open site (obligation/presumption) with a fresh variable of its type and
+  side and the result is a plain term whose sequent
+  Sigma' |- v : sigma -| Delta' carries exactly sources(e) on its two
+  sides, with the kind-tags remembering only the burden of proof
+  (assumption / obligation / presumption). The role of theta-normal form:
+  the root sequent exists for any term, but the sequents of the
+  *subarguments* live in the typing derivation, which is meta-level and
+  invisible in the term. Theta-expansion reifies that derivation into the
+  syntax - every logically-progressing node's local sequent becomes surface
+  structure via its exposed obligation - so the compiler reads one
+  hyperedge per subargument off the term mechanically, without
+  reconstructing the derivation.
+  The stoup is a focus (LKT/LKQ disciplines ~ CBN/CBV), which is the bridge
+  to Layer-4 polarization, and the stoup discipline is what tracks the
+  centrality restrictions of the premonoidal par syntactically.
+
+** Semantics: indeterminates, not morphisms
+
+The generated category of the presentation is the polynomial extension
+C[X] of the base category C, with one freely adjoined indeterminate per
+obligation and per presumption:
+
+- a term-side site of type sigma adjoins x : T -> sigma;
+- a context-side site adjoins the dual x' : sigma -> F.
+
+Presumptions and obligations are NOT definable morphisms of C. Adjoining a
+genuine global element T -> sigma would make sigma semantically true,
+collapse strict and defeasible, and destroy direct consistency. As
+indeterminates:
+
+- grafting = substitution: filling a site is the universal property of
+  C[X] (a functor C[X] -> C[X'] choosing a morphism for x);
+- instantiation never happens inside C[X]: indeterminates stay
+  indeterminate there, and that IS defeasibility. Instantiation is an
+  *evaluation functor out of* C[X]: by the universal property, each choice
+  of a morphism m for x induces ev_m : C[X] -> C[X\{x}]. These functors
+  read off the computational content of an *outcome* after Layers 3-4 have
+  run; they are not operations on the debate. Three cases:
+  - defeat (attacker IN): the site is NOT instantiated. What reduction
+    leaves there is the clash itself,
+
+    :   mu alpha:A.< t || E >        (alpha unused)
+
+    the paper's abort (COMMA, Definition Attack: the steal wing
+    < x || t2 > with x bound to the original): the site's original t -
+    its derivation, or its bare indeterminate, the presumption that was
+    refuted or the open obligation - facing the winning refutation E
+    under an affine binder. The site stays an indeterminate wherever t
+    is one; the clash records that its continuation has been taken by E.
+    (Revised 2026-09-17: an earlier version of this bullet, written
+    against the shapes the term-level verbs graft, had =mu _.<[:A] || E>=
+    with a fresh obligation in place of t; that is the special case in
+    which the original was a bare obligation.) Semantically this is *not* an
+    instantiation of x at all: it is composition with the refutation, in
+    C[X], with x still free. (An earlier draft of this bullet called it
+    "ev at the abort morphism T -> F -> A, the vacuous affine witness of
+    main.tex:300". That misread the author's ednote, which is ex
+    contradictione quodlibet - mu_:A.<F || F> witnesses A *given a
+    contradiction already in hand* - and has nothing to do with a defeated
+    site, which holds a refutation facing a hole, not a contradiction.)
+    Operationally nothing is grafted at evaluation time: the attack
+    scaffold was built by graft at construction time, and reduction under
+    the sigma-polarized strategy leaves this throw at the site, so any
+    continuation demanding the site consumes an exception;
+  - acceptance by derivation (a supporter d for A is IN): ev at the
+    denotation of d - syntactically, grafting the supporter;
+  - IN by default (unattacked, unsupported presumption): NO instantiation.
+    The normal form retains the indeterminate; the debate's value is
+    polynomial in x, a proof modulo the presumption. This matches
+    delegations surviving in AIDA normal forms today. Retraction or update
+    on new arguments = composing with a different evaluation functor;
+  The three cases assemble into the statement of adequacy (T3), with one
+  correction to its earlier form: only the *acceptance-by-derivation*
+  case instantiates an indeterminate. Let m(sigma) send each site
+  accepted by derivation to its supporter's denotation and leave every
+  other site free. Then reduction under the sigma-polarized strategy
+  computes ev_m(sigma) composed with the defeat throws:
+  [[NF_sigma(d)]] = ev_m(sigma)([[d]]) with, at each site sigma defeats,
+  the clash mu alpha.< t || E > in place of the original t - up to
+  the Layer-0 equational theory (undemanded sites are affinely discarded,
+  and affine discard is an equation). Both sides of the square therefore
+  live in C[X], not in C: a defeated debate is still polynomial in its
+  defeated sites, and the OUT row of the square is checked by
+  substituting the *clash* for the site by hand, never a closed term.
+  The OUT-side promise that follows is "not a value" (an obligation or
+  an uncatchable clash remains; the classifier reports the latter as an
+  exception wherever it sits); "OUT implies a closed exception at the
+  root" is a separate claim requiring abort propagation through axiom-headed spines
+  (task aida-abort-propagation), which the calculus does not currently
+  provide and whose soundness is unexamined;
+- obligation vs presumption is not a semantic distinction. Both are
+  indeterminates; they differ only in default label (OUT vs IN, Layer 3)
+  and burden of proof. The asymmetry lives entirely in the argumentation
+  layer;
+- conservativity of C[X] over C is the precise statement of "a delegation
+  may be assumed until the contrary is proven".
+
+Fragment note: an individual hyperedge - a linear (dual-linear) argument,
+i.e. Delta restricted to the single stoup successor - denotes in the
+intuitionistic, cartesian closed fragment; only the debate operations
+(grafting, capture, attack/support composition) engage the control
+structure. Adjoining indeterminates is available in both settings, which is
+why the treatment of obligations and presumptions is uniform across the
+fragment boundary.
+
+** Canonical naming and question-begging capture
+
+Grafting is deliberately capture-permitting, but capture is name-sensitive:
+without a naming discipline, alpha-equivalent rootstocks produce
+non-alpha-equivalent debate terms and neither the compilation nor the
+semantics is well defined.
+
+Discipline (locally-named): free assumption variables are canonical per
+(proposition, side); bound variables are alpha-convertible as usual;
+grafting permits capture only at canonical assumption names. FreshenBinderNames
+(core/comp/alpha.py) enforces the bound half; the canonical-assumption half
+is currently only a convention in examples and MUST become a checked
+invariant of Argument construction.
+
+An attack or support graft *begs the question* iff a source site of the
+scion's edge names a proposition that occurs, with the appropriate side, in
+scope(e) of the rootstock edge at the graft site. The graft then captures:
+the composite is the rootstock's argument from contradiction. Begging the
+question is thereby a propositional property, independent of naming
+accidents, and decidable from the presentation alone (sources x scope).
+
+** Rational closure
+
+Rational closure (attacks/supports propagate to and from subarguments) is
+specified as *reachability closure on the presentation*: an edge targeting
+node n engages every edge with source or target n, and subargument edges
+are already present by construction. It is NEVER performed as term-level
+substitution - that is the operation that explodes and need not terminate.
+The presentation is finite, so closure is finite. Debate terms are
+recovered on demand by *unfolding* (section 4).
+
+Semantic justification of the closure requirement: ev_m substitutes at
+*every* occurrence of an indeterminate - functors do not act on single
+occurrences of a generator. A partially grafted attack (some sites of the
+proposition left unwrapped) reduces to a term that is ev_m of nothing: one
+occurrence reflects defeat while another retains the default. Rational
+closure is exactly the condition under which evaluation has a functorial
+description, i.e. under which adequacy (T3) is even well-posed.
+
+* Layer 3: labelling as an ADF
+
+The graph has support and attack, default-labelled leaves, and a strict
+layer. This is not a Dung AF, and bipolar-AF semantics are not assumed.
+The structure is an abstract dialectical framework: every node gets an
+acceptance condition over its parents.
+
+** Strict layer first
+
+Before any defeasible labelling:
+
+1. compute the strict subgraph (edges with strict(e));
+2. close the finite set of present strict hyperedges under *transposition*:
+   an n-source strict edge contributes its n re-orientations (swap the
+   target with one source, negating sides), so premise-attacks through
+   strict edges exist. This is linear in the edge set, decidable, and
+   purely syntactic even first-order (the transposal reuses the edge's own
+   terms; no unification search). No proof search and no deductive closure
+   is performed: the graph never invents strict derivations beyond
+   re-orientations of edges the document already contains.
+   Two levels must not be confused here:
+   - meta-theorem (cited by the T4 consistency proof, never computed): the
+     ambient classical sequent calculus is closed under transposition -
+     for every strict derivation and premise the transposed derivation
+     exists via mu/mu' rebinding (what the contraposition fixtures
+     exercise term-level). Had this failed, restricted rebut would have
+     been required instead;
+   - honest gap, part of T4's content: the closure/consistency postulates
+     quantify over the infinite deductive closure of accepted conclusions.
+     The proof obligation is that present-edges-plus-transposals already
+     generate enough attacks to prevent inconsistent joint acceptance;
+     the fixture suite checks finite instances of the known failure modes;
+3. detect strict contradictions: a node with strict edges to both its term
+   and context side. Mark the *edges involved* CONTR.
+
+STR and CONTR are edge/derivation properties, not additional truth values
+of the Layer-3 fixpoint. CONTR propagates only along dependency edges
+(reachability in the presentation); an isolated contradictory component
+must not affect the labels of nodes not depending on it
+(non-interference; see fixture =contamination= in tests/rationality/).
+
+** Acceptance conditions
+
+For each node n, side s, the acceptance condition is compiled from the
+incoming edges:
+
+- each supporting edge e with target (n,s) contributes a conjunct-free
+  disjunct: the conjunction of the acceptance of its sources
+  (support is disjunctive: each undefeated supporter suffices);
+- an obligation site contributes the literal =false= by default (accepted
+  only if some edge derives it);
+- a presumption site contributes =true= by default (rejected only if some
+  edge derives its contrary);
+- an attacking edge on (n,s) is a supporting edge on the contrary side
+  (n, s'); the condition for (n,s) conjoins the negation of the
+  acceptance of (n,s');
+- that negation is ASYMMETRIC (author, 2026-09-25). A presumption is a
+  delegation: it hands the burden of refutation to the other side. So a
+  side that carries only a default marker, with no edge deriving it, does
+  not conjoin back against a side that is derived - the derivation
+  defeats it outright. The conjunction is added to a side's DERIVED
+  disjuncts only when the contrary side is itself derived; a
+  presumption's own disjunct always carries it. Consequence: an undercut
+  of a presumed premise decides the contest instead of leaving it UNDEC,
+  and a defeasible argument beats a bare default as decisively as a
+  strict one does;
+- a default marker on BOTH sides of one proposition is an ONUS CONFLICT:
+  each side delegates the burden to the other and neither holds it. It
+  should be refused where the presentation is built, which needs the onus
+  to be tracked by the prover or the wrapper (task
+  aida-onus-delegation-polarity); until then the compiler warns and keeps
+  both conjunctions, i.e. the old mutual rebut. Opposing OBLIGATIONS are
+  not a conflict: nobody delegated, and both sides stay OUT;
+- a strict edge contributes with weight "strict": it can only be
+  countered by CONTR, not by defeasible attack.
+
+** Semantics
+
+Labellings are the standard ADF semantics over the three values
+IN/OUT/UNDEC:
+
+- grounded :: least fixed point of the three-valued (Kleene) evaluation of
+  the acceptance conditions. Unique; this is the default labelling.
+- preferred / stable :: as in ADF theory; generally multiple.
+
+The ordering STR < IN < UNDEC < OUT of labeller-spec.org and the
+_combine_pair tables of core/comp/color.py are fragments of the Kleene
+evaluation and are superseded by it; recasting removes the
+ValueError("incomplete") holes.
+
+Compatibility requirement (verification target T5): on tree-shaped
+(cycle-free, sharing-free) debates the ADF grounded labelling must agree
+with the existing term labeller on the green/red/yellow ~ IN/OUT/UNDEC
+correspondence; the term labeller then becomes a derived view.
+
+* Layer 2->4 interface: unfolding
+
+A debate term for an entry point (the issue) is generated by unfolding the
+presentation from that node: choose edges per the labelling, expand
+subarguments, and break cycles by mu/mu'-capture at the first repeated
+(proposition, side) on the current spine.
+
+Obligation (verification target T6): unfolding terminates and is
+well-typed. Measure: each (proposition, side) pair may be captured at most
+once per branch, so branch length is bounded by 2 * |nodes|.
+
+* Specification obligations (verification targets)
+
+Tracked in tasks.org under "Specification and verification".
+
+- T1 :: sigma-guided reduction is deterministic and terminating on
+  compiled debate terms; normalization is stable under grafting
+  (labelling commutes with substitution of an argument for an
+  indeterminate of equal status). Without stability, composition in the
+  generated category is not associative and Layers 1-2 collapse.
+- T2 :: Layer-1 quotients satisfy the (co)control-category axioms; C[X] is
+  conservative over C; the Layer-4 semantics is a polarized/adjunction
+  model with the uniform CBN/CBV strategies as degenerate cases; the
+  dualizing functor swaps term/context and credulous/skeptical.
+- T3 (flagship) :: computational adequacy: if the witness labelling sigma
+  labels the issue IN, the unfolded debate term normalizes to a value; if
+  OUT, to an abort/exception term; if UNDEC, mode-dependent per the
+  polarity policy. Equivalently: NF under the sigma-polarized strategy
+  computes ev_m(sigma) up to the Layer-0 theory (the commuting square in
+  the Semantics subsection of Layer 2). Proof by induction on the fixpoint
+  stages of sigma.
+- T4 :: rationality postulates for the induced instantiation: closure,
+  direct and indirect consistency, subargument closure,
+  non-interference/crash-resistance. Machine side: fixture suite in
+  tests/rationality/ with recorded expected labellings.
+- T5 :: compilation correctness (agreement with the term labeller on
+  trees; regression against the current color.py fixtures).
+- T6 :: unfolding totality (section 4).

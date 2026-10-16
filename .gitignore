@@ -23,6 +23,7 @@ __pycache__/
 !AGENTS.md
 !CLAUDE.md
 !tasks.org
+!debate-graph-spec.org
 # the AI-drafted minicourses (teaching material, not manuscript)
 !minicourse*.org
 # OCaml build artifacts (keep sources tracked)
