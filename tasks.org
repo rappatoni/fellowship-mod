@@ -3741,8 +3741,9 @@ the loop's proof instead of the bare delegation.
 
 Case 4 (a variable captured by an argument's own binder: the sprung
 trap, Peirce, the self-attack, the captured presumptions that close the
-even loop) is folded into [[id:aida-discuss-capture-source-vs-strict]],
-since changing it changes the even loop's models.
+even loop) was folded into [[id:aida-discuss-capture-source-vs-strict]]
+and resolved there 2026-10-16: today's reading - its label in sigma -
+is the right one.
 
 Checked and not violations (2026-10-16):
 - 5. The attacker wing's root, captured by the attack's =alt=, is
@@ -4544,7 +4545,8 @@ answered (still needed while graphs are compiled from terms). Retiring
 the reference route (=issue-graph term=, =compile_issue= for the issue
 graph) moves to [[id:aida-rational-closure]].
 
-*** BACKLOG Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
+*** DONE Discuss: a captured site is a source for the labelling but not an assumption for the strict phase
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-discuss-capture-source-vs-strict
 :AREA:           phd
@@ -4559,6 +4561,40 @@ graph) moves to [[id:aida-rational-closure]].
 :OUTCOME:        A decision reconciling the two readings of a captured site: a live source in the framework ([[id:aida-presumption-capture]], 2026-09-17) and a discharged commitment that is not an assumption in the strict phase (2026-09-25, [[id:aida-review-guard-and-strict-decisions]]).
 :VERIFY:         The decision is written here with its effect on the self-attack, the even loop and Peirce's law stated and checked by a run; lesson 8a's "Why capture" and lesson 10 agree with it.
 :END:
+
+*Decision (the author, 2026-10-16): the first reading, and today's
+layering is already correct.* A variable bound by an argument's own
+binder that captures a site inside another part of the argument (the
+sprung trap, Peirce's law, the self-attack, the captured presumptions
+that close the even loop) stands for that argument's own continuation
+or hypothesis, a real binder: in the term the capture discharges the
+site. Debates may be classical; capture is what closes an argument
+classically (the self-attack's registered body is linear, its unfolded
+body uses =rule= twice: consequentia mirabilis). Each phase reads it at
+its level:
+- the document graph keeps the captured presumption as a live source
+  (=SelfAttack.λ1: P->false[t] <- P[c]:pres=): capture happens only in a
+  term, other debates may exclude the capturing argument, and the
+  capture may itself depend on a non-strict argument;
+- the strict phase reads the captured site as no assumption; where the
+  subterm is then closed it contributes a strict edge (=SelfAttack*=,
+  Peirce's =s1*=), which is how the term's reading enters the labels;
+- sigma (core/comp/standing.py) judges such a variable by its statement's
+  label: where the term around it is not closed the capture may rest on
+  defeasible parts, and the label is the reading the labelling used,
+  which keeps sigma and the labels in step (T3). Counting it as met
+  there could keep a supporter the labels call OUT or UNDEC.
+Evidence (runs of 2026-10-16): self_attack_lk - the graph alone labels
+P UNDEC (grounded and preferred); with =SelfAttack*= P is IN, P[c] OUT,
+and =evaluate SelfAttack.= is a value in both modes; even_loop_lk - in
+Pdefault's term the strict phase decides Q's scaffolds ("supporter
+strict", "attacker strict: defeat") and rightly collects no edge
+(Pdefault keeps the defeated site, Qdefault's =rule= is free: Qdefault
+is closed only inside Pdefault); skeptical open, credulous a value;
+tests/test_adequacy.py passes on self_attack_lk, even_loop_lk and
+demo/06_peirce under every witness. Lesson 8a's "Why capture" agrees;
+lesson 11 and lesson 13b's point 5 are updated.
+
 
 The author's reading (lesson 8a, 2026-10-05): capture lets a default
 continuation make way for the real one, and is the same for
@@ -5335,7 +5371,7 @@ necessarily forcing the document-wide labelling. Whether in general
 the document labelling should be used for issues is an independent
 question.
 
-*** BACKLOG Find strict edges directly, not through "contains a decision"
+*** NEXT Find strict edges directly, not through "contains a decision"
 :PROPERTIES:
 :ID:             aida-strict-edge-collector-condition
 :AREA:           phd
@@ -5350,6 +5386,18 @@ question.
 :OUTCOME:        The strict phase contributes a strict edge for every closed (strict in the debate, no uncaught clash) argument whose framework edge is defeasible, whether or not a scaffold around or inside it was decided by strictness, so the issue graph no longer depends on where in the term the argument stands.
 :VERIFY:         The self-attack (tests/rationality/self_attack_lk.fspy) gets =SelfAttack*= from P[t] and from P[c] in the legacy shape too; the strict edges on every fixture are recorded before and after and any change is listed here; the suite passes.
 :END:
+
+The author, 2026-10-16: implementing the suggested condition seems the
+right way to go. Checked the same day on the even loop that the
+condition keeps the vetoes that are right: in Pdefault's term the
+strict phase decides Q's scaffolds, but Pdefault keeps the defeated
+site =Q:!u2= and Qdefault has the free =rule= (bound by Pdefault), so
+neither is closed outside the term and neither gets an edge; a strict
+edge must be true outside the term, since it makes its statement IN for
+the labelling. A subterm holding an uncatchable clash still gets none
+(decided 2026-09-25, aida-review-guard-and-strict-decisions: it derives
+its statement only from an inconsistency).
+
 
 Found 2026-10-06 (aida-unfold-entrypoints). The collector in
 =strict_resolve= adds =n*= only for an outermost closed eta-wrapped

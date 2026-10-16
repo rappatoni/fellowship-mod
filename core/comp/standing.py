@@ -19,9 +19,12 @@ computed bottom-up from the term:
   the captured demand was a presumption (``captured_presumption`` or a
   presumption among ``captured_default``), then its label;
 - a variable bound by an argument's own binder, captured inside another
-  argument, keeps its statement's label (case 4 of the task, decided
-  elsewhere: aida-discuss-capture-source-vs-strict); one used inside the
-  argument that binds it is plumbing and counts for nothing;
+  argument, keeps its statement's label: where the term around it is
+  closed, the strict phase has already decided it and contributed a
+  strict edge; where it is not, the capture may rest on defeasible parts,
+  and the label is the reading the labelling used (case 4, resolved
+  2026-10-16: tasks.org, aida-discuss-capture-source-vs-strict); one used
+  inside the argument that binds it is plumbing and counts for nothing;
 - an obligation site OUT, a presumption site its label; declared names
   and built-in leaves count for nothing;
 - a derivation stands IN iff all it rests on is IN, OUT iff something

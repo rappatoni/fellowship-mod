@@ -950,8 +950,12 @@ still finds:
      root rule;
    - an obligation site OUT, a presumption site its label;
    - a variable an argument's own binder captured inside another
-     argument by its label (an open question, tasks.org
-     aida-discuss-capture-source-vs-strict).
+     argument by its label. Where the term around it is closed, phase 1
+     has already read the capture as discharged and contributed a strict
+     edge (=SelfAttack*=, lesson 10); where it is not, the capture may
+     rest on defeasible parts, and the label is the reading the
+     labelling itself used (tasks.org, aida-discuss-capture-source-vs-strict,
+     resolved 2026-10-16).
    So labels decide only presumptions. A supporter that needs its own
    statement cannot win on that statement's label: the root it captures
    is no evidence for the debate it is the root of.
@@ -1419,9 +1423,11 @@ argument is closed.
 
 *Questions.* Does the even loop stay symmetric for the right reason? The
 framework still records the captured presumption as a source, while the
-strict phase treats it as discharged. That is the open discussion
-[[file:tasks.org::*Discuss: a captured site is a source for the labelling but not an assumption for the strict phase][aida-discuss-capture-source-vs-strict]],
-best settled together with this point.
+strict phase treats it as discharged. Settled 2026-10-16
+([[file:tasks.org::*Discuss: a captured site is a source for the labelling but not an assumption for the strict phase][aida-discuss-capture-source-vs-strict]]):
+both are right at their level - the capture discharges the site in the
+term, the presumption stays live in the document, where other debates
+may exclude the capturing argument.
 
 ** Point 6 - A site-free clash wins a support scaffold by strict redundancy
 
