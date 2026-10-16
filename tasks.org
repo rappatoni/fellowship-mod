@@ -578,6 +578,57 @@ tests/test_first_order_baseline.py (opaque quantified statements label
 and evaluate: tests/first_order/). Next: the design questions above,
 agreed with the author before any code.
 
+*Design decisions (the author, 2026-10-16).*
+- Q1, statement identity: as the spec says. A node is a proposition up
+  to renaming of bound first-order variables, never the printed string;
+  =forall x, Bird x -> Flies x=, its instance =Bird tweety -> Flies
+  tweety= and =Flies tweety= are three nodes, linked only by an argument
+  that instantiates. Needs Prop objects on the term nodes.
+- Q3, capture: a binder captures a site only for the identical statement
+  (up to renaming of bound variables). No unification: =P x= is not
+  matched against =P tweety=.
+- Q4, the instantiation step (=ConsFO=, =tweety * ...=): a presumed
+  general rule stands or falls as one statement. The step is part of the
+  spine, not an attack point, as for the intermediate conclusions of a
+  curried implication ([[id:aida-curried-intermediate-conclusions]]); an
+  exception for one individual has to refute the rule itself, which
+  brings it down for every individual (the verdict of adaptive logic's
+  inductive generalisation, fo_opaque.fspy).
+  To keep in mind (not adopted): presuming =forall x, P x= could instead
+  presume each instance =P t= on its own, so that an exception for
+  Tweety leaves the rule standing for other individuals. That needs the
+  instantiation exposed as an edge that is *not* strict - AIDA contraposes
+  every implication, so a strict instantiation edge would carry the
+  refutation of the instance back to the rule anyway.
+- Q2, sites under a first-order binder: refused. A site is what the
+  arguer leaves out, and only a statement can be presumed or owed, not
+  an open formula: an open site under =λx= (or under an existential's
+  witness =(y).=) is refused at registration, on the =dixi= entry, with
+  the remedy - presume or owe a closed statement (=forall x, Wings x=,
+  =forall x, Bird x -> Wings x=, or anything else that proves =Wings x=)
+  and instantiate it. Automatic lifting to the universal closure was
+  considered and rejected: it would choose for the arguer which
+  statement is left out.
+  Example (run 2026-10-16): =birds_fly : forall x, Bird x -> Flies x=
+  owing =Wings x= under =λx= is refused; written as
+  =λx.λb:Bird x.μr:Flies x.<wf || x * μw:Wings x.<?:forall x, Bird x ->
+  Wings x || x*b*w> * r>= it owes the closed rule.
+- Lemmas under a first-order binder (the same principle): a horn whose
+  statement mentions a variable bound by a first-order binder of the
+  argument (=μw:Wings x= above) is not exposed; it stays part of the
+  argument like a spine step. Its own closed horns (the owed rule, the
+  axiom =wf=) are exposed as usual. So nodes, labels and debates only
+  ever concern closed statements; =Wings x= itself cannot be attacked or
+  supported, only what it rests on.
+- Q5, the reduction rules: with only closed debates, two new rules, both
+  strict (no decision, never sigma): forall,
+  =<λx.t || u * e> -> <t[u/x] || e>=, and exists,
+  =<(u, t) || (y).e> -> <t || e[u/y]>=. Substitution never enters a
+  debate (a debate under =λx= does not mention x); the support and attack
+  shapes, sigma, the discharge and the normal-form classes are unchanged,
+  and the rules add no critical pair (=λx.t= is a value, =u * e= a
+  covalue).
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
