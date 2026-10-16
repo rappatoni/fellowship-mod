@@ -132,6 +132,8 @@ class Interpreter:
             return self._service(c, svc.set_pipeline, c["mode"])
         if c.kind == "subarguments":
             return self._service(c, svc.set_subarguments, c["mode"])
+        if c.kind == "undecided":
+            return self._service(c, svc.set_undecided, c["mode"])
         if c.kind in QUERIES:
             return self._query(c)
         if c.kind in CLI_ONLY:

@@ -1,0 +1,39 @@
+# The credulous tiebreak's other symptom: A is presumed and IN; sa supports
+# A from B, and B is contested (pb vs nb, both derived from presumptions:
+# UNDEC under grounded). Credulous grounded evaluation returns a value whose
+# term keeps pb's derivation of B and drops nb's attack on it, although
+# grounded does not accept B.
+lk.
+declare A, B, Q, R : bool.
+declare b_a : (B -> A).
+declare q_b : (Q -> B).
+declare r_nb : (R -> ~B).
+argument pa : (A).
+by default.
+dixi.
+argument sa : (A).
+cut (B -> A) t.
+axiom b_a.
+elim.
+next.
+axiom t.
+dixi.
+argument pb : (B).
+cut (Q -> B) t.
+axiom q_b.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument nb : (B).
+cut (~B) x.
+cut (R -> ~B) th.
+axiom r_nb.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.

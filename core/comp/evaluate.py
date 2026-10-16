@@ -81,8 +81,17 @@ tiebreak, reached only when the status is undecided:
 
     supporter IN            -> keep scion        attacker IN   -> keep attack wing
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG
-    supporter UNDEC         -> credulous: scion  attacker UNDEC-> credulous: ORIG
-                               skeptical: ORIG                    skeptical: attack wing
+    supporter UNDEC         -> ORIG              attacker UNDEC-> attack wing
+
+What a credulous witness leaves UNDEC it does not accept, so it is
+resolved as in skeptical mode: the witness alone makes the credulous
+choices, and under grounded semantics credulous evaluation is skeptical
+evaluation (the author, 2026-10-16; tasks.org,
+aida-credulous-tiebreak-grounded).  The old credulous tiebreak - an UNDEC
+supporter kept, an UNDEC attack dropped - is the option
+``undecided="credulous"`` (``UNDECIDED``; `undecided credulous` in the
+CLI); it can return a value whose term keeps a derivation the witness
+does not accept, or OPEN where skeptical evaluation gives a value.
 
 Before normalisation the labels are discharged: every site is named by
 its label and is a delegation iff it is IN (an obligation labelled IN:
@@ -143,6 +152,24 @@ class EvaluationRefused(DebateCompileError):
 
 
 _MODES = ("skeptical", "credulous")
+
+#: What sigma does with a scaffold whose status a credulous witness leaves
+#: UNDEC (tasks.org, aida-credulous-tiebreak-grounded; the author,
+#: 2026-10-16).  "witness" (default): the witness does not accept it, so
+#: it is resolved as in skeptical mode - the witness alone makes the
+#: credulous choices.  "credulous": the old tiebreak (keep an UNDEC
+#: supporter, drop an UNDEC attack), which can manufacture acceptance the
+#: witness does not give.  Evaluation has more degrees of freedom than the
+#: labelling; this option names one of them.
+UNDECIDED = ("witness", "credulous")
+
+
+def _tiebreak(tiebreak: str, undecided: str) -> str:
+    """The tiebreak sigma uses: a credulous witness's UNDEC residue is
+    resolved skeptically unless ``undecided`` is "credulous"."""
+    if undecided not in UNDECIDED:
+        raise ValueError(f"undecided must be one of {UNDECIDED}, got {undecided!r}")
+    return "credulous" if tiebreak == "credulous" and undecided == "credulous" else "skeptical"
 
 #: Compare every label sigma reads off the term with the labelling it was
 #: written from.  Off: sigma consults only the term.  The comparison ran on
@@ -458,6 +485,7 @@ def evaluate_debate(
     witness=None,
     favour=None,
     source=None,
+    undecided: str = "witness",
 ):
     """Compile, label, choose the witness sigma, resolve, normalize,
     classify.
@@ -475,7 +503,8 @@ def evaluate_debate(
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
     sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness, favour)
-    normal_form = _evaluate_under(body, name, sigma, tiebreak, strict_names, base)
+    normal_form = _evaluate_under(body, name, sigma, _tiebreak(tiebreak, undecided),
+                                  strict_names, base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
                  _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
@@ -491,6 +520,7 @@ def evaluate_witnesses(
     base: str = "cbn",
     semantics: str = "preferred",
     source=None,
+    undecided: str = "witness",
 ):
     """Credulous evaluation under every accepting witness.
 
@@ -503,7 +533,8 @@ def evaluate_witnesses(
     graph = _compile_for_evaluation(body, name, strict_names, strict_kinds, source)
     results = []
     for number, sigma in accepting_witnesses(graph, issue_of(body), semantics):
-        nf = _evaluate_under(body, name, sigma, "credulous", strict_names, base)
+        nf = _evaluate_under(body, name, sigma, _tiebreak("credulous", undecided),
+                             strict_names, base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
 
@@ -575,6 +606,7 @@ def evaluate_shared(
     semantics: str = "preferred",
     witness=None,
     source=None,
+    undecided: str = "witness",
 ):
     """``evaluate_debate`` for a ``SharedDebate`` (core/dc/share.py): what
     ``evaluate_debate(shared.expand(), ...)`` returns, up to the names of
@@ -595,7 +627,7 @@ def evaluate_shared(
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
     sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
-    normal_form = _evaluate_shared_under(resolver, name, sigma, tiebreak, base)
+    normal_form = _evaluate_shared_under(resolver, name, sigma, _tiebreak(tiebreak, undecided), base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
                  _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
@@ -611,6 +643,7 @@ def evaluate_witnesses_shared(
     base: str = "cbn",
     semantics: str = "preferred",
     source=None,
+    undecided: str = "witness",
 ):
     """``evaluate_witnesses`` for a ``SharedDebate``: credulous evaluation
     under every accepting witness.  The instances are resolved by
@@ -619,7 +652,7 @@ def evaluate_witnesses_shared(
     graph = _shared_issue_graph(resolver, name, source)
     results = []
     for number, sigma in accepting_witnesses(graph, shared.issue, semantics):
-        nf = _evaluate_shared_under(resolver, name, sigma, "credulous", base)
+        nf = _evaluate_shared_under(resolver, name, sigma, _tiebreak("credulous", undecided), base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
 

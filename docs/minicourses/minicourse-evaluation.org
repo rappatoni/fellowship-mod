@@ -969,8 +969,11 @@ still finds:
    So labels decide only presumptions. A supporter that needs its own
    statement cannot win on that statement's label: the root it captures
    is no evidence for the debate it is the root of.
-3. *Wing choice* (=_wing_choice=): the table of lesson 7. The mode's
-   tiebreak is used only when the status is UNDEC.
+3. *Wing choice* (=wing_choice=, core/comp/standing.py): the table of
+   lesson 7, used only when the status is UNDEC. Since 2026-10-16 an
+   UNDEC status is resolved as in skeptical mode in both modes - what the
+   witness leaves UNDEC it does not accept; =undecided credulous= restores
+   the credulous tiebreak (tasks.org, aida-credulous-tiebreak-grounded).
 4. *Rewrite* the scaffold to the kept wing - =keep_orig=,
    =keep_scion_support= or =keep_attack_wing=, the same functions phase 1
    uses - and walk on *into the result only*.

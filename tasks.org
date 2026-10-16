@@ -5699,7 +5699,8 @@ a VALUE while the issue is labelled OUT (default and share: OPEN). The
 default drops p3's own derivation of B (no primacy), so the classical
 case split is not reconstructed.
 
-*** BACKLOG Make credulous evaluation under grounded agree with skeptical
+*** DONE Make credulous evaluation under grounded agree with skeptical
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-credulous-tiebreak-grounded
 :AREA:           phd
@@ -5730,6 +5731,35 @@ grounded does not accept B. Related:
 [[id:aida-circular-supporter-judged-in]] (another supporter kept on a
 standing it does not have).
 
+
+*Decision (the author, 2026-10-16): rule (a) is the default, the old
+behaviour an option.* Two rules were run in scratch on the reproductions
+and the suite: (a) what a credulous witness leaves UNDEC it does not
+accept, so the residue is resolved as in skeptical mode; (b) only never
+keep an UNDEC supporter over an original standing IN. Both fixed both
+symptoms on the reproductions and tests/olon.fspy and moved no pin; (b)
+fixes the second symptom only because A's original happens to be IN. The
+author: evaluation has more degrees of freedom than the labelling and
+the credulous/skeptical semantics (discussed before), so (a) is the
+default and the old tiebreak stays selectable.
+
+*Done 2026-10-16.* =UNDECIDED= and =_tiebreak= (core/comp/evaluate.py):
+the four evaluation entry points take =undecided= ("witness", default;
+"credulous", the old tiebreak). Session setting =undecided
+witness|credulous= (=FSP_UNDECIDED=; wrap/prover.py, =Service.set_undecided=,
+wrap/syntax.py, wrap/interpreter.py, wrap/cli.py). Docs: the tiebreak
+table in core/comp/evaluate.py's docstring; a dated note under the table
+of minicourse.org lesson 7 (the uniform-strategy passage below it now
+describes =undecided credulous=); minicourse-evaluation.org's step 3 of
+sigma. Evidence: tests/test_undecided.py (12 tests; fixtures
+tests/undecided/, copies of the two reproductions): under grounded,
+credulous = skeptical = =VALUE !IN:A= for pa and sa of both fixtures and
+first, tester, final, olon of tests/olon.fspy (before: OPEN with
+=?UNDEC:B=, resp. a value keeping pb's derivation); =undecided credulous=
+reproduces both old results; preferred unchanged. Suite: 2157 passed, 8
+skipped, 2 xfailed, 1 xpassed; no existing pin moved
+(=TestLocalPolicyWasUnsound= calls =resolve_scaffolds= with the
+credulous tiebreak directly and still passes).
 *** BACKLOG Compile an elimination cell that ends in the falsum context
 :PROPERTIES:
 :ID:             aida-negation-cell-horn

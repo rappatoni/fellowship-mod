@@ -552,6 +552,23 @@ class Service:
         return Done({"default": "by primacy", "share": "shared (captured)",
                      "preserve": "preserved (kept on top of the captured)"}[mode])
 
+    @_operation
+    def set_undecided(self, mode: str) -> Done:
+        """What credulous evaluation does with a scaffold its witness
+        labelling leaves UNDEC: ``witness`` (default) resolves it as not
+        accepted - as skeptical mode does - so the witness alone makes the
+        credulous choices; ``credulous`` uses the old tiebreak, keeping an
+        UNDEC supporter and dropping an UNDEC attack, which can return a
+        value the witness does not support (core/comp/evaluate.py,
+        ``UNDECIDED``).  Skeptical evaluation is the same under both."""
+        if mode not in ("witness", "credulous"):
+            raise InvalidRequest(f"undecided: witness or credulous, not '{mode}'")
+        if self.session.undecided != mode:
+            self.session.undecided = mode
+            self.session.bump_revision()
+        return Done({"witness": "not accepted (resolved as by the witness)",
+                     "credulous": "the credulous tiebreak (keep supporters, drop attacks)"}[mode])
+
     def _issue_source(self, found):
         """The graph ``found``'s issue graph is taken from: the document
         graph, a debate's own graph (its scope), or None - compile from the
@@ -1091,7 +1108,8 @@ class Service:
                                      "pipeline.", stage="evaluate")
         common = dict(strict_names=s.declarations.keys(),
                       strict_kinds=declaration_kinds(s.declarations),
-                      base=base, semantics=semantics, source=self._issue_source(found))
+                      base=base, semantics=semantics, source=self._issue_source(found),
+                      undecided=s.undecided)
 
         def run(on_shared, on_term, **options):
             """Evaluate from the shared debate, one instance of a sub-debate
