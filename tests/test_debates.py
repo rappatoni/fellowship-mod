@@ -214,6 +214,50 @@ def test_support_verbs(prover, verb, ok):
             debate_line(prover, move)
 
 
+# An exposed node - here the axiom r1 pro applies - is a node of kind
+# "derivation" (tasks.org, aida-rational-closure, 2026-10-16): `attack`
+# and `support` reach it, the verbs that name a site kind do not.
+@pytest.mark.parametrize("move, ok", [
+    ("attack attackrule pro.", True),
+    ("rebut attackrule pro.", False),         # A->B is no obligation of pro
+    ("undermine attackrule pro.", False),     # ... nor a presumption
+])
+def test_an_exposed_axiom_can_be_attacked(move, ok):
+    p = setup_prover()
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            execute_script(p, "tests/minicourse/lesson8a_attackrule.fspy", strict=True, isolate=False)
+        record(p, "debate pro open d : B.", "pro.")
+        if ok:
+            record(p, move)
+            record(p, "cedat tempus.")
+            assert p.debates["d"].moves[-1].verb == "attack"
+            assert "attackrule" in pres_str(p.debate_term(p.debates["d"]))
+        else:
+            with pytest.raises(DebateError, match="has no (obligation|presumption) on :A->B"):
+                debate_line(p, move)
+    finally:
+        p.close()
+
+
+def test_a_lemma_can_be_supported(prover):
+    """tests/alternative_arguments.fspy: arg1 proves A on the way to B
+    (a lemma); sup1 supports it."""
+    from core.dc.debate import target_nodes
+    p = setup_prover()
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            execute_script(p, "tests/alternative_arguments.fspy", strict=False, isolate=False)
+        nodes = target_nodes(p.graph, "arg1")
+        assert ((K("A"), "term"), "derivation") in nodes
+        assert ((K("A->B"), "term"), "derivation") in nodes
+        assert [str(m) for m in p.debates["first"].moves] == ["arg1.", "support sup1 arg1."]
+    finally:
+        p.close()
+
+
 def test_a_target_must_have_been_uttered(prover):
     record(prover, "debate pro closed d : Flies.", "tweety.")
     with pytest.raises(DebateError, match="not a move of the debate yet"):

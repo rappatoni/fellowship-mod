@@ -25,8 +25,13 @@ A debate is a *recipe*, recorded in a script as
   below, in registration order (core/dc/unfold.py, ``order``).
 - A **verb** only checks: the target must be an earlier move and have a
   node the mover's conclusion can attack or support, of the kind the
-  verb names (``VERBS``).  A move without a verb is checked for nothing
-  - a non sequitur is allowed, and simply joins the scope.
+  verb names (``VERBS``).  The nodes of an argument are its sites, its
+  conclusion and, since 2026-10-16, its exposed nodes - the axioms it
+  applies, its lemmas, its lambdas (kind ``derivation``; tasks.org,
+  aida-rational-closure) - which ``attack`` and ``support`` reach, while
+  the verbs that name a site kind do not.  A move without a verb is
+  checked for nothing - a non sequitur is allowed, and simply joins the
+  scope.
 
 A debate never contributes to the document graph: its term is compiled
 on demand from the recipe and the document as they stand.
@@ -139,17 +144,21 @@ def argument_statement(graph: DebateGraph, name: str):
 def target_nodes(graph: DebateGraph, name: str, conclusion=None) -> set:
     """{(statement, kind)}: what of the argument ``name`` a move can reach
     - the sites of its body and subarguments (obligations and
-    presumptions), and its conclusion with the kind of its statement's
-    root (a presumption if something in ``graph`` presumes it).  An
-    argument that is a bare claim compiles to no edge, only a default
-    marker; its ``conclusion`` is then given by the caller.
-    Strict leaves are not nodes yet (aida-rational-closure); intermediate
-    conclusions are not, by decision (aida-curried-intermediate-conclusions)."""
+    presumptions), its exposed nodes (``derivation``: an axiom it
+    applies, a lemma, a lambda - a ``subargument`` source of one of its
+    edges; the horn rule, core/dc/debate_graph.py), and its conclusion
+    with the kind of its statement's root (a presumption if something in
+    ``graph`` presumes it).  An argument that is a bare claim compiles to
+    no edge, only a default marker; its ``conclusion`` is then given by
+    the caller.  An intermediate conclusion on the spine is no node, by
+    decision (aida-curried-intermediate-conclusions)."""
     nodes = set()
     for edge in _own_edges(graph, name):
         for source in edge.sources:
             if source.kind in ("obligation", "presumption"):
                 nodes.add(((source.key, source.side), source.kind))
+            elif source.kind == "subargument":
+                nodes.add(((source.key, source.side), "derivation"))
     conclusion = conclusion or argument_statement(graph, name)
     if conclusion is not None:
         kind = "presumption" if "presumption" in graph.defaults.get(conclusion, ()) else "obligation"
@@ -191,7 +200,7 @@ def check_move(debate: Debate, graph: DebateGraph, move: Move, statement_of) -> 
     wanted = contrary(mover) if relation == "attack" else mover
     nodes = target_nodes(graph, move.target, statement_of(move.target))
     if not any(s == wanted and (kind is None or k == kind) for s, k in nodes):
-        what = {None: "site", "obligation": "obligation", "presumption": "presumption"}[kind]
+        what = {None: "node", "obligation": "obligation", "presumption": "presumption"}[kind]
         raise DebateError(
             f"debate '{debate.name}': {move.verb}: '{move.argument}' concludes "
             f"{_show(graph, mover)}, but '{move.target}' has no {what} on "

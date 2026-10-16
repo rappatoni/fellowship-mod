@@ -185,9 +185,10 @@ two together:
 : support bArg cArg.
 : cedat tempus.
 
-=support bArg cArg.= is checked - cArg must have a site on B - and adds
-nothing to the document: the conflicts and supports are already there by
-proposition identity. =graph d2.=:
+=support bArg cArg.= is checked - cArg must have a node on B: a site,
+its conclusion, or (since 2026-10-16) an exposed node such as an axiom
+it applies or a lemma it proves - and adds nothing to the document: the
+conflicts and supports are already there by proposition identity. =graph d2.=:
 
 : Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 4 edges
 :   abc (subargument, strict): A->B->C[t] <- -

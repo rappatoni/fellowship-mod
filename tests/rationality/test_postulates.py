@@ -265,7 +265,7 @@ class TestCurriedAttack:
         walk(host.body)
         assert "B->C" not in term_props
 
-    @pytest.mark.parametrize("verb, what", [("attack", "site"), ("rebut", "obligation"),
+    @pytest.mark.parametrize("verb, what", [("attack", "node"), ("rebut", "obligation"),
                                             ("undermine", "presumption")])
     def test_challenge_to_intermediate_conclusion_is_refused(self, curried_prover, verb, what):
         """By decision, not a defect: B->C is no attack point of cArg."""

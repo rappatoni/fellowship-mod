@@ -33,9 +33,9 @@ dixi.
 # Construct support, reduce, color.
 debate pro open first : B.
 arg1.
-% was `support sup1 arg1.`: :A is not a node of 'arg1' yet (an intermediate
-% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
-sup1 arg1.
+% :A is arg1's lemma, an exposed node since 2026-10-16 (tasks.org,
+% aida-rational-closure), so `support` reaches it.
+support sup1 arg1.
 cedat tempus.
 evaluate first.
 label first.
@@ -73,9 +73,9 @@ dixi.
 # Construct support, reduce, color.
 debate con open second : B.
 c1.
-% was `support csup1 c1.`: A: is not a node of 'c1' yet (an intermediate
-% conclusion; tasks.org, aida-rational-closure), so the move carries no verb.
-csup1 c1.
+% A: is c1's lemma, an exposed node since 2026-10-16 (tasks.org,
+% aida-rational-closure), so `support` reaches it.
+support csup1 c1.
 cedat tempus.
 evaluate second.
 label second.

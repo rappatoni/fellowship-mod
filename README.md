@@ -49,10 +49,6 @@ main line of development. It covers the quantifier-free fragment,
 derivation cycles included, and is still incomplete. Known gaps, each
 tracked in `tasks.org`:
 
-- **Moves do not reach exposed nodes yet.** The document graph and the
-  unfolded term expose every horn of an argument (the axioms it applies,
-  its lemmas, its lambdas), but a debate's `attack` and `support` verbs
-  still name sites and conclusions only (tasks.org, aida-rational-closure).
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
 - **No first-order debates.** Normalisation and the debate operations
@@ -767,18 +763,21 @@ cedat tempus.
 
   | verb | the target needs |
   |---|---|
-  | `attack` | a site of the contrary of the mover's conclusion |
+  | `attack` | a node of the contrary of the mover's conclusion |
   | `rebut` | ... that is an obligation |
   | `undermine` (= `undercut`) | ... that is a presumption |
-  | `support` | a site of the mover's conclusion |
+  | `support` | a node of the mover's conclusion |
   | `buttress` (= `reinforce`) | ... that is an obligation |
   | `undergird` | ... that is a presumption |
 
-  A node is a site of the target's body (its subarguments included) or
-  its conclusion, which counts as an obligation unless the scope presumes
-  it. Intermediate conclusions and strict leaves are not nodes yet
-  (rational closure). Without a verb a move is not checked: a non
-  sequitur is allowed and simply joins the scope.
+  A node is a site of the target's body (its subarguments included), its
+  conclusion, which counts as an obligation unless the scope presumes
+  it, or one of its exposed nodes - a declared axiom it applies, a lemma,
+  a lambda - which `attack` and `support` reach (kind `derivation`), the
+  verbs that name a site kind not. An intermediate conclusion on the
+  spine of a curried application is no node, by decision. Without a verb
+  a move is not checked: a non sequitur is allowed and simply joins the
+  scope.
 
 Every command that takes an argument also takes a debate: `evaluate`,
 `explain`, `label`, `render` (the debate's term, or `evaluated`), `tree`,

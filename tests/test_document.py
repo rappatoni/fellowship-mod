@@ -57,9 +57,9 @@ def test_a_verb_refuses_a_target_without_the_node(prover):
     rAtt = Argument(prover, "rAtt", "R", ["by default"], is_anti=True)
     rAtt.execute(); prover.register_argument(rAtt)
     assert debate_line(prover, "debate pro closed d : P.") and debate_line(prover, "pArg.")
-    with pytest.raises(DebateError, match="no site on :R"):
+    with pytest.raises(DebateError, match="no node on :R"):
         debate_line(prover, "support rArg pArg.")
-    with pytest.raises(DebateError, match="no site on :R"):
+    with pytest.raises(DebateError, match="no node on :R"):
         debate_line(prover, "attack rAtt pArg.")
     assert debate_line(prover, "rArg pArg.")            # no verb: a non sequitur is allowed
 

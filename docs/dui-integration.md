@@ -129,7 +129,12 @@ A target is a name (an argument or a debate), `issue :X` (X proved) or
 
 **Linking back to the text.** Every edge of a graph names the argument it
 came from (`argument`) and that argument's `span` in the checked text; the
-inventory gives each argument's span too. A *statement* is `{prop, side,
+inventory gives each argument's span too. An argument's exposed nodes
+(its lemmas and lambdas, `NAME.μ1`, `NAME.λ1`) are edges of their own
+and carry the argument's span: there is no finer provenance yet. A
+declared axiom an argument applies is an edge named after the axiom,
+shared by every argument that applies it; its `argument` is the axiom's
+name and its `span` is null. A *statement* is `{prop, side,
 key}`; `key` is a stable id across checks of the same document.
 
 **What to colour with.** The editor decides; the material is: the verdict
@@ -176,6 +181,9 @@ major one.
 - First-order debates and debates in `lj` or minimal logic are refused
   (`code: "logic"` or a compile refusal); the document is otherwise
   checked.
-- Only sites are attack and support points; intermediate conclusions and
-  strict leaves are not yet (rational closure).
+- Attack and support points are an argument's sites, its conclusion and
+  its exposed nodes (the axioms it applies, its lemmas, its lambdas;
+  move targets of kind `derivation`, reached by `attack` and `support`).
+  An intermediate conclusion on the spine of a curried application is
+  none, by decision. Exposed nodes carry their argument's span only.
 - `explain` (the forensic account of an evaluation) is CLI-only.

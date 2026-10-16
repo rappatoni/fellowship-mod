@@ -2604,6 +2604,23 @@ pre-existing gap noticed on the way: =pres_tree= prints a stub as
 "Unhandled term type" in =explain= on the shared route (also on the
 code before this step).
 
+*Step 3 done 2026-10-16: moves reach exposed nodes.* =target_nodes=
+(core/dc/debate.py) adds every =subargument= source of an argument's
+edges as a node of kind =derivation= (an axiom it applies, a lemma, a
+lambda); =attack= and =support= (kind None) accept it, =rebut=,
+=undermine= and the support verbs that name a site kind do not; the
+refusal says "no node" for the kind-free verbs. tests/test_debates.py:
+=attack attackrule pro.= accepted on lesson8a_attackrule.fspy (and the
+debate term holds attackrule), =rebut= and =undermine= refused;
+tests/alternative_arguments.fspy's =support sup1 arg1.= and =support
+csup1 c1.= restored (the lemmas A of arg1 and c1; verdicts unchanged).
+The curried B->C is still no node (tests/rationality/test_postulates.py).
+JSON graph: lemma and lambda edges carry their argument's span; an
+axiom's edge, shared by the arguments that apply it, carries the
+axiom's name and a null span (docs/dui-integration.md, which also
+updates its known limits). README's verb table and minicourse.org's
+move check say "node".
+
 Evidence: tests/test_unfold_exposure.py (28 tests: the attackrule
 fixture - the debate about A->B stands where r1 stood, attackrule in
 its wing loses in phase 1, =evaluate attackrule.= is an exception;
