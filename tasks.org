@@ -3465,7 +3465,7 @@ this task is to decide.
 :ICK:            3
 :EFFORT:         2:00
 :DEFERRALS:      0
-:OUTCOME:        A decision on what a supporter of S that needs S captures in an argument term: today the scaffold's b, which for the argument on top of S's stack is the stack below it, the root excluded; so where the labels accept that supporter through the argument on top, the term gives an exception. Either the shape changes (the captured variable reaches the root, or the whole stack), or sigma falls back at a captured variable whose stack is OUT, or the exception is accepted as the reading of "can this argument be defended on its own".
+:OUTCOME:        A decision on what a supporter of S that needs S captures in an argument term: today the scaffold's b, which for the argument on top of S's stack is the stack below it, the root excluded; so where the labels accept that supporter through the argument on top, the term gives an exception. Either (A) the shape changes so that the element on top of a stack sees the root scaffold's b (the root), or (B) sigma falls back to a scaffold's original when the supporter it keeps rests on a captured variable that stands for an OUT stack, or (C) the exception is accepted as the reading of an argument term.
 :VERIFY:         The decision is written here; tests/exposure/lemma_captured.fspy and tests/exposure/site_variant.fspy have the stated classes for =evaluate argP.= (today: exception), pinned in tests/test_unfold_exposure.py; lesson 8a's capture-by-b paragraph agrees.
 :END:
 
@@ -3516,6 +3516,31 @@ circular support, which the graph keeps; see
 route, because an argument on top of its stack is never in scope of its
 own supporters' demands. The canonical term shows it, since there the
 demand reaches the root, which the label of P decides.
+
+*Where the presumption of Q goes* (the author's question, 2026-10-16).
+Q's debate inside argP is =SUP[alt3,b3](!u2:Q, argQ)=: the presumption
+=!u2:Q= is its root, the fallback if argQ is dropped. Sigma keeps argQ,
+because it decides from the labels of the document graph - argQ's edge
+Q[t] <- P->Q[t], P[t] has P IN - and not from what argQ's P is in this
+term (=b2=, argP2, refuted). Once kept, there is no way back, and the
+clash surfaces only in normalisation. argP itself is never attacked:
+the exception comes from the refuted argP2 standing in for P.
+
+*The options run on the example* (scratch experiment, 2026-10-16; both
+terms replay through Fellowship):
+- (A) argQ's P captured by the root scaffold's =b1= instead of =b2=:
+  : SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP2{...}, argP{[Q] = SUP(!u2:Q, argQ{[P] = b1})}))
+  : value: μargP:P.<qp:Q->P||μb1:Q.<pq:P->Q||!IN:P*b1:Q>*argP:P>
+  the canonical term's answer: P from Q from the root ?u1:P, which the
+  label IN discharges. argP's own derivation still cannot be what argQ
+  uses - that would put argP inside itself - so a "whole stack"
+  variant does not exist; only the root is in reach.
+- (B) Q's scaffold decided for its original, the presumption:
+  : SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP2{...}, argP{[Q] = !u2:Q}))
+  : value: μargP:P.<qp:Q->P||!IN:Q*argP:P>
+  P from the presumed Q, the answer one expects of argP. Sigma would
+  need to read a supporter's status off the term where a captured
+  variable stands for a stack whose derivations are all OUT.
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
