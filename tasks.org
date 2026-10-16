@@ -5738,7 +5738,8 @@ modus tollens attacks of sequent-based argumentation,
 both dropped; the file now spells the rule =P -> Q -> false= and leaves
 falsum owed.
 
-*** BACKLOG Replay the dialectical classical proofs the type check refuses
+*** DONE Replay the dialectical classical proofs the type check refuses
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-typecheck-dialectical-classical
 :AREA:           phd
@@ -5763,6 +5764,18 @@ mu/3/mutilde/3/mutilde/2", in the debate about A->false; expanded:
 by an enclosing continuation. Peirce's law, with a capture of the same
 kind, passes (t_peirce.fspy), so instruction generation is the first
 suspect. Possibly related: [[id:aida-instructions-falsum-closing-elim]].
+
+*Closed 2026-10-16: fixed by [[id:aida-replay-neg-elim-shortcut]]*
+(commit 9dceec8). Instruction generation was at fault, as suspected: the
+=elim H1= shortcut fired on =A -> false= and on a lambda that is a
+scaffold's original; the term was right. VERIFY, run on main after the
+merge 6e0902f: =evaluate p1= of t_dne.fspy and t_mirabilis.fspy is a
+VALUE in both modes with the type check on, =expanded= and off, and the
+normal forms are identical across the three settings - the classical
+proofs, e.g. for double negation elimination
+=λf.μalt7:A.<f || μb1:A->false.<λb3:A.μb4:false.<b3||alt7>||b1> * μ'b5:false.<b5||_F_>>=.
+eval/results/ is not in the repository, so the comparison is with the
+check-off run rather than with t_dne_typecheck_off.txt.
 
 *** BACKLOG Design: labels that depend on the issue asked, in a strict document
 :PROPERTIES:
