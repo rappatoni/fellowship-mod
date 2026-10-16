@@ -510,8 +510,7 @@ supporter of P1 is strict, and both scaffolds are delayed. In P2's term
 the stubs for P1 carry P1's open obligation, and the same follows. The
 unfolded term holds P0's attack four times, under each of the four
 supporters, and =pipeline unfolded.= decides it four times. (=explain=
-prints the terms going in and out as trees; a stub is shown there as
-"Unhandled term type", a gap of the tree printer.)
+prints the terms going in and out as trees, a stub by its name.)
 
 The labelling and the evaluation are what they are on the unfolded term:
 

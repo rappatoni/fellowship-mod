@@ -326,7 +326,11 @@ class _VanillaVisitor(ProofTermVisitor):
         return node
 
     def visit_unhandled(self, node):
-        self._emit(f"Unhandled term type: {type(node)}")
+        # A node that brings its own printed form - a stub standing for a
+        # resolved sub-debate on the shared route (core/dc/instances.py)
+        # carries its display name - is printed as that.
+        shown = getattr(node, "pres", None)
+        self._emit(shown if isinstance(shown, str) and shown else f"Unhandled term type: {type(node)}")
         return node
 
 
@@ -696,7 +700,9 @@ class _NLVisitor(ProofTermVisitor):
 
     def visit_unhandled(self, term):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}Unhandled term type: {type(term)}")
+        shown = getattr(term, "pres", None)       # a stub: its display name
+        self.lines.append(f"{indent_str}" + (shown if isinstance(shown, str) and shown
+                                             else f"Unhandled term type: {type(term)}"))
         return term
 
 

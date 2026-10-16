@@ -2601,9 +2601,11 @@ grow; the recurrence is size(n) = 2 size(n-1) + 59); the ill-typed
 axiom of test_an_ill_typed_argument_is_rejected_by_both is now caught in
 the debate about P0->P1, where the axiom stands. Verdicts and labels of
 the course unchanged. minicourse-sharing.org regenerated from runs. A
-pre-existing gap noticed on the way: =pres_tree= prints a stub as
+pre-existing gap noticed on the way: =pres_tree= printed a stub as
 "Unhandled term type" in =explain= on the shared route (also on the
-code before this step).
+code before this step); fixed 2026-10-16 - both tree renderers of
+pres/nl.py print a node that carries its own =pres= (a stub's display
+name) as that (tests/test_share.py::test_the_tree_printer_shows_a_stub_by_its_name).
 
 *Step 3 done 2026-10-16: moves reach exposed nodes.* =target_nodes=
 (core/dc/debate.py) adds every =subargument= source of an argument's
@@ -2648,7 +2650,13 @@ tests/test_unfold_exposure.py and test_evaluation_course.py; the
 decisions of [[id:aida-discuss-non-site-attack-points]] are implemented
 (compiler 1ceebe1, unfolder 2e2c0b5, shared route 599fcbe, moves
 80e7919, reference route retired daf692d); full suite 2071 passed, 2
-skipped, 2 xfailed, 1 xpassed. Left for others: the strict layer
+skipped, 2 xfailed, 1 xpassed. This task's OUTCOME was the attack and
+support points; the other closure of the specification - implication
+edges, transposal (contraposition) closure of every implication,
+strict or defeasible, and the negation bridge identifying ~A with
+A -> false in the labelling - is [[id:aida-strict-layer]] (BACKLOG,
+under [[id:aida-debate-compiler-completion]], whose VERIFY asks for a
+transposition-closure test). Left for others: the strict layer
 ([[id:aida-strict-layer]]), the commutation property
 ([[id:aida-unfold-commutation-spec]]), the entry-point capture question
 ([[id:aida-entrypoint-capture-adequacy]]), and the captured source in
@@ -3478,6 +3486,36 @@ the refuted presumption: =μargP:P.<qp||μb1:Q.<pq||μb8:P.<rp||μb9:R.<nR||
 are values. Nothing in the exposure step is to blame; the question is
 what the stack below an argument on top should mean for its own
 statement. All three =subarguments= settings agree on the class.
+
+*The example, as terms* (tests/exposure/site_variant.fspy; scaffolds
+printed by =pres_scaffolds=, the bodies abbreviated):
+
+: argP  = μargP:P.<μth:P.<qp || [Q] * th> || argP>        P from qp : Q->P, Q presumed
+: argQ  = μargQ:Q.<μth:Q.<pq || [P] * th> || argQ>        Q from pq : P->Q, P an obligation
+: argP2 = μargP2:P.<μth2:P.<rp || [R] * th2> || argP2>    P from rp : R->P, R presumed
+: killR refutes R strictly (nR : ~R)
+: labels: P[t] IN, Q[t] IN, R[t] OUT, R[c] IN
+
+Canonical term of P (registration order, nobody on top):
+: SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP{[Q] = SUP(!u2:Q, argQ{[P] = b1})}, argP2{...}))
+: evaluates to a value: argQ's demand for P is b1, the root ?u1:P, IN.
+
+Term for argP (argP on top of P's stack):
+: SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP2{[R] = ATT(!u3:R, killR)}, argP{[Q] = SUP(!u2:Q, argQ{[P] = b2})}))
+: evaluates to an exception:
+: μargP:P.<qp||μb1:Q.<pq||μb9:P.<rp||μb1:R.<nR||?OUT:R*_F_>*b9>*b1>*argP>
+
+Inside argP's term, argQ's demand for P is captured by =b2=, the =b= of
+the stack's own scaffold. After that scaffold's outer step =b2= is the
+part of the stack *below* argP - argP2 alone - not the root and not
+argP. Sigma keeps argP (IN), walks into argQ (Q IN), and at P finds
+argP2, whose R is strictly refuted: the clash. The labels, read off the
+document graph, have argQ's P IN through argP itself (P from Q from P,
+circular support, which the graph keeps; see
+[[id:aida-circular-support-design]]); the term for argP cannot show that
+route, because an argument on top of its stack is never in scope of its
+own supporters' demands. The canonical term shows it, since there the
+demand reaches the root, which the label of P decides.
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
