@@ -23,6 +23,13 @@ from pres.gen import pres_scaffolds, pres_str
 from wrap.cli import setup_prover
 from wrap.service import Service
 
+
+@pytest.fixture(autouse=True)
+def _unfolded_route(monkeypatch):
+    """These tests are about the unfolded term, and pin its verdicts; the
+    shared route is compared with it where a test says so."""
+    monkeypatch.setenv("FSP_PIPELINE", "unfolded")
+
 TESTS = Path(__file__).parent
 
 FIXTURES = [

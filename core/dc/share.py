@@ -121,8 +121,8 @@ class _Builder(Unfolder):
     the only difference is that a statement no binder in scope captures is
     not unfolded in place but cited."""
 
-    def __init__(self, graph: DebateGraph, subarguments="default"):
-        super().__init__(graph, subarguments=subarguments)
+    def __init__(self, graph: DebateGraph, subarguments="default", primacy=()):
+        super().__init__(graph, subarguments=subarguments, primacy=primacy)
         self.defs = {}
         self._todo = []
 
@@ -237,6 +237,12 @@ class SharedDebate:
     _reach: dict = field(default_factory=dict, repr=False)
 
     # -- structure ----------------------------------------------------------
+
+    @property
+    def statement(self) -> tuple:
+        """The issue's statement (``issue`` is the key of the root
+        definition, a variant for an argument entrypoint)."""
+        return debate_statement(self.issue)
 
     def reach(self, statement) -> frozenset:
         """Statements unfolding ``statement`` can meet (a superset: the
@@ -475,12 +481,15 @@ class SharedDebate:
             if key == self.issue:
                 continue
             # A name the author wrote stays, even for a bare site; without
-            # one, a bare site reads better than a name for it.  A variant
-            # of a statement's debate is the author's under no name.
-            canonical = key == definition.statement
-            if (canonical and key in explicit) or (definition.cited >= 2 and not definition.trivial):
-                definition.name = ((explicit.get(key) or user_names.get(key)) if canonical
-                                   else None) or anon(key)
+            # one, a bare site reads better than a name for it.  The
+            # author's ``cite NAME`` names the debate its citation stands
+            # for, which may be a variant (cited like an obligation site);
+            # the one argument about a statement names its canonical debate.
+            statement = definition.statement
+            if statement in explicit or (definition.cited >= 2 and not definition.trivial):
+                definition.name = (explicit.get(statement)
+                                   or (user_names.get(statement) if key == statement else None)
+                                   or anon(key))
 
     def _count_occurrences(self) -> None:
         """How often each definition is written out when the issue is
@@ -656,14 +665,25 @@ def _author_citations(graph: DebateGraph) -> dict:
     return {s: n for s, n in found.items() if s not in clash}
 
 
-def share(graph: DebateGraph, issue, user_names=None, anon=None, subarguments="default") -> SharedDebate:
-    """The debate of ``issue`` = (canonical key, side) as named sub-debates."""
-    builder = _Builder(graph, subarguments)
-    defs = builder.build(issue)
-    shared = SharedDebate(graph, issue, defs, frozenset(builder._scaffold_vars), subarguments)
+def share(graph: DebateGraph, issue, user_names=None, anon=None, subarguments="default",
+          top=None) -> SharedDebate:
+    """The debate of ``issue`` = (canonical key, side) as named sub-debates.
+    With ``top``, an argument edge of the issue, the debate biased towards
+    that argument, as ``unfold_argument`` unfolds it (aida-unfold-entrypoints):
+    the argument on top of the stack, the sites of its own body of the kind
+    it wrote, primacy its and its subarguments'."""
+    builder = _Builder(graph, subarguments, primacy={top.name} if top is not None else ())
+    root = issue
+    if top is not None:
+        if not any(e is top for e in builder._by_target.get(issue, [])):
+            raise UnfoldError(f"'{top.name}' is not an argument edge of the document.")
+        root = (issue, None, top.name)
+    defs = builder.build(root)
+    shared = SharedDebate(graph, root, defs, frozenset(builder._scaffold_vars), subarguments)
     shared.assign_names(user_names, anon)
-    logger.debug("share: issue %s has %d definition(s), %d shown by name",
-                 issue, len(shared.defs), len(shared.named()))
+    logger.debug("share: issue %s%s has %d definition(s), %d shown by name", issue,
+                 f" (biased towards '{top.name}')" if top is not None else "",
+                 len(shared.defs), len(shared.named()))
     return shared
 
 

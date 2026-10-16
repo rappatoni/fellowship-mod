@@ -13,6 +13,11 @@
 # are computed on the unfolded term through the Python API, which is
 # unchanged.
 #
+# Revised 2026-10-16: the shared route builds the stacked shape and is the
+# default again (tasks.org, aida-shared-route-stack-shape); the transcripts
+# stay on the unfolded route, which this sequel describes, and its tests
+# select it (FSP_PIPELINE=unfolded).
+#
 # Revised 2026-10-05: lesson 8a (unfolding) added at the author's request,
 # since the course started from an unfolded term that no lesson built.
 # Its transcripts are pinned by the same test file.
@@ -55,12 +60,13 @@ The code under study is =_evaluate_under= in =core/comp/evaluate.py=:
 :     v  classify_nf                 core/comp/oracle_terms.py  value / exception / open
 
 *Two routes.* What this sequel describes is the pipeline on the *unfolded*
-term. It is the CLI default (=pipeline unfolded.=), since 2026-10-06 again:
-only this route builds the stacked shape and the argument entrypoints of
-lesson 8a. The other route, =pipeline shared.=, keeps the debate as named
-sub-debates and runs phases 1-3 one sub-debate at a time; it still builds
-the older, legacy shape (tasks.org, aida-shared-route-stack-shape) and is
-the subject of minicourse-sharing.org (lessons 14-18).
+term, selected with =pipeline unfolded.= (or =FSP_PIPELINE=unfolded=);
+the transcripts below are taken on it. The CLI default is the other
+route, =pipeline shared.=, which keeps the debate as named sub-debates and
+runs phases 1-3 one sub-debate at a time. It builds the same stacked shape
+and argument entrypoints (lesson 8a) and gives the same graph, labels,
+normal form and class, up to the names of binders and the numbers of
+sites; it is the subject of minicourse-sharing.org (lessons 14-18).
 
 *Is phase 2 normalisation?* Yes. Every decision phases 1 and 2 take is
 the choice of one rule, (mu<) or (>mu), at one critical pair - the

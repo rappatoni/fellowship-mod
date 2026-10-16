@@ -29,6 +29,14 @@ from pres.gen import pres_str
 
 from coursekit import debate_term, eta_reduce, eta_step, fire, scaffold_at
 
+
+@pytest.fixture(autouse=True)
+def _unfolded_route(monkeypatch):
+    """The course follows the unfolded term; its transcripts are taken on
+    the unfolded route, which is not the CLI default since
+    aida-shared-route-stack-shape."""
+    monkeypatch.setenv("FSP_PIPELINE", "unfolded")
+
 HERE = Path(__file__).parent
 
 UNFOLDED = (

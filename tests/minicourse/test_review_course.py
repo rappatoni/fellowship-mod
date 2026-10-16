@@ -30,6 +30,14 @@ from core.dc.strict import strict_resolve  # noqa: E402
 from pres.gen import pres_str  # noqa: E402
 from test_strict import A, STRICT, axiom, denied, presumed, tatt, tsup  # noqa: E402
 
+
+@pytest.fixture(autouse=True)
+def _unfolded_route(monkeypatch):
+    """Lesson 13b quotes the unfolded route (minicourse-evaluation.org), which
+    is not the CLI default since aida-shared-route-stack-shape; the CLI
+    runs below inherit the setting."""
+    monkeypatch.setenv("FSP_PIPELINE", "unfolded")
+
 P, O = "presumption", "obligation"
 
 

@@ -122,11 +122,11 @@ TODO: Mechanism to declare a scenario of default assumptions.
         #: against (core/dc/typecheck.py).
         self.typecheck_expanded = os.getenv("FSP_TYPECHECK", "1") == "expanded"
         #: Whether graph, label and evaluate work on the term unfolded from
-        #: the document graph instead of on the shared debate.  Default on
-        #: since 2026-10-06: only the unfolded route builds the stacked shape
-        #: and the argument entrypoints (aida-unfold-entrypoints).
-        #: FSP_PIPELINE=shared or `pipeline shared` selects the shared route.
-        self.pipeline_unfolded = os.getenv("FSP_PIPELINE", "unfolded") == "unfolded"
+        #: the document graph instead of on the shared debate.  Off by
+        #: default again since the shared route builds the stacked shape and
+        #: the argument entrypoints (aida-shared-route-stack-shape).
+        #: FSP_PIPELINE=unfolded or `pipeline unfolded` selects the unfolded route.
+        self.pipeline_unfolded = os.getenv("FSP_PIPELINE", "shared") == "unfolded"
         #: At an exposed node whose statement is already bound: "default"
         #: keeps the node's own derivation iff its argument has primacy,
         #: "share" never, "preserve" always (core/dc/unfold.py,
@@ -895,9 +895,14 @@ TODO: Mechanism to declare a scenario of default assumptions.
         cache[statement] = (self.revision, term)
         return term
 
-    def shared_debate(self, issue) -> SharedDebate:
-        """The debate of ``issue`` as named sub-debates (core/dc/share.py)."""
-        return share(self.graph, issue, self.debate_names(), self.anon_name, self.subarguments)
+    def shared_debate(self, issue, argument: Any = None) -> SharedDebate:
+        """The debate of ``issue`` as named sub-debates (core/dc/share.py);
+        for ``argument``, an argument with its own edge in the document, the
+        debate biased towards it, as its unfolded term is."""
+        from core.dc.unfold import argument_edge
+        edge = argument_edge(self.graph, argument.name) if argument is not None else None
+        return share(self.graph, issue, self.debate_names(), self.anon_name, self.subarguments,
+                     top=edge)
 
     def get_argument(self, name: str) -> Optional[Any]:
         """ Retrieve a registered argument """

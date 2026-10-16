@@ -527,8 +527,9 @@ class Service:
 
     @_operation
     def set_pipeline(self, mode: str) -> Done:
-        """``unfolded`` (the default) works on the term unfolded from the
-        document graph; ``shared`` on the debate as named sub-debates."""
+        """``shared`` (the default) works on the debate as named
+        sub-debates; ``unfolded`` on the term unfolded from the document
+        graph, the reference the shared route is tested against."""
         if mode not in ("shared", "unfolded"):
             raise InvalidRequest(f"pipeline: shared or unfolded, not '{mode}'")
         self.session.pipeline_unfolded = mode == "unfolded"
@@ -806,7 +807,7 @@ class Service:
         changes.  An argument the document refused at registration falls
         back to its own term (``own_term``), with a warning.  Every unfolded
         term is type-checked (the type oracle), unless `typecheck off`."""
-        from core.dc.unfold import unfold_legacy, UnfoldError
+        from core.dc.unfold import UnfoldError
         s = self.session
         target = self._as_target(target)
         name = target.text
@@ -842,17 +843,17 @@ class Service:
             return IssueTerm(target, arg, None, issue, arg.body, None, own_term=True)
         try:
             if s.pipeline_unfolded:
-                # Built for the per-definition type check only; it is the
-                # legacy shape (aida-shared-route-stack-shape), not the term
-                # evaluated, so it must not narrate itself as the unfolding.
+                # Built for the per-definition type check only: the term
+                # evaluated on this route is the unfolded one, which narrates
+                # its own unfolding, so the sharing builder stays quiet.
                 unfold_log = logging.getLogger("core.dc.unfold")
                 was_disabled, unfold_log.disabled = unfold_log.disabled, True
                 try:
-                    shared = s.shared_debate(issue)
+                    shared = s.shared_debate(issue, arg)
                 finally:
                     unfold_log.disabled = was_disabled
             else:
-                shared = s.shared_debate(issue)
+                shared = s.shared_debate(issue, arg)
         except UnfoldError as e:
             logger.warning("Unfolding refused for '%s': %s", name, e)
             raise UnfoldRefused(str(e), stage="graph", cause=e)
@@ -866,12 +867,10 @@ class Service:
         term = None
         if want_term or expanded_check:
             try:
-                if want_term:
-                    term = s.unfolded_term(arg) if arg is not None else None
-                    if term is None:            # an issue, or an argument without an edge
-                        term = s.issue_term(issue)
-                else:
-                    term = unfold_legacy(document, issue)    # the shared route's reference
+                # the term the shared form expands to (core/dc/share.py)
+                term = s.unfolded_term(arg) if arg is not None else None
+                if term is None:                # an issue, or an argument without an edge
+                    term = s.issue_term(issue)
             except UnfoldError as e:
                 logger.warning("Unfolding refused for '%s': %s", name, e)
                 raise UnfoldRefused(str(e), stage="graph", cause=e)
@@ -898,6 +897,14 @@ class Service:
                 logger.warning("Type check failed for '%s': %s", name, e)
                 raise TypeCheckRefused(str(e), stage="graph", cause=e)
         return IssueTerm(target, arg, None, issue, term, shared)
+
+    def _unfolded(self, found: IssueTerm):
+        """The unfolded term of ``found`` - its argument's, biased towards
+        it, or the issue's canonical one: what its shared form expands to,
+        and the reference the shared route falls back to."""
+        s = self.session
+        term = s.unfolded_term(found.argument) if found.argument is not None else None
+        return term if term is not None else s.issue_term(found.issue)
 
     def _debate_issue(self, target: Target, debate) -> IssueTerm:
         """``issue_term`` for a debate (core/dc/debate.py): the term compiled
@@ -962,7 +969,6 @@ class Service:
         from core.dc.instances import IssueResolver
         from core.dc.strict import compile_issue, document_issue_graph, issue_strict_edges
         from core.comp.evaluate import _shared_issue_graph
-        from core.dc.unfold import unfold_legacy
         s = self.session
         target = self._as_target(target)
         name = target.text
@@ -997,13 +1003,13 @@ class Service:
                         # sound debate.
                         logger.warning("Compiling '%s' from its shared debate failed (%s: %s); "
                                        "compiling the unfolded term instead.", name, type(e).__name__, e)
-                        term = term if term is not None else unfold_legacy(s.graph, found.issue)
+                        term = term if term is not None else self._unfolded(found)
                 if graph is None and source is not None:
                     graph = document_issue_graph(
                         source, found.issue, issue_strict_edges(term, name, options["strict_names"]), name)
                 if graph is None:
                     if term is None:                # not expected: a shared form always has a source
-                        term = unfold_legacy(s.graph, found.issue)
+                        term = self._unfolded(found)
                     graph = compile_issue(term, name, **options)
             except (DebateCompileError, FirstOrderNotSupported) as e:
                 logger.warning("Debate graph compilation refused for '%s': %s", name, e)
@@ -1062,12 +1068,12 @@ class Service:
         the critical pairs the witness labelling leaves open.  In credulous
         mode ``witness`` N picks labelling N of `label`, ``"all"`` evaluates
         under every labelling that accepts the issue; ``favour`` (credulous,
-        an argument, the unfolded route) prefers a witness in which the
-        argument's own derivation is IN.  The normal form is cached on the
+        an argument) prefers a witness in which the argument's own
+        derivation is IN.  The normal form is cached on the
         argument or debate (`render NAME evaluated`)."""
         from core.comp.evaluate import (evaluate_debate, evaluate_witnesses, evaluate_shared,
                                         evaluate_witnesses_shared, EvaluationRefused)
-        from core.dc.unfold import unfold_legacy, argument_edge
+        from core.dc.unfold import argument_edge
         s = self.session
         if mode not in MODES or semantics not in SEMANTICS or base not in BASES:
             raise InvalidRequest(f"evaluate: mode {MODES}, semantics {SEMANTICS}, base {BASES}")
@@ -1085,10 +1091,10 @@ class Service:
         favoured = None
         if favour:
             favoured = argument_edge(s.graph, arg.name) if arg is not None else None
-            if mode != "credulous" or witness is not None or shared is not None or favoured is None:
-                raise InvalidRequest("'favour' needs credulous mode without a witness number, an "
-                                     "argument with its own edge in the document, and the unfolded "
-                                     "pipeline.", stage="evaluate")
+            if mode != "credulous" or witness is not None or favoured is None:
+                raise InvalidRequest("'favour' needs credulous mode without a witness number and "
+                                     "an argument with its own edge in the document.",
+                                     stage="evaluate")
         common = dict(strict_names=s.declarations.keys(),
                       strict_kinds=declaration_kinds(s.declarations),
                       base=base, semantics=semantics, source=self._issue_source(found))
@@ -1109,7 +1115,7 @@ class Service:
                     logger.warning("Evaluating '%s' from its shared debate failed (%s: %s); "
                                    "evaluating the unfolded term instead.", name, type(e).__name__, e)
             if term is None:
-                term = unfold_legacy(s.graph, issue)   # the shared route's reference
+                term = self._unfolded(found)          # the shared route's reference
             return on_term(term, name, **options)
 
         try:
@@ -1237,9 +1243,10 @@ class Service:
 
     @_operation
     def share(self, name: str) -> Shared:
-        """The debate about an argument's issue as named sub-debates: the
-        issue's term, then one `NAME[open sites] := term` line per sub-debate
-        it cites (core/dc/share.py)."""
+        """The debate about an argument's issue as named sub-debates, biased
+        towards the argument as its evaluation is: the root's term, then one
+        `NAME[open sites] := term` line per sub-debate it cites
+        (core/dc/share.py)."""
         from core.dc.unfold import UnfoldError
         s = self.session
         arg = s.get_argument(name)
@@ -1254,7 +1261,7 @@ class Service:
             raise Refused(f"'{name}' is not in the document graph; it has no debate to share.",
                           stage="debate")
         try:
-            shared = s.shared_debate(issue)
+            shared = s.shared_debate(issue, arg)
             text = shared.to_text()
         except UnfoldError as e:
             logger.warning("Sharing refused for '%s': %s", name, e)

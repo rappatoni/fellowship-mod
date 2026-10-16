@@ -331,9 +331,11 @@ class TestShareCommand:
         script.write_text(chain_script(2) + "share a2_0.\n")
         run(fresh, script)
         out = capsys.readouterr().out
-        assert "Debate about 'a2_0' (P2[t]), 3 sub-debate(s) cited by name:" in out
-        assert out.count(f"{ANON_PREFIX}2:P1") == 2
-        assert f"{ANON_PREFIX}2[?:P1, ?:P0->P1, !:P0] := " in out
+        # biased towards a2_0: the debate about P1->P2 has a2_0's axiom on
+        # top under a2_0 and is canonical under a2_1, each used once
+        assert "Debate about 'a2_0' (P2[t]), 2 sub-debate(s) cited by name:" in out
+        assert out.count(f"{ANON_PREFIX}1:P1") == 2
+        assert f"{ANON_PREFIX}1[?:P1, ?:P0->P1, !:P0] := " in out
 
     def test_an_authors_citation_keeps_its_name(self, fresh, tmp_path, capsys):
         script = tmp_path / "cited.fspy"
@@ -917,3 +919,82 @@ def test_the_settings_agree_with_the_unfolded_term(fresh, script, setting, capsy
             options = dict(strict_names=names, strict_kinds=kinds, mode=mode, semantics="grounded")
             assert (verdict(evaluate_shared, share(doc, statement, subarguments=setting), **options)
                     == verdict(evaluate_debate, term, **options)), (statement, mode)
+
+
+# -- argument entrypoints (aida-unfold-entrypoints) --------------------------------
+
+from core.dc.unfold import UnfoldError, argument_edge, unfold_argument         # noqa: E402
+
+
+def argument_edges(prover):
+    """The document edge of every registered argument that has one."""
+    found = (argument_edge(prover.graph, name) for name in prover.arguments)
+    return [edge for edge in found if edge is not None]
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_an_argument_term_is_its_unfolding(fresh, script, capsys):
+    """``share(..., top=edge)`` against ``unfold_argument``: expansion, issue
+    graph and evaluation, credulous with and without ``favour``."""
+    run(fresh, script, stop_marker=False)
+    doc = fresh.graph
+    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    edges = argument_edges(fresh)
+    assert edges, "the fixture registered no argument with an edge"
+    for edge in edges:
+        issue = (edge.target_key, edge.target_side)
+        term = unfold_argument(doc, edge)
+
+        def shared():
+            return share(doc, issue, top=edge)
+
+        assert shape(shared().expand()) == shape(term), edge.name
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reference = compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
+            graph = compile_issue_shared(shared(), "x", strict_names=names, strict_kinds=kinds)
+        assert {edge_key(e) for e in graph.edges} == {edge_key(e) for e in reference.edges}
+        assert graph.defaults == reference.defaults
+        for mode, extra in (("skeptical", {}), ("credulous", {}), ("credulous", {"favour": edge})):
+            options = dict(strict_names=names, strict_kinds=kinds, mode=mode, semantics="grounded",
+                           **extra)
+            assert (verdict(evaluate_shared, shared(), **options)
+                    == verdict(evaluate_debate, term, **options)), (edge.name, mode, extra)
+
+
+def test_an_argument_term_puts_the_argument_on_top():
+    """The root of an argument's shared debate is a variant keyed by the
+    argument, and the issue's canonical debate is another definition."""
+    doc, issue = doubled_chain(2)
+    edge = argument_edge(doc, "a2_0")
+    shared = share(doc, issue, top=edge)
+    assert shared.issue == (issue, None, "a2_0") and shared.statement == issue
+    assert issue not in shared.defs                       # nothing cites the canonical one
+    assert shape(shared.expand()) == shape(unfold_argument(doc, edge))
+
+
+def test_an_edge_of_another_statement_is_refused():
+    doc, issue = doubled_chain(2)
+    with pytest.raises(UnfoldError):
+        share(doc, issue, top=argument_edge(doc, "a1_0"))
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_both_type_checks_agree_on_argument_terms(fresh, script, capsys):
+    """The per-definition check of an argument's shared debate accepts
+    exactly what the replay of its unfolded term accepts."""
+    run(fresh, script, stop_marker=False)
+    try:
+        fresh.send_command("discard theorem.")         # a fixture may end inside a proof
+    except Exception:
+        pass
+    doc = fresh.graph
+    for edge in argument_edges(fresh):
+        issue = (edge.target_key, edge.target_side)
+        shared = share(doc, issue, top=edge)
+        if shared.spelling_clashes():
+            continue                                    # the CLI replays the term then
+        prop, anti = doc.nodes[edge.target_key], edge.target_side == "context"
+        expanded = outcome(lambda: typecheck(fresh, unfold_argument(doc, edge), "x", prop, anti))
+        per_definition = outcome(lambda: typecheck_shared(fresh, shared, "y"))
+        assert expanded == per_definition, edge.name

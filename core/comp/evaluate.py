@@ -574,6 +574,7 @@ def evaluate_shared(
     base: str = "cbn",
     semantics: str = "preferred",
     witness=None,
+    favour=None,
     source=None,
 ):
     """``evaluate_debate`` for a ``SharedDebate`` (core/dc/share.py): what
@@ -591,10 +592,10 @@ def evaluate_shared(
     """
     resolver = IssueResolver(shared, strict_names, strict_kinds)
     graph = _shared_issue_graph(resolver, name, source)
-    issue = shared.issue
+    issue = shared.statement
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
-    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
+    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness, favour)
     normal_form = _evaluate_shared_under(resolver, name, sigma, tiebreak, base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
@@ -618,7 +619,7 @@ def evaluate_witnesses_shared(
     resolver = IssueResolver(shared, strict_names, strict_kinds)
     graph = _shared_issue_graph(resolver, name, source)
     results = []
-    for number, sigma in accepting_witnesses(graph, shared.issue, semantics):
+    for number, sigma in accepting_witnesses(graph, shared.statement, semantics):
         nf = _evaluate_shared_under(resolver, name, sigma, "credulous", base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
@@ -631,7 +632,7 @@ def _shared_issue_graph(resolver, name, source):
         edges = resolver.strict_edges()
         logger.debug("strict: %d decision(s), %d strict edge(s) for '%s' over %d instance(s)",
                      len(resolver.decisions()), len(edges), name, len(resolver.instances))
-        return document_issue_graph(source, resolver.shared.issue, edges, name)
+        return document_issue_graph(source, resolver.shared.statement, edges, name)
     return issue_graph(resolver, name)
 
 
@@ -651,7 +652,7 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
     if not isinstance(strict_body, (Mu, Mutilde)) and hasattr(strict_body, "number"):
         # A bare site: the eta wrapper every argument has, as unfolding
         # gives the issue (core/dc/unfold.py), so the issue reads off the root.
-        key, side = shared.issue
+        key, side = shared.statement
         prop = shared.graph.nodes.get(key, key)
         strict_body = (Mu(ID("x1", prop), prop, strict_body, ID("x1", prop)) if side == "term"
                        else Mutilde(DI("x1", prop), prop, DI("x1", prop), strict_body))

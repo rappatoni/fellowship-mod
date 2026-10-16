@@ -1296,9 +1296,8 @@ def evaluate_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptic
         evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all] [favour].
         evaluate issue :X|X: [same options, no favour].
 
-    On the unfolded route (the default) ARG's term is the one unfolded for
-    it, biased towards it; an issue gets the canonical term.  ``favour``
-    (credulous, an argument, the unfolded route) prefers a witness
+    ARG's debate is biased towards it, on either route; an issue gets the
+    canonical one.  ``favour`` (credulous, an argument) prefers a witness
     labelling in which the argument's own derivation is IN.  In credulous
     mode N picks labelling N of `label ARG SEMANTICS` as the witness and
     `all` evaluates under every labelling that accepts the issue.  The

@@ -45,10 +45,12 @@ from core.ac.ast import (
     first_order_node, FirstOrderNotSupported,
 )
 from core.comp.oracle_terms import _free_names, all_names, contains_uncatchable_clash
-from core.dc.debate_graph import DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin
+from core.dc.debate_graph import (
+    DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin, BUILTIN_LEAVES,
+)
 from core.dc.share import SharedDebate, debate_statement, is_cite, _same_origin
 from core.dc.strict import (
-    strict_resolve, strict_in_scope, is_closed, strict_edge_candidate, _contains_assumption, _eta_statement, fold_occurrences, key_of,
+    strict_resolve, strict_in_scope, is_closed, _show, strict_edge_candidate, _contains_assumption, _eta_statement, fold_occurrences, key_of,
 )
 from core.logging_util import artifact
 
@@ -607,17 +609,28 @@ class IssueResolver:
             if not isinstance(node, ProofTerm):
                 return
             statement = _eta_statement(node)
-            if (statement is not None and strict_edge_candidate(node, self.strict_names, _has_decision)
-                    and is_closed(node, self.strict_names)):
-                full = self.materialise(node)
+            if statement is not None and strict_edge_candidate(node, self.strict_names, _has_decision):
+                # as strict_resolve's collector, and in its words
                 name = binder_origin(node)
-                if contains_uncatchable_clash(full):
-                    logger.debug("strict: no edge for '%s': it holds an uncatchable clash", name)
+                shown = _show(statement, getattr(node, "prop", None))
+                if not is_closed(node, self.strict_names):
+                    # a parameter is a variable of the citing term that
+                    # captures the statement: shown as that statement
+                    params = {_param(s): f"{_show(s, self.shared._prop(s[0]))} (captured where cited)"
+                              for s in instance.captured}
+                    free = sorted(params.get(n, n) for n in {n for _kind, n in _free_names(node)}
+                                  - set(self.strict_names) - set(BUILTIN_LEAVES))
+                    logger.debug("strict: no edge for '%s' on %s: not closed%s", name, shown,
+                                 " (free: %s)" % ", ".join(free) if free else " (an open site remains)")
+                elif contains_uncatchable_clash(full := self.materialise(node)):
+                    logger.debug("strict: no edge for '%s' on %s: it holds an uncatchable clash, "
+                                 "so it derives its statement only from an inconsistency", name, shown)
                 else:
                     out.append(Edge(name=f"{name}*", target_key=key_of(statement),
                                     target_side=statement[1], sources=(), strict=True,
                                     role="strict", term=full))
-                    logger.debug("strict: edge '%s*' (a closed derivation the framework missed)", name)
+                    logger.debug("strict: edge '%s*' on %s (a closed derivation the framework "
+                                 "missed)", name, shown)
                     return                  # maximal: do not descend into it
             for slot in ("term", "context"):
                 child = getattr(node, slot, None)

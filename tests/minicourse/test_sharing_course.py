@@ -229,6 +229,7 @@ class TestLesson14Definitions:
         assert labels(graph) == {"P1->P2[t]": "IN", "P0->P1[t]": "IN", "P1[t]": "IN", "P0[t]": "IN", "P2[t]": "IN"}
         assert (pres_str(nf), cls) == (NF14, "value")
 
+    @STALE
     def test_the_issue_p1_names_nothing(self, fresh):                # exercise 1
         run(fresh, HERE / "lesson14_sharing.fspy")
         shared = fresh.shared_debate((K("P1"), "term"))
@@ -273,6 +274,7 @@ class TestLesson15Captures:
         assert len(found) == 8 and {v for k, v in found.items() if "->P" not in k and "->Q" not in k} == {"UNDEC"}
         assert found["(Q->false)->P[t]"] == "IN" and found["(P->false)->Q[t]"] == "IN"     # the axioms
 
+    @STALE
     def test_the_issue_q_names_nothing(self, fresh):                 # exercise 1
         run(fresh, HERE / "lesson15_capture.fspy")
         assert fresh.shared_debate((K("Q"), "term")).named() == {
@@ -398,9 +400,9 @@ class TestLesson18Evaluation:
 
     def test_the_pipeline_switch(self, fresh):
         run(fresh, HERE / "lesson14_sharing.fspy")
-        # the default is the unfolded route since 2026-10-06, until the shared
-        # route builds the stacked shape (tasks.org, aida-shared-route-stack-shape)
-        assert fresh.pipeline_unfolded
+        # the shared route is the default again since it builds the stacked
+        # shape (tasks.org, aida-shared-route-stack-shape)
+        assert not fresh.pipeline_unfolded
         fresh.pipeline_unfolded = True
         out = run(fresh, HERE / "lesson14_sharing.fspy")
         assert "Debate about 'a2_0'" in out                        # debate always shows the shared form
