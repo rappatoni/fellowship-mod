@@ -85,9 +85,11 @@ def test_a_circular_supporter_rests_on_b(fresh):
     # back needs B inside B's own debate: its demand is the b of B's
     # support scaffold, and after the outer step B's root obligation,
     # shared - no second obligation for B.  Skeptically B is UNDEC and the
-    # site an obligation; the credulous witness labels the loop IN, so it
-    # is the delegation !IN:B, a value (the coinductive reading, tasks.org
-    # aida-unfounded-credulous-witness).
+    # site an obligation.  Credulously the witness labels the loop IN; back
+    # rests on B's root, an obligation nobody met, so it stands OUT, and
+    # so does pro: B's root survives and is discharged by its label, the
+    # bare delegation !IN:B (tasks.org, aida-judge-by-what-it-stands-for;
+    # until 2026-10-16 the loop's proof through !IN:B).
     run(fresh, CYCLE)
     term = unfold(fresh.graph, (K("B"), "term"))
     match = _match_scaffold(term, set(fresh.declarations))
@@ -97,7 +99,7 @@ def test_a_circular_supporter_rests_on_b(fresh):
     nf, cls, *_ = evaluate(fresh, term, "skeptical")
     assert cls == "open" and pres_str(nf) == "?UNDEC:B"
     nf, cls, *_ = evaluate(fresh, term, "credulous")
-    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
+    assert (cls, pres_str(nf)) == ("value", "!IN:B")
 
 
 @pytest.mark.parametrize("script", FIXTURES + [CIRCULAR, "tests/entrypoints.fspy"])
@@ -168,15 +170,15 @@ def test_a_circular_supporter_no_longer_wins_by_strictness(fresh, order, tmp_pat
 
 
 def test_b_with_back_on_top_is_a_value_through_the_delegation(fresh, tmp_path):
-    # aida-circular-supporter-judged-in: inside B's debate sigma keeps back
-    # (its source B is IN), whose B can only be B's root obligation.  B is
-    # IN (through other), so that obligation is the delegation !IN:B and B
-    # is a value - but other's proof is not in the normal form
-    # (aida-labelled-sites-delegation-rewrite; OPEN before).  With other on
-    # top, B is a value through other.
+    # aida-circular-supporter-judged-in: inside B's debate back rests on
+    # B's root obligation, which nobody met in the term, so back stands
+    # OUT (tasks.org, aida-judge-by-what-it-stands-for) and A's debate keeps
+    # other, from the presumed D: B is a value through other's proof.
+    # Until 2026-10-16 sigma kept back by B's label, and the value went
+    # through the delegation !IN:B with other's proof missing.
     run(fresh, CIRCULAR)
     nf, cls, *_ = evaluate(fresh, unfold(fresh.graph, (K("B"), "term")))
-    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
+    assert (cls, pres_str(nf)) == ("value", "μpro:B.<r1:A->B||μb1:A.<rd:D->A||!IN:D*b1:A>*pro:B>")
     fresh.new_document()
     run(fresh, reordered(tmp_path))
     assert evaluate(fresh, unfold(fresh.graph, (K("B"), "term")))[1] == "value"

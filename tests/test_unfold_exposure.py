@@ -143,7 +143,9 @@ class TestALemmaIsExposed:
                 "SUP[alt1,b1](?u1:P, SUP[alt2,b2](μargP:P.<μth:P.<qp||SUP[alt3,b3](!u2:Q, "
                 "μargQ:Q.<μth_2:Q.<pq||b1*th_2>||argQ>)*th>||argP>, "
                 f"μth2:P.<rp||{R_DEBATE}*th2>))")
-            assert verdict(svc, "issue :P") == ("value", "μargP:P.<qp:Q->P||μb1:Q.<pq:P->Q||!IN:P*b1:Q>*argP:P>")
+            # judged by what it stands for, argQ's P (the root, inside P's
+            # own debate) is no evidence: P from the presumed Q
+            assert verdict(svc, "issue :P") == ("value", "μargP:P.<qp:Q->P||!IN:Q*argP:P>")
             # unfolded for argQ: the lemma is in argQ's body, at its own
             # statement's debate, with an obligation root and argP below it
             assert pres_scaffolds(term_of(svc, "argQ").term) == (
@@ -164,13 +166,11 @@ class TestALemmaIsExposed:
                 f"SUP[alt1,b1](?u1:P, SUP[alt2,b2](μth2:P.<rp||{R_DEBATE}*th2>, "
                 "μargP:P.<μth:P.<qp||SUP[alt3,b3](!u2:Q, μargQ:Q.<μth_2:Q.<pq||b2*th_2>||argQ>)"
                 "*th>||argP>))")
-            # b2 is the stack below argP - the refuted lemma - so argQ, IN
-            # by the labels through argP, fails here (tasks.org,
-            # aida-entrypoint-capture-adequacy; site_variant.fspy shows the
-            # same with a site)
-            assert verdict(svc, "argP") == (
-                "exception", "μargP:P.<qp:Q->P||μb1:Q.<pq:P->Q||μb8:P.<rp:R->P||"
-                "μb9:R.<nR:~R||?OUT:R*_F_>*b8:P>*b1:Q>*argP:P>")
+            # b2 is the stack below argP - the refuted lemma - so argQ
+            # stands OUT here and Q's scaffold keeps its presumption
+            # (tasks.org, aida-judge-by-what-it-stands-for; until 2026-10-16
+            # an exception: argQ was kept by P's label)
+            assert verdict(svc, "argP") == ("value", "μargP:P.<qp:Q->P||!IN:Q*argP:P>")
         finally:
             prover.close()
 
@@ -179,7 +179,7 @@ class TestALemmaIsExposed:
         try:
             term = pres_scaffolds(term_of(svc, "argP").term)
             assert "SUP[alt4,b4](b2, μth2:P.<rp||ATT[alt5,b5](!u3:R, " in term
-            assert verdict(svc, "argP")[0] == "exception"
+            assert verdict(svc, "argP") == ("value", "μargP:P.<qp:Q->P||!IN:Q*argP:P>")
         finally:
             prover.close()
 
@@ -188,8 +188,7 @@ class TestTheSiteVariant:
     def test_a_site_and_a_lemma_unfold_alike(self):
         """site_variant.fspy: argQ demands P, argP2 derives P from the
         refuted R.  The terms are those of lemma_captured.fspy with argP2's
-        wrapper around the lemma's body, and the verdicts the same - the
-        exception for argP included."""
+        wrapper around the lemma's body, and the verdicts the same."""
         lemma = session("exposure/lemma_captured.fspy")
         site = session("exposure/site_variant.fspy")
         try:
@@ -198,7 +197,7 @@ class TestTheSiteVariant:
                 unwrapped = with_site.replace("μargP2:P.<", "").replace("||argP2>", "")
                 assert unwrapped == pres_scaffolds(term_of(lemma[1], text).term), text
                 assert verdict(site[1], text)[0] == verdict(lemma[1], text)[0], text
-            assert verdict(site[1], "argP")[0] == "exception"
+            assert verdict(site[1], "argP") == ("value", "μargP:P.<qp:Q->P||!IN:Q*argP:P>")
         finally:
             lemma[0].close()
             site[0].close()
@@ -338,3 +337,73 @@ def test_the_setting_is_a_session_setting():
             svc.set_subarguments("all")
     finally:
         prover.close()
+
+
+# -- judged by what it stands for (tasks.org, aida-judge-by-what-it-stands-for) --
+
+PRESUMED_Q = "μargP:P.<qp:Q->P||!IN:Q*argP:P>"
+
+
+def evaluated(svc, text, mode="skeptical"):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ev = svc.evaluate(svc.target(text), mode=mode)
+    return ev.nf_class, pres_str(ev.normal_form)
+
+
+class TestJudgedByWhatItStandsFor:
+    """Sigma judges a captured variable by what it stands for: =b2= is the
+    stack below the top, a captured obligation root of the debate being
+    decided is unmet, a nested sub-debate counts by how it comes out in
+    the term.  The discharge is unchanged: a root that survives is named
+    by its statement's label."""
+
+    @pytest.mark.parametrize("script", ["exposure/site_variant.fspy", "exposure/lemma_captured.fspy"])
+    def test_the_argument_and_the_issue_give_p_from_the_presumed_q(self, script):
+        prover, svc = session(script)
+        try:
+            for text in ("argP", "issue :P"):
+                assert evaluated(svc, text) == ("value", PRESUMED_Q), text
+        finally:
+            prover.close()
+
+    def test_an_unfounded_loop_is_the_bare_delegation(self):
+        """site_obligation.fspy: argP demands Q; credulously P is IN only
+        through the loop P from Q from P."""
+        prover, svc = session("exposure/site_obligation.fspy")
+        try:
+            for text in ("argP", "issue :P"):
+                assert evaluated(svc, text, "credulous") == ("value", "!IN:P"), text
+                assert evaluated(svc, text) == ("open", "?UNDEC:P"), text
+        finally:
+            prover.close()
+
+    def test_the_lesson_8a_loop_is_the_bare_delegation(self):
+        prover, svc = session("minicourse/lesson8a_cycle.fspy")
+        try:
+            for text in ("pro", "issue :B"):
+                assert evaluated(svc, text, "credulous") == ("value", "!IN:B"), text
+                assert evaluated(svc, text) == ("open", "?UNDEC:B"), text      # skeptical unchanged
+        finally:
+            prover.close()
+
+    @pytest.mark.parametrize("script", ["exposure/site_obligation.fspy", "exposure/site_variant.fspy",
+                                        "exposure/lemma_captured.fspy", "minicourse/lesson8a_cycle.fspy",
+                                        "circular_supporter.fspy"])
+    def test_the_shared_route_gives_the_same_classes(self, script):
+        """The shared route reads a stub by the standing of its resolved
+        instance (core/comp/standing.py): every issue gets the class the
+        unfolded route gives, in both modes.  (The normal forms may differ
+        by the shapes the routes build, as before.)"""
+        classes = {}
+        for pipe in ("unfolded", "shared"):
+            prover, svc = session(script)
+            try:
+                svc.set_pipeline(pipe)
+                for text in targets(prover):
+                    if text.startswith("issue"):
+                        for mode in ("skeptical", "credulous"):
+                            classes.setdefault((text, mode), {})[pipe] = evaluated(svc, text, mode)[0]
+            finally:
+                prover.close()
+        assert all(v["unfolded"] == v["shared"] for v in classes.values()), classes

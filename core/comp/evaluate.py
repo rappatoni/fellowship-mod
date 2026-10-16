@@ -100,9 +100,10 @@ nested under an axiom head is not propagated by the standard rules
 import logging
 
 from core.ac.ast import (
-    ProofTerm, Mu, Mutilde, ID, DI,
+    ProofTerm, Mu, Mutilde, Lamda, Admal, ID, DI,
     first_order_node, FirstOrderNotSupported,
 )
+from core.comp.standing import Standing, OWN, ROOT, _binder as _binder_name
 from core.comp.adf_label import (
     grounded_labels, labellings, intersection_labelling, SEMANTICS,
 )
@@ -244,11 +245,16 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
     if check_labels is None:
         check_labels = CHECK_LABELS
     used = binder_names(body) if stubs is not None else None
+    # What each expression stands for in the term (core/comp/standing.py;
+    # tasks.org, aida-judge-by-what-it-stands-for): a scaffold is decided by
+    # the standing of its scion, not by the labels of the statements it
+    # rests on.  ``senv`` maps the variables in scope to what they stand for.
+    standing = Standing(mode, strict_names, stubs, labels)
 
-    def walk(node, env):
+    def walk(node, env, senv):
         if stubs is not None and isinstance(node, Stub):
             # the labelling pass reaches a sub-debate when it is written out
-            return walk(label_in_place(stubs.open(node, used), labels), env)
+            return walk(label_in_place(stubs.open(node, used), labels), env, senv)
         if not isinstance(node, ProofTerm):
             return node
         match = _match_scaffold(node, strict_names)
@@ -272,10 +278,9 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 if wrong:
                     raise EvaluationRefused(
                         f"The labelled term disagrees with the labelling at {wrong[:3]}.")
-            status = derivation_status(records)
+            status, _s_orig, choice, _whole = standing.scaffold(match, senv)
             if trace is not None:
                 trace.append((statement, status))
-            choice = _wing_choice(role, status, mode)
             if logger.isEnabledFor(logging.DEBUG):
                 kept = ("original" if choice == "orig"
                         else ("supporter" if role == "supporter" else "attacker (the clash)"))
@@ -296,20 +301,28 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                              ", dropping the %s%s" % (
                                  dropped[0],
                                  " and the %d scaffold(s) inside it" % inside if inside else ""))
-            # a rewrite builds new wrappers: label them like the rest
+            # a rewrite builds new wrappers: label them like the rest.  The
+            # scaffold's alt, where the kept wing still uses it, stands for
+            # the captured root of the contrary.
+            kept = {**senv, alt: ROOT}
             if choice == "orig":
-                return walk(label_in_place(_keep_orig(node, orig, alt), labels), env)
+                return walk(label_in_place(_keep_orig(node, orig, alt), labels), env, kept)
             if role == "supporter":
-                return walk(label_in_place(_keep_scion_support(node, scion_raw, alt), labels), env)
-            return walk(label_in_place(_keep_attack_wing(node, match), labels), env)
+                return walk(label_in_place(_keep_scion_support(node, scion_raw, alt), labels), env, kept)
+            return walk(label_in_place(_keep_attack_wing(node, match), labels), env, kept)
         inner = {**env, **binder_statements(node)}
+        sinner = senv
+        if isinstance(node, (Mu, Mutilde, Lamda, Admal)):
+            name = _binder_name(node)
+            if senv.get(name) is not ROOT:
+                sinner = {**senv, name: OWN}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
             if isinstance(child, ProofTerm):
-                setattr(node, slot, walk(child, inner))
+                setattr(node, slot, walk(child, inner, sinner))
         return node
 
-    return walk(label_term(body, labels), {})
+    return walk(label_term(body, labels), {}, {})
 
 
 def record_label_mismatches(records, labels) -> list:
