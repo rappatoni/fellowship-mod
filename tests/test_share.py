@@ -65,6 +65,21 @@ def doubled_chain(levels):
     return compile_document(named, strict_names=strict), (K(f"P{levels}"), "term")
 
 
+def presumed_horn_document():
+    """a1 applies the declared axiom ax0 : P0 as a horn; b0 derives P0 too,
+    so the horn is engaged, and a0 presumes P0.  The unfolder builds the
+    horn's debate with an obligation root and the presumption of P0 at the
+    bottom of the stack, which is not P0's canonical debate (its root the
+    presumption): the shared route cites a variant of it."""
+    strict = {"r0", "r1", "ax0"}
+    doc = compile_document(
+        [("a0", eta("a0", "P0", Deleg("1", "P0"))),
+         ("b0", from_site("b0", "P0", "r0", "Q", Goal("1", "Q"))),
+         ("a1", from_site("a1", "P1", "r1", "P0", DI("ax0", "P0")))],
+        strict_names=strict)
+    return doc, strict
+
+
 def random_document(seed, props=4, arguments=6):
     """A small random document over P0..: supports from obligations and
     presumptions, and derivations from failure, so cycles and captures of
@@ -120,6 +135,14 @@ class TestExpansionIsUnfolding:
         # bare site where it is written out - as in unfold.
         from test_unfold import bare_contrary_document
         doc, _ = bare_contrary_document()
+        for statement in doc.statements():
+            assert same_term(doc, statement), statement
+
+    def test_a_presumed_horn_cites_a_variant(self):
+        doc, _ = presumed_horn_document()
+        issue = (K("P1"), "term")
+        variants = [key for key in share(doc, issue).defs if len(key) == 3]
+        assert variants == [((K("P0"), "term"), False, None)]
         for statement in doc.statements():
             assert same_term(doc, statement), statement
 
@@ -540,6 +563,11 @@ class TestIssueGraphFromInstances:
         for statement in doc.statements():
             same_graph(doc, statement, strict, semantics=ALL)
 
+    def test_a_presumed_horn(self):
+        doc, strict = presumed_horn_document()
+        for statement in doc.statements():
+            same_graph(doc, statement, strict, semantics=ALL)
+
     @pytest.mark.parametrize("seed", range(60))
     def test_random_documents(self, seed):
         doc = random_document(seed)
@@ -698,6 +726,11 @@ class TestEvaluateFromTheSharedDebate:
         for statement in doc.statements():
             same_evaluation(doc, statement, strict, semantics=("grounded", "preferred", "stable"))
 
+    def test_a_presumed_horn(self):
+        doc, strict = presumed_horn_document()
+        for statement in doc.statements():
+            same_evaluation(doc, statement, strict)
+
     @pytest.mark.parametrize("seed", range(30))
     def test_random_documents(self, seed):
         doc = random_document(seed)
@@ -846,3 +879,41 @@ def test_the_tree_printer_shows_a_stub_by_its_name():
     term = Mu(ID("a", "P2"), "P2", stub, ID("a", "P2"))
     for text in (pres_tree(term), pretty_natural(term, vanilla_rendering), pres_str(term)):
         assert "anon_1" in text and "Unhandled" not in text
+
+
+# -- the subarguments settings (tasks.org, aida-circular-support-design) --------
+
+#: Fixtures where "preserve" keeps a captured node's own derivation, and
+#: where a scaffold's variable captures it (the attackers' copy).
+SETTING_SCRIPTS = [
+    "tests/rationality/self_attack_lk.fspy",
+    "tests/rationality/even_loop_lk.fspy",
+    "tests/peirces_law.fspy",
+    "tests/naf_olon.fspy",
+    "tests/multiple_undercuts.fspy",
+    "tests/exposure/lemma_captured.fspy",
+]
+
+
+@pytest.mark.parametrize("setting", ["preserve", "share"])
+@pytest.mark.parametrize("script", SETTING_SCRIPTS)
+def test_the_settings_agree_with_the_unfolded_term(fresh, script, setting, capsys):
+    """Expansion, issue graph and evaluation under the setting, against the
+    unfolded term under the same setting (the default is every other test)."""
+    run(fresh, script, stop_marker=False)
+    doc = fresh.graph
+    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    for statement in doc.statements():
+        term = unfold(doc, statement, setting)
+        assert shape(share(doc, statement, subarguments=setting).expand()) == shape(term), statement
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reference = compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
+            shared = compile_issue_shared(share(doc, statement, subarguments=setting), "x",
+                                          strict_names=names, strict_kinds=kinds)
+        assert {edge_key(e) for e in shared.edges} == {edge_key(e) for e in reference.edges}
+        assert shared.defaults == reference.defaults
+        for mode in ("skeptical", "credulous"):
+            options = dict(strict_names=names, strict_kinds=kinds, mode=mode, semantics="grounded")
+            assert (verdict(evaluate_shared, share(doc, statement, subarguments=setting), **options)
+                    == verdict(evaluate_debate, term, **options)), (statement, mode)

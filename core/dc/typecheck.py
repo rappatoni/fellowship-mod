@@ -206,10 +206,11 @@ def typecheck_shared(prover, shared, name: str, checked=None) -> int:
     artifact either way.
     """
     replays = 0
-    for statement, definition in shared.defs.items():
+    for debate, definition in shared.defs.items():
         if definition.trivial:
             continue                       # a bare site: nothing to check
-        term = shared.skeleton(statement)
+        statement = definition.statement
+        term = shared.skeleton(debate)
         key = (statement, shape(term))
         shown = f"{shared.graph.nodes.get(statement[0], statement[0])}[{statement[1][0]}]"
         if checked is not None and key in checked:

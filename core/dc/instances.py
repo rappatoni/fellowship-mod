@@ -46,7 +46,7 @@ from core.ac.ast import (
 )
 from core.comp.oracle_terms import _free_names, all_names, contains_uncatchable_clash
 from core.dc.debate_graph import DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin
-from core.dc.share import SharedDebate, is_cite, _same_origin
+from core.dc.share import SharedDebate, debate_statement, is_cite, _same_origin
 from core.dc.strict import (
     strict_resolve, strict_in_scope, is_closed, strict_edge_candidate, _contains_assumption, _eta_statement, fold_occurrences, key_of,
 )
@@ -116,16 +116,21 @@ class _Pending(Stub):
 
 
 class _Instance:
-    """One statement under a set of captures and cuts.  ``opened``: the
+    """One debate of a statement (``debate``: its definition's key) under a
+    set of captures and cuts.  ``opened``: the
     captured statements whose capturing variable stands, where the instance
     is written out, for something not strict - an attack's alt, or a
     scaffold's b whose original is not strict - so that the strict phase
     reads them as it reads those variables in the unfolded term."""
 
-    def __init__(self, statement, captured, cut, opened=frozenset()):
-        self.statement = statement
+    def __init__(self, debate, captured, cut, scaffolded=frozenset(), opened=frozenset()):
+        self.debate = debate
+        self.statement = debate_statement(debate)
         self.captured = captured          # frozenset of statements
         self.cut = cut                    # frozenset of statements
+        #: captured statements a scaffold's variable captures: where the
+        #: setting is "preserve", a kept node's attackers are copied there
+        self.scaffolded = scaffolded
         self.opened = opened              # frozenset of captured statements
         self.resolved = None              # the strict-resolved local term
         self.open = False                 # an open site remains in it
@@ -136,7 +141,7 @@ class _Instance:
 
     @property
     def key(self):
-        return (self.statement, self.captured, self.cut, self.opened)
+        return (self.debate, self.captured, self.cut, self.scaffolded, self.opened)
 
     def __deepcopy__(self, memo):
         # Terms are deep-copied freely (the compiler, the strict phase); an
@@ -148,11 +153,12 @@ def _param(statement) -> str:
     return f"{PARAM}{statement[1][0]}:{statement[0]}"
 
 
-def _rebuild(node, leaf, captured=None):
+def _rebuild(node, leaf, captured=None, kept=None):
     """A copy of ``node`` with every citation replaced by ``leaf(citation)``,
     and every unengaged exposed node whose statement the instance captures
     (``captured(statement)``: the variable, or None) by that variable
-    (core/dc/share.py, ``exposed_as``)."""
+    (core/dc/share.py, ``exposed_as``) - or, where the setting keeps its
+    own derivation, by the form ``kept(node, statement, name)`` chooses."""
     if is_cite(node):
         return leaf(node)
     if not isinstance(node, ProofTerm):
@@ -161,12 +167,13 @@ def _rebuild(node, leaf, captured=None):
     if bound is not None and captured is not None:
         var = captured(bound)
         if var is not None:
-            return var
+            form = kept(node, bound, var.name) if kept is not None else None
+            return var if form is None else _rebuild(form, leaf, captured, kept)
     out = copy(node)
     for slot in ("term", "context"):
         child = getattr(node, slot, None)
         if isinstance(child, ProofTerm):
-            setattr(out, slot, _rebuild(child, leaf, captured))
+            setattr(out, slot, _rebuild(child, leaf, captured, kept))
     return out
 
 
@@ -212,20 +219,21 @@ class IssueResolver:
 
     # -- instances ----------------------------------------------------------------
 
-    def instance(self, statement, captured, cut, opened=()) -> _Instance:
-        """The instance of ``statement`` under the given captures and cuts,
-        restricted to what the statement can reach; with ``opened``, its
-        variant for the strict phase."""
-        relevant = self.shared.reach(statement)
+    def instance(self, debate, captured, cut, scaffolded=(), opened=()) -> _Instance:
+        """The instance of the definition ``debate`` under the given
+        captures and cuts, restricted to what its statement can reach; with
+        ``opened``, its variant for the strict phase."""
+        relevant = self.shared.reach(debate_statement(debate))
         captured = frozenset(s for s in captured if s in relevant)
-        key = (statement, captured, frozenset(s for s in cut if s in relevant))
+        key = (debate, captured, frozenset(s for s in cut if s in relevant),
+               frozenset(s for s in scaffolded if s in captured))
         opened = frozenset(s for s in opened if s in captured)
         table = self._variants if opened else self.instances
         found = table.get((*key, opened))
         if found is None:
             found = table[(*key, opened)] = _Instance(*key, opened)
         if opened:
-            self.instance(statement, captured, key[2])      # its instance is counted
+            self.instance(*key)                             # its instance is counted
         return found
 
     def root(self) -> _Instance:
@@ -238,13 +246,38 @@ class IssueResolver:
         there."""
         names = {s: _param(s) for s in instance.captured}
         names.update(citation.captures)
-        target = citation.debate
+        target = citation.statement
         if target in names:
             return "captured", names[target], names
         path = instance.cut | {instance.statement} | citation.cuts
         if target in path or getattr(citation, "bare", False):
             return "cut", None, names
-        return "instance", self.instance(target, names, path), names
+        return "instance", self.instance(citation.debate, names, path,
+                                         self._scaffolded(instance, names)), names
+
+    def _scaffolded(self, instance, names) -> frozenset:
+        """The statements of ``names`` (statement -> capturing variable)
+        that a scaffold's variable captures - only where it matters, under
+        "preserve" (``_Builder._kept``)."""
+        if self.shared.subarguments != "preserve":
+            return frozenset()
+        return frozenset(s for s, name in names.items() if self._by_scaffold(instance, s, name))
+
+    def _by_scaffold(self, instance, statement, name) -> bool:
+        return name in self.shared.scaffold_vars or (
+            name == _param(statement) and statement in instance.scaffolded)
+
+    def _kept(self, instance):
+        """For ``_rebuild``: the form a node with a kept derivation takes
+        where ``name`` captures its statement (``_Builder._kept``)."""
+        def kept(node, statement, name):
+            forms = getattr(node, "kept", None)
+            if forms is None:
+                return None
+            plain, attacked = forms
+            return (attacked if attacked is not None and self._by_scaffold(instance, statement, name)
+                    else plain)
+        return kept
 
     def _capturer(self, instance, compiled=False):
         """For ``_rebuild``: the variable of a statement the instance
@@ -274,6 +307,14 @@ class IssueResolver:
         return ("presumption" if "presumption" in self.shared.graph.defaults.get(statement, ())
                 else "obligation")
 
+    def _root_kind(self, debate) -> str:
+        """The kind of the root of the definition ``debate``: the
+        statement's own kind, or the one its variant gives it."""
+        statement = debate_statement(debate)
+        if debate == statement or debate[1] is None:
+            return self._kind(statement)
+        return "presumption" if debate[1] else "obligation"
+
     # -- the framework ------------------------------------------------------------
 
     def _compile_term(self, instance):
@@ -286,40 +327,43 @@ class IssueResolver:
         here, one level, under the names the captured statements have."""
         def leaf(citation):
             what, value, names = self._at(instance, citation)
-            target = citation.debate
+            target = citation.statement
             if what == "cut":
                 return self._site(target)
             if what == "captured":
+                form = kept(citation, target, value)
+                if form is not None:
+                    return _rebuild(form, leaf, capturer, kept)
                 out = self._variable(target, value, citation.presumed)
                 out.cites = out.name
                 out.source_kind = "presumption" if citation.presumed else "obligation"
                 return out
-            if self._sub_argument(target):
+            if self._sub_argument(citation.debate):
                 return _renamed(self._compile_term(value),
                                 {_param(s): names[s] for s in value.captured})
             out = self._variable(target, f"{PARAM}{next(self._stubs)}", False)
-            out.cites = self.shared.defs[target].name or out.name
-            out.source_kind = self._kind(target)
+            out.cites = self.shared.defs[citation.debate].name or out.name
+            out.source_kind = self._root_kind(citation.debate)
             out.instance = value
             return out
 
-        term = _rebuild(self.shared.defs[instance.statement].body, leaf,
-                        self._capturer(instance, compiled=True))
+        kept, capturer = self._kept(instance), self._capturer(instance, compiled=True)
+        term = _rebuild(self.shared.defs[instance.debate].body, leaf, capturer, kept)
         found = first_order_node(term)
         if found is not None:
             raise FirstOrderNotSupported("Debate graph compilation", found)
         return term
 
-    def _sub_argument(self, statement) -> bool:
-        """Whether the compiler reads the debate of ``statement``, where a
+    def _sub_argument(self, debate) -> bool:
+        """Whether the compiler reads the definition ``debate``, where a
         body needs it, as a sub-argument of that body rather than as the
         statement's site: its root is a binder but no scaffold it matches.
         The root's shape is the definition's own, whatever its citations
         are written out as."""
-        found = self._sub_arguments.get(statement)
+        found = self._sub_arguments.get(debate)
         if found is None:
-            body = self.shared.defs[statement].body
-            found = self._sub_arguments[statement] = (
+            body = self.shared.defs[debate].body
+            found = self._sub_arguments[debate] = (
                 isinstance(body, (Mu, Mutilde)) and _match_scaffold(body, self.strict_names) is None)
         return found
 
@@ -359,24 +403,28 @@ class IssueResolver:
 
         def leaf(citation):
             what, value, names = self._at(instance, citation)
-            target = citation.debate
+            target = citation.statement
             if what == "cut":
                 return self._site(target)
             if what == "captured":
+                form = kept(citation, target, value)
+                if form is not None:
+                    return _rebuild(form, leaf, capturer, kept)
                 return self._variable(target, value, citation.presumed)
-            shown = self.shared.defs[target].name or f"<{self.shared.marker(target)}>"
+            shown = self.shared.defs[citation.debate].name or f"<{self.shared.marker(target)}>"
             return _Pending(value, names, shown)
 
         def on_pending(node, scope):
             child = node.instance
             opened = self._opened(child, node.names, scope)
-            child = self.instance(child.statement, child.captured, child.cut, opened)
+            child = self.instance(child.debate, child.captured, child.cut, child.scaffolded, opened)
             return self._stub(self.resolve(child), node.names)
 
         # The parameters standing for something not strict enter as an
         # attack's alt does: "the statement fails", an open site.
         scope = {_param(s): ("alt", DI if s[1] == "term" else ID, None) for s in instance.opened}
-        term = _rebuild(self.shared.defs[instance.statement].body, leaf, self._capturer(instance))
+        kept, capturer = self._kept(instance), self._capturer(instance)
+        term = _rebuild(self.shared.defs[instance.debate].body, leaf, capturer, kept)
         instance.resolved, _ = strict_resolve(term, self.strict_names, trace=instance.trace,
                                               edges=False, scope=scope, on_pending=on_pending)
         instance.open = _contains_assumption(instance.resolved)
@@ -415,7 +463,7 @@ class IssueResolver:
                   else self._variable(s, names[s], False) for s in captured]
         if child.open:
             leaves.append(self._site(target))
-        shown = self.shared.defs[target].name or f"<{self.shared.marker(target)}>"
+        shown = self.shared.defs[child.debate].name or f"<{self.shared.marker(target)}>"
         return Stub(child, leaves, child.decision, shown, captured)
 
     def materialise(self, node, used=None, *, deep=True, names=None) -> ProofTerm:
@@ -526,8 +574,8 @@ class IssueResolver:
                 instance = n.instance
                 if self.reads_as_its_site(instance):
                     out = self._variable(instance.statement, f"{PARAM}{next(self._stubs)}", False)
-                    out.cites = self.shared.defs[instance.statement].name or out.name
-                    out.source_kind = self._kind(instance.statement)
+                    out.cites = self.shared.defs[instance.debate].name or out.name
+                    out.source_kind = self._root_kind(instance.debate)
                     return out
                 return convert(self.open(n, used))
             if not isinstance(n, ProofTerm):
