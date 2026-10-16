@@ -5637,7 +5637,8 @@ earlier and is the one the value shows).
 
 Stretch goal (author, 2026-10-06).
 
-*** BACKLOG Keep an exposed lemma inside the binders its hypotheses come from
+*** DONE Keep an exposed lemma inside the binders its hypotheses come from
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-lemma-exposure-scope
 :AREA:           phd
@@ -5672,6 +5673,31 @@ input/output logic's reasoning by cases, argued dialectically. =not_a=
 is =λh:A.μk:false.<(n_a h) || ?Ox[c]>=; its lemma Ox from A is stacked
 in Ox's debate outside =λh=. Type check on: refused; off: =claim= is
 =VALUE μalt5:Ox.<n_a || h:A*alt5>= while Ox is labelled OUT.
+
+*Done 2026-10-16.* The compiler already recorded the lemma's use of =h=
+as a captured obligation source at A; the unfolder copied the variable
+anyway. =Unfolder._edge= (core/dc/unfold.py) now unfolds a variable that
+an edge's body uses but does not bind, and that the edge records as a
+captured source, as its statement in scope: captured again where the
+binder is in scope (inside =λh=, unchanged), the statement's debate where
+it is not (the stacked copy: =μy:B.<f || ?u4:A*y>=, A owed). The shared
+route gives the same classes, so it was left alone (the port is on the
+=shared-route-stack-shape= worktree).
+
+Evidence: tests/exposure/lemma_scope_cases.fspy and lemma_scope_io.fspy
+(copies of the two reproductions); tests/test_unfold_exposure.py,
+=TestALemmaStaysInItsScope= (every term closed and replayed with the type
+check on; =p1= and =claim= OPEN in both modes, the issue OUT) and
+=test_every_unfolded_term_is_closed= (13 fixtures); 5 of these fail
+before the change. Suite: 2143 passed, 8 skipped (the new fixtures have
+no issue IN for the adequacy test), 2 xfailed, 1 xpassed; no existing pin
+moved.
+
+Not part of the bug, for [[id:aida-circular-support-design]]: with
+=subarguments preserve=, =p1= and =s1= of the proof by cases evaluate to
+a VALUE while the issue is labelled OUT (default and share: OPEN). The
+default drops p3's own derivation of B (no primacy), so the classical
+case split is not reconstructed.
 
 *** BACKLOG Make credulous evaluation under grounded agree with skeptical
 :PROPERTIES:

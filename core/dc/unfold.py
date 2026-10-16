@@ -528,6 +528,10 @@ class Unfolder:
         if edge.term is None:
             raise UnfoldError(f"Edge '{edge.name}' carries no term; it cannot be unfolded.")
         primary = own or self._has_primacy(edge)
+        # the variables the edge's body uses that an enclosing argument
+        # binds (core/dc/debate_graph.py, ``variable``: a captured source)
+        captured = {(s.side, s.site) for s in edge.sources
+                    if s.kind in ("obligation", "presumption")}
         root_lambda = _peel_eta(edge.term)
         if not isinstance(root_lambda, Lamda):
             root_lambda = None
@@ -577,10 +581,21 @@ class Unfolder:
                              edge.name, node.cites)
                 return self.statement((canonical_prop(node.prop), side), env, spine,
                                       **own_kind(False))
-            if isinstance(node, ID):
-                return ID(names.get(("context", node.name), node.name), node.prop)
-            if isinstance(node, DI):
-                return DI(names.get(("term", node.name), node.name), node.prop)
+            if isinstance(node, (ID, DI)):
+                vside = "context" if isinstance(node, ID) else "term"
+                if (vside, node.name) not in names and (vside, node.name) in captured:
+                    # A variable an enclosing argument binds, which the
+                    # compiler recorded as a source at its binder's
+                    # statement: unfolded as that statement in scope -
+                    # captured again where the binder is in scope, the
+                    # statement's debate where it is not (aida-lemma-
+                    # exposure-scope: a lemma stacked outside its lambda).
+                    presumed = getattr(node, "captured_presumption", False)
+                    logger.debug("unfold: '%s' uses '%s', bound by an enclosing argument; "
+                                 "unfolded as its statement", edge.name, node.name)
+                    return self.statement((canonical_prop(node.prop), vside), env, spine,
+                                          presumed=presumed, **own_kind(presumed))
+                return type(node)(names.get((vside, node.name), node.name), node.prop)
             if isinstance(node, Lamda):
                 new = fresh(node.di.di.name)
                 inner = {**env, (canonical_prop(node.di.prop), "term"): new}
