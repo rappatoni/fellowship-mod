@@ -3587,11 +3587,10 @@ question-begging form; B1 (without the root rule) leaves them different
 
 Consequence on the unfounded loop (lesson8a_cycle.fspy, scratch run):
 skeptical unchanged (open, =?UNDEC:B=); credulous today
-=μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>=, under B2
-=μpro:B.<r1:A->B||!IN:A*pro:B>= - back is dropped (it rests on B's
-captured root) and A's unmet obligation root is discharged by A's
-credulous label. The loop no longer shows in the proof; whether that
-discharge is right is case 3 of the implementation task.
+=μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>=. A first run
+applied the rule at A's scaffold only and gave
+=μpro:B.<r1:A->B||!IN:A*pro:B>=; under the full rule (cases 2 and 3 of
+the implementation task) the loop is open credulously, see there.
 
 Implementation: [[id:aida-judge-by-what-it-stands-for]].
 
@@ -3608,7 +3607,7 @@ Implementation: [[id:aida-judge-by-what-it-stands-for]].
 :EFFORT:         12:00
 :DEFERRALS:      0
 :OUTCOME:        Sigma (phase 2) and the discharge (phase 3) judge every leaf of a supporter or attacker wing by what it stands for in the term - a captured stack by its derivations, a captured obligation root of the debate being decided as unmet, a nested sub-debate by its own outcome in this term - and fall back to the statement's label only where the term cannot decide (a loop, a presumption nobody contests); the unfolded and the shared route alike.
-:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture: site_variant with argP's =by default.= removed) is open credulously, its surviving root an unmet obligation (not =!IN:Q=, not =!IN:P=); lesson8a_cycle's credulous result is =μpro:B.<r1:A->B||!IN:A*pro:B>= (accepted by the author 2026-10-16); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
+:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture: site_variant with argP's =by default.= removed) is open credulously, its surviving root an unmet obligation (not =!IN:Q=, not =!IN:P=); lesson8a_cycle is open credulously, =?:B= unmet (the full rule; corrected 2026-10-16, to be confirmed by the author); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
 :END:
 
 Decided by the author 2026-10-16 ([[id:aida-entrypoint-capture-adequacy]],
@@ -3662,9 +3661,20 @@ printed the unmet root as =?OUT:P= while P's credulous label is IN; an
 unmet obligation needs a name that does not read as its statement's
 label.
 
-The unfounded loop (lesson8a_cycle, credulous) losing its loop in the
-proof is accepted for now (the author, 2026-10-16); bringing the full
-loop back is [[id:aida-evaluate-keep-supporters-of-in-obligations]].
+The unfounded loop (lesson8a_cycle, credulous), run under the full
+rule 2026-10-16:
+| step | credulous result |
+| today | value =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>= |
+| A's scaffold keeps its root (back rests on B's captured root) | value =μpro:B.<r1:A->B||!IN:A*pro:B>= |
+| pro rests on the unmet =?u2:A=: B's scaffold keeps its root | value =μx1:B.<!IN:B||x1:B>= by label |
+| ... the surviving root discharged as unmet | open =μx1:B.<?OUT:B||x1:B>= |
+The pure loop is open credulously, like the argP-demands-Q variant
+(once argP2 is refuted that document is the same loop between P and
+Q). The author first accepted the second row, which the agent had
+shown as B2's result; it applied the rule at one scaffold only and
+discharged by label (case 3). The open result awaits the author's
+confirmation. Bringing the loop back is
+[[id:aida-evaluate-keep-supporters-of-in-obligations]].
 
 Case 4 (a variable captured by an argument's own binder: the sprung
 trap, Peirce, the self-attack, the captured presumptions that close the
@@ -3714,13 +3724,12 @@ Checked and not violations (2026-10-16):
 :EFFORT:         3:00
 :DEFERRALS:      0
 :OUTCOME:        An evaluation option (beside mode, semantics and base) under which sigma keeps a supporter whose captured obligation root is labelled IN, instead of counting that root unmet ([[id:aida-judge-by-what-it-stands-for]]), so that an unfounded loop accepted credulously shows the loop in its proof again.
-:VERIFY:         With the option, tests/minicourse/lesson8a_cycle.fspy evaluates credulously to =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>= (the result before the principle); without it, to =μpro:B.<r1:A->B||!IN:A*pro:B>=; the CLI, the service and the JSON schema carry the option; the suite passes.
+:VERIFY:         With the option, tests/minicourse/lesson8a_cycle.fspy evaluates credulously to =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>= (the result before the principle); without it, open with B's obligation unmet; the CLI, the service and the JSON schema carry the option; the suite passes.
 :END:
 
 Proposed by the author 2026-10-16, after deciding that an expression is
 judged by what it stands for: a captured obligation root then counts as
-unmet, which drops the loop from the credulous proof of an unfounded
-loop. To be added after [[id:aida-judge-by-what-it-stands-for]].
+unmet, which makes an unfounded loop open credulously. To be added after [[id:aida-judge-by-what-it-stands-for]].
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
