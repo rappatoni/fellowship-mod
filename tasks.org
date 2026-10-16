@@ -2920,6 +2920,12 @@ part 2, branch eval-literature):
   =~P[t]= is never contested by a derivation of P[t]; the
   inconsistency-adaptive strategies (reliability, minimal abnormality)
   derive neither. The missing negation bridge.
+
+Re-run (2026-10-16, eval/REPORT.org part 3): with the rule spelled
+=P -> ~Q= (eval/literature2/seq_mcs_closed_neg.fspy, possible since
+[[id:aida-negation-cell-horn]]) preferred and stable give five
+labellings: the three maximal consistent subsets, the one with all
+premises IN, and one with all premises IN and both Q and =~Q= IN.
 *derivation*, and a strict rule applied to a defeasible premise is a
 strict rule: the premise is what is defeasible. The compiler merges the
 two into one edge and lets the premise decide its strictness, so no
@@ -3355,6 +3361,9 @@ above. Two consequences to record: adequacy as the minicourses state it
 ("IN implies a value") needs the exception for strictly contradictory
 documents, and nothing above DEBUG tells the user that the document is
 inconsistent (see [[id:aida-issue-relative-strict-labels]]).
+
+Re-run (2026-10-16): tests/test1.fspy (=arg1=) is another strictly
+inconsistent document - EfficientMetro both sides IN, EXCEPTION.
 
 *What the code says.* =contains_uncatchable_clash= calls a clash
 uncatchable when no enclosing mu/mu' binder binds one of its command's
@@ -6020,6 +6029,58 @@ stable A is OUT, and the credulous stable normal form shows =?UNDEC:A=,
 the grounded label of the documented fallback. The fallback is logged at
 INFO by the CLI, but the result object and its JSON do not mark it.
 
+*** BACKLOG Label the scaffold an elimination cell gets in the term
+:PROPERTIES:
+:ID:             aida-cell-scaffold-label
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A debate in which two arguments share an elimination cell (an exposed node such as =(Q->false)[c]= from =?:Q * ?:false=) evaluates: writing sigma into the term labels the scaffold built on the cell, so =evaluate= never refuses with "No label for scaffold issue".
+:VERIFY:         eval/literature2/bug_scaffold_label.fspy and seq_mcs_closed.fspy: =evaluate att_p= (and =att_r=) gives a verdict in both modes under grounded, preferred and stable, agreeing with the label of the issue.
+:END:
+
+Found in the re-run of the literature evaluation (2026-10-16,
+eval/REPORT.org part 3); already present in part 2's output, so not a
+regression of the fixes. bug_scaffold_label.fspy was reduced
+automatically from seq_mcs_closed.fspy. The labelling holds
+=Q->false[c]= (IN), but =evaluate_debate= (core/comp/evaluate.py, the
+scaffold walk) finds =target_label= None on the record of the scaffold
+whose scion is the cell, in every mode and semantics, grounded
+included, while the issue is IN.
+
+*** BACKLOG Keep labels and verdicts independent of the subarguments setting
+:PROPERTIES:
+:ID:             aida-subarguments-setting-labels
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        =subarguments default=, =share= and =preserve= (=FSP_SUBARGUMENTS=) give the same labels and verdict classes, as the README and the glossary state; or the statement is corrected and the setting under which a dialectical case split is found is the default.
+:VERIFY:         eval/literature/t_cases.fspy (=p1=, proof by cases) and eval/literature2/io_cases.fspy (=claim=, input/output logic's reasoning by cases): the same labels and verdicts under all three settings; the harness comparison of eval/REPORT.org part 3 over every literature document finds no difference between the settings.
+:END:
+
+Found in the re-run (2026-10-16, eval/REPORT.org part 3), after
+[[id:aida-lemma-exposure-scope]] was fixed. Under =default= and =share=
+the lemma for B inside =λh:A= (B from A->B and h) is replaced by the
+captured variable =b2=, B's root obligation - the node has no primacy -
+so the case split is lost: issue OUT, OPEN. Under =preserve= the issue
+is IN and both modes give the classical proof
+=λf.λg.μα:B.<g || (λh.μ_.<f || h*α>) * α>=. The README says of the
+setting "The labels never depend on that setting", the glossary "The
+verdict's class never depends on it". Over all 74 literature documents
+only these two differ between the settings.
+
 *** BACKLOG Port the shared route to the stacked shape and the entrypoints
 :PROPERTIES:
 :ID:             aida-shared-route-stack-shape
@@ -7215,6 +7276,12 @@ itself takes 0.02 s for a 400-name declare. The 5 s per-command timeout
 also fails the final full snapshot of large debates (doubled chain from 9
 levels). Use pipes or a framed protocol; overlaps
 [[id:aida-certificate-checking-architecture]].
+
+2026-10-16: a full suite run alongside three other prover-heavy jobs
+failed two tests (tests/minicourse/test_evaluation_course.py::
+TestLesson8aUnfold::test_capture_by_b and test_minicourse.py::
+test_lesson_fixture_replays[lesson2_graph.fspy]) with BrokenPipeError
+on the prover pipe; both pass alone (eval/rerun/pytest.txt).
 
 ** DONE Enforce the pure level: arguments linear, counterarguments dual-linear, no scaffolds
 CLOSED: [2026-10-15 Thu]
