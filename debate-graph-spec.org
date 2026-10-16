@@ -384,13 +384,24 @@ Tracked in tasks.org under "Specification and verification".
   conservative over C; the Layer-4 semantics is a polarized/adjunction
   model with the uniform CBN/CBV strategies as degenerate cases; the
   dualizing functor swaps term/context and credulous/skeptical.
-- T3 (flagship) :: computational adequacy: if the witness labelling sigma
-  labels the issue IN, the unfolded debate term normalizes to a value; if
-  OUT, to an abort/exception term; if UNDEC, mode-dependent per the
-  polarity policy. Equivalently: NF under the sigma-polarized strategy
-  computes ev_m(sigma) up to the Layer-0 theory (the commuting square in
-  the Semantics subsection of Layer 2). Proof by induction on the fixpoint
+- T3 (flagship) :: computational adequacy, for *founded* witness
+  labellings: if the witness labelling sigma labels the issue IN, the
+  unfolded debate term normalizes to a value; if OUT, to an
+  abort/exception term; if UNDEC, mode-dependent per the polarity policy.
+  Equivalently: NF under the sigma-polarized strategy computes
+  ev_m(sigma) up to the Layer-0 theory (the commuting square in the
+  Semantics subsection of Layer 2). Proof by induction on the fixpoint
   stages of sigma.
+  Restricted 2026-10-16 (the author; tasks.org,
+  aida-judge-by-what-it-stands-for). A labelling is founded if every
+  statement it labels IN is IN by a derivation whose IN sources are
+  reached in earlier stages, so that no IN statement rests on itself;
+  the grounded labelling always is, a preferred labelling that accepts
+  an unfounded loop (P from Q, Q from P, with no other ground) is not.
+  For such a labelling ev_m(sigma) is not well-founded - the supporter's
+  denotation contains the site it would replace - and evaluation, which
+  judges every expression by what it stands for, returns open where the
+  label says IN. The label still records that the loop is admissible.
 - T4 :: rationality postulates for the induced instantiation: closure,
   direct and indirect consistency, subargument closure,
   non-interference/crash-resistance. Machine side: fixture suite in
