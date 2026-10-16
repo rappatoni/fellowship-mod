@@ -28,3 +28,11 @@ include = ["core*", "pres*", "wrap*"]
 
 [tool.setuptools.package-data]
 wrap = ["schemas/*.json"]
+
+[tool.pytest.ini_options]
+# The performance tests (scaling on generated documents) are left out of the
+# default run; run them sparingly, with `make test-perf` or `pytest -m perf`.
+markers = [
+    "perf: performance test - size and growth on generated documents; run sparingly (pytest -m perf)",
+]
+addopts = "-m 'not perf'"

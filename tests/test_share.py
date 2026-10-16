@@ -155,6 +155,7 @@ class TestExpansionIsUnfolding:
 
 
 class TestSharing:
+    @pytest.mark.perf
     def test_the_shared_form_is_linear_where_the_term_is_exponential(self):
         sizes = {}
         for levels in (4, 8):
@@ -601,6 +602,7 @@ class TestIssueGraphFromInstances:
             found += len(strict(shared))
         assert found, "Peirce's law has a strict edge the framework misses"
 
+    @pytest.mark.perf
     def test_one_instance_per_statement_where_nothing_is_captured(self):
         doc, issue = doubled_chain(12)
         strict = {f"r{i}_{a}" for i in range(1, 13) for a in range(2)}
@@ -636,6 +638,7 @@ class TestIssueGraphFromInstances:
 
 
 class TestLabelDoesNotUnfold:
+    @pytest.mark.perf
     def test_label_and_graph_never_call_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
         fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
@@ -767,6 +770,7 @@ class TestEvaluateFromTheSharedDebate:
         assert [(n, c, shape(nf), s) for n, nf, c, s in shared] == \
                [(n, c, shape(nf), s) for n, nf, c, s in reference]
 
+    @pytest.mark.perf
     def test_only_the_kept_wings_are_written_out(self):
         # 16 levels: the unfolded term has 2^16 copies of the bottom debate.
         # Evaluation keeps one supporter per level, so the answer is a
@@ -801,6 +805,7 @@ class TestEvaluateFromTheSharedDebate:
 
 
 class TestEvaluateCommand:
+    @pytest.mark.perf
     def test_evaluate_never_calls_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
         fresh.typecheck_expanded = False      # the expanded type check unfolds, by design

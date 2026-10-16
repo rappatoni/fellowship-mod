@@ -62,6 +62,9 @@ calculus, specification and recorded decisions in `tasks.org`.
 - Prefer focused changes that keep Python and Fellowship concerns separated.
 - Run the focused tests for every change and the documented test suite when
   feasible.
+- The performance tests (pytest marker `perf`, `make test-perf`) are not part
+  of the default run. Run them sparingly: after changing sharing, unfolding
+  or the instance resolver, and before a performance claim.
 - Rebuild Fellowship and run its relevant tests when OCaml sources change.
 - Support performance claims with a reproducible fixture, configuration, and
   repeated timings. Record semantic equivalence checks as well as elapsed time.

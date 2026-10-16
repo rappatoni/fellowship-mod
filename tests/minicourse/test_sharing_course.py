@@ -204,6 +204,7 @@ def measure(levels, supporters=2):
 
 # -- About this sequel: the table ----------------------------------------------------
 
+@pytest.mark.perf
 class TestTheSizeTable:
     @pytest.mark.parametrize("levels, expected", [
         (1, (3, 47, 61, 3)), (2, (5, 93, 181, 5)), (3, (7, 139, 421, 7)),
@@ -433,6 +434,7 @@ class TestLesson18Evaluation:
         strict_resolve(unfold_argument(doc, argument_edge(doc, "a2_0")), names, trace=trace)
         assert len(trace) == 12
 
+    @pytest.mark.perf
     def test_sixteen_levels_give_a_small_answer(self):
         doc, issue, strict = doubled_chain(16)
         with warnings.catch_warnings():

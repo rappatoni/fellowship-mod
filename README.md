@@ -1105,12 +1105,24 @@ source .venv/bin/activate
 pytest -q tests
 ```
 
+The performance tests - size and growth of the debate on generated
+documents (doubled chains of up to sixteen levels, the size table of
+docs/minicourses/minicourse-sharing.org) - carry the pytest marker `perf`
+and are left out of the default run (`pyproject.toml`). Run them
+sparingly: after a change to sharing, unfolding or the instance resolver,
+and before stating a performance claim.
+
+```bash
+make test-perf          # or: pytest -q -m perf tests
+```
+
 ## Development commands
 
 ```bash
 make reset-venv
 make cli ARGS="--help"
 make test
+make test-perf
 make lint
 make format
 make typecheck
