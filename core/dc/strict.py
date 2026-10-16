@@ -242,7 +242,8 @@ def keep_attack_wing(node, match):
 
 # -- the strict phase ------------------------------------------------------
 
-def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
+def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True, *,
+                   scope=None, on_pending=None):
     """Decide every scaffold strictness decides, bottom-up, and return
     (term', strict_edges): the rewritten term and the strict edges the
     closed subterms containing a decision contribute.  ``trace``, if a
@@ -250,6 +251,12 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     ``edges=False`` only the decisions are made and no edge is collected:
     the caller resolves one instance of a shared debate and collects
     across instances itself (core/dc/instances.py).
+
+    For that caller: ``scope`` holds the variables free in the instance
+    that stand, in the enclosing term, for something not strict (entries
+    as ``strict_in_scope`` reads them), and ``on_pending(node, scope)``
+    replaces a cited instance not yet chosen (a node marked ``pending``)
+    where the walk meets it, under the scaffold variables in scope there.
 
     Works on a copy; the input is not modified.
     """
@@ -274,6 +281,8 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         rewritten first, then it is decided.  ``ids``/``dis`` are the
         enclosing mu/mu' binders, the catchers in scope; ``scope`` the
         paper scaffolds' own variables in scope (``strict_in_scope``)."""
+        if on_pending is not None and getattr(node, "pending", False):
+            return on_pending(node, scope or {})
         if not isinstance(node, ProofTerm):
             return node
         scope = scope or {}
@@ -364,7 +373,7 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         kept._strict_decision = True
         return kept
 
-    term = walk(deepcopy(term))
+    term = walk(deepcopy(term), scope=dict(scope or {}))
 
     def has_decision(node):
         if not isinstance(node, ProofTerm):

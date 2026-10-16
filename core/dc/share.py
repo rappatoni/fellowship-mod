@@ -4,9 +4,10 @@ aida-shared-subarguments; decisions of 2026-10-01).
 Unfolding (core/dc/unfold.py) copies the debate of a statement into every
 place the statement is needed, so the term is as large as the number of
 paths through the document graph.  Here every statement reachable from the
-issue gets ONE definition - its site wrapped by its supporters and
-attackers, exactly as ``Unfolder._wrap`` builds it - and a place that needs
-the statement holds a *citation* of that definition instead of a copy.
+issue gets ONE definition - its debate, the root under its supporter
+stack and the contrary's attacker wing, exactly as ``Unfolder._debate``
+builds it - and a place that needs the statement holds a *citation* of
+that definition instead of a copy.
 
 Names are transparent: a citation means its expansion.  ``expand`` writes
 the definitions back in and yields the term ``unfold`` yields, up to
@@ -106,10 +107,6 @@ class _Builder(Unfolder):
     the only difference is that a statement no binder in scope captures is
     not unfolded in place but cited."""
 
-    #: The shared route keeps the legacy shape until
-    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``).
-    stacked = False
-
     def __init__(self, graph: DebateGraph, subarguments="default"):
         super().__init__(graph, subarguments=subarguments)
         self.defs = {}
@@ -157,8 +154,7 @@ class _Builder(Unfolder):
             statement = self._todo.pop(0)
             if statement in self.defs:
                 continue
-            body = self._wrap(statement, self._site(statement),
-                              self._by_target.get(statement, []), {}, frozenset({statement}))
+            body = self._debate(statement, {}, frozenset({statement}))
             self.defs[statement] = Definition(statement, body)
         return self.defs
 

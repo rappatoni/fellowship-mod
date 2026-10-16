@@ -168,18 +168,28 @@ class Standing:
         defaults = self.stubs.shared.graph.defaults
         params = {}
         for statement, actual in stub.actual.items():
-            entry = env.get(actual)
             label = self.labels.get(statement) or UNDEC
-            if entry is None or entry is OWN:
-                value = IN
-            elif entry is LABEL:
+            if not isinstance(actual, str):
+                # the variable was substituted (b := the original): the
+                # standing of what stands there
+                params[_param(statement)] = ("std", self.of(actual, env))
+                continue
+            entry = env.get(actual)
+            if entry is None:
+                continue                                 # unbound here: IN
+            if entry is OWN:
+                # Plumbing here, but read inside the instance's scaffolds,
+                # where crossing makes it LABEL - as in its copy.
+                params[_param(statement)] = OWN
+                continue
+            if entry is LABEL:
                 value = label
             elif entry is ROOT:
                 value = label if "presumption" in defaults.get(statement, ()) else OUT
             else:
                 value = entry[1]
             params[_param(statement)] = ("std", value)
-        key = (stub.instance.key, tuple(sorted((k, v[1]) for k, v in params.items())))
+        key = (stub.instance.key, tuple(sorted(params.items())))
         if key not in self._memo:
             self._memo[key] = self.of(label_term(resolved, self.labels), params)
         return self._memo[key]

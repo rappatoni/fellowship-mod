@@ -22,9 +22,7 @@ from core.ac.ast import Mu, Mutilde, Lamda, Hyp, Cons, Goal, Deleg, Geled, ID, D
 from core.dc.debate_graph import compile_document, canonical_prop
 from core.dc.share import share, is_cite, ANON_PREFIX, _leaves
 from core.dc.typecheck import shape
-# The shared route keeps the legacy shape until aida-shared-route-stack-shape,
-# so its reference is the legacy unfolding.
-from core.dc.unfold import unfold_legacy as unfold
+from core.dc.unfold import unfold
 from wrap.cli import setup_prover, execute_script
 from wrap.prover import NameClash
 
@@ -251,6 +249,18 @@ SCRIPTS = [
     "tests/demo/04_document.fspy",
     "tests/demo/05_even_loop.fspy",
     "tests/demo/06_peirce.fspy",
+    "tests/entrypoints.fspy",
+    "tests/exposure/curried_cell.fspy",
+    "tests/exposure/lemma_captured.fspy",
+    "tests/exposure/site_obligation.fspy",
+    "tests/exposure/site_variant.fspy",
+    "tests/exposure/two_sites.fspy",
+    "tests/minicourse/lesson8a_attackrule.fspy",
+    "tests/minicourse/lesson8a_cycle.fspy",
+    "tests/minicourse/lesson9_evaluation.fspy",
+    "tests/minicourse/lesson14_sharing.fspy",
+    "tests/minicourse/lesson15_capture.fspy",
+    "tests/minicourse/lesson17_instances.fspy",
 ]
 
 
@@ -587,7 +597,11 @@ class TestIssueGraphFromInstances:
         resolver.compile("x")
         q_fails = [i for i in resolver.instances.values() if i.statement == (K("Q"), "context")]
         assert len(q_fails) == 1
-        assert q_fails[0].captured == {(K("P"), "context"), (K("Q"), "term")}
+        # In the stacked shape a scaffold's b binds its statement over the
+        # stack, so P (the issue's) and Q->false (the lambdas') are captured
+        # there too.
+        assert q_fails[0].captured == {(K("P"), "context"), (K("Q"), "term"),
+                                       (K("P"), "term"), (K("Q->false"), "term")}
         same_graph(doc, issue, strict, semantics=ALL)
 
 
