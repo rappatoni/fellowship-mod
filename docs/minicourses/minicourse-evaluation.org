@@ -817,13 +817,23 @@ contrary alone, which is no scaffold, lesson 8a.)
 
 *Strict edges.* After deciding, =strict_resolve= collects every
 outermost eta-wrapped subterm =mu n.< t || n >= that
-  1. contains a strictly decided scaffold,
+  1. is a copy of an argument that is *defeasible as registered* - the
+     unfolder marks each copy's root with the argument it came from,
+     and an argument Fellowship holds as strict is among the strict
+     names (since 2026-10-16, tasks.org,
+     aida-strict-edge-collector-condition; before, the condition was
+     "contains a strictly decided scaffold", which a term built by hand
+     still uses),
   2. is *closed* - strict, and no free variable except declared names - and
   3. holds no uncatchable clash.
 Each such subterm becomes a source-less strict edge =n*= of the issue
-graph: a strict derivation the framework could not see. Condition 3
-exists because a subterm that holds a clash derives its statement only
-from an inconsistency.
+graph: a strict derivation the framework could not see. A strict
+argument gets none: the graph already has its strict edge. Condition 2
+asks for closed *outside* the term too, since the edge makes its
+statement IN for the labelling: a part closed only by a variable an
+enclosing argument binds gets none. Condition 3 exists because a
+subterm that holds a clash derives its statement only from an
+inconsistency.
 
 *How strict subterms are handled, end to end.* A strict argument in the
 document unfolds to its body, like killC here, and is strict because it
@@ -852,7 +862,6 @@ result is kept; minicourse-sharing.org, lesson 17.)
 : strict  B[t] delayed for the labelling (neither the original nor the supporter is strict)
 : strict  no edge for 'pro' on B[t]: not closed (an open site remains)
 : strict  no edge for 'con' on A[c]: not closed (an open site remains)
-: strict  edge 'killC*' on C[c] (a closed derivation the framework missed)
 
 (The log names a scaffold by the statement its scion concludes: both C
 lines are about killC's refutation of C, both A lines about con's.)
@@ -874,13 +883,12 @@ B scaffold. Had =alt2= counted as settled, as an argument's binder does,
 the wing AW would have been "original strict" and con dropped before
 sigma ever saw it.
 
-The first decision gives a strict edge. K, killC's own wrapper, is
-closed and is the term kept by a decision, so the collector records
-=killC*: C[c] <- -=. It changes no label: killC is already a strict edge
-of the framework. Before 2026-10-06 the term had K itself as the
-attacker of the presumption of C, with no scaffold decided inside or
-around K's wrapper,
-and no =killC*= was collected.
+No strict edge results. K, killC's own wrapper, is closed, but killC is
+strict as registered and already a strict edge of the framework, so the
+collector adds nothing. pro and con are defeasible as registered but not
+closed: each still rests on a site. (Until 2026-10-16 the collector
+asked for "contains a decision" instead and recorded =killC*=, the same
+derivation once more; it changed no label.)
 
 *The same decisions as reduction steps.* The wing first (it is a
 context-side scaffold; =fire= at the binder =alt5=):
@@ -914,10 +922,12 @@ alpha-equal to what =strict_resolve= wrote.
 1. Remove =killC= from the fixture. Which scaffolds does phase 1 decide,
    and what does the evaluation return?
 2. At an attack, why is "both wings strict" delayed rather than decided?
-3. This debate gets the strict edge =killC*= but none for pro or con,
-   although both contain killC's decision. Which of the three collector
-   conditions fails for them? Why did the legacy term, with K as the
-   attacker itself, give no =killC*= either?
+3. This debate contributes no strict edge, although pro and con both
+   contain killC's decision and killC's wrapper is closed. Which
+   collector condition fails for each of the three? In the self-attack
+   the edge =SelfAttack*= is recorded from P[c] in the legacy shape too
+   (since 2026-10-16); which condition did the earlier collector fail
+   there?
 4. In =tests/entrypoints.fspy= =s1= and =s2= both prove E strictly.
    Which proof does the strict phase keep for =evaluate issue :E.=, and
    which for =evaluate s1.=? What did the rule "t strict first" do?
@@ -1464,14 +1474,18 @@ produces the whole term, which gets the edge =SelfAttack*=. Under the
 earlier "strictly below" it would get none, and =label= would say UNDEC
 while =evaluate= said VALUE (call-by-onus.org, "The strict-edge rule").
 
-Lesson 10's example: =killC*= is collected, while pro and con are not,
-because an open site remains in each.
+Lesson 10's example: no edge - pro and con keep an open site, and
+killC is strict as registered (until 2026-10-16 =killC*= was collected,
+a duplicate of its framework edge).
 
 *Question.* Can the outermost rule double-count, or swallow an inner
 closed derivation that deserves its own edge? (A closed decided subterm
 inside a larger closed decided one gets no edge of its own.) The
-proposal to drop the "contains a decision" condition is
-[[file:tasks.org::*Find strict edges directly, not through "contains a decision"][aida-strict-edge-collector-condition]].
+"contains a decision" condition was replaced on 2026-10-16 for unfolded
+terms by "a copy of an argument defeasible as registered"
+([[file:tasks.org::*Find strict edges directly, not through "contains a decision"][aida-strict-edge-collector-condition]]);
+the hand-built terms of this point have no argument copies and keep the
+old condition.
 
 ** Point 8 - =strict_in_debate='s catcher parameters
 
@@ -1599,13 +1613,14 @@ between the implementation and doing them as normalisation steps:
    strict phase that picked one of them would be choosing between two
    proofs. The labelling decides that case (CONTR in call-by-onus.org),
    and the paper allows that proofs can be strictly defeated there.
-3. Condition 2, closedness, fails for both: PRO rests on !u2 and CON on
-   !u3, even after the defeat. K, killC's wrapper, is closed and is the
-   term the wing's decision kept, so it contains a decision. In the
-   legacy term K was the attacker itself: the only decision was made at
-   the attack scaffold, outside K's wrapper, and the clash it left
-   still holds the presumption of C, so nothing closed contained a
-   decision.
+3. Condition 2, closedness, fails for pro and con: PRO rests on !u2 and
+   CON on !u3, even after the defeat. Condition 1 fails for killC: it is
+   strict as registered, and the graph has its strict edge already. In
+   the self-attack's legacy term for P[c], SelfAttack is the attacker
+   itself: the only decision is made at the attack scaffold, outside
+   its wrapper, so the earlier condition "contains a decision" failed
+   although SelfAttack is closed wherever it stands. The new condition
+   asks only that it is defeasible as registered.
 4. s2 for the issue and s1 for s1. In the issue term
    =SUP(?u1, SUP(S1, S2))= the inner scaffold has two strict wings; the
    supporter, s2, is checked first and kept, so the higher of the two

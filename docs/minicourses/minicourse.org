@@ -190,11 +190,10 @@ its conclusion, or (since 2026-10-16) an exposed node such as an axiom
 it applies or a lemma it proves - and adds nothing to the document: the
 conflicts and supports are already there by proposition identity. =graph d2.=:
 
-: Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 4 edges
+: Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 3 edges
 :   abc (subargument, strict): A->B->C[t] <- -
 :   cArg (supporter, defeasible): C[t] <- A->B->C[t:suba], A[t:obli], B[t:obli]
 :   bArg (supporter, strict): B[t] <- -
-:   bArg* (strict, strict): B[t] <- -
 :   default A[t]: obligation
 :   default B[t]: obligation
 
@@ -202,13 +201,14 @@ Read it: =cArg= is one edge with *three* sources: the axiom =abc= it
 applies, which is a strict, source-less edge of its own (since
 2026-10-15 every declared axiom an argument applies is one; lesson 8a of
 minicourse-evaluation.org), and two term-side obligations. =bArg= is
-strict with no sources - an axiom needs nothing. =bArg*= is the
-same derivation once more, the strict edge the strict phase contributes
-(=minicourse-evaluation.org=, lesson 10). Edges are named after the
+strict with no sources - an axiom needs nothing. (Until 2026-10-16 the
+strict phase added =bArg*=, the same derivation once more; it now adds a
+strict edge only for an argument that is defeasible as registered,
+=minicourse-evaluation.org=, lesson 10.) Edges are named after the
 argument or subargument they record (task =aida-host-edge-naming=). The
 graph is the part of the document graph reachable from the issue C[t],
-plus the strict edge (since 2026-10-15; until then it was compiled from
-the debate term). An edge is a *supporter*
+plus the strict edges the strict phase finds (since 2026-10-15; until
+then it was compiled from the debate term); here there are none. An edge is a *supporter*
 when it concludes the issue or a source of another edge, an *attacker*
 when it concludes the contrary of one; both arguments here are
 supporters. The default markers record that A and B occur as obligation

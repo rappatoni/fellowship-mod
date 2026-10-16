@@ -263,13 +263,15 @@ def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
             execute_script(prover, str(source), strict=True, isolate=False)
         text = "\n".join(r.getMessage() for r in caplog.records)
         for line in (
-            "Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 4 edges",
+            "Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 3 edges",
             "  abc (subargument, strict): A->B->C[t] <- -",
             "  cArg (supporter, defeasible): C[t] <- A->B->C[t:suba], A[t:obli], B[t:obli]",
             "  bArg (supporter, strict): B[t] <- -",
-            "  bArg* (strict, strict): B[t] <- -",
         ):
             assert line in text
+        # bArg is strict as registered: no duplicate bArg* (since 2026-10-16,
+        # aida-strict-edge-collector-condition)
+        assert "bArg*" not in text
         term = pres_str(prover.debate_term(prover.debates["d2"]))
         assert ("μalt2:B.<?u3:B||μ'b2:B.<μ_:B.<b2:B||alt2:B>||μ'_:B.<μbArg:B."
                 "<axB:B||bArg:B>||alt2:B>>>") in term

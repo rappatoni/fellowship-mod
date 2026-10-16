@@ -374,16 +374,16 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         return any(has_decision(getattr(node, slot, None)) for slot in ("term", "context"))
 
     def collect(node):
-        """The OUTERMOST closed eta-wrapped subterms that owe their
-        closedness to a decision -> one strict edge each.  A subterm
-        holding an uncatchable clash contributes none: it derives its
-        statement only from an inconsistency, which the classifier
+        """The OUTERMOST closed eta-wrapped arguments whose own edge in the
+        graph is defeasible -> one strict edge each (``strict_edge_candidate``).
+        A subterm holding an uncatchable clash contributes none: it derives
+        its statement only from an inconsistency, which the classifier
         reports as an exception instead."""
         if not isinstance(node, ProofTerm):
             return
         statement = _eta_statement(node)
-        if statement is not None and has_decision(node):
-            # It owes its closedness to a decision.  Three conditions gate the
+        if statement is not None and strict_edge_candidate(node, strict_names, has_decision):
+            # A defeasible argument, as registered.  Two conditions gate the
             # edge, and which one vetoed it is the interesting part.
             name = binder_origin(node)
             if not is_closed(node, strict_names):
@@ -419,6 +419,22 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
                      "\n".join(f"{e.name}: {e.target_key}[{e.target_side[0]}] <- - (source-less, strict)"
                                 for e in edges) or "none")
     return term, edges
+
+
+def strict_edge_candidate(node, strict_names, has_decision) -> bool:
+    """Whether the eta-wrapped subterm ``node`` may contribute a strict
+    edge once it is closed: it is a copy of an argument (the unfolder
+    marks the root of every copy with its ``origin``) that is not already
+    strict as registered (not among ``strict_names``, which hold the
+    strict arguments Fellowship holds), whether or not anything was
+    decided in or around it (tasks.org, aida-strict-edge-collector-condition,
+    2026-10-16).  A subterm without an origin - a term built by hand, or
+    the wrapper a decision leaves - is a candidate only if it contains a
+    strict decision, the rule before."""
+    origin = getattr(node, "origin", None)
+    if origin:
+        return origin not in set(strict_names or ())
+    return has_decision(node)
 
 
 def _eta_statement(node):

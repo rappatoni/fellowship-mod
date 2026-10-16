@@ -48,7 +48,7 @@ from core.comp.oracle_terms import _free_names, contains_uncatchable_clash
 from core.dc.debate_graph import DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin
 from core.dc.share import SharedDebate, is_cite, _same_origin
 from core.dc.strict import (
-    strict_resolve, is_closed, _contains_assumption, _eta_statement, fold_occurrences, key_of,
+    strict_resolve, is_closed, strict_edge_candidate, _contains_assumption, _eta_statement, fold_occurrences, key_of,
 )
 from core.logging_util import artifact
 
@@ -424,8 +424,8 @@ class IssueResolver:
 
     def strict_edges(self, instance=None) -> list:
         """The strict edges of the unfolded term: the outermost closed
-        eta-wrapped subterms that owe their closedness to a decision and
-        hold no uncatchable clash (``strict_resolve``'s collector), found
+        eta-wrapped copies of arguments defeasible as registered that hold
+        no uncatchable clash (``strict_resolve``'s collector), found
         in the resolved instances.  What is found inside an instance does
         not depend on where it is cited, so it is computed once."""
         instance = self.resolve(instance or self.root())
@@ -440,7 +440,8 @@ class IssueResolver:
             if not isinstance(node, ProofTerm):
                 return
             statement = _eta_statement(node)
-            if statement is not None and _has_decision(node) and is_closed(node, self.strict_names):
+            if (statement is not None and strict_edge_candidate(node, self.strict_names, _has_decision)
+                    and is_closed(node, self.strict_names)):
                 full = self.materialise(node)
                 name = binder_origin(node)
                 if contains_uncatchable_clash(full):

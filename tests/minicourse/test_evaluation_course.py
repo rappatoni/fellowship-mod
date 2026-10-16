@@ -159,7 +159,7 @@ class TestLesson8aUnfold:
             assert [(show(*k), what) for k, what in trace] == [
                 ("A->B[t]", "supporter strict"), ("A->B[c]", "original strict"),
                 ("C[c]", "supporter strict"), ("C[c]", "attacker strict: defeat")]
-            assert [e.name for e in edges] == ["killC*"]
+            assert [e.name for e in edges] == []        # killC is strict as registered
             # after phase 1 the debate about A->B is r1 again: UNFOLDED's shape
             assert pres_scaffolds(out).startswith("SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<r1||ATT[alt5,b5](!u4:A, ")
             svc = Service.of(prover)
@@ -242,7 +242,8 @@ class TestLesson9Input:
                                   "B[t]": "IN", "A[t]": "IN",
                                   # the axioms' statements and con's lemma ~A
                                   "A->B[t]": "IN", "C->~A[t]": "IN", "~C[t]": "IN", "~A[t]": "OUT"}
-        assert [e.name for e in graph.edges if e.name.endswith("*")] == ["killC*"]
+        # killC is strict as registered: no duplicate killC* (2026-10-16)
+        assert [e.name for e in graph.edges if e.name.endswith("*")] == []
 
     def test_the_attack_on_a_is_read_disjunctively(self, debate):
         from core.dc.debate_graph import _match_scaffold, scion_record
@@ -262,7 +263,7 @@ class TestLesson10Strict:
         out, edges = strict_resolve(term, names, trace=trace)
         assert [(s, what) for (_, s), what in trace] == [
             ("context", "supporter strict"), ("context", "attacker strict: defeat")]
-        assert [e.name for e in edges] == ["killC*"]
+        assert [e.name for e in edges] == []            # lesson 10: no strict edge
         assert pres_str(scaffold_at(out, "u3")) == AFTER_STRICT_C
 
     def test_the_decisions_as_steps(self, debate):

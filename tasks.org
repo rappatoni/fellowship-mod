@@ -5385,7 +5385,8 @@ necessarily forcing the document-wide labelling. Whether in general
 the document labelling should be used for issues is an independent
 question.
 
-*** NEXT Find strict edges directly, not through "contains a decision"
+*** DONE Find strict edges directly, not through "contains a decision"
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-strict-edge-collector-condition
 :AREA:           phd
@@ -5400,6 +5401,39 @@ question.
 :OUTCOME:        The strict phase contributes a strict edge for every closed (strict in the debate, no uncaught clash) argument whose framework edge is defeasible, whether or not a scaffold around or inside it was decided by strictness, so the issue graph no longer depends on where in the term the argument stands.
 :VERIFY:         The self-attack (tests/rationality/self_attack_lk.fspy) gets =SelfAttack*= from P[t] and from P[c] in the legacy shape too; the strict edges on every fixture are recorded before and after and any change is listed here; the suite passes.
 :END:
+
+*Done 2026-10-16.* =strict_edge_candidate= (core/dc/strict.py), used by
+=strict_resolve='s collector and by =IssueResolver.strict_edges=
+(core/dc/instances.py): an eta-wrapped subterm is a candidate if it is a
+copy of an argument (the unfolder's =origin= on its root) that is not
+strict as registered (not among the strict names, which hold every
+argument Fellowship holds); closedness and the clash condition stay. A
+subterm without an origin (a term built by hand, the wrapper a decision
+leaves) keeps the old condition, "contains a strict decision".
+Evidence:
+- the strict edges of every fixture, before and after (scratch sweep:
+  706 entries - every statement in the stacked and the legacy shape and
+  every argument term, 40 fixtures): 117 changed. Gained: =SelfAttack*=
+  from P[c] and from P->false[t] in the legacy shape, in self_attack.fspy
+  and self_attack_lk.fspy (the VERIFY). Lost: every duplicate edge of an
+  argument strict as registered - killC* (lesson 9, lesson8a_attackrule),
+  killR* (exposure fixtures), k* (lesson 17), bArg* (lesson 2), aArg*
+  (lesson 5, curried_cell, curried_attack), s1*, s2* (entrypoints,
+  multiple_supports_stack_vs_queue), c1*, c2*, opus*, qStrict*, argA*,
+  t* (modus_tollens), arg1*, arg2*, inconsistency* (test1);
+- labels and verdicts unchanged: a second sweep over every argument,
+  debate and statement of the same fixtures, grounded and preferred
+  labellings, skeptical and credulous evaluation (1768 entries): 0
+  changed;
+- tests/test_unfold.py::test_a_strict_edge_does_not_depend_on_where_the_argument_stands
+  (SelfAttack* from P[t] and P[c], stacked and legacy) and
+  ::test_a_strict_argument_gets_no_duplicate_edge; re-pinned:
+  test_evaluation_course.py (lessons 8a, 9, 10: no killC*),
+  test_minicourse.py (lesson 2: no bArg*); full suite 2119 passed, 7
+  skipped, 2 xfailed, 1 xpassed;
+- docs: lesson 10 (the collector's conditions, its transcript, exercise
+  3 and its solution), lesson 13b point 7, minicourse.org lesson 2, the
+  glossary.
 
 The author, 2026-10-16: implementing the suggested condition seems the
 right way to go. Checked the same day on the even loop that the

@@ -223,7 +223,7 @@ Words in /italics/ inside an entry have an entry of their own.
 - Strict phase :: Phase 1 of evaluation: a scaffold one of whose wings is
   strict and the other not is decided by strictness ("supporter strict",
   "attacker strict: defeat"); the rest is delayed for the labelling. It
-  also contributes strict edges (=killC*=) for closed derivations the
+  also contributes strict edges (=SelfAttack*=) for closed derivations the
   graph missed. Lesson 10.
 
 - Sigma phase :: Phase 2: the remaining scaffolds are decided top-down:

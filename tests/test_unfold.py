@@ -426,6 +426,34 @@ def test_self_attack_derives_its_conclusion(prover):
     assert grounded_labels(g)[issue] == "IN"
 
 
+def test_a_strict_edge_does_not_depend_on_where_the_argument_stands(prover):
+    """aida-strict-edge-collector-condition (2026-10-16): the collector
+    records a closed copy of an argument defeasible as registered, whether
+    or not a scaffold in or around it was decided by strictness.  The
+    self-attack is closed wherever it stands, so it gets SelfAttack* from
+    P[t] and from P[c], in the stacked and the legacy shape; before, the
+    legacy term for P[c] had SelfAttack as the attacker itself, decided
+    outside its wrapper, and no edge."""
+    from core.dc.strict import issue_strict_edges
+    doc, _issue, sn, _sk = load(prover, "tests/rationality/self_attack_lk.fspy")
+    for statement in ((K("P"), "term"), (K("P"), "context")):
+        for build in (unfold, unfold_legacy):
+            edges = issue_strict_edges(build(doc, statement), "u", sn)
+            assert [e.name for e in edges] == ["SelfAttack*"], (statement, build.__name__)
+
+
+def test_a_strict_argument_gets_no_duplicate_edge(prover):
+    """killC is strict as registered: the graph has its strict edge, so the
+    collector adds no killC* (until 2026-10-16 it did, a duplicate)."""
+    from core.dc.strict import issue_strict_edges
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        execute_script(prover, "tests/minicourse/lesson9_evaluation.fspy", strict=True, isolate=False)
+    doc, sn = prover.graph, list(prover.declarations.keys())
+    assert next(e for e in doc.edges if e.name == "killC").strict
+    assert issue_strict_edges(unfold(doc, (K("C"), "context")), "u", sn) == []
+
+
 def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
     # Since the asymmetric guard the cycle resolves two-valued: the undercut
     # of Q fails because its premise B rests on an R that cR refutes, so the
