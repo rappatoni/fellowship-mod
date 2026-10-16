@@ -2474,7 +2474,8 @@ unfolding and replaying it, doubles. No test covered it. A lambda
 subargument is compiled per parent, so presumably duplicated alike (not
 checked). The author: "The status quo might also be fine. Needs design."
 
-*** DOING Implement rational closure: attack and support points beyond sites
+*** DONE Implement rational closure: attack and support points beyond sites
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-rational-closure
 :AREA:           phd
@@ -2635,6 +2636,23 @@ replaces the setting tests by =test_the_reference_route_is_retired=
 (=issue-graph term= now parses as an opaque word). README phase 4/5,
 lessons 8a, 17 (the instance compiler's log is now from Python) and
 minicourse.org updated.
+
+*Closed 2026-10-16.* VERIFY: the fixtures in which an argument's
+non-site node is engaged evaluate as decided on the unfolded route -
+tests/minicourse/lesson8a_attackrule.fspy (attackrule against the axiom
+r1 pro applies: in r1's attacker wing, loses in phase 1, pro a value,
+attackrule an exception), tests/exposure/lemma_captured.fspy (a lemma as
+a second derivation of P), tests/rationality/self_attack_lk.fspy (the
+lambda's edge stacked at =issue :P->false=), pinned in
+tests/test_unfold_exposure.py and test_evaluation_course.py; the
+decisions of [[id:aida-discuss-non-site-attack-points]] are implemented
+(compiler 1ceebe1, unfolder 2e2c0b5, shared route 599fcbe, moves
+80e7919, reference route retired daf692d); full suite 2071 passed, 2
+skipped, 2 xfailed, 1 xpassed. Left for others: the strict layer
+([[id:aida-strict-layer]]), the commutation property
+([[id:aida-unfold-commutation-spec]]), the entry-point capture question
+([[id:aida-entrypoint-capture-adequacy]]), and the captured source in
+the strict phase ([[id:aida-discuss-capture-source-vs-strict]]).
 
 Evidence: tests/test_unfold_exposure.py (28 tests: the attackrule
 fixture - the debate about A->B stands where r1 stood, attackrule in
@@ -3531,6 +3549,13 @@ options are presentational by construction. Sizes (issue :P): (a)
 Still to do for VERIFY: the differential test of (a) against d2, in
 [[id:aida-rational-closure]].
 
+VERIFY met 2026-10-16: both fixtures have stated expected labels and
+classes and the differential test asserts them
+(tests/test_unfold_exposure.py: lemma_captured.fspy and
+lesson8a_cycle.fspy pinned; test_the_settings_agree_on_classes_and_labels
+over eight fixtures). Ready to close once the author confirms the
+recorded decision.
+
 Refined 2026-10-15 with Q2: d2 where the node's argument has primacy
 (the entry point and its subarguments; a debate's moved arguments and
 theirs), (a) elsewhere, including everywhere in a canonical issue term;
@@ -3594,7 +3619,8 @@ the unfolder's behaviour):
 - the entrypoint bias (the argument on top, its own site kinds), which
   only the unfolder has.
 
-*** BACKLOG Discuss: what can be attacked and supported besides sites
+*** DONE Discuss: what can be attacked and supported besides sites
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-discuss-non-site-attack-points
 :AREA:           phd
@@ -3609,6 +3635,17 @@ the unfolder's behaviour):
 :OUTCOME:        A decision on which subterms of an argument other than its sites are attack and support points in an unfolded debate - declared axioms, lambda subarguments, intermediate conclusions - and on what happens to an argument whose conclusion contradicts a declared axiom.
 :VERIFY:         The decision is written here; the extended lesson 9 fixture (=attackrule= refuting A->B, which pro applies as the declared axiom r1; since 2026-10-16 tests/minicourse/lesson8a_attackrule.fspy) has a stated expected issue graph and verdict, and implementation tasks exist for the unfolder side of whatever is decided.
 :END:
+
+*Closed 2026-10-16.* The decision is written below (the horn rule, Q1-Q3,
+the curry decision, the argument discipline); the attackrule fixture,
+since 2026-10-16 tests/minicourse/lesson8a_attackrule.fspy, has its
+expected issue graph and verdict pinned
+(test_evaluation_course.py::TestLesson8aUnfold::test_document_graph and
+::test_an_axiom_is_exposed: attackrule A->B[c] OUT, A->B[t] IN, pro a
+value, attackrule an exception); the implementation was
+[[id:aida-rational-closure]], done. What happens to an argument whose
+conclusion contradicts a declared axiom beyond this - strict against
+strict, transposition - stays with [[id:aida-strict-layer]].
 
 Today the unfolder expands only sites (and =cite NAME= leaves), so only
 statements that occur as sites can be attacked or supported inside a

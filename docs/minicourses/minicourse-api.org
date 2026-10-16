@@ -241,7 +241,10 @@ by =wrap/schemas/aida.schema.json= (JSON Schema 2020-12). The pieces:
   text); =term_from_tree= reads a tree back exactly;
 - a *graph* has nodes, hyperedges (name, the =argument= it came from and
   that argument's =span= in the text, role, strict, target, sources) and
-  default markers;
+  default markers. An argument's lemmas and lambdas (=NAME.μ1=,
+  =NAME.λ1=) carry the argument's span; a declared axiom's edge, shared
+  by every argument that applies it, carries the axiom's name and a null
+  span (since 2026-10-16, docs/dui-integration.md);
 - an *error* is ={code, stage, message, span, cause, diagnostics}=.
 
 Verdicts and labels keep AIDA's words (value / open / exception; IN / OUT /
@@ -402,8 +405,9 @@ What a real server has to decide (=docs/dui-integration.md=):
 
 1. =id= is the node's own id in the tree; a binder under =id= would
    overwrite it.
-2. The interpreter never saw a block for it - registered from code, say,
-   not from the checked text.
+2. Either the interpreter never saw a block for the argument -
+   registered from code, say, not from the checked text - or the edge is
+   a declared axiom's, which no argument owns.
 3. A new kind is an addition: the minor version. A renamed field breaks
    readers: the major version.
 
