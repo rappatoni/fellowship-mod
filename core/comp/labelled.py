@@ -11,10 +11,10 @@ context-sorted one (pres/gen.py):
 
 The label is a function of the statement, the proposition with its side,
 so every reduction step keeps it correct.  Sigma reads the labelled term
-(core/comp/evaluate.py ``resolve_scaffolds``): a scion's conclusion is the
-label of its root, its sources are the labels of its sites, captured
-variables and lambda subarguments - the attacker's conclusion included,
-whose wing root is the captured ``alt``, a context variable ``{L}S``.
+(core/comp/evaluate.py ``resolve_scaffolds``) for a scion's conclusion and
+for presumptions; everything else a scion rests on is judged by what it
+stands for in the term (core/comp/standing.py), not by its statement's
+label.
 
 Before normalisation the labels are discharged (``discharge_labels``):
 every site takes its label as its name and its kind from the label,

@@ -63,18 +63,21 @@ policy):
                 skeptically.
 
 Wing choice at a scaffold (site of proposition A) is decided by the
-scion's DERIVATION STATUS under sigma (``derivation_status``): IN iff the
-scion's target statement and all of its sources are IN, OUT iff any of
-them is OUT, UNDEC otherwise.  Consulting the target statement alone was
-unsound: Q[t] IN says some derivation of Q is live, not that this
-supporter's is (aida-supporter-derivation-status, 2026-09-16).  The
-labels are read off the term, not looked up in sigma: sigma is first
-written into the term (core/comp/labelled.py), every statement occurrence
-carrying its label, and the scion's records carry the labels of its root
-and of its sites, captured variables and lambda subarguments - the
-attacker's conclusion included, the captured alt at its wing's root.  The
-UNDEC rows are the tiebreak, reached only when sigma leaves the status
-undecided:
+scion's STATUS: IN iff the scion's target statement is IN and everything
+it rests on stands IN in the term, OUT iff something is OUT, UNDEC
+otherwise.  Consulting the target statement alone was unsound: Q[t] IN
+says some derivation of Q is live, not that this supporter's is
+(aida-supporter-derivation-status, 2026-09-16).  What the scion rests on
+is judged by what it stands for in the term, not by its statement's
+label (core/comp/standing.py; tasks.org, aida-judge-by-what-it-stands-for,
+2026-10-16): a nested debate by how it comes out there, a scaffold's b by
+the original it binds - a root obligation of the debate being decided
+is unmet - and labels only for presumptions and for variables captured
+by an argument's own binder.  sigma is still written into the term first
+(core/comp/labelled.py): the labels give the target, the presumptions
+and the discharge.  ``derivation_status`` reads a graph's records against
+a labelling (the witness's favour check).  The UNDEC rows are the
+tiebreak, reached only when the status is undecided:
 
     supporter IN            -> keep scion        attacker IN   -> keep attack wing
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG

@@ -3595,7 +3595,8 @@ see the implementation task).
 
 Implementation: [[id:aida-judge-by-what-it-stands-for]].
 
-*** NEXT Judge an expression by what it stands for, not by its statement's label
+*** DONE Judge an expression by what it stands for, not by its statement's label
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-judge-by-what-it-stands-for
 :AREA:           phd
@@ -3610,6 +3611,45 @@ Implementation: [[id:aida-judge-by-what-it-stands-for]].
 :OUTCOME:        Sigma (phase 2) judges every leaf of a supporter or attacker wing by what it stands for in the term - a captured stack by its derivations, a captured obligation root of the debate being decided as unmet, a nested sub-debate by its own outcome in this term - and falls back to the statement's label only where the term cannot decide (a loop, a presumption nobody contests); the unfolded and the shared route alike. The discharge (phase 3) is unchanged (decided 2026-10-16).
 :VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture, tests/exposure/site_obligation.fspy) gives the value =!IN:P= credulously; lesson8a_cycle is the value =μx1:B.<!IN:B||x1:B>= credulously (decided by the author 2026-10-16), skeptical unchanged; a T3 check over every fixture passes (issue IN under the witness => value); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
 :END:
+
+*Done 2026-10-16* (commits 5f0f651 records, 45e9254 implementation, and
+the docs commit). =core/comp/standing.py= computes each expression's
+standing bottom-up from the term: a nested debate by how it comes out,
+a scaffold's =b= by the original it binds (an obligation root unmet, a
+presumption root by its label, a lower stack by its own derivations),
+the attack's =alt= by the same root rule (case 5), an obligation site
+OUT, a presumption site its label, a variable captured by an argument's
+own binder by its label (case 4, left open), own plumbing neutral.
+=resolve_scaffolds= (core/comp/evaluate.py) decides each scaffold by the
+standing of its scion, AND the target statement's label; the shared
+route reads a stub by its resolved instance's standing (memoised per
+instance and captured standings). The discharge is unchanged (decided
+2026-10-16). Evidence:
+- tests/test_unfold_exposure.py::TestJudgedByWhatItStandsFor (pinned as
+  strict xfails first, then flipped): lemma_captured and site_variant -
+  =argP= and =issue :P= both =μargP:P.<qp:Q->P||!IN:Q*argP:P>=; the new
+  fixture tests/exposure/site_obligation.fspy - =argP= and =issue :P=
+  credulously =!IN:P=, skeptically =?UNDEC:P=; lesson8a_cycle - =pro= and
+  =issue :B= credulously =!IN:B=, skeptically =?UNDEC:B=; the shared
+  route gives the same classes on these five documents.
+- tests/test_adequacy.py (new): on every fixture with debates, an issue
+  IN under the witness - skeptical, and every accepting preferred
+  witness - evaluates to a value; 35 fixtures, 5 skipped (no debate
+  evaluated); the one known exception is the inconsistent test1.fspy
+  (strict against strict, aida-strict-layer), present before as well.
+  On the code before, lemma_captured and site_variant failed it.
+- Moved pins, all by the rule: the four exposure pins of argP above;
+  tests/test_scaffold_capture.py - lesson8a_cycle's canonical credulous
+  result (the loop's proof through =!IN:B= -> =!IN:B=) and
+  circular_supporter.fspy's B (a value through B's own root, other's
+  proof missing -> =μpro:B.<r1:A->B||μb1:A.<rd:D->A||!IN:D*b1:A>*pro:B>=,
+  through other's founded proof). No pinned verdict of tests/minicourse,
+  tests/rationality, tests/demo or the sharing course moved; lessons 9-13
+  keep their terms and results.
+- Full suite: 2117 passed, 7 skipped, 2 xfailed, 1 xpassed.
+- Docs: lesson 11 (the scion's standing), lesson 8a (the bound-node and
+  capture-by-b passages), README phase 8, the evaluate.py and
+  labelled.py docstrings, glossary (Standing, Sigma phase).
 
 Decided by the author 2026-10-16 ([[id:aida-entrypoint-capture-adequacy]],
 option B2), with the principle stated there. Today every leaf of a scion

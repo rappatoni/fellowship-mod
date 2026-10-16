@@ -345,11 +345,17 @@ through the document graph.
    it would mix incompatible positions.
 8. **sigma, normalise, classify** — write σ into the term (every occurrence of
    a statement carries its label, printed `A{IN}` or `{OUT}A`), resolve every
-   scaffold σ decides by reading those labels, keeping one wing each, then
-   name every site by its label - a site is a delegation if IN, an obligation
-   otherwise - and reduce the result to a normal form, classified as an
-   exception if it holds an uncaught clash, open if an obligation remains,
-   and a value otherwise.
+   scaffold σ decides, keeping one wing each, then name every site by its
+   label - a site is a delegation if IN, an obligation otherwise - and reduce
+   the result to a normal form, classified as an exception if it holds an
+   uncaught clash, open if an obligation remains, and a value otherwise. A
+   scaffold is decided by what its scion *stands for* in the term, its
+   standing (`core/comp/standing.py`): a nested debate by how it comes out
+   there, a captured root obligation of the debate being decided as unmet,
+   the stack below the top as its own derivations; statement labels decide
+   only presumptions. So a supporter never rests on its own statement's
+   label, and an unfounded loop accepted credulously evaluates to the bare
+   delegation of its statement (tasks.org, aida-judge-by-what-it-stands-for).
 
 Two things the log makes visible that are worth knowing. The strict phase runs
 **twice** per evaluation: once inside the issue-graph compilation to collect

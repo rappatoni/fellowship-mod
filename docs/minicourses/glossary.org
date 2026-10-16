@@ -226,9 +226,17 @@ Words in /italics/ inside an entry have an entry of their own.
   also contributes strict edges (=killC*=) for closed derivations the
   graph missed. Lesson 10.
 
-- Sigma phase :: Phase 2: the remaining scaffolds are decided top-down by
-  the labels of the witness: keep the supporter if its derivation is IN,
-  the attacked term if the attacker is OUT. Lesson 11.
+- Sigma phase :: Phase 2: the remaining scaffolds are decided top-down:
+  keep the supporter if it stands IN, the attacked term if the attacker
+  stands OUT. Lesson 11.
+
+- Standing :: What an expression comes to in the term, judged by what it
+  stands for rather than by its statement's label (since 2026-10-16): a
+  nested debate by how it comes out there; a scaffold's =b= by the
+  original it binds, a root obligation of the debate being decided
+  counting as unmet; a presumption by its label. Sigma decides by
+  standings, so a supporter cannot win on its own statement's label.
+  =core/comp/standing.py=; lesson 11.
 
 - Critical pair :: A command =<mu a.c || mu'x.c'>= where two reduction
   rules apply, (mu<) and (>mu); every scaffold decision is the choice of

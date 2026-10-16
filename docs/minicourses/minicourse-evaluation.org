@@ -449,15 +449,18 @@ The canonical term of P stacks argP and the lemma in registration order
 (=SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP, lemma))=), and inside argP the
 demand for Q brings in argQ, whose lemma proves the statement the whole
 debate is about: P is bound by the root scaffold's =b1=, argQ has no
-primacy, so the lemma is =b1= - the root, which sigma reads as IN. Under
-=subarguments preserve.= it is =SUP[alt4,b4](b1, lemma)= instead, the
-lemma on top of the captured variable. In the term for argP the stack
-is =SUP(lemma, argP)= and the lemma inside argQ is =b2=, the stack below
-argP - the refuted lemma alone - which makes =evaluate argP.= an
-exception while =issue :P= and =argQ= are values. That is the
-entrypoint shape's doing, not the exposure's: the site variant
-(=tests/exposure/site_variant.fspy=) gives the same (tasks.org,
-aida-entrypoint-capture-adequacy).
+primacy, so the lemma is =b1=, the root. Under =subarguments preserve.=
+it is =SUP[alt4,b4](b1, lemma)= instead, the lemma on top of the
+captured variable. In the term for argP the stack is =SUP(lemma, argP)=
+and the lemma inside argQ is =b2=, the stack below argP - the refuted
+lemma alone. Either way sigma judges argQ by what its P stands for
+(lesson 11): =b1= is P's own root, an obligation nobody met in the term,
+and =b2= the refuted lemma, so argQ stands OUT and Q's debate keeps its
+presumption. =evaluate argP.= and =evaluate issue :P.= both give P from
+the presumed Q, =μargP:P.<qp:Q->P||!IN:Q*argP:P>=. (Until 2026-10-16
+sigma read argQ's P by P's label: =issue :P= returned the circular
+proof through the root, and =evaluate argP.= an exception; tasks.org,
+aida-entrypoint-capture-adequacy.)
 
 =explain pro.= prints the unfolder's steps:
 
@@ -541,8 +544,12 @@ Inside back, the demand for B is the demand the whole debate is about:
 an obligation for a statement already being proved. The support
 scaffold of B binds B[t] to =b1=, so the demand becomes =b1=. After that
 scaffold's outer step =b1= is B's root, so back shares the obligation
-?u1 instead of opening a second one; evaluation leaves it open
-(=μpro:B.<r1:A->B||μb1:A.<r3:B->A||?u1:B*b1:A>*pro:B>=).
+?u1 instead of opening a second one. Evaluated, back rests on that
+root, an obligation nobody met in the term, so back stands OUT
+(lesson 11), and pro with it: B's root survives. Skeptically B is UNDEC
+and the result is open, =?UNDEC:B=; credulously the witness labels the
+loop IN and the surviving root is discharged by its label, the bare
+delegation =!IN:B= - B accepted, no derivation shown.
 
 *A capture, and the contrary's root.* =tests/rationality/self_attack_lk.fspy=:
 one argument for P from =pRule: (P->false)->P=, whose body presumes "P
@@ -924,22 +931,30 @@ still finds:
 
 1. *Compile the scion* against the binders in scope (=scion_record=).
    This gives the edge the compiler would give the scion: its target
-   statement and its sources. A scion that is a *stack* - the supporter
-   stack under a root, or an attacker wing (lesson 8a) - stands for
-   several alternatives and gives one edge per element
-   (=stack_elements=); a lone root counts as an identity edge, the
-   statement resting on itself. A root captured by the attack's =alt=
-   compiles the same way: the captured variable is a source at the
-   statement it is bound to. The stack's own =alt= and =b= are in scope
-   for each element (=scoped_stack_elements=).
-2. *Derivation status* under sigma (=derivation_status=): for one edge,
-   IN if the target and every source are IN, OUT if any of them is OUT,
-   and UNDEC otherwise; for several, IN if some alternative is IN, OUT
-   if all are OUT. So a stack is IN if some supporter in it is. The
-   labels are those of the labelled term (lesson 9): the compiler copies
-   each occurrence's label into the edge it builds - the target's from
-   the scion's root, a source's from its site, captured variable or
-   lambda. sigma itself is not consulted again.
+   statement, whose label (lesson 9) must be IN for the scion to win.
+   The stack's own =alt= and =b= are in scope for each element
+   (=scoped_stack_elements=).
+2. *The scion's standing* (=core/comp/standing.py=, since 2026-10-16):
+   what it stands for in the term, judged bottom-up. A derivation stands
+   IN if everything it rests on does, OUT if anything is OUT, UNDEC
+   otherwise; a stack stands as the wing its own scaffolds keep. What it
+   rests on is judged by *what each expression stands for*, not by its
+   statement's label:
+   - a nested debate by how it comes out here, its scaffolds decided by
+     the same rule;
+   - a scaffold's =b= by the original it binds: a root that is an
+     obligation is an obligation nobody met in the term, OUT; a
+     presumption root keeps its label; the stack below the top stands as
+     those derivations;
+   - the attack's =alt=, the captured root of the contrary, by the same
+     root rule;
+   - an obligation site OUT, a presumption site its label;
+   - a variable an argument's own binder captured inside another
+     argument by its label (an open question, tasks.org
+     aida-discuss-capture-source-vs-strict).
+   So labels decide only presumptions. A supporter that needs its own
+   statement cannot win on that statement's label: the root it captures
+   is no evidence for the debate it is the root of.
 3. *Wing choice* (=_wing_choice=): the table of lesson 7. The mode's
    tiebreak is used only when the status is UNDEC.
 4. *Rewrite* the scaffold to the kept wing - =keep_orig=,
@@ -976,13 +991,14 @@ The context side is the mirror image.
 : sigma  supporter B[t] is IN -> keep the supporter, dropping the original
 : sigma  attacker A[c] is OUT -> keep the original, dropping the attacker and the 1 scaffold(s) inside it
 
-The "IN" and "OUT" in these lines are *derivation statuses*, not the
-labels of B[t] and A[c]. The B scaffold's scion is PRO, whose edge is
-B[t] <- A[t]:pres@u2, and B[t] and A[t] are both IN, so its status is
-IN. The A scaffold's scion is the wing AW, with two alternatives: its
-root =alt2=, recorded as an obligation source at A[c] - the identity
-edge A[c] <- A[c] - and con, A[c] <- C[t]:pres@u3.
-A[c] is OUT, so both are OUT, and so is AW. Walking top-down, phase 2
+The "IN" and "OUT" in these lines are the scions' statuses, not the
+labels of B[t] and A[c]. The B scaffold's scion is PRO, which rests on
+the debate about A. That debate's attacker wing AW holds its root
+=alt2=, the captured root of A[c], an obligation nobody met, so OUT,
+and con, which rests on the presumption of C that killC defeated in
+phase 1, so OUT: AW stands OUT, the attack keeps the presumption =!u2=
+(A is IN), and PRO stands IN. The A scaffold's scion is AW, OUT as just
+computed. Walking top-down, phase 2
 decides B, keeps PRO, walks into it, and decides A. It never reaches
 anything inside AW: the support scaffold there (the "1 scaffold inside
 it") and the debate about C go with it, and phase 1's decisions on C
