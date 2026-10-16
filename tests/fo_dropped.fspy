@@ -1,0 +1,16 @@
+# Universally quantified defeasible rule: birds fly, for every animal, by
+# default; Tweety is a bird. The argument instantiates the rule at tweety.
+lk.
+declare Animal : type.
+declare tweety : Animal.
+declare Bird, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+by default.
+next.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.

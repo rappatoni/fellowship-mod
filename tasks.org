@@ -6934,7 +6934,8 @@ Compound witnesses such as =[A -> B]= are not terms at all and cannot be
 written. Separately, the =Quant= case substitutes under a binder that
 rebinds the substituted name.
 
-** BACKLOG Keep a binder named _ apart from the unfolder's unused binders
+** DONE Keep a binder named _ apart from the unfolder's unused binders
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-underscore-binder
 :AREA:           phd
@@ -6958,7 +6959,21 @@ neither bound nor a declared axiom"). The unfolder writes =_= for its own
 unused binders. All nine arguments of
 tests/thetaexpander_bureaucratic_cases.fspy are unqueryable this way.
 
-** BACKLOG Refuse an argument over a conjunction or disjunction in one line
+*Done 2026-10-16.* Not a clash of names: =_= is affine for the compiler
+(=binder_statements= ignores it), but the unfolder let it capture the
+sites of its statement in its scope, writing =_= as a variable that
+Fellowship refuses. =Unfolder._edge= (core/dc/unfold.py, =scoped=) now
+never captures with an affine binder, as the compiler. No renaming was
+needed. Evidence: tests/exposure/underscore_binder.fspy (copy of the
+reproduction) and tests/thetaexpander_bureaucratic_cases.fspy:
+=tests/test_underscore_binder.py= graphs and evaluates every argument with
+the type check on and off (a and b: VALUE; all nine bureaucratic cases:
+OPEN). A =_= the argument actually uses (=axiom _.=) is still read as a
+free variable by the compiler, so that argument is left out of the graph
+with the warning on its entry.
+
+** DONE Refuse an argument over a conjunction or disjunction in one line
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-unsupported-connective-crash
 :AREA:           phd
@@ -6980,7 +6995,18 @@ the CLI exits 1 with a traceback, and =Service.check= raises instead of
 reporting ([[id:aida-document-check]]). The README says such
 propositions can be declared but not argued about.
 
-** BACKLOG Name an argument's edge after the argument when it starts with an introduction
+*Done 2026-10-16.* =Service._finish= (wrap/service.py) catches the
+=SyntaxErrorInSource= of =finish_recording=, abandons the recording and
+raises =ContentRefused= with one line naming the connective
+(=_unsupported_syntax=). Evidence: tests/connectives_refused.fspy (copy of
+expressivity_connectives.fspy): =Service.check= reports the three =dixi=
+entries refused ("'conj' uses a conjunction (/\): it can be declared, but
+AIDA cannot argue about it yet; ...") and a later check works
+(=test_an_argument_over_a_conjunction_is_refused_in_one_line=);
+=acdc --script= prints three "Refused" lines, no traceback, exit 0.
+
+** DONE Name an argument's edge after the argument when it starts with an introduction
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-negation-edge-provenance
 :AREA:           phd
@@ -7005,7 +7031,16 @@ Also the skeptic's challenge =s1 : ~(P - P)= (eval/literature/
 t_lnc_dialectical.fspy): =elim h.= on a negated goal gives the same
 =μH1= wrapper.
 
-** BACKLOG Report an argument left out of the document graph at its own line
+*Done 2026-10-16.* =_host_name= (core/dc/debate_graph.py) skips the
+binder of Fellowship's negation-introduction wrapper
+(=_is_negation_introduction=: a mu on a primitive negation whose term is a
+lambda). Evidence: tests/negation_edge_name.fspy (copy of the
+reproduction), tests/test_negation_edge_name.py: the edge is =negA=, the
+JSON graph gives ="argument": "negA"= and the block's span (lines 6-9).
+Not re-run: t_lnc_dialectical.fspy's =s1=.
+
+** DONE Report an argument left out of the document graph at its own line
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-check-dropped-argument
 :AREA:           phd
@@ -7024,6 +7059,19 @@ t_lnc_dialectical.fspy): =elim h.= on a negated goal gives the same
 Found 2026-10-16 (eval/REPORT.org, bug 1): the entry is =ok= and the
 warning appears only in the report-level diagnostics, so an editor shows
 the block as fine ([[id:aida-document-check]]).
+
+*Done 2026-10-16.* A service operation nested in another (the =dixi= of a
+document check runs =finish_recording= inside =check=) shared the outer
+collector and got no diagnostics of its own. =_operation=
+(wrap/service.py) now also gives a nested result, or the error it
+raises, what was logged during its own call; the report keeps them all.
+Evidence: tests/fo_dropped.fspy (copy of eval/literature/first_order.fspy),
+=test_a_dropped_argument_is_marked_on_its_own_entry= (tests/test_service.py):
+the =dixi= entry is =ok= and carries the warning "not added to the
+document graph"; the report still has it. bug_falsum_cell.fspy, the other
+fixture the VERIFY names, no longer drops anything
+([[id:aida-negation-cell-horn]]). Suite: 2172 passed, 8 skipped, 2
+xfailed, 1 xpassed; no existing pin moved.
 
 ** BACKLOG Remove the recursion-depth limit from term traversals
 :PROPERTIES:

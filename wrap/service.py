@@ -137,17 +137,39 @@ class _Collector(logging.Handler):
             self.items.append(Diagnostic(record.levelname.lower(), record.name, record.getMessage()))
 
 
+def _unsupported_syntax(name: str, error) -> str:
+    """One line for an argument whose proposition or proof term AIDA cannot
+    read: the connective, when it is one AIDA does not have."""
+    text = str(error)
+    for symbol, word in (("/\\", "conjunction"), ("\\/", "disjunction")):
+        if symbol in text:
+            return (f"'{name}' uses a {word} ({symbol}): it can be declared, but AIDA "
+                    f"cannot argue about it yet; the argument is not registered.")
+    return f"'{name}' cannot be read by AIDA ({text.splitlines()[0]}); the argument is not registered."
+
+
 def _operation(method):
     """Run a service method under the session lock, collecting its
     diagnostics onto the result (a dataclass with ``diagnostics``) or onto
-    the AidaError it raises.  Nested operations share the outer collector."""
+    the AidaError it raises.  Nested operations share the outer collector,
+    and each also gets what was logged during its own call - so an entry
+    of a document check carries its own warnings, such as an argument left
+    out of the document graph (tasks.org, aida-check-dropped-argument)."""
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         with self.session.lock:
             outer = getattr(_depth, "collector", None)
             if outer is not None:
-                return method(self, *args, **kwargs)
+                start = len(outer.items)
+                try:
+                    result = method(self, *args, **kwargs)
+                except AidaError as e:
+                    e.diagnostics = list(outer.items[start:])
+                    raise
+                if hasattr(result, "diagnostics"):
+                    result.diagnostics = list(outer.items[start:])
+                return result
             collector = _Collector(threading.get_ident())
             loggers = [logging.getLogger(name) for name in _CAPTURED_LOGGERS]
             for lg in loggers:
@@ -666,11 +688,18 @@ class Service:
 
     def _finish(self, current: dict, demand_strict: bool) -> Done:
         from wrap.registry import finish_recording, abandon
+        from core.ac.syntax import SyntaxErrorInSource
         try:
             arg = finish_recording(self.session, current, demand_strict=demand_strict)
         except ProverError as e:
             abandon(self.session, current)
             raise ContentRefused(str(e), stage="record", cause=e)
+        except SyntaxErrorInSource as e:
+            # Fellowship has connectives AIDA's term language lacks: the
+            # argument is refused in one line, not with a traceback
+            # (tasks.org, aida-unsupported-connective-crash).
+            abandon(self.session, current)
+            raise ContentRefused(_unsupported_syntax(current["name"], e), stage="record", cause=e)
         verb = "proved" if demand_strict else "registered"
         return Done(f"'{arg.name}' {verb}: {arg.conclusion}.", arg)
 

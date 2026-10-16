@@ -249,6 +249,39 @@ def test_a_document_check_reports_every_command(svc):
     assert evaluation["span"]["line"] == 46 and evaluation["result"]["verdict"] == "open"
 
 
+def test_a_dropped_argument_is_marked_on_its_own_entry(svc):
+    """tasks.org, aida-check-dropped-argument: an argument Fellowship
+    accepts but the document graph cannot take (here a quantifier step)
+    carries the warning on its `dixi` entry, not only on the report."""
+    from pathlib import Path
+    text = (Path(__file__).parent / "fo_dropped.fspy").read_text()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        report = svc.check(text)
+    dixi = [e for e in report.entries if e.kind == "dixi"]
+    assert len(dixi) == 1 and dixi[0].status == "ok"
+    assert any(d.level == "warning" and "not added to the document graph" in d.message
+               for d in dixi[0].diagnostics)
+    assert any("not added to the document graph" in d.message for d in report.diagnostics)
+
+
+def test_an_argument_over_a_conjunction_is_refused_in_one_line(svc):
+    """tasks.org, aida-unsupported-connective-crash: `dixi` on an argument
+    whose conclusion or tactics mention /\\ or \\/ is refused, and the check
+    goes on to the next entry."""
+    from pathlib import Path
+    text = (Path(__file__).parent / "connectives_refused.fspy").read_text()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        report = svc.check(text)
+    dixi = [e for e in report.entries if e.kind == "dixi"]
+    assert [e.status for e in dixi] == ["refused"] * 3
+    assert "conjunction (/\\)" in dixi[0].message and "disjunction (\\/)" in dixi[2].message
+    assert all("\n" not in e.message for e in dixi)
+    assert not report.ok
+    assert svc.check("lk.\ndeclare A : bool.\nargument a : (A).\nby default.\ndixi.\n").ok
+
+
 def test_a_check_starts_a_new_document_each_time(svc):
     first = svc.check("lk.\ndeclare A : bool.\n")
     second = svc.check("lk.\ndeclare A : bool.\n")
