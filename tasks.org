@@ -3607,7 +3607,7 @@ Implementation: [[id:aida-judge-by-what-it-stands-for]].
 :EFFORT:         12:00
 :DEFERRALS:      0
 :OUTCOME:        Sigma (phase 2) and the discharge (phase 3) judge every leaf of a supporter or attacker wing by what it stands for in the term - a captured stack by its derivations, a captured obligation root of the debate being decided as unmet, a nested sub-debate by its own outcome in this term - and fall back to the statement's label only where the term cannot decide (a loop, a presumption nobody contests); the unfolded and the shared route alike.
-:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture: site_variant with argP's =by default.= removed) is open credulously, its surviving root an unmet obligation (not =!IN:Q=, not =!IN:P=); lesson8a_cycle is open credulously, =?:B= unmet (the full rule; corrected 2026-10-16, to be confirmed by the author); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
+:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (a new fixture: site_variant with argP's =by default.= removed) is open credulously, its surviving root an unmet obligation (not =!IN:Q=, not =!IN:P=); lesson8a_cycle is open credulously, =?:B= unmet (the full rule; confirmed by the author 2026-10-16); every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
 :END:
 
 Decided by the author 2026-10-16 ([[id:aida-entrypoint-capture-adequacy]],
@@ -3672,9 +3672,34 @@ The pure loop is open credulously, like the argP-demands-Q variant
 (once argP2 is refuted that document is the same loop between P and
 Q). The author first accepted the second row, which the agent had
 shown as B2's result; it applied the rule at one scaffold only and
-discharged by label (case 3). The open result awaits the author's
-confirmation. Bringing the loop back is
-[[id:aida-evaluate-keep-supporters-of-in-obligations]].
+discharged by label (case 3).
+
+*Decision (the author, 2026-10-16): the loop is open credulously, and
+adequacy (T3) is restricted to founded labellings.* Under the principle
+a credulous witness that accepts an unfounded loop of obligations
+labels the issue IN while evaluation returns open, which breaks T3 as
+stated (debate-graph-spec.org, Layer 4 theorems). T3's own construction
+already presupposes founded acceptance: m(sigma) sends a site accepted
+by derivation to its supporter's denotation, which for an unfounded
+loop contains that very site, and the proof goes by induction on the
+fixpoint stages of sigma. T3 now reads "for founded witness
+labellings": every IN statement IN by a derivation whose IN sources are
+reached in earlier stages (the grounded labelling always is). The
+spec's T3 carries the restriction with a dated note (debate-graph-spec.org
+is a local file, not versioned: root-level files are ignored by
+.gitignore). Consequences:
+- skeptical and grounded evaluation: unchanged by the restriction;
+- credulous evaluation under a founded witness: adequate;
+- credulous evaluation under an unfounded witness: open, the label
+  still recording admissibility; loops through presumptions keep their
+  values (a captured presumption root keeps its label), pending case 4;
+- today's behaviour was not adequate either (the argP-demands-Q variant
+  gives an exception with P IN); it was adequate only on canonical
+  terms, by borrowing the label at the captured root.
+The option [[id:aida-evaluate-keep-supporters-of-in-obligations]]
+brings the loop's proof back as a value; it lies outside T3's
+restricted scope. A test of T3 should state for each fixture witness
+whether it is founded.
 
 Case 4 (a variable captured by an argument's own binder: the sprung
 trap, Peirce, the self-attack, the captured presumptions that close the
@@ -3723,7 +3748,7 @@ Checked and not violations (2026-10-16):
 :ICK:            2
 :EFFORT:         3:00
 :DEFERRALS:      0
-:OUTCOME:        An evaluation option (beside mode, semantics and base) under which sigma keeps a supporter whose captured obligation root is labelled IN, instead of counting that root unmet ([[id:aida-judge-by-what-it-stands-for]]), so that an unfounded loop accepted credulously shows the loop in its proof again.
+:OUTCOME:        An evaluation option (beside mode, semantics and base) under which sigma keeps a supporter whose captured obligation root is labelled IN, instead of counting that root unmet ([[id:aida-judge-by-what-it-stands-for]]), so that an unfounded loop accepted credulously shows the loop in its proof again. Outside the scope of adequacy (T3 holds for founded labellings only, decided 2026-10-16).
 :VERIFY:         With the option, tests/minicourse/lesson8a_cycle.fspy evaluates credulously to =μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>= (the result before the principle); without it, open with B's obligation unmet; the CLI, the service and the JSON schema carry the option; the suite passes.
 :END:
 
