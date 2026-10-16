@@ -53,10 +53,6 @@ tracked in `tasks.org`:
   transposition, so there are no premise-attacks through strict edges.
 - **No first-order debates.** Normalisation and the debate operations
   refuse first-order terms (see *First-order logic*).
-- **The shared route lags behind.** `pipeline shared` still builds the
-  earlier scaffold shape and has not been ported to the stacked shape and
-  the argument entrypoints (it does expose horns), so the default route
-  is `unfolded`.
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
@@ -245,13 +241,13 @@ export FSP_LOGLEVEL=DEBUG
 `DEBUG` each prints the artifact it produced.
 
 The phases are described below as they act on the *unfolded* debate term,
-which is what defines them and what the default route builds. `pipeline
-shared` (or `FSP_PIPELINE=shared`) keeps the debate as named sub-debates
+which is what defines them. The default route, `pipeline shared` (or
+`FSP_PIPELINE=shared`), keeps the same debate as named sub-debates
 instead, and each phase works on those (see the note after phase 5 and
-`share ARG`); `pipeline unfolded` switches back. The shared route has not
-yet been ported to the stacked shape the unfolded route builds (see
-*Status*). The unfolded route's cost grows with the number of paths
-through the document graph.
+`share ARG`); `pipeline unfolded` builds the term itself. The two give the
+same graph, labels and normal form, up to the names of binders and the
+numbers of sites; the unfolded route's cost grows with the number of
+paths through the document graph.
 
 1. **issue** — read the argument's own registered proof term and its issue, a
    (proposition, side) pair.
@@ -317,10 +313,11 @@ through the document graph.
 
    `graph ARG` and `label ARG` need only the issue graph, and get it without
    building the unfolded term. The debate is kept as one definition per
-   statement (see `share ARG`), and phase 5 runs on one *instance* of
-   a sub-debate at a time: a statement together with the statements captured
-   and cut in it, which is all that the copy of that sub-debate at a site
-   depends on. Each instance is strictness-resolved (and compiled) once; a
+   debate about a statement - a statement can have variants, such as the
+   argument evaluated on top of its stack (see `share ARG`) - and phase 5
+   runs on one *instance* of a sub-debate at a time: a statement together
+   with the statements captured and cut in it, which is all that the copy
+   of that sub-debate at a site depends on. Each instance is strictness-resolved (and compiled) once; a
    cited instance shows the scaffolds around it only whether a site is still
    open in it, which captured variables are still free in it, and whether a
    decision was made inside. The result is the graph the unfolded term gives
@@ -592,7 +589,8 @@ everywhere, so it never holds a defeasible argument.
   citation like any obligation. Refine the cited argument and every citer
   follows. `expand ARG` computes the full term on demand.
 - **Sub-debates are shared by name.** The debate about an issue brings in the
-  debate of every statement it reaches. `share ARG` writes a sub-debate that
+  debate of every statement it reaches. `share ARG` prints the debate biased
+  towards ARG, as `evaluate ARG` evaluates it; it writes a sub-debate that
   is needed in two or more places once and cites it by name - the author's
   name where one argument or debate is about that statement, `anon_1`,
   `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in

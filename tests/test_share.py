@@ -638,6 +638,7 @@ class TestIssueGraphFromInstances:
 class TestLabelDoesNotUnfold:
     def test_label_and_graph_never_call_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
 
         def refuse(*_args, **_kwargs):
             raise AssertionError("label and graph must not unfold the debate")
@@ -802,6 +803,7 @@ class TestEvaluateFromTheSharedDebate:
 class TestEvaluateCommand:
     def test_evaluate_never_calls_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
 
         def refuse(*_args, **_kwargs):
             raise AssertionError("evaluate must not unfold the debate")
@@ -819,6 +821,7 @@ class TestEvaluateCommand:
     def test_the_pipeline_switch_selects_the_unfolded_term(self, fresh, tmp_path, capsys, caplog,
                                                            monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
         calls = []
         real = core.dc.unfold.unfold_argument
 

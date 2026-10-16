@@ -7,34 +7,35 @@
 # tests/minicourse/test_sharing_course.py pins the quoted values so this
 # file cannot silently go stale. The design decisions it describes are the
 # author's, recorded in tasks.org under aida-shared-subarguments.
+#
+# Regenerated 2026-10-16 when the shared route was ported to the stacked
+# shape and the argument entrypoints (tasks.org,
+# aida-shared-route-stack-shape): every transcript, size and count below
+# was taken again; lessons 14, 15 and 17 gain the variants of a debate.
 
 * About this sequel
 
 minicourse-evaluation.org describes how a debate is unfolded from the
 document graph into one term (lesson 8a) and follows that term through
-evaluation (lessons 9-13). Both describe the *unfolded* route.
-Since 2026-10-02 it is no longer the route the CLI takes by default.
+evaluation (lessons 9-13). Both describe the *unfolded* route. This
+sequel describes the other one, the *shared* route, which is the CLI
+default.
 
-*Note (2026-10-06).* The default has moved back to the unfolded route
-for now: only that route builds the stacked shape and the argument
-entrypoints of lesson 8a (tasks.org, aida-unfold-entrypoints). The
-shared route described here still builds the *legacy* shape - the site
-innermost, each supporter and attacker wrapping what came before - and
-compares itself with the legacy unfolding (=unfold_legacy=), until it is
-ported (aida-shared-route-stack-shape). To follow these lessons, select
-it with =pipeline shared.= (or =FSP_PIPELINE=shared=); the transcripts
-below were taken on it.
-
-*Note (2026-10-16).* Both routes now expose every horn of an argument
+*Note (2026-10-16).* The shared route builds what the unfolded route
+builds: the stacked shape of lesson 8a - the root under one support
+scaffold whose scion is the supporter stack, one attack scaffold whose
+scion is the contrary's debate - and the argument entrypoints, an
+argument's debate with the argument on top of its stack. Until this date
+it built an older, *legacy* shape and was compared with a legacy
+unfolding; both are gone. It also exposes every horn of an argument
 (minicourse-evaluation.org, lesson 8a; tasks.org, aida-rational-closure):
 a declared axiom applied, a lemma, a lambda becomes, where it stands, the
 debate about its statement, as soon as some other argument derives,
 contests or presumes that statement. In the fixtures below the two
 arguments at each level apply *different* axioms with the same statement
 (=r1_0= and =r1_1=, both =P0 -> P1=), and in lesson 15 two arguments
-prove the same lambda. Each such statement is therefore engaged, and it
-is a sub-debate of its own, shared like any other. The transcripts and
-sizes below are those of the exposing routes.
+prove the same lambda. Each such statement is therefore engaged, and its
+debate is a sub-debate of its own, shared like any other.
 
 The reason is size. Unfolding copies a statement's debate into every
 place the statement is needed, so the term is as large as the number of
@@ -49,16 +50,16 @@ level, the number of paths doubles per level:
 |      4 |           9 |                 185 |                   901 |
 |      8 |          17 |                 369 |                 15301 |
 
-(measured on the generated documents of tests/test_share.py; the term
-follows size(n) = 2 size(n-1) + 59, so sixteen levels give about 3.9
-million nodes; two definitions per level, the statement and its
-implication). Before the sharing work, =label= on ten levels - twenty
-arguments - took 105 seconds. Now it takes about one.
+(measured on the issue P_n of the generated documents of
+tests/test_share.py; the term follows size(n) = 2 size(n-1) + 59, so
+sixteen levels give about 3.9 million nodes; two definitions per level,
+the statement and its implication). Before the sharing work, =label= on
+ten levels - twenty arguments - took 105 seconds. Now it takes about one.
 
 The pipeline on the default route:
 
 :   document graph, issue
-:     |  share               core/dc/share.py         one definition per statement, citations
+:     |  share               core/dc/share.py         one definition per debate, citations
 :     |  typecheck_shared    core/dc/typecheck.py     replay each definition once
 :     |  IssueResolver       core/dc/instances.py     resolve each INSTANCE once (its strict edges)
 :     |  labellings          core/comp/adf_label.py   as before, on the same issue graph
@@ -69,7 +70,11 @@ Four decisions shape it (author, 2026-10-01):
 
 1. *Names are transparent.* A named sub-debate means its expansion;
    nothing new enters the calculus.
-2. *One debate per statement*, that is, per (proposition, side).
+2. *One debate per statement*, that is, per (proposition, side). Since
+   the stacked shape, read: one debate per statement *and variant*
+   (lesson 14) - the unfolder builds a different debate about the same
+   statement where an argument is on top of its stack or a root has
+   another kind.
 3. *A name is shown from the second occurrence on*; a sub-debate used
    once stays in place.
 4. *Capture does not force copying.* A citation records what its site
@@ -80,12 +85,11 @@ And one about what may be memoised: not a definition, but an *instance*
 is false, since strictness is read off the concrete term and the same
 sub-debate is decided differently under different captures.
 
-The unfolded route remains, in its legacy shape, as the reference the
-shared one is tested against: =pipeline unfolded.= (or
-=FSP_PIPELINE=unfolded=) selects the unfolded route, =pipeline shared.=
-this one. Against the legacy unfolding the shared route gives the same
-graph, labels and normal form, up to the names of binders and the
-numbers of sites.
+The unfolded route remains as the reference the shared one is tested
+against: =pipeline unfolded.= (or =FSP_PIPELINE=unfolded=) selects it,
+=pipeline shared.= this one. Against the unfolding the shared route
+gives the same term when expanded, the same graph, labels and normal
+form, up to the names of binders and the numbers of sites.
 
 Prerequisites: lesson 2 (hyperedges), lesson 7 (sigma), and lessons 8a,
 10, 11 and 13 of the first sequel (unfolding, the strict phase, sigma's
@@ -93,41 +97,49 @@ walk, capture).
 
 Four fixtures run through the lessons:
 
-: .venv/bin/acdc --script tests/minicourse/lesson14_sharing.fspy      # debate, label, evaluate
-: .venv/bin/acdc --script tests/minicourse/lesson15_capture.fspy      # debate, label
+: .venv/bin/acdc --script tests/minicourse/lesson14_sharing.fspy      # share, label, evaluate
+: .venv/bin/acdc --script tests/minicourse/lesson15_capture.fspy      # share, label
 : .venv/bin/acdc --script tests/minicourse/lesson16_spelling.fspy     # label, refused
-: .venv/bin/acdc --script tests/minicourse/lesson17_instances.fspy    # debate, explain
+: .venv/bin/acdc --script tests/minicourse/lesson17_instances.fspy    # share, explain
 : .venv/bin/python -m pytest tests/minicourse/test_sharing_course.py -q
 
 To look at the shared form from Python:
 
 : import sys; sys.path.insert(0, "tests/minicourse")
 : from wrap.cli import setup_prover, execute_script
-: from core.dc.debate_graph import canonical_prop as K
 : prover = setup_prover()
 : execute_script(prover, "tests/minicourse/lesson14_sharing.fspy", isolate=False)
-: shared = prover.shared_debate((K("P2"), "term"))
+: a2_0 = prover.get_argument("a2_0")
+: shared = prover.shared_debate(prover.issue_of(a2_0), a2_0)    # without a2_0: the issue's own
 : print(shared.to_text()); shared.named(); shared.expand()
 
-* Lesson 14 - Definitions and citations
+* Lesson 14 - Definitions, citations and variants
 
 ** Definition
 
 =share(graph, issue)= (=core/dc/share.py=) builds one *definition* for
-every statement the issue reaches: the statement's own site, wrapped in
-a support scaffold per edge deriving it and an attack scaffold per edge
-deriving its contrary - exactly what the unfolder's =_wrap= builds, with
-the unfolder's own scaffold code. The difference is what happens at a
-site inside an edge's body. The unfolder expands the site's statement in
-place, in scope. =share= leaves a *citation* there: a leaf that names the
-statement and will be expanded later, if at all.
+every debate the issue reaches: the debate the unfolder's =_debate=
+builds for a statement - its root, under one support scaffold whose
+scion is the supporter stack, and the attack scaffold whose scion is the
+contrary's debate - with the unfolder's own code. The difference is what
+happens at a site inside an edge's body. The unfolder expands the site's
+statement in place, in scope. =share= leaves a *citation* there: a leaf
+that names the debate and will be expanded later, if at all.
 
 A citation is a term- or context-side name leaf (=§= internally) that
-records three things about its site: the statement cited, whether the
-site was a presumption, and what the site's scope does to the cited
-debate (lesson 15). A statement whose definition is a bare site - nobody
-derives or contests it - is *trivial* and is written in place as that
-site.
+records what it cites, whether the site was a presumption, and what the
+site's scope does to the cited debate (lesson 15). A statement whose
+definition is a bare site - nobody derives or contests it - is *trivial*
+and is written in place as that site.
+
+*Variants.* The unfolder does not always build the same debate about a
+statement. An argument's term puts the argument on top of its stack, and
+the sites in its own body keep the kind it wrote (minicourse-evaluation.org,
+lesson 8a); an exposed node's debate has an obligation root, a
+presumption of the statement at the bottom of the stack, and the node on
+top when its argument has primacy. Each of these is a *variant*: a
+definition keyed by (statement, root kind, argument on top), next to the
+statement's canonical one. A citation names the definition it means.
 
 *Expansion.* =SharedDebate.expand()= writes every definition back in,
 interpreting each citation as the unfolder would: a captured statement
@@ -135,19 +147,21 @@ becomes the capturing variable, a statement already being expanded on
 the path becomes a bare site, any other becomes the definition's body
 with its binders renamed on reuse. The result is the unfolded term up to
 alpha-equivalence and site numbering, and that equation is the gate the
-whole route is tested against: =expand= must agree with =unfold= on
-every fixture, and does.
+whole route is tested against: =expand= must agree with =unfold= (and,
+for an argument, =unfold_argument=) on every fixture, and does.
 
 *Names.* A definition is shown by name when it is cited from two or more
-sites along the issue's expansion, or when the author cited it with
-=cite NAME=. The name is the registered argument or debate whose issue
-is the statement, if there is exactly one; otherwise =anon_1=, =anon_2=,
-..., numbered on first use and kept with the document, so the numbers do
-not shift between commands. =anon_= is a reserved prefix. A sub-debate
-needed once is printed in place, and a trivial one is never named.
+sites along the root's expansion, or when the author cited it with
+=cite NAME=. The name of a canonical debate is the registered argument
+or debate whose issue is the statement, if there is exactly one;
+otherwise - and for a variant - =anon_1=, =anon_2=, ..., numbered on
+first use and kept with the document, so the numbers do not shift
+between commands. =anon_= is a reserved prefix. A sub-debate needed once
+is printed in place, and a trivial one is never named.
 
-*What =share ARG.= prints:* the issue's term, in which every named
-sub-debate is a citation, and then one line
+*What =share ARG.= prints:* the debate biased towards ARG - the one
+=evaluate ARG.= evaluates - in which every named sub-debate is a
+citation, and then one line
 
 : NAME[open sites] := body
 
@@ -162,41 +176,43 @@ argument =a0=), and =a2_0= and =a2_1= both derive P2 from P1.
 
 =share a2_0.=:
 
-: Debate about 'a2_0' (P2[t]), 3 sub-debate(s) cited by name:
-:   μalt2:P2.<μalt1:P2.<?u1:P2||μ'b2:P2.<μ_:P2.<b2:P2||alt1:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<anon_1:P1->P2||anon_2:P1*th:P2>||a2_0:P2>||alt1:P2>>>||μ'b3:P2.<μ_:P2.<b3:P2||alt2:P2>||μ'_:P2.<μa2_1:P2.<μth_2:P2.<anon_1:P1->P2||anon_2:P1*th_2:P2>||a2_1:P2>||alt2:P2>>>
-:   anon_1[?:P1->P2] := μalt4:P1->P2.<μalt3:P1->P2.<?u2:P1->P2||μ'b5:P1->P2.<μ_:P1->P2.<b5:P1->P2||alt3:P1->P2>||μ'_:P1->P2.<r2_0:P1->P2||alt3:P1->P2>>>||μ'b6:P1->P2.<μ_:P1->P2.<b6:P1->P2||alt4:P1->P2>||μ'_:P1->P2.<r2_1:P1->P2||alt4:P1->P2>>>
-:   anon_2[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<μalt5:P1.<?u3:P1||μ'b8:P1.<μ_:P1.<b8:P1||alt5:P1>||μ'_:P1.<μa1_0:P1.<μth_3:P1.<anon_3:P0->P1||!u4:P0*th_3:P1>||a1_0:P1>||alt5:P1>>>||μ'b9:P1.<μ_:P1.<b9:P1||alt6:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_3:P0->P1||!u5:P0*th_4:P1>||a1_1:P1>||alt6:P1>>>
-:   anon_3[?:P0->P1] := μalt8:P0->P1.<μalt7:P0->P1.<?u6:P0->P1||μ'b11:P0->P1.<μ_:P0->P1.<b11:P0->P1||alt7:P0->P1>||μ'_:P0->P1.<r1_0:P0->P1||alt7:P0->P1>>>||μ'b12:P0->P1.<μ_:P0->P1.<b12:P0->P1||alt8:P0->P1>||μ'_:P0->P1.<r1_1:P0->P1||alt8:P0->P1>>>
+: Debate about 'a2_0' (P2[t]), 2 sub-debate(s) cited by name:
+:   μalt1:P2.<?u1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<μalt8:P1->P2.<?u2:P1->P2||μ'b8:P1->P2.<μ_:P1->P2.<b8:P1->P2||alt8:P1->P2>||μ'_:P1->P2.<μalt9:P1->P2.<r2_0:P1->P2||μ'b9:P1->P2.<μ_:P1->P2.<b9:P1->P2||alt9:P1->P2>||μ'_:P1->P2.<r2_1:P1->P2||alt9:P1->P2>>>||alt8:P1->P2>>>||anon_1:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<μalt4:P1->P2.<?u3:P1->P2||μ'b4:P1->P2.<μ_:P1->P2.<b4:P1->P2||alt4:P1->P2>||μ'_:P1->P2.<μalt5:P1->P2.<r2_1:P1->P2||μ'b5:P1->P2.<μ_:P1->P2.<b5:P1->P2||alt5:P1->P2>||μ'_:P1->P2.<r2_0:P1->P2||alt5:P1->P2>>>||alt4:P1->P2>>>||anon_1:P1*th:P2>||a2_0:P2>||alt2:P2>>>||alt1:P2>>>
+:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?u4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||!u5:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_2:P0->P1||!u6:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>||alt6:P1>>>
+:   anon_2[?:P0->P1] := μalt10:P0->P1.<?u7:P0->P1||μ'b10:P0->P1.<μ_:P0->P1.<b10:P0->P1||alt10:P0->P1>||μ'_:P0->P1.<μalt11:P0->P1.<r1_0:P0->P1||μ'b11:P0->P1.<μ_:P0->P1.<b11:P0->P1||alt11:P0->P1>||μ'_:P0->P1.<r1_1:P0->P1||alt11:P0->P1>>>||alt10:P0->P1>>>
 
-The first line is the issue's definition: the obligation ?u1 for P2
-wrapped in two support scaffolds, one per supporter, as in lesson 9. Each
-supporter's body applies its rule to a site for P1, and at both sites
-stands =anon_2:P1=, a citation. Where the rule stood stands =anon_1:P1->P2=:
-the rule is an exposed node, and its statement =P1 -> P2= has a second
-derivation, the other axiom. The second line is that debate: the
-obligation ?u2 under the support scaffolds of =r2_0= and =r2_1=. The
-third is the debate about P1, written once: the obligation ?u3 wrapped
-in a1_0's and a1_1's support scaffolds, each resting on the debate about
-=P0 -> P1= (=anon_3=, the fourth line) and a presumption of P0.
+The first line is the root: the obligation ?u1 for P2 under one support
+scaffold whose scion is the stack of a2_1 and a2_0, a2_0 on top - the
+term is a2_0's. Each supporter applies its rule to a site for P1, and at
+both sites stands =anon_1:P1=, a citation. Where the rule stood stands
+the debate about =P1 -> P2=: the rule is an exposed node, and its
+statement has a second derivation, the other axiom. That debate is
+written out twice, and differently. Under a2_1 it is the canonical one,
+its stack r2_0 then r2_1, the last registered on top. Under a2_0 it is a
+variant: a2_0 has primacy, which reaches its own axiom, so r2_0 is on
+top. Each is needed once, so neither is named. The second line is P1's
+debate, written once: the obligation ?u4 under the stack of a1_0 and
+a1_1, each resting on the debate about =P0 -> P1= (=anon_2=, the third
+line) and a presumption of P0.
 
 Three things to notice.
 
-  - P1's debate is called =anon_2=. Two arguments conclude P1, so no
+  - P1's debate is called =anon_1=. Two arguments conclude P1, so no
     single name is the author's for *the debate about P1*; a1_0 names
-    its own supporter edge, not the contest it is part of. The same
-    holds for the implications: two axioms derive each.
+    its own supporter edge, not the contest it is part of.
   - P0 is not named, although it too is needed twice. Its definition is
     the bare site =!u:P0= - a0 presumes it and nobody contests it - and a
-    bare site is written in place: =!u4:P0= and =!u5:P0=.
-  - The header =anon_2[?:P1, ?:P0->P1, !:P0]= lists what the sub-debate
-    rests on: its own obligation ?:P1 (the innermost original of every
-    scaffold), the obligation of the implication's debate it cites, and
-    the presumption !:P0 its supporters use.
+    bare site is written in place: =!u5:P0= and =!u6:P0=.
+  - The header =anon_1[?:P1, ?:P0->P1, !:P0]= lists what the sub-debate
+    rests on: its own obligation ?:P1 (the root), the obligation of the
+    implication's debate it cites, and the presumption !:P0 its
+    supporters use.
 
-Unfolded, the same debate is 181 nodes and holds the third and fourth
-lines twice, under =a2_0= and under =a2_1=, with a1_0 and a1_1 renamed
-=a1_0_2= and =a1_1_2= in the second copy. Shared, it is 93 nodes. =label=
-and =evaluate= give:
+Unfolded for a2_0, the same debate is 181 nodes and holds the second and
+third lines twice, under =a2_0= and under =a2_1=, with a1_0 and a1_1
+renamed =a1_0_2= and =a1_1_2= in the second copy. Shared, its six
+definitions (two of them variants) are 110 nodes; the issue's own debate,
+without the bias, is 93 (the table above). =label= and =evaluate= give:
 
 : Grounded labelling for 'a2_0':
 :   P0->P1                                   term     IN
@@ -205,17 +221,18 @@ and =evaluate= give:
 :   P1->P2                                   term     IN
 :   P2                                       term     IN
 : Evaluated 'a2_0' (skeptical, preferred, base cbn): VALUE
-:   normal form: μa2_1:P2.<r2_1:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_1:P2>
+:   normal form: μa2_0:P2.<r2_0:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_0:P2>
 
 ** Exercises
 
-1. =share a1_0.= on the same document prints two lines and names one
-   sub-debate. Which, and why not P1's own?
+1. =share a1_0.= on the same document prints one line and names nothing.
+   Why is the debate about =P0 -> P1= not named, although both
+   supporters of P1 need it?
 2. Give each level three supporters instead of two. How do the number of
    definitions, the size of the shared form and the size of the unfolded
    term grow with the number of levels?
 3. Under what circumstances would the debate about P1 be called =a1_0=
-   rather than =anon_2=?
+   rather than =anon_1=?
 
 * Lesson 15 - Captures and cuts
 
@@ -233,6 +250,13 @@ accumulates them from the outside in, inner ones overriding, and applies
 the unfolder's three cases in the unfolder's order: captured first, then
 cut, then expanded.
 
+In the stacked shape every binder captures, the scaffolds' own included
+(minicourse-evaluation.org, lesson 13): a support scaffold's =b= binds
+its statement over the stack, and an attack's =alt= the contrary over
+its wing. So a citation inside a stack records the scaffold's =b= as a
+capture of the statement being supported, and capture alone ends the
+unfolding; the cuts remain for the record.
+
 Printed, a citation shows that information in brackets, in the author's
 notation:
 
@@ -243,7 +267,7 @@ left open": an arrow marks a captured statement and names the capturing
 binder; a bare marker is a cut. The markers are the term printer's:
 =?:A= and =!:A= for an obligation and a presumption on the term side,
 =A:?= and =A:!= on the context side. A citation of a sub-debate that
-nothing captures or cuts shows no bracket at all, as =anon_2= in lesson
+nothing captures or cuts shows no bracket at all, as =anon_1= in lesson
 14.
 
 A capture can hit *any* statement the sub-debate reaches, not only a
@@ -267,45 +291,43 @@ even loop of tests/rationality/even_loop_lk.fspy, with P argued twice.
 
 =share p1.=:
 
-: Debate about 'p1' (P[t]), 3 sub-debate(s) cited by name:
-:   μalt3:P.<μalt2:P.<μalt1:P.<?u1:P||μ'b2:P.<μ_:P.<b2:P||alt1:P>||μ'_:P.<μp1:P.<μrule:P.<anon_1:(Q->false)->P||anon_2[rule -> P:!, ?:P]:Q->false*rule:P>||p1:P>||alt1:P>>>||μ'b3:P.<μ_:P.<b3:P||alt2:P>||μ'_:P.<μp2:P.<μrule_2:P.<anon_1:(Q->false)->P||anon_2[rule_2 -> P:!, ?:P]:Q->false*rule_2:P>||p2:P>||alt2:P>>>||μ'b5:P.<μ_:P.<b5:P||μ'x4:P.<x4:P||u2:P!>>||μ'_:P.<b5:P||alt3:P>>>
-:   anon_1[?:(Q->false)->P] := μalt5:(Q->false)->P.<μalt4:(Q->false)->P.<?u3:(Q->false)->P||μ'b7:(Q->false)->P.<μ_:(Q->false)->P.<b7:(Q->false)->P||alt4:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt4:(Q->false)->P>>>||μ'b8:(Q->false)->P.<μ_:(Q->false)->P.<b8:(Q->false)->P||alt5:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt5:(Q->false)->P>>>
-:   anon_2[?:Q->false, ?:(Q->false)->P, P:!, Q:!] := μalt7:Q->false.<μalt6:Q->false.<?u4:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt6:Q->false>||μ'_:Q->false.<λh:Q.μalpha:false.<h:Q||anon_3[h -> ?:Q, ?:Q->false]:Q>||alt6:Q->false>>>||μ'b11:Q->false.<μ_:Q->false.<b11:Q->false||alt7:Q->false>||μ'_:Q->false.<λh_2:Q.μalpha_2:false.<h_2:Q||anon_3[h_2 -> ?:Q, ?:Q->false]:Q>||alt7:Q->false>>>
-:   anon_3[?:(Q->false)->P, ?:Q->false, P:!, Q:!] := μ'alt8:Q.<μb13:Q.<μ_:Q.<alt8:Q||b13:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<qRule:(P->false)->Q||λh_3:P.μalpha_3:false.<h_3:P||μ'alt10:P.<μb16:P.<μ_:P.<alt10:P||b16:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<anon_1:(Q->false)->P||anon_2[rule_3 -> Q:!, h_3 -> ?:P, rule_5 -> P:!, ?:Q]:Q->false*rule_5:P>||p2_2:P>||b16:P>>||μ'alt9:P.<μb15:P.<μ_:P.<alt9:P||b15:P>||μ'_:P.<μp1_2:P.<μrule_4:P.<anon_1:(Q->false)->P||anon_2[rule_3 -> Q:!, h_3 -> ?:P, rule_4 -> P:!, ?:Q]:Q->false*rule_4:P>||p1_2:P>||b15:P>>||u5:P!>>>*rule_3:Q>||q:Q>||b13:Q>>||u6:Q!>
+: Debate about 'p1' (P[t]), 1 sub-debate(s) cited by name:
+:   μalt5:P.<μalt1:P.<?u1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μalt2:P.<μp2:P.<μrule_2:P.<μalt12:(Q->false)->P.<?u2:(Q->false)->P||μ'b12:(Q->false)->P.<μ_:(Q->false)->P.<b12:(Q->false)->P||alt12:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13:(Q->false)->P.<μ_:(Q->false)->P.<b13:(Q->false)->P||alt13:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13:(Q->false)->P>>>||alt12:(Q->false)->P>>>||μalt14:Q->false.<?u3:Q->false||μ'b14:Q->false.<μ_:Q->false.<b14:Q->false||alt14:Q->false>||μ'_:Q->false.<μalt15:Q->false.<λh_5:Q.μalpha_5:false.<h_5:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b14 -> ?:Q->false, h_5 -> ?:Q]:Q>||μ'b15:Q->false.<μ_:Q->false.<b15:Q->false||alt15:Q->false>||μ'_:Q->false.<λh_6:Q.μalpha_6:false.<h_6:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b15 -> ?:Q->false, h_6 -> ?:Q]:Q>||alt15:Q->false>>>||alt14:Q->false>>>*rule_2:P>||p2:P>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<μp1:P.<μrule:P.<μalt6:(Q->false)->P.<?u4:(Q->false)->P||μ'b6:(Q->false)->P.<μ_:(Q->false)->P.<b6:(Q->false)->P||alt6:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7:(Q->false)->P.<μ_:(Q->false)->P.<b7:(Q->false)->P||alt7:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7:(Q->false)->P>>>||alt6:(Q->false)->P>>>||μalt10:Q->false.<?u5:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt10:Q->false>||μ'_:Q->false.<μalt11:Q->false.<λh_4:Q.μalpha_4:false.<h_4:Q||anon_1[rule -> P:!, b2 -> ?:P, b10 -> ?:Q->false, h_4 -> ?:Q]:Q>||μ'b11:Q->false.<μ_:Q->false.<b11:Q->false||alt11:Q->false>||μ'_:Q->false.<λh_3:Q.μalpha_3:false.<h_3:Q||anon_1[rule -> P:!, b2 -> ?:P, b11 -> ?:Q->false, h_3 -> ?:Q]:Q>||alt11:Q->false>>>||alt10:Q->false>>>*rule:P>||p1:P>||alt2:P>>>||alt1:P>>>||μ'b5:P.<μ_:P.<b5:P||alt5:P>||μ'_:P.<b5:P||alt5:P>>>
+:   anon_1[?:(Q->false)->P, ?:Q->false, P:!, Q:!] := μ'alt8:Q.<μb8:Q.<μ_:Q.<alt8:Q||b8:Q>||μ'_:Q.<μalt9:Q.<alt8:Q||μ'b9:Q.<μ_:Q.<b9:Q||alt9:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<qRule:(P->false)->Q||λh_2:P.μalpha_2:false.<h_2:P||μ'alt16:P.<μb16:P.<μ_:P.<alt16:P||b16:P>||μ'_:P.<μalt17:P.<alt16:P||μ'b17:P.<μ_:P.<b17:P||alt17:P>||μ'_:P.<μalt18:P.<μp1_2:P.<μrule_4:P.<μalt6_2:(Q->false)->P.<?u6:(Q->false)->P||μ'b6_2:(Q->false)->P.<μ_:(Q->false)->P.<b6_2:(Q->false)->P||alt6_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7_2:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7_2:(Q->false)->P.<μ_:(Q->false)->P.<b7_2:(Q->false)->P||alt7_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7_2:(Q->false)->P>>>||alt6_2:(Q->false)->P>>>||μalt10_2:Q->false.<?u7:Q->false||μ'b10_2:Q->false.<μ_:Q->false.<b10_2:Q->false||alt10_2:Q->false>||μ'_:Q->false.<μalt11_2:Q->false.<λh_4_2:Q.μalpha_4_2:false.<h_4_2:Q||rule_3:Q>||μ'b11_2:Q->false.<μ_:Q->false.<b11_2:Q->false||alt11_2:Q->false>||μ'_:Q->false.<λh_3_2:Q.μalpha_3_2:false.<h_3_2:Q||rule_3:Q>||alt11_2:Q->false>>>||alt10_2:Q->false>>>*rule_4:P>||p1_2:P>||μ'b18:P.<μ_:P.<b18:P||alt18:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<μalt12_2:(Q->false)->P.<?u8:(Q->false)->P||μ'b12_2:(Q->false)->P.<μ_:(Q->false)->P.<b12_2:(Q->false)->P||alt12_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13_2:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13_2:(Q->false)->P.<μ_:(Q->false)->P.<b13_2:(Q->false)->P||alt13_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13_2:(Q->false)->P>>>||alt12_2:(Q->false)->P>>>||μalt14_2:Q->false.<?u9:Q->false||μ'b14_2:Q->false.<μ_:Q->false.<b14_2:Q->false||alt14_2:Q->false>||μ'_:Q->false.<μalt15_2:Q->false.<λh_5_2:Q.μalpha_5_2:false.<h_5_2:Q||rule_3:Q>||μ'b15_2:Q->false.<μ_:Q->false.<b15_2:Q->false||alt15_2:Q->false>||μ'_:Q->false.<λh_6_2:Q.μalpha_6_2:false.<h_6_2:Q||rule_3:Q>||alt15_2:Q->false>>>||alt14_2:Q->false>>>*rule_5:P>||p2_2:P>||alt18:P>>>||alt17:P>>>||b16:P>>||u10:P!>>*rule_3:Q>||q:Q>||alt9:Q>>>||b8:Q>>||u11:Q!>
 
-Three sub-debates are named. =anon_1= is the debate about the rule
-=(Q -> false) -> P=, which =pRule1= and =pRule2= both derive. =anon_2= is
-the debate about =Q -> false=: p1's and p2's lambdas =λh:Q. ...= are
-exposed nodes with that statement, each the other's alternative, so the
-lambda is cited where it stood and its definition stacks both. =anon_3=
-is the debate about "Q fails" - the statement Q[c] - needed inside each
-lambda. The citations carry brackets:
+One sub-debate is named: =anon_1=, the debate about "Q fails" - the
+statement Q[c] - needed inside each of the four lambdas =λh:Q. ...= at
+the root: each of the two debates about =Q -> false= written out there
+stacks p1's lambda and p2's. Everything else is written in place, because each copy
+is needed once: under p2 the debates about the rule
+=(Q -> false) -> P= and about the lambda's statement =Q -> false= are the
+canonical ones; under p1, which has primacy, they are variants with p1's
+own axiom (=pRule1=) and p1's own lambda on top. The four citations
+carry brackets:
 
-: anon_2[rule -> P:!, ?:P]:Q->false       inside p1
-: anon_2[rule_2 -> P:!, ?:P]:Q->false     inside p2
-: anon_3[h -> ?:Q, ?:Q->false]:Q          inside the first lambda of anon_2
-: anon_3[h_2 -> ?:Q, ?:Q->false]:Q        inside the second
+: anon_1[rule_2 -> P:!, b1 -> ?:P, b14 -> ?:Q->false, h_5 -> ?:Q]:Q   under p2, first lambda
+: anon_1[rule_2 -> P:!, b1 -> ?:P, b15 -> ?:Q->false, h_6 -> ?:Q]:Q   under p2, second lambda
+: anon_1[rule -> P:!, b2 -> ?:P, b10 -> ?:Q->false, h_4 -> ?:Q]:Q     under p1, first lambda
+: anon_1[rule -> P:!, b2 -> ?:P, b11 -> ?:Q->false, h_3 -> ?:Q]:Q     under p1, second lambda
 
 =rule -> P:!= says that p1's continuation =rule= (the binder of
 =cut ((Q -> false) -> P) rule=) captures "P fails": wherever the
-sub-debate would need a refutation of P, it gets =rule=. =?:P= is a cut:
-P[t] is the issue, already being expanded, so a demand for it inside the
-sub-debate stays an open obligation. In p2 the same is captured and cut,
-under p2's own names. Inside the lambda's definition, =h -> ?:Q= says
-that its hypothesis =h= captures Q, and =?:Q->false= that the lambda's
-own statement is being expanded there. The capture by =rule= reaches
-"Q fails" through the citation of the lambda: expansion accumulates the
-brackets from the outside in.
+sub-debate would need a refutation of P, it gets =rule=. =b2 -> ?:P= is
+the capture by the =b= of P's stack (the stack's scaffold binds P over
+its scion), and =b10 -> ?:Q->false= that by the =b= of the lambda's
+stack; =h_4 -> ?:Q= says the lambda's hypothesis captures Q. Under p2
+the same, under p2's own names.
 
-The last definition line shows the unused part. Built without a scope,
-=anon_3= expands "P fails" into the whole debate about P[c] - the
-attacks by p1 and p2, written =p1_2= and =p2_2= - and *inside those* the
-lambda is cited again, with Q[c] captured by =rule_3=, q's own
-continuation. At every citation site "P fails" is captured by =rule=, so
-that part of the definition is never used. Expanding the citations gives
-the unfolded term, 183 nodes, while the shared form is 126: here sharing
-saves little. It is still the same debate, as the test checks, and the
-labels are the even loop's, with the two rules IN:
+The definition line shows the unused part. Built without a scope,
+=anon_1= expands "P fails" into the whole debate about P[c] - the
+attacks by p1 and p2, written =p1_2= and =p2_2= - and inside those the
+lambdas are written out again, with "Q fails" captured by =rule_3=, q's
+own continuation, a binder of the definition itself. At every citation
+site "P fails" is captured by =rule= or =rule_2=, so that part of the
+definition is never used. Expanding the citations gives the unfolded
+term, 213 nodes, while the shared form is 180: here sharing saves
+little. It is still the same debate, as the test checks, and the labels
+are the even loop's, with the two rules IN:
 
 : Grounded labelling for 'p1':
 :   (Q->false)->P                            term     IN
@@ -319,13 +341,13 @@ labels are the even loop's, with the two rules IN:
 
 ** Exercises
 
-1. =share q.= names the rule's debate and the lambda's, but not the
-   debate about "P fails". Why is that not named there, although p1 and
-   p2 both attack it?
+1. =share q.= names the debates about the rule and about =Q -> false=,
+   but not the debate about "P fails". Why is that not named there,
+   although p1 and p2 both attack it?
 2. Remove =p2= from the fixture. What does =share p1.= print?
-3. Inside =anon_3='s definition, the citations of the lambda under =p1_2=
-   and =p2_2= carry =rule_3 -> Q:!=. Which rule of the unfolder is that,
-   and why is it a bracket here and not the variable itself?
+3. Inside =anon_1='s definition, "Q fails" is the variable =rule_3=
+   itself, while at the root the four lambdas cite it with a bracket.
+   Why the difference?
 
 * Lesson 16 - The type check, one definition at a time
 
@@ -350,7 +372,9 @@ grow, so a skeleton that type-checked once still does, and a later
 =label= on the same document replays nothing it has seen.
 =typecheck expanded.= (or =FSP_TYPECHECK=expanded=) selects the old
 whole-term replay, which is the reference the per-definition check is
-tested against; both accept and reject the same documents.
+tested against; both accept and reject the same documents. Since the
+port the skeletons are stacked definitions, so the check replays the
+shape that is evaluated.
 
 *One statement, two spellings.* The graph identifies =~Q= with
 =Q -> false= (=canonical_prop=, lesson 2); Fellowship does not. When one
@@ -375,17 +399,19 @@ aida-negation-spelling-in-unfolding; the fallback keeps it as it was.
 : ...
 : typecheck      replaying 'a2_0_3' (theorem P1) as 31 instruction(s)
 : ...
-: typecheck      replaying 'a2_0_4' (theorem P0->P1) as 17 instruction(s)
+: typecheck      replaying 'a2_0_4' (theorem P1->P2) as 17 instruction(s)
 : ...
-: typecheck      'a2_0' - 4 definition(s) replayed, 1 already checked or bare
+: typecheck      replaying 'a2_0_5' (theorem P0->P1) as 17 instruction(s)
+: ...
+: typecheck      'a2_0' - 5 definition(s) replayed, 1 already checked or bare
 
-The term sent for P2 is the first line of =share a2_0.= with its four
-citations replaced by obligations: =?u2:P1->P2||?u3:P1= under a2_0 and
-=?u4:P1->P2||?u5:P1= under a2_1. P1's skeleton is the third line with
-its sites numbered from u1 again and its citations of the implication
-open as well. P0's definition is bare and is not replayed. Four replays
-of 29, 17, 31 and 17 instructions, where the unfolded term needs 185
-(=typecheck expanded.=).
+The term sent for P2 is the first line of =share a2_0.= with its
+citations - and the two debates about =P1 -> P2= written in place there -
+replaced by obligations: =?u2:P1->P2||?u3:P1= under a2_1 and
+=?u4:P1->P2||?u5:P1= under a2_0. The two replays for =P1 -> P2= are its
+variant and its canonical debate. P0's definition is bare and is not
+replayed. Five replays of 29, 17, 31, 17 and 17 instructions, where the
+unfolded term needs 185 (=typecheck expanded.=).
 
 tests/minicourse/lesson16_spelling.fspy: =p= needs =~Q=, =nq= derives
 =Q -> false=. =label p.=:
@@ -409,19 +435,26 @@ tests/minicourse/lesson16_spelling.fspy: =p= needs =~Q=, =nq= derives
 
 ** Definition
 
-An *instance* is a statement together with the statements captured and
-cut in it - restricted to what the statement can reach - and it is the
+An *instance* is a definition together with the statements captured and
+cut in it - restricted to what its statement can reach - and it is the
 unit the compiler and the strict phase work on. Two citations of the
-same statement under the same captures and cuts, like the two in lesson
-15, are one instance: the binders' names are parameters, written =§=
-internally, not part of the key. Where nothing is captured, there is
-exactly one instance per statement.
+same definition under the same captures and cuts, like the four in
+lesson 15, are one instance: the binders' names are parameters, written
+=§= internally, not part of the key. Where nothing is captured, there is
+exactly one instance per definition.
 
 Why not one definition? Strictness is read off the concrete term (lesson
 10). A sub-debate whose only site is captured is strict; the same
 sub-debate with that site open is not. So the same definition is decided
 differently under different captures, and what can be memoised is the
-instance.
+instance. In the stacked shape what captures matters as well: a
+statement captured by an argument's binder is a commitment the debate
+made, one captured by an attack's =alt= stands for an open site, and one
+captured by a scaffold's =b= is as strict as the original =b= stands for
+(minicourse-evaluation.org, lesson 13). The strict phase therefore
+chooses the instance where it meets the citation, under the scaffold
+variables in scope there; such a choice is a variant of the instance for
+the strict phase alone, and is not counted as an instance.
 
 =IssueResolver= (=core/dc/instances.py=) does two things with
 instances.
@@ -430,29 +463,31 @@ instances.
 citation replaced by what the unfolder would put there: the capturing
 variable, a bare site for a cut statement, or - for a cited instance - a
 citation leaf that the compiler reads as a *source* of the cited
-statement, of the kind the statement's own site has. Meeting that leaf,
+statement, of the kind the cited debate's root has. Meeting that leaf,
 the compiler first compiles the cited instance (a hook on the compiler's
 citation branch), so the edges come out in the order the unfolded term
-would give them, each once. The issue graph was the union until
-2026-10-15. Since then the issue graph is the part of the document graph
-reachable from the issue (minicourse-evaluation.org, lesson 8a), the
-instances contribute only their strict edges, and the instance compiler
-is called from Python only (=IssueResolver(shared, names).compile(name)=;
-the CLI setting =issue-graph term.= that selected it is retired since
-2026-10-16).
+would give them, each once. A cited debate whose root is no scaffold the
+compiler recognises (an attack whose wing is only its own =alt=) is read
+by the compiler as a sub-argument of the body it stands in; the
+instance is written out there one level instead. The issue graph was the
+union until 2026-10-15. Since then the issue graph is the part of the
+document graph reachable from the issue (minicourse-evaluation.org,
+lesson 8a), the instances contribute only their strict edges, and the
+instance compiler is called from Python only
+(=IssueResolver(shared, names).compile(name)=).
 
-*Resolve.* =strict_resolve= is unchanged. It runs on an instance's term
-in which each cited instance is a *stub*: a chain of leaves holding
-exactly what an enclosing scaffold may ask of the resolved instance - an
-open site if one remains in it, the captured variables still free in it,
-and whether a strict decision was made inside. The strict phase's own
-predicates (open sites, free names, decisions) read a stub like any
-subterm, so a scaffold is decided here exactly as it is on the unfolded
-term. Cited instances are resolved first and memoised.
+*Resolve.* =strict_resolve= runs on an instance's term in which each
+cited instance is a *stub*: a chain of leaves holding exactly what an
+enclosing scaffold may ask of the resolved instance - an open site if
+one remains in it, the captured variables still free in it, and whether
+a strict decision was made inside. The strict phase's own predicates
+(open sites, free names, decisions) read a stub like any subterm, so a
+scaffold is decided here exactly as it is on the unfolded term. Cited
+instances are resolved where the strict phase meets them, and memoised.
 
 *Strict edges* are collected across stubs, as the collector of lesson 10
-collects them: the outermost closed subterms that owe their closedness to
-a decision. Only such a subterm is written out in full, because =adopt=
+collects them: the outermost closed copies of arguments defeasible as
+registered. Only such a subterm is written out in full, because =adopt=
 replays it. =fold_occurrences= then has nothing to fold: where the
 unfolded term gave one edge per copy (a1_0 and a1_0_2), the instance
 gives one.
@@ -463,72 +498,83 @@ tests/minicourse/lesson17_instances.fspy: lesson 14's document plus a
 strict refutation of P0, the counterargument =k= from the axiom
 =np0 : ~P0=.
 
-=share a2_0.= now names four sub-debates. P0's definition is no longer
+=share a2_0.= now names three sub-debates. P0's definition is no longer
 bare - k contests it - and it is needed twice, so it is named; and since
 =a0= is the one argument about P0[t], it is called =a0=:
 
-:   anon_2[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<μalt5:P1.<?u3:P1||...||μ'_:P1.<μa1_0:P1.<μth_3:P1.<anon_3:P0->P1||a0:P0*th_3:P1>||a1_0:P1>||alt5:P1>>>||...>
-:   a0[!:P0] := μalt9:P0.<!u5:P0||μ'b14:P0.<μ_:P0.<b14:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<b14:P0||alt9:P0>>>
+: Debate about 'a2_0' (P2[t]), 3 sub-debate(s) cited by name:
+:   ...                    (the root: lesson 14's first line)
+:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?u4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||a0:P0*th_3:P1>||...
+:   ...                    (anon_2: lesson 14's third line, its site u5)
+:   a0[!:P0] := μalt12:P0.<!u6:P0||μ'b12:P0.<μ_:P0.<b12:P0||μ'alt13:P0.<μb13:P0.<μ_:P0.<alt13:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<alt13:P0||b13:P0>>||alt12:P0>>||μ'_:P0.<b12:P0||alt12:P0>>>
 
 The instance compiler's DEBUG log (=IssueResolver(...).compile("a2_0")=),
-then the strict stage of =explain a2_0.= with =pipeline shared.=,
-without the terms. The axioms are supporters, each in its implication's
-debate:
+then the strict stage of =explain a2_0.=, without the terms. The axioms
+are supporters, each in its implication's debate:
 
 : compile        framework of 'a2_0', one instance of a sub-debate at a time
-: compile        edge 'r2_1' (supporter, strict) P1->P2[t] <- -
 : compile        edge 'r2_0' (supporter, strict) P1->P2[t] <- -
-: compile        edge 'r1_1' (supporter, strict) P0->P1[t] <- -
+: compile        edge 'r2_1' (supporter, strict) P1->P2[t] <- -
 : compile        edge 'r1_0' (supporter, strict) P0->P1[t] <- -
+: compile        edge 'r1_1' (supporter, strict) P0->P1[t] <- -
 : compile        edge 'np0' (subargument, strict) ~P0[t] <- -
 : compile        edge 'k' (attacker, strict) P0[c] <- ~P0[t]:suba@np0
-: compile        edge 'a1_1' (supporter, defeasible) P1[t] <- P0->P1[t]:obli@§7, P0[t]:pres@§8
 : compile        edge 'a1_0' (supporter, defeasible) P1[t] <- P0->P1[t]:obli@§5, P0[t]:pres@§6
-: compile        edge 'a2_1' (supporter, defeasible) P2[t] <- P1->P2[t]:obli@§3, P1[t]:obli@§4
-: compile        edge 'a2_0' (supporter, defeasible) P2[t] <- P1->P2[t]:obli@§1, P1[t]:obli@§2
+: compile        edge 'a1_1' (supporter, defeasible) P1[t] <- P0->P1[t]:obli@§7, P0[t]:pres@§8
+: compile        edge 'a2_1' (supporter, defeasible) P2[t] <- P1->P2[t]:obli@§1, P1[t]:obli@§2
+: compile        edge 'a2_0' (supporter, defeasible) P2[t] <- P1->P2[t]:obli@§3, P1[t]:obli@§4
 : strict         P1->P2[t] supporter strict
 : strict         P1->P2[t] supporter strict
 : strict         P0->P1[t] supporter strict
 : strict         P0->P1[t] supporter strict
+: strict         P0[c] supporter strict
 : strict         P0[c] attacker strict: defeat
 : strict         P1[t] delayed for the labelling (neither the original nor the supporter is strict)
 : strict         P1[t] delayed for the labelling (neither the original nor the supporter is strict)
+: strict         P1->P2[t] supporter strict
+: strict         P1->P2[t] supporter strict
 : strict         P2[t] delayed for the labelling (neither the original nor the supporter is strict)
 : strict         P2[t] delayed for the labelling (neither the original nor the supporter is strict)
-: strict         5 decision(s), 0 strict edge(s) for 'a2_0' over 5 instance(s)
+: strict         no edge for 'a2_1' on P2[t]: not closed (an open site remains)
+: strict         no edge for 'a1_0' on P1[t]: not closed (an open site remains)
+: strict         no edge for 'a1_1' on P1[t]: not closed (an open site remains)
+: strict         no edge for 'a2_0' on P2[t]: not closed (an open site remains)
+: strict         8 decision(s), 0 strict edge(s) for 'a2_0' over 6 instance(s)
 
-Five instances, resolved innermost first. The two implications' debates
-are decided by strictness: each stack is two axioms, strict, against an
-obligation root, so the supporter wins twice, and the debate is the
-last registered axiom. In P0's instance, k's refutation has no site and
-the original =!u13= is one, so the attacker wins: defeat, the clash of
-lesson 10, decided *once*. In P1's term the citations of the implication
-are stubs of a strict instance, and the two citations of P0 are the stub
-=a0= - printed by its name, since the instance is named - which carries
-an open site, because the defeat left =!u13= in place. So neither
-supporter of P1 is strict, and both scaffolds are delayed. In P2's term
-the stubs for P1 carry P1's open obligation, and the same follows. The
-unfolded term holds P0's attack four times, under each of the four
-supporters, and =pipeline unfolded.= decides it four times. (=explain=
-prints the terms going in and out as trees, a stub by its name.)
+Six instances: P2's root (a2_0's variant), the two debates about
+=P1 -> P2= (the variant under a2_0, the canonical one under a2_1), P1's,
+=P0 -> P1='s and P0's, resolved where the strict phase meets them. The
+implications' debates are decided by strictness: each stack is two
+axioms, strict, against an obligation root, so each stack keeps its top
+and the root its stack - two decisions per debate. In P0's instance the
+attacker wing is k's: strict, so the wing is decided first (k is a
+supporter of P0[c] there), and then the attack, against the presumption
+=!u6:P0=, which is not strict: defeat, the clash of lesson 10, decided
+*once*. In P1's term the citations of P0 are the stub =a0= - printed by
+its name, since the instance is named - which carries an open site,
+because the defeat left =!u6= in place. So neither scaffold of P1 is
+strict, and both are delayed; in P2's term the stubs for P1 carry P1's
+open obligation, and the same follows. The unfolded term holds P0's
+attack four times, under each of the four supporters, and
+=pipeline unfolded.= decides it four times. (=explain= prints the terms
+going in and out as trees, a stub by its name.)
 
 The labelling and the evaluation are what they are on the unfolded term:
 
-: label            [1] P1->P2[t]=IN  P0->P1[t]=IN  ~P0[t]=IN  P0[c]=IN  P1[t]=OUT  P0[t]=OUT  P2[t]=OUT
-: sigma          supporter P2[t] is OUT -> keep the original, dropping the supporter
-: sigma          supporter P2[t] is OUT -> keep the original, dropping the supporter
+: label            [1] ~P0[t]=IN  P0[c]=IN  P0->P1[t]=IN  P1[t]=OUT  P0[t]=OUT  P1->P2[t]=IN  P2[t]=OUT
+: sigma          supporter P2[t] is OUT -> keep the original, dropping the supporter and the 1 scaffold(s) inside it
 : Evaluated 'a2_0' (skeptical, preferred, base cbn): OPEN
 :   normal form: ?OUT:P2
 
 ** Exercises
 
-1. Lesson 15's debate has two citations of "Q fails" and four instances
-   in all. What are the captures of the instance of "Q fails", and why do
-   the two citations not give two instances?
-2. In lesson 15, the strict phase makes three decisions; two are the
-   rule's axioms. Which scaffold is the third, and why is that wing
-   strict there when the same argument's body in the document has an
-   open site?
+1. Lesson 15's debate cites "Q fails" four times. What are the captures
+   of its instance, and why do the four citations not give four
+   instances?
+2. In lesson 15, the strict phase decides the rule's debate four times
+   and q's two scaffolds once each. Why is q's attack on "Q fails"
+   decided by strictness there, when the same argument's body in the
+   document has an open site?
 3. A decision was made in P0's instance, yet no strict edge is
    contributed. Which condition of the collector fails?
 
@@ -539,33 +585,36 @@ The labelling and the evaluation are what they are on the unfolded term:
 =evaluate_shared= (=core/comp/evaluate.py=) runs the pipeline of the
 first sequel on the shared debate. Phase 1 is the per-instance strict
 phase of lesson 17, already done when the issue graph was built. Phase 2
-is =resolve_scaffolds=, walking top-down from the issue's resolved term
+is =resolve_scaffolds=, walking top-down from the root's resolved term
 as before, with one addition: when the walk reaches a stub, it writes
 the cited instance out one level - its resolved term, under the names
 the captured variables have at that site, still holding stubs for what
 it cites in turn. The walk only reaches a stub inside a wing it keeps.
 A dropped wing is never written out at all.
 
-To decide a scaffold, phase 2 compiles the scion (lesson 11). A stub
-inside the scion is read as the compiler reads it: as a source of its
-statement, when the resolved instance still has the statement's own site
-as its innermost original; opened one level and read on, otherwise.
+To decide a scaffold, phase 2 judges its scion by what it stands for
+(minicourse-evaluation.org, lesson 11). A stub stands for its resolved
+instance, judged under what its captured variables stand for at the
+site; and where the compiler must read a scion's sources, a stub is a
+source of its statement when the resolved instance still has the
+statement's own site as its innermost original, and is opened one level
+and read on otherwise.
 
-After phase 2 the sites are renumbered in reading order, since an
-instance written out in two places brings the same sites twice, and
-phase 3 normalises as before. What is normalised has the size of the
+After phase 2 the labels are discharged into the sites, so a site's name
+is its label and an instance written out in two places brings its sites
+twice with the same names; normalisation follows as before. What is normalised has the size of the
 answer, not of the debate.
 
-*The two routes.* =pipeline shared.= selects this route (the default
-until 2026-10-06; see the note in "About this sequel"); =pipeline unfolded.=
-(or =FSP_PIPELINE=unfolded=) makes =graph=, =label= and =evaluate= build
-the unfolded term and run the first sequel's pipeline on it. The two
-give the same graph, labels, normal form and class; what differs is the
-names of binders and the numbers of sites, which the unfolded route takes
-from the order of unfolding. On every statement of every fixture, in
-both modes and under both base strategies, the two routes have been
-compared and agree. If the shared route ever fails other than by a
-refusal, the CLI warns and runs the unfolded one.
+*The two routes.* =pipeline shared.= selects this route, the default;
+=pipeline unfolded.= (or =FSP_PIPELINE=unfolded=) makes =graph=, =label=
+and =evaluate= build the unfolded term and run the first sequel's
+pipeline on it. The two give the same graph, labels, normal form and
+class, for an issue and for an argument, =favour= included; what differs
+is the names of binders and the numbers of sites, which the unfolded
+route takes from the order of unfolding. On every statement and every
+argument of every fixture, in both modes and under both base strategies,
+the two routes have been compared and agree. If the shared route ever
+fails other than by a refusal, the CLI warns and runs the unfolded one.
 
 *Limits that remain.* The walks recurse: a chain of 90 arguments is
 refused by =evaluate= and one of 150 by =label=, with one line
@@ -579,52 +628,58 @@ debates the shared route is no faster than the unfolded one.
 Lesson 14's document, =explain a2_0.= on the shared route, the sigma
 stage:
 
-: sigma          supporter P2[t] is IN -> keep the supporter, dropping the original and the 1 scaffold(s) inside it
-: sigma          supporter P1[t] is IN -> keep the supporter, dropping the original and the 1 scaffold(s) inside it
-: evaluate       'a2_0' - 4 scaffold(s) decided by strictness over 5 instance(s), 2 by sigma (skeptical tiebreak, base cbn)
+: sigma          supporter P2[t] is IN -> keep the supporter, dropping the original
+: sigma          supporter P2[t] is IN -> keep the supporter, dropping the original
+: sigma          supporter P1[t] is IN -> keep the supporter, dropping the original
+: sigma          supporter P1[t] is IN -> keep the supporter, dropping the original
+: evaluate       'a2_0' - 6 scaffold(s) decided by strictness over 6 instance(s), 4 by sigma (skeptical tiebreak, base cbn)
 : normalise      normal form after 2 step(s) under cbn
 : normalise      the normal form:
-: normalise        μa2_1:P2.<r2_1:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_1:P2>
+: normalise        μa2_0:P2.<r2_0:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_0:P2>
 
-The four strict decisions are the implications' debates (lesson 17),
-each resolved to its last registered axiom. At P2 the outermost scaffold
-- a2_1's - is decided first and keeps its supporter, which contains a
-stub for P1; the stub is opened, its scaffolds decided, and a1_1's
-supporter kept. a2_0's support scaffold, and the second copy of P1's
-debate it would have held, are never written out. Under =pipeline
-unfolded.= the term is the stacked shape unfolded for a2_0, which puts
-a2_0 on top (minicourse-evaluation.org, lesson 8a), so the answer is
-a2_0's:
+The six strict decisions are the implications' debates (lesson 17),
+each resolved to the top of its stack: =r2_0= under a2_0, where a2_0's
+primacy put it on top, =r2_1= under a2_1, and =r1_1= in P1's. At P2 the root's support
+scaffold keeps its stack, and the stack's own scaffold keeps its top,
+a2_0 - the argument the debate is biased towards. a2_0 holds a stub for
+P1; the stub is opened, P1's two scaffolds are decided the same way, and
+a1_1, the top of P1's stack, is kept. a2_1, and the copy of P1's debate
+it would have held, are never written out. Under =pipeline unfolded.=
+the term is a2_0's unfolded term, and the answer is the same:
 
 : normalise        μa2_0:P2.<r2_0:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_0:P2>
 
-Sixteen levels (=bench/gen.py double 16=): =evaluate a16_0.= answers
-VALUE in about a second, and the normal form is a chain of sixteen
-arguments with one presumption site at the bottom - 65 nodes, on the
-generated document of the test - where the unfolded term would have
+Sixteen levels (=bench/gen.py double 16=): evaluating the issue P16
+answers VALUE in about a second, and the normal form is a chain of
+sixteen arguments with one presumption site at the bottom - 65 nodes, on
+the generated document of the test - where the unfolded term would have
 about 3.9 million.
 
 ** Exercises
 
 1. How many sigma decisions does =explain a2_0.= report on lesson 14's
-   document under =pipeline shared.=, and how many under =pipeline
-   unfolded= (the stacked shape, minicourse-evaluation.org lesson 8a)?
-   Why do they differ, and why is it not more on the unfolded route,
-   which holds P1's debate twice?
-2. Why must sites be renumbered after phase 2, and why not before?
-3. In lesson 17's evaluation, P2's two scaffolds are decided and the
-   result is =?u1:P2=. Was any stub opened?
+   document under =pipeline shared.=, and how many strict decisions,
+   and how many of each under =pipeline unfolded.=? Why does the strict
+   count differ and the sigma count not, although the unfolded term
+   holds P1's debate twice?
+2. Why may a sub-debate written out twice bring the same site names
+   twice, and why is that harmless?
+3. In lesson 17's evaluation, P2's root scaffold is decided and the
+   result is =?OUT:P2=. Was any stub opened?
 
 * What this means for the specification
 
 debate-graph-spec.org describes unfolding as the bridge from the graph
 to evaluation (the Layer 2->4 interface). That bridge is now the
 reference route, and the production route computes the same things
-without the term. Three notions deserve a place in the spec:
+without the term. Four notions deserve a place in the spec:
 
-  - the *shared form*: one definition per statement, and citations with
+  - the *shared form*: one definition per debate, and citations with
     captures and cuts;
-  - the *instance*: a statement with the statements captured and cut in
+  - the *variant*: the debate about a statement the unfolder builds with
+    an argument on top or a root of another kind, a definition of its
+    own;
+  - the *instance*: a definition with the statements captured and cut in
     it, the unit at which strictness is read off;
   - *lazy opening*: sigma writes a sub-debate out only inside a wing it
     keeps, so a lost sub-debate costs nothing.
@@ -633,23 +688,26 @@ Open after the sharing work (tasks.org): listing a document's statements
 and arguments from the CLI, and naming an anonymous sub-debate
 (aida-cli-inventory-and-naming); the two spellings of a negation
 (aida-negation-spelling-in-unfolding); the recursion limits
-(aida-deep-term-recursion); and the fallback to the unfolded route,
-which should go once the shared route has seen real documents.
+(aida-deep-term-recursion); sharing composed debates, which are still
+evaluated on their unfolded term; and the fallback to the unfolded
+route, which should go once the shared route has seen real documents.
 
 * Appendix - Solutions
 
 ** Lesson 14
 
-1. For the issue P1[t] there are three definitions: P1's own, the
-   implication P0 -> P1's, and P0's. P0's is a bare site, written in
-   place, and the issue is never named. The implication's debate is cited
-   by both a1_0 and a1_1, so it is named (=anon_3=, the number the
-   document already gave it): two lines.
+1. a1_0's debate has a1_0 on top, and a1_0's primacy reaches its own
+   axiom r1_0: under a1_0 the debate about =P0 -> P1= is a variant with
+   r1_0 on top, under a1_1 it is the canonical one. Two definitions,
+   each needed once, so both are written in place and nothing is named.
+   (P0 differs too: a1_0 demands P0, so under a1_0 P0's debate is a
+   variant with an obligation root and a0's presumption at the bottom;
+   under a1_1 it is the bare presumption.)
 2. Linearly, linearly, and by a factor of three per level: with three
-   supporters per level the shared form has 69, 137, 205 and 273 nodes
-   for one to four levels and the unfolded term 115, 457, 1483 and 4561.
-   The number of definitions is twice the number of levels plus one
-   either way: each level adds its statement and its implication.
+   supporters per level the issue's shared form has 69, 137, 205 and 273
+   nodes for one to four levels and the unfolded term 115, 457, 1483 and
+   4561. The number of definitions is twice the number of levels plus
+   one either way: each level adds its statement and its implication.
 3. When exactly one registered argument or debate is about P1[t].
    Remove a1_1: P1's debate - now a1_0's support scaffold alone - is
    still needed by both supporters of P2, so it is named, and a1_0 is
@@ -659,28 +717,36 @@ which should go once the shared route has seen real documents.
 
 ** Lesson 15
 
-1. Unfolding Q[t] expands q once. Its site "P fails" is not captured by
-   q's binders (=rule= binds Q[c], =h= binds P[t]), so it is expanded in
-   place into the debate about P[c], attacked by p1 and p2 - and that
-   debate occurs once, so it is not named. p1 and p2 inside it each cite
-   the rule's debate and the lambda's, so those two are named. Inside the
-   lambdas the site "Q fails" is captured, by q's continuation =rule=, so
-   the debate about "Q fails" collapses to a variable there.
+1. Unfolding q's debate expands q once. Its site "P fails" is not
+   captured by q's binders (=rule= binds Q[c], =h= binds P[t]), so it is
+   expanded in place into the debate about P[c], attacked by p1 and p2 -
+   and that debate occurs once, so it is not named. p1 and p2 inside it
+   each cite the rule's debate and the lambda's, so those two are named
+   (=anon_2= and =anon_3=, the numbers the document gives them after
+   =share p1.=). Inside the lambdas the site "Q fails" is captured, by
+   q's continuation =rule=, so the debate about "Q fails" collapses to a
+   variable there.
 2. One line, nothing named. With p2 gone, p1's rule and lambda have no
    alternative derivation and stay as written; the debate about
    "Q fails" is needed once, inside p1's lambda, and is written in place
    there, with "P fails" inside q captured by =rule= as in the even loop.
-3. Capture. =rule_3= is q's continuation for Q, a binder of the
-   definition's own body. Where the lambda is written out under it, the
-   site for Q[c] becomes that variable. The lambda is a citation here,
-   so the capture is recorded in its bracket and applied when the
-   citation is expanded.
+3. Capture, at different times. Inside the definition, the lambdas stand
+   under q's continuation =rule_3=, a binder of the definition's own
+   body, which binds Q[c]: the unfolder captures there while the
+   definition is built, so the site is the variable. At the root the
+   capturing binders - p1's =rule= and the scaffolds' =b= - are outside
+   the definition of "Q fails", so the capture is recorded in the
+   citation's bracket and applied when the citation is expanded.
 
 ** Lesson 16
 
-1. None. P1's, P0->P1's and P0's definitions were replayed (P0's is
-   bare and never is) when =label a2_0.= checked P2, and
-   =prover.typechecked()= remembers them.
+1. Two. P1's and P0->P1's canonical definitions replayed (P0's is bare
+   and never is) when =label a2_0.= checked P2, and
+   =prover.typechecked()= remembers them. a1_0's debate adds two
+   variants: =P0 -> P1= with r1_0 on top, and P0's with a1_0's demand
+   as its root and a0's presumption at the bottom. Its root, a1_0 on top
+   of P1's stack, has the skeleton of P1's canonical debate up to the
+   names of binders, which the memo does not see, so it is not replayed.
 2. Yes: both arguments now spell the statement =Q -> false=,
    =spelling_clashes= is empty, and the per-definition check runs. P
    labels IN.
@@ -692,41 +758,40 @@ which should go once the shared route has seen real documents.
 
 ** Lesson 17
 
-1. P[c] and Q[t] are captured (by =rule= and =h= in p1, by =rule_2= and
-   =h_2= in p2) and P[t] and Q->false are cut. The instance key holds the
+1. P[c], P[t], Q->false and Q[t] are captured: P[c] by =rule= (in p1)
+   or =rule_2= (in p2), P[t] by the =b= of P's stack, Q->false by the =b=
+   of the lambda's stack, Q[t] by the lambda's hypothesis; P[t] and
+   Q->false are also recorded as cuts. The instance key holds the
    captured *statements*, not the capturing variables' names: those are
    parameters, substituted when the instance is written out at a site.
-   The other three instances are P's, the rule's and the lambda's.
-2. The attack scaffold inside =anon_3=: q's proof of Q, contesting the
-   presumption "Q fails" (the trace names it by the attacker's
-   statement, Q[t]). In the document q rests on the presumption
-   "P fails"; in the instance that site is captured by =rule=, a
-   variable, and a variable is not a site (lesson 10). So q is strict
-   there and defeats the bare presumption =u:Q!=. The labelling still
-   sees the loop, because the compiler records the capture as a
-   presumption source.
-3. Closedness. The defeated site keeps =!u13:P0=, so the subterm that
+   The other five instances are P's root, the rule's and the lambda's
+   debates under p2 and their variants under p1.
+2. The attack scaffold inside =anon_1=: q's proof of Q, contesting the
+   presumption "Q fails". In the document q rests on the presumption
+   "P fails"; in the instance that site is captured by =rule=, an
+   argument's binder, and a variable captured by an argument's binder
+   is a commitment the debate made, not a site (lesson 10). So q's stack
+   is strict there - first decision - and q defeats the bare presumption
+   =u:Q!= - the second. The labelling still sees the loop, because the
+   compiler records the capture as a presumption source.
+3. Closedness. The defeated site keeps =!u6:P0=, so the subterm that
    holds the decision rests on a site and is not closed.
 
 ** Lesson 18
 
-1. Two on the shared route, four on the unfolded one (besides the
-   strict decisions on the implications). The shared route
-   builds the legacy shape: one support scaffold per supporter, the
-   last registered outermost, so one decision per statement keeps
-   a2_1, then a1_1. The stacked shape has two scaffolds per statement
-   with two supporters: the root's support scaffold, whose scion is the
-   whole stack (IN, so the stack is kept), and the stack's own scaffold
-   (which keeps the top, a2_0 - the argument the term was unfolded
-   for). Inside a2_0 the same two happen for P1. It is not more because
-   sigma walks top-down and into the kept wing only: the second copy of
-   P1's debate, under a2_1, is discarded with a2_1 before it is
-   consulted. The unfolded route only pays for building it (and for
-   compiling and resolving it, lessons 10 and 17).
-2. An instance opened in two places brings two copies of its sites with
-   the same numbers, and =classify_nf= and the readers of the normal
-   form expect distinct sites. Before phase 2 the copies do not exist
-   yet, and nothing says which will be kept.
-3. No. Both scaffolds of P2 keep their original, the obligation ?u1,
-   and the stubs for P1 sit in the dropped supporters. The whole debate
-   below P2 was built as five instances and never written out.
+1. Four sigma decisions on either route; six strict decisions on the
+   shared route and twelve on the unfolded one. Strictness decides every
+   copy on the unfolded term - the two debates about P1->P2 and the
+   four copies of P0->P1's, two decisions each - and each instance once
+   on the shared route. Sigma walks
+   top-down and into the kept wing only: on both routes the root's
+   scaffold keeps the stack, the stack's scaffold keeps a2_0, and inside
+   a2_0 the same two happen for P1; the second copy of P1's debate,
+   under a2_1, is discarded with a2_1 before it is consulted.
+2. The labels are discharged into the sites before normalisation, so a
+   site's name is its label: two copies of a site carry the same name,
+   which is what the readers of the normal form need; no numbering has
+   to keep them apart.
+3. No. P2's root scaffold keeps its original, the obligation ?u1, and
+   the stubs for P1 sit in the dropped stack. The whole debate below P2
+   was built as six instances and never written out.
