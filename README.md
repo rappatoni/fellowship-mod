@@ -678,6 +678,10 @@ one-line message.
     `EXCEPTION` instead
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
+  - the drawing (DOT file or picture) carries a legend of the symbols it
+    uses: a sample of each edge style (role colour, strict, refutation
+    source, proof or refutation derived) and the node markings
+    (`[t:p]` and the like, the labels and their fill colours)
 - `label TARGET|document [grounded|complete|preferred|stable]`
   - print the labelling(s) of the chosen semantics (default grounded):
     one `IN` / `OUT` / `UNDEC` per proposition and side; several

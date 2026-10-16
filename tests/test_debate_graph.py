@@ -316,6 +316,23 @@ class TestDocument:
         assert "fillcolor=" in dot
         assert "t=IN" in dot
 
+    def test_dot_export_has_a_legend_of_the_symbols_it_uses(self):
+        from core.comp.adf_label import grounded_labels
+        g = compile_debate(parg_body(Deleg("1", "Q")), "pArg", strict_names=STRICT)
+        dot = g.to_dot(labels=grounded_labels(g))
+        legend = dot[dot.index("subgraph cluster_legend"):]
+        assert 'label="Legend"' in legend
+        assert "[t:p]" in legend and "the proof is presumed" in legend
+        assert "the label of the term side" in legend
+        # Only what the drawing uses: no attacker here, no owed refutation.
+        assert "attacker" not in legend and "[c:o]" not in legend
+        assert dot.count("{") == dot.count("}")
+
+    def test_dot_export_without_legend(self):
+        g = compile_debate(parg_body(Goal("1", "Q")), "pArg", strict_names=STRICT)
+        dot = g.to_dot(legend=False)
+        assert "cluster_legend" not in dot and dot.endswith("}")
+
 
 class TestTextView:
     def test_tree_shape_and_labels(self):
