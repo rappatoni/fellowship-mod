@@ -1,0 +1,16 @@
+# The same argument owing the open formula Wings x under the binder:
+# refused at registration (Q2) - only a statement can be owed.
+lk.
+declare Animal : type.
+declare Bird, Wings, Flies : Animal -> bool.
+declare wf : (forall x:Animal, Wings [x] -> Flies [x]).
+argument birds_fly : (forall x:Animal, Bird [x] -> Flies [x]).
+elim.
+elim b.
+cut (forall x:Animal, Wings [x] -> Flies [x]) r.
+axiom wf.
+elim [x].
+elim.
+next.
+axiom r.
+dixi.

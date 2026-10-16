@@ -53,6 +53,18 @@ Words in /italics/ inside an entry have an entry of their own.
   Written by the tactics =by default.= (a presumption) and by leaving a
   goal open (an obligation). Lesson 1.
 
+- Open site :: A site whose proposition mentions a variable bound by a
+  quantifier of its argument (=Wings x= under =forall x=). It is refused:
+  only a statement can be presumed or owed, so the argument has to presume
+  or owe a closed statement (=forall x, Wings x=, or whatever proves it)
+  and instantiate it. README, "First-order debates".
+
+- Instantiation :: Applying a general rule to an individual (=elim
+  [tweety]=; the term =tweety * ...=). It is a step of the argument, not
+  a point of attack: the rule stands or falls as one statement, and its
+  instance (=Bird tweety -> Flies tweety=) is not a node. README,
+  "First-order debates".
+
 - Onus :: Who bears the burden at a site: the author (obligation) or the
   opponent (presumption). Also the =pro= / =con= of a debate.
 

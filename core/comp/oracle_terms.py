@@ -29,8 +29,9 @@ from core.ac.ast import (
     ProofTerm, Term, Context,
     Mu, Mutilde, Lamda, Admal, Hyp, Pyh, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI,
-    first_order_node, FirstOrderNotSupported,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
+from core.ac.prop import Prop, PropError, TSym
 
 
 # ---------------------------------------------------------------------------
@@ -44,12 +45,6 @@ from core.ac.ast import (
 from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
-
-def _check_propositional(node: ProofTerm, operation: str) -> None:
-    found = first_order_node(node)
-    if found is not None:
-        raise FirstOrderNotSupported(operation, found)
-
 
 def all_names(node) -> set:
     """Every variable and binder name in the tree, both namespaces pooled."""
@@ -182,8 +177,6 @@ def substitute(node, kind, name: str, replacement, minimal=False):
     """
     if kind not in (ID, DI):
         raise TypeError("kind must be the ID or DI class")
-    _check_propositional(node, "Oracle substitution")
-    _check_propositional(replacement, "Oracle substitution")
     avoid = all_names(replacement) | {name}
     prepared = freshen_binders(node, avoid=avoid, only=avoid if minimal else None)
     return _replace_free(prepared, kind, name, replacement)
@@ -192,6 +185,68 @@ def substitute(node, kind, name: str, replacement, minimal=False):
 # ---------------------------------------------------------------------------
 # Alpha-equivalence
 # ---------------------------------------------------------------------------
+
+def substitute_fo(node, var: str, fo_term):
+    """[fo_term / var] on a copy of ``node``: the first-order substitution of
+    the two first-order rules (tasks.org, aida-first-order-reduction, Q5).
+    Every proposition mentioning ``var`` free is rewritten
+    (``Prop.subst``, capture-avoiding inside the proposition), and so are
+    the instantiation terms and witnesses.  A first-order binder of the
+    same name shadows ``var``; one that would capture a variable of
+    ``fo_term`` is renamed first.  Proof variables are untouched: first
+    order binds none."""
+    node = deepcopy(node)
+    captured = set(fo_term.free_vars())
+    taken = set(captured) | {var}
+
+    def fresh(name):
+        n, candidate = 2, f"{name}_2"
+        while candidate in taken:
+            n += 1
+            candidate = f"{name}_{n}"
+        taken.add(candidate)
+        return candidate
+
+    def subst_prop(p, name, term):
+        if not isinstance(p, str) or not p:
+            return p
+        try:
+            parsed = Prop.parse(p)
+        except PropError:
+            return p
+        if name not in parsed.free_vars():
+            return p
+        return str(parsed.subst(name, term))
+
+    def walk(n, name, term):
+        if not isinstance(n, ProofTerm):
+            return
+        if hasattr(n, "prop"):
+            n.prop = subst_prop(n.prop, name, term)
+        if isinstance(n, ConsFO):
+            n.fo_term = n.fo_term.subst(name, term)
+        if isinstance(n, TermsPairFO):
+            n.witness = n.witness.subst(name, term)
+        if isinstance(n, (LamdaFO, DestructTermsPairFO)):
+            if n.var == name:
+                return                              # shadowed below
+            if n.var in term.free_vars():
+                old, new = n.var, fresh(n.var)
+                n.var = new
+                for child in _fo_children(n):
+                    walk(child, old, TSym(new))
+        for child in _fo_children(n):
+            walk(child, name, term)
+
+    walk(node, var, fo_term)
+    return node
+
+
+def _fo_children(n):
+    """Every ProofTerm attribute of ``n`` - the binder records (Hyp, Pyh,
+    their variables) included, since they carry propositions too."""
+    return [v for k, v in vars(n).items() if isinstance(v, ProofTerm)]
+
 
 def canonical_form(node) -> tuple:
     """A nested-tuple canonical form: binders numbered by traversal order,
@@ -230,6 +285,14 @@ def canonical_form(node) -> tuple:
             return ("cons", walk(n.term, term_env, ctx_env), walk(n.context, term_env, ctx_env))
         if isinstance(n, Sonc):
             return ("sonc", walk(n.context, term_env, ctx_env), walk(n.term, term_env, ctx_env))
+        if isinstance(n, LamdaFO):
+            return ("lamdafo", n.var, str(n.sort), walk(n.term, term_env, ctx_env))
+        if isinstance(n, ConsFO):
+            return ("consfo", str(n.fo_term), walk(n.context, term_env, ctx_env))
+        if isinstance(n, TermsPairFO):
+            return ("pairfo", str(n.witness), walk(n.term, term_env, ctx_env))
+        if isinstance(n, DestructTermsPairFO):
+            return ("destructfo", n.var, str(n.sort), walk(n.context, term_env, ctx_env))
         if isinstance(n, Goal):
             return ("goal", n.number, n.prop)
         if isinstance(n, Laog):
@@ -240,7 +303,6 @@ def canonical_form(node) -> tuple:
             return ("geled", n.number, n.prop)
         raise ValueError(f"canonical_form: unhandled node {type(n).__name__}")
 
-    _check_propositional(node, "Oracle canonical form")
     return walk(node, {}, {})
 
 
@@ -301,6 +363,18 @@ def _step_command(term, context, strategy: str, fired=None):
         inner = Mutilde(DI(x, prop), prop, term.term, context.context)
         return context.term, inner
 
+    if isinstance(term, LamdaFO) and isinstance(context, ConsFO):
+        # < lam x.v :: u * E >  -->  < v[u/x] :: E >   (first order, strict)
+        if fired is not None:
+            fired.append("(\u2200)")
+        return substitute_fo(term.term, term.var, context.fo_term), context.context
+
+    if isinstance(term, TermsPairFO) and isinstance(context, DestructTermsPairFO):
+        # < (u, v) :: (y). E >  -->  < v :: E[u/y] >   (first order, strict)
+        if fired is not None:
+            fired.append("(\u2203)")
+        return term.term, substitute_fo(context.context, context.var, term.witness)
+
     if isinstance(term, Sonc) and isinstance(context, Admal):
         # < E1 * v :: E2 .a lam >  -->  < mu a.< v :: E2 > :: E1 >
         if fired is not None:
@@ -319,8 +393,6 @@ def normalize_command(term, context, strategy: str = "cbn", fuel: int = 500):
     this same function, which is all the oracle needs."""
     if strategy not in ("cbn", "cbv"):
         raise ValueError(f"strategy must be 'cbn' or 'cbv', got {strategy!r}")
-    _check_propositional(term, "Oracle normalization")
-    _check_propositional(context, "Oracle normalization")
     term, context = deepcopy(term), deepcopy(context)
     for _ in range(fuel):
         step = _step_command(term, context, strategy)
@@ -335,7 +407,6 @@ def normalize_command(term, context, strategy: str = "cbn", fuel: int = 500):
 def normalize_term(v, strategy: str = "cbn", fuel: int = 500):
     """Normalize the command under a root Mu/Mutilde binder, rebuilding the
     binder; other roots are returned unchanged (already weak-normal)."""
-    _check_propositional(v, "Oracle normalization")
     v = deepcopy(v)
     if isinstance(v, (Mu, Mutilde)):
         t, c = normalize_command(v.term, v.context, strategy=strategy, fuel=fuel)
@@ -378,7 +449,6 @@ def normalize_strong(v, strategy: str = "cbn", fuel: int = 2000):
     """
     if strategy not in ("cbn", "cbv"):
         raise ValueError(f"strategy must be 'cbn' or 'cbv', got {strategy!r}")
-    _check_propositional(v, "Oracle normalization")
     v = deepcopy(v)
     tracing = logger.isEnabledFor(TRACE)
     for step in range(1, fuel + 1):
@@ -532,7 +602,6 @@ def classify_nf(v) -> str:
       a value: an IN-by-default site stays indeterminate and the value is
       polynomial in it (debate-graph-spec.org, Semantics subsection).
     """
-    _check_propositional(v, "Oracle NF classification")
     if contains_uncatchable_clash(v):
         logger.debug("classify: EXCEPTION (an uncatchable clash: the debate is "
                      "acceptable only given an inconsistency)%s",
@@ -621,7 +690,6 @@ def instantiate_sites(node, site_map):
     context-side sites Context replacements.  Sites absent from the map are
     left indeterminate (the IN-by-default case).  Returns a copy.
     """
-    _check_propositional(node, "Oracle instantiation")
 
     def walk(n):
         if isinstance(n, (Goal, Deleg)) and n.number in site_map:

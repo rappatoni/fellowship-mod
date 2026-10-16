@@ -17,9 +17,14 @@ def _cell_from_command(node) -> None:
     tail of falsum ``a * _F_`` has none, ``_F_`` being flagged, not typed -
     takes the type of the command it is cut against, the other half's.
     So the cell of ``mu'H:~A.< H || ?:A * _F_ >`` is ~A, in the spelling
-    the argument wrote (tasks.org, aida-negation-cell-horn)."""
+    the argument wrote (tasks.org, aida-negation-cell-horn).  Likewise a
+    universal instantiation ``t * c`` and an existential introduction
+    ``(t, v)``, whose types cannot be recovered from their halves (see
+    ``visit_ConsFO``): they are the rule or the existential they are cut
+    against (aida-first-order-reduction)."""
     for cell, other in ((node.context, node.term), (node.term, node.context)):
-        if isinstance(cell, (Cons, Sonc)) and cell.prop is None and getattr(other, "prop", None):
+        if (isinstance(cell, (Cons, Sonc, ConsFO, TermsPairFO)) and cell.prop is None
+                and getattr(other, "prop", None)):
             cell.prop = other.prop
             logger.debug("Enriching cell with type %s from its command", cell.prop)
 

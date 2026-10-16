@@ -25,6 +25,7 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
     first_order_node, FirstOrderNotSupported,
 )
 from core.ac.prop import (
@@ -979,6 +980,38 @@ def declaration_kinds(declarations) -> dict:
 BUILTIN_LEAVES = {"_F_": "moxia", "_T_": "prop"}
 
 
+def _fo_scopes(body, outer=frozenset()) -> dict:
+    """{id(node): the first-order variables bound above it} for every node
+    of ``body``, starting from ``outer`` (those bound around the body):
+    lambda x (``LamdaFO``) and the existential's witness (``(x).``,
+    ``DestructTermsPairFO``) bind one (tasks.org,
+    aida-first-order-reduction)."""
+    scopes, stack = {}, [(body, frozenset(outer))]
+    while stack:
+        node, bound = stack.pop()
+        if not isinstance(node, ProofTerm):
+            continue
+        scopes[id(node)] = bound
+        inner = bound | {node.var} if isinstance(node, (LamdaFO, DestructTermsPairFO)) else bound
+        for slot in ("term", "context"):
+            child = getattr(node, slot, None)
+            if isinstance(child, ProofTerm):
+                stack.append((child, inner))
+    return scopes
+
+
+def _open_in(prop, bound) -> frozenset:
+    """The first-order variables of ``bound`` that ``prop`` mentions: a
+    statement mentioning one is open - it is no statement at all outside
+    the binder (tasks.org, aida-first-order-reduction, Q2)."""
+    if not prop or not bound:
+        return frozenset()
+    try:
+        return frozenset(Prop.parse(prop).free_vars()) & frozenset(bound)
+    except PropError:
+        return frozenset()
+
+
 class _Compiler:
     """Term -> hyperedges: the abstract argumentation framework of a term.
 
@@ -1023,14 +1056,12 @@ class _Compiler:
             )
 
     def compile(self, body: ProofTerm, name: str, role: str = "argument") -> None:
-        found = first_order_node(body)
-        if found is not None:
-            raise FirstOrderNotSupported("Debate graph compilation", found)
         self.graph.add_edge(self.compile_body(deepcopy(body), _host_name(body, name), role, {}))
 
     # -- one subargument ----------------------------------------------------
 
-    def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None):
+    def compile_body(self, body, name, role, outer, *, expect_side=None, expect_prop=None,
+                     fo_outer=frozenset()):
         """Compile one subargument body into its edge, by the horn rule
         (tasks.org, aida-discuss-non-site-attack-points, 2026-10-15).
 
@@ -1077,9 +1108,20 @@ class _Compiler:
             p = getattr(node, "prop", None)
             if not p:
                 return None
-            if isinstance(node, (Mu, Goal, Deleg, DI, Lamda, Sonc)):
+            if isinstance(node, (Mu, Goal, Deleg, DI, Lamda, Sonc, LamdaFO, TermsPairFO)):
                 return (canonical_prop(p), "term")
             return (canonical_prop(p), "context")
+
+        # The first-order variables bound above each node (``fo_outer``:
+        # those bound around this body, for a subargument).
+        fo_scope = _fo_scopes(body, fo_outer)
+
+        def is_open(node) -> bool:
+            """A node whose statement mentions a first-order variable bound
+            by the argument is no horn: it is not a statement outside its
+            binder, so it stays part of the argument, like a spine step
+            (the author, 2026-10-16)."""
+            return bool(_open_in(getattr(node, "prop", None), fo_scope.get(id(node))))
 
         def on_spine(node, spine):
             """Whether ``node`` carries this edge's proof on: a spine
@@ -1105,7 +1147,8 @@ class _Compiler:
 
         def sub_edge(node, label, env):
             sub_outer = {**outer, **{k: (*v, name) for k, v in env.items()}}
-            rec = self.compile_body(node, label, "subargument", sub_outer)
+            rec = self.compile_body(node, label, "subargument", sub_outer,
+                                    fo_outer=fo_scope.get(id(node), frozenset()))
             self.graph.add_edge(rec)
             return _Acc((Source(rec.target_key, rec.target_side, "subargument", label, (),
                                 rec.target_label),), not rec.strict)
@@ -1183,13 +1226,24 @@ class _Compiler:
                             f"Edge '{name}': open site {node.number!r} has no "
                             f"proposition; run enrichment first."
                         )
+                    bound = _open_in(node.prop, fo_scope.get(id(node)))
+                    if bound:
+                        # Only a statement can be presumed or owed, not an
+                        # open formula (the author, 2026-10-16).
+                        shown = ", ".join(sorted(bound))
+                        raise DebateCompileError(
+                            f"Edge '{name}': it {'presumes' if kind == 'presumption' else 'owes'} "
+                            f"'{node.prop}', which mentions {shown}, bound by the argument; "
+                            f"only a statement can be presumed or owed - presume or owe a "
+                            f"closed one (for instance 'forall {shown}, ...', or whatever "
+                            f"proves it) and instantiate it.")
                     return _Acc((Source(self.graph.add_node(node.prop), lside, kind,
                                         str(node.number), scope,
                                         getattr(node, "label", None)),))
             if isinstance(node, (ID, DI)):
                 return variable(node, env, scope)
             if _is_negation_wrapper(node):
-                if rest or node is content or on_spine(node.context, spine):
+                if rest or node is content or on_spine(node.context, spine) or is_open(node):
                     return visit(node.context, env, spine, scope, rest=rest)
                 # Off the spine, the wrapper is the horn, not the bare cell
                 # inside it: ``?:A * _F_`` alone is no refutation of ~A
@@ -1218,14 +1272,15 @@ class _Compiler:
                     label = _scion_name(element, f"{name}.{srole}{next(self._fresh)}")
                     element_outer = {**sub_outer, **{k: (*v, name) for k, v in inner.items()}}
                     self.graph.add_edge(self.compile_body(element, label, srole, element_outer,
-                                                          expect_side=target_side, expect_prop=sprop))
+                                                          expect_side=target_side, expect_prop=sprop,
+                                                          fo_outer=fo_scope.get(id(node), frozenset())))
                 # the site stays a source of this derivation; the scion is
                 # its own edge
                 return visit(orig, env, spine, scope, rest=rest, parent=node)
             same_issue = (statement_of(node) == own and isinstance(parent, (Mu, Mutilde))
                           and getattr(parent, "prop", None)
                           and canonical_prop(parent.prop) == own[0])
-            spine_node = rest or node is content or on_spine(node, spine) or same_issue
+            spine_node = rest or node is content or on_spine(node, spine) or same_issue or is_open(node)
             if isinstance(node, (Mu, Mutilde)):
                 if not spine_node:
                     tag = "\u03bc" if isinstance(node, Mu) else "\u03bc'"
@@ -1249,6 +1304,23 @@ class _Compiler:
                     return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
                 return (visit(node.term, env, spine, scope, parent=node)
                         + visit(node.context, env, spine, scope, parent=node))
+            # First order (the author, 2026-10-16).  An instantiation
+            # ``t * c`` and an existential's introduction ``(t, v)`` are
+            # steps of the spine, never attack points: a rule stands or
+            # falls as one statement (Q4), so neither the step nor the
+            # instance chain under it is exposed.  The existential's
+            # elimination ``(x). c`` binds x for what follows.  A universal
+            # introduction ``lambda x. t`` is a horn like a lambda.
+            if isinstance(node, ConsFO):
+                return visit(node.context, env, spine, scope, rest=True, parent=node)
+            if isinstance(node, TermsPairFO):
+                return visit(node.term, env, spine, scope, rest=True, parent=node)
+            if isinstance(node, DestructTermsPairFO):
+                return visit(node.context, env, spine, scope, rest=True, parent=node)
+            if isinstance(node, LamdaFO):
+                if not spine_node:
+                    return sub_edge(node, f"{name}.\u03bb{next(self._fresh)}", env)
+                return visit(node.term, env, spine, scope, rest=True, parent=node)
             raise DebateCompileError(
                 f"Edge '{name}': unhandled node {type(node).__name__} during "
                 f"source collection."
@@ -1273,6 +1345,10 @@ class _Compiler:
             acc = visit(body_, env, spine, (), rest=True, parent=root)
         elif isinstance(root, (Cons, Sonc)):
             acc = visit(root.term, env, spine, (), parent=root) + visit(root.context, env, spine, (), parent=root)
+        elif isinstance(root, (LamdaFO, TermsPairFO)):
+            acc = visit(root.term, env, spine, (), rest=True, parent=root)
+        elif isinstance(root, (ConsFO, DestructTermsPairFO)):
+            acc = visit(root.context, env, spine, (), rest=True, parent=root)
         else:
             acc = visit(root, env, spine, ())
         # Strict = the derivation uses no indeterminate anywhere: none among
@@ -1300,6 +1376,10 @@ class _Compiler:
             side = "context"
             if not body.prop and body.id.prop and getattr(body.context, "prop", None):
                 body.prop = f"{body.context.prop}-{body.id.prop}"
+        elif isinstance(body, (LamdaFO, TermsPairFO)):
+            side = "term"                      # first order (aida-first-order-reduction)
+        elif isinstance(body, (ConsFO, DestructTermsPairFO)):
+            side = "context"
         elif isinstance(body, Cons):
             side = "context"                   # an elimination cell as a horn
         elif isinstance(body, Sonc):

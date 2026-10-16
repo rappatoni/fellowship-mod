@@ -1,0 +1,30 @@
+# A presumed general rule instantiated at an individual (tasks.org,
+# aida-first-order-reduction, Q4): the instantiation is a spine step, so
+# the rule stands or falls as one statement.  penguin refutes the rule
+# itself by a counter-instance.
+lk.
+declare Animal : type.
+declare tweety, pingu : Animal.
+declare Bird, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare bird_pingu : (Bird [pingu]).
+declare grounded_pingu : (Flies [pingu] -> false).
+argument flies_tweety : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+by default.
+next.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.
+counterargument penguin : (forall x:Animal, Bird [x] -> Flies [x]).
+elim [pingu].
+elim.
+axiom bird_pingu.
+cut (Flies [pingu] -> false) g.
+axiom grounded_pingu.
+elim g.
+axiom.
+elim.
+dixi.

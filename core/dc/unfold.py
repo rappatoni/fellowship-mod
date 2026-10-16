@@ -80,6 +80,7 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
 from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta, _is_affine_binder
 from core.logging_util import TRACE, artifact
@@ -575,7 +576,23 @@ class Unfolder:
                 out = Sonc(walk(node.context, env, names), walk(node.term, env, names))
                 out.prop = node.prop
                 return out
-            raise UnfoldError(f"Edge '{edge.name}': cannot unfold node {type(node).__name__}.")
+            # First order (tasks.org, aida-first-order-reduction): copied as
+            # written.  The first-order variable keeps its name - renaming
+            # it would mean substituting into propositions - and binds no
+            # statement a site could be met by: every site is closed (the
+            # compiler refuses an open one).
+            if isinstance(node, LamdaFO):
+                out = LamdaFO(node.var, node.sort, walk(node.term, env, names))
+            elif isinstance(node, ConsFO):
+                out = ConsFO(node.fo_term, walk(node.context, env, names))
+            elif isinstance(node, TermsPairFO):
+                out = TermsPairFO(node.witness, walk(node.term, env, names))
+            elif isinstance(node, DestructTermsPairFO):
+                out = DestructTermsPairFO(node.var, node.sort, walk(node.context, env, names))
+            else:
+                raise UnfoldError(f"Edge '{edge.name}': cannot unfold node {type(node).__name__}.")
+            out.prop = node.prop
+            return out
 
         copy = walk(edge.term, env, {})
         if isinstance(copy, (Mu, Mutilde)):

@@ -42,6 +42,7 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
 from core.ac.prop import Prop
 from core.dc.debate_graph import DebateGraph, canonical_prop
@@ -69,6 +70,23 @@ def debate_statement(key) -> tuple:
     and the argument on top that ``Unfolder._debate`` is given (an exposed
     node's debate, an argument entrypoint)."""
     return key if len(key) == 2 else key[0]
+
+
+def _first_order_copy(node, walk):
+    """A copy of a first-order node with its child walked, or None for any
+    other node.  The first-order variable keeps its name."""
+    if isinstance(node, LamdaFO):
+        out = LamdaFO(node.var, node.sort, walk(node.term))
+    elif isinstance(node, ConsFO):
+        out = ConsFO(node.fo_term, walk(node.context))
+    elif isinstance(node, TermsPairFO):
+        out = TermsPairFO(node.witness, walk(node.term))
+    elif isinstance(node, DestructTermsPairFO):
+        out = DestructTermsPairFO(node.var, node.sort, walk(node.context))
+    else:
+        return None
+    out.prop = node.prop
+    return out
 
 
 def _cite(statement, prop, presumed, captures, cuts, bare=False, debate=None):
@@ -388,7 +406,12 @@ class SharedDebate:
                 out = Sonc(walk(node.context, names), walk(node.term, names))
                 out.prop = node.prop
                 return out
-            raise UnfoldError(f"Cannot share node {type(node).__name__}.")
+            # first order: copied as written, the variable keeps its name
+            # (core/dc/unfold.py; tasks.org, aida-first-order-reduction)
+            out = _first_order_copy(node, lambda child: walk(child, names))
+            if out is None:
+                raise UnfoldError(f"Cannot share node {type(node).__name__}.")
+            return out
 
         return walk(definition.body, {})
 

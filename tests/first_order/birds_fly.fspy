@@ -1,0 +1,38 @@
+# A general argument under a first-order binder that owes a closed
+# statement (Q2): forall x, Bird x -> Wings x, instantiated at x.  The
+# lemma mu w:Wings x mentions the bound x and is not exposed.
+lk.
+declare Animal : type.
+declare tweety : Animal.
+declare Bird, Wings, Flies : Animal -> bool.
+declare wf : (forall x:Animal, Wings [x] -> Flies [x]).
+declare bird_tweety : (Bird [tweety]).
+argument birds_fly : (forall x:Animal, Bird [x] -> Flies [x]).
+elim.
+elim b.
+cut (forall x:Animal, Wings [x] -> Flies [x]) r.
+axiom wf.
+elim [x].
+elim.
+cut (forall x:Animal, Bird [x] -> Wings [x]) w.
+next.
+elim [x].
+elim.
+axiom b.
+axiom w.
+axiom r.
+dixi.
+# Somebody presumes that birds have wings.
+argument wings : (forall x:Animal, Bird [x] -> Wings [x]).
+by default.
+dixi.
+# Tweety flies, by the general rule (owed: birds_fly supports it),
+# instantiated at tweety.
+argument tweety_flies : (Flies [tweety]).
+cut (forall x:Animal, Bird [x] -> Flies [x]) r.
+next.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.

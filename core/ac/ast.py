@@ -255,12 +255,12 @@ FIRST_ORDER_NODES = (LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO)
 def first_order_node(node: "ProofTerm"):
     """The first first-order construct in ``node``, or None if there is none.
 
-    Reduction and the debate operations do not yet handle first-order terms:
-    the reduction rules for first-order AC/DC are not settled, and grafting
-    into a first-order binder needs design work.  They use this to refuse such
-    a term outright rather than walk into it and quietly do the wrong thing --
-    several of them fall through to "return the node unchanged" or "not equal"
-    on a node they do not recognise, which would be silent and wrong.
+    The debate pipeline handles first-order terms since 2026-10-17 (tasks.org,
+    aida-first-order-reduction).  The legacy and deprecated operations - the
+    legacy reducer, grafting, structural matching - do not, and use this to
+    refuse such a term outright rather than walk into it and quietly do the
+    wrong thing: several fall through to "return the node unchanged" or "not
+    equal" on a node they do not recognise.
     """
     if isinstance(node, FIRST_ORDER_NODES):
         return node

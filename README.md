@@ -46,13 +46,15 @@ The current codebase supports:
 The debate compiler - unfolding a document into a debate term, compiling
 and labelling it, and evaluating it under a witness labelling - is the
 main line of development. It covers the quantifier-free fragment,
-derivation cycles included, and is still incomplete. Known gaps, each
+derivation cycles included, and first-order debates whose sites are
+closed statements (see *First-order logic*); it is still incomplete. Known gaps, each
 tracked in `tasks.org`:
 
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
-- **No first-order debates.** Normalisation and the debate operations
-  refuse first-order terms (see *First-order logic*).
+- **First-order debates need closed sites.** An argument that presumes or
+  owes an open formula under a quantifier is left out of the document
+  graph (see *First-order logic*).
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
@@ -653,9 +655,8 @@ sub-debate at a time. Debates are classical: their
 scaffolds throw to a second conclusion, which LJ forbids, so the debate
 commands are refused while the file is in `lj`. Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate
-is in. They cover
-the quantifier-free fragment and refuse first-order terms with a
-one-line message.
+is in. First-order arguments take part as described under *First-order
+logic*.
 
 - `graph TARGET|document [all] ["FILE.dot"] [show]`
   - print the nodes, hyperedges and default markers of the target's issue
@@ -971,13 +972,33 @@ Worked examples: `tests/fo_forall.fspy`, and `tests/fo_exists_forall.fspy`,
 which proves `(exists y, forall x. P x y) -> (forall x, exists y. P x y)` and
 exercises every first-order proof-term constructor.
 
-### What is not supported yet
+### First-order debates
 
-The debate pipeline — unfolding, the debate graph, labelling and
-evaluation — does not handle first-order terms. The
-reduction rules for first-order AC/DC are not settled, so rather than guess,
-those operations raise `FirstOrderNotSupported` naming the construct they
-stopped at.
+First-order arguments take part in debates on both routes, the shared (the
+default) and the unfolded (decided with the author 2026-10-16; tasks.org,
+`aida-first-order-reduction`; examples in `tests/first_order/`):
+
+- A statement is a proposition up to renaming of bound variables:
+  `forall x:Animal, Bird [x] -> Flies [x]`, its instance
+  `Bird [tweety] -> Flies [tweety]` and `Flies [tweety]` are three
+  statements, linked only by an argument that instantiates the first.
+- A binder meets a site only for the identical statement: a presumed
+  `forall x, Ab [x] -> false` does not meet an owed `Ab [tweety] -> false`.
+  Owe the universal and instantiate it instead.
+- A general rule stands or falls as one statement. Instantiating it
+  (`elim [tweety]`) is a step of the argument, not a point of attack: an
+  exception for one individual has to refute the rule itself.
+- Only a statement can be presumed or owed, not an open formula. An
+  argument that owes `Wings [x]` under `forall x` is left out of the
+  document graph, with the reason on its `dixi`; presume or owe a closed
+  statement - `forall x, Wings [x]`, `forall x, Bird [x] -> Wings [x]`, or
+  whatever proves it - and instantiate it. Likewise, a lemma whose
+  statement mentions such a variable is part of its argument, not a node
+  of its own.
+- Evaluation has two more rules, both strict: a universal introduction
+  meeting an instantiation substitutes the instance
+  (`<λx.t || u * e> → <t[u/x] || e>`), an existential's witness meeting its
+  elimination likewise (`<(u, v) || (y).e> → <v || e[u/y]>`).
 
 ## Render styles
 

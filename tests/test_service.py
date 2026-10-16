@@ -251,10 +251,11 @@ def test_a_document_check_reports_every_command(svc):
 
 def test_a_dropped_argument_is_marked_on_its_own_entry(svc):
     """tasks.org, aida-check-dropped-argument: an argument Fellowship
-    accepts but the document graph cannot take (here a quantifier step)
-    carries the warning on its `dixi` entry, not only on the report."""
+    accepts but the document graph cannot take (here one that owes an open
+    formula) carries the warning on its `dixi` entry, not only on the
+    report."""
     from pathlib import Path
-    text = (Path(__file__).parent / "fo_dropped.fspy").read_text()
+    text = (Path(__file__).parent / "first_order" / "birds_fly_open.fspy").read_text()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         report = svc.check(text)

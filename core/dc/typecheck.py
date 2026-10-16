@@ -20,6 +20,7 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
 from core.ac.instructions import InstructionsGenerationVisitor
 from core.comp.enrich import PropEnrichmentVisitor
@@ -70,6 +71,16 @@ def shape(node) -> tuple:
             return ("cons", walk(n.term, term_env, ctx_env), walk(n.context, term_env, ctx_env))
         if isinstance(n, Sonc):
             return ("sonc", walk(n.context, term_env, ctx_env), walk(n.term, term_env, ctx_env))
+        # first order: the variable and the terms verbatim - the unfolder
+        # keeps the names the argument wrote
+        if isinstance(n, LamdaFO):
+            return ("lamdafo", n.var, str(n.sort), walk(n.term, term_env, ctx_env))
+        if isinstance(n, ConsFO):
+            return ("consfo", str(n.fo_term), walk(n.context, term_env, ctx_env))
+        if isinstance(n, TermsPairFO):
+            return ("pairfo", str(n.witness), walk(n.term, term_env, ctx_env))
+        if isinstance(n, DestructTermsPairFO):
+            return ("destructfo", n.var, str(n.sort), walk(n.context, term_env, ctx_env))
         for cls, tag in ((Goal, "goal"), (Laog, "laog"), (Deleg, "deleg"), (Geled, "geled")):
             if isinstance(n, cls):
                 return (tag, next(sites), prop(n.prop))

@@ -26,6 +26,7 @@ FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
                   | set(glob.glob(str(TESTS / "minicourse" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "demo" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "exposure" / "*.fspy")))
+                  | set(glob.glob(str(TESTS / "first_order" / "*.fspy")))
                   | {str(TESTS / "entrypoints.fspy"), str(TESTS / "circular_supporter.fspy"),
                      str(TESTS / "rationality" / "self_attack_lk.fspy"),
                      str(TESTS / "rationality" / "even_loop_lk.fspy")})

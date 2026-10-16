@@ -1,0 +1,27 @@
+# The existential: exp introduces exists x, Pr x with the witness c;
+# exq owes it and eliminates it, (x:D)., then introduces exists x, Q x
+# with the witness x.
+lk.
+declare D : type.
+declare c : D.
+declare Pr, Q : D -> bool.
+declare pr_c : (Pr [c]).
+declare pq : (forall x:D, Pr [x] -> Q [x]).
+argument exp : (exists x:D, Pr [x]).
+elim [c].
+axiom pr_c.
+dixi.
+argument exq : (exists x:D, Q [x]).
+cut (exists x:D, Pr [x]) h.
+next.
+elim.
+cut (exists x:D, Q [x]) k.
+elim [x].
+cut (forall x:D, Pr [x] -> Q [x]) r.
+axiom pq.
+elim [x].
+elim.
+axiom.
+axiom r.
+axiom.
+dixi.

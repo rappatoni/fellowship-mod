@@ -467,7 +467,10 @@ class TestALemmaStaysInItsScope:
                                            "exposure/lemma_scope_io.fspy",
                                            "minicourse/lesson9_evaluation.fspy",
                                            "minicourse/lesson15_capture.fspy",
-                                           "circular_supporter.fspy"}))
+                                           "circular_supporter.fspy",
+                                           "first_order/tweety.fspy", "first_order/birds_fly.fspy",
+                                           "first_order/generalisation.fspy",
+                                           "first_order/witness.fspy"}))
 def test_every_unfolded_term_is_closed(script):
     """The premise of the strict phase (tasks.org, the decision of
     2026-09-25): the unfolded term is closed as a whole."""

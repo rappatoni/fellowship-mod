@@ -42,13 +42,12 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Term, Context, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
-    first_order_node, FirstOrderNotSupported,
 )
 from core.comp.oracle_terms import _free_names, all_names, contains_uncatchable_clash
 from core.dc.debate_graph import (
     DebateGraph, Edge, _Compiler, _match_scaffold, binder_origin, BUILTIN_LEAVES,
 )
-from core.dc.share import SharedDebate, debate_statement, is_cite, _same_origin
+from core.dc.share import SharedDebate, debate_statement, is_cite, _same_origin, _first_order_copy
 from core.dc.strict import (
     strict_resolve, strict_in_scope, is_closed, _show, strict_edge_candidate, _contains_assumption, _eta_statement, fold_occurrences, key_of,
 )
@@ -350,11 +349,7 @@ class IssueResolver:
             return out
 
         kept, capturer = self._kept(instance), self._capturer(instance, compiled=True)
-        term = _rebuild(self.shared.defs[instance.debate].body, leaf, capturer, kept)
-        found = first_order_node(term)
-        if found is not None:
-            raise FirstOrderNotSupported("Debate graph compilation", found)
-        return term
+        return _rebuild(self.shared.defs[instance.debate].body, leaf, capturer, kept)
 
     def _sub_argument(self, debate) -> bool:
         """Whether the compiler reads the definition ``debate``, where a
@@ -533,7 +528,9 @@ class IssueResolver:
             elif isinstance(n, Sonc):
                 out = Sonc(walk(n.context, names), walk(n.term, names))
             else:
-                raise ValueError(f"Cannot write out node {type(n).__name__}.")
+                out = _first_order_copy(n, lambda child: walk(child, names))
+                if out is None:
+                    raise ValueError(f"Cannot write out node {type(n).__name__}.")
             out.prop = n.prop
             return out
 

@@ -1,6 +1,6 @@
-"""The state the first-order expansion starts from (tasks.org,
-aida-first-order-reduction; pinned 2026-10-16 after
-aida-fo-resolve-unwired).
+"""First-order terms before the debate machinery: resolution and
+statements used as a whole (tasks.org, aida-fo-resolve-unwired,
+aida-first-order-reduction; tests/test_first_order.py has the debates).
 
 - Every proof term AIDA parses goes through the resolution pass, so the
   first-order constructors are first-order nodes (``LamdaFO``,
@@ -8,12 +8,9 @@ aida-fo-resolve-unwired).
 - A quantified proposition used as a whole - presumed, owed, refuted,
   used through declared rules - labels and evaluates like any statement
   (copies of eval/literature2/fo_opaque.fspy and rio_fo.fspy).
-- A quantifier step is refused with ``FirstOrderNotSupported``, naming
-  the construct: at registration (the argument is left out of the
-  document graph, with the warning on its `dixi` entry) and at every
-  query.  Before the resolution pass was wired in, ``elim [tweety]`` was
-  misread as a propositional cell and refused with "declared name
-  'tweety' has kind 'sort'" (the literature evaluation's bug 8).
+- A quantifier step joins the document graph (until 2026-10-16 it was
+  refused; before the resolution pass was wired in, ``elim [tweety]`` was
+  misread as a propositional cell, the literature evaluation's bug 8).
 """
 
 import warnings
@@ -26,7 +23,6 @@ from wrap.cli import setup_prover
 from wrap.service import Service, AidaError
 
 TESTS = Path(__file__).parent
-REFUSAL = "does not support first-order terms yet, and this one contains a ConsFO"
 
 
 def kinds(node):
@@ -88,17 +84,15 @@ def test_an_existential_presumed_as_a_whole_is_a_value(check):
         assert svc.evaluate(svc.target("obliged")).nf_class == "value"
 
 
-def test_a_quantifier_step_is_refused_as_first_order(check):
+def test_a_quantifier_step_joins_the_document_graph(check):
     prover, svc, report = check("fo_dropped.fspy")
     dixi, = [e for e in report.entries if e.kind == "dixi"]
-    assert "ConsFO" in {k for k in kinds(prover.arguments["flies_tweety"].body)}
-    assert any(REFUSAL in d.message for d in dixi.diagnostics)
-    assert "flies_tweety" not in {e.name for e in prover.graph.edges}
-    for query in (svc.graph, svc.label, svc.evaluate):
-        with pytest.raises(AidaError, match="first-order terms"):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                query(svc.target("flies_tweety"))
+    assert "ConsFO" in kinds(prover.arguments["flies_tweety"].body)
+    assert not any("not added to the document graph" in d.message for d in dixi.diagnostics)
+    assert "flies_tweety" in {e.name for e in prover.graph.edges}
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        assert svc.evaluate(svc.target("flies_tweety")).nf_class == "value"   # the rule presumed
 
 
 def test_register_refuses_a_name_it_cannot_resolve(check):

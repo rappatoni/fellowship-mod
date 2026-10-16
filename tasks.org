@@ -488,7 +488,8 @@ Five prover-side defects were found and fixed on the way:
 - The Python side read =¬A= as a symbol *named* =¬A= rather than as a
   negation, and =⊥= likewise.
 
-** NEXT Extend the debate compiler to first-order arguments
+** DONE Extend the debate compiler to first-order arguments
+CLOSED: [2026-10-17 Sat]
 :PROPERTIES:
 :ID:             aida-first-order-reduction
 :AREA:           phd
@@ -629,6 +630,82 @@ agreed with the author before any code.
   and the rules add no critical pair (=λx.t= is a value, =u * e= a
   covalue).
 
+*Done 2026-10-17, on both routes* (the shared route became the default
+again on 2026-10-17, so the author chose to extend it too).
+- Statement identity needed no new code: =canonical_prop= already keys a
+  proposition by its parsed =Prop= with de Bruijn indices.
+- Enrichment (core/comp/enrich.py, =_cell_from_command=): an
+  instantiation =t * c= and an existential's introduction =(t, v)= take
+  the type of the command they are cut against.
+- Compiler (core/dc/debate_graph.py): =_fo_scopes= gives every node the
+  first-order variables bound above it; an open site raises
+  =DebateCompileError= with the remedy (on the =dixi= entry); a horn with
+  an open statement is visited inline; =ConsFO=, =TermsPairFO= and
+  =DestructTermsPairFO= are spine steps, =LamdaFO= a horn like a lambda;
+  the =first_order_node= refusal is gone.
+- Unfolder and shared route (core/dc/unfold.py, share.py
+  =_first_order_copy=, instances.py): the four nodes are copied as
+  written, the first-order variable keeps its name.
+- Reduction (core/comp/oracle_terms.py): the rules (∀) and (∃) in
+  =_step_command=, =substitute_fo= (propositions, instantiation terms and
+  witnesses; shadowing, capture-avoiding renaming); the guards are gone,
+  also in =evaluate._compile_for_evaluation=. The type check's =shape=
+  compares first-order nodes.
+
+Evidence: tests/first_order/ (tweety, birds_fly, birds_fly_open,
+generalisation, witness) and tests/test_first_order.py (31 tests):
+- graphs: =flies_tweety= rests on the presumed rule and =bird_tweety=,
+  no instance node; =penguin= refutes the rule strictly; =birds_fly=
+  owes the closed =forall x, Bird x -> Wings x= and its lemma =Wings x= is
+  not a node; every node of every fixture is closed;
+- =birds_fly_open= is refused on its =dixi= entry: "it owes 'Wings x',
+  which mentions x, bound by the argument; ... presume or owe a closed
+  one ... and instantiate it";
+- verdicts, the same in both modes on both routes: flies_tweety OPEN
+  (rule refuted), penguin VALUE; birds_fly, wings, tweety_flies VALUE;
+  gen EXCEPTION, pc OPEN, refuted VALUE; exp, exq VALUE;
+- (∀) fires: =tweety_flies= normalises to birds_fly's derivation for
+  tweety (=μb3:Wings tweety.<!IN:forall x, Bird x -> Wings x || tweety *
+  bird_tweety * b3>=); (∃) fires: =exq= gives =(c, μb3:Q c.<pq || c *
+  pr_c * b3>)=; unit tests of both rules and of =substitute_fo=;
+- every unfolded term of every fixture replays with the type check on
+  and expanded, and is closed; the values' normal forms replay too;
+- tests/fo_forall.fspy and fo_exists_forall.fspy join the document graph
+  without a warning; tests/test_adequacy.py covers tests/first_order/.
+- Suite: 2307 passed, 9 skipped, 16 deselected (perf), 2 xfailed, 1
+  xpassed after updating the pins that recorded the refusal
+  (test_first_order_baseline.py, test_service.py's dropped-argument test,
+  test_enrich_prop.py's non-invertible nodes); =pytest -m perf=: 16 passed.
+- Literature (eval/literature2): adapt_induction_fo (gen, pc VALUE),
+  ec_fo (holds VALUE) now evaluate. circ_fo's =flies= is OPEN by Q3:
+  it owes the instance =Ab tweety -> false= while =none_abnormal=
+  presumes =forall x, Ab x -> false=; without unification the two do not
+  meet - the document has to owe the universal and instantiate it.
+Not covered: the legacy and deprecated modules (graft.py, match_utils.py,
+alt_structure.py, reduce.py, legacy_shape.py) still refuse first-order
+terms; nothing in the pipeline calls them.
+
+
+** BACKLOG Tell constants and predicates from sorts in the signature
+:PROPERTIES:
+:ID:             aida-signature-kinds
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        core/ac/signature.py gives a declared constant (=tweety : Animal=) and a predicate (=Bird : Animal -> bool=) kinds of their own instead of "sort", so a message about a declaration names what it is.
+:VERIFY:         A test declares a sort, a constant and a predicate and reads their kinds from =prover.declarations=; the minicourse and first-order tests pass.
+:END:
+
+Found 2026-10-16 with the literature evaluation's bug 8: the misleading
+"declared name 'tweety' has kind 'sort'" message. Since the first-order
+debates no compiler path reaches the kind check with a first-order name,
+so this is cosmetic.
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the

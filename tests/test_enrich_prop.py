@@ -100,14 +100,17 @@ def test_the_root_keeps_the_theorem_it_was_proved_from():
     assert node.prop == "(exists y:N,forall x:N,P x y)->(forall x:N,exists y:N,P x y)"
 
 
-@pytest.mark.parametrize("node_type", [ConsFO, TermsPairFO])
-def test_the_non_invertible_nodes_carry_no_proposition(node_type):
+@pytest.mark.parametrize("node_type, expected", [(ConsFO, "forall x:N,P x y"),
+                                                 (TermsPairFO, "exists y:N,P x y")])
+def test_the_non_invertible_nodes_take_their_commands_type(node_type, expected):
     """A universal instantiation's type cannot be rebuilt from its children --
     recovering P from P[t/x] is not determined -- and an existential
     introduction's binder is discarded by Fellowship's printer.  Both take
-    their type from the enclosing command instead."""
+    the type of the command they are cut against (core/comp/enrich.py,
+    ``_cell_from_command``; since 2026-10-17, for the compiler: tasks.org,
+    aida-first-order-reduction)."""
     node = enriched(EXISTS_FORALL)
-    assert find(node, node_type).prop is None
+    assert find(node, node_type).prop == expected
 
 
 def test_the_command_takes_its_type_from_the_other_side():

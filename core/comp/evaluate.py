@@ -546,9 +546,6 @@ def _compile_for_evaluation(body, name, strict_names, strict_kinds, source=None)
     one, the framework compiled from the term plus those strict edges
     (``compile_issue``, the reference until the generalisation lands;
     tasks.org, aida-discuss-issue-graph-from-document)."""
-    found = first_order_node(body)
-    if found is not None:
-        raise FirstOrderNotSupported("Debate evaluation", found)
     if source is not None:
         return document_issue_graph(source, issue_of(body),
                                     issue_strict_edges(body, name, strict_names), name)
