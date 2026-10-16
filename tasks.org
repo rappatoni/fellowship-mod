@@ -3453,7 +3453,8 @@ to be unified; the author's inclination of 2026-10-15 is towards the
 obligation root with presumptions as supporters for sites too, which
 this task is to decide.
 
-*** BACKLOG Discuss: an argument on top of its stack captures only the stack below it
+*** DONE Discuss: an argument on top of its stack captures only the stack below it
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-entrypoint-capture-adequacy
 :AREA:           phd
@@ -3560,6 +3561,122 @@ terms replay through Fellowship):
   thrown is the demand, not the debate's value; the information that
   comes back is P's label, as with =b1=. Plain cbn keeps =?v1= in place
   (open), plain cbv returns the root (open).
+
+*Decision (the author, 2026-10-16): B2. C and D are out.* The general
+principle: *an expression is judged by what it stands for, not by its
+statement's label.* At a scaffold, sigma reads a supporter's status
+off the term where the supporter rests on a captured variable: =b2=
+stands for the part of the stack below, judged by those derivations;
+a captured *obligation* root of the debate being decided (=b1= here)
+stands for an obligation nobody met in the term, and counts as unmet,
+not as its statement's label (a captured presumption root keeps its
+label: somebody presumed it). On the example both the canonical term
+and argP's term then give P from the presumed Q,
+=μargP:P.<qp:Q->P||!IN:Q*argP:P>=; the question-begging route stays in
+the graph (decision of 2026-10-14) and is never the proof returned.
+
+Why the canonical term returned the circular proof (worked out with the
+author): the root is read by P's label twice - by sigma at Q's scaffold
+(argQ's source P[t] is IN in the graph) and by the discharge of phase 3
+(=site_for_label= turns =?u1:P= with label IN into =!IN:P=) - and the
+root is outside the stack, so it reaches argQ through =b1= (canonical
+term: argP at the bottom of the stack) but never through =b2= (argP's
+term: argP on top). Option A would have given both terms the
+question-begging form; B1 (without the root rule) leaves them different
+(=b1= read globally, =b2= locally).
+
+Consequence on the unfounded loop (lesson8a_cycle.fspy, scratch run):
+skeptical unchanged (open, =?UNDEC:B=); credulous today
+=μpro:B.<r1:A->B||μb1:A.<r3:B->A||!IN:B*b1:A>*pro:B>=, under B2
+=μpro:B.<r1:A->B||!IN:A*pro:B>= - back is dropped (it rests on B's
+captured root) and A's unmet obligation root is discharged by A's
+credulous label. The loop no longer shows in the proof; whether that
+discharge is right is case 3 of the implementation task.
+
+Implementation: [[id:aida-judge-by-what-it-stands-for]].
+
+*** NEXT Judge an expression by what it stands for, not by its statement's label
+:PROPERTIES:
+:ID:             aida-judge-by-what-it-stands-for
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         12:00
+:DEFERRALS:      0
+:OUTCOME:        Sigma (phase 2) and the discharge (phase 3) judge every leaf of a supporter or attacker wing by what it stands for in the term - a captured stack by its derivations, a captured obligation root of the debate being decided as unmet, a nested sub-debate by its own outcome in this term - and fall back to the statement's label only where the term cannot decide (a loop, a presumption nobody contests); the unfolded and the shared route alike.
+:VERIFY:         tests/exposure/lemma_captured.fspy and site_variant.fspy: =evaluate argP.= and =evaluate issue :P.= both give =μargP:P.<qp:Q->P||!IN:Q*argP:P>= (value); the argP-demands-Q variant (scratch: site_variant with argP's =by default.= removed) gives an open result credulously, not =!IN:Q=; lesson8a_cycle's credulous result is the one recorded here and accepted by the author; every other pinned verdict of tests/minicourse, tests/rationality, tests/demo unchanged or justified; the shared route agrees (tests/test_share.py); the suite passes.
+:END:
+
+Decided by the author 2026-10-16 ([[id:aida-entrypoint-capture-adequacy]],
+option B2), with the principle stated there. Today every leaf of a scion
+is compiled as a source of its statement (=scion_record=,
+core/dc/debate_graph.py) and =derivation_status= (core/comp/evaluate.py)
+reads that statement's label off the labelled term. The survey of
+2026-10-16 found where that differs from what the leaf stands for:
+
+1. A scaffold's =b=: =b1= stands for the root, =b2= for the stack below
+   the top; both are judged by the statement's label. Rule: a captured
+   stack by its derivations, a captured obligation root of the debate
+   being decided as unmet, a captured presumption root by its label.
+2. A sub-debate nested in a supporter is judged by its statement's
+   label, not by its outcome in this term. Scratch run on site_variant
+   with argP *demanding* Q, credulous (P, Q IN through the loop):
+   : argP's term: SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP2{...}, argP{[Q] = SUP(?u2:Q, argQ{[P] = b2})}))
+   : today:        exception  μargP:P.<qp||μb1:Q.<pq||μb9:P.<rp||μb1:R.<nR||?OUT:R*_F_>*b9>*b1>*argP>
+   : rule 1 at Q only: value  μargP:P.<qp:Q->P||!IN:Q*argP:P>
+   Rule 1 drops argQ inside argP, so Q's debate in this term rests on
+   its unmet obligation, but the stack scaffold above had already kept
+   argP because its source Q[t] is IN by label: applying the rule at
+   one level makes the decision above it stale. Consistently applied,
+   each sub-debate's status in the term is computed bottom-up from the
+   term and feeds the scaffold above it; labels decide only what the
+   term cannot (loops, uncontested presumptions). Here the result
+   becomes open: argP cannot stand without the loop. The same holds
+   wherever entry-point bias, captures or scope make a copy of a debate
+   come out differently from its label (lesson 17: strictness already
+   varies by instance).
+3. The discharge (phase 3) rewrites a surviving obligation root by its
+   statement's label (=site_for_label=): =?u2:Q= became =!IN:Q= above,
+   though nothing in the term met it. An obligation root that survives
+   is unmet.
+7. Stubs on the shared route are read as sources of their statement
+   unless opened: case 2 on the shared route; the instance resolver
+   must compute the same bottom-up status.
+
+Case 4 (a variable captured by an argument's own binder: the sprung
+trap, Peirce, the self-attack, the captured presumptions that close the
+even loop) is folded into [[id:aida-discuss-capture-source-vs-strict]],
+since changing it changes the even loop's models.
+
+Checked and not violations (2026-10-16):
+- 5. The attacker wing's root, captured by the attack's =alt=, is
+  compiled as an identity record (the contrary from itself) and judged
+  by the contrary's label, while it stands for "the attacked term,
+  passed on". Scratch variant dropping that record from sigma's reading
+  wherever the wing has attackers: 242 evaluations over every fixture
+  (each argument and debate, skeptical and credulous) and the
+  bare-contrary document of tests/test_unfold.py: no verdict changed;
+  of 32 wing decisions met, the root record never decided one (it
+  always agreed with an attacker's record). Structurally it cannot
+  matter: where the root alone would decide (every attacker OUT, the
+  contrary IN by a presumption), the wing reduces to its root =alt=, and
+  both of sigma's choices pass the attacked term on (defeat gives
+  =μalt.<T || alt>=, eta T). Only the word in the trace differs. In an
+  issue's own debate the root cannot decide at all: a credulous witness
+  accepts the issue, so its contrary is OUT.
+- 6. A citation =cite pArg= unfolds into the debate about pArg's
+  conclusion and is judged by that statement, as intended. The
+  author's wrinkle - the cited debate may reduce to a strict term -
+  is handled: scratch document with pArg defeasible as written (it
+  demands Q) and qArg strict for Q; =use= cites pArg. The strict phase
+  decides pArg's debate inside use's term and contributes =use*=; labels
+  all IN; =evaluate use.= gives the strict proof through the cited
+  debate, =μuse:U.<rp||μb1:P.<rq||μb4:Q.<aq||b4>*b1>*use>=; pArg stays
+  defeasible in the document.
 
 *** BACKLOG Design: circular, self-supporting arguments - keep, drop in evaluation, or never generate?
 :PROPERTIES:
@@ -4323,6 +4440,17 @@ scaffolds, and adds =SelfAttack*=: P->false[t] OUT and P[t] IN, where
 the default and share settings (the captured variable alone) leave
 both UNDEC. The one place the settings disagree on labels
 (tests/test_unfold_exposure.py, =LABELS_DIFFER=).
+
+Case 4 of the survey of 2026-10-16 ([[id:aida-judge-by-what-it-stands-for]]):
+under the author's principle - an expression is judged by what it
+stands for, not by its statement's label - a variable captured by an
+argument's own binder stands for that argument's own continuation or
+hypothesis (a self-reference, like a captured root), yet sigma judges
+it by the label of the binder's statement and the strict phase reads it
+as discharged. The decision here should settle both readings by that
+principle; it changes the even loop's models (lesson 15,
+tests/rationality/even_loop*.fspy, tests/demo/05_even_loop.fspy) and
+Peirce's law, which must be checked by a run.
 
 *** DONE Discuss: should the scaffold binders alt and b capture?
 CLOSED: [2026-10-06 Tue]
