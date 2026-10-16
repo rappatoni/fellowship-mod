@@ -3184,6 +3184,20 @@ scaffold. That is the fastest way to check points 5 to 7 on a fixture.
 :VERIFY:         A written note in call-by-onus.org states the additional reduction rules (or the decision not to add them) and their soundness argument; if rules are added, the in-attacker case of tests/test_evaluate.py asserts class exception and subject reduction is checked by replaying the normal form through Fellowship; if not, classify_nf's spine-aware definition is tested on the defeated fixture.
 :END:
 
+*Direction (the author, 2026-10-16).* The principled treatment of a
+closed uncatchable clash: it contributes a strict edge to every other
+node, since a contradiction derives every statement, and everything
+evaluates to an exception. Today the clash decides scaffolds as a
+strict wing but claims no strict edge (decided 2026-09-25,
+aida-review-guard-and-strict-decisions) and is reported as an exception
+only where it sits. To be worked out here, with
+[[id:aida-uncatchable-exception-terminology]]: what the labelling does
+with strict edges on both sides of every statement, and how T3
+(debate-graph-spec.org) states the inconsistent case - an issue IN with
+evaluation an exception (tests/test1.fspy is today's one known instance,
+tests/test_adequacy.py =KNOWN=).
+
+
 Note 2026-09-17 (aida-paper-attack-shape): a defeated site now holds
 the real clash mu alpha.< t || E >, and classify_nf finds an
 uncatchable clash wherever it sits, so a lost debate reports as an
