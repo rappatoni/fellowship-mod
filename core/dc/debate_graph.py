@@ -777,7 +777,8 @@ def _host_name(body, fallback: str) -> str:
     node = body
     while True:
         if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
-            names.append(binder_origin(node))
+            if not _is_negation_introduction(node):
+                names.append(binder_origin(node))
             node = node.term
         elif isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
             names.append(binder_origin(node))
@@ -788,6 +789,15 @@ def _host_name(body, fallback: str) -> str:
         if not candidate.startswith(SYNTHETIC_PREFIX):
             return candidate
     return fallback
+
+
+def _is_negation_introduction(node) -> bool:
+    """Fellowship's wrapper for ``elim h.`` on a goal ~A,
+    ``mu H1:~A.< lambda h:A. ... || H1 >``: its binder (H1) is the prover's,
+    not the argument's, and names no subargument (tasks.org,
+    aida-negation-edge-provenance)."""
+    from core.ac.instructions import is_primitive_negation_prop
+    return isinstance(node.term, Lamda) and is_primitive_negation_prop(getattr(node, "prop", None))
 
 
 def binder_statements(node) -> dict:
