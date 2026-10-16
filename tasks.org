@@ -7016,3 +7016,68 @@ Evidence: the two new tests fail before (=['alt1', 'b3', 'pArg',
 'alt1']=) and pass after; suite 1388 passed, no existing test touched.
 This is the one change to =unfold= since it became the reference for the
 shared route; the differential tests of that task still pass against it.
+
+** DONE Replay a scaffold on a negation's lambda without the elim shortcut
+CLOSED: [2026-10-16 Fri]
+:PROPERTIES:
+:ID:             aida-replay-neg-elim-shortcut
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The type oracle's instruction generator replays a support scaffold whose original is a lambda refuting its hypothesis (μalt:¬A.<λh:A.μa:⊥.<h||X>||wiring>) as a cut, so every unfolded term of tests/minicourse/lesson15_capture.fspy replays through Fellowship and agrees with the term sent.
+:VERIFY:         tests/test_neg_elim_shortcut.py passes, and 5 of its 7 tests fail on the generator before the change; the suite passes with the default and with the expanded type check, lesson 15 no longer among the expanded check's rejections.
+:END:
+
+Found 2026-10-16 while assessing [[id:aida-shared-route-stack-shape]]:
+the suite run with =FSP_TYPECHECK=expanded= had Fellowship reject 9 of
+the 11 terms of lesson 15 (the three argument terms and six issue
+terms), "alt15 is neither in your hypothesis nor in your conclusion" or
+"This is not trivial", where the default per-definition check accepted
+them. Nothing failed: the tests that load the fixture run it with
+=stop_on_error=False=. The legacy unfolding of the same issues
+replayed.
+
+The terms are well-typed; the replay translation was wrong.
+=InstructionsGenerationVisitor.visit_Mu= (core/ac/instructions.py)
+replays μH1:¬A.<λH2:A.μH3:⊥.<H2||X>||H1> as the single command =elim
+H1=, but checked only the left half. In lesson 15 "Q fails" has two
+supporters, the lambdas of p1 and p2, so in the stacked shape the lower
+one is the original of a support scaffold,
+=μalt2:Q->false.<λh:Q.μalpha:false.<h||...>||μ'b2:Q->false.<...>>=; the
+shortcut fired, dropped the wiring, and every later instruction was one
+binder off (Fellowship rebuilt =λalt2:Q.μalt3:false...=). The legacy
+shape never puts a lambda where a scaffold's original is - that is
+always the bare site - which is why the per-definition check, still on
+the legacy shape until [[id:aida-shared-route-stack-shape]], never met
+it. A second mismatch on the way: =elim H1= builds that shape only for a
+primitive negation =~A=; for =A -> false= it builds =λH2:A.?:⊥=, so the
+shortcut was wrong there too even with H1 on the right.
+
+Fix: the shortcut requires the right-hand side to be H1 itself and the
+cut proposition to be a primitive negation (=is_primitive_negation_prop=);
+anything else takes the ordinary cut.
+
+Evidence (worktree branch shared-route-stack-shape):
+- tests/test_neg_elim_shortcut.py (new, 7 tests): =~Q= is still one
+  =elim=; =Q -> false= and the scaffold shape are cuts; each of the
+  three shapes replays through Fellowship and agrees with the term; all
+  11 lesson 15 terms replay. Before the change 5 fail.
+- Suite, default type check: 2124 passed, 7 skipped, 2 xfailed, 1
+  xpassed. Its rejected type checks are the intended ones only (lesson
+  16's two spellings, test_an_ill_typed_argument_is_rejected_by_both).
+- Suite, =FSP_TYPECHECK=expanded=: the same rejections and no others;
+  lesson 15's are gone. 2 failures, both by the prover's I/O timeout on
+  the expanded check of the 12-level doubled chain
+  (tests/test_share.py, =test_label_and_graph_never_call_unfold=,
+  =test_evaluate_never_calls_unfold=) - a size limit of the expanded
+  check, not a type error, as before the change.
+- Caution for worktrees: the main checkout's virtualenv has an editable
+  install that maps =core=, =wrap= and =pres= to the main checkout, so
+  pytest run from another worktree tests the main checkout's code unless
+  =PYTHONPATH= names the worktree. The runs above set it.
