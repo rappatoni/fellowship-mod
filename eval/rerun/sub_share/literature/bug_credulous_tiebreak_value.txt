@@ -1,0 +1,42 @@
+== literature/bug_credulous_tiebreak_value.fspy: check ok=True (0.1s)
+-- pa: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- sa: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- pb: issue B[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:B
+      credulous -> open      ?UNDEC:B
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:B
+      credulous -> value     μpb:B.<q_b:Q->B||!IN:Q*pb:B>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:B
+      credulous -> value     μpb:B.<q_b:Q->B||!IN:Q*pb:B>
+-- nb: issue B[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:B?
+      credulous -> open      UNDEC:B?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:B?
+      credulous -> value     μ'nb:B.<r_nb:R->~B||!IN:R*nb:B*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:B?
+      credulous -> value     μ'nb:B.<r_nb:R->~B||!IN:R*nb:B*_F_>
+== done in 0.6s

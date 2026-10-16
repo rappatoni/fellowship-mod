@@ -1,0 +1,17 @@
+== literature2/fo_opaque.fspy: check ok=True (0.1s)
+-- gen: issue forall x:D,Pr x[t]; 4 edges
+   grounded  issue: ['OUT']
+      [1] Pr d->false[t]=IN (Pr d->false)->~(forall x:D,Pr x)[t]=IN ~(forall x:D,Pr x)[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> exception μalt1:forall x:D,Pr x.<counter_d:(Pr d->false)->~(forall x:D,Pr x)||not_pd:Pr d->false*?OUT:forall x:D,Pr x*_F_>
+      credulous -> exception μalt1:forall x:D,Pr x.<counter_d:(Pr d->false)->~(forall x:D,Pr x)||not_pd:Pr d->false*?OUT:forall x:D,Pr x*_F_>
+-- pc: issue Pr c[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] Pr c[t]=OUT Pr d->false[t]=IN (Pr d->false)->~(forall x:D,Pr x)[t]=IN (forall x:D,Pr x)->Pr c[t]=IN ~(forall x:D,Pr x)[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> open      ?OUT:Pr c
+      credulous -> open      ?OUT:Pr c
+-- refuted: issue forall x:D,Pr x[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] Pr d->false[t]=IN (Pr d->false)->~(forall x:D,Pr x)[t]=IN ~(forall x:D,Pr x)[t]=IN forall x:D,Pr x[c]=IN forall x:D,Pr x[t]=OUT
+      skeptical -> value     μ'alt2:forall x:D,Pr x.<counter_d:(Pr d->false)->~(forall x:D,Pr x)||not_pd:Pr d->false*μb1:forall x:D,Pr x.<alt2:forall x:D,Pr x||b1:forall x:D,Pr x>*_F_>
+      credulous -> value     μ'alt2:forall x:D,Pr x.<counter_d:(Pr d->false)->~(forall x:D,Pr x)||not_pd:Pr d->false*μb1:forall x:D,Pr x.<alt2:forall x:D,Pr x||b1:forall x:D,Pr x>*_F_>
+== done in 0.3s

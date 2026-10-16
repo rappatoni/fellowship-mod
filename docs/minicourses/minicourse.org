@@ -878,6 +878,20 @@ Read the UNDEC column as the modes' definitions: credulous discards an
 undecided *attacker* (give the proponent the benefit of the doubt);
 skeptical discards the undecided *attacked side*.
 
+*Since 2026-10-16 the credulous column is an option, not the default*
+(tasks.org, =aida-credulous-tiebreak-grounded=). A credulous witness
+already makes the credulous choices; what it leaves UNDEC it does not
+accept. Resolving that residue with the credulous column could still
+manufacture acceptance: under grounded semantics a supporter resting on
+an UNDEC presumption was kept over an original that stood IN, and the
+verdict came out OPEN where skeptical evaluation gave a value. By default
+an UNDEC status is now resolved as in the skeptical column in both modes,
+so under grounded credulous and skeptical evaluation coincide.
+=undecided credulous= (=FSP_UNDECIDED=credulous=) restores the credulous
+column; the passage below describes that setting. Evaluation has more
+degrees of freedom than the labelling and the two modes, and this setting
+names one of them.
+
 *The modes are uniform strategies.* Translating wing choice into
 reductions with the paper's shapes of lesson 6: on the term side (mu<)
 keeps the original at a support and defeats it at an attack, (>mu) the

@@ -681,6 +681,82 @@ so an obligation can be about an eventuality that does not exist.
 - Bug 7 also in the skeptic's challenge of =t_lnc_dialectical.fspy=:
   [[id:aida-negation-edge-provenance]].
 
+* Part 3: re-run after the fixes
+
+Re-run 2026-10-16 on branch =eval-rerun= at =9f565c8= (main, with the
+fixes =2dac6a3= to =2f2cd10=). Same documents, same harness, same
+cross-checks; outputs in =eval/rerun/=, compared with the first run by
+=eval/compare_runs.py=. Three documents were added to check the fixes in
+their originally intended spelling (=t_dne_direct.fspy=,
+=seq_mcs_closed_neg.fspy=) and to reduce a newly noticed failure
+(=bug_scaffold_label.fspy=).
+
+** The bugs of part 1
+
+| bug | task                                   | re-run                                                                                          |
+|-----+----------------------------------------+-------------------------------------------------------------------------------------------------|
+|   1 | aida-negation-cell-horn                | fixed: x1, x2 join the graph; ~~A->A written with ~ and =elim= on falsum evaluates to the classical proof (=t_dne_direct=); the modus tollens attacks with ~Q join the graph |
+|   2 | aida-lemma-exposure-scope              | fixed: no free variable, no mismatch; t_cases and io_cases now OUT/OPEN under the default setting (see bug 10) |
+|   3 | aida-credulous-tiebreak-grounded       | fixed: both reproductions and olon.fspy give VALUE in both modes; the value no longer keeps B's derivation |
+|   4 | aida-typecheck-dialectical-classical   | fixed: t_dne and t_mirabilis are VALUE with the type check on                                    |
+|   5 | aida-underscore-binder                 | fixed: a, b, and thetaexpander_bureaucratic_cases.fspy all graph and evaluate                    |
+|   6 | aida-unsupported-connective-crash      | fixed: one-line refusal per argument, exit 0                                                     |
+|   7 | aida-negation-edge-provenance          | fixed: the edge is named negA                                                                    |
+|   8 | aida-first-order-reduction (note)      | fixed message: "Debate graph compilation does not support first-order terms yet, and this one contains a ConsFO" |
+
+** Cross-checks: unchanged
+
+161/161 Dung frameworks and 11/11 literature frameworks agree on all
+four semantics; 155/161 ADFs, the same six tautologous conditions; 912
+of 912 evaluations adequate on random frameworks, with the same 116
+issue-level differences from Dung (specification question 2). The
+specification questions 1, 3, 4 and 5 give the same results as before.
+
+** New findings
+
+9. *A scaffold on an elimination cell gets no label.*
+   =bug_scaffold_label.fspy= (reduced automatically from
+   =seq_mcs_closed.fspy=; already in part 2's output, which I misread):
+   two refutations share the cell =?:Q * ?:false=; =evaluate att_p=
+   fails in every mode and semantics with "No label for scaffold issue
+   ('B(S:Q,->,false)', 'context') in the term", although the labelling
+   has =Q->false[c]= IN and the issue IN. Task
+   [[id:aida-cell-scaffold-label]].
+10. *The subarguments setting changes labels and verdicts.* Since bug 2's
+    fix, the dialectical proof by cases (=t_cases=) and I/O logic's
+    reasoning by cases (=io_cases=) are OUT and OPEN under
+    =subarguments default= and =share=, and IN with the classical proof
+    term under =preserve=. The README says the labels never depend on the
+    setting. Across all 74 literature documents these two are the only
+    ones that differ. Task [[id:aida-subarguments-setting-labels]].
+- With =~Q= spelled out (=seq_mcs_closed_neg.fspy=) the sequent-based
+  example has five preferred labellings: the three maximal consistent
+  subsets, all premises IN, and all premises IN with Q and =~Q= both IN.
+  Same family as before; note on [[id:aida-strict-layer]].
+- =tests/test1.fspy= is another strictly inconsistent document
+  (EfficientMetro both sides IN, EXCEPTION); it was in the first sweep
+  too and I had not listed it.
+
+** Dialectical theorems now
+
+| theorem                    | default setting, type check on | preserve |
+|----------------------------+--------------------------------+----------|
+| transitivity, contraposition, Peirce, ~(P-P) | VALUE         | VALUE    |
+| ~~A->A (both spellings), consequentia mirabilis | VALUE      | VALUE    |
+| proof by cases             | OUT, OPEN (bug 10)             | VALUE    |
+
+** Test suite, fixtures, scaling
+
+- Suite: 2176 passed, 8 skipped, 2 xfailed, 1 xpassed, 2 failed. Both
+  failures (=test_capture_by_b=, =test_lesson_fixture_replays[lesson2_graph.fspy]=)
+  were =BrokenPipeError= on the prover pipe while three other
+  prover-heavy jobs ran; both pass alone. Noted on
+  [[id:aida-transport-limits]].
+- Fixture sweep (71 scripts): olon and thetaexpander are clean; what
+  remains is documented (lj refusals, two spellings, odd loops without a
+  stable labelling, strictly inconsistent fixtures).
+- Scaling: unchanged within noise (n=11: label 3.7 s, evaluate 8.4 s).
+
 * Task changes made (tasks.org on this branch)
 
 New tasks, each citing its reproduction: [[id:aida-negation-cell-horn]]
@@ -702,14 +778,18 @@ INFO message); the married-bachelor and non-interference documents into
 [[id:aida-postulate-fixtures-fspy]]; the s(CASP) documents into
 [[id:aida-scasp-stable-correspondence]]; the scaling run into
 [[id:aida-scaling-benchmarks]]; part 2's evidence into
-[[id:aida-strict-layer]] and the tasks above. No status was changed.
+[[id:aida-strict-layer]] and the tasks above. No status was changed. Part 3 added [[id:aida-cell-scaffold-label]] and
+[[id:aida-subarguments-setting-labels]], and notes on
+[[id:aida-strict-layer]], [[id:aida-uncatchable-exception-terminology]]
+and [[id:aida-transport-limits]].
 
 * Files
 
 - =eval/literature/*.fspy= - part 1's documents (48 with the two
   non-contradiction files); =eval/literature2/*.fspy= - part 2's (26);
   =eval/scasp/*.pl= - the s(CASP) programs.
-- =eval/results2/= - part 2's harness output.
+- =eval/results2/= - part 2's harness output; =eval/rerun/= - part 3's
+  (=sub_share/=, =sub_preserve/=: the same under the other settings).
 - =eval/results/= - harness output for every document, the cross-checks,
   the fixture sweep, the scaling run.
 - =eval/harness.py=, =eval/af_crosscheck.py=, =eval/af_eval_check.py=,

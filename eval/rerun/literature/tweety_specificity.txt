@@ -1,0 +1,32 @@
+== literature/tweety_specificity.fspy: check ok=True (0.1s)
+-- birdsfly: issue Flies[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=UNDEC Flies[t]=UNDEC Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> open      ?UNDEC:Flies
+   preferred issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- penguinsdont: issue Flies[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=UNDEC Flies[t]=UNDEC Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> open      UNDEC:Flies?
+   preferred issue: ['IN', 'OUT']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+== done in 0.5s

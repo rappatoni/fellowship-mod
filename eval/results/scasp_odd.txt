@@ -1,0 +1,28 @@
+== literature/scasp_odd.fspy: check ok=True (0.1s)
+-- arg_p: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] (P->false)->P[t]=IN P->false[t]=OUT P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+      credulous -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+   preferred issue: ['IN']
+      [1] (P->false)->P[t]=IN P->false[t]=OUT P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+      credulous -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+   stable    issue: ['IN']
+      [1] (P->false)->P[t]=IN P->false[t]=OUT P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+      credulous -> value     μalt2:P.<rule_p:(P->false)->P||λb1:P.μb2:false.<b1:P||alt2:P>*alt2:P>
+-- arg_r: issue R[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] R[t]=IN
+      skeptical -> value     μarg_r:R.<r_fact:R||arg_r:R>
+      credulous -> value     μarg_r:R.<r_fact:R||arg_r:R>
+   preferred issue: ['IN']
+      [1] R[t]=IN
+      skeptical -> value     μarg_r:R.<r_fact:R||arg_r:R>
+      credulous -> value     μarg_r:R.<r_fact:R||arg_r:R>
+   stable    issue: ['IN']
+      [1] R[t]=IN
+      skeptical -> value     μarg_r:R.<r_fact:R||arg_r:R>
+      credulous -> value     μarg_r:R.<r_fact:R||arg_r:R>
+== done in 0.2s

@@ -1,0 +1,15 @@
+== literature/catala_empty.fspy: check ok=True (0.1s)
+-- exc: issue Rate15[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] Children->Rate15[t]=IN Children[t]=OUT Rate15[t]=OUT
+      skeptical -> open      ?OUT:Rate15
+      credulous -> open      ?OUT:Rate15
+   preferred issue: ['OUT']
+      [1] Children->Rate15[t]=IN Children[t]=OUT Rate15[t]=OUT
+      skeptical -> open      ?OUT:Rate15
+      credulous -> open      ?OUT:Rate15
+   stable    issue: ['OUT']
+      [1] Children->Rate15[t]=IN Children[t]=OUT Rate15[t]=OUT
+      skeptical -> open      ?OUT:Rate15
+      credulous -> open      ?OUT:Rate15
+== done in 0.3s

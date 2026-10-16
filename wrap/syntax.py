@@ -468,6 +468,7 @@ COMMANDS = {
     "typecheck": _p_choice("typecheck", ("on", "off", "expanded")),
     "pipeline": _p_choice("pipeline", ("shared", "unfolded")),
     "subarguments": _p_choice("subarguments", ("default", "share", "preserve")),
+    "undecided": _p_choice("undecided", ("witness", "credulous")),
     "load": _p_load,
     "tactic": _p_tactic,
     "start": _p_start,

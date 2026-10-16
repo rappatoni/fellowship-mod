@@ -1,0 +1,10 @@
+# Minimal reproduction: an argument whose cut is named `_` (Fellowship
+# accepts it) makes every debate that reaches P fail the type check.
+lk.
+declare P : bool.
+argument a : (P).
+cut (P) _.
+dixi.
+argument b : (P).
+by default.
+dixi.

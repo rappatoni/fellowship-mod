@@ -77,3 +77,4 @@ papers/comma2026/.cecli/
 *.json
 !wrap/schemas/*.json
 *.txt
+!eval/**/*.txt

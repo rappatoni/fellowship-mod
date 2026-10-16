@@ -1,0 +1,7 @@
+== literature/bug_credulous_tiebreak_value.fspy: check ok=True (0.1s)
+-- pa: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] B->A[t]=IN ~B[t]=IN Q->B[t]=IN R->~B[t]=IN A[t]=IN B[c]=UNDEC B[t]=UNDEC Q[t]=IN R[t]=IN
+      skeptical -> value     !IN:A
+      credulous -> value     μsa:A.<b_a:B->A||μb1:B.<q_b:Q->B||!IN:Q*b1:B>*sa:A>
+== done in 0.2s

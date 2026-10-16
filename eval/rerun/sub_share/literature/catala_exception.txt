@@ -1,0 +1,32 @@
+== literature/catala_exception.fspy: check ok=True (0.1s)
+-- base: issue Rate20[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+      credulous -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+   preferred issue: ['OUT']
+      skeptical -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+      credulous -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+   stable    issue: ['OUT']
+      skeptical -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+      credulous -> exception μalt1:Rate20.<one_value:Rate15->~Rate20||μb1:Rate15.<exc_rule:Children->Rate15||children:Children*b1:Rate15>*?OUT:Rate20*_F_>
+-- exc: issue Rate15[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+      credulous -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+   preferred issue: ['IN']
+      skeptical -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+      credulous -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+   stable    issue: ['IN']
+      skeptical -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+      credulous -> value     μexc:Rate15.<exc_rule:Children->Rate15||children:Children*exc:Rate15>
+-- excl: issue Rate20[c]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+      credulous -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+      credulous -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+      credulous -> value     μ'alt3:Rate20.<one_value:Rate15->~Rate20||μb2:Rate15.<exc_rule:Children->Rate15||children:Children*b2:Rate15>*μb1:Rate20.<alt3:Rate20||b1:Rate20>*_F_>
+== done in 0.4s

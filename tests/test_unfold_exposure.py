@@ -414,3 +414,66 @@ class TestJudgedByWhatItStandsFor:
             finally:
                 prover.close()
         assert all(v["unfolded"] == v["shared"] for v in classes.values()), classes
+
+
+# -- an exposed lemma stays in the scope of its hypotheses ------------------------
+
+def closed(prover, term):
+    """The variables free in ``term`` that no declaration accounts for."""
+    from core.dc.discipline import free_variables
+    return {name for _kind, name in free_variables(term)
+            if name not in prover.declarations and name not in ("_F_", "_T_")}
+
+
+class TestALemmaStaysInItsScope:
+    """tasks.org, aida-lemma-exposure-scope (the literature evaluation's bug
+    2).  A lemma that uses a hypothesis of its own argument (``h`` of
+    ``λh:A``) is an edge whose source at A is captured.  Stacked in the
+    debate about its statement outside that lambda, the hypothesis is
+    unfolded as its statement there - an obligation on A - instead of
+    being copied free.  Proof by cases (eval/literature/t_cases.fspy) and
+    input/output logic's reasoning by cases (eval/literature2/io_cases.fspy)."""
+
+    @pytest.mark.parametrize("script, target", [("exposure/lemma_scope_cases.fspy", "p1"),
+                                                ("exposure/lemma_scope_io.fspy", "claim")])
+    def test_the_term_is_closed_replays_and_agrees_with_the_label(self, script, target):
+        prover, svc = session(script)
+        try:
+            for text in targets(prover):
+                found = term_of(svc, text)
+                assert closed(prover, found.term) == set(), text
+                replay(prover, found, name="scope")
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                issue = svc.issue_term(svc.target(target), want_term=False).issue
+                for mode in ("skeptical", "credulous"):
+                    result = svc.evaluate(svc.target(target), mode=mode)
+                    assert result.sigma.get(issue) == "OUT"
+                    assert result.nf_class == "open", mode
+        finally:
+            prover.close()
+
+    def test_outside_the_lambda_the_hypothesis_is_an_obligation(self):
+        prover, svc = session("exposure/lemma_scope_cases.fspy")
+        try:
+            shown = pres_scaffolds(term_of(svc, "p1").term)
+            assert "μy:B.<f||?u4:A*y>" in shown          # was <f||h*y>, h free
+            assert "λh:A.μk:false.<b2||x>" in shown       # inside, captured as before
+        finally:
+            prover.close()
+
+
+@pytest.mark.parametrize("script", sorted({*FIXTURES, "exposure/lemma_scope_cases.fspy",
+                                           "exposure/lemma_scope_io.fspy",
+                                           "minicourse/lesson9_evaluation.fspy",
+                                           "minicourse/lesson15_capture.fspy",
+                                           "circular_supporter.fspy"}))
+def test_every_unfolded_term_is_closed(script):
+    """The premise of the strict phase (tasks.org, the decision of
+    2026-09-25): the unfolded term is closed as a whole."""
+    prover, svc = session(script)
+    try:
+        for text in targets(prover):
+            assert closed(prover, term_of(svc, text).term) == set(), text
+    finally:
+        prover.close()

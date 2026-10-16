@@ -1,0 +1,47 @@
+# Minimal reproduction (found in the re-run of 2026-10-16; already present
+# in part 2's output): credulous evaluation of att_p under preferred or
+# stable fails with "No label for scaffold issue ('B(S:Q,->,false)',
+# 'context') in the term; the labelling and the term disagree about the
+# debate's shape". att_p and att_r share the elimination cell ?:Q * ?:false,
+# an exposed node on (Q->false)[c]; reduced automatically from
+# seq_mcs_closed.fspy (every block left is needed).
+lk.
+declare P, Q, S1, S2, S3 : bool.
+declare src_p : (S1 -> P).
+declare src_q : (S2 -> Q).
+declare src_r : (S3 -> (P -> Q -> false)).
+argument q : (Q).
+cut (S2 -> Q) t.
+axiom src_q.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument r : (P -> Q -> false).
+cut (S3 -> (P -> Q -> false)) t.
+axiom src_r.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument att_p : (P).
+cut (P -> Q -> false) th.
+next.
+elim.
+axiom th.
+elim.
+next.
+next.
+dixi.
+counterargument att_r : (P -> Q -> false).
+elim.
+next.
+elim.
+next.
+next.
+dixi.
+counterargument nofalse : (false).
+elim.
+dixi.

@@ -498,6 +498,11 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             parsed = grammar.parser.parse(self.proof_term)
             transformer = ProofTermTransformer()
             self.body = transformer.transform(parsed)
+            # The parser reads the two ambiguous constructors propositionally;
+            # the declarations decide which are first-order (\x:N. a
+            # LamdaFO, x*K2 a ConsFO; tasks.org, aida-fo-resolve-unwired).
+            from core.ac.resolve import resolve
+            self.body = resolve(self.body, getattr(self.prover, "declarations", None))
             if isinstance(self.body, (Mu, Mutilde)) and getattr(self.body, "prop", None):
                 self.conclusion = self.body.prop
                 self._rename_outer_binder(self.body, self.name)

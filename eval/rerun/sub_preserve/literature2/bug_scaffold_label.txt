@@ -1,0 +1,52 @@
+== literature2/bug_scaffold_label.fspy: check ok=True (0.1s)
+-- q: issue Q[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+   preferred issue: ['IN']
+      skeptical -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+   stable    issue: ['IN']
+      skeptical -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+-- r: issue P->Q->false[t]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+      credulous -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+   preferred issue: ['IN']
+      skeptical -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+      credulous -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+   stable    issue: ['IN']
+      skeptical -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+      credulous -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+-- att_p: issue P[c]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   preferred issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   stable    issue: ['IN']
+      skeptical -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+-- att_r: issue P->Q->false[c]; 9 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+      credulous -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+   preferred issue: ['OUT']
+      skeptical -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+      credulous -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+   stable    issue: ['OUT']
+      skeptical -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+      credulous -> exception μ'alt16:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*OUT:P->Q->false?>
+-- nofalse: issue false[c]; 1 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+== done in 1.1s

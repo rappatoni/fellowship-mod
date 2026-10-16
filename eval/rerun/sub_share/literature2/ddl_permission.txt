@@ -1,0 +1,32 @@
+== literature2/ddl_permission.fspy: check ok=True (0.1s)
+-- prohibition: issue ONotSmoke[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+      credulous -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+   preferred issue: ['OUT']
+      skeptical -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+      credulous -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+   stable    issue: ['OUT']
+      skeptical -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+      credulous -> exception μalt1:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb1:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b1:PSmoke>*?OUT:ONotSmoke*_F_>
+-- permission: issue PSmoke[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+      credulous -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+   preferred issue: ['IN']
+      skeptical -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+      credulous -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+   stable    issue: ['IN']
+      skeptical -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+      credulous -> value     μpermission:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*permission:PSmoke>
+-- exception: issue ONotSmoke[c]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+      credulous -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+      credulous -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+      credulous -> value     μ'alt3:ONotSmoke.<perm_excludes:PSmoke->~ONotSmoke||μb2:PSmoke.<perm_rule:SmokingArea->PSmoke||area:SmokingArea*b2:PSmoke>*μb1:ONotSmoke.<alt3:ONotSmoke||b1:ONotSmoke>*_F_>
+== done in 0.5s

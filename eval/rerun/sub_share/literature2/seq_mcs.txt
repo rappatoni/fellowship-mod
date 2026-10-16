@@ -1,0 +1,42 @@
+== literature2/seq_mcs.fspy: check ok=True (0.1s)
+-- p: issue P[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+      credulous -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+   preferred issue: ['IN']
+      skeptical -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+      credulous -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+   stable    issue: ['IN']
+      skeptical -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+      credulous -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+-- q: issue Q[t]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> open      ?UNDEC:Q
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+-- r: issue P->~Q[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+      credulous -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+   preferred issue: ['IN']
+      skeptical -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+      credulous -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+   stable    issue: ['IN']
+      skeptical -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+      credulous -> value     μr:P->~Q.<src_r:S3->P->~Q||!IN:S3*r:P->~Q>
+-- att_q: issue Q[c]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Q?
+      credulous -> open      UNDEC:Q?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Q?
+      credulous -> value     μ'att_q:Q.<src_r:S3->P->~Q||!IN:S3*μb2:P.<src_p:S1->P||!IN:S1*b2:P>*att_q:Q*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Q?
+      credulous -> value     μ'att_q:Q.<src_r:S3->P->~Q||!IN:S3*μb2:P.<src_p:S1->P||!IN:S1*b2:P>*att_q:Q*_F_>
+== done in 0.6s

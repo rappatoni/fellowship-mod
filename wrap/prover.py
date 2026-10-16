@@ -133,6 +133,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
         #: ``Unfolder``; tasks.org, aida-circular-support-design).
         #: FSP_SUBARGUMENTS or `subarguments MODE` selects it.
         self.subarguments = os.getenv("FSP_SUBARGUMENTS", "default")
+        #: What credulous evaluation does where its witness labelling leaves
+        #: a scaffold UNDEC: "witness" resolves it as not accepted (as in
+        #: skeptical mode), "credulous" uses the old tiebreak (keep the
+        #: supporter, drop the attack) - core/comp/evaluate.py, UNDECIDED;
+        #: tasks.org, aida-credulous-tiebreak-grounded.  FSP_UNDECIDED or
+        #: `undecided MODE` selects it.
+        self.undecided = os.getenv("FSP_UNDECIDED", "witness")
         #: The current document (wrap/document.py).  Fellowship starts in a
         #: fresh theory; ``new_document`` sets its logic (setup_prover).
         self.doc = Document()

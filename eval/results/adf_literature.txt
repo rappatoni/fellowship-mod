@@ -1,0 +1,12 @@
+ok support_chain: a: T; b: a; c: b
+ok attack_chain: a: T; b: ~a; c: ~b
+ok joint_attack: a: T; b: T; c: ~a | ~b
+ok joint_support: a: T; b: ~d; c: a&b; d: F
+ok mixed: a: T; b: ~c; c: a&~b
+ok xor: a: T; b: ~e; c: a&~b | ~a&b; e: F
+ok self_support: a: a
+ok support_cycle: a: b; b: a
+ok support_cycle_with_base: a: b | ~c; b: a; c: F
+ok odd_negative: a: ~a
+ok even_negative: a: ~b; b: ~a
+11/11 ADFs agree on all four semantics

@@ -1,0 +1,42 @@
+== literature2/io_cases.fspy: check ok=True (0.1s)
+-- claim: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+   preferred issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+   stable    issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+-- from_b: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+   preferred issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+   stable    issue: ['OUT']
+      skeptical -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+      credulous -> open      μalt5:Ox.<?OUT:Ox||alt5:Ox>
+-- b_from_input: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+-- not_a: issue A->false[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+== done in 0.8s

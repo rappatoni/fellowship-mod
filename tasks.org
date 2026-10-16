@@ -488,7 +488,7 @@ Five prover-side defects were found and fixed on the way:
 - The Python side read =¬A= as a symbol *named* =¬A= rather than as a
   negation, and =⊥= likewise.
 
-** BACKLOG Extend the debate compiler to first-order arguments
+** NEXT Extend the debate compiler to first-order arguments
 :PROPERTIES:
 :ID:             aida-first-order-reduction
 :AREA:           phd
@@ -563,6 +563,71 @@ introduction) are refused, each with the misleading kind message
 hand-instantiated schemata such as =(forall x, P x) -> P c= are a
 working stopgap (fo_opaque.fspy gives adaptive inductive
 generalisation's verdicts).
+
+2026-10-16, the foundations fixed before the expansion (author's plan of
+2026-10-16): the resolution pass is wired in
+([[id:aida-fo-resolve-unwired]]), so a quantifier step is now a first-order
+node and is refused with =FirstOrderNotSupported= naming it ("... contains a
+ConsFO ...") at registration - on its =dixi= entry
+([[id:aida-check-dropped-argument]]) - and at =graph=, =label= and
+=evaluate=; the misleading "kind 'sort'" message of bug 8 no longer
+appears. Still to settle with the expansion: core/ac/signature.py files
+every non-proposition declaration - sorts, constants (=tweety=) and
+predicates - under the kind "sort". The starting state is pinned in
+tests/test_first_order_baseline.py (opaque quantified statements label
+and evaluate: tests/first_order/). Next: the design questions above,
+agreed with the author before any code.
+
+*Design decisions (the author, 2026-10-16).*
+- Q1, statement identity: as the spec says. A node is a proposition up
+  to renaming of bound first-order variables, never the printed string;
+  =forall x, Bird x -> Flies x=, its instance =Bird tweety -> Flies
+  tweety= and =Flies tweety= are three nodes, linked only by an argument
+  that instantiates. Needs Prop objects on the term nodes.
+- Q3, capture: a binder captures a site only for the identical statement
+  (up to renaming of bound variables). No unification: =P x= is not
+  matched against =P tweety=.
+- Q4, the instantiation step (=ConsFO=, =tweety * ...=): a presumed
+  general rule stands or falls as one statement. The step is part of the
+  spine, not an attack point, as for the intermediate conclusions of a
+  curried implication ([[id:aida-curried-intermediate-conclusions]]); an
+  exception for one individual has to refute the rule itself, which
+  brings it down for every individual (the verdict of adaptive logic's
+  inductive generalisation, fo_opaque.fspy).
+  To keep in mind (not adopted): presuming =forall x, P x= could instead
+  presume each instance =P t= on its own, so that an exception for
+  Tweety leaves the rule standing for other individuals. That needs the
+  instantiation exposed as an edge that is *not* strict - AIDA contraposes
+  every implication, so a strict instantiation edge would carry the
+  refutation of the instance back to the rule anyway.
+- Q2, sites under a first-order binder: refused. A site is what the
+  arguer leaves out, and only a statement can be presumed or owed, not
+  an open formula: an open site under =λx= (or under an existential's
+  witness =(y).=) is refused at registration, on the =dixi= entry, with
+  the remedy - presume or owe a closed statement (=forall x, Wings x=,
+  =forall x, Bird x -> Wings x=, or anything else that proves =Wings x=)
+  and instantiate it. Automatic lifting to the universal closure was
+  considered and rejected: it would choose for the arguer which
+  statement is left out.
+  Example (run 2026-10-16): =birds_fly : forall x, Bird x -> Flies x=
+  owing =Wings x= under =λx= is refused; written as
+  =λx.λb:Bird x.μr:Flies x.<wf || x * μw:Wings x.<?:forall x, Bird x ->
+  Wings x || x*b*w> * r>= it owes the closed rule.
+- Lemmas under a first-order binder (the same principle): a horn whose
+  statement mentions a variable bound by a first-order binder of the
+  argument (=μw:Wings x= above) is not exposed; it stays part of the
+  argument like a spine step. Its own closed horns (the owed rule, the
+  axiom =wf=) are exposed as usual. So nodes, labels and debates only
+  ever concern closed statements; =Wings x= itself cannot be attacked or
+  supported, only what it rests on.
+- Q5, the reduction rules: with only closed debates, two new rules, both
+  strict (no decision, never sigma): forall,
+  =<λx.t || u * e> -> <t[u/x] || e>=, and exists,
+  =<(u, t) || (y).e> -> <t || e[u/y]>=. Substitution never enters a
+  debate (a debate under =λx= does not mention x); the support and attack
+  shapes, sigma, the discharge and the normal-form classes are unchanged,
+  and the rules add no critical pair (=λx.t= is a value, =u * e= a
+  covalue).
 
 * Specification and verification
 
@@ -2860,6 +2925,12 @@ part 2, branch eval-literature):
   =~P[t]= is never contested by a derivation of P[t]; the
   inconsistency-adaptive strategies (reliability, minimal abnormality)
   derive neither. The missing negation bridge.
+
+Re-run (2026-10-16, eval/REPORT.org part 3): with the rule spelled
+=P -> ~Q= (eval/literature2/seq_mcs_closed_neg.fspy, possible since
+[[id:aida-negation-cell-horn]]) preferred and stable give five
+labellings: the three maximal consistent subsets, the one with all
+premises IN, and one with all premises IN and both Q and =~Q= IN.
 *derivation*, and a strict rule applied to a defeasible premise is a
 strict rule: the premise is what is defeasible. The compiler merges the
 two into one edge and lets the premise decide its strictness, so no
@@ -3295,6 +3366,9 @@ above. Two consequences to record: adequacy as the minicourses state it
 ("IN implies a value") needs the exception for strictly contradictory
 documents, and nothing above DEBUG tells the user that the document is
 inconsistent (see [[id:aida-issue-relative-strict-labels]]).
+
+Re-run (2026-10-16): tests/test1.fspy (=arg1=) is another strictly
+inconsistent document - EfficientMetro both sides IN, EXCEPTION.
 
 *What the code says.* =contains_uncatchable_clash= calls a clash
 uncatchable when no enclosing mu/mu' binder binds one of its command's
@@ -5642,7 +5716,8 @@ earlier and is the one the value shows).
 
 Stretch goal (author, 2026-10-06).
 
-*** BACKLOG Keep an exposed lemma inside the binders its hypotheses come from
+*** DONE Keep an exposed lemma inside the binders its hypotheses come from
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-lemma-exposure-scope
 :AREA:           phd
@@ -5678,7 +5753,33 @@ is =λh:A.μk:false.<(n_a h) || ?Ox[c]>=; its lemma Ox from A is stacked
 in Ox's debate outside =λh=. Type check on: refused; off: =claim= is
 =VALUE μalt5:Ox.<n_a || h:A*alt5>= while Ox is labelled OUT.
 
-*** BACKLOG Make credulous evaluation under grounded agree with skeptical
+*Done 2026-10-16.* The compiler already recorded the lemma's use of =h=
+as a captured obligation source at A; the unfolder copied the variable
+anyway. =Unfolder._edge= (core/dc/unfold.py) now unfolds a variable that
+an edge's body uses but does not bind, and that the edge records as a
+captured source, as its statement in scope: captured again where the
+binder is in scope (inside =λh=, unchanged), the statement's debate where
+it is not (the stacked copy: =μy:B.<f || ?u4:A*y>=, A owed). The shared
+route gives the same classes, so it was left alone (the port is on the
+=shared-route-stack-shape= worktree).
+
+Evidence: tests/exposure/lemma_scope_cases.fspy and lemma_scope_io.fspy
+(copies of the two reproductions); tests/test_unfold_exposure.py,
+=TestALemmaStaysInItsScope= (every term closed and replayed with the type
+check on; =p1= and =claim= OPEN in both modes, the issue OUT) and
+=test_every_unfolded_term_is_closed= (13 fixtures); 5 of these fail
+before the change. Suite: 2143 passed, 8 skipped (the new fixtures have
+no issue IN for the adequacy test), 2 xfailed, 1 xpassed; no existing pin
+moved.
+
+Not part of the bug, for [[id:aida-circular-support-design]]: with
+=subarguments preserve=, =p1= and =s1= of the proof by cases evaluate to
+a VALUE while the issue is labelled OUT (default and share: OPEN). The
+default drops p3's own derivation of B (no primacy), so the classical
+case split is not reconstructed.
+
+*** DONE Make credulous evaluation under grounded agree with skeptical
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-credulous-tiebreak-grounded
 :AREA:           phd
@@ -5709,7 +5810,37 @@ grounded does not accept B. Related:
 [[id:aida-circular-supporter-judged-in]] (another supporter kept on a
 standing it does not have).
 
-*** BACKLOG Compile an elimination cell that ends in the falsum context
+
+*Decision (the author, 2026-10-16): rule (a) is the default, the old
+behaviour an option.* Two rules were run in scratch on the reproductions
+and the suite: (a) what a credulous witness leaves UNDEC it does not
+accept, so the residue is resolved as in skeptical mode; (b) only never
+keep an UNDEC supporter over an original standing IN. Both fixed both
+symptoms on the reproductions and tests/olon.fspy and moved no pin; (b)
+fixes the second symptom only because A's original happens to be IN. The
+author: evaluation has more degrees of freedom than the labelling and
+the credulous/skeptical semantics (discussed before), so (a) is the
+default and the old tiebreak stays selectable.
+
+*Done 2026-10-16.* =UNDECIDED= and =_tiebreak= (core/comp/evaluate.py):
+the four evaluation entry points take =undecided= ("witness", default;
+"credulous", the old tiebreak). Session setting =undecided
+witness|credulous= (=FSP_UNDECIDED=; wrap/prover.py, =Service.set_undecided=,
+wrap/syntax.py, wrap/interpreter.py, wrap/cli.py). Docs: the tiebreak
+table in core/comp/evaluate.py's docstring; a dated note under the table
+of minicourse.org lesson 7 (the uniform-strategy passage below it now
+describes =undecided credulous=); minicourse-evaluation.org's step 3 of
+sigma. Evidence: tests/test_undecided.py (12 tests; fixtures
+tests/undecided/, copies of the two reproductions): under grounded,
+credulous = skeptical = =VALUE !IN:A= for pa and sa of both fixtures and
+first, tester, final, olon of tests/olon.fspy (before: OPEN with
+=?UNDEC:B=, resp. a value keeping pb's derivation); =undecided credulous=
+reproduces both old results; preferred unchanged. Suite: 2157 passed, 8
+skipped, 2 xfailed, 1 xpassed; no existing pin moved
+(=TestLocalPolicyWasUnsound= calls =resolve_scaffolds= with the
+credulous tiebreak directly and still passes).
+*** DONE Compile an elimination cell that ends in the falsum context
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-negation-cell-horn
 :AREA:           phd
@@ -5743,6 +5874,29 @@ modus tollens attacks of sequent-based argumentation,
 both dropped; the file now spells the rule =P -> Q -> false= and leaves
 falsum owed.
 
+
+*Done 2026-10-16.* Two causes. (1) The cell =?:A * _F_= had no
+proposition: falsum is flagged, not typed, so enrichment could not build
+=A -> false= from the halves. =_cell_from_command= (core/comp/enrich.py)
+gives a cell without a type the type of the command it is cut against,
+in the spelling the argument wrote (~A). (2) With the type, the bare cell
+became the horn, and the exposed debate did not replay: Fellowship
+rebuilt it inside its negation wrapper, =μ'H1:~A.<H1 || ?:A*_F_>=, since
+a bare =?:A * _F_= is no refutation of ~A it can write. Off the spine the
+wrapper is now the horn (=compile_body=, core/dc/debate_graph.py), and
+the cell is its own exposure, inlined. On the spine it is seen through
+as before.
+
+Evidence: tests/exposure/negation_cell.fspy (copy of bug_falsum_cell),
+tests/test_negation_cell.py (3 tests): x1 and x2 are in the document
+graph, with edges x1.c1 and x2.c1 deriving ~A[c] from A[t] owed, each
+term the wrapper; every debate replays and evaluates (OPEN: A owed)
+with the type check on and expanded. The direct dialectical proof of
+double negation elimination - t_dne.fspy's p2 with falsum closed by
+=elim= instead of owed - evaluates to the classical proof in both modes
+(scratch). Suite: 2161 passed, 8 skipped, 2 xfailed, 1 xpassed; no
+existing pin moved. Not re-run: seq_mcs_closed.fspy's modus tollens
+attacks rewritten with =~Q=.
 *** DONE Replay the dialectical classical proofs the type check refuses
 CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
@@ -5879,6 +6033,58 @@ Found 2026-10-16 (eval/REPORT.org, specification question 5): under
 stable A is OUT, and the credulous stable normal form shows =?UNDEC:A=,
 the grounded label of the documented fallback. The fallback is logged at
 INFO by the CLI, but the result object and its JSON do not mark it.
+
+*** BACKLOG Label the scaffold an elimination cell gets in the term
+:PROPERTIES:
+:ID:             aida-cell-scaffold-label
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A debate in which two arguments share an elimination cell (an exposed node such as =(Q->false)[c]= from =?:Q * ?:false=) evaluates: writing sigma into the term labels the scaffold built on the cell, so =evaluate= never refuses with "No label for scaffold issue".
+:VERIFY:         eval/literature2/bug_scaffold_label.fspy and seq_mcs_closed.fspy: =evaluate att_p= (and =att_r=) gives a verdict in both modes under grounded, preferred and stable, agreeing with the label of the issue.
+:END:
+
+Found in the re-run of the literature evaluation (2026-10-16,
+eval/REPORT.org part 3); already present in part 2's output, so not a
+regression of the fixes. bug_scaffold_label.fspy was reduced
+automatically from seq_mcs_closed.fspy. The labelling holds
+=Q->false[c]= (IN), but =evaluate_debate= (core/comp/evaluate.py, the
+scaffold walk) finds =target_label= None on the record of the scaffold
+whose scion is the cell, in every mode and semantics, grounded
+included, while the issue is IN.
+
+*** BACKLOG Keep labels and verdicts independent of the subarguments setting
+:PROPERTIES:
+:ID:             aida-subarguments-setting-labels
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        =subarguments default=, =share= and =preserve= (=FSP_SUBARGUMENTS=) give the same labels and verdict classes, as the README and the glossary state; or the statement is corrected and the setting under which a dialectical case split is found is the default.
+:VERIFY:         eval/literature/t_cases.fspy (=p1=, proof by cases) and eval/literature2/io_cases.fspy (=claim=, input/output logic's reasoning by cases): the same labels and verdicts under all three settings; the harness comparison of eval/REPORT.org part 3 over every literature document finds no difference between the settings.
+:END:
+
+Found in the re-run (2026-10-16, eval/REPORT.org part 3), after
+[[id:aida-lemma-exposure-scope]] was fixed. Under =default= and =share=
+the lemma for B inside =λh:A= (B from A->B and h) is replaced by the
+captured variable =b2=, B's root obligation - the node has no primacy -
+so the case split is lost: issue OUT, OPEN. Under =preserve= the issue
+is IN and both modes give the classical proof
+=λf.λg.μα:B.<g || (λh.μ_.<f || h*α>) * α>=. The README says of the
+setting "The labels never depend on that setting", the glossary "The
+verdict's class never depends on it". Over all 74 literature documents
+only these two differ between the settings.
 
 *** DONE Port the shared route to the stacked shape and the entrypoints
 CLOSED: [2026-10-16 Fri]
@@ -6800,7 +7006,8 @@ no =.fspy= script uses =focus=. The manual expansion reaches =qed= on the
 exact goal where =focus= aborts, which is how both first-order fixtures are
 written. It also no-ops silently when applied to a conclusion.
 
-** BACKLOG Run the first-order resolution pass on parsed proof terms
+** DONE Run the first-order resolution pass on parsed proof terms
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-fo-resolve-unwired
 :AREA:           phd
@@ -6843,6 +7050,20 @@ the pass was verified, its wiring was not. Its commit (220235b) names
 Fix sketch: =resolve(body, prover.declarations)= after both parses (no
 =env= at the root). Tests that relied on the propositional reading may
 need updating.
+
+*Done 2026-10-16.* =resolve= runs after both production parses:
+=Argument.execute= (core/dc/argument.py; Fellowship's term, with the
+prover's declarations) and =Service.register= (wrap/service.py; the
+user's term, strict, a =ResolutionError= refused as =InvalidRequest=).
+Evidence: tests/test_first_order_baseline.py (6 tests): fo_forall.fspy
+registers a body with =ConsFO=, fo_exists_forall.fspy one with =LamdaFO=,
+=ConsFO=, =TermsPairFO= and =DestructTermsPairFO=, both still replay
+(=report.ok=); =register= of a term heading an application with the
+undeclared =Zed= is refused ("neither bound nor declared"). The focused
+first-order tests (tests/test_fo_*.py, test_resolve.py,
+test_enrich_prop.py): 98 passed. Suite: 2172 passed, 8 skipped, 2
+xfailed, 1 xpassed; no existing pin moved, so no test relied on the
+propositional reading.
 
 ** BACKLOG Regenerate the Fellowship documentation transcripts
 :PROPERTIES:
@@ -6958,7 +7179,8 @@ Compound witnesses such as =[A -> B]= are not terms at all and cannot be
 written. Separately, the =Quant= case substitutes under a binder that
 rebinds the substituted name.
 
-** BACKLOG Keep a binder named _ apart from the unfolder's unused binders
+** DONE Keep a binder named _ apart from the unfolder's unused binders
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-underscore-binder
 :AREA:           phd
@@ -6982,7 +7204,21 @@ neither bound nor a declared axiom"). The unfolder writes =_= for its own
 unused binders. All nine arguments of
 tests/thetaexpander_bureaucratic_cases.fspy are unqueryable this way.
 
-** BACKLOG Refuse an argument over a conjunction or disjunction in one line
+*Done 2026-10-16.* Not a clash of names: =_= is affine for the compiler
+(=binder_statements= ignores it), but the unfolder let it capture the
+sites of its statement in its scope, writing =_= as a variable that
+Fellowship refuses. =Unfolder._edge= (core/dc/unfold.py, =scoped=) now
+never captures with an affine binder, as the compiler. No renaming was
+needed. Evidence: tests/exposure/underscore_binder.fspy (copy of the
+reproduction) and tests/thetaexpander_bureaucratic_cases.fspy:
+=tests/test_underscore_binder.py= graphs and evaluates every argument with
+the type check on and off (a and b: VALUE; all nine bureaucratic cases:
+OPEN). A =_= the argument actually uses (=axiom _.=) is still read as a
+free variable by the compiler, so that argument is left out of the graph
+with the warning on its entry.
+
+** DONE Refuse an argument over a conjunction or disjunction in one line
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-unsupported-connective-crash
 :AREA:           phd
@@ -7004,7 +7240,18 @@ the CLI exits 1 with a traceback, and =Service.check= raises instead of
 reporting ([[id:aida-document-check]]). The README says such
 propositions can be declared but not argued about.
 
-** BACKLOG Name an argument's edge after the argument when it starts with an introduction
+*Done 2026-10-16.* =Service._finish= (wrap/service.py) catches the
+=SyntaxErrorInSource= of =finish_recording=, abandons the recording and
+raises =ContentRefused= with one line naming the connective
+(=_unsupported_syntax=). Evidence: tests/connectives_refused.fspy (copy of
+expressivity_connectives.fspy): =Service.check= reports the three =dixi=
+entries refused ("'conj' uses a conjunction (/\): it can be declared, but
+AIDA cannot argue about it yet; ...") and a later check works
+(=test_an_argument_over_a_conjunction_is_refused_in_one_line=);
+=acdc --script= prints three "Refused" lines, no traceback, exit 0.
+
+** DONE Name an argument's edge after the argument when it starts with an introduction
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-negation-edge-provenance
 :AREA:           phd
@@ -7029,7 +7276,16 @@ Also the skeptic's challenge =s1 : ~(P - P)= (eval/literature/
 t_lnc_dialectical.fspy): =elim h.= on a negated goal gives the same
 =μH1= wrapper.
 
-** BACKLOG Report an argument left out of the document graph at its own line
+*Done 2026-10-16.* =_host_name= (core/dc/debate_graph.py) skips the
+binder of Fellowship's negation-introduction wrapper
+(=_is_negation_introduction=: a mu on a primitive negation whose term is a
+lambda). Evidence: tests/negation_edge_name.fspy (copy of the
+reproduction), tests/test_negation_edge_name.py: the edge is =negA=, the
+JSON graph gives ="argument": "negA"= and the block's span (lines 6-9).
+Not re-run: t_lnc_dialectical.fspy's =s1=.
+
+** DONE Report an argument left out of the document graph at its own line
+CLOSED: [2026-10-16 Fri]
 :PROPERTIES:
 :ID:             aida-check-dropped-argument
 :AREA:           phd
@@ -7048,6 +7304,19 @@ t_lnc_dialectical.fspy): =elim h.= on a negated goal gives the same
 Found 2026-10-16 (eval/REPORT.org, bug 1): the entry is =ok= and the
 warning appears only in the report-level diagnostics, so an editor shows
 the block as fine ([[id:aida-document-check]]).
+
+*Done 2026-10-16.* A service operation nested in another (the =dixi= of a
+document check runs =finish_recording= inside =check=) shared the outer
+collector and got no diagnostics of its own. =_operation=
+(wrap/service.py) now also gives a nested result, or the error it
+raises, what was logged during its own call; the report keeps them all.
+Evidence: tests/fo_dropped.fspy (copy of eval/literature/first_order.fspy),
+=test_a_dropped_argument_is_marked_on_its_own_entry= (tests/test_service.py):
+the =dixi= entry is =ok= and carries the warning "not added to the
+document graph"; the report still has it. bug_falsum_cell.fspy, the other
+fixture the VERIFY names, no longer drops anything
+([[id:aida-negation-cell-horn]]). Suite: 2172 passed, 8 skipped, 2
+xfailed, 1 xpassed; no existing pin moved.
 
 ** BACKLOG Remove the recursion-depth limit from term traversals
 :PROPERTIES:
@@ -7111,6 +7380,12 @@ itself takes 0.02 s for a 400-name declare. The 5 s per-command timeout
 also fails the final full snapshot of large debates (doubled chain from 9
 levels). Use pipes or a framed protocol; overlaps
 [[id:aida-certificate-checking-architecture]].
+
+2026-10-16: a full suite run alongside three other prover-heavy jobs
+failed two tests (tests/minicourse/test_evaluation_course.py::
+TestLesson8aUnfold::test_capture_by_b and test_minicourse.py::
+test_lesson_fixture_replays[lesson2_graph.fspy]) with BrokenPipeError
+on the prover pipe; both pass alone (eval/rerun/pytest.txt).
 
 ** DONE Enforce the pure level: arguments linear, counterarguments dual-linear, no scaffolds
 CLOSED: [2026-10-15 Thu]

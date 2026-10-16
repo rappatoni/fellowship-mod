@@ -1,0 +1,2 @@
+== literature2/ec_fo.fspy: check ok=True (0.1s)
+== done in 0.1s

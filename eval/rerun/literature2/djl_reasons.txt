@@ -1,0 +1,41 @@
+== literature2/djl_reasons.fspy: check ok=True (0.1s)
+-- w1_shared: issue Robbery[t]; 10 edges
+   grounded  issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+   preferred issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+   stable    issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+-- w2_shared: issue Robbery[t]; 10 edges
+   grounded  issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+   preferred issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+   stable    issue: ['OUT']
+      [1] Absent1->~Reliable[t]=IN Reliable->Said1->Robbery[t]=IN Reliable->Said2->Robbery[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT Robbery[t]=OUT Said1[t]=IN Said2[t]=IN
+      skeptical -> open      ?OUT:Robbery
+      credulous -> open      ?OUT:Robbery
+-- undercut_shared: issue Reliable[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] Absent1->~Reliable[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT
+      skeptical -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+   preferred issue: ['IN']
+      [1] Absent1->~Reliable[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT
+      skeptical -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+   stable    issue: ['IN']
+      [1] Absent1->~Reliable[t]=IN ~Reliable[t]=IN Absent1[t]=IN Reliable[c]=IN Reliable[t]=OUT
+      skeptical -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt2:Reliable.<absent_undercuts_shared:Absent1->~Reliable||absent1:Absent1*μb1:Reliable.<alt2:Reliable||b1:Reliable>*_F_>
+== done in 0.8s

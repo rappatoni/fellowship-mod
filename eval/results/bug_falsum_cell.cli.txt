@@ -1,0 +1,42 @@
+Running script literature/bug_falsum_cell.fspy (strict=False, stop_on_error=True, echo_notes=False)
+Minimal reproduction: applying a negation (here the declared ~A) to an
+open site leaves the elimination cell `?:A * _F_`; the compiler finds no
+proposition on it, and the argument is silently left out of the document
+graph ("root proposition missing; run enrichment first").
+'A' : 'bool'  declared.
+'B' : 'bool'  declared.
+'na' : '~A'  declared.
+Started recording argument 'x1' with conclusion 'B'.
+Executing argument 'x1'.
+Starting theorem 'x1' for issue 'B'
+Argument 'x1' executed.
+
+Argument term: 'μthesis:B.<μg:B.<?1.1||μ'H1:~A.<H1||?1.2.1*_F_>>||thesis>'.
+
+Enriching argument 'x1'.
+Argument 'x1' enriched.
+Starting proof term generation for enriched argument 'x1'
+Finished proof term generation for enriched argument 'x1'
+
+Enriched proof term: 'μx1:B.<μg:B.<?1.1:~A||μ'H1:~A.<H1:~A||?1.2.1:A*_F_>>||x1:B>'.
+
+Argument 'x1' not added to the document graph: Edge 'x1.c1': root proposition missing; run enrichment first.
+Argument 'x1' executed and registered with conclusion 'B'.
+Started recording argument 'x2' with conclusion 'B'.
+Executing argument 'x2'.
+Starting theorem 'x2' for issue 'B'
+Ignoring ProverError on final 'next': There is only one goal, impossible to switch.
+Argument 'x2' executed.
+
+Argument term: 'μthesis:B.<μg:B.<na||μ'H1:~A.<H1||?1.2.1*_F_>>||thesis>'.
+
+Enriching argument 'x2'.
+Argument 'x2' enriched.
+Starting proof term generation for enriched argument 'x2'
+Finished proof term generation for enriched argument 'x2'
+
+Enriched proof term: 'μx2:B.<μg:B.<na:~A||μ'H1:~A.<H1:~A||?1.2.1:A*_F_>>||x2:B>'.
+
+Argument 'x2' not added to the document graph: Edge 'x2.c1': root proposition missing; run enrichment first.
+Argument 'x2' executed and registered with conclusion 'B'.
+Finished script literature/bug_falsum_cell.fspy

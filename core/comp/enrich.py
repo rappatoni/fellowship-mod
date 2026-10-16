@@ -12,6 +12,18 @@ from core.ac.prop import BinOp, PBin, PQuant, Prop, PropError, Quantifier
 logger = logging.getLogger(__name__)
 
 
+def _cell_from_command(node) -> None:
+    """An elimination cell whose type cannot be built from its halves - a
+    tail of falsum ``a * _F_`` has none, ``_F_`` being flagged, not typed -
+    takes the type of the command it is cut against, the other half's.
+    So the cell of ``mu'H:~A.< H || ?:A * _F_ >`` is ~A, in the spelling
+    the argument wrote (tasks.org, aida-negation-cell-horn)."""
+    for cell, other in ((node.context, node.term), (node.term, node.context)):
+        if isinstance(cell, (Cons, Sonc)) and cell.prop is None and getattr(other, "prop", None):
+            cell.prop = other.prop
+            logger.debug("Enriching cell with type %s from its command", cell.prop)
+
+
 class PropEnrichmentVisitor(ProofTermVisitor):
     """
     Replaces the old hack of parsing 'tt' from ID/DI name. 
@@ -359,12 +371,13 @@ class PropEnrichmentVisitor(ProofTermVisitor):
     def visit_Mu(self, node: Mu):
         with self._bound(node.id.name, node.prop):
             node = super().visit_Mu(node)
+        _cell_from_command(node)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node
 
     def visit_Mutilde(self, node: Mutilde):
         with self._bound(node.di.name, node.prop):
             node = super().visit_Mutilde(node)
-        #print("node.term, node.context", node.term.prop, node.context.prop)
+        _cell_from_command(node)
         node.contr = node.term.prop if node.term.prop else node.context.prop if node.context.prop else None
         return node

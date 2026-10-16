@@ -1,0 +1,42 @@
+== literature2/dl_ambiguity.fspy: check ok=True (0.1s)
+-- r1: issue Pacifist[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> open      ?UNDEC:Pacifist
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> value     μr1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*r1:Pacifist>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> value     μr1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*r1:Pacifist>
+-- r2: issue Pacifist[c]; 4 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> open      UNDEC:Pacifist?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> value     μ'r2:Pacifist.<!IN:Republican->~Pacifist||republican:Republican*μ'b1:~Pacifist.<b1:~Pacifist||r2:Pacifist*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> value     μ'r2:Pacifist.<!IN:Republican->~Pacifist||republican:Republican*μ'b1:~Pacifist.<b1:~Pacifist||r2:Pacifist*_F_>>
+-- r3: issue HasGun[c]; 7 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> open      UNDEC:HasGun?
+   preferred issue: ['IN', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> value     μ'r3:HasGun.<!IN:Pacifist->~HasGun||μb1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*b1:Pacifist>*μ'b3:~HasGun.<b3:~HasGun||r3:HasGun*_F_>>
+   stable    issue: ['IN', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> value     μ'r3:HasGun.<!IN:Pacifist->~HasGun||μb1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*b1:Pacifist>*μ'b3:~HasGun.<b3:~HasGun||r3:HasGun*_F_>>
+-- r4: issue HasGun[t]; 7 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> open      ?UNDEC:HasGun
+   preferred issue: ['OUT', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> value     μr4:HasGun.<!IN:Chicago->HasGun||chicago:Chicago*r4:HasGun>
+   stable    issue: ['OUT', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> value     μr4:HasGun.<!IN:Chicago->HasGun||chicago:Chicago*r4:HasGun>
+== done in 0.7s

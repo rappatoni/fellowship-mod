@@ -81,7 +81,7 @@ from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
 )
-from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta
+from core.dc.debate_graph import DebateGraph, canonical_prop, _peel_eta, _is_affine_binder
 from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
@@ -466,6 +466,10 @@ class Unfolder:
         if edge.term is None:
             raise UnfoldError(f"Edge '{edge.name}' carries no term; it cannot be unfolded.")
         primary = own or self._has_primacy(edge)
+        # the variables the edge's body uses that an enclosing argument
+        # binds (core/dc/debate_graph.py, ``variable``: a captured source)
+        captured = {(s.side, s.site) for s in edge.sources
+                    if s.kind in ("obligation", "presumption")}
         root_lambda = _peel_eta(edge.term)
         if not isinstance(root_lambda, Lamda):
             root_lambda = None
@@ -492,6 +496,13 @@ class Unfolder:
             # the sites of the argument unfolded keep the kind it wrote
             return {"own_kind": presumed} if own else {}
 
+        def scoped(env, statement, new):
+            # an affine binder (``_``) binds nothing a site could be met by,
+            # as for the compiler (``binder_statements``): a user's
+            # ``cut (P) _.`` must not capture P's sites (tasks.org,
+            # aida-underscore-binder)
+            return env if _is_affine_binder(new) else {**env, statement: new}
+
         def walk(node, env, names, expose=True):
             """``expose``: whether this node itself may be exposed; its
             children are checked either way."""
@@ -515,32 +526,43 @@ class Unfolder:
                              edge.name, node.cites)
                 return self.statement((canonical_prop(node.prop), side), env, spine,
                                       **own_kind(False))
-            if isinstance(node, ID):
-                return ID(names.get(("context", node.name), node.name), node.prop)
-            if isinstance(node, DI):
-                return DI(names.get(("term", node.name), node.name), node.prop)
+            if isinstance(node, (ID, DI)):
+                vside = "context" if isinstance(node, ID) else "term"
+                if (vside, node.name) not in names and (vside, node.name) in captured:
+                    # A variable an enclosing argument binds, which the
+                    # compiler recorded as a source at its binder's
+                    # statement: unfolded as that statement in scope -
+                    # captured again where the binder is in scope, the
+                    # statement's debate where it is not (aida-lemma-
+                    # exposure-scope: a lemma stacked outside its lambda).
+                    presumed = getattr(node, "captured_presumption", False)
+                    logger.debug("unfold: '%s' uses '%s', bound by an enclosing argument; "
+                                 "unfolded as its statement", edge.name, node.name)
+                    return self.statement((canonical_prop(node.prop), vside), env, spine,
+                                          presumed=presumed, **own_kind(presumed))
+                return type(node)(names.get((vside, node.name), node.name), node.prop)
             if isinstance(node, Lamda):
                 new = fresh(node.di.di.name)
-                inner = {**env, (canonical_prop(node.di.prop), "term"): new}
+                inner = scoped(env, (canonical_prop(node.di.prop), "term"), new)
                 hyp = Hyp(DI(new, node.di.di.prop), node.di.prop)
                 body = Lamda(hyp, walk(node.term, inner, {**names, ("term", node.di.di.name): new}))
                 body.prop = node.prop
                 return body
             if isinstance(node, Mu):
                 new = fresh(node.id.name)
-                inner = {**env, (canonical_prop(node.prop), "context"): new}
+                inner = scoped(env, (canonical_prop(node.prop), "context"), new)
                 names2 = {**names, ("context", node.id.name): new}
                 return Mu(ID(new, node.id.prop), node.prop,
                           walk(node.term, inner, names2), walk(node.context, inner, names2))
             if isinstance(node, Mutilde):
                 new = fresh(node.di.name)
-                inner = {**env, (canonical_prop(node.prop), "term"): new}
+                inner = scoped(env, (canonical_prop(node.prop), "term"), new)
                 names2 = {**names, ("term", node.di.name): new}
                 return Mutilde(DI(new, node.di.prop), node.prop,
                                walk(node.term, inner, names2), walk(node.context, inner, names2))
             if isinstance(node, Admal):
                 new = fresh(node.id.id.name)
-                inner = {**env, (canonical_prop(node.id.prop), "context"): new}
+                inner = scoped(env, (canonical_prop(node.id.prop), "context"), new)
                 pyh = Pyh(ID(new, node.id.id.prop), node.id.prop)
                 out = Admal(pyh, walk(node.context, inner, {**names, ("context", node.id.id.name): new}))
                 out.prop = node.prop

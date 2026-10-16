@@ -137,17 +137,39 @@ class _Collector(logging.Handler):
             self.items.append(Diagnostic(record.levelname.lower(), record.name, record.getMessage()))
 
 
+def _unsupported_syntax(name: str, error) -> str:
+    """One line for an argument whose proposition or proof term AIDA cannot
+    read: the connective, when it is one AIDA does not have."""
+    text = str(error)
+    for symbol, word in (("/\\", "conjunction"), ("\\/", "disjunction")):
+        if symbol in text:
+            return (f"'{name}' uses a {word} ({symbol}): it can be declared, but AIDA "
+                    f"cannot argue about it yet; the argument is not registered.")
+    return f"'{name}' cannot be read by AIDA ({text.splitlines()[0]}); the argument is not registered."
+
+
 def _operation(method):
     """Run a service method under the session lock, collecting its
     diagnostics onto the result (a dataclass with ``diagnostics``) or onto
-    the AidaError it raises.  Nested operations share the outer collector."""
+    the AidaError it raises.  Nested operations share the outer collector,
+    and each also gets what was logged during its own call - so an entry
+    of a document check carries its own warnings, such as an argument left
+    out of the document graph (tasks.org, aida-check-dropped-argument)."""
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
         with self.session.lock:
             outer = getattr(_depth, "collector", None)
             if outer is not None:
-                return method(self, *args, **kwargs)
+                start = len(outer.items)
+                try:
+                    result = method(self, *args, **kwargs)
+                except AidaError as e:
+                    e.diagnostics = list(outer.items[start:])
+                    raise
+                if hasattr(result, "diagnostics"):
+                    result.diagnostics = list(outer.items[start:])
+                return result
             collector = _Collector(threading.get_ident())
             loggers = [logging.getLogger(name) for name in _CAPTURED_LOGGERS]
             for lg in loggers:
@@ -553,6 +575,23 @@ class Service:
         return Done({"default": "by primacy", "share": "shared (captured)",
                      "preserve": "preserved (kept on top of the captured)"}[mode])
 
+    @_operation
+    def set_undecided(self, mode: str) -> Done:
+        """What credulous evaluation does with a scaffold its witness
+        labelling leaves UNDEC: ``witness`` (default) resolves it as not
+        accepted - as skeptical mode does - so the witness alone makes the
+        credulous choices; ``credulous`` uses the old tiebreak, keeping an
+        UNDEC supporter and dropping an UNDEC attack, which can return a
+        value the witness does not support (core/comp/evaluate.py,
+        ``UNDECIDED``).  Skeptical evaluation is the same under both."""
+        if mode not in ("witness", "credulous"):
+            raise InvalidRequest(f"undecided: witness or credulous, not '{mode}'")
+        if self.session.undecided != mode:
+            self.session.undecided = mode
+            self.session.bump_revision()
+        return Done({"witness": "not accepted (resolved as by the witness)",
+                     "credulous": "the credulous tiebreak (keep supporters, drop attacks)"}[mode])
+
     def _issue_source(self, found):
         """The graph ``found``'s issue graph is taken from: the document
         graph, a debate's own graph (its scope), or None - compile from the
@@ -610,6 +649,14 @@ class Service:
             body = ProofTermTransformer().transform(Grammar().parser.parse(proof_term))
         except Exception as e:
             raise InvalidRequest(f"register: cannot read the proof term: {e}", cause=e)
+        # The first-order reading of the ambiguous constructors, strict: a
+        # name the declarations do not account for is refused, not guessed
+        # (tasks.org, aida-fo-resolve-unwired).
+        from core.ac.resolve import resolve, ResolutionError
+        try:
+            body = resolve(body, s.declarations)
+        except ResolutionError as e:
+            raise InvalidRequest(f"register: {e}", cause=e)
         # A term typed as a string has lost its citation marks: a free leaf
         # naming a registered argument is a citation (core/dc/cite.py).
         mark_citations(body, lambda n: n in s.arguments and n != name)
@@ -650,11 +697,18 @@ class Service:
 
     def _finish(self, current: dict, demand_strict: bool) -> Done:
         from wrap.registry import finish_recording, abandon
+        from core.ac.syntax import SyntaxErrorInSource
         try:
             arg = finish_recording(self.session, current, demand_strict=demand_strict)
         except ProverError as e:
             abandon(self.session, current)
             raise ContentRefused(str(e), stage="record", cause=e)
+        except SyntaxErrorInSource as e:
+            # Fellowship has connectives AIDA's term language lacks: the
+            # argument is refused in one line, not with a traceback
+            # (tasks.org, aida-unsupported-connective-crash).
+            abandon(self.session, current)
+            raise ContentRefused(_unsupported_syntax(current["name"], e), stage="record", cause=e)
         verb = "proved" if demand_strict else "registered"
         return Done(f"'{arg.name}' {verb}: {arg.conclusion}.", arg)
 
@@ -1097,7 +1151,8 @@ class Service:
                                      stage="evaluate")
         common = dict(strict_names=s.declarations.keys(),
                       strict_kinds=declaration_kinds(s.declarations),
-                      base=base, semantics=semantics, source=self._issue_source(found))
+                      base=base, semantics=semantics, source=self._issue_source(found),
+                      undecided=s.undecided)
 
         def run(on_shared, on_term, **options):
             """Evaluate from the shared debate, one instance of a sub-debate

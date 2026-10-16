@@ -169,6 +169,16 @@ class _Acc:
 _EMPTY = _Acc()
 
 
+# How to_dot draws an edge of each role, and what the legend says of it.
+_DOT_ROLE_COLOUR = {"supporter": "darkgreen", "attacker": "red", "subargument": "gray40",
+                    "strict": "black"}
+_DOT_ROLE_TEXT = {"argument": "argument", "supporter": "supporter",
+                  "attacker": "attacker:\\nderives\\nthe contrary",
+                  "subargument": "subargument:\\npart of an\\nargument, or a\\ndeclared axiom",
+                  "strict": "strict edge\\nread off the\\ndebate term"}
+_DOT_FILL = {"IN": "#cdebc5", "OUT": "#f2c4c4", "UNDEC": "#e0e0e0"}
+
+
 class DebateGraph:
     """Nodes (canonical props), hyperedges, and per-node default markers.
 
@@ -415,9 +425,10 @@ class DebateGraph:
                 out.append(f"  {annotate(statement)}")
         return "\n".join(out)
 
-    def to_dot(self, labels=None) -> str:
-        """Graphviz source.  With ``labels``, nodes are filled by status."""
-        fill = {"IN": "#cdebc5", "OUT": "#f2c4c4", "UNDEC": "#e0e0e0"}
+    def to_dot(self, labels=None, legend: bool = True) -> str:
+        """Graphviz source.  With ``labels``, nodes are filled by status;
+        with ``legend``, a box explains the symbols the drawing uses."""
+        fill = _DOT_FILL
         lines = ["digraph debate {", "  rankdir=BT;",
                  '  node [shape=box, style="rounded,filled", fillcolor=white];']
         ids = {key: f"n{i}" for i, key in enumerate(self.nodes)}
@@ -450,12 +461,7 @@ class DebateGraph:
         # edge.  Context-side sources are dashed; the arrowhead at the
         # target is filled for a proof, empty for a refutation.
         for i, edge in enumerate(self.edges):
-            colour = {
-                "supporter": "darkgreen",
-                "attacker": "red",
-                "subargument": "gray40",
-                "strict": "black",
-            }.get(edge.role, "black")
+            colour = _DOT_ROLE_COLOUR.get(edge.role, "black")
             width = " penwidth=2" if edge.strict else ""
             head = "normal" if edge.target_side == "term" else "empty"
             if len(edge.sources) == 1:
@@ -481,8 +487,73 @@ class DebateGraph:
             )
             if not edge.sources:
                 lines.append(f"  {ids[edge.target_key]} [peripheries=2];")
+        if legend and (self.nodes or self.edges):
+            lines.extend(self._dot_legend(labels))
         lines.append("}")
         return "\n".join(lines)
+
+    def _dot_legend(self, labels=None) -> list:
+        """A cluster explaining the symbols ``to_dot`` drew for this graph,
+        and only those: a sample of every edge style in use, drawn as the
+        edges are, and the node markings with their meaning."""
+        out = ['  subgraph cluster_legend {', '    label="Legend"; fontsize=11;',
+               '    style="rounded"; color=gray60;',
+               '    node [shape=plaintext, style="", fillcolor=white, fontsize=9];',
+               '    edge [fontsize=9];']
+        samples = []                          # (attributes, description)
+        for role in dict.fromkeys(e.role for e in self.edges):
+            colour = _DOT_ROLE_COLOUR.get(role, "black")
+            samples.append((f"color={colour}", _DOT_ROLE_TEXT.get(role, role)))
+        sources = [s for e in self.edges for s in e.sources]
+        if any(e.strict for e in self.edges):
+            samples.append(("color=black penwidth=2", "thick:\\nstrict, rests\\non no site"))
+        if any(s.side == "context" for s in sources):
+            samples.append(("color=black style=dashed", "dashed:\\nthe source is\\na refutation"))
+        if any(e.target_side == "term" for e in self.edges):
+            samples.append(("color=black arrowhead=normal", "filled head:\\nderives\\na proof"))
+        if any(e.target_side == "context" for e in self.edges):
+            samples.append(("color=black arrowhead=empty", "empty head:\\nderives\\na refutation"))
+        for i, (attributes, text) in enumerate(samples):
+            out.append(f'    lg{i}a [label="", shape=point, width=0.05];')
+            out.append(f'    lg{i}b [label="", shape=point, width=0.05];')
+            out.append(f'    lg{i}a -> lg{i}b [{attributes} label="{text}"];')
+        if samples:
+            # Every sample on the same two ranks, side by side, and the table
+            # of node markings beneath them (rankdir=BT: lower is earlier).
+            out.append("    {rank=same; " + " ".join(f"lg{i}a" for i in range(len(samples))) + "}")
+            out.append("    {rank=same; " + " ".join(f"lg{i}b" for i in range(len(samples))) + "}")
+            out.append("    lgnodes -> lg0a [style=invis];")
+        rows = ['<TR><TD ALIGN="LEFT"><B>box</B></TD>'
+                '<TD ALIGN="LEFT">a proposition; its term side (proved) and '
+                'context side (refuted) share one box</TD></TR>']
+        if any(len(e.sources) == 1 for e in self.edges):
+            rows.append('<TR><TD ALIGN="LEFT"><B>labelled arrow</B></TD><TD ALIGN="LEFT">'
+                        'an argument with one source, named by the label</TD></TR>')
+        if any(len(e.sources) != 1 for e in self.edges):
+            rows.append('<TR><TD ALIGN="LEFT"><B>small box</B></TD><TD ALIGN="LEFT">'
+                        'an argument with several or no sources, named; a line '
+                        'without head from each source, one arrow out</TD></TR>')
+        if any(not e.sources for e in self.edges):
+            rows.append('<TR><TD ALIGN="LEFT"><B>double border</B></TD><TD ALIGN="LEFT">'
+                        'derived by an argument that rests on nothing</TD></TR>')
+        marks = sorted({f"{side[0]}:{kind[0]}" for (_key, side), kinds in self.defaults.items()
+                        for kind in kinds})
+        meaning = {"t:o": "the proof is owed (obligation)", "t:p": "the proof is presumed",
+                   "c:o": "the refutation is owed (obligation)", "c:p": "the refutation is presumed"}
+        for mark in marks:
+            rows.append(f'<TR><TD ALIGN="LEFT"><B>[{mark}]</B></TD>'
+                        f'<TD ALIGN="LEFT">{meaning.get(mark, mark)}</TD></TR>')
+        if labels:
+            rows.append('<TR><TD ALIGN="LEFT"><B>t=, c=</B></TD><TD ALIGN="LEFT">'
+                        'the label of the term side, the context side</TD></TR>')
+            for status, colour in _DOT_FILL.items():
+                rows.append(f'<TR><TD ALIGN="LEFT" BGCOLOR="{colour}"><B>{status}</B></TD>'
+                            f'<TD ALIGN="LEFT">fill: the term side is {status} '
+                            f'(the context side if the term side has no label)</TD></TR>')
+        out.append('    lgnodes [label=<<TABLE BORDER="0" CELLSPACING="2">'
+                   + "".join(rows) + '</TABLE>>];')
+        out.append("  }")
+        return out
 
 # ---------------------------------------------------------------------------
 # Scaffold shapes (COMMA 2026 paper, Definitions Support and Attack; the
@@ -777,7 +848,8 @@ def _host_name(body, fallback: str) -> str:
     node = body
     while True:
         if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
-            names.append(binder_origin(node))
+            if not _is_negation_introduction(node):
+                names.append(binder_origin(node))
             node = node.term
         elif isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
             names.append(binder_origin(node))
@@ -788,6 +860,15 @@ def _host_name(body, fallback: str) -> str:
         if not candidate.startswith(SYNTHETIC_PREFIX):
             return candidate
     return fallback
+
+
+def _is_negation_introduction(node) -> bool:
+    """Fellowship's wrapper for ``elim h.`` on a goal ~A,
+    ``mu H1:~A.< lambda h:A. ... || H1 >``: its binder (H1) is the prover's,
+    not the argument's, and names no subargument (tasks.org,
+    aida-negation-edge-provenance)."""
+    from core.ac.instructions import is_primitive_negation_prop
+    return isinstance(node.term, Lamda) and is_primitive_negation_prop(getattr(node, "prop", None))
 
 
 def binder_statements(node) -> dict:
@@ -1108,7 +1189,14 @@ class _Compiler:
             if isinstance(node, (ID, DI)):
                 return variable(node, env, scope)
             if _is_negation_wrapper(node):
-                return visit(node.context, env, spine, scope, rest=rest)
+                if rest or node is content or on_spine(node.context, spine):
+                    return visit(node.context, env, spine, scope, rest=rest)
+                # Off the spine, the wrapper is the horn, not the bare cell
+                # inside it: ``?:A * _F_`` alone is no refutation of ~A
+                # Fellowship can rebuild, the wrapper is (tasks.org,
+                # aida-negation-cell-horn).  The cell is then the wrapper's
+                # own exposure and is inlined there.
+                return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
             match = _match_scaffold(node, self.strict_names)
             if match is not None:
                 srole, site_side, sprop, orig, scion_raw, alt, scion_kind = match

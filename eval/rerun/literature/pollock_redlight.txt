@@ -1,0 +1,41 @@
+== literature/pollock_redlight.fspy: check ok=True (0.1s)
+-- red: issue Red[t]; 8 edges
+   grounded  issue: ['IN']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN LooksRed[t]=IN Red[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+      credulous -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+   preferred issue: ['IN']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN LooksRed[t]=IN Red[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+      credulous -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+   stable    issue: ['IN']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN LooksRed[t]=IN Red[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+      credulous -> value     μred:Red.<!IN:LooksRed->Red||looks_red:LooksRed*red:Red>
+-- undercut: issue LooksRed->Red[c]; 6 edges
+   grounded  issue: ['OUT']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+      credulous -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+   preferred issue: ['OUT']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+      credulous -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+   stable    issue: ['OUT']
+      [1] ~(LooksRed->Red)[t]=OUT LooksRed->Red[c]=OUT LooksRed->Red[t]=IN RedLight->~(LooksRed->Red)[t]=IN ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+      credulous -> open      μ'alt4:LooksRed->Red.<alt4:LooksRed->Red||OUT:LooksRed->Red?>
+-- witness: issue RedLight[c]; 3 edges
+   grounded  issue: ['IN']
+      [1] ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+      credulous -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+   preferred issue: ['IN']
+      [1] ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+      credulous -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+   stable    issue: ['IN']
+      [1] ~RedLight[t]=IN WhiteLightTestimony->~RedLight[t]=IN RedLight[c]=IN RedLight[t]=OUT WhiteLightTestimony[t]=IN
+      skeptical -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+      credulous -> value     μ'alt2:RedLight.<testimony_says_white:WhiteLightTestimony->~RedLight||!IN:WhiteLightTestimony*μb1:RedLight.<alt2:RedLight||b1:RedLight>*_F_>
+== done in 0.7s

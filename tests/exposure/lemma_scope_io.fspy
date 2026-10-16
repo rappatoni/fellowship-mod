@@ -1,0 +1,38 @@
+# Input/output logic, reasoning by cases (basic output out2): G = {(a,x),
+# (b,x)}, input a v b. out2 gives x, out1 does not. Without disjunction the
+# input is written (a -> false) -> b; the case split needs the classical
+# combination of two moves, so it is argued dialectically.
+lk.
+declare A, B, Ox : bool.
+declare input : ((A -> false) -> B).
+declare n_a : (A -> Ox).
+declare n_b : (B -> Ox).
+argument claim : (Ox).
+dixi.
+# Ox from b (owed).
+argument from_b : (Ox).
+cut (B -> Ox) t.
+axiom n_b.
+elim.
+next.
+axiom t.
+dixi.
+# b from not-a (owed), by the input.
+argument b_from_input : (B).
+cut ((A -> false) -> B) t.
+axiom input.
+elim.
+next.
+axiom t.
+dixi.
+# not-a: assume a; then Ox by (a,x), thrown to Ox's continuation (owed).
+argument not_a : (A -> false).
+elim h.
+cut (Ox) k.
+cut (A -> Ox) y.
+axiom n_a.
+elim.
+axiom h.
+axiom y.
+next.
+dixi.

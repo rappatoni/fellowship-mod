@@ -1,0 +1,66 @@
+== literature2/dl_ambiguity.fspy: check ok=True (0.1s)
+-- r1: issue Pacifist[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=UNDEC Pacifist[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> open      ?UNDEC:Pacifist
+   preferred issue: ['OUT', 'IN']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> value     μr1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*r1:Pacifist>
+   stable    issue: ['OUT', 'IN']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Pacifist
+      credulous -> value     μr1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*r1:Pacifist>
+-- r2: issue Pacifist[c]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=UNDEC Pacifist[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> open      UNDEC:Pacifist?
+   preferred issue: ['IN', 'OUT']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> value     μ'r2:Pacifist.<!IN:Republican->~Pacifist||republican:Republican*μ'b1:~Pacifist.<b1:~Pacifist||r2:Pacifist*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Pacifist?
+      credulous -> value     μ'r2:Pacifist.<!IN:Republican->~Pacifist||republican:Republican*μ'b1:~Pacifist.<b1:~Pacifist||r2:Pacifist*_F_>>
+-- r3: issue HasGun[c]; 7 edges
+   grounded  issue: ['UNDEC']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=UNDEC HasGun[t]=UNDEC Pacifist[c]=UNDEC Pacifist[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> open      UNDEC:HasGun?
+   preferred issue: ['IN', 'OUT', 'OUT']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=IN HasGun[t]=OUT Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [3] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> value     μ'r3:HasGun.<!IN:Pacifist->~HasGun||μb1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*b1:Pacifist>*μ'b3:~HasGun.<b3:~HasGun||r3:HasGun*_F_>>
+   stable    issue: ['IN', 'OUT', 'OUT']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=IN HasGun[t]=OUT Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [3] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:HasGun?
+      credulous -> value     μ'r3:HasGun.<!IN:Pacifist->~HasGun||μb1:Pacifist.<!IN:Quaker->Pacifist||quaker:Quaker*b1:Pacifist>*μ'b3:~HasGun.<b3:~HasGun||r3:HasGun*_F_>>
+-- r4: issue HasGun[t]; 7 edges
+   grounded  issue: ['UNDEC']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=UNDEC HasGun[t]=UNDEC Pacifist[c]=UNDEC Pacifist[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> open      ?UNDEC:HasGun
+   preferred issue: ['OUT', 'IN', 'IN']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=IN HasGun[t]=OUT Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [3] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> value     μr4:HasGun.<!IN:Chicago->HasGun||chicago:Chicago*r4:HasGun>
+   stable    issue: ['OUT', 'IN', 'IN']
+      [1] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=IN HasGun[t]=OUT Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=IN Pacifist[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [3] Chicago->HasGun[t]=IN Pacifist->~HasGun[t]=IN Quaker->Pacifist[t]=IN Republican->~Pacifist[t]=IN Chicago[t]=IN HasGun[c]=OUT HasGun[t]=IN Pacifist[c]=OUT Pacifist[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:HasGun
+      credulous -> value     μr4:HasGun.<!IN:Chicago->HasGun||chicago:Chicago*r4:HasGun>
+== done in 0.8s

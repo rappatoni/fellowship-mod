@@ -1,0 +1,32 @@
+== literature/aba_toni.fspy: check ok=True (0.1s)
+-- arg_p: issue P[t]; 8 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+-- arg_r: issue R[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+   preferred issue: ['IN']
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+   stable    issue: ['IN']
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+-- att_a: issue A[c]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+== done in 0.5s
