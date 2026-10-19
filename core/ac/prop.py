@@ -44,7 +44,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Set
+from typing import Dict, List, Set
+
+from core.ac import referents
 
 
 class PropError(ValueError):
@@ -255,7 +257,18 @@ class Prop:
         raise NotImplementedError
 
     def canonical(self) -> str:
-        return self._canonical({}, 0)
+        """The key of this proposition up to renaming of its bound
+        variables and of its discourse referents, which are numbered by
+        first occurrence (tasks.org, aida-discourse-referents, (a))."""
+        return self._canonical({_REFERENTS: {}}, 0)
+
+    def referent_order(self) -> List[str]:
+        """The discourse referents of this proposition in the order
+        ``canonical`` numbers them: lining two such orders up gives the
+        renaming under which their keys agree."""
+        refs: Dict[str, int] = {}
+        self._canonical({_REFERENTS: refs}, 0)
+        return list(refs)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Prop):
@@ -492,10 +505,18 @@ def _fresh(prefix: str, taken: Set[str]) -> str:
     return f"{prefix}{index}"
 
 
+#: The key, in a ``_canonical`` environment, of the discourse referents
+#: met so far; no variable name can be it.
+_REFERENTS = "\0referents"
+
+
 def _term_canonical(term: Term, env: Dict[str, int]) -> str:
     if isinstance(term, TSym):
         if term.name in env:
             return f"#{env[term.name]}"
+        refs = env.get(_REFERENTS)
+        if refs is not None and referents.is_referent(term.name):
+            return f"r#{refs.setdefault(term.name, len(refs))}"
         return f"t:{term.name}"
     if isinstance(term, TApp):
         return f"@({_term_canonical(term.fun, env)},{_term_canonical(term.arg, env)})"

@@ -143,3 +143,38 @@ dixi.
         assert "w" not in prover.arguments
     finally:
         prover.close()
+
+
+# -- keys up to renaming of referents (decision (a)) -------------------------------
+
+def key(text):
+    from core.dc.debate_graph import canonical_prop
+    return canonical_prop(referents.expand(text))
+
+
+def test_a_statement_is_identified_up_to_renaming_of_its_referents():
+    assert key("Dr ?x -> false") == key("Dr ?w -> false")
+    assert key("P ?a ?b") == key("P ?b ?a")
+
+
+def test_identity_does_not_instantiate():
+    """P z z is an instance of P ?a ?b, not the same statement: the author
+    writes the bridge (AIDA is not an automated prover)."""
+    assert key("P ?a ?b") != key("P ?c ?c")
+    assert key("Dr ?x") != key("Dr c")
+
+
+def test_a_referent_is_neither_a_bound_variable_nor_a_constant():
+    assert key("exists y:Pub, R ?x y") != key("exists y:Pub, R y y")
+    assert key("Dr ?x") != key("Dr referent")
+
+
+def test_non_atomic_terms_and_function_referents():
+    assert key("P (f ?x)") == key("P (f ?y)") != key("P ?x")
+    assert key("Q (?g c)") == key("Q (?h c)") != key("Q (?g d)")
+
+
+def test_the_referent_order_lines_two_statements_up():
+    from core.ac.prop import Prop
+    order = Prop.parse(referents.expand("R ?b (f ?a) ?b")).referent_order()
+    assert order == ["referent_b", "referent_a"]
