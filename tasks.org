@@ -721,7 +721,8 @@ Found 2026-10-16 with the literature evaluation's bug 8: the misleading
 "declared name 'tweety' has kind 'sort'" message. Since the first-order
 debates no compiler path reaches the kind check with a first-order name,
 so this is cosmetic.
-** BACKLOG Do not expose a horn whose sources mention a first-order bound variable
+** DONE Do not expose a horn whose sources mention a first-order bound variable
+CLOSED: [2026-10-20 Tue]
 :PROPERTIES:
 :ID:             aida-fo-open-source-horn
 :AREA:           phd
@@ -756,6 +757,26 @@ the hypothesis =n : Dr y -> false=. The cut is exposed as the horn
 evaluating or replaying =a= fails: "Fellowship rejected the unfolded
 term for 'a_1': Symbol y undefined". The VERIFY should cover this case
 too: =a= evaluates without error, and its unfolded term replays.
+
+*Done 2026-10-20.* =is_open= (core/dc/debate_graph.py) now also holds
+when anything inside a node - a hypothesis's annotation, a witness, a
+first-order term - mentions a first-order variable bound above it, read
+from =_fo_mentions=, one pass per body (only when the body binds one).
+Such a node stays part of its argument.
+- tests/first_order/open_source_horn.fspy (= eval/literature3/
+  bug_fo_open_source.fspy): =graph a= has no source, =a= is strict, IN
+  under every labelling, and a value.
+- tests/first_order/hypothesis_horn.fspy (= drinker_closed.fspy): no
+  horn =a.μ1=; =a= evaluates (open: its owed =peirce= has no argument)
+  and replays with the type check on and =expanded=. Its =b= is IN but
+  an exception, recorded as known in tests/test_adequacy.py
+  ([[id:aida-exfalso-under-lambda-exception]]).
+- tests/test_first_order.py: two new tests and both fixtures in its
+  parametrised checks (every node closed, verdicts on both routes,
+  replay); 8 of them fail without the fix.
+- Suite: 2333 passed, 9 skipped, 16 deselected (perf), 2 xfailed,
+  1 xpassed; the one failure, hypothesis_horn's =b= in the adequacy test,
+  is now pinned as known.
 
 ** BACKLOG Refuse a name that Fellowship reserves, with a message
 :PROPERTIES:

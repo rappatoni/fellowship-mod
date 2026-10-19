@@ -32,7 +32,8 @@ from wrap.cli import setup_prover
 from wrap.service import Service
 
 TESTS = Path(__file__).parent
-FIXTURES = ["tweety", "birds_fly", "generalisation", "witness"]
+FIXTURES = ["tweety", "birds_fly", "generalisation", "witness", "open_source_horn",
+            "hypothesis_horn"]
 PIPELINES = ["shared", "unfolded"]
 
 
@@ -118,6 +119,31 @@ class TestTheGraph:
             prover.close()
 
 
+def test_a_horn_using_a_bound_variable_stays_in_its_argument():
+    """aida-fo-open-source-horn: the cell (x, p) * _F_ proves the closed
+    exists x, P x, but from the bound x and p : P x; exposed, it owed the
+    open P x and the strict argument was labelled OUT."""
+    prover, svc, report = session("open_source_horn")
+    try:
+        assert report.ok
+        assert edges(prover)["a"][1:] == ([], True)
+        labels = svc.label(svc.target("a")).labellings
+        assert [set(l.values()) for l in labels] == [{"IN"}]
+    finally:
+        prover.close()
+
+
+def test_a_horn_using_a_hypothesis_about_a_bound_variable_stays_in_its_argument():
+    """The cut of the closed claim under forall y uses n : Dr y -> false;
+    exposed as a horn, its replay mentioned y unbound."""
+    prover, _svc, report = session("hypothesis_horn")
+    try:
+        assert report.ok
+        assert not any(name.startswith("a.") for name in edges(prover))
+    finally:
+        prover.close()
+
+
 # -- evaluation ----------------------------------------------------------------------
 
 EXPECTED = {
@@ -134,6 +160,11 @@ EXPECTED = {
     ("generalisation", "refuted"): "value",
     ("witness", "exp"): "value",
     ("witness", "exq"): "value",
+    # a horn using the bound x (or a hypothesis about it) stays in its
+    # argument (aida-fo-open-source-horn): a is strict and a value
+    ("open_source_horn", "a"): "value",
+    # a stays evaluable; open, as its owed peirce has no argument
+    ("hypothesis_horn", "a"): "open",
 }
 
 
