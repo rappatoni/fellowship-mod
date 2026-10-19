@@ -41,6 +41,13 @@ FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
 KNOWN = {("test1.fspy", text, where)
          for text in ("arg1", "issue :UseMetro", "issue :EfficientMetro", "issue EfficientMetro:")
          for where in ("skeptical", "witness 1")}
+#: tests/first_order/hypothesis_horn.fspy: b proves its statement by ex
+#: falso under lambda-bound hypotheses, which classify_nf takes for an
+#: uncatchable clash (tasks.org, aida-exfalso-under-lambda-exception).
+KNOWN |= {("hypothesis_horn.fspy", text, where)
+          for text in ("b", "issue :forall z:Pub,(Dr z->false)->"
+                            "(exists x:Pub,Dr x->(forall y:Pub,Dr y))")
+          for where in ("skeptical", "witness 1")}
 
 
 def targets(prover):

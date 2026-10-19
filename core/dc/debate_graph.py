@@ -1000,6 +1000,39 @@ def _fo_scopes(body, outer=frozenset()) -> dict:
     return scopes
 
 
+@lru_cache(maxsize=None)
+def _prop_names(prop) -> frozenset:
+    """The free names of ``prop``, or none if it does not parse."""
+    try:
+        return frozenset(Prop.parse(prop).free_vars())
+    except PropError:
+        return frozenset()
+
+
+def _fo_mentions(body) -> dict:
+    """{id(node): the names free in the propositions and first-order terms
+    of ``node``'s whole subterm} - a hypothesis's annotation and a
+    witness included, the variables of its own first-order binders not."""
+    mentions = {}
+
+    def walk(node):
+        names = set(_prop_names(node.prop)) if isinstance(getattr(node, "prop", None), str) else set()
+        for attr in ("fo_term", "witness"):
+            term = getattr(node, attr, None)
+            if term is not None and hasattr(term, "free_vars"):
+                names |= set(term.free_vars())
+        for child in vars(node).values():
+            if isinstance(child, ProofTerm):
+                names |= walk(child)
+        if isinstance(node, (LamdaFO, DestructTermsPairFO)):
+            names.discard(node.var)
+        mentions[id(node)] = frozenset(names)
+        return names
+
+    walk(body)
+    return mentions
+
+
 def _open_in(prop, bound) -> frozenset:
     """The first-order variables of ``bound`` that ``prop`` mentions: a
     statement mentioning one is open - it is no statement at all outside
@@ -1115,13 +1148,16 @@ class _Compiler:
         # The first-order variables bound above each node (``fo_outer``:
         # those bound around this body, for a subargument).
         fo_scope = _fo_scopes(body, fo_outer)
+        fo_mentions = _fo_mentions(body) if any(fo_scope.values()) else {}
 
         def is_open(node) -> bool:
-            """A node whose statement mentions a first-order variable bound
-            by the argument is no horn: it is not a statement outside its
-            binder, so it stays part of the argument, like a spine step
-            (the author, 2026-10-16)."""
-            return bool(_open_in(getattr(node, "prop", None), fo_scope.get(id(node))))
+            """A node whose statement - or anything inside it, such as a
+            hypothesis it uses - mentions a first-order variable bound by
+            the argument is no horn: outside the binder it is no closed
+            argument, so it stays part of the argument, like a spine step
+            (the author, 2026-10-16; tasks.org, aida-fo-open-source-horn)."""
+            bound = fo_scope.get(id(node))
+            return bool(bound) and bool(fo_mentions.get(id(node), frozenset()) & bound)
 
         def on_spine(node, spine):
             """Whether ``node`` carries this edge's proof on: a spine
