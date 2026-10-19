@@ -194,11 +194,9 @@ class Interpreter:
     def _fellowship(self, c: Command, *, include_ui: bool = False) -> Outcome:
         s = self.session
         try:
-            claim = getattr(s, "claim_declared_names", None)
-            if claim is not None:
-                claim(c.text + ".")
-            state = s.send_command(c.text + ".", include_ui=self.live or include_ui,
-                                   allow_incomplete=self.live)
+            send = getattr(s, "send_declaring", s.send_command)
+            state = send(c.text + ".", include_ui=self.live or include_ui,
+                         allow_incomplete=self.live)
             if self.live:
                 self.show_ui(state)
         except MachinePayloadError:
@@ -271,6 +269,8 @@ class Interpreter:
             return Outcome(None, c.text, c.kind, "refused",
                            f"'{self.recording['name']}' is still being recorded; end it with "
                            f"`dixi.` (or `qed.`) first.")
+        if " ".join(c.text.split()) == "discard theorem":
+            return self._discard(c)
         if not self.live:
             self.recording["instructions"].append(c.text)
             return Outcome(None, c.text, "instruction", "ok")
@@ -301,6 +301,18 @@ class Interpreter:
         message = (f"'{arg.name}' proved: {arg.conclusion}." if demand_strict else
                    f"Argument '{arg.name}' executed and registered with conclusion '{arg.conclusion}'.")
         return Outcome(None, c.text, c.kind, "ok", message, value=arg, diagnostics=list(done.diagnostics))
+
+    def _discard(self, c: Command) -> Outcome:
+        """`discard theorem.` in a block abandons the recording, as it
+        abandons a proof in Fellowship: nothing is registered, and the name
+        goes back to what it was (a refinement leaves the argument as it
+        was before `refine`)."""
+        from wrap.registry import abandon
+        current = self.recording
+        self._drop_recording()
+        abandon(self.session, current)
+        return Outcome(None, c.text, c.kind, "ok",
+                       f"Discarded the recording of '{current['name']}'; nothing registered.")
 
     def _drop_recording(self) -> None:
         current, self.recording = self.recording, None

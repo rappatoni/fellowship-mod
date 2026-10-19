@@ -627,10 +627,9 @@ class Service:
     def command(self, text: str) -> Done:
         """A Fellowship command (``declare``, ``deny``, a logic toggle ...).
         A ``declare`` takes its names first, so a clash is refused before
-        Fellowship sees it."""
+        Fellowship sees it, and gives them back if Fellowship refuses it."""
         try:
-            self.session.claim_declared_names(text)
-            state = self.session.send_command(text)
+            state = self.session.send_declaring(text)
         except ProverError as e:
             raise ContentRefused(str(e), stage="prover", cause=e)
         return Done(text.strip(), state)

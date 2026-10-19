@@ -681,14 +681,45 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if not dry_run:
             self.names[name] = kind
 
-    def claim_declared_names(self, command: str) -> None:
-        """The names a `declare N1, N2 : TYPE.` command introduces."""
+    def claim_declared_names(self, command: str) -> list[str]:
+        """The names a `declare N1, N2 : TYPE.` command introduces, all
+        taken or none (a clash on one leaves the others free)."""
         match = re.match(r"\s*declare\s+(.+?)\s*:", command)
         if not match:
-            return
-        for name in (n.strip() for n in match.group(1).split(",")):
-            if name:
-                self.claim_name(name, "declaration")
+            return []
+        names = [n for n in (n.strip() for n in match.group(1).split(",")) if n]
+        for name in names:
+            self.claim_name(name, "declaration", dry_run=True)
+        for name in names:
+            self.claim_name(name, "declaration")
+        return names
+
+    def send_declaring(self, command: str, **kwargs) -> Dict[str, Any]:
+        """Send a Fellowship command; a ``declare`` takes its names first, so
+        a clash is refused before Fellowship sees it, and gives back the
+        ones Fellowship did not define.  Fellowship refuses some declarations
+        with a note only (``Symbol C undefined``, ``A is a proposition, not
+        a sort``); its signature is what tells, and such a refusal is raised
+        as a ProverError."""
+        names = self.claim_declared_names(command)
+        try:
+            state = self.send_command(command, **kwargs)
+        except BaseException:
+            self.release_names(names)
+            raise
+        if names and not state.get("_need_more_input"):
+            undefined = [n for n in names if n not in self.declarations]
+            if undefined:
+                self.release_names(undefined)
+                reason = "; ".join(state.get("notes") or []) or "Fellowship did not define it"
+                raise ProverError(f"'{', '.join(undefined)}' not declared: {reason}")
+        return state
+
+    def release_names(self, names: list[str]) -> None:
+        """Give back declaration names that did not come into force."""
+        for name in names:
+            if self.names.get(name) == "declaration" and name not in self.declarations:
+                self.names.pop(name)
 
     def register_argument(self, argument: Any, *, replace: bool = False) -> None:
         """ Register a new argument (i.e. a partial Fellowship proof.)

@@ -770,6 +770,55 @@ Fellowship's bare parse error. The names are checked for uniqueness
 already (README, "Names are unique per document"); the keyword list is
 in wrap/fellowship/lexer.mll.
 
+** DONE Never register a discarded argument or a refused declaration
+CLOSED: [2026-10-19 Mon]
+:PROPERTIES:
+:ID:             aida-discard-and-refused-declarations
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:30
+:DEFERRALS:      0
+:OUTCOME:        =discard theorem.= inside an argument block abandons the recording, and no replay that leaves Fellowship without an open theorem registers an argument; a declaration Fellowship refuses, with an error or with a note only, holds none of its names.
+:VERIFY:         tests/test_syntax.py: the four regression tests fail on the parent commit and pass; the documented test suite passes.
+:END:
+
+Found 2026-10-19. (1) =discard theorem.= in a block was recorded as a
+step. On replay Fellowship went idle and answered later steps with a
+note ("Where is the goal ?"), not an error; no goals read as proved, the
+wrapper sent =qed.= (a no-op when idle) and registered the argument as
+strict - citable by =axiom= and =cite= although Fellowship never held
+it, with an open site =?1.1=. (2) =claim_declared_names= took a
+declaration's names before sending it and never gave them back: not on
+a parse error, and not when Fellowship refuses with a note only
+(=declare r : A -> B.= is read as a sort: "B is a proposition, not a
+sort"; =declare r : (A -> C).=: "Symbol C undefined").
+
+*Decided (the author, 2026-10-19):* in a block, =discard theorem.= means
+what it means in Fellowship - abandon the proof. The recording is
+dropped and its name given back (=registry.abandon=; a refinement leaves
+the argument as it was before =refine=); a following =dixi.= is refused,
+nothing being recorded.
+
+Done 2026-10-19. wrap/interpreter.py =_discard=; core/dc/argument.py
+=execute= refuses a replay whose final state has =mode idle= (a step
+ended the theorem) before reading the goals; wrap/prover.py
+=send_declaring= claims a declaration's names all or none, gives back on
+any ProverError, and after the reply gives back every name missing from
+Fellowship's signature, raising its notes as a ProverError (used by
+=Interpreter._fellowship= and =Service.command=).
+
+Evidence: tests/test_syntax.py, four new tests - discard in a block,
+the replay guard, the four refused declarations of both kinds plus a
+clash that no longer takes its partner name, and the interpreter's
+note-only refusal - all four failing with the source changes reverted
+and passing with them. Full suite 2312 passed, 9 skipped, 2 xfailed, 1
+xpassed.
+
 ** BACKLOG Design: classical first-order theorems that throw an open statement
 :PROPERTIES:
 :ID:             aida-fo-classical-dialectics

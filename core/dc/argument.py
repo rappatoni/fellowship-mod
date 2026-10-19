@@ -474,6 +474,13 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                         break
                     raise
             flush_pending()
+            if isinstance(last_output, dict) and last_output.get("mode") == "idle":
+                # A step closed the theorem without proving it (`discard
+                # theorem.`); no goals would otherwise read as proved.
+                raise ProverError(
+                    f"'{self.name}': a step left Fellowship with no theorem open; "
+                    "an argument's steps cannot include `discard theorem.`, `qed.` "
+                    "or other commands that end the proof.")
         except ProverError:
             # A failed replay leaves Fellowship inside the theorem it opened;
             # close it, or the next command is refused ("Finish the proof

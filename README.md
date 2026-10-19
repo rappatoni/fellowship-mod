@@ -550,6 +550,11 @@ detects a machine-mode desynchronization.
   - end the recording and demand a strict witness; refused, leaving the
     argument as it was, while an obligation, a presumption or a defeasible
     citation remains open
+- `discard theorem.` (inside a recording)
+  - abandon the recording: nothing is registered and the name is free
+    again (a refinement leaves the argument as it was before `prove`). A
+    replay in which some step ends Fellowship's theorem is refused, never
+    registered
 - `adopt EDGE* as NAME`
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
 - `expand ARG`
@@ -611,6 +616,10 @@ everywhere, so it never holds a defeasible argument.
   arguments share one namespace, checked before anything reaches the prover;
   `new document` starts a new one. Names starting with `typecheck_`,
   `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
+  A declaration holds its names only if Fellowship defines them: one it
+  refuses - with an error, or with a note only such as `Symbol C undefined`
+  or `B is a proposition, not a sort` (an axiom needs its parentheses:
+  `declare r : (A -> B).`) - is reported as an error and takes no name.
 - **Sessions start in LK.** Debates are classical, and a session starts with
   a classical document, so the type check of a debate never runs in LJ by
   accident.

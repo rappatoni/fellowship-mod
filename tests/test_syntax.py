@@ -97,3 +97,55 @@ dixi.
     assert prover.arguments["a"].span == Span(4, 1, 11, 5)
     evaluation = next(o for o in out if o.kind == "evaluate").value
     assert evaluation.nf_class == "value"
+
+
+def test_discard_theorem_in_a_block_abandons_the_recording(prover):
+    text = """lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument a : (A -> B).
+elim x.
+discard theorem.
+argument a : (A -> B).
+axiom r.
+dixi.
+"""
+    out = list(Interpreter(prover).run(text))
+    assert [o.status for o in out] == ["ok"] * len(out)
+    assert out[5].message == "Discarded the recording of 'a'; nothing registered."
+    assert not prover.arguments["a"].open_sites()
+
+
+def test_a_replay_that_ends_the_theorem_is_refused(prover):
+    from core.dc.argument import Argument
+    from wrap.prover import ProverError
+    prover.send_command("lk.")
+    prover.send_command("declare A, B : bool.")
+    arg = Argument(prover, name="a", conclusion="A -> B")
+    arg.instructions = ["elim x", "discard theorem"]
+    with pytest.raises(ProverError, match="no theorem open"):
+        arg.execute(declare="auto")
+    assert prover.send_command("theorem t : (A -> A).")["mode"] == "subgoals"
+    prover.send_command("discard theorem.")
+
+
+def test_a_refused_declaration_gives_its_names_back(prover):
+    from wrap.prover import ProverError
+    prover.send_command("lk.")
+    prover.send_declaring("declare A, B : bool.")
+    for refused in ["declare r : A -> B.",            # read as a sort: refused with a note only
+                    "declare r : (A -> C).",          # C undefined: a note only
+                    "declare r : A -> .",             # a parse error
+                    "declare s, A : bool."]:          # A clashes: s is not taken either
+        with pytest.raises(ProverError):
+            prover.send_declaring(refused)
+    assert "r" not in prover.names and "s" not in prover.names
+    prover.send_declaring("declare r : (A -> B).")
+    prover.send_declaring("declare s : bool.")
+    assert prover.names["r"] == prover.names["s"] == "declaration"
+
+
+def test_interpreter_declaration_refused_by_a_note(prover):
+    out = list(Interpreter(prover).run("lk.\ndeclare A : bool.\ndeclare r : A -> A.\ndeclare r : (A -> A).\n"))
+    assert [o.status for o in out] == ["ok", "ok", "error", "ok"]
+    assert "not a sort" in out[2].message
