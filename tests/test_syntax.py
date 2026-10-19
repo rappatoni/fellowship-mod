@@ -132,16 +132,16 @@ def test_a_replay_that_ends_the_theorem_is_refused(prover):
 def test_a_refused_declaration_gives_its_names_back(prover):
     from wrap.prover import ProverError
     prover.send_command("lk.")
-    prover.send_declaring("declare A, B : bool.")
+    prover.send_top_level("declare A, B : bool.")
     for refused in ["declare r : A -> B.",            # read as a sort: refused with a note only
                     "declare r : (A -> C).",          # C undefined: a note only
                     "declare r : A -> .",             # a parse error
                     "declare s, A : bool."]:          # A clashes: s is not taken either
         with pytest.raises(ProverError):
-            prover.send_declaring(refused)
+            prover.send_top_level(refused)
     assert "r" not in prover.names and "s" not in prover.names
-    prover.send_declaring("declare r : (A -> B).")
-    prover.send_declaring("declare s : bool.")
+    prover.send_top_level("declare r : (A -> B).")
+    prover.send_top_level("declare s : bool.")
     assert prover.names["r"] == prover.names["s"] == "declaration"
 
 
@@ -227,3 +227,64 @@ def test_a_refused_live_step_carries_fellowships_reply(prover):
     assert ";;BEGIN_ML_DATA;;" not in step.message
     script = list(Interpreter(prover).run("lk.\nfrobnicate.\n"))
     assert script[-1].status == "error" and "\n" not in script[-1].message   # scripts: one line
+
+
+# -- proof steps outside an argument -------------------------------------------
+
+def test_a_step_outside_an_argument_is_refused(prover, tmp_path):
+    from wrap.prover import StepOutsideArgument
+    interpreter = Interpreter(prover, live=True)
+    out = list(interpreter.run("lk.\ndeclare A : bool.\nelim x.\nnext.\ndiscard theorem.\n"))
+    assert [o.status for o in out] == ["ok", "ok", "error", "error", "error"]
+    assert all(isinstance(o.error, StepOutsideArgument) for o in out[2:])
+    assert "Where is the goal ?" in out[2].message           # Fellowship's reply, in the REPL
+    saved = tmp_path / "s.fspy"
+    interpreter.write_transcript(str(saved))
+    assert saved.read_text().splitlines() == ["lk.", "declare A : bool."]
+
+
+def test_the_api_refuses_a_step_outside_an_argument(prover):
+    from wrap.service import ContentRefused, Service
+    svc = Service.of(prover)
+    svc.command("declare A : bool.")
+    with pytest.raises(ContentRefused, match="is a proof step"):
+        svc.command("elim x.")
+    with pytest.raises(ContentRefused, match="is a proof step"):
+        svc.command("qed.")
+
+
+def test_the_check_points_steps_after_a_stated_claim_to_prove(prover):
+    from wrap.service import Service
+    text = "lk.\ndeclare A : bool.\ntheorem t : (A -> A).\n{}elim x.\naxiom x.\nqed.\n"
+    report = Service.of(prover).check(text.format(""))
+    assert not report.ok
+    assert [o.status for o in report.entries[3:]] == ["error", "error", "refused"]
+    assert all("`prove t.` opens its proof" in o.message for o in report.entries[3:])
+    report = Service.of(prover).check(text.format("prove t.\n"))
+    assert report.ok and report.entries[-1].message == "'t' proved: A->A."
+
+
+def test_prove_reopens_a_first_order_argument_in_the_repl(prover):
+    # The stored conclusion is printed (`P x`); Fellowship reads only `P[x]`.
+    text = """lk.
+declare i : type.
+declare P, Q : i -> bool.
+declare upd : i -> bool -> bool.
+declare c : i.
+declare B : bool.
+argument a : (forall x:i, P[x] -> Q[x]).
+elim y.
+dixi.
+prove a.
+elim z.
+dixi.
+argument u : (upd[c][B]).
+dixi.
+prove u.
+dixi.
+argument w : (forall x:i, P x -> P x).
+dixi.
+"""
+    out = list(Interpreter(prover, live=True).run(text))
+    assert [(o.text, o.status) for o in out if o.status != "ok"] == []
+    assert prover.arguments["a"].conclusion == "forall x:i,P x->Q x"

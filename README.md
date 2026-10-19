@@ -586,7 +586,13 @@ everywhere, so it never holds a defeasible argument.
 - **A statement only states.** `lemma foo : (A).` registers the claim as the
   maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an obligation
   marker on A: A is claimed and owes a proof. It opens nothing, so claims can
-  be collected first and proved later.
+  be collected first and proved later. Unlike in Fellowship, proof steps
+  cannot follow it directly: write `prove foo.` first.
+- **Proof steps belong in an argument.** Outside an argument block
+  Fellowship has no theorem open, so a tactic, `next.`, `qed.` or `discard
+  theorem.` there is refused - in the REPL, by the document check and by
+  the service's `command` - and `save` leaves it out. After a statement the
+  refusal points to `prove NAME.`.
 - **Refinement.** `prove foo` reopens foo, replaying what it has so far, so the
   proof continues from its open goals, presumptions included. It ends with
   `qed.`, which demands a strict witness, or `dixi.`, which registers

@@ -629,7 +629,7 @@ class Service:
         A ``declare`` takes its names first, so a clash is refused before
         Fellowship sees it, and gives them back if Fellowship refuses it."""
         try:
-            state = self.session.send_declaring(text)
+            state = self.session.send_top_level(text)
         except ProverError as e:
             raise ContentRefused(str(e), stage="prover", cause=e)
         return Done(text.strip(), state)

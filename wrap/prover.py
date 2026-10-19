@@ -36,6 +36,17 @@ class CitationRefused(ProverError):
     the wrong side or the wrong proposition."""
 
 
+class StepOutsideArgument(ProverError):
+    """A proof step (a tactic, ``next``, ``qed``, ``discard theorem``)
+    given outside an argument, where Fellowship has no theorem open: it
+    answers with a note only, and the wrapper refuses the step."""
+
+
+#: Fellowship's notes for a step with no theorem open (tactics.ml,
+#: ``Goal_exists false``; instructions.ml, ``What_qed``).
+_NO_GOAL_NOTES = {"Where is the goal ?", "Quid erat demonstrandum?"}
+
+
 class StrictnessRefused(ProverError):
     """`qed` demanded a strict witness and the witness still has open
     obligations or presumptions.  Nothing reaches Fellowship's theorems."""
@@ -708,13 +719,16 @@ TODO: Mechanism to declare a scenario of default assumptions.
             self.claim_name(name, "declaration")
         return names
 
-    def send_declaring(self, command: str, **kwargs) -> Dict[str, Any]:
-        """Send a Fellowship command; a ``declare`` takes its names first, so
-        a clash is refused before Fellowship sees it, and gives back the
-        ones Fellowship did not define.  Fellowship refuses some declarations
-        with a note only (``Symbol C undefined``, ``A is a proposition, not
-        a sort``); its signature is what tells, and such a refusal is raised
-        as a ProverError."""
+    def send_top_level(self, command: str, **kwargs) -> Dict[str, Any]:
+        """Send a Fellowship command given outside an argument.  A
+        ``declare`` takes its names first, so a clash is refused before
+        Fellowship sees it, and gives back the ones Fellowship did not
+        define.  Fellowship refuses some commands with a note only, and
+        those are raised as a ProverError: a declaration it did not define
+        (``Symbol C undefined``, ``A is a proposition, not a sort``; its
+        signature is what tells), and a proof step - no theorem is open
+        outside an argument, so Fellowship asks ``Where is the goal ?``
+        (StepOutsideArgument)."""
         names = self.claim_declared_names(command)
         try:
             state = self.send_command(command, **kwargs)
@@ -730,6 +744,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 # Fellowship's reply does not say it refused: the wrapper does
                 ui = state.get("_ui", "")
                 raise ProverError(message, ui=f"{message}\n{ui}" if ui else "")
+        if state.get("mode") == "idle" and set(state.get("notes") or []) & _NO_GOAL_NOTES:
+            word = command.strip().rstrip(".").strip()
+            message = (f"'{word}' is a proof step, and no argument is being recorded: "
+                       f"start one with `argument NAME : (PROPOSITION).`, or prove a "
+                       f"stated claim with `prove NAME.`")
+            ui = state.get("_ui", "")
+            raise StepOutsideArgument(message, ui=f"{message}\n{ui}" if ui else "")
         return state
 
     def release_names(self, names: list[str]) -> None:

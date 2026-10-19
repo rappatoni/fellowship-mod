@@ -38,13 +38,25 @@ from typing import Any, Callable, List, Optional
 
 from core.dc.cite import CitationError, citation_target, is_strict_citation
 from core.dc.debate import DebateError
-from wrap.prover import MachinePayloadError, ProverError
+from wrap.prover import MachinePayloadError, ProverError, StepOutsideArgument
 from wrap.service import AidaError, Service
 from wrap.syntax import Command, Span, SyntaxRefused, Unit, parse_units, split, parse
 
 QUERIES = ("graph", "label", "evaluate", "render", "tree", "unfold", "share")
 CLI_ONLY = ("explain", "render_nf", "reduce", "normalize", "expand", "projection", "load", "save")
 FAILED = ("refused", "error", "fatal", "reported")
+
+
+def _command_prop(conclusion: str) -> str:
+    """A conclusion in Fellowship's command syntax, as the replay sends it
+    (Argument.execute): a stored conclusion is in the printer's syntax
+    (``P x``), which Fellowship's parser does not read.  What AIDA cannot
+    parse (a conjunction) goes as written."""
+    from core.ac.prop_render import prop_to_command
+    try:
+        return prop_to_command(conclusion)
+    except Exception:
+        return conclusion
 
 
 @dataclass
@@ -77,6 +89,9 @@ class Interpreter:
         #: keeps it - not a line of a block that was refused or abandoned.
         self.transcript: List[dict] = []
         self._abandoned: Optional[dict] = None
+        #: The claim stated last, for the hint when proof steps follow it
+        #: as in Fellowship, where `theorem` opens the proof.
+        self._stated: Optional[str] = None
 
     # -- running -------------------------------------------------------------
 
@@ -168,9 +183,14 @@ class Interpreter:
         if c.kind == "refine":
             return self._reopen(c)
         if c.kind in ("dixi", "qed"):
-            return Outcome(None, c.text, c.kind, "refused", "Not currently recording an argument.")
+            hint = (f" '{self._stated}' is only stated: `prove {self._stated}.` opens its proof."
+                    if self._stated is not None else "")
+            return Outcome(None, c.text, c.kind, "refused", "Not currently recording an argument." + hint)
         if c.kind == "statement":
-            return self._service(c, svc.state, c["keyword"], c["name"], c["conclusion"], anti=c["anti"])
+            o = self._service(c, svc.state, c["keyword"], c["name"], c["conclusion"], anti=c["anti"])
+            if o.status == "ok":
+                self._stated = c["name"]
+            return o
         if c.kind == "debate":
             return self._service(c, svc.start_debate, c["name"], c["issue"], c["onus"], c["scope"])
         if c.kind == "close_debate":
@@ -252,7 +272,7 @@ class Interpreter:
     def _fellowship(self, c: Command, *, include_ui: bool = False) -> Outcome:
         s = self.session
         try:
-            send = getattr(s, "send_declaring", s.send_command)
+            send = getattr(s, "send_top_level", s.send_command)
             state = send(c.text + ".", include_ui=self.live or include_ui,
                          allow_incomplete=self.live)
             if self.live:
@@ -261,6 +281,9 @@ class Interpreter:
             raise
         except ProverError as e:
             message = (e.ui or str(e)) if self.live else str(e)
+            if isinstance(e, StepOutsideArgument) and self._stated is not None:
+                message = (f"'{self._stated}' is only stated: `prove {self._stated}.` opens its "
+                           f"proof, and `qed.` ends it.\n" + message)
             return Outcome(None, c.text, "fellowship", "error", message, error=e)
         return Outcome(None, c.text, "fellowship", "ok", value=state)
 
@@ -280,7 +303,8 @@ class Interpreter:
         if self.live:
             opener = "antitheorem" if anti else "theorem"
             try:
-                current["_state"] = s.send_command(f"{opener} {name} : ({conclusion}).", include_ui=True)
+                current["_state"] = s.send_command(f"{opener} {name} : ({_command_prop(conclusion)}).",
+                                                   include_ui=True)
                 self.show_ui(current["_state"])
             except MachinePayloadError:
                 raise
@@ -289,6 +313,7 @@ class Interpreter:
                     s.names.pop(name)
                 return Outcome(None, c.text, c.kind, "error", str(e), error=e)
         self.recording = current
+        self._stated = None
         return Outcome(None, c.text, c.kind, "ok",
                        f"Started recording {kind} '{name}' with conclusion '{conclusion}'.")
 
@@ -303,7 +328,7 @@ class Interpreter:
             opener = "antitheorem" if current["is_anti"] else "theorem"
             try:
                 current["_state"] = s.send_command(
-                    f"{opener} {c['name']} : ({current['conclusion']}).", include_ui=True)
+                    f"{opener} {c['name']} : ({_command_prop(current['conclusion'])}).", include_ui=True)
             except MachinePayloadError:
                 raise
             except ProverError as e:
@@ -320,6 +345,7 @@ class Interpreter:
         current["_opened_at"] = c.span
         current["_transcript_from"] = len(self.transcript)
         self.recording = current
+        self._stated = None
         return Outcome(None, c.text, c.kind, "ok",
                        f"Refining '{c['name']}' : {current['conclusion']}; end with `qed.` or `dixi.`")
 

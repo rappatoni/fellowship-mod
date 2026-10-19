@@ -807,7 +807,7 @@ nothing being recorded.
 Done 2026-10-19. wrap/interpreter.py =_discard=; core/dc/argument.py
 =execute= refuses a replay whose final state has =mode idle= (a step
 ended the theorem) before reading the goals; wrap/prover.py
-=send_declaring= claims a declaration's names all or none, gives back on
+=send_top_level= claims a declaration's names all or none, gives back on
 any ProverError, and after the reply gives back every name missing from
 Fellowship's signature, raising its notes as a ProverError (used by
 =Interpreter._fellowship= and =Service.command=).
@@ -874,6 +874,86 @@ the previous command's error, so the one-line message reads e.g. "Line
 1, character 0: Parse error: syntactical analysis.; You need to specify
 a proposition." (wrap/fellowship/main.ml, the parse-error branch). The
 human reply is right.
+
+** DONE Refuse proof steps outside an argument
+CLOSED: [2026-10-19 Mon]
+:PROPERTIES:
+:ID:             aida-steps-outside-arguments
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A proof step given outside an argument block - a tactic, =next=, =qed=, =discard theorem= - is refused by the REPL, the document check and the service's =command=, and =save= leaves it out; after a statement the refusal points to =prove NAME.=
+:VERIFY:         tests/test_syntax.py: the REPL refuses three such steps and =save= leaves them out; =Service.command= refuses =elim x.= and =qed.=; the check of =theorem t ... elim x. axiom x. qed.= refuses all three with the =prove t.= hint, and with =prove t.= inserted passes; a census of every .fspy fixture finds none relying on such a step; the documented test suite passes.
+:END:
+
+Found 2026-10-19 by the author (=cut (A).= outside an argument was
+accepted, and =save= kept it) and reported from a check: a plain
+Fellowship theorem - =theorem t : (A -> A).=, tactics, =qed.= - passed
+every tactic and refused only =qed.= ("Not currently recording an
+argument"). Both are one bug: AIDA's =theorem= only states a claim
+(README, "A statement only states"), so Fellowship never opened =t=; a
+step with no theorem open gets a note only ("Where is the goal ?"; for
+=qed=, "Quid erat demonstrandum?"), which the wrapper took for success.
+Fellowship had not accepted the theorem.
+
+*Decided (the author, 2026-10-19):* such steps are refused everywhere.
+Not changed here, and open to the author: =theorem= still only states,
+so steps right after it do not open its proof as they would in
+Fellowship; the refusal points to =prove NAME.= instead.
+
+Done 2026-10-19. =ProverWrapper.send_top_level= (was =send_declaring=;
+used by =Interpreter._fellowship= and =Service.command=) raises
+=StepOutsideArgument= when Fellowship's reply is idle with one of those
+notes; Fellowship decides what is a step, so the wrapper keeps no
+tactic list. The interpreter adds "'t' is only stated: `prove t.` opens
+its proof" to a refused step, =qed.= or =dixi.= after a statement.
+
+Evidence: tests/test_syntax.py, three new tests, pass; census of 171
+.fspy files under tests/, eval/ and examples/ through =Service.check=:
+no step outside an argument.
+
+** DONE Reopen a first-order argument with prove in the REPL
+CLOSED: [2026-10-19 Mon]
+:PROPERTIES:
+:ID:             aida-live-refine-fo
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         0:45
+:DEFERRALS:      0
+:OUTCOME:        =prove NAME.= in the REPL reopens an argument or statement whatever its conclusion, first-order included, as it does in a script.
+:VERIFY:         tests/test_syntax.py: a live session refines two first-order arguments (one with a nested application =upd[c][B]=) and opens one typed in the printed spelling, with no refusal; fails with the fix reverted.
+:END:
+
+Reported 2026-10-19 by the author: =prove foo= sometimes failed with
+"Parse error: syntactical analysis". In live mode (the REPL)
+=Interpreter._reopen= opened the theorem with the stored conclusion as
+it was, and a stored conclusion is in Fellowship's printed syntax -
+=forall x:i,P x->P x=, application by juxtaposition - which Fellowship's
+parser does not read. Scripts and the document check were not affected:
+their replay (=Argument.execute=) converts with =prop_to_command=.
+Propositional conclusions read the same in both syntaxes, hence
+"not always".
+
+Done 2026-10-19. =_reopen= and the live opener of =argument= send the
+conclusion through =prop_to_command= (=interpreter._command_prop=;
+what AIDA cannot parse, a conjunction, goes as written). Probed in both
+modes: counterarguments, propositional and first-order statements,
+refining twice, presumptions, registered proof terms, citations - all
+reopen.
+
+Evidence: the new test in tests/test_syntax.py passes and fails with the
+fix reverted; full suite 2320 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
 ** BACKLOG Design: classical first-order theorems that throw an open statement
 :PROPERTIES:
