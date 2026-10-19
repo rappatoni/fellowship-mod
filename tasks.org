@@ -748,6 +748,15 @@ decision of [[id:aida-first-order-reduction]] keeps every node closed
 by not exposing a horn whose *statement* is open; this horn's statement
 is closed, its source is not.
 
+Seen again 2026-10-19, with a worse effect: in
+tests/discourse/drinker_closed.fspy (branch discourse-referents, commit
+307c567) argument =a= cuts the claim =E= under =forall y= while holding
+the hypothesis =n : Dr y -> false=. The cut is exposed as the horn
+=a.μ1 : E[t]= with the open source =Dr y->false[t:obli]=, and
+evaluating or replaying =a= fails: "Fellowship rejected the unfolded
+term for 'a_1': Symbol y undefined". The VERIFY should cover this case
+too: =a= evaluates without error, and its unfolded term replays.
+
 ** BACKLOG Refuse a name that Fellowship reserves, with a message
 :PROPERTIES:
 :ID:             aida-reserved-names
@@ -5433,6 +5442,49 @@ when obligations remain beside the clash).
   defeated-site item) updated (both gitignored).
 - Suite: 1542 passed; the 2 failures are the author's working copy of
   even_loop_lk.fspy on the shared route, unchanged.
+
+*** BACKLOG Design: is ex falso under lambda-bound hypotheses an exception?
+:PROPERTIES:
+:ID:             aida-exfalso-under-lambda-exception
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether a clash whose free names are all bound by enclosing lambdas (ex falso from the function's own hypotheses) is an exception, and =classify_nf= and =contains_uncatchable_clash= follow the decision.
+:VERIFY:         The decision is written here; the propositional =e= below and =b= of tests/discourse/drinker_closed.fspy (branch discourse-referents) evaluate to the verdict it states; the suite passes with any moved pin listed.
+:END:
+
+Found 2026-10-19. A closed proof by ex falso evaluates to EXCEPTION:
+
+#+begin_example
+lk.
+declare P, Q : bool.
+argument e : ((P -> false) -> P -> Q).
+elim n.
+elim p.
+cut (P -> false) g.
+axiom n.
+elim.
+axiom p.
+elim.
+dixi.
+#+end_example
+
+=evaluate e= gives =μe.<λn:P->false.λp:P.μg:Q.<n||p*_F_>||e>=,
+EXCEPTION. The same for =b : forall z, (Dr z -> false) -> E= of
+drinker_closed.fspy, so it is not first-order specific. It follows the
+documented rule of =contains_uncatchable_clash=
+(core/comp/oracle_terms.py): =μg= is affine, its command's free names
+=n= and =p= are lambda-bound, and lambda-bound variables cannot catch
+(COMMA 2026). But the clash is conditional on the function's arguments:
+the term is a value, which only throws when applied to a contradictory
+pair, so the debate is not acceptable "only given an inconsistency".
+Related: [[id:aida-classify-exception-before-open]].
 
 *** DONE Design: labellings in the term; a delegation not IN under sigma is an obligation again
 CLOSED: [2026-10-07 Wed]
