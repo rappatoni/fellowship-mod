@@ -3,6 +3,7 @@ from typing import Any, List, Tuple, Optional, Dict
 import pexpect
 from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
+from core.ac import referents
 from core.ac.signature import Declaration
 from wrap.document import Document
 from core.dc.debate_graph import (
@@ -47,6 +48,11 @@ class StepOutsideArgument(ProverError):
 _NO_GOAL_NOTES = {"Where is the goal ?", "Quid erat demonstrandum?"}
 
 
+class ReferentRefused(ProverError):
+    """An argument misuses a discourse referent: undeclared, or used
+    without being stated (tasks.org, aida-discourse-referents)."""
+
+
 class StrictnessRefused(ProverError):
     """`qed` demanded a strict witness and the witness still has open
     obligations or presumptions.  Nothing reaches Fellowship's theorems."""
@@ -56,7 +62,7 @@ class StrictnessRefused(ProverError):
 #: Fellowship (the type oracle's replay, the theta-expansion names) and the
 #: ones it gives to sub-debates nobody named (core/dc/share.py).  A user name
 #: with one of them could collide with a generated one, so it is refused.
-RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX, ANON_PREFIX)
+RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX, ANON_PREFIX, referents.PREFIX)
 
 #: What may refine what: a recording becomes the argument it records, a
 #: statement's enthymeme becomes its witness.  Anything else is a clash.
@@ -751,6 +757,31 @@ TODO: Mechanism to declare a scenario of default assumptions.
                        f"stated claim with `prove NAME.`")
             ui = state.get("_ui", "")
             raise StepOutsideArgument(message, ui=f"{message}\n{ui}" if ui else "")
+        return state
+
+    def declare_referents(self, names: list[str], sort: str) -> Dict[str, Any]:
+        """``referent x, y : SORT.``: declare the constants of the discourse
+        referents ``?x`` and ``?y`` (core/ac/referents.py), all or none.
+        Their names carry the reserved prefix, so they are claimed here
+        rather than by ``claim_name``."""
+        constants = [referents.constant(n) for n in names]
+        for name, const in zip(names, constants):
+            if const in self.names:
+                raise NameClash(f"the referent '?{name}' is already declared in this document.")
+        for const in constants:
+            self.names[const] = "referent"
+        try:
+            state = self.send_command(f"declare {', '.join(constants)} : {sort}.")
+        except BaseException:
+            for const in constants:
+                self.names.pop(const, None)
+            raise
+        undefined = [c for c in constants if c not in self.declarations]
+        if undefined:
+            for const in undefined:
+                self.names.pop(const, None)
+            reason = "; ".join(state.get("notes") or []) or "Fellowship did not define it"
+            raise ProverError(f"'{referents.show(', '.join(undefined))}' not declared: {reason}")
         return state
 
     def release_names(self, names: list[str]) -> None:

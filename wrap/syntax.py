@@ -27,6 +27,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from core.ac import referents
+
 
 @dataclass(frozen=True)
 class Span:
@@ -235,6 +237,19 @@ def _p_bare(kind, usage):
 
 
 _DEBATE = re.compile(r"^(\S+)\s+(\S+)\s+([^\s:]+)\s*:\s*(.+)$", re.S)
+
+
+_REFERENT = re.compile(r"^([A-Za-z][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z][A-Za-z0-9_]*)*)\s*:\s*(.+)$", re.S)
+
+
+def _p_referent(words, rest, text):
+    """``referent x, y : SORT.``: declares the discourse referents ``?x``
+    and ``?y`` (tasks.org, aida-discourse-referents)."""
+    match = _REFERENT.match(rest.strip())
+    if match is None:
+        raise SyntaxRefused("Use: referent NAME : SORT.  (then write ?NAME in a statement)")
+    names = [n.strip() for n in match.group(1).split(",")]
+    return Command("referent", text, args={"names": names, "sort": match.group(2).strip()})
 
 
 def _p_debate(words, rest, text):
@@ -457,6 +472,7 @@ COMMANDS = {
     "case": _p_case,
     "qed": _p_bare("qed", "Use: qed."),
     "debate": _p_debate,
+    "referent": _p_referent,
     "cedat": _p_cedat,
     "ct": _p_bare("close_debate", "Use: ct.  (short for cedat tempus.)"),
     "register": _p_register,
@@ -496,8 +512,9 @@ _CASELESS = set(STATEMENT_KEYWORDS + ANTI_KEYWORDS + REFINE_VERBS)
 
 
 def parse(text: str, span: Optional[Span] = None) -> Command:
-    """Read one command (without its final ``.``)."""
-    text = text.strip()
+    """Read one command (without its final ``.``).  A discourse referent
+    ``?x`` is read as its constant (core/ac/referents.py)."""
+    text = referents.expand(text.strip())
     words = text.split()
     if not words:
         raise SyntaxRefused("an empty command", span)

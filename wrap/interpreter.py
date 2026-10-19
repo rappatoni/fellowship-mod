@@ -191,6 +191,12 @@ class Interpreter:
             if o.status == "ok":
                 self._stated = c["name"]
             return o
+        if c.kind == "referent":
+            try:
+                state = s.declare_referents(c["names"], c["sort"])
+            except ProverError as e:
+                return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
+            return Outcome(None, c.text, c.kind, "ok", value=state)
         if c.kind == "debate":
             return self._service(c, svc.start_debate, c["name"], c["issue"], c["onus"], c["scope"])
         if c.kind == "close_debate":
@@ -352,7 +358,7 @@ class Interpreter:
     def _in_block(self, c: Command) -> Outcome:
         if c.kind in ("dixi", "qed"):
             return self._close(c, demand_strict=c.kind == "qed")
-        if c.kind in ("argument", "refine", "statement", "debate"):
+        if c.kind in ("argument", "refine", "statement", "debate", "referent"):
             return Outcome(None, c.text, c.kind, "refused",
                            f"'{self.recording['name']}' is still being recorded; end it with "
                            f"`dixi.` (or `qed.`) first.")
