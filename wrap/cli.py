@@ -148,11 +148,21 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
         say(o.message)
 
 
-def _run_cli_only(prover: ProverWrapper, c, *, interactive: bool = False) -> None:
+def _run_cli_only(prover: ProverWrapper, c, *, interactive: bool = False,
+                  interpreter=None) -> None:
     """The commands only the CLI runs: explain, the deprecated term-level
-    commands and load."""
+    commands, load and save."""
     k = c.kind
-    if k == "explain":
+    if k == "save":
+        path = Path(c["path"]).expanduser()
+        try:
+            n = interpreter.write_transcript(str(path), every=c["all"])
+        except OSError as e:
+            print(f"save: {e}")
+            return
+        what = "every command" if c["all"] else "the accepted commands"
+        (print if interactive else logger.info)(f"Saved {what} ({n} lines) to {path}.")
+    elif k == "explain":
         explain_argument_cmd(prover, c["target"], c["mode"], c["base"], c["semantics"],
                              c["witness"], c["favour"])
     elif k == "render_nf":
@@ -228,7 +238,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                     break
                 continue
             if o.status == "cli":
-                _run_cli_only(prover, o.command)
+                _run_cli_only(prover, o.command, interpreter=interpreter)
                 continue
             if o.status in ("ok", "comment", "reported"):
                 _render(prover, o)
@@ -331,7 +341,8 @@ def interactive_mode(prover: ProverWrapper) -> None:
     the interpreter (wrap/interpreter.py) live: an argument block sends
     every line to Fellowship as it comes and shows the goals.  Lines
     starting with '#' are echoed, '%' lines ignored; `load 'FILE'.` runs a
-    script in a new document; `exit` or `quit` leaves.  Line editing and
+    script in a new document; `save [all] "FILE".` writes the session
+    back as a script; `exit` or `quit` leaves.  Line editing and
     history come from readline (emacs bindings)."""
     from wrap.interpreter import Interpreter
     from wrap.syntax import parse_units, split
@@ -365,7 +376,7 @@ def interactive_mode(prover: ProverWrapper) -> None:
             for item in parse_units(text):
                 o = interpreter.execute(item)
                 if o.status == "cli":
-                    _run_cli_only(prover, o.command, interactive=True)
+                    _run_cli_only(prover, o.command, interactive=True, interpreter=interpreter)
                 elif o.status in ("ok", "comment", "reported"):
                     _render(prover, o, interactive=True)
                 elif o.status == "refused":

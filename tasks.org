@@ -819,6 +819,42 @@ note-only refusal - all four failing with the source changes reverted
 and passing with them. Full suite 2312 passed, 9 skipped, 2 xfailed, 1
 xpassed.
 
+** DONE Save an interactive session as a script
+CLOSED: [2026-10-19 Mon]
+:PROPERTIES:
+:ID:             aida-save-session
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:30
+:DEFERRALS:      0
+:OUTCOME:        =save "FILE".= writes the session's accepted commands as a script that =load= replays; =save all "FILE".= writes every command, each failed one after a =%= line saying why.
+:VERIFY:         tests/test_syntax.py: the save syntax, both transcripts of a live session with a refused declaration, a refused step, a discarded block and a syntax error, and the accepted transcript replaying to the same arguments; the documented test suite passes.
+:END:
+
+Asked 2026-10-19 by the author, with the option to keep failing commands.
+Until now the only record was the readline history (=~/.acdc_history=),
+which mixes sessions and keeps what failed.
+
+Done 2026-10-19. =Interpreter.transcript= keeps every unit run (comments
+included; =save= itself not); =write_transcript= writes it. Accepted
+leaves out a command whose status is refused, error, fatal or reported,
+and every line of a block refused at =dixi.=/=qed.=, abandoned with
+=discard theorem.= or dropped by =new document=; a block still open is
+written with a closing =%= note. =save= is CLI-only (the document check
+skips it) and runs inside a block without being recorded as a step. A
+=load "FILE".= line is written as itself. =SyntaxRefused= now carries the
+command's text, so =save all= can write a command that did not parse.
+
+Evidence: tests/test_syntax.py, three new tests, pass; a REPL session
+driven through =acdc --interactive= saved both ways, and its accepted
+transcript replayed by =--script= registers the same arguments. Full
+suite 2315 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
 ** BACKLOG Design: classical first-order theorems that throw an open statement
 :PROPERTIES:
 :ID:             aida-fo-classical-dialectics

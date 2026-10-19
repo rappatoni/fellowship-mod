@@ -182,6 +182,16 @@ A script loaded with `--load` or `load` stops at a `%stop` line,
 so a demo file can hold its setup above the marker and the commands to
 paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
 
+`save "FILE".` writes the session so far back as a script that `load`
+runs again: the accepted commands, comments included. A command that was
+refused or failed is left out, and so is every line of an argument block
+refused at `dixi.`/`qed.` or abandoned with `discard theorem.`. `save all
+"FILE".` writes every command, each failed one after a silent `%` line
+saying why (`% refused: ...`), so loading it meets the same failures. A
+`load "FILE".` line is written as itself, not as the file's commands. The
+file name must be quoted when it contains a dot. `save` is not itself
+written.
+
 ### Script mode
 
 ```bash

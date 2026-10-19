@@ -149,3 +149,64 @@ def test_interpreter_declaration_refused_by_a_note(prover):
     out = list(Interpreter(prover).run("lk.\ndeclare A : bool.\ndeclare r : A -> A.\ndeclare r : (A -> A).\n"))
     assert [o.status for o in out] == ["ok", "ok", "error", "ok"]
     assert "not a sort" in out[2].message
+
+
+# -- save --------------------------------------------------------------------
+
+def test_save_syntax():
+    assert parse('save "s.fspy"').args == {"path": "s.fspy", "all": False}
+    assert parse('save all "s.fspy"').args == {"path": "s.fspy", "all": True}
+    assert parse('save "all.fspy"').args == {"path": "all.fspy", "all": False}
+    with pytest.raises(SyntaxRefused):
+        parse("save all")
+
+
+SESSION = """declare A, B : bool.
+# a narration line
+declare r : A -> B.
+declare r : (A -> B).
+argument a1 : (A -> B).
+elim x.
+discard theorem.
+argument a2 : (A -> B).
+axiom r.
+dixi.
+argument a3 : (B).
+elim x.
+dixi.
+start argument z.
+"""
+
+
+def test_save_writes_the_accepted_commands_or_every_command(prover, tmp_path):
+    interpreter = Interpreter(prover, live=True)
+    for item in parse_units(SESSION):
+        interpreter.execute(item)
+    outcomes = [o.status for o in (interpreter.execute(i) for i in parse_units('save "x".'))]
+    assert outcomes == ["cli"]                         # the CLI writes the file
+    accepted, every = tmp_path / "accepted.fspy", tmp_path / "every.fspy"
+    interpreter.write_transcript(str(accepted))
+    interpreter.write_transcript(str(every), every=True)
+    assert accepted.read_text().splitlines() == [
+        "declare A, B : bool.", "# a narration line", "declare r : (A -> B).",
+        "argument a2 : (A -> B).", "axiom r.", "dixi.",
+        "argument a3 : (B).", "dixi."]                       # its refused step is left out
+    lines = every.read_text().splitlines()
+    assert [l for l in lines if not l.startswith("% ")] == [
+        l.strip() for l in SESSION.splitlines()]           # `save` itself is not written
+    assert lines[lines.index("declare r : A -> B.") - 1].startswith("% error: 'r' not declared")
+    assert lines[lines.index("elim x.", 7) - 1] == "% refused: refused by Fellowship"
+    assert lines[-2].startswith("% refused: `start argument` is gone")
+
+
+def test_a_saved_session_replays(prover, tmp_path):
+    interpreter = Interpreter(prover, live=True)
+    for item in parse_units(SESSION + "argument a4 : (A -> B).\nelim x.\n"):
+        interpreter.execute(item)
+    saved = tmp_path / "s.fspy"
+    interpreter.write_transcript(str(saved))
+    assert saved.read_text().splitlines()[-1].startswith("% 'a4' was still being recorded")
+    prover.new_document()
+    out = list(Interpreter(prover).run(saved.read_text()))
+    assert all(o.status in ("ok", "comment") for o in out)
+    assert set(prover.arguments) == {"a2", "a3"}

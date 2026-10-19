@@ -17,7 +17,7 @@ Statuses:
   to;
 - ``fatal``: the prover connection broke;
 - ``cli``: a command only the CLI runs (explain, the deprecated term-level
-  commands, load); the CLI runs it, a document check skips it;
+  commands, load, save); the CLI runs it, a document check skips it;
 - ``comment`` and ``stop`` for comment lines and ``%stop``.
 
 Arguments are recorded as blocks: ``argument N : (P).`` ... ``dixi.``, and
@@ -25,6 +25,10 @@ Arguments are recorded as blocks: ``argument N : (P).`` ... ``dixi.``, and
 replayed when it closes.  With ``live`` (the REPL) every line is sent to
 Fellowship as it comes, and ``show_ui`` gets Fellowship's reply - the open
 goals - after each.
+
+Every unit run is kept in ``transcript``; ``save "FILE".`` writes it back
+as a script (``write_transcript``): the accepted commands, or with ``save
+all`` every command, each failed one after a ``%`` line saying why.
 """
 
 from __future__ import annotations
@@ -39,7 +43,8 @@ from wrap.service import AidaError, Service
 from wrap.syntax import Command, Span, SyntaxRefused, Unit, parse_units, split, parse
 
 QUERIES = ("graph", "label", "evaluate", "render", "tree", "unfold", "share")
-CLI_ONLY = ("explain", "render_nf", "reduce", "normalize", "expand", "projection", "load")
+CLI_ONLY = ("explain", "render_nf", "reduce", "normalize", "expand", "projection", "load", "save")
+FAILED = ("refused", "error", "fatal", "reported")
 
 
 @dataclass
@@ -67,6 +72,11 @@ class Interpreter:
         #: The argument block being recorded: its name, conclusion,
         #: instructions, whether it is anti, and (live) Fellowship's state.
         self.recording: Optional[dict] = None
+        #: Every unit run, in order: its text as written back, why it
+        #: failed (None if it did not), and whether the accepted transcript
+        #: keeps it - not a line of a block that was refused or abandoned.
+        self.transcript: List[dict] = []
+        self._abandoned: Optional[dict] = None
 
     # -- running -------------------------------------------------------------
 
@@ -76,6 +86,49 @@ class Interpreter:
             yield self.execute(item)
 
     def execute(self, item) -> Outcome:
+        outcome = self._execute(item)
+        if not (isinstance(item, Command) and item.kind == "save"):
+            self._log(item, outcome)
+        return outcome
+
+    def _log(self, item, o: Outcome) -> None:
+        if isinstance(item, SyntaxRefused):
+            text = item.text + "."
+        elif isinstance(item, Unit):
+            text = {"narration": f"# {item.text}", "silent": f"% {item.text}",
+                    "stop": "%stop"}.get(item.kind, item.text)
+        else:
+            text = item.text + "."
+        failure = None
+        if o.status in FAILED:
+            failure = f"{o.status}: " + " ".join((o.message or "").split())
+        self.transcript.append({"text": text, "failure": failure, "kept": failure is None})
+        if self._abandoned is not None:
+            # the block, from its opening line to this one, did not survive
+            for entry in self.transcript[self._abandoned["_transcript_from"]:]:
+                entry["kept"] = False
+            self._abandoned = None
+
+    def write_transcript(self, path: str, *, every: bool = False) -> int:
+        """Write the transcript to ``path`` as a script: the accepted
+        commands, or with ``every`` all of them, each failed one after a
+        ``%`` line saying why.  Returns the number of lines written."""
+        lines = []
+        for entry in self.transcript:
+            if every:
+                if entry["failure"]:
+                    lines.append(f"% {entry['failure']}")
+                lines.append(entry["text"])
+            elif entry["kept"]:
+                lines.append(entry["text"])
+        if self.recording is not None:
+            lines.append(f"% '{self.recording['name']}' was still being recorded; "
+                         f"end it with `dixi.` (or `qed.`).")
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+        return len(lines)
+
+    def _execute(self, item) -> Outcome:
         if isinstance(item, SyntaxRefused):
             return Outcome(item.span, "", "syntax", "refused", str(item), error=item)
         if isinstance(item, Unit):
@@ -101,8 +154,11 @@ class Interpreter:
         s, svc = self.session, self.service
         if c.kind == "new_document":
             if self.recording is not None:
+                self._abandoned = self.recording
                 self._drop_recording()
             return self._service(c, svc.new_document, c["logic"], c["minimal"])
+        if c.kind == "save":
+            return Outcome(None, c.text, c.kind, "cli")
         if self.recording is not None:
             return self._in_block(c)
         if c.kind == "argument":
@@ -216,7 +272,7 @@ class Interpreter:
         except ProverError as e:
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
         current = {"name": name, "conclusion": conclusion, "instructions": [], "is_anti": anti,
-                   "_opened_at": c.span}
+                   "_opened_at": c.span, "_transcript_from": len(self.transcript)}
         kind = "counterargument" if anti else "argument"
         if self.live:
             opener = "antitheorem" if anti else "theorem"
@@ -258,6 +314,7 @@ class Interpreter:
                                f"'{c['name']}' could not be replayed to continue it.")
             self.show_ui(current.get("_state"))
         current["_opened_at"] = c.span
+        current["_transcript_from"] = len(self.transcript)
         self.recording = current
         return Outcome(None, c.text, c.kind, "ok",
                        f"Refining '{c['name']}' : {current['conclusion']}; end with `qed.` or `dixi.`")
@@ -291,6 +348,7 @@ class Interpreter:
         try:
             done = self.service.finish_recording(current, demand_strict=demand_strict)
         except AidaError as e:
+            self._abandoned = current
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e,
                            diagnostics=list(e.diagnostics))
         arg = done.value
@@ -309,6 +367,7 @@ class Interpreter:
         was before `refine`)."""
         from wrap.registry import abandon
         current = self.recording
+        self._abandoned = current
         self._drop_recording()
         abandon(self.session, current)
         return Outcome(None, c.text, c.kind, "ok",

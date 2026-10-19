@@ -68,6 +68,7 @@ class SyntaxRefused(ValueError):
     def __init__(self, message: str, span: Optional[Span] = None):
         super().__init__(message)
         self.span = span
+        self.text = ""       # the command as written, set by parse_units
 
 
 # ---------------------------------------------------------------------------
@@ -399,6 +400,14 @@ def _p_load(words, rest, text):
     return Command("load", text, args={"path": unquote(rest)})
 
 
+def _p_save(words, rest, text):
+    every = bool(words) and words[0] == "all"
+    path = rest.strip()[len("all"):] if every else rest
+    if not path.strip():
+        raise SyntaxRefused('Use: save [all] "FILE".')
+    return Command("save", text, args={"path": unquote(path), "all": every})
+
+
 def _p_render_nf(words, rest, text):
     if not words:
         raise SyntaxRefused("Use: render-nf ARG [STYLE].")
@@ -470,6 +479,7 @@ COMMANDS = {
     "subarguments": _p_choice("subarguments", ("default", "share", "preserve")),
     "undecided": _p_choice("undecided", ("witness", "credulous")),
     "load": _p_load,
+    "save": _p_save,
     "tactic": _p_tactic,
     "start": _p_start,
     "end": _p_end,
@@ -520,5 +530,6 @@ def parse_units(text: str) -> List[Any]:
         try:
             out.append(parse(unit.text, unit.span))
         except SyntaxRefused as e:
+            e.text = unit.text
             out.append(e)
     return out
