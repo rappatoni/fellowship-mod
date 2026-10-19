@@ -1,0 +1,23 @@
+# The drinker split for the discourse-referent experiments. B's witness
+# ?x is simulated by the constant x0 (no ?x yet).
+lk.
+declare Pub : type.
+declare c : Pub.
+declare x0 : Pub.
+declare Dr : Pub -> bool.
+# A: first witness c; under the arbitrary y, set Dr y aside as k and owe
+# the claim again (right) and its continuation (left).
+argument a : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+elim [c].
+elim h.
+elim y.
+cut (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) k.
+dixi.
+# B: second witness, here x0; give up the goal forall y, Dr y (m) and owe
+# the context of Dr x0, where d goes.
+argument b : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+elim [x0].
+elim d.
+cut (Dr [x0]) m.
+axiom d.
+dixi.

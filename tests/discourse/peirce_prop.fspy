@@ -1,0 +1,17 @@
+# Propositional Peirce as a debate: a asks for not P under P's
+# continuation g; b supplies it, owing P's continuation, which g captures.
+lk.
+declare P : bool.
+argument a : (((P -> false) -> P) -> P).
+elim f.
+cut ((P -> false) -> P) g.
+axiom f.
+elim.
+next.
+axiom g.
+dixi.
+argument b : (P -> false).
+elim p.
+cut (P) m.
+axiom p.
+dixi.

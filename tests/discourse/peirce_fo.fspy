@@ -1,0 +1,14 @@
+# First-order Peirce: the same debate under forall z. a's site is
+# Dr z -> false, which mentions the bound z: an open site, refused.
+lk.
+declare Pub : type.
+declare Dr : Pub -> bool.
+argument a : (forall z:Pub, ((Dr [z] -> false) -> Dr [z]) -> Dr [z]).
+elim z.
+elim f.
+cut ((Dr [z] -> false) -> Dr [z]) g.
+axiom f.
+elim.
+next.
+axiom g.
+dixi.
