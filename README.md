@@ -187,7 +187,8 @@ runs again: the accepted commands, comments included. A command that was
 refused or failed is left out, and so is every line of an argument block
 refused at `dixi.`/`qed.` or abandoned with `discard theorem.`. `save all
 "FILE".` writes every command, each failed one after a silent `%` line
-saying why (`% refused: ...`), so loading it meets the same failures. A
+saying why (`% refused:` and Fellowship's reply, one `%` line per line),
+so loading it meets the same failures. A
 `load "FILE".` line is written as itself, not as the file's commands. The
 file name must be quoted when it contains a dot. `save` is not itself
 written.
@@ -525,7 +526,10 @@ Interactive mode accepts the commands of scripts. A command without its
 final `.` asks for more with `...`; `exit` or `quit` leaves.
 
 Syntax/prover errors are non-fatal in the interactive wrapper unless the wrapper
-detects a machine-mode desynchronization.
+detects a machine-mode desynchronization. When Fellowship refuses a command or
+a proof step, the REPL shows Fellowship's own reply - its message, then the
+proof term and goals as they stand - without the machine block; a script logs
+only the message.
 
 ### Recording commands
 

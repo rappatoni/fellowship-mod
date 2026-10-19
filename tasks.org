@@ -855,6 +855,26 @@ driven through =acdc --interactive= saved both ways, and its accepted
 transcript replayed by =--script= registers the same arguments. Full
 suite 2315 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
+Follow-up 2026-10-19 (asked by the author): a refused step in the REPL
+said only "refused by Fellowship". =ProverError.ui= now carries
+Fellowship's human-facing reply (=prover.human_reply=: the reply without
+the machine block or a stray prompt). In live mode a refused step and a
+failed Fellowship command report it - the REPL prints it, =save all=
+writes it as =%= lines; scripts keep the one-line message. A
+declaration refused by a note only keeps the wrapper's sentence first,
+as Fellowship's reply does not say it refused. The REPL no longer logs
+refusals a second time at WARNING (DEBUG instead). Evidence:
+tests/test_syntax.py (a refused live step carries Fellowship's reply,
+without the machine block; a script's error stays one line; =save all=
+writes the reply as =%= lines); full suite 2316 passed, 9 skipped, 2
+xfailed, 1 xpassed.
+
+Seen, not fixed: after a parse error Fellowship's machine block repeats
+the previous command's error, so the one-line message reads e.g. "Line
+1, character 0: Parse error: syntactical analysis.; You need to specify
+a proposition." (wrap/fellowship/main.ml, the parse-error branch). The
+human reply is right.
+
 ** BACKLOG Design: classical first-order theorems that throw an open statement
 :PROPERTIES:
 :ID:             aida-fo-classical-dialectics

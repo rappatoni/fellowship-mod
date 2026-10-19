@@ -192,10 +192,15 @@ def test_save_writes_the_accepted_commands_or_every_command(prover, tmp_path):
         "argument a2 : (A -> B).", "axiom r.", "dixi.",
         "argument a3 : (B).", "dixi."]                       # its refused step is left out
     lines = every.read_text().splitlines()
-    assert [l for l in lines if not l.startswith("% ")] == [
+    assert [l for l in lines if not l.startswith("%")] == [
         l.strip() for l in SESSION.splitlines()]           # `save` itself is not written
-    assert lines[lines.index("declare r : A -> B.") - 1].startswith("% error: 'r' not declared")
-    assert lines[lines.index("elim x.", 7) - 1] == "% refused: refused by Fellowship"
+    i = lines.index("declare r : A -> B.")
+    assert lines[i - 3:i] == ["% error:", "% 'r' not declared: B is a proposition, not a sort.",
+                              "% > B is a proposition, not a sort."]
+    refusal = lines[:lines.index("elim x.", lines.index("argument a3 : (B)."))]
+    refusal = refusal[max(i for i, l in enumerate(refusal) if l == "% refused:"):]
+    assert all(l == "%" or l.startswith("% ") for l in refusal[1:])
+    assert "Nothing to elim." in "\n".join(refusal)            # Fellowship's own reply
     assert lines[-2].startswith("% refused: `start argument` is gone")
 
 
@@ -210,3 +215,15 @@ def test_a_saved_session_replays(prover, tmp_path):
     out = list(Interpreter(prover).run(saved.read_text()))
     assert all(o.status in ("ok", "comment") for o in out)
     assert set(prover.arguments) == {"a2", "a3"}
+
+
+def test_a_refused_live_step_carries_fellowships_reply(prover):
+    interpreter = Interpreter(prover, live=True)
+    out = list(interpreter.run("lk.\ndeclare A, B : bool.\nargument a : (A -> B).\naxiom nonsense.\n"))
+    step = out[-1]
+    assert step.status == "refused"
+    assert "nonsense is neither in your hypothesis nor in your conclusion." in step.message
+    assert "1 goal yet to prove!" in step.message              # the goals, as Fellowship shows them
+    assert ";;BEGIN_ML_DATA;;" not in step.message
+    script = list(Interpreter(prover).run("lk.\nfrobnicate.\n"))
+    assert script[-1].status == "error" and "\n" not in script[-1].message   # scripts: one line

@@ -101,7 +101,8 @@ class Interpreter:
             text = item.text + "."
         failure = None
         if o.status in FAILED:
-            failure = f"{o.status}: " + " ".join((o.message or "").split())
+            message = (o.message or "").strip()
+            failure = f"{o.status}:" + ("\n" if "\n" in message else " ") + message
         self.transcript.append({"text": text, "failure": failure, "kept": failure is None})
         if self._abandoned is not None:
             # the block, from its opening line to this one, did not survive
@@ -117,7 +118,8 @@ class Interpreter:
         for entry in self.transcript:
             if every:
                 if entry["failure"]:
-                    lines.append(f"% {entry['failure']}")
+                    # why, as silent comments; Fellowship's reply line by line
+                    lines.extend(f"% {line}".rstrip() for line in entry["failure"].splitlines())
                 lines.append(entry["text"])
             elif entry["kept"]:
                 lines.append(entry["text"])
@@ -258,7 +260,8 @@ class Interpreter:
         except MachinePayloadError:
             raise
         except ProverError as e:
-            return Outcome(None, c.text, "fellowship", "error", str(e), error=e)
+            message = (e.ui or str(e)) if self.live else str(e)
+            return Outcome(None, c.text, "fellowship", "error", message, error=e)
         return Outcome(None, c.text, "fellowship", "ok", value=state)
 
     # -- argument blocks -----------------------------------------------------
@@ -306,7 +309,8 @@ class Interpreter:
             except ProverError as e:
                 abandon(s, current)
                 return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
-            replayed = [self._live_step(current, instr, record=False) for instr in current["instructions"]]
+            replayed = [self._live_step(current, instr, record=False)[0]
+                        for instr in current["instructions"]]
             if "refused" in replayed:
                 abandon(s, current)
                 s.send_command("discard theorem.")
@@ -331,9 +335,8 @@ class Interpreter:
         if not self.live:
             self.recording["instructions"].append(c.text)
             return Outcome(None, c.text, "instruction", "ok")
-        status = self._live_step(self.recording, c.text)
-        return Outcome(None, c.text, "instruction", status if status != "ok" else "ok",
-                       "" if status == "ok" else "refused by Fellowship")
+        status, message = self._live_step(self.recording, c.text)
+        return Outcome(None, c.text, "instruction", status, message)
 
     def _close(self, c: Command, *, demand_strict: bool) -> Outcome:
         s = self.session
@@ -381,8 +384,9 @@ class Interpreter:
             except ProverError:
                 pass
 
-    def _live_step(self, current: dict, command: str, *, record: bool = True) -> str:
-        """Run one recorded line live: "ok" or "refused" (MachinePayloadError
+    def _live_step(self, current: dict, command: str, *, record: bool = True) -> tuple[str, str]:
+        """Run one recorded line live: ("ok", "") or ("refused", why) - why
+        is Fellowship's reply when it refused (MachinePayloadError
         propagates).  `cite NAME` uses a registered argument at the focused
         goal: a strict one Fellowship closes itself, a defeasible one leaves
         the site open and moves on.  A cited site is closed as far as the
@@ -417,7 +421,7 @@ class Interpreter:
                         if focused is None or focused[0] not in cited_sites:
                             break
                         if set(metas(state)) <= cited_sites:
-                            return "refused"
+                            return "refused", "every open goal is a cited site; no step can land on one"
                         state = s.send_command("next.", include_ui=True)
                 output = s.send_command(command + ".", include_ui=True, allow_incomplete=True)
                 self.show_ui(output)
@@ -425,13 +429,15 @@ class Interpreter:
                     output = s.send_command(self.read_more(), include_ui=True, allow_incomplete=True)
                     self.show_ui(output)
                 if isinstance(output, dict) and output.get("_need_more_input"):
-                    return "refused"
+                    return "refused", "the command is incomplete: Fellowship is still waiting for its end"
         except MachinePayloadError:
             raise
-        except (ProverError, CitationError):
-            return "refused"
+        except ProverError as e:
+            return "refused", e.ui or str(e)
+        except CitationError as e:
+            return "refused", str(e)
         if isinstance(output, dict):
             current["_state"] = output
         if record:
             current["instructions"].append(command)
-        return "ok"
+        return "ok", ""

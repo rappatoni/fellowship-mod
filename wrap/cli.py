@@ -380,11 +380,12 @@ def interactive_mode(prover: ProverWrapper) -> None:
                 elif o.status in ("ok", "comment", "reported"):
                     _render(prover, o, interactive=True)
                 elif o.status == "refused":
-                    print(f"refused: {o.message}")
-                    logger.warning("Refused: %s", o.message)
+                    print("refused:" + ("\n" if "\n" in o.message else " ") + o.message)
+                    logger.debug("Refused: %s", o.message)
                 elif o.status == "error":
-                    print(f"acdc: ignored command due to prover error: {o.message}")
-                    logger.error("Prover error: %s", o.message)
+                    print("acdc: ignored command due to prover error:"
+                          + ("\n" if "\n" in o.message else " ") + o.message)
+                    logger.debug("Prover error: %s", o.message)
                 elif o.status == "fatal":
                     print(f"acdc: fatal prover communication error: {o.message}")
                     logger.error("Fatal prover communication error: %s", o.message)

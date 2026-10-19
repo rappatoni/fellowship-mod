@@ -15,7 +15,12 @@ from core.ac.ast import FirstOrderNotSupported
 logger = logging.getLogger('fsp.wrapper')
 
 class ProverError(Exception):
-    pass
+    """A refusal.  ``ui`` is Fellowship's human-facing reply, without the
+    machine block, when Fellowship gave one ("" otherwise)."""
+
+    def __init__(self, *args, ui: str = ""):
+        super().__init__(*args)
+        self.ui = ui
 
 class MachinePayloadError(ProverError):
     pass
@@ -47,6 +52,15 @@ RESERVED_PREFIXES = ("typecheck_", SYNTHETIC_PREFIX, ANON_PREFIX)
 _REFINABLE = {"recording", "statement"}
 
 MACHINE_BLOCK_RE = re.compile(r";;BEGIN_ML_DATA;;(.*?);;END_ML_DATA;;", re.S)
+
+
+def human_reply(output: str) -> str:
+    """Fellowship's reply as a person reads it: the machine block and any
+    stray prompt left out."""
+    text = MACHINE_BLOCK_RE.sub("", output).strip()
+    while text.startswith("fsp <"):
+        text = text[len("fsp <"):].lstrip()
+    return text
 
 #: The end of one reply in machine mode: the machine block's end, then the
 #: prompt.  Waiting for both, not for the prompt alone, keeps a stray prompt
@@ -410,7 +424,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if errs:
             # keep last_state for post-mortem, then raise
             self.last_state = state
-            raise ProverError("; ".join(errs))
+            raise ProverError("; ".join(errs), ui=human_reply(output))
 
         self.last_state = state
         self._update_declarations_from_state(state)
@@ -712,7 +726,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
             if undefined:
                 self.release_names(undefined)
                 reason = "; ".join(state.get("notes") or []) or "Fellowship did not define it"
-                raise ProverError(f"'{', '.join(undefined)}' not declared: {reason}")
+                message = f"'{', '.join(undefined)}' not declared: {reason}"
+                # Fellowship's reply does not say it refused: the wrapper does
+                ui = state.get("_ui", "")
+                raise ProverError(message, ui=f"{message}\n{ui}" if ui else "")
         return state
 
     def release_names(self, names: list[str]) -> None:
