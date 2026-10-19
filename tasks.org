@@ -987,6 +987,86 @@ quantifier theorems are argued in one argument (fo_t_exchange =whole=,
 fo_t_negation =a=, the latter mislabelled by
 [[id:aida-fo-open-source-horn]]).
 
+2026-10-20: the author's answer under design is discourse referents,
+[[id:aida-discourse-referents]].
+
+** BACKLOG Design: discourse referents
+:PROPERTIES:
+:ID:             aida-discourse-referents
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        An argument may state or use a discourse referent =?x= (a pseudo-constant of a sort), and a site that mentions a variable bound by =forall= right or =exists= left is filled by a referent argument whose statement is the site's up to renaming of referents; first-order Peirce and the drinker paradox are then debates that presume nothing classical.
+:VERIFY:         On branch discourse-referents: tests/discourse/peirce_fo.fspy with SUP added evaluates =a= to a value, as peirce_prop.fspy does; the drinker evaluates as a debate without the presumed =peirce= of drinker_closed.fspy; every unfolded term replays; the decisions below are confirmed or amended by the author.
+:END:
+
+The author's proposal (2026-10-19/20). A discourse referent =?x : S=
+is a pseudo-constant. It can be a witness (=elim [?x]= on an existential
+right or a universal left) or occur in an argument's statement, as in
+=argument sup : (Dr [?x] -> false). elim p. cut (Dr [?x]) m. axiom p. by
+default.= =Dr [?x]= reads: supply the right context and =Dr [t/?x]=
+holds. On the Fellowship side =?x= is a fresh constant; =qed= refuses a
+proof that holds one, =dixi= does not. The compiler and not the object
+language keeps the referents (unlike the dynamic logics of de Groote and
+Lebedeva, which encode them in the terms). The context supplies a
+variable for =?x= and binders that capture the argument's sites: in
+first-order Peirce under =forall z=, sup fills =a='s site
+=Dr z -> false= with =?x := z=, and =a='s =g : Dr z= captures sup's
+=(Dr z)⊥=, as in the propositional debate (peirce_prop.fspy, a value).
+
+Evidence so far (branch discourse-referents, 307c567):
+- peirce_prop.fspy: propositional Peirce as two arguments evaluates to a
+  value and labels IN.
+- peirce_fo.fspy: under =forall z= the site =Dr z -> false= is refused
+  (Q2 of [[id:aida-first-order-reduction]]).
+- drinker_split.fspy: both arguments register, the classical throw done
+  by capture. A's site has the claim's own statement, so the claim's
+  alternatives are bound around the whole term, outside =y= and =k=: the
+  witness cannot be caught there. Through a presumed Peirce
+  (drinker_closed.fspy) this does not arise, and with referents Peirce is
+  itself a debate.
+- Fellowship and AIDA's propositions accept binders of function sort
+  (=forall g:S->S, P (g c)=, instantiated by =elim [h]=: checked
+  2026-10-20). Fellowship's terms have no lambda, only applications.
+
+Decisions proposed 2026-10-20 (to be confirmed by the author):
+- (a) A referent is caught by identity only: a site and a statement
+  match when equal up to renaming of referents (=canonical_prop= with
+  referents numbered as bound variables). No instantiation is searched
+  for ("AIDA is not an automated prover"): =P z z= is not filled by an
+  argument for =P [?a] [?b]=; the author writes the bridge, a closed
+  generalisation =forall a b, P a b= filled by it and instantiated at
+  =z, z=, or the instance argument itself when the referent argument
+  needs capture from its context (as sup does). The same for a closed
+  site =Dr c=.
+- (b) A closed counter-instance attacks a referent statement; the author
+  names the target and AIDA checks that it is an instance. It defeats a
+  use whose referent is caught by a =forall= right variable (arbitrary,
+  so every instance) or by that constant, not one caught by an =exists=
+  left variable (a particular unknown individual). The defeat is per
+  use, not per node.
+- (c) A use whose referent is not caught is open, whatever presumptions
+  the argument has (sup's =by default= makes its left site a
+  presumption, so sup alone would otherwise argue =~Dr ?x= about
+  nobody).
+- (d) Referent presumptions =!x=: =Dr [!x]= reads "unless the context
+  overrides it, =Dr [t/!x]= holds". Caught by a =forall= right variable
+  it presumes a universal that falls as one (Q4); caught by constants it
+  would be an exemptable rule - one schema, one presumption per instance,
+  a counter-instance defeating only its instance, an attack on the
+  schema all of them - which needs the instance named by the author.
+- (e) Non-atomic terms are allowed: =f ?x= matches and checks as
+  first-order terms. =?g x= is also allowed: binders of function sort
+  exist, and since terms have no lambda, matching an applicative term is
+  syntactic and has at most one solution (=?g c= against =h c= gives
+  =?g := h= only).
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
