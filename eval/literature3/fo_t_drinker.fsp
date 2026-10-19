@@ -1,0 +1,95 @@
+# The drinker paradox (Smullyan) as a plain Fellowship theorem:
+#
+#   exists x:Pub, Dr x -> (forall y:Pub, Dr y)
+#
+# Classically valid, intuitionistically not: the proof uses the claim
+# twice (contraction on the right). The first witness c is withdrawn and
+# replaced by y once y turns out to be a non-drinker.
+#
+# Fellowship accepts the proof. AIDA runs every step but refuses `qed.`:
+# a theorem must be at the pure level, and this one is not linear ('a' is
+# used twice; 'k' is used under the second continuation binder m).
+#
+# Reading `cut A k`: it names the *current* goal k (a mu-binder mu k:G), then
+# opens two goals, |- A (rhs) and A |- (lhs, a context for A). So
+# `cut G' k` with G' the claim means "remember where the current goal goes
+# (k), and start proving the claim afresh". `axiom k` on an lhs goal of type
+# G sends a proof back to that remembered place.
+#
+# Each step is followed by its open goals, as
+#   hypotheses ; first-order variables |- active conclusion | named conclusions
+# and the proof term so far (;: is mu, \ is lambda, (t,p) a witness pair,
+# ?n an open goal).
+
+lk.
+declare Pub : type.
+declare c : Pub.
+declare Dr : Pub -> bool.
+
+theorem drinker : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+prove drinker.
+#  1     |- E                  where E = exists x:Pub, Dr x -> forall y:Pub, Dr y
+#  mu thesis:E.<?1 || thesis>
+
+cut (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) a.
+# Contraction: the goal E is named a, so it can be returned to later.
+#  1.1   |- E | a
+#  1.2   E |- | a                   (lhs: where does the proof of E go?)
+#  mu thesis:E.< mu a:E.<?1.1 || ?1.2> || thesis>
+
+elim [c].
+# Exists-introduction with the first witness, the declared constant c.
+#  1.1.1 |- Dr c -> forall y:Pub, Dr y | a
+#  ... <(c, ?1.1.1) || ?1.2> ...
+
+elim h.
+# Implication-introduction: assume h : Dr c.
+#  1.1.1.1  h:Dr c |- forall y:Pub, Dr y | a
+
+elim y.
+# Forall-introduction: an arbitrary y.
+#  1.1.1.1.1  h:Dr c ; y:Pub |- Dr y | a
+# Dr y does not follow from Dr c. This is where the first witness fails.
+
+cut (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) k.
+# Backtrack: name the current goal Dr y as k, and prove E again (the second
+# use of the claim). y is still in scope.
+#  1.1.1.1.1.1  h:Dr c ; y:Pub |- E | k:Dr y, a:E
+#  1.1.1.1.1.2  h:Dr c ; y:Pub   E |- | k:Dr y, a:E
+#  ... \y:Pub. mu k:Dr y.<?1.1.1.1.1.1 || ?1.1.1.1.1.2> ...
+
+elim [y].
+# Exists-introduction with the second witness: y itself.
+#  1.1.1.1.1.1.1  h:Dr c ; y:Pub |- Dr y -> forall y:Pub, Dr y | k, a
+
+elim d.
+# Implication-introduction: assume d : Dr y.
+#  1.1.1.1.1.1.1.1  d:Dr y, h:Dr c ; y:Pub |- forall y:Pub, Dr y | k, a
+
+cut (Dr [y]) m.
+# Weakening of the current goal: name forall y, Dr y as m (never used),
+# and cut on Dr y, which is now available as d.
+#  ...1.1.1.1.1.1.1.1.1  d, h ; y |- Dr y | m, k, a
+#  ...1.1.1.1.1.1.1.1.2  d, h ; y   Dr y |- | m, k, a
+#  ... \d:Dr y. mu m:(forall y:Pub, Dr y).<?..1 || ?..2> ...
+
+axiom d.
+# The proof of Dr y is the hypothesis d.
+#  ... mu m.<d || ?..2> ...
+
+axiom k.
+# ... and it goes to k: the goal Dr y left open by the first witness.
+#  ... mu m.<d || k> ...
+# Remaining:
+#  1.1.1.1.1.2  h:Dr c ; y:Pub   E |- | k, a
+#  1.2          E |- | a
+
+axiom a.
+# The second proof of E (witness y) goes where the claim goes: a.
+#  ... mu k:Dr y.<(y, \d:Dr y. mu m.<d || k>) || a> ...
+
+axiom a.
+# The first proof of E (witness c) goes there too.
+#  mu thesis:E.< mu a:E.<(c, \h:Dr c.\y:Pub. mu k:Dr y.
+#                            <(y, \d:Dr y. mu m.<d || k>) || a>) || a> || thesis>
+qed.

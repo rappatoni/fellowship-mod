@@ -25,5 +25,9 @@ elim d.
 cut (Dr [y]) m.
 axiom d.
 axiom k.
-next.
+# The one goal left is the claim on the left - its refutation, i.e. the
+# claim's continuation. p3 owes it (dixi leaves it open: the site
+# `?:exists x, ...` on the context side); `next.` fails here, since there
+# is no other goal to switch to. In the closed theorem it is the claim's
+# own continuation: cut (claim) a. first, then axiom a. for both left goals.
 dixi.
