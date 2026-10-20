@@ -1097,6 +1097,61 @@ Decisions proposed 2026-10-20 (to be confirmed by the author):
   syntactic and has at most one solution (=?g c= against =h c= gives
   =?g := h= only).
 
+Evidence since (branch discourse-referents, 99206dd): Fellowship holds
+referents in the theorem's environment and refuses =qed= (a4fb72f);
+peirce_fo.fspy with sup evaluates =a= to a value, the classical proof
+at =z=; drinker_referent.fspy (drinker_closed with Peirce argued, not
+presumed) normalises =a= to the classical proof of fo_t_drinker.fsp;
+both replay with the type check on and expanded
+(tests/test_discourse_referents.py).
+
+Decisions of 2026-10-20 (the author, after the export discussion):
+- (a), (c) and (e) confirmed. (b) and (d) are a follow-up designed with
+  the author before any code; until then a closed counterargument
+  reaches a referent statement only through weakening (below).
+- Prover side. No global declaration. An argument's referent environment
+  is part of its statement, =argument t : [?x:Pub, ?y] (PROP).=, or is
+  collected from PROP when PROP mentions every referent. Fellowship
+  holds the referents in the initial goal's environment, infers their
+  sorts, refuses =qed= on a theorem that has one and never registers a
+  =?x=. "The wrapper is not the source of truth, the prover is."
+- Import and export. Import happens at the root: the referent
+  environment, which must be explicit when the body uses a referent the
+  conclusion does not mention (a witness-only referent). Export happens
+  at every horn, an off-spine node, a site or an exposed subargument:
+  it exports its whole first-order context, the variables its statement
+  mentions and the binders above it. A site under =z= is the node
+  =[?z] ⊢ P= whether or not =z= occurs in =P=. No tactic marks an export
+  (=omitted.= was considered and dropped: a goal left open already is an
+  exporting obligation, and AIDA computes the context from the binders
+  in scope). Exports carry no sigil.
+- Keys and lineup. A node is a statement with a context. Contexts carry
+  sorts and match on them; statements match up to renaming of referents
+  (a). A referent the statement mentions is lined up by the statement; a
+  witness-only one by sort and binder order. When several lineups exist
+  the supporter is used once per lineup, the instance from the innermost
+  binder on top of the stack.
+- Weakening. A smaller context bears on a larger one: weakening edges
+  from =P= to =[Γ] ⊢ P= to =[Γ, ?x] ⊢ P=, on a statement and on its
+  contrary, so closed supporters, closed counterarguments and binders in
+  scope reach every context. Drawn in a quiet style, labelled
+  "weakening". Consequence: a site whose statement is the claim itself
+  is captured by the claim's own binder (the hoisting problem), so the
+  drinker split (drinker_split.fspy) is not a form AIDA offers; the
+  drinker is argued through first-order Peirce (drinker_referent.fspy).
+  Accepted as a slight inconvenience.
+- Sigils. =!x= presumes its sort inhabited (attackable by an argument
+  that the sort is empty); =?x= asks for a witness. The sigil matters
+  only for a use nothing catches: =?x= open (c), =!x= a presumption.
+  Matching ignores it. =!x= is implemented with (d).
+- A referent argument without sites is strict at every caught use and
+  never citable.
+- Labelling a referent target: an uncaught referent of the target itself
+  is an unmet obligation, so the label and the evaluation agree and the
+  adequacy check needs no exclusion.
+- Pipelines: the unfolded route first; the shared route refuses a
+  referent debate with a pointer to =pipeline unfolded.= until ported.
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
