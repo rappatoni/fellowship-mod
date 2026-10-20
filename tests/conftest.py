@@ -154,6 +154,28 @@ def pytest_ignore_collect(collection_path: Path, config):
 def pytest_report_header(config):
     return f"TODO: {PYTEST_TODO}"
 
+
+def pytest_sessionstart(session):
+    """Refuse to run against a Fellowship that does not know discourse
+    referents: ACDC_FSP may point at another checkout's binary, and tests
+    that never state a referent would pass against it silently."""
+    from wrap.cli import resolve_fsp_path
+    prover = setup_prover()
+    try:
+        for line in ("lk.", "declare S : type.", "declare Q : S -> bool."):
+            prover.send_command(line)
+        try:
+            out = prover.send_command("theorem referent_guard : (Q [?x] -> Q [?x]).")
+            refused = out.get("errors")
+        except Exception as e:                      # a parse error
+            refused = str(e)
+    finally:
+        prover.close()
+    if refused:
+        pytest.exit(f"The Fellowship binary {resolve_fsp_path()} does not accept discourse "
+                    f"referents ({refused}); build this checkout's (make -C wrap/fellowship) "
+                    f"or point ACDC_FSP at it.", returncode=3)
+
 @pytest.fixture(autouse=True)
 def fresh_document(request):
     """Every test that uses the session-wide `prover` starts on a fresh

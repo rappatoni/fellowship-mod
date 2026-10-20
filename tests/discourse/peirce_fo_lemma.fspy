@@ -1,0 +1,33 @@
+# First-order Peirce with a supporter that proves a closed lemma under its
+# own binder z (tasks.org, aida-discourse-referents, plan step 5a). At a's
+# use the supporter goes under a's z, where ?x stands for z: its own z is
+# renamed, so a's hypothesis about a's z captures nothing of the lemma,
+# and the lemma, closed, stays a node (k contests it).
+lk.
+# Referents are instantiated on the unfolded route only, for now.
+pipeline unfolded.
+declare Pub : type.
+declare Dr : Pub -> bool.
+argument a : (forall z:Pub, ((Dr [z] -> false) -> Dr [z]) -> Dr [z]).
+elim z.
+elim f.
+cut ((Dr [z] -> false) -> Dr [z]) g.
+axiom f.
+elim.
+next.
+axiom g.
+dixi.
+argument sup : (Dr [?x] -> false).
+elim p.
+cut (forall z:Pub, Dr [z] -> Dr [z]) l.
+elim z.
+elim q.
+axiom q.
+cut (Dr [?x]) m.
+axiom p.
+by default.
+dixi.
+# k presumes the lemma false.
+counterargument k : (forall z:Pub, Dr [z] -> Dr [z]).
+by default.
+dixi.

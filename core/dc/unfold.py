@@ -74,6 +74,7 @@ The term this produces is evaluated by the term-first pipeline
 """
 
 import logging
+import re
 from copy import deepcopy
 from itertools import count
 
@@ -86,9 +87,30 @@ from core.ac.prop import Prop, TSym
 from core.dc.debate_graph import (
     DebateGraph, canonical_prop, _peel_eta, _is_affine_binder, _referent_form, _prop_names,
 )
+from core.comp.oracle_terms import uncaught_referents
 from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
+
+_NAME = re.compile(r"[A-Za-z_?][A-Za-z0-9_']*")
+
+
+def _names_in(node) -> set:
+    """Every name the propositions and first-order terms of ``node``'s
+    subterm spell, bound or free: a fresh name avoids them all."""
+    found = set()
+
+    def walk(n):
+        for attr in ("prop", "fo_term", "witness", "var"):
+            value = getattr(n, attr, None)
+            if value is not None:
+                found.update(_NAME.findall(str(value)))
+        for child in vars(n).values():
+            if isinstance(child, ProofTerm):
+                walk(child)
+
+    walk(node)
+    return found
 
 
 class UnfoldError(ValueError):
@@ -534,27 +556,48 @@ class Unfolder:
         fo0 = self._fo_here
         inst_vars = set().union(*(t.free_vars() for t in inst.values())) if inst else set()
 
-        def ip(prop):
-            if not inst or not isinstance(prop, str):
+        # ``ren``: the body's own first-order binders renamed where their
+        # names are taken here (a variable a referent stands for, or one
+        # bound around the place the body goes), applied before ``inst``.
+        def ip(prop, ren=None):
+            if not (inst or ren) or not isinstance(prop, str):
                 return prop
             parsed = Prop.parse(prop)
+            for name, new in (ren or {}).items():
+                parsed = parsed.subst(name, TSym(new))
             for name, term in inst.items():
                 parsed = parsed.subst(name, term)
             return str(parsed)
 
-        def it(term):
-            if not inst or term is None:
+        def it(term, ren=None):
+            if not (inst or ren) or term is None:
                 return term
+            for name, new in (ren or {}).items():
+                term = term.subst(name, TSym(new))
             for name, value in inst.items():
                 term = term.subst(name, value)
             return term
 
-        def site(prop, side, env, fo, **kw):
+        def renamed(node, var, fo, ren):
+            """``ren`` with the binder ``var`` renamed if its name is taken
+            here, and the name it binds as."""
+            if var not in inst_vars and var not in fo:
+                return ({k: v for k, v in ren.items() if k != var} if ren and var in ren else ren), var
+            taken = inst_vars | set(fo) | _names_in(node) | set((ren or {}).values())
+            n, new = 2, f"{var}_2"
+            while new in taken:
+                n += 1
+                new = f"{var}_{n}"
+            logger.debug("unfold: edge '%s' binder '%s' renamed to '%s' (the name is taken here)",
+                         edge.name, var, new)
+            return {**(ren or {}), var: new}, new
+
+        def site(prop, side, env, fo, ren=None, **kw):
             """A site, or a variable an enclosing argument binds, met as
             its statement: one mentioning a first-order variable in scope
             is, unless a binder of that very proposition captures it, the
             referent statement it is an instance of."""
-            literal = ip(prop)
+            literal = ip(prop, ren)
             here = (canonical_prop(literal), side)
             bound = _prop_names(literal) & fo if fo else frozenset()
             saved, self._fo_here = self._fo_here, fo
@@ -611,23 +654,30 @@ class Unfolder:
             # aida-underscore-binder)
             return env if _is_affine_binder(new) else {**env, statement: new}
 
-        def walk(node, env, names, expose=True, fo=None):
+        def walk(node, env, names, expose=True, fo=None, ren=None):
             """``expose``: whether this node itself may be exposed; its
             children are checked either way.  ``fo``: the first-order
             variables in scope."""
             fo = fo0 if fo is None else fo
-            # an instantiated body is inlined whole: its horns' statements
-            # are its conclusion's referents read at this use
-            exposed = self._node_edge.get(id(node)) if expose and not inst else None
+
+            def p(prop):
+                return ip(prop, ren)
+
+            exposed = self._node_edge.get(id(node)) if expose else None
+            if exposed is not None and inst and uncaught_referents(node) & set(inst):
+                # a horn about a referent read at this use is a statement
+                # about the variable it stands for here: inlined, as any
+                # horn mentioning a variable bound above it (step 0)
+                exposed = None
             if exposed is not None and node is not edge.term:
                 return self._exposed(node, exposed, env, spine, names, primary,
-                                     lambda n, e, nm, expose=True: walk(n, e, nm, expose, fo))
+                                     lambda n, e, nm, expose=True: walk(n, e, nm, expose, fo, ren))
             if isinstance(node, (Goal, Deleg)):
                 presumed = isinstance(node, Deleg)
-                return site(node.prop, "term", env, fo, presumed=presumed, **own_kind(presumed))
+                return site(node.prop, "term", env, fo, ren=ren, presumed=presumed, **own_kind(presumed))
             if isinstance(node, (Laog, Geled)):
                 presumed = isinstance(node, Geled)
-                return site(node.prop, "context", env, fo, presumed=presumed, **own_kind(presumed))
+                return site(node.prop, "context", env, fo, ren=ren, presumed=presumed, **own_kind(presumed))
             if isinstance(node, (ID, DI)) and getattr(node, "cites", None):
                 # A citation (core/dc/cite.py) unfolds exactly like an
                 # obligation site: the cited argument's edge derives that
@@ -635,7 +685,7 @@ class Unfolder:
                 side = "context" if isinstance(node, ID) else "term"
                 logger.debug("unfold: '%s' cites '%s'; expanded as its statement",
                              edge.name, node.cites)
-                return site(node.prop, side, env, fo, **own_kind(False))
+                return site(node.prop, side, env, fo, ren=ren, **own_kind(False))
             if isinstance(node, (ID, DI)):
                 vside = "context" if isinstance(node, ID) else "term"
                 if (vside, node.name) not in names and (vside, node.name) in captured:
@@ -648,64 +698,63 @@ class Unfolder:
                     presumed = getattr(node, "captured_presumption", False)
                     logger.debug("unfold: '%s' uses '%s', bound by an enclosing argument; "
                                  "unfolded as its statement", edge.name, node.name)
-                    return site(node.prop, vside, env, fo, presumed=presumed, **own_kind(presumed))
-                return type(node)(names.get((vside, node.name), node.name), ip(node.prop))
+                    return site(node.prop, vside, env, fo, ren=ren, presumed=presumed, **own_kind(presumed))
+                return type(node)(names.get((vside, node.name), node.name), p(node.prop))
             if isinstance(node, Lamda):
                 new = fresh(node.di.di.name)
-                inner = scoped(env, (canonical_prop(ip(node.di.prop)), "term"), new)
-                hyp = Hyp(DI(new, ip(node.di.di.prop)), ip(node.di.prop))
+                inner = scoped(env, (canonical_prop(p(node.di.prop)), "term"), new)
+                hyp = Hyp(DI(new, p(node.di.di.prop)), p(node.di.prop))
                 body = Lamda(hyp, walk(node.term, inner, {**names, ("term", node.di.di.name): new},
-                                       fo=fo))
-                body.prop = ip(node.prop)
+                                       fo=fo, ren=ren))
+                body.prop = p(node.prop)
                 return body
             if isinstance(node, Mu):
                 new = fresh(node.id.name)
-                inner = scoped(env, (canonical_prop(ip(node.prop)), "context"), new)
+                inner = scoped(env, (canonical_prop(p(node.prop)), "context"), new)
                 names2 = {**names, ("context", node.id.name): new}
-                return Mu(ID(new, ip(node.id.prop)), ip(node.prop),
-                          walk(node.term, inner, names2, fo=fo),
-                          walk(node.context, inner, names2, fo=fo))
+                return Mu(ID(new, p(node.id.prop)), p(node.prop),
+                          walk(node.term, inner, names2, fo=fo, ren=ren),
+                          walk(node.context, inner, names2, fo=fo, ren=ren))
             if isinstance(node, Mutilde):
                 new = fresh(node.di.name)
-                inner = scoped(env, (canonical_prop(ip(node.prop)), "term"), new)
+                inner = scoped(env, (canonical_prop(p(node.prop)), "term"), new)
                 names2 = {**names, ("term", node.di.name): new}
-                return Mutilde(DI(new, ip(node.di.prop)), ip(node.prop),
-                               walk(node.term, inner, names2, fo=fo),
-                               walk(node.context, inner, names2, fo=fo))
+                return Mutilde(DI(new, p(node.di.prop)), p(node.prop),
+                               walk(node.term, inner, names2, fo=fo, ren=ren),
+                               walk(node.context, inner, names2, fo=fo, ren=ren))
             if isinstance(node, Admal):
                 new = fresh(node.id.id.name)
-                inner = scoped(env, (canonical_prop(ip(node.id.prop)), "context"), new)
-                pyh = Pyh(ID(new, ip(node.id.id.prop)), ip(node.id.prop))
+                inner = scoped(env, (canonical_prop(p(node.id.prop)), "context"), new)
+                pyh = Pyh(ID(new, p(node.id.id.prop)), p(node.id.prop))
                 out = Admal(pyh, walk(node.context, inner,
-                                      {**names, ("context", node.id.id.name): new}, fo=fo))
-                out.prop = ip(node.prop)
+                                      {**names, ("context", node.id.id.name): new}, fo=fo, ren=ren))
+                out.prop = p(node.prop)
                 return out
             if isinstance(node, Cons):
-                out = Cons(walk(node.term, env, names, fo=fo), walk(node.context, env, names, fo=fo))
-                out.prop = ip(node.prop)
+                out = Cons(walk(node.term, env, names, fo=fo, ren=ren), walk(node.context, env, names, fo=fo, ren=ren))
+                out.prop = p(node.prop)
                 return out
             if isinstance(node, Sonc):
-                out = Sonc(walk(node.context, env, names, fo=fo), walk(node.term, env, names, fo=fo))
-                out.prop = ip(node.prop)
+                out = Sonc(walk(node.context, env, names, fo=fo, ren=ren), walk(node.term, env, names, fo=fo, ren=ren))
+                out.prop = p(node.prop)
                 return out
             # First order (tasks.org, aida-first-order-reduction): copied,
             # the variable keeping its name.  It joins the scope: a site
             # below that mentions it is a referent statement's instance.
-            if isinstance(node, (LamdaFO, DestructTermsPairFO)) and node.var in inst_vars:
-                raise UnfoldError(f"Edge '{edge.name}': its binder '{node.var}' would capture "
-                                  f"the variable a referent stands for here.")
             if isinstance(node, LamdaFO):
-                out = LamdaFO(node.var, node.sort, walk(node.term, env, names, fo=fo | {node.var}))
+                ren2, var = renamed(node, node.var, fo, ren)
+                out = LamdaFO(var, node.sort, walk(node.term, env, names, fo=fo | {var}, ren=ren2))
             elif isinstance(node, ConsFO):
-                out = ConsFO(it(node.fo_term), walk(node.context, env, names, fo=fo))
+                out = ConsFO(it(node.fo_term, ren), walk(node.context, env, names, fo=fo, ren=ren))
             elif isinstance(node, TermsPairFO):
-                out = TermsPairFO(it(node.witness), walk(node.term, env, names, fo=fo))
+                out = TermsPairFO(it(node.witness, ren), walk(node.term, env, names, fo=fo, ren=ren))
             elif isinstance(node, DestructTermsPairFO):
-                out = DestructTermsPairFO(node.var, node.sort,
-                                          walk(node.context, env, names, fo=fo | {node.var}))
+                ren2, var = renamed(node, node.var, fo, ren)
+                out = DestructTermsPairFO(var, node.sort,
+                                          walk(node.context, env, names, fo=fo | {var}, ren=ren2))
             else:
                 raise UnfoldError(f"Edge '{edge.name}': cannot unfold node {type(node).__name__}.")
-            out.prop = ip(node.prop)
+            out.prop = p(node.prop)
             return out
 
         copy = walk(edge.term, env, {})

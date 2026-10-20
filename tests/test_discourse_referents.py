@@ -285,7 +285,122 @@ def test_the_drinker_is_a_debate_that_presumes_nothing_classical():
 def test_the_shared_route_refuses_a_referent_debate_with_a_pointer():
     prover, svc, _report = session((DISCOURSE / "peirce_fo.fspy").read_text(), pipeline="shared")
     try:
+        svc.set_pipeline("shared")                  # the fixture asks for unfolded
         with pytest.raises(Exception, match="pipeline unfolded"):
             evaluated(svc, "a")
+    finally:
+        prover.close()
+
+
+# -- an uncaught use (decision (c)), step 5 ----------------------------------------
+
+def test_a_referent_target_owes_a_witness_and_is_open():
+    """sup alone: nothing above its root catches ?x, so the witness is an
+    unmet obligation; the label and the evaluation agree."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        assert report.ok
+        assert evaluated(svc, "sup")[0] == "open"
+        issue = svc.issue_term(svc.target("sup"), want_term=False).issue
+        assert svc.label(svc.target("sup")).labellings[0][issue] == "OUT"
+        graph = svc.graph(svc.target("sup")).graph
+        assert any(s.key.startswith("a witness for ?") for e in graph.edges for s in e.sources)
+        # at a's use the referent is caught: a is still a value and IN
+        assert evaluated(svc, "a")[0] == "value"
+        issue = svc.issue_term(svc.target("a"), want_term=False).issue
+        assert svc.label(svc.target("a")).labellings[0][issue] == "IN"
+    finally:
+        prover.close()
+
+
+def test_a_referent_argument_without_sites_is_not_strict_as_a_target():
+    """Strict at a caught use, but as its own target it owes the witness."""
+    text = HEAD + "argument t : (Dr [?x] -> Dr [?x]).\nelim p.\naxiom p.\ndixi.\n"
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        assert evaluated(svc, "t")[0] == "open"
+        issue = svc.issue_term(svc.target("t"), want_term=False).issue
+        assert svc.label(svc.target("t")).labellings[0][issue] != "IN"
+    finally:
+        prover.close()
+
+
+def test_an_uncaught_referent_makes_a_normal_form_open():
+    from core.comp.oracle_terms import uncaught_referents
+    prover, svc, _report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        svc.set_typecheck("off")
+        term = svc.issue_term(svc.target("sup"), want_term=True).term
+        assert uncaught_referents(term)
+        assert not uncaught_referents(svc.issue_term(svc.target("a"), want_term=True).term)
+    finally:
+        prover.close()
+
+
+def test_a_presumption_about_a_referent_holds_only_given_a_witness():
+    """sup's presumed (Dr ?x)⊥ as its own target: a presumption about
+    nobody - not IN, and open."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        assert report.ok
+        target = svc.target("issue Dr ?x:")
+        assert evaluated(svc, "issue Dr ?x:")[0] == "open"
+        issue = svc.issue_term(target, want_term=False).issue
+        assert svc.label(target).labellings[0][issue] == "OUT"
+    finally:
+        prover.close()
+
+
+# -- fixes to the instantiation, step 5a -------------------------------------------
+
+def test_a_supporters_own_binder_is_renamed_where_its_name_is_taken():
+    """sup proves a closed lemma under its own z; at a's use it goes under
+    a's z: its z is renamed, the lemma stays a node (k contests it) and
+    the whole term replays."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo_lemma.fspy").read_text())
+    try:
+        assert report.ok
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
+        assert "λz_2:Pub.λq:Dr z_2.q:Dr z_2" in term
+        assert not referents_in(term)
+        graph = svc.graph(svc.target("a")).graph
+        assert any(e.name == "sup.λ1" for e in graph.edges)          # the lemma, a node
+        assert evaluated(svc, "a")[0] == "value"
+    finally:
+        prover.close()
+
+
+def test_a_horn_using_an_unstated_referent_is_no_horn():
+    """sup's other branch uses p : Dr ?x but states the lemma's contrary,
+    a closed statement: it argues about ?x, so it is no attacker of the
+    closed lemma (until a node carries its context)."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo_lemma.fspy").read_text())
+    try:
+        assert report.ok
+        lemma = [e for e in prover.graph.edges if e.name == "sup.λ1"][0]
+        against = [e for e in prover.graph.edges
+                   if e.target_key == lemma.target_key and e.target_side == "context"]
+        assert against == []                    # k presumes it: a default marker
+        assert "presumption" in prover.graph.defaults[(lemma.target_key, "context")]
+    finally:
+        prover.close()
+
+
+def test_a_counterargument_of_a_referent_statement_is_instantiated_at_the_use():
+    text = (DISCOURSE / "peirce_fo.fspy").read_text() + """counterargument c : (Dr [?x] -> false).
+elim.
+by default.
+dixi.
+"""
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
+        assert "c:Dr z->false" in term and not referents_in(term)
+        graph = svc.graph(svc.target("a")).graph
+        assert any(e.name == "c" and e.target_side == "context" and "r#" in e.target_key
+                   for e in graph.edges)
+        assert evaluated(svc, "a")[0] == "value"     # c owes false's context: it fails
     finally:
         prover.close()

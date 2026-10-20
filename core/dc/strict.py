@@ -74,7 +74,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.debate_graph import (
     DebateGraph, Edge, canonical_prop, compile_debate, _match_scaffold, _restore_scion,
-    scaffold_parts, BUILTIN_LEAVES, binder_origin,
+    scaffold_parts, BUILTIN_LEAVES, binder_origin, require_witnesses,
 )
 from core.logging_util import TRACE, artifact
 
@@ -460,11 +460,13 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     """The issue graph: the argumentation framework of the term
     (compile_debate, cycles through captured obligations included) plus
     the strict edges strictness on the term contributes."""
+    from core.comp.evaluate import issue_of
     graph = compile_debate(term, name, strict_names=strict_names, strict_kinds=strict_kinds)
     for edge in issue_strict_edges(term, name, strict_names):
         graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)
+    require_witnesses(graph, issue_of(term))
     return graph
 
 
@@ -512,6 +514,7 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
         graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)
+    require_witnesses(graph, issue)
     logger.debug("issue graph from the document: %d of %d statement(s) reachable, %d edge(s), "
                  "%d strict edge(s) from the term", len(keep), len(source.statements()),
                  len(graph.edges), len(strict_edges))

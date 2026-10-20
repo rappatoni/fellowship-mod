@@ -597,7 +597,8 @@ def classify_nf(v) -> str:
       presumption, and whatever obligations remain elsewhere (author,
       2026-10-07, tasks.org aida-classify-exception-before-open): an
       obligation strictly defeated is no longer merely open.
-    - "open":      contains an unfilled obligation (Goal/Laog).
+    - "open":      contains an unfilled obligation (Goal/Laog), or a
+      discourse referent nothing caught (``uncaught_referents``).
     - "value":     anything else.  Presumptions (Deleg/Geled) may occur in
       a value: an IN-by-default site stays indeterminate and the value is
       polynomial in it (debate-graph-spec.org, Semantics subsection).
@@ -611,8 +612,42 @@ def classify_nf(v) -> str:
     if _contains(v, (Goal, Laog)):
         logger.debug("classify: OPEN%s", _because_open(v))
         return "open"
+    uncaught = uncaught_referents(v)
+    if uncaught:
+        # decision (c) of aida-discourse-referents: a caught referent is
+        # substituted by the variable that caught it, so one left in the
+        # normal form is a witness nobody supplied
+        logger.debug("classify: OPEN (no witness for the discourse referent %s)",
+                     ", ".join(sorted(uncaught)))
+        return "open"
     logger.debug("classify: VALUE")
     return "value"
+
+
+def uncaught_referents(node) -> set:
+    """The discourse referents ``?x`` the propositions and first-order
+    terms of ``node`` mention."""
+    from core.ac import referents
+    found = set()
+    seen = set()
+
+    def walk(n):
+        if id(n) in seen:
+            return
+        seen.add(id(n))
+        prop = getattr(n, "prop", None)
+        if isinstance(prop, str):
+            found.update(referents.mentioned(prop))
+        for attr in ("fo_term", "witness"):
+            term = getattr(n, attr, None)
+            if term is not None and hasattr(term, "free_vars"):
+                found.update(v for v in term.free_vars() if referents.is_referent(v))
+        for child in vars(n).values():
+            if isinstance(child, ProofTerm):
+                walk(child)
+
+    walk(node)
+    return found
 
 
 def _because_open(node) -> str:

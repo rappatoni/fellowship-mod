@@ -1020,6 +1020,14 @@ fo_t_negation =a=, the latter mislabelled by
 2026-10-20: the author's answer under design is discourse referents,
 [[id:aida-discourse-referents]].
 
+2026-10-20, on branch discourse-referents (plan step 5a): the skeptic's
+challenge is now a move. =s1= of fo_t_exchange.fspy is a supporter of
+the claim owing the referent statement =exists y:D, R ?x y= (nothing
+supports it, so the obligation is OUT and =s1= does not apply); before,
+it was left out of the graph. The
+verdicts are unchanged: =whole=, =p1= and =s1= evaluate to values on
+the unfolded route, as on main, since =whole= is strict.
+
 ** BACKLOG Design: discourse referents
 :PROPERTIES:
 :ID:             aida-discourse-referents

@@ -27,6 +27,7 @@ FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
                   | set(glob.glob(str(TESTS / "demo" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "exposure" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "first_order" / "*.fspy")))
+                  | set(glob.glob(str(TESTS / "discourse" / "*.fspy")))
                   | {str(TESTS / "entrypoints.fspy"), str(TESTS / "circular_supporter.fspy"),
                      str(TESTS / "rationality" / "self_attack_lk.fspy"),
                      str(TESTS / "rationality" / "even_loop_lk.fspy")})
@@ -45,6 +46,12 @@ KNOWN = {("test1.fspy", text, where)
 #: falso under lambda-bound hypotheses, which classify_nf takes for an
 #: uncatchable clash (tasks.org, aida-exfalso-under-lambda-exception).
 KNOWN |= {("hypothesis_horn.fspy", text, where)
+          for text in ("b", "issue :forall z:Pub,(Dr z->false)->"
+                            "(exists x:Pub,Dr x->(forall y:Pub,Dr y))")
+          for where in ("skeptical", "witness 1")}
+#: The same ex falso under lambdas in the drinker's b (tests/discourse).
+KNOWN |= {(fixture, text, where)
+          for fixture in ("drinker_closed.fspy", "drinker_referent.fspy")
           for text in ("b", "issue :forall z:Pub,(Dr z->false)->"
                             "(exists x:Pub,Dr x->(forall y:Pub,Dr y))")
           for where in ("skeptical", "witness 1")}

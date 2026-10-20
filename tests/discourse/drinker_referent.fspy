@@ -3,6 +3,8 @@
 # presumed Peirce replaced by first-order Peirce argued with the referent
 # argument sup. a normalises to the classical proof of fo_t_drinker.fsp.
 lk.
+# Referents are instantiated on the unfolded route only, for now.
+pipeline unfolded.
 declare Pub : type.
 declare c : Pub.
 declare Dr : Pub -> bool.

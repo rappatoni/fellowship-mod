@@ -18,7 +18,7 @@ This module is being built along propositional-fragment-plan.org:
 
 import logging
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from itertools import count
 from typing import Optional
@@ -1040,6 +1040,22 @@ def _fo_mentions(body) -> dict:
     return mentions
 
 
+def _mentions_referent(body) -> bool:
+    """Whether a proposition of ``body`` spells a discourse referent."""
+    stack = [body]
+    while stack:
+        node = stack.pop()
+        prop = getattr(node, "prop", None)
+        if isinstance(prop, str) and "?" in prop and referents.mentioned(prop):
+            return True
+        for attr in ("fo_term", "witness"):
+            term = getattr(node, attr, None)
+            if term is not None and "?" in str(term):
+                return True
+        stack.extend(c for c in vars(node).values() if isinstance(c, ProofTerm))
+    return False
+
+
 def _referent_form(prop, bound) -> str:
     """``prop`` with each first-order variable of ``bound`` it mentions
     made the referent of that name: ``Dr z -> false`` under ``forall z``
@@ -1048,6 +1064,46 @@ def _referent_form(prop, bound) -> str:
     for var in sorted(bound):
         parsed = parsed.subst(var, TSym(referents.constant(var)))
     return str(parsed)
+
+
+def witness_key(referent: str) -> str:
+    """The node a referent target owes for ``referent``: a witness."""
+    return f"a witness for {referent}"
+
+
+def require_witnesses(graph, issue) -> None:
+    """The issue graph of a target that is itself a referent statement:
+    nothing above the root can catch its referents, so each is an unmet
+    obligation of the target - a witness nobody supplies - which every
+    derivation of the target owes.  The label then agrees with the
+    evaluation, which leaves the referent open (tasks.org,
+    aida-discourse-referents, decision (c) and the decisions of
+    2026-10-20)."""
+    key, side = issue
+    if "r#" not in key:
+        return
+    try:
+        names = Prop.parse(graph.nodes.get(key, key)).referent_order()
+    except PropError:
+        return
+    if not names:
+        return
+    owed = tuple(Source(witness_key(name), "term", "obligation", name) for name in names)
+    for source in owed:
+        graph.nodes.setdefault(source.key, source.key)
+        graph.mark_default(source.key, source.side, "obligation")
+    graph.edges = [replace(edge, sources=edge.sources + owed, strict=False)
+                   if (edge.target_key, edge.target_side) == issue else edge
+                   for edge in graph.edges]
+    kinds = graph.defaults.get(issue, set())
+    if "presumption" in kinds:
+        # a presumption about nobody: the default holds given a witness
+        kinds.discard("presumption")
+        if not kinds:
+            del graph.defaults[issue]
+        graph.edges.append(Edge("presumed", key, side, owed, False, role="supporter"))
+    logger.debug("compile: the target %s is a referent statement; its derivations owe "
+                  "a witness for %s", graph.nodes.get(key, key), ", ".join(names))
 
 
 def _open_in(prop, bound) -> frozenset:
@@ -1165,16 +1221,25 @@ class _Compiler:
         # The first-order variables bound above each node (``fo_outer``:
         # those bound around this body, for a subargument).
         fo_scope = _fo_scopes(body, fo_outer)
-        fo_mentions = _fo_mentions(body) if any(fo_scope.values()) else {}
+        fo_mentions = (_fo_mentions(body) if any(fo_scope.values()) or _mentions_referent(body)
+                       else {})
 
         def is_open(node) -> bool:
             """A node whose statement - or anything inside it, such as a
             hypothesis it uses - mentions a first-order variable bound by
             the argument is no horn: outside the binder it is no closed
             argument, so it stays part of the argument, like a spine step
-            (the author, 2026-10-16; tasks.org, aida-fo-open-source-horn)."""
+            (the author, 2026-10-16; tasks.org, aida-fo-open-source-horn).
+            Likewise a node that uses a discourse referent its statement
+            does not state: it argues in the argument's referent
+            environment, not for its closed statement (until a node
+            carries its context; tasks.org, aida-discourse-referents)."""
+            mentions = fo_mentions.get(id(node), frozenset())
             bound = fo_scope.get(id(node))
-            return bool(bound) and bool(fo_mentions.get(id(node), frozenset()) & bound)
+            if bound and mentions & bound:
+                return True
+            used = {n for n in mentions if referents.is_referent(n)}
+            return bool(used) and bool(used - _prop_names(getattr(node, "prop", None) or ""))
 
         def on_spine(node, spine):
             """Whether ``node`` carries this edge's proof on: a spine

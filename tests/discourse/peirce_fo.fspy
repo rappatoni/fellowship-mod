@@ -4,6 +4,8 @@
 # sup states it for the referent ?x; filling a's site, ?x stands for z,
 # and sup's own presumed site (Dr ?x)⊥, now (Dr z)⊥, is captured by g.
 lk.
+# Referents are instantiated on the unfolded route only, for now.
+pipeline unfolded.
 declare Pub : type.
 declare Dr : Pub -> bool.
 argument a : (forall z:Pub, ((Dr [z] -> false) -> Dr [z]) -> Dr [z]).
