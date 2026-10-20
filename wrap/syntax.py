@@ -173,13 +173,22 @@ def strip_outer_parens(text: str) -> str:
 
 def _target(words: List[str], usage: str):
     """(target text, rest) from the words after a verb: a name, or
-    ``issue :X`` / ``issue X:`` joined."""
+    ``issue :X`` / ``issue X:`` joined.  A proposition in parentheses
+    runs to its closing parenthesis, so it may contain spaces, as every
+    quantified one does: ``issue :(exists x:D, P [x])``."""
     if not words:
         raise SyntaxRefused(usage)
     if words[0] == "issue":
         if len(words) < 2:
             raise SyntaxRefused(usage)
-        return f"issue {words[1]}", words[2:]
+        if not words[1].lstrip(":").startswith("("):
+            return f"issue {words[1]}", words[2:]
+        depth = 0
+        for end, word in enumerate(words[1:], start=1):
+            depth += word.count("(") - word.count(")")
+            if depth <= 0:
+                return "issue " + " ".join(words[1:end + 1]), words[end + 1:]
+        raise SyntaxRefused(f"{usage}  (The proposition's parentheses do not close.)")
     return words[0], words[1:]
 
 

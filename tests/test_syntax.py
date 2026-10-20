@@ -294,3 +294,23 @@ dixi.
     out = list(Interpreter(prover, live=True).run(text))
     assert [(o.text, o.status) for o in out if o.status != "ok"] == []
     assert prover.arguments["a"].conclusion == "forall x:i,P x->Q x"
+
+
+@pytest.mark.parametrize("text, target, rest", [
+    # a quantified proposition has spaces: in parentheses it runs to the
+    # closing one, and the options after it stay options
+    ("graph issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) all",
+     "issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y]))", {"whole": True}),
+    ("evaluate issue (exists x:Pub, Dr [x]): credulous 2",
+     "issue (exists x:Pub, Dr [x]):", {"mode": "credulous", "witness": 2}),
+    ("label issue :A preferred", "issue :A", {"semantics": "preferred"}),
+])
+def test_an_issue_target_in_parentheses_may_contain_spaces(text, target, rest):
+    c = parse(text)
+    assert c["target"] == target
+    assert all(c[k] == v for k, v in rest.items())
+
+
+def test_an_issue_target_with_open_parentheses_is_refused():
+    with pytest.raises(SyntaxRefused, match="parentheses do not close"):
+        parse("graph issue :(A -> B")
