@@ -894,8 +894,20 @@ class Service:
             _pipeline_logger.debug("issue: NOT unfolded and NOT type-checked - the issue is not in "
                                    "the document, so '%s' is evaluated as it was registered", name)
             return IssueTerm(target, arg, None, issue, arg.body, None, own_term=True)
+        # Discourse referents (tasks.org, aida-discourse-referents) are
+        # instantiated where a referent statement is unfolded, which the
+        # shared form does not do yet: such a debate is type-checked whole
+        # on the unfolded route, and refused on the shared one.
+        referents = any("r#" in key for key, _side in document.reachable(issue))
+        if referents and not s.pipeline_unfolded:
+            raise UnfoldRefused(
+                f"the debate about '{document.nodes.get(issue[0], issue[0])}' reaches a statement "
+                f"with a discourse referent, which only the unfolded route instantiates: use "
+                f"`pipeline unfolded.`", stage="graph")
         try:
-            if s.pipeline_unfolded:
+            if referents:
+                shared = None
+            elif s.pipeline_unfolded:
                 # Built for the per-definition type check only: the term
                 # evaluated on this route is the unfolded one, which narrates
                 # its own unfolding, so the sharing builder stays quiet.
@@ -910,13 +922,14 @@ class Service:
         except UnfoldError as e:
             logger.warning("Unfolding refused for '%s': %s", name, e)
             raise UnfoldRefused(str(e), stage="graph", cause=e)
-        if _pipeline_logger.isEnabledFor(logging.DEBUG) and not s.pipeline_unfolded:
+        if _pipeline_logger.isEnabledFor(logging.DEBUG) and not s.pipeline_unfolded and shared:
             artifact(_pipeline_logger, "issue: the debate as named sub-debates", shared.to_text(tree=True))
         # A statement spelled two ways (~A and A -> false) joins two
         # spellings only in the expanded term, so that is the one to
         # type-check then (tasks.org, aida-negation-spelling-in-unfolding).
-        clashes = shared.spelling_clashes() if s.typecheck_enabled else {}
-        expanded_check = s.typecheck_enabled and (s.typecheck_expanded or bool(clashes))
+        clashes = shared.spelling_clashes() if s.typecheck_enabled and shared is not None else {}
+        expanded_check = s.typecheck_enabled and (s.typecheck_expanded or bool(clashes)
+                                                  or shared is None)
         term = None
         if want_term or expanded_check:
             try:

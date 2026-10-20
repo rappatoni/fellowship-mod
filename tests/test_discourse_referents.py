@@ -8,11 +8,14 @@ side.  AIDA, for now, also refuses a referent the conclusion does not
 state (deferred by design).
 """
 
+import re
 import warnings
+from pathlib import Path
 
 import pytest
 
 from core.ac import referents
+from pres.gen import pres_str
 from wrap.cli import setup_prover
 from wrap.service import Service
 from wrap.syntax import parse
@@ -199,3 +202,90 @@ def test_the_referent_order_lines_two_statements_up():
     from core.ac.prop import Prop
     order = Prop.parse("R ?b (f ?a) ?b").referent_order()
     assert order == ["?b", "?a"]
+
+
+# -- unfolding: substitute, then capture (step 4) ----------------------------------
+
+DISCOURSE = Path(__file__).parent / "discourse"
+
+
+def referents_in(shown):
+    """The referents a displayed term mentions; AIDA displays its open
+    sites as ?u1, ?u2, ..."""
+    return {r for r in referents.mentioned(shown) if not re.fullmatch(r"\?u\d+", r)}
+
+
+def evaluated(svc, target):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = svc.evaluate(svc.target(target))
+    return result.nf_class, pres_str(result.normal_form)
+
+
+def test_first_order_peirce_is_a_debate():
+    """a owes Dr z -> false under forall z; sup fills it with ?x := z, and
+    a's g : Dr z captures sup's presumed (Dr z)⊥ - propositional Peirce at
+    z, a value."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "a")
+        assert cls == "value"
+        assert "μsup:Dr z->false.<λp:Dr z.μm:false.<p:Dr z||g:Dr z>||sup:Dr z->false>" in nf
+        assert not referents_in(nf)
+    finally:
+        prover.close()
+
+
+@pytest.mark.parametrize("typecheck", ["on", "expanded"])
+def test_the_instantiated_debate_replays(typecheck):
+    prover, svc, _report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        svc.set_typecheck(typecheck)
+        found = svc.issue_term(svc.target("a"), want_term=True)      # type-checked
+        assert not referents_in(pres_str(found.term))
+    finally:
+        prover.close()
+
+
+def test_every_supporter_is_instantiated_by_its_own_referents():
+    """A second supporter states the same referent statement with ?w: both
+    are read at z where they fill a's site."""
+    text = (DISCOURSE / "peirce_fo.fspy").read_text() + """argument sup2 : (Dr [?w] -> false).
+elim q.
+cut (Dr [?w]) n.
+axiom q.
+by default.
+dixi.
+"""
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        svc.set_typecheck("off")
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)
+        assert "λp:Dr z" in term and "λq:Dr z" in term and not referents_in(term)
+        assert evaluated(svc, "a")[0] == "value"
+    finally:
+        prover.close()
+
+
+def test_the_drinker_is_a_debate_that_presumes_nothing_classical():
+    prover, svc, report = session((DISCOURSE / "drinker_referent.fspy").read_text())
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "a")
+        assert cls == "value"
+        # (c, λh. λy. μk.<(y, λd. μm.<d || k>) || a>), up to names
+        assert nf.startswith("μalt5:exists x:Pub,Dr x->(forall y:Pub,Dr y).<(c,λ")
+        assert ".<(y,λ" in nf and not referents_in(nf)
+    finally:
+        prover.close()
+
+
+def test_the_shared_route_refuses_a_referent_debate_with_a_pointer():
+    prover, svc, _report = session((DISCOURSE / "peirce_fo.fspy").read_text(), pipeline="shared")
+    try:
+        with pytest.raises(Exception, match="pipeline unfolded"):
+            evaluated(svc, "a")
+    finally:
+        prover.close()
