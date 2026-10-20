@@ -82,9 +82,13 @@ let help_full =
    "Switch to non minimal logic (i.e. enable \"ex falso sequitur quodlibet\")")
 
 let help_theorem =
-  ("theorem x : P",
+  ("theorem x : [?r1:S1, ..., ?rn] P",
    "Starts a proof of P. All the free variables in P must have been previously" ^^
-   "declared using \"declare\"" )
+   "declared using \"declare\", except the discourse referents ?r1, ..., ?rn:" ^^
+   "pseudo-constants held in the goal's environment, never declared. The" ^^
+   "environment may be left out when P mentions every referent; a sort left" ^^
+   "out is inferred from P. A theorem with a referent cannot be registered:" ^^
+   "\"qed\" refuses it." )
 
 let help_declare =
   ("declare [A1,...,An : t | A : p]",
@@ -483,7 +487,7 @@ let jack_instr =
   | Declare -> help_declare
   | Theorem -> help_theorem
   | Deny -> ("deny x : P", "Declare the proposition P as a named moxia/anti-axiom x.")
-  | AntiTheorem -> ("antitheorem x : P", "Starts a counterproof/refutation of P on the left-hand side.")
+  | AntiTheorem -> ("antitheorem x : [?r1:S1, ..., ?rn] P", "Starts a counterproof/refutation of P on the left-hand side, with discourse referents as for \"theorem\".")
   | Next -> help_next
   | Prev -> help_prev
   | Qed -> help_qed

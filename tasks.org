@@ -1028,7 +1028,8 @@ it was left out of the graph. The
 verdicts are unchanged: =whole=, =p1= and =s1= evaluate to values on
 the unfolded route, as on main, since =whole= is strict.
 
-** BACKLOG Design: discourse referents
+** DONE Discourse referents, first version
+CLOSED: [2026-10-21 Wed]
 :PROPERTIES:
 :ID:             aida-discourse-referents
 :AREA:           phd
@@ -1159,6 +1160,118 @@ Decisions of 2026-10-20 (the author, after the export discussion):
   adequacy check needs no exclusion.
 - Pipelines: the unfolded route first; the shared route refuses a
   referent debate with a pointer to =pipeline unfolded.= until ported.
+
+Evidence of the first version (branch discourse-referents, 2026-10-21):
+- Fellowship: referent environments, sort inference, =qed= refused
+  (a4fb72f); =help theorem= documents them.
+- Keys up to renaming of referents, referent nodes, instantiation at a
+  use (4e7eba0, b9c11ac); an uncaught referent is open and a referent
+  target owes a witness, so label and evaluation agree (d48f552); every
+  horn exports its context, witness-only referents are imported through
+  the environment, weakening edges, lineups (f5d7a49).
+- tests/test_discourse_referents.py (38 tests): peirce_fo.fspy =a= is
+  the classical proof at =z=, a value; drinker_referent.fspy =a= is the
+  classical proof of the drinker without a presumed Peirce;
+  witness_import.fspy =a= is the intuitionistic proof with =w= lined up
+  at =y=; witness_two.fspy uses =w= once per lineup; weakening.fspy
+  places a closed supporter and counterargument under =y=; every
+  unfolded term replays with the type check on and expanded.
+- tests/test_adequacy.py includes tests/discourse/ (the drinker's =b=
+  pinned with [[id:aida-exfalso-under-lambda-exception]]).
+- Suite: 2394 passed, 9 skipped, 16 deselected (perf), 2 xfailed,
+  1 xpassed; perf: 16 passed.
+
+Left for follow-ups: [[id:aida-referents-shared-route]],
+[[id:aida-referents-counter-instances]], [[id:aida-referents-open-horns]],
+[[id:aida-referents-node-names]].
+
+** BACKLOG Port referent and context debates to the shared route
+:PROPERTIES:
+:ID:             aida-referents-shared-route
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The shared route evaluates debates with discourse referents and statements in a context instance by instance, or the author decides they stay on the unfolded route and the refusal message says so.
+:VERIFY:         tests/test_discourse_referents.py passes on both pipelines with the same verdicts; the perf tests pass.
+:END:
+
+Plan step 7 of [[id:aida-discourse-referents]]. Today the shared route
+refuses a debate that reaches a referent (pointer to =pipeline
+unfolded.=) and evaluates one that reaches a statement in a context from
+its unfolded term. A port applies each lineup's substitution where a
+definition body is written in (core/dc/share.py, =_instantiate.cite=),
+keys instances by it (core/dc/instances.py, =IssueResolver._at=), follows
+weakening for supporters and attackers, and type-checks instantiated
+definitions.
+
+** BACKLOG Design: counter-instances and referent presumptions
+:PROPERTIES:
+:ID:             aida-referents-counter-instances
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides decisions (b) and (d) of [[id:aida-discourse-referents]] - closed counter-instances of a referent statement, defeating per use, and =!x= presuming its sort inhabited - and they are implemented.
+:VERIFY:         The decision is written here; birds_fly_presumed_open.fspy and a counter-instance fixture give the verdicts it states; the suite passes.
+:END:
+
+Plan step 8 of [[id:aida-discourse-referents]]. Needs the binder kind of
+each context entry (a universal right: arbitrary, every instance; an
+existential left: a particular unknown individual), which contexts do
+not record yet. A presumed site under a binder is a presumption in its
+context since 2026-10-21; only closed counterarguments reach it, by
+weakening.
+
+** BACKLOG Design: a lemma whose statement mentions a bound variable
+:PROPERTIES:
+:ID:             aida-referents-open-horns
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether a horn whose statement mentions a variable bound above it becomes a referent argument of its own (plan step 4b), and how its two forms - in place with the variable, standalone with the referent - and the hypotheses it captures are shown.
+:VERIFY:         The decision is written here; birds_fly's lemma =μw : Wings x= gives the graph it states; hypothesis_horn and open_source_horn keep their verdicts.
+:END:
+
+Plan step 4b of [[id:aida-discourse-referents]]. Today such a horn is
+inlined (step 0, [[id:aida-fo-open-source-horn]]); a closed horn under a
+binder is already the node of its statement in its context.
+
+** BACKLOG Show a referent statement in one naming
+:PROPERTIES:
+:ID:             aida-referents-node-names
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A node with referents is shown in one naming whoever registered it first, and the witness a referent target owes is named as its own environment names it.
+:VERIFY:         =graph sup= on peirce_fo.fspy shows sup's node and its witness with the same referent names; the referent tests pass.
+:END:
+
+Found 2026-10-21: =graph sup= shows the node as =Dr ?z->false= (=a='s
+site registered it first) and owes "a witness for ?z", while =sup='s own
+source reads =Dr ?x=.
 
 * Specification and verification
 

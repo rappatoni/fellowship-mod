@@ -303,6 +303,44 @@ Words in /italics/ inside an entry have an entry of their own.
 - Pipeline unfolded / shared :: The two routes through evaluation: the
   unfolded term (the default) or the shared form. Lesson 18.
 
+* Discourse referents
+
+No lesson covers these yet; the decisions are recorded in =tasks.org=,
+=aida-discourse-referents= (2026-10-20), and the README, /Discourse
+referents/. Examples in =tests/discourse/=.
+
+- Discourse referent :: A pseudo-constant =?x= local to an argument.
+  Fellowship holds it in the theorem's goal environment, never in the
+  signature, and refuses =qed= on a theorem that has one. Where the
+  argument fills a site, the referent stands for what the site has in its
+  place - typically a variable bound there.
+
+- Referent environment, import :: The referents an argument states,
+  written before its conclusion: =argument sup : [?x:Pub] (Dr [?x] ->
+  false).= Left out, it is collected from the conclusion. A referent the
+  conclusion does not mention is a /witness/ and needs the environment.
+
+- Witness :: A referent of the environment that the conclusion does not
+  mention, used in the body (=elim [?x]=). It is lined up with an entry of
+  the site's context of the same sort (see /lineup/).
+
+- Statement in a context, export :: A site's statement together with its
+  first-order context: the referents of its argument and the variables
+  bound above it. Shown =[?y:Pub] ⊢ E=. Every site exports its context,
+  owed or presumed; a variable the statement mentions is shown as the
+  referent standing for it (=[?x:Animal] ⊢ Wings ?x=).
+
+- Lineup :: How a supporter's referents meet a site: those its
+  conclusion states by the statement (identity up to renaming), each
+  witness with a context entry of its sort the statement does not
+  mention. Several lineups mean several uses of the supporter, the one
+  for the innermost binder on top of the stack.
+
+- Weakening edge :: A dotted grey edge from a statement to the same
+  statement in a larger context: whatever supports or attacks the smaller
+  bears on the larger. A binder of a statement in scope captures it in
+  any context for the same reason.
+
 * The argument discipline
 
 - Pure level :: What a registered argument must be (decided 2026-10-15,
