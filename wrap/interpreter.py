@@ -191,12 +191,6 @@ class Interpreter:
             if o.status == "ok":
                 self._stated = c["name"]
             return o
-        if c.kind == "referent":
-            try:
-                state = s.declare_referents(c["names"], c["sort"])
-            except ProverError as e:
-                return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
-            return Outcome(None, c.text, c.kind, "ok", value=state)
         if c.kind == "debate":
             return self._service(c, svc.start_debate, c["name"], c["issue"], c["onus"], c["scope"])
         if c.kind == "close_debate":
@@ -304,13 +298,15 @@ class Interpreter:
         except ProverError as e:
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
         current = {"name": name, "conclusion": conclusion, "instructions": [], "is_anti": anti,
+                   "referents": c.args.get("referents"),
                    "_opened_at": c.span, "_transcript_from": len(self.transcript)}
         kind = "counterargument" if anti else "argument"
         if self.live:
             opener = "antitheorem" if anti else "theorem"
             try:
-                current["_state"] = s.send_command(f"{opener} {name} : ({_command_prop(conclusion)}).",
-                                                   include_ui=True)
+                env = f"[{current['referents']}] " if current["referents"] else ""
+                current["_state"] = s.send_command(
+                    f"{opener} {name} : {env}({_command_prop(conclusion)}).", include_ui=True)
                 self.show_ui(current["_state"])
             except MachinePayloadError:
                 raise
@@ -358,7 +354,7 @@ class Interpreter:
     def _in_block(self, c: Command) -> Outcome:
         if c.kind in ("dixi", "qed"):
             return self._close(c, demand_strict=c.kind == "qed")
-        if c.kind in ("argument", "refine", "statement", "debate", "referent"):
+        if c.kind in ("argument", "refine", "statement", "debate"):
             return Outcome(None, c.text, c.kind, "refused",
                            f"'{self.recording['name']}' is still being recorded; end it with "
                            f"`dixi.` (or `qed.`) first.")

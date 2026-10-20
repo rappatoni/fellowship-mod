@@ -322,6 +322,10 @@ type type_error =
   | Fun_apply_err of term * sort * term * sort
   | Pred_apply_err of prop * sort * term * sort
   | Type_mismatch of term * sort * sort
+  | Referent_sort of string
+  | Referent_conflict of string * sort * sort
+  | Referent_unlisted of string
+  | Referent_kind of string * sort
 
 class type_msg error =
 object (self)
@@ -353,6 +357,15 @@ object (self)
       | Type_mismatch (term, sort, sort') ->
 	  Format.sprintf "Term %s of type %s does not match the type %s."
 	  (pretty_term term) (pretty_sort sort) (pretty_sort sort')
+      | Referent_sort name ->
+	  Format.sprintf "The sort of the referent %s cannot be inferred: give it, as in [%s:SORT]." name name
+      | Referent_conflict (name, sort, sort') ->
+	  Format.sprintf "The referent %s is used with the sort %s and with the sort %s." name
+	  (pretty_sort sort) (pretty_sort sort')
+      | Referent_unlisted name ->
+	  Format.sprintf "The referent %s is missing from the theorem's referent environment." name
+      | Referent_kind (name, sort) ->
+	  Format.sprintf "The referent %s has the sort %s: a referent stands for an individual or a function, not a proposition or a sort." name (pretty_sort sort)
 end
 	  
 let rec term_infer t sign = match t with 
@@ -407,6 +420,100 @@ let rec prop_infer p sign = match p with
 	 | Inl SProp -> Inl SProp
 	 | Inl sort  -> Inr (Prop_kind (prop,sort))
 	 | Inr m -> Inr m )
+
+(* DISCOURSE REFERENTS *)
+(* A referent ?x is a pseudo-constant local to a theorem: it lives in the
+   theorem's goal environment, never in the signature, and a theorem with
+   one cannot be registered (qed refuses it).  Its sort is given in the
+   theorem's referent environment or inferred from its uses. *)
+let is_referent name = String.length name > 1 && name.[0] = '?'
+
+let rec referents_of_term t acc = match t with
+  | TSym n -> if is_referent n && not (List.mem n acc) then acc @ [n] else acc
+  | TApp (t, t') -> referents_of_term t' (referents_of_term t acc)
+
+let rec referents_of_prop p acc = match p with
+  | True | False | PSym _ -> acc
+  | PApp (p, t) -> referents_of_term t (referents_of_prop p acc)
+  | UProp (_, p) -> referents_of_prop p acc
+  | BProp (p, _, p') -> referents_of_prop p' (referents_of_prop p acc)
+  | Quant (_, _, p) -> referents_of_prop p acc
+
+exception Referent_error of type_error
+
+(* The sorts of the referents of [p], from the sort expected where each
+   occurs: an argument of a predicate or a function, or the head of an
+   application to a term of known sort. *)
+let infer_referents p sign =
+  let found = ref [] in
+  let ctx sign = coll_add_list sign !found in
+  let assign n s = match List.assoc_opt n !found with
+    | Some s' -> if not (eq_sort s s') then raise (Referent_error (Referent_conflict (n, s', s)))
+    | None -> found := !found @ [(n, s)] in
+  let unassigned t =
+    List.filter (fun n -> not (List.mem_assoc n !found)) (referents_of_term t []) in
+  let rec expect t s sign = match t with
+    | TSym n -> if is_referent n then assign n s
+    | TApp (f, a) ->
+        (match term_infer f (ctx sign) with
+           | Inl (SArr (s1, _)) -> expect a s1 sign
+           | Inl _ -> ()
+           | Inr _ ->
+               (match term_infer a (ctx sign) with
+                  | Inl sa -> expect f (SArr (sa, s)) sign
+                  | Inr _ ->
+                      (match unassigned t with
+                         | n :: _ -> raise (Referent_error (Referent_sort n))
+                         | [] -> ())))
+  in
+  let rec walk p sign = match p with
+    | True | False | PSym _ -> ()
+    | PApp (q, t) ->
+        walk q sign;
+        (match prop_infer q (ctx sign) with
+           | Inl (SArr (s, _)) -> expect t s sign
+           | _ -> ())
+    | UProp (_, q) -> walk q sign
+    | BProp (q, _, q') -> walk q sign; walk q' sign
+    | Quant (_, (names, s), q) ->
+        walk q (List.fold_right (fun x y -> Coll.add x s y) names sign)
+  in
+  walk p sign;
+  !found
+
+let rec sort_result s = match s with SArr (_, s') -> sort_result s' | _ -> s
+
+(* The referent environment of a theorem stating [p]: the one given
+   (complete: every referent of [p] listed; a sort left out inferred), or,
+   with none given, the referents of [p] with their inferred sorts. *)
+let referent_env p given sign =
+  try
+    let inferred = infer_referents p sign in
+    let mentioned = referents_of_prop p [] in
+    let env = match given with
+      | None ->
+          List.map (fun n -> match List.assoc_opt n inferred with
+            | Some s -> (n, s)
+            | None -> raise (Referent_error (Referent_sort n))) mentioned
+      | Some listed ->
+          List.iter (fun n -> if not (List.mem_assoc n listed)
+                      then raise (Referent_error (Referent_unlisted n))) mentioned;
+          List.map (fun (n, so) -> match so, List.assoc_opt n inferred with
+            | Some s, Some s' ->
+                if eq_sort s s' then (n, s)
+                else raise (Referent_error (Referent_conflict (n, s, s')))
+            | Some s, None -> (n, s)
+            | None, Some s' -> (n, s')
+            | None, None -> raise (Referent_error (Referent_sort n))) listed
+    in
+    List.iter (fun (n, s) ->
+      List.iter (fun sym -> if not (Coll.mem sym sign)
+                  then raise (Referent_error (Undefined sym))) (get_sort_symbols s []);
+      match sort_result s with
+        | SProp | SSet -> raise (Referent_error (Referent_kind (n, s)))
+        | _ -> ()) env;
+    Inl env
+  with Referent_error e -> Inr e
 
 (* PROOF TERMS *)
 (*Metavariables*)
@@ -651,6 +758,7 @@ let rec prop_of_goals gl = match gl with
 type state = 
   { index: int;
     open_thm: (string * prop * bool) option;  (* false = theorem, true = anti-theorem *)
+    open_refs: (string * sort) list;  (* the open theorem's discourse referents *)
     goals: (metaid * goal) list;
     sign: (sort Coll.t);
     thms: (prop Coll.t);
@@ -658,7 +766,7 @@ type state =
     pt: proof_t3rm }
 
 let new_state () =
-  { index=0; open_thm=None; goals=[]; sign=Coll.empty; thms=Coll.empty; mox=Coll.empty; pt=Term (TermMeta initial_meta) }
+  { index=0; open_thm=None; open_refs=[]; goals=[]; sign=Coll.empty; thms=Coll.empty; mox=Coll.empty; pt=Term (TermMeta initial_meta) }
 
 (*Transform states into propositions*)
 let prop_of_state s = 

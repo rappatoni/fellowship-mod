@@ -74,6 +74,7 @@ type instruction_error =
   | Discard_all
   | Discard_theorem
   | Nothing_undo
+  | Referent_qed of string list
 
 class instruction_msg ?loc error =
 object (self)
@@ -103,6 +104,9 @@ object (self)
 	  "Pulling out: trashing the current proof."
       | Nothing_undo ->
 	  "You have not even started! What do you want to undo?"
+      | Referent_qed refs ->
+	  sprintf "This proof is about the discourse referent%s %s, a pseudo-constant: it cannot be registered. Discard it (discard theorem)."
+	    (if List.length refs > 1 then "s" else "") (String.concat ", " refs)
 end
 
 
@@ -175,46 +179,45 @@ let deny args cairn = match args, cairn with
       Idle (Some (new tactic_msg (Need_args "an axiom name and its body")), s)
   | _, _ -> Exception (new tactic_msg Instr_misuse, (get_state cairn))
 
-let theorem args cairn = match args, cairn with
-  | [Labeled_prop ([name],prop)], Idle (_,s) -> 
-      begin match prop_infer prop s.sign with
-	 | Inl SProp -> 
-	    let ns = {s with index=1;
-	      open_thm=Some (name,prop,false);
-	      goals=[initial_meta,(new_goal prop)];
-	      pt=Term (Mu (thesis,prop,Play(TermMeta initial_meta,Concl thesis))) }
-	    in
-	    let nc = Subgoals (1, ns) in
-	    trace := (T_goal (ns,name))::!trace ;
-	    history := (nc,!trace)::!history ;
-	    nc
-	 | Inl x -> Idle (Some (new type_msg (Prop_kind (prop,x))),s)
-	 | Inr m -> Idle (Some (new type_msg m),s)
-      end
-  | _, Idle (_,s) -> Idle (Some (new tactic_msg (Need_args "the theorem's name and its body")),s)
-  | _, _ -> Exception (new tactic_msg Instr_misuse,(get_state cairn))
+(* Open a theorem (or, [is_anti], an antitheorem) stating [prop].  Its
+   discourse referents - [given], or collected from [prop] - make up the
+   initial goal's environment; a theorem with any cannot be registered. *)
+let start_theorem name given prop is_anti s =
+  match referent_env prop given s.sign with
+    | Inr m -> Idle (Some (new type_msg m), s)
+    | Inl refs ->
+        begin match prop_infer prop (coll_add_list s.sign refs) with
+          | Inl SProp ->
+              let g = { (new_goal prop) with env = refs } in
+              let g = if is_anti then { g with active = (LeftHandSide, prop) } else g in
+              let ns = { s with
+                index = 1;
+                open_thm = Some (name, prop, is_anti);
+                open_refs = refs;
+                goals = [initial_meta, g];
+                pt = if is_anti
+                  then Context (MuTilde (thesis, prop, Play (Hyp thesis, ContextMeta initial_meta)))
+                  else Term (Mu (thesis, prop, Play (TermMeta initial_meta, Concl thesis)))
+              } in
+              let nc = Subgoals (1, ns) in
+              trace := (T_goal (ns, name))::!trace;
+              history := (nc, !trace)::!history;
+              nc
+          | Inl x -> Idle (Some (new type_msg (Prop_kind (prop, x))), s)
+          | Inr m -> Idle (Some (new type_msg m), s)
+        end
 
-let antitheorem args cairn = match args, cairn with
-  | [Labeled_prop ([name],prop)], Idle (_,s) ->
-      begin match prop_infer prop s.sign with
-        | Inl SProp ->
-            let g = { (new_goal prop) with active=(LeftHandSide, prop) } in
-            let ns = { s with
-              index = 1;
-              open_thm = Some (name,prop,true);
-              goals = [initial_meta, g];
-              pt = Context (MuTilde (thesis, prop, Play (Hyp thesis, ContextMeta initial_meta)))
-            } in
-            let nc = Subgoals (1, ns) in
-            trace := (T_goal (ns,name))::!trace;
-            history := (nc,!trace)::!history;
-            nc
-        | Inl x -> Idle (Some (new type_msg (Prop_kind (prop,x))), s)
-        | Inr m -> Idle (Some (new type_msg m), s)
-      end
-  | _, Idle (_,s) ->
+let theorem_like is_anti args cairn = match args, cairn with
+  | [Labeled_prop ([name], prop)], Idle (_, s) -> start_theorem name None prop is_anti s
+  | [Labeled_ref_prop ([name], env, prop)], Idle (_, s) ->
+      start_theorem name (Some env) prop is_anti s
+  | _, Idle (_, s) ->
       Idle (Some (new tactic_msg (Need_args "the theorem's name and its body")), s)
   | _, _ -> Exception (new tactic_msg Instr_misuse, (get_state cairn))
+
+let theorem args cairn = theorem_like false args cairn
+
+let antitheorem args cairn = theorem_like true args cairn
 
 let next args cairn = match args, cairn with
   | [], Success s | [], Subgoals (_,s) | [], Exception (_,s) -> 
@@ -247,6 +250,8 @@ let prev args cairn = match args, cairn with
   | _, Idle (_,s) -> Idle (Some (new tactic_msg (Goal_exists false)),s)
 
 let qed args cairn = match args, cairn with 
+  | [], Success s | [], Exception (_,s) when s.goals=[] && s.open_refs <> [] ->
+      Exception (new instruction_msg (Referent_qed (List.map fst s.open_refs)), s)
   | [], Success s | [], Exception (_,s) when s.goals=[] ->
       begin match s.open_thm with
         | Some (name,prop,is_anti) ->
@@ -256,7 +261,7 @@ let qed args cairn = match args, cairn with
               else { s with thms = Coll.add name prop s.thms }
             in
             let nc = Idle (Some (new instruction_msg (Defined name)),
-              { s' with index = 0; open_thm=None; goals=[]; pt=Term (TermMeta initial_meta) }) in
+              { s' with index = 0; open_thm=None; open_refs=[]; goals=[]; pt=Term (TermMeta initial_meta) }) in
             trace := (T_qed s.pt)::!trace;
             history := (nc,!trace)::!history;
             nc
@@ -334,7 +339,7 @@ let discard_theorem args cairn = match args,cairn with
 	| _ :: t' -> prune_trace t'
       end in
       trace := prune_trace !trace ;
-      Idle (Some (new instruction_msg Discard_theorem),{s with open_thm=None ;
+      Idle (Some (new instruction_msg Discard_theorem),{s with open_thm=None ; open_refs=[] ;
 	goals=[]})
  | _, _ -> Idle (Some (new tactic_msg No_args),get_state cairn)
 

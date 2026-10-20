@@ -76,6 +76,9 @@ let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let sep = ['_']
 let ident = letter (letter | digit | sep)* | "_"
+(* A discourse referent ?x: a pseudo-constant local to a theorem, never
+   declared (AIDA, tasks.org aida-discourse-referents). *)
+let refident = '?' letter (letter | digit | sep)*
 let integer = ['0'-'9']+
 let space = [' ' '\t']
 
@@ -84,6 +87,7 @@ rule nexttoken = parse
   | "(*"[^'\n']*"*)" { nexttoken lexbuf }
   | space+  { nexttoken lexbuf }
   | ident   { id_or_kwd (lexeme lexbuf) }
+  | refident { REFIDENT (lexeme lexbuf) }
   | '.'     { DOT }
   | ','     { VIR } 
   | ';'     { PVIR }

@@ -31,6 +31,8 @@ from __future__ import annotations
 
 from typing import Mapping
 
+from core.ac import referents
+
 from core.ac.ast import (
     Admal,
     Cons,
@@ -190,6 +192,8 @@ class _Scope:
             return True
         if name in self.proof:
             return False
+        if referents.is_referent(name):
+            return True                 # a discourse referent ?x is a term
 
         declaration = self.declarations.get(name)
         if declaration is None:

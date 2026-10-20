@@ -172,6 +172,7 @@ def reopen(prover, name: str) -> dict:
     return {
         "name": name,
         "conclusion": arg.conclusion,
+        "referents": getattr(arg, "referents", None),
         "instructions": list(arg.instructions),
         "is_anti": getattr(arg, "is_anti", False),
         "statement": previous == "statement",
@@ -207,6 +208,7 @@ def finish_recording(prover, current: dict, *, demand_strict: bool):
         conclusion=current["conclusion"],
         instructions=current["instructions"],
         is_anti=current.get("is_anti", False),
+        referents=current.get("referents"),
     )
     arg.execute(declare=True if demand_strict else "auto", accept=enforce_discipline)
     if before is not None and getattr(before, "statement_kind", None):

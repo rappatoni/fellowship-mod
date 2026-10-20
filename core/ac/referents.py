@@ -1,43 +1,32 @@
 """Discourse referents (tasks.org, aida-discourse-referents).
 
-A discourse referent ``?x`` is a pseudo-constant of a sort, declared by
-``referent x : SORT.``.  An argument may state it (``sup : (Dr [?x] ->
-false)``); where such an argument fills a site that mentions a variable
-bound by a universal right or an existential left, ``?x`` stands for that
-variable.  Neither Fellowship's lexer nor the proposition grammar reads
-``?``, so ``?x`` is the declared constant ``referent_x`` everywhere below
-the script; ``show`` turns it back for people.
+A discourse referent ``?x`` is a pseudo-constant local to an argument:
+Fellowship holds it in the argument's goal environment, never in the
+signature, and refuses ``qed`` on a theorem that has one, so no referent
+is ever registered on the prover side.  An argument states its referents
+in a referent environment, ``argument sup : [?x:Pub] (Dr [?x] -> false).``,
+or leaves it out to have them collected from the statement.
+
+Where an argument stating a referent fills a site that mentions a variable
+bound by a universal right or an existential left, the referent stands for
+that variable.
 """
 
 import re
 
-#: The prefix of the constant a referent is; reserved, so no user name
-#: can be one.
-PREFIX = "referent_"
-
-_WRITTEN = re.compile(r"(?<![\w?])\?([A-Za-z][A-Za-z0-9_]*)")
-_CONSTANT = re.compile(rf"\b{PREFIX}([A-Za-z][A-Za-z0-9_]*)")
-
-
-def constant(name: str) -> str:
-    """The constant of the referent ``?name``."""
-    return PREFIX + name
+_REFERENT = re.compile(r"(?<![\w?])\?[A-Za-z][A-Za-z0-9_]*")
 
 
 def is_referent(name: str) -> bool:
-    return name.startswith(PREFIX)
+    return len(name) > 1 and name[0] == "?" and name[1].isalpha()
 
 
-def expand(text: str) -> str:
-    """``?x`` -> ``referent_x`` in script text."""
-    return _WRITTEN.sub(lambda m: constant(m.group(1)), text)
-
-
-def show(text: str) -> str:
-    """``referent_x`` -> ``?x``, for messages and displays."""
-    return _CONSTANT.sub(lambda m: "?" + m.group(1), text)
+def constant(name: str) -> str:
+    """The referent that stands for the variable ``name``."""
+    return "?" + name
 
 
 def mentioned(text) -> set:
-    """The referent constants ``text`` mentions."""
-    return {PREFIX + m.group(1) for m in _CONSTANT.finditer(text or "")}
+    """The referents ``text`` mentions - a proposition, an environment or a
+    Fellowship proof term (whose open goals ``?1.2`` are numbers)."""
+    return set(_REFERENT.findall(text or ""))

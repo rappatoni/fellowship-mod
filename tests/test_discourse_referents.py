@@ -1,9 +1,11 @@
 """Discourse referents (tasks.org, aida-discourse-referents).
 
-A referent ``?x`` is declared by ``referent x : SORT.`` and is the
-constant ``referent_x`` below the script.  An argument that mentions one
-holds for whatever the referent stands for where it is used, so it ends
-with ``dixi``, never ``qed``, and it must state the referent it uses.
+A referent ``?x`` is a pseudo-constant local to an argument: Fellowship
+holds it in the argument's goal environment (given as ``[?x:Pub]`` or
+collected from the statement), never in the signature, and refuses ``qed``
+on a theorem that has one - no referent is ever registered on the prover
+side.  AIDA, for now, also refuses a referent the conclusion does not
+state (deferred by design).
 """
 
 import warnings
@@ -36,53 +38,73 @@ def entry(report, kind):
     return [e for e in report.entries if e.kind == kind][-1]
 
 
+def fellowship(prover, command):
+    """Fellowship's own verdict on a command: its notes and errors."""
+    try:
+        out = prover.send_command(command)
+    except Exception as e:
+        return str(e)
+    return " ".join(str(n) for n in out.get("errors", []) + out.get("notes", []))
+
+
 # -- the written form --------------------------------------------------------------
 
-def test_a_written_referent_is_its_constant_and_shown_back():
-    assert referents.expand("Dr [?x] -> false") == "Dr [referent_x] -> false"
-    assert referents.expand("elim [?x]") == "elim [referent_x]"
-    assert referents.show("Dr referent_x->false") == "Dr ?x->false"
-    assert referents.mentioned("R referent_x (f referent_y) c") == {"referent_x", "referent_y"}
+def test_a_referent_is_a_name_with_a_question_mark():
+    assert referents.is_referent("?x") and not referents.is_referent("x")
+    assert not referents.is_referent("?1")                  # an open goal
+    assert referents.mentioned("R ?x (f ?y) c ?1.2") == {"?x", "?y"}
 
 
-def test_the_parser_reads_a_referent_declaration_and_a_referent_statement():
-    c = parse("referent x, y : Pub")
-    assert c.kind == "referent" and c["names"] == ["x", "y"] and c["sort"] == "Pub"
-    a = parse("argument sup : (Dr [?x] -> false)")
-    assert a["conclusion"] == "Dr [referent_x] -> false"
-    assert parse("cut (Dr [?x]) m").text == "cut (Dr [referent_x]) m"
+def test_the_parser_reads_a_referent_environment():
+    a = parse("argument sup : [?x:Pub, ?y] (Dr [?x] -> false)")
+    assert a["referents"] == "?x:Pub, ?y" and a["conclusion"] == "Dr [?x] -> false"
+    b = parse("argument sup : (Dr [?x] -> false)")
+    assert b["referents"] is None and b["conclusion"] == "Dr [?x] -> false"
 
 
-# -- declaration -------------------------------------------------------------------
+def test_the_proposition_grammar_reads_a_referent_as_a_term():
+    from core.ac.prop import Prop
+    assert Prop.parse("Dr ?x -> false").free_vars() == {"?x"}
 
-def test_a_referent_is_declared_as_a_constant_of_its_sort():
-    prover, _svc, report = session(HEAD + "referent x : Pub.\n")
+
+# -- Fellowship is the source of truth ----------------------------------------------
+
+def test_fellowship_holds_a_referent_in_the_goal_environment_and_refuses_qed():
+    prover = setup_prover()
     try:
-        assert report.ok
-        assert prover.declarations["referent_x"] == "Pub"
-        assert prover.names["referent_x"] == "referent"
+        for line in HEAD.splitlines():
+            prover.send_command(line)
+        assert fellowship(prover, "theorem t : (Dr [?x] -> Dr [?x]).") == ""
+        prover.send_command("elim p.")
+        prover.send_command("axiom p.")
+        refusal = fellowship(prover, "qed.")
+        assert "discourse referent ?x" in refusal and "cannot be registered" in refusal
+        prover.send_command("discard theorem.")
+        assert "t" not in prover.declarations
     finally:
         prover.close()
 
 
-def test_a_user_name_with_the_referent_prefix_is_refused():
-    prover, _svc, report = session(HEAD + "declare referent_x : Pub.\n")
+@pytest.mark.parametrize("command, says", [
+    ("declare ax : (Dr [?x]).", "Symbol ?x undefined"),
+    ("declare ?x : Pub.", "Parse error"),
+    ("theorem k : [?x:Pub -> Pub] (Dr [?x]).", "used with the sort"),
+    ("theorem k : [?y:Pub] (Dr [?x]).", "missing from the theorem's referent environment"),
+    ("theorem k : [?w] (Dr [c]).", "cannot be inferred"),
+    ("theorem k : [?p:Pub -> bool] (Dr [c]).", "not a proposition or a sort"),
+    ("theorem k : [?x:Nope] (Dr [c]).", "Symbol Nope undefined"),
+])
+def test_fellowship_refuses_what_would_register_or_mistype_a_referent(command, says):
+    prover = setup_prover()
     try:
-        assert not report.ok
+        for line in HEAD.splitlines():
+            prover.send_command(line)
+        assert says in fellowship(prover, command)
     finally:
         prover.close()
 
 
-def test_a_referent_is_declared_once():
-    prover, _svc, report = session(HEAD + "referent x : Pub.\nreferent x : Pub.\n")
-    try:
-        assert entry(report, "referent").status == "refused"
-        assert "already declared" in entry(report, "referent").message
-    finally:
-        prover.close()
-
-
-# -- ending an argument --------------------------------------------------------------
+# -- arguments with referents -------------------------------------------------------
 
 SUP = """argument sup : (Dr [?x] -> false).
 elim p.
@@ -93,43 +115,42 @@ by default.
 
 
 def test_an_argument_stating_a_referent_ends_with_dixi():
-    prover, _svc, report = session(HEAD + "referent x : Pub.\n" + SUP + "dixi.\n")
+    prover, _svc, report = session(HEAD + SUP + "dixi.\n")
     try:
         assert entry(report, "dixi").status == "ok", entry(report, "dixi").message
         assert "sup" in prover.arguments
         assert not prover.arguments["sup"].citable          # never a theorem
+        assert "sup" not in prover.declarations
     finally:
         prover.close()
 
 
-def test_qed_is_refused_for_an_argument_with_a_referent():
-    text = HEAD + "referent x : Pub.\nargument t : (Dr [?x] -> Dr [?x]).\nelim p.\naxiom p.\nqed.\n"
+def test_an_explicit_environment_reaches_fellowship():
+    text = HEAD + "argument sup : [?x:Pub] (Dr [?x] -> false).\n" + SUP.split("\n", 1)[1] + "dixi.\n"
+    prover, _svc, report = session(text)
+    try:
+        assert entry(report, "dixi").status == "ok", entry(report, "dixi").message
+        assert prover.arguments["sup"].referents == "?x:Pub"
+    finally:
+        prover.close()
+
+
+def test_qed_on_an_argument_with_a_referent_is_refused_by_fellowship():
+    text = HEAD + "argument t : (Dr [?x] -> Dr [?x]).\nelim p.\naxiom p.\nqed.\n"
     prover, _svc, report = session(text)
     try:
         closing = entry(report, "qed")
         assert closing.status in ("refused", "error")
-        assert "discourse referent ?x" in closing.message and "dixi" in closing.message
-        assert "t" not in prover.arguments
+        assert "discourse referent ?x" in closing.message
+        assert "t" not in prover.arguments and "t" not in prover.declarations
     finally:
         prover.close()
 
 
-def test_an_undeclared_referent_is_refused():
-    prover, _svc, report = session(HEAD + SUP + "dixi.\n")
-    try:
-        closing = entry(report, "dixi")
-        assert closing.status in ("refused", "error")
-        assert "undeclared referent ?x" in closing.message
-        assert "referent x : SORT" in closing.message
-    finally:
-        prover.close()
-
-
-def test_a_referent_used_but_not_stated_is_refused():
-    """Deferred (the author, 2026-10-20): a witness-only referent would be
-    caught by a capture, not by the statement."""
-    text = HEAD + """referent x : Pub.
-argument w : (exists x:Pub, Dr [x] -> Dr [x]).
+def test_a_referent_the_conclusion_does_not_state_is_refused():
+    """Deferred (the author, 2026-10-20): a referent outside the conclusion
+    would be caught by a capture, not by the statement."""
+    text = HEAD + """argument w : [?x:Pub] (exists y:Pub, Dr [y] -> Dr [y]).
 elim [?x].
 elim p.
 axiom p.
@@ -149,7 +170,7 @@ dixi.
 
 def key(text):
     from core.dc.debate_graph import canonical_prop
-    return canonical_prop(referents.expand(text))
+    return canonical_prop(text)
 
 
 def test_a_statement_is_identified_up_to_renaming_of_its_referents():
@@ -166,7 +187,7 @@ def test_identity_does_not_instantiate():
 
 def test_a_referent_is_neither_a_bound_variable_nor_a_constant():
     assert key("exists y:Pub, R ?x y") != key("exists y:Pub, R y y")
-    assert key("Dr ?x") != key("Dr referent")
+    assert key("Dr ?x") != key("Dr x")
 
 
 def test_non_atomic_terms_and_function_referents():
@@ -176,5 +197,5 @@ def test_non_atomic_terms_and_function_referents():
 
 def test_the_referent_order_lines_two_statements_up():
     from core.ac.prop import Prop
-    order = Prop.parse(referents.expand("R ?b (f ?a) ?b")).referent_order()
-    assert order == ["referent_b", "referent_a"]
+    order = Prop.parse("R ?b (f ?a) ?b").referent_order()
+    assert order == ["?b", "?a"]

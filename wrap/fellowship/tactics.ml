@@ -21,6 +21,7 @@ type arg =
   | Formula of prop
   | Expression of term
   | Labeled_prop of string list * prop
+  | Labeled_ref_prop of string list * (string * sort option) list * prop
   | Labeled_sort of string list * sort
   | Prover of provers
 
@@ -32,6 +33,13 @@ let pretty_arg = function
   | Expression t -> pretty_term t
   | Labeled_prop ([s],p) -> sprintf "%s : %s" s (pretty_prop p)
   | Labeled_prop (_,p) -> assert false
+  | Labeled_ref_prop ([s],env,p) ->
+      sprintf "%s : [%s] %s" s
+        (pretty_comma_list (List.map (fun (r,so) -> match so with
+           | Some sort -> sprintf "%s:%s" r (pretty_sort sort)
+           | None -> r) env))
+        (pretty_prop p)
+  | Labeled_ref_prop (_,_,p) -> assert false
   | Labeled_sort (sl,p) -> sprintf "%s : %s" (pretty_comma_list sl) (pretty_sort p)
   | Prover p -> pretty_prover p
 

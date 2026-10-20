@@ -68,6 +68,11 @@ type token =
   | MOXIA
   | ANTITHEOREM
   | DENY
+  | REFIDENT of (
+# 32 "parser.mly"
+        string
+# 75 "parser.mli"
+)
 
 val main :
   (Lexing.lexbuf  -> token) -> Lexing.lexbuf -> Help.script

@@ -29,6 +29,7 @@
 %token LPAR RPAR LBRA RBRA VIR PVIR PIPE COLON DOT 
 %token EOF 
 %token MOXIA ANTITHEOREM DENY
+%token <string> REFIDENT
 
 /* Token priorities / associativity */
 
@@ -146,6 +147,8 @@ arg:
 | delimited_t_expr                        { Expression $1 }
 | varlist COLON s_expr                    { Labeled_sort ($1,$3) }
 | varlist COLON delimited_p_expr          { Labeled_prop ($1,$3) }
+| varlist COLON LBRA reflist RBRA delimited_p_expr
+                                          { Labeled_ref_prop ($1,$4,$6) }
 | COQ                                     { Prover Coq }
 | PVS                                     { Prover Pvs }
 | ISABELLE                                { Prover Isabelle }
@@ -169,6 +172,7 @@ t_expr:
 
 t_exprat:
 | IDENT                                    { TSym $1 }
+| REFIDENT                                 { TSym $1 }
 | LPAR t_expr RPAR                         { $2 }
 
 p_expr:
@@ -184,6 +188,18 @@ p_expr:
 | FORALL varlist COLON s_expr VIR p_expr   { Quant(Forall,($2,$4),$6) } 
 | EXISTS varlist COLON s_expr VIR p_expr   { Quant(Exists,($2,$4),$6) }
 | LPAR p_expr RPAR                         { $2 }
+;
+
+/* A theorem's referent environment: [?x:S, ?y] (a sort left out is
+   inferred from the statement). */
+reflist:
+| refdecl                                  { [$1] }
+| refdecl VIR reflist                      { $1::$3 }
+;
+
+refdecl:
+| REFIDENT                                 { ($1, None) }
+| REFIDENT COLON s_expr                    { ($1, Some $3) }
 ;
 
 varlist:

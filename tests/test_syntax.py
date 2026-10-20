@@ -36,8 +36,12 @@ def test_comments_stop_and_incomplete():
 # -- parsing -----------------------------------------------------------------
 
 @pytest.mark.parametrize("text, kind, args", [
-    ("argument a : (A -> B)", "argument", {"name": "a", "conclusion": "A -> B", "anti": False}),
-    ("counterargument c : (A)", "argument", {"name": "c", "conclusion": "A", "anti": True}),
+    ("argument a : (A -> B)", "argument", {"name": "a", "conclusion": "A -> B", "referents": None,
+                                           "anti": False}),
+    ("counterargument c : (A)", "argument", {"name": "c", "conclusion": "A", "referents": None,
+                                             "anti": True}),
+    ("argument s : [?x:Pub, ?y] (D [?x] -> D [?y])", "argument",
+     {"name": "s", "conclusion": "D [?x] -> D [?y]", "referents": "?x:Pub, ?y", "anti": False}),
     ("dixi", "dixi", {}), ("cr", "dixi", {}), ("case rested", "dixi", {}),
     ("cedat tempus", "close_debate", {}), ("ct", "close_debate", {}),
     ("new document minimal lj", "new_document", {"logic": "lj", "minimal": True}),

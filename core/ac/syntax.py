@@ -66,6 +66,7 @@ varlist:    NAME ("," NAME)*
 ?foterm:    fatom
           | foterm fatom                        -> t_app
 ?fatom:     NAME                                -> t_sym
+          | REFNAME                             -> t_sym
           | "(" foterm ")"                      -> t_group
           | "[" foterm "]"                      -> t_group
 
@@ -142,6 +143,8 @@ _EXISTS.3:  /exists(?![A-Za-z0-9_])/ | "∃"
 _SET.3:     /type(?![A-Za-z0-9_])/
 _BOOL.3:    /bool(?![A-Za-z0-9_])/
 NAME:       /(?!(?:true|false|forall|exists|type|bool)\b)[A-Za-z_][A-Za-z0-9_]*/
+// A discourse referent ?x (an open goal ?1 is a number).
+REFNAME:    /\?[A-Za-z][A-Za-z0-9_]*/
 NUMBER:     /[0-9]+/
 %import common.WS
 %ignore WS

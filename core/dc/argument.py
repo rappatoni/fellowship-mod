@@ -46,11 +46,15 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
     #: Deterministic sequence for the theta-expansion temporaries (was
     #: id(body), a memory address that changed between runs).
 
-    def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS", is_anti: bool = False):
+    def __init__(self, prover, name: str, conclusion: str, instructions: list = None, rendering = "argumentation", enrich : str = "PROPS", is_anti: bool = False, referents: str = None):
         # TODO: some of these stil need type hints.
         self.prover = prover
         self.name = name
         self.conclusion = conclusion #Conclusion of the argument.
+        # The referent environment as written (``?x:Pub, ?y``), or None to
+        # have Fellowship collect it from the conclusion (tasks.org,
+        # aida-discourse-referents).
+        self.referents = referents
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
         self.delegations = {} # Dict of Delegations: {deleg_number : {prop : some_str, deleg_index : some_int, label : some_str}
@@ -388,12 +392,10 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         if (self.body and isinstance(self.body, Mutilde)) or getattr(self, "is_anti", False):
             prop = self.body.prop if (self.body and isinstance(self.body, Mutilde)) else self.conclusion
             logger.info("Starting antitheorem '%s' for issue '%s'", self.name, prop)
-            start_cmd = f'antitheorem {self.name} : ({prop_to_command(prop)}).'
+            start_cmd = f'antitheorem {self.name} : {self._referent_env()}({prop_to_command(prop)}).'
         else:
             logger.info("Starting theorem '%s' for issue '%s'", self.name, self.conclusion)
-            start_cmd = f'theorem {self.name} : ({prop_to_command(self.conclusion)}).'
-        if declare is True or declare == "auto":
-            self._check_referents_declared()
+            start_cmd = f'theorem {self.name} : {self._referent_env()}({prop_to_command(self.conclusion)}).'
         start_payload = self.prover.send_command(start_cmd)
         output = start_payload
         # Execute each instruction.  Ordinary Fellowship commands are batched
@@ -550,23 +552,18 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             except Exception:
                 self.prover.send_command('discard theorem.')
                 raise
+        # A referent makes the proof one about a pseudo-constant: Fellowship
+        # refuses `qed` on it, so `dixi` discards it.  A referent the
+        # conclusion does not state is deferred by design (tasks.org,
+        # aida-discourse-referents), so refused here, not by the logic.
         held = self._referents_held() if declare is True or declare == "auto" else set()
-        if held:
-            stated = referents.mentioned(self.conclusion)
-            if declare is True or held - stated:
-                self.prover.send_command('discard theorem.')
-                shown = ", ".join(sorted(referents.show(r) for r in held))
-                if declare is True:
-                    raise StrictnessRefused(
-                        f"'{self.name}' uses the discourse referent {shown}: it holds for "
-                        f"whatever the referent stands for where it is used, so it ends "
-                        f"with `dixi.`, not `qed.`")
-                raise ReferentRefused(
-                    f"'{self.name}' uses the discourse referent "
-                    f"{', '.join(sorted(referents.show(r) for r in held - stated))} but does "
-                    f"not state it: a referent is caught by the statement an argument is "
-                    f"used for, so it must occur in '{self.name}''s conclusion "
-                    f"(tasks.org, aida-discourse-referents)")
+        unstated = held - referents.mentioned(self.conclusion)
+        if unstated:
+            self.prover.send_command('discard theorem.')
+            raise ReferentRefused(
+                f"'{self.name}' has the discourse referent {', '.join(sorted(unstated))} but its "
+                f"conclusion does not state it: a referent is caught through the statement an "
+                f"argument is used for, so for now it must occur in the conclusion")
         if declare is True and open_sites:
             self.prover.send_command('discard theorem.')
             raise StrictnessRefused(
@@ -597,19 +594,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.executed = True
 
     def _referents_held(self) -> set:
-        """The discourse referents the conclusion or the proof mentions."""
-        return referents.mentioned(self.conclusion) | referents.mentioned(self.proof_term)
+        """The discourse referents of the environment, the conclusion and
+        the proof."""
+        return (referents.mentioned(self.referents) | referents.mentioned(self.conclusion)
+                | referents.mentioned(self.proof_term))
 
-    def _check_referents_declared(self) -> None:
-        """A referent of the conclusion must be declared, with
-        ``referent x : SORT.``, before an argument states it."""
-        undeclared = sorted(r for r in referents.mentioned(self.conclusion)
-                            if r not in self.prover.declarations)
-        if undeclared:
-            shown = ", ".join(referents.show(r) for r in undeclared)
-            raise ReferentRefused(
-                f"'{self.name}' states the undeclared referent {shown}: declare it first, "
-                f"e.g. `referent {undeclared[0][len(referents.PREFIX):]} : SORT.`")
+    def _referent_env(self) -> str:
+        """The referent environment as Fellowship reads it, or nothing."""
+        return f"[{self.referents}] " if self.referents else ""
 
     @staticmethod
     def _normalize_pt_to_unicode(pt_ascii: str) -> str:
