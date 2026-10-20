@@ -41,7 +41,7 @@ Files
     Service.check(text) replays a whole document and reports on every
     command; Service.import_document() imports from another formalism.
 - serialize.py, schemas/aida.schema.json
-  - Versioned JSON for every result, error and report (`{"aida": "1.0",
+  - Versioned JSON for every result, error and report (`{"aida": "1.1",
     "kind": ...}`), terms as text and as trees; the JSON Schema describes it.
 - importers.py
   - The importer contract and the `acdc.importers` entry point (s(CASP):

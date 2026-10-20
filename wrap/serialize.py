@@ -28,7 +28,7 @@ from typing import Any, Dict, Optional
 
 from core.ac import ast as A
 
-VERSION = "1.0"
+VERSION = "1.1"
 
 
 def envelope(kind: str, **data) -> Dict[str, Any]:
@@ -232,6 +232,7 @@ def to_json(result, session=None) -> Dict[str, Any]:
     if isinstance(result, S.GraphResult):
         return envelope("graph", target=_target(result.target), whole=result.whole,
                         graph=graph(result.graph, labels=result.labels, spans=spans),
+                        labelling=result.labelling,
                         labels_unavailable=result.labels_unavailable, diagnostics=_diags(result))
     if isinstance(result, S.LabelResult):
         return envelope("labellings", target=_target(result.target), semantics=result.semantics,

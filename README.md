@@ -687,11 +687,18 @@ admitted; `graph` reports which fragment (acyclic or cyclic) a debate
 is in. First-order arguments take part as described under *First-order
 logic*.
 
-- `graph TARGET|document [all] ["FILE.dot"] [show]`
+- `graph TARGET|document [all] [grounded|complete|preferred|stable] [skeptical|credulous] ["FILE.dot"] [show]`
   - print the nodes, hyperedges and default markers of the target's issue
     graph (unfolded from the document) or of the document graph; write
-    Graphviz DOT when a filename is given; `all` shows a debate's whole
-    scope
+    Graphviz DOT when a filename is given (double-quoted; any other word
+    is refused); `all` shows a debate's whole scope
+  - the labels drawn are the grounded labelling unless a semantics is
+    named; the mode picks one labelling of a semantics with several, as
+    `evaluate` picks its witness - skeptical (the default) the
+    statement-wise intersection of its labellings, credulous the first
+    that accepts the issue (else the grounded labelling; `document` has no
+    issue, so credulous is refused there); the summary line `labels:`
+    and the legend of the drawing name the labelling shown
   - every lambda is a subargument edge of its own; a subargument that
     captured a binder of an enclosing one records the capture as a source
     at that binder's statement, so the framework shows a sprung trap as a

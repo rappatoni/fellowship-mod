@@ -48,7 +48,11 @@ def test_comments_stop_and_incomplete():
     ("Lemma foo : (A)", "statement", {"keyword": "lemma", "name": "foo", "conclusion": "A", "anti": False}),
     ("prove foo", "refine", {"verb": "prove", "name": "foo"}),
     ("rebut b a", "move", {"verb": "rebut", "argument": "b", "target": "a"}),
-    ('graph d all "out.dot" show', "graph", {"target": "d", "whole": True, "show": True, "dot_path": "out.dot"}),
+    ('graph d all "out.dot" show', "graph", {"target": "d", "whole": True, "show": True, "dot_path": "out.dot",
+                                              "semantics": "grounded", "mode": "skeptical"}),
+    ("graph issue :P preferred credulous", "graph",
+     {"target": "issue :P", "whole": False, "show": False, "dot_path": None,
+      "semantics": "preferred", "mode": "credulous"}),
     ("evaluate issue :B credulous all", "evaluate",
      {"target": "issue :B", "mode": "credulous", "semantics": "preferred", "base": "cbn",
       "witness": "all", "favour": False}),
@@ -69,6 +73,8 @@ def test_commands(text, kind, args):
     ("register t : B := μx:B", "double-quote the proof term"),
     ("evaluate a sceptical", "unknown option"),
     ("evaluate a 2", "requires credulous"),
+    ("graph a preferd", "a file name is double-quoted"),
+    ("graph a preferred stable", "one semantics"),
     ("tactic pop", "`tactic` is gone"),
 ])
 def test_old_and_wrong_forms_name_their_fix(text, hint):
@@ -292,3 +298,23 @@ dixi.
     out = list(Interpreter(prover, live=True).run(text))
     assert [(o.text, o.status) for o in out if o.status != "ok"] == []
     assert prover.arguments["a"].conclusion == "forall x:i,P x->Q x"
+
+
+@pytest.mark.parametrize("text, target, rest", [
+    # a quantified proposition has spaces: in parentheses it runs to the
+    # closing one, and the options after it stay options
+    ("graph issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) all",
+     "issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y]))", {"whole": True}),
+    ("evaluate issue (exists x:Pub, Dr [x]): credulous 2",
+     "issue (exists x:Pub, Dr [x]):", {"mode": "credulous", "witness": 2}),
+    ("label issue :A preferred", "issue :A", {"semantics": "preferred"}),
+])
+def test_an_issue_target_in_parentheses_may_contain_spaces(text, target, rest):
+    c = parse(text)
+    assert c["target"] == target
+    assert all(c[k] == v for k, v in rest.items())
+
+
+def test_an_issue_target_with_open_parentheses_is_refused():
+    with pytest.raises(SyntaxRefused, match="parentheses do not close"):
+        parse("graph issue :(A -> B")

@@ -58,6 +58,21 @@ def test_graph_label_evaluate(svc):
     assert isinstance(allw, WitnessEvaluations) and allw.results
 
 
+def test_graph_overlay_of_a_semantics_and_mode(svc):
+    # The overlay is grounded unless a semantics is named, and says which it is.
+    g = svc.graph("tweety", labels=True)
+    assert g.labelling == "grounded labelling"
+    sk = svc.graph("tweety", labels=True, semantics="preferred")
+    assert sk.labelling.startswith("preferred, skeptical")
+    cr = svc.graph("tweety", labels=True, semantics="preferred", mode="credulous")
+    assert cr.labelling.startswith("preferred, credulous: labelling ")
+    assert cr.labels[(K("Flies"), "term")] == "IN"
+    with pytest.raises(InvalidRequest, match="credulous needs an issue"):
+        svc.graph("document", labels=True, semantics="preferred", mode="credulous")
+    with pytest.raises(InvalidRequest):
+        svc.graph("tweety", labels=True, semantics="admissible")
+
+
 def test_the_document_graph(svc):
     g = svc.graph("document")
     assert g.graph is svc.session.graph
