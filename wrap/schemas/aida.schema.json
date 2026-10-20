@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "https://aida.example/schemas/aida-1.0.json",
- "title": "AIDA service results, version 1.0",
+ "$id": "https://aida.example/schemas/aida-1.1.json",
+ "title": "AIDA service results, version 1.1",
  "oneOf": [
   {
    "type": "object",
@@ -13,7 +13,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "error"
@@ -30,7 +30,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "graph"
@@ -40,6 +40,10 @@
     },
     "graph": {
      "$ref": "#/$defs/graph"
+    },
+    "labelling": {
+     "description": "Which labelling the graph's labels are (since 1.1): 'grounded labelling', or the semantics, the mode and how the labelling was chosen; null without labels.",
+     "type": ["string", "null"]
     },
     "diagnostics": {
      "$ref": "#/$defs/diagnostics"
@@ -57,7 +61,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "labellings"
@@ -89,7 +93,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "evaluation"
@@ -124,7 +128,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "evaluations"
@@ -148,7 +152,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "term"
@@ -171,7 +175,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "rendering"
@@ -195,7 +199,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "shared"
@@ -218,7 +222,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "tree"
@@ -244,7 +248,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "inventory"
@@ -263,7 +267,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "done"
@@ -283,7 +287,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "report"
@@ -312,7 +316,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.0"
+     "const": "1.1"
     },
     "kind": {
      "const": "import"

@@ -118,3 +118,12 @@ def test_an_error(svc):
         svc.evaluate("nobody")
     out = valid(to_json(e.value))
     assert out["kind"] == "error" and out["code"] == "not_found" and out["stage"] is None
+
+
+def test_a_graph_names_its_labelling(svc):
+    # Since 1.1: the labels of a graph say which labelling they are.
+    plain = valid(to_json(svc.graph("tweety"), svc.session))
+    assert plain["labelling"] is None
+    out = valid(to_json(svc.graph("tweety", labels=True, semantics="preferred", mode="credulous"),
+                        svc.session))
+    assert out["aida"] == "1.1" and out["labelling"].startswith("preferred, credulous")

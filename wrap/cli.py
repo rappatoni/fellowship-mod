@@ -1141,12 +1141,17 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
 
 
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
-                       show: bool = False, whole: bool = False) -> None:
+                       show: bool = False, whole: bool = False, semantics: str = "grounded",
+                       mode: str = "skeptical") -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT
     (wrap/service.py, ``graph``).
 
     Syntax:
-        graph ARG|DEBATE [all] ['FILE.dot'] [show].
+        graph ARG|DEBATE [all] [SEMANTICS] [skeptical|credulous] ["FILE.dot"] [show].
+
+    The labels drawn are the grounded labelling unless a semantics is named;
+    the mode picks one labelling of a semantics that has several (as
+    `evaluate` picks its witness).
 
     With `show`, render the graph and open it in the platform viewer;
     when Graphviz is not installed, print an indented text view instead
@@ -1156,7 +1161,8 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     """
     service = Service.of(prover)
     try:
-        result = service.graph(service.target(name), whole=whole, labels=True)
+        result = service.graph(service.target(name), whole=whole, labels=True,
+                               semantics=semantics, mode=mode)
     except AidaError as e:
         _report(e)
         return
@@ -1197,18 +1203,22 @@ def _show_graph(prover: ProverWrapper, name: str, result, dot_path: Optional[str
     logger.info("  fragment: %s",
                 "acyclic" if graph.is_acyclic() else "cyclic (derivation cycle; labelled like any other)")
     labels = result.labels
+    labelling = getattr(result, "labelling", None)
     if result.labels_unavailable:
         print(f"graph: labels unavailable: {result.labels_unavailable}")
+    elif labelling:
+        logger.info("  labels: %s", labelling)
     may_render = getattr(prover, "render_files", True)
     if dot_path:
         if may_render:
             with open(dot_path, "w") as fh:
-                fh.write(graph.to_dot(labels=labels))
+                fh.write(graph.to_dot(labels=labels, labelling=labelling))
             logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
         else:
             logger.info("File output is off (ACDC_NO_RENDER): not writing %s.", dot_path)
     if show:
-        image = _render_graph_image(graph.to_dot(labels=labels), f"{name}_graph") if may_render else None
+        image = (_render_graph_image(graph.to_dot(labels=labels, labelling=labelling), f"{name}_graph")
+                 if may_render else None)
         if image and _open_file(image):
             logger.info("Graph rendered to %s and opened.", image)
             return
@@ -1219,14 +1229,16 @@ def _show_graph(prover: ProverWrapper, name: str, result, dot_path: Optional[str
         # way the text view is the better thing to have in a log.
         if not may_render:
             logger.info("")
-            logger.info("Debate graph '%s' (file output is off, ACDC_NO_RENDER):", name)
+            logger.info("Debate graph '%s' (file output is off, ACDC_NO_RENDER)%s:", name,
+                        f"; labels: {labelling}" if labels and labelling else "")
             logger.info("")
             for line in graph.to_text(labels=labels).splitlines():
                 logger.info("  %s", line)
             logger.info("")
             return
         logger.info("")
-        logger.info("Debate graph '%s' (install graphviz for a rendered picture):", name)
+        logger.info("Debate graph '%s' (install graphviz for a rendered picture)%s:", name,
+                    f"; labels: {labelling}" if labels and labelling else "")
         logger.info("")
         for line in graph.to_text(labels=labels).splitlines():
             logger.info("  %s", line)

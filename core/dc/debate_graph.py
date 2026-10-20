@@ -21,6 +21,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from functools import lru_cache
 from itertools import count
+from typing import Optional
 
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
@@ -426,9 +427,10 @@ class DebateGraph:
                 out.append(f"  {annotate(statement)}")
         return "\n".join(out)
 
-    def to_dot(self, labels=None, legend: bool = True) -> str:
+    def to_dot(self, labels=None, legend: bool = True, labelling: Optional[str] = None) -> str:
         """Graphviz source.  With ``labels``, nodes are filled by status;
-        with ``legend``, a box explains the symbols the drawing uses."""
+        with ``legend``, a box explains the symbols the drawing uses, and
+        ``labelling`` (which labelling ``labels`` is) heads its table."""
         fill = _DOT_FILL
         lines = ["digraph debate {", "  rankdir=BT;",
                  '  node [shape=box, style="rounded,filled", fillcolor=white];']
@@ -489,11 +491,11 @@ class DebateGraph:
             if not edge.sources:
                 lines.append(f"  {ids[edge.target_key]} [peripheries=2];")
         if legend and (self.nodes or self.edges):
-            lines.extend(self._dot_legend(labels))
+            lines.extend(self._dot_legend(labels, labelling))
         lines.append("}")
         return "\n".join(lines)
 
-    def _dot_legend(self, labels=None) -> list:
+    def _dot_legend(self, labels=None, labelling: Optional[str] = None) -> list:
         """A cluster explaining the symbols ``to_dot`` drew for this graph,
         and only those: a sample of every edge style in use, drawn as the
         edges are, and the node markings with their meaning."""
@@ -545,6 +547,10 @@ class DebateGraph:
             rows.append(f'<TR><TD ALIGN="LEFT"><B>[{mark}]</B></TD>'
                         f'<TD ALIGN="LEFT">{meaning.get(mark, mark)}</TD></TR>')
         if labels:
+            if labelling:
+                from html import escape
+                rows.insert(0, f'<TR><TD ALIGN="LEFT"><B>labels</B></TD>'
+                               f'<TD ALIGN="LEFT">{escape(labelling)}</TD></TR>')
             rows.append('<TR><TD ALIGN="LEFT"><B>t=, c=</B></TD><TD ALIGN="LEFT">'
                         'the label of the term side, the context side</TD></TR>')
             for status, colour in _DOT_FILL.items():

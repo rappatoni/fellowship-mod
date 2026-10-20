@@ -231,7 +231,7 @@ next command is not refused for an open proof.
 ** Definition
 
 =wrap.serialize.to_json(result, session)= turns any result, error or
-report into a versioned *envelope* ={"aida": "1.0", "kind": ...}=, described
+report into a versioned *envelope* ={"aida": "1.1", "kind": ...}=, described
 by =wrap/schemas/aida.schema.json= (JSON Schema 2020-12). The pieces:
 
 - a *statement* is ={prop, side, key}=: the displayed proposition, =term=
@@ -255,7 +255,7 @@ UNDEC); colours are the editor's.
 The evaluation of =tweety=:
 
 #+begin_example
-{"aida": "1.0", "kind": "evaluation", "verdict": "value", "mode": "skeptical", "semantics": "preferred"}
+{"aida": "1.1", "kind": "evaluation", "verdict": "value", "mode": "skeptical", "semantics": "preferred"}
 sigma: [{"prop": "Bird", "side": "term", "key": "S:Bird", "label": "IN"},
         {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"}, ...]
 normal form: μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
@@ -279,7 +279,7 @@ An edge of its graph, linked to its argument's block in the text:
 And an error:
 
 #+begin_example
-{"aida": "1.0", "kind": "error", "code": "not_found", "stage": null,
+{"aida": "1.1", "kind": "error", "code": "not_found", "stage": null,
  "message": "Argument 'nobody' not found.", "span": null, "cause": null, "diagnostics": []}
 #+end_example
 

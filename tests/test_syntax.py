@@ -44,7 +44,11 @@ def test_comments_stop_and_incomplete():
     ("Lemma foo : (A)", "statement", {"keyword": "lemma", "name": "foo", "conclusion": "A", "anti": False}),
     ("prove foo", "refine", {"verb": "prove", "name": "foo"}),
     ("rebut b a", "move", {"verb": "rebut", "argument": "b", "target": "a"}),
-    ('graph d all "out.dot" show', "graph", {"target": "d", "whole": True, "show": True, "dot_path": "out.dot"}),
+    ('graph d all "out.dot" show', "graph", {"target": "d", "whole": True, "show": True, "dot_path": "out.dot",
+                                              "semantics": "grounded", "mode": "skeptical"}),
+    ("graph issue :P preferred credulous", "graph",
+     {"target": "issue :P", "whole": False, "show": False, "dot_path": None,
+      "semantics": "preferred", "mode": "credulous"}),
     ("evaluate issue :B credulous all", "evaluate",
      {"target": "issue :B", "mode": "credulous", "semantics": "preferred", "base": "cbn",
       "witness": "all", "favour": False}),
@@ -65,6 +69,8 @@ def test_commands(text, kind, args):
     ("register t : B := μx:B", "double-quote the proof term"),
     ("evaluate a sceptical", "unknown option"),
     ("evaluate a 2", "requires credulous"),
+    ("graph a preferd", "a file name is double-quoted"),
+    ("graph a preferred stable", "one semantics"),
     ("tactic pop", "`tactic` is gone"),
 ])
 def test_old_and_wrong_forms_name_their_fix(text, hint):

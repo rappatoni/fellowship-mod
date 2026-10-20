@@ -127,7 +127,7 @@ def test_lesson5_json(prover, svc):
     out = to_json(svc.evaluate(svc.target("tweety")), prover)
     jsonschema.validate(out, SCHEMA)
     assert (out["aida"], out["kind"], out["verdict"], out["mode"], out["semantics"]) == (
-        "1.0", "evaluation", "value", "skeptical", "preferred")
+        "1.1", "evaluation", "value", "skeptical", "preferred")
     assert out["sigma"][:2] == [
         {"prop": "Bird", "side": "term", "key": "S:Bird", "label": "IN"},
         {"prop": "Flies", "side": "term", "key": "S:Flies", "label": "IN"}]
@@ -155,6 +155,6 @@ def test_lesson5_error(svc):
     with pytest.raises(AidaError) as err:
         svc.evaluate(svc.target("nobody"))
     assert to_json(err.value) == {
-        "aida": "1.0", "kind": "error", "code": "not_found", "stage": None,
+        "aida": "1.1", "kind": "error", "code": "not_found", "stage": None,
         "message": "Argument 'nobody' not found.", "span": None, "cause": None,
         "diagnostics": []}

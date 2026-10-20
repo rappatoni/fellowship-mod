@@ -328,6 +328,14 @@ class TestDocument:
         assert "attacker" not in legend and "[c:o]" not in legend
         assert dot.count("{") == dot.count("}")
 
+    def test_dot_legend_names_the_labelling(self):
+        from core.comp.adf_label import grounded_labels
+        g = compile_debate(parg_body(Deleg("1", "Q")), "pArg", strict_names=STRICT)
+        dot = g.to_dot(labels=grounded_labels(g), labelling="preferred, skeptical: <its only labelling>")
+        legend = dot[dot.index("subgraph cluster_legend"):]
+        assert "<B>labels</B>" in legend and "preferred, skeptical: &lt;its only labelling&gt;" in legend
+        assert "<B>labels</B>" not in g.to_dot(labelling="grounded labelling")   # no labels drawn
+
     def test_dot_export_without_legend(self):
         g = compile_debate(parg_body(Goal("1", "Q")), "pArg", strict_names=STRICT)
         dot = g.to_dot(legend=False)

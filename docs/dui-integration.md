@@ -81,7 +81,7 @@ report = svc.check(text)
 `to_json(report, session)` (`wrap/serialize.py`) gives:
 
 ```json
-{"aida": "1.0", "kind": "report", "ok": false, "seconds": 0.09,
+{"aida": "1.1", "kind": "report", "ok": false, "seconds": 0.09,
  "entries": [
    {"span": {"line": 44, "col": 1, "end_line": 44, "end_col": 24},
     "text": "rebut photo penguin", "command": "move", "status": "refused",
@@ -171,10 +171,17 @@ then be shown against the s(CASP) source.
 
 ## JSON formats
 
-Every object is a versioned envelope `{"aida": "1.0", "kind": ...}`,
+Every object is a versioned envelope `{"aida": "1.1", "kind": ...}`,
 described by `wrap/schemas/aida.schema.json` (JSON Schema 2020-12). The
 version follows semver: additions raise the minor version, changes the
 major one.
+
+- 1.1 (2026-10-20): a `graph` result names the labelling its labels are,
+  `labelling` (a string, or null without labels): `"grounded
+  labelling"`, or the semantics and mode asked for and how the labelling
+  was chosen (`Service.graph(..., semantics=, mode=)`; `graph ... preferred
+  credulous` in the CLI).
+- 1.0: the first version.
 
 ## Known limits
 

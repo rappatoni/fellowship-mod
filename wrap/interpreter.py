@@ -242,7 +242,8 @@ class Interpreter:
         svc = self.service
         try:
             if c.kind == "graph":
-                result = svc.graph(svc.target(c["target"]), whole=c["whole"], labels=True)
+                result = svc.graph(svc.target(c["target"]), whole=c["whole"], labels=True,
+                                   semantics=c["semantics"], mode=c["mode"])
             elif c.kind == "label":
                 result = svc.label(svc.target(c["target"]), c["semantics"])
             elif c.kind == "evaluate":

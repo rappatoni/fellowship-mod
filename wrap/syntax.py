@@ -337,7 +337,8 @@ def _eval_options(verb, rest_words):
 
 def _p_query(verb):
     usage = {
-        "graph": 'Use: graph ARG|DEBATE|issue :X|X:|document [all] ["FILE.dot"] [show].',
+        "graph": ('Use: graph ARG|DEBATE|issue :X|X:|document [all] '
+                  '[grounded|complete|preferred|stable] [skeptical|credulous] ["FILE.dot"] [show].'),
         "label": "Use: label ARG|DEBATE|issue :X|X: [grounded|complete|preferred|stable].",
         "evaluate": "Use: evaluate ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",
         "explain": "Use: explain ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",
@@ -349,9 +350,24 @@ def _p_query(verb):
         target, more = _target(words, usage)
         args: Dict[str, Any] = {"target": target}
         if verb == "graph":
-            path = next((o for o in more if o not in ("show", "all")), None)
+            # The labelling drawn: grounded unless a semantics is named; a
+            # mode picks one labelling of a semantics that has several.  A
+            # file name is double-quoted, so any other word is refused
+            # rather than taken for a file.
+            semantics = [o for o in more if o in ("grounded", "complete", "preferred", "stable")]
+            modes = [o for o in more if o in ("skeptical", "credulous")]
+            paths = [o for o in more if o.startswith('"')]
+            unknown = [o for o in more if o not in ("show", "all") and o not in semantics
+                       and o not in modes and o not in paths]
+            if unknown:
+                raise SyntaxRefused(f"graph: unknown option(s) {' '.join(unknown)}; a file name is "
+                                    f'double-quoted ("FILE.dot"). {usage}')
+            if len(semantics) > 1 or len(modes) > 1 or len(paths) > 1:
+                raise SyntaxRefused(f"graph: one semantics, one mode and one file at most. {usage}")
             args.update(whole="all" in more, show="show" in more,
-                        dot_path=unquote(path) if path else None)
+                        dot_path=unquote(paths[0]) if paths else None,
+                        semantics=semantics[0] if semantics else "grounded",
+                        mode=modes[0] if modes else "skeptical")
         elif verb == "label":
             if len(more) > 1 or (more and more[0] not in ("grounded", "complete", "preferred", "stable")):
                 raise SyntaxRefused(f"label: unknown option(s) {' '.join(more)}")

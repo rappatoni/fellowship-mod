@@ -252,8 +252,9 @@ class GraphResult:
     graph: DebateGraph
     term: Any = None
     whole: bool = False                       # a debate's whole scope
-    labels: Optional[Dict] = None             # the grounded overlay
+    labels: Optional[Dict] = None             # the labelling drawn over the graph
     labels_unavailable: Optional[str] = None  # why there is none
+    labelling: Optional[str] = None           # which labelling ``labels`` is
     diagnostics: List[Diagnostic] = field(default_factory=list)
 
 
@@ -1013,18 +1014,26 @@ class Service:
                            "of refutation, so neither side holds it.", names)
 
     @_operation
-    def graph(self, target, *, whole: bool = False, labels: bool = False) -> GraphResult:
+    def graph(self, target, *, whole: bool = False, labels: bool = False,
+              semantics: str = "grounded", mode: str = "skeptical") -> GraphResult:
         """The debate graph of ``target``: the issue's, compiled from the
         shared debate (one instance of a sub-debate at a time) or from the
         unfolded term; ``document``: the document graph itself; with
-        ``whole``, a debate's whole scope.  ``labels`` adds the grounded
-        overlay (None, with the reason, if adf-bdd is missing)."""
+        ``whole``, a debate's whole scope.  ``labels`` adds a labelling of
+        ``semantics`` as an overlay (None, with the reason, if adf-bdd is
+        missing or the semantics has no labelling), chosen as `evaluate`
+        chooses its witness: skeptical, the statement-wise intersection of
+        the labellings; credulous, the first that accepts the issue (else
+        the grounded one).  ``labelling`` says which it is."""
+        if semantics not in SEMANTICS or mode not in MODES:
+            raise InvalidRequest(f"graph: semantics {SEMANTICS}, mode {MODES}")
         from core.dc.instances import IssueResolver
         from core.dc.strict import compile_issue, document_issue_graph, issue_strict_edges
         from core.comp.evaluate import _shared_issue_graph
         s = self.session
         target = self._as_target(target)
         name = target.text
+        issue = None                               # the statement a credulous overlay accepts
         if whole:
             if target.kind != "debate":
                 raise InvalidRequest(f"graph: 'all' is for debates; '{name}' is not one.")
@@ -1035,7 +1044,7 @@ class Service:
             result = GraphResult(target, None, None, s.graph)
         else:
             found = self.issue_term(target, want_term=s.pipeline_unfolded)
-            term, shared = found.term, found.shared
+            term, shared, issue = found.term, found.shared, found.issue
             if s.pipeline_unfolded:
                 shared = None                      # `pipeline unfolded`: the reference path
             options = dict(strict_names=s.declarations.keys(),
@@ -1076,15 +1085,41 @@ class Service:
             self._remember_strict_edges(graph, name)
             result = GraphResult(target, found.argument, found.debate, graph, term)
         if labels:
-            from core.comp.adf_label import grounded_labels
+            if mode == "credulous" and semantics != "grounded" and issue is None:
+                raise InvalidRequest("graph: credulous needs an issue to accept; "
+                                     f"'{name}' has none here (use skeptical).")
             try:
-                result.labels = grounded_labels(result.graph)
+                result.labels, result.labelling = self._overlay(result.graph, semantics, mode, issue)
+                if result.labels is None:
+                    result.labels_unavailable = result.labelling
             except AdfBddNotFound as e:
                 # The graph needs no labeller; labels are an overlay.  But
                 # say loudly why they are missing - there is no fallback.
                 logger.warning("Labels unavailable for the graph view: %s", e)
                 result.labels_unavailable = str(e)
         return result
+
+    @staticmethod
+    def _overlay(graph, semantics: str, mode: str, issue):
+        """The labelling drawn over a graph, and its description."""
+        from core.comp.adf_label import grounded_labels, intersection_labelling, labellings
+        if semantics == "grounded":
+            return grounded_labels(graph), "grounded labelling"
+        found = labellings(graph, semantics)
+        if not found:
+            return None, f"no {semantics} labelling exists"
+        if mode == "skeptical":
+            if len(found) == 1:
+                return found[0], f"{semantics}, skeptical: its only labelling"
+            return (intersection_labelling(found),
+                    f"{semantics}, skeptical: the statement-wise intersection of its "
+                    f"{len(found)} labellings (UNDEC where they differ)")
+        for number, labels in enumerate(found, 1):
+            if labels.get(issue) == "IN":
+                return labels, (f"{semantics}, credulous: labelling {number} of {len(found)}, "
+                                f"the first that accepts the issue")
+        return (grounded_labels(graph),
+                f"grounded labelling: no {semantics} labelling accepts the issue (credulous fallback)")
 
     @_operation
     def label(self, target, semantics: str = "grounded") -> LabelResult:
