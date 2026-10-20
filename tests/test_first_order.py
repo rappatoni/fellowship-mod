@@ -6,9 +6,11 @@ design decided by the author 2026-10-16).
 - A presumed rule stands or falls as one statement: an instantiation
   ``t * c`` is a spine step, never an attack point, so no instance node
   appears (Q4).
-- Only a statement can be presumed or owed: an open site under a
-  first-order binder is refused (Q2), and a horn whose statement mentions
-  such a variable is not exposed.  Every node is closed.
+- An owed open site under a first-order binder is a referent statement:
+  its bound variables become discourse referents (tasks.org,
+  aida-discourse-referents; before, Q2 refused it).  A presumed one is
+  still refused.  A horn that mentions such a variable is not exposed.
+  Every node is closed up to referents.
 - Two strict rules (Q5): <lambda x.t || u * e> -> <t[u/x] || e> and
   <(u, v) || (y).e> -> <v || e[u/y]>.
 
@@ -94,27 +96,39 @@ class TestTheGraph:
         finally:
             prover.close()
 
-    @pytest.mark.parametrize("name", FIXTURES)
-    def test_every_node_is_closed(self, name):
-        """No node mentions a first-order variable: its free names are all
-        declared constants (the lemma mu w:Wings x is not exposed)."""
+    @pytest.mark.parametrize("name", FIXTURES + ["birds_fly_open"])
+    def test_every_node_is_closed_up_to_referents(self, name):
+        """No node mentions a first-order variable: its free names are
+        declared constants or discourse referents (the lemma mu w:Wings x
+        is not exposed)."""
         prover, _svc, _report = session(name)
         try:
             for key in prover.graph.nodes:
                 prop = prover.graph.nodes[key]
-                assert set(Prop.parse(prop).free_vars()) <= set(prover.declarations), prop
+                names = {n for n in Prop.parse(prop).free_vars() if not n.startswith("?")}
+                assert names <= set(prover.declarations), prop
         finally:
             prover.close()
 
-    def test_an_open_site_is_refused_with_the_remedy(self):
+    def test_an_owed_open_site_is_a_referent_statement(self):
+        """birds_fly_open owes Wings x under forall x: the referent
+        statement Wings ?x, which an argument stating it would fill."""
         prover, _svc, report = session("birds_fly_open")
+        try:
+            assert report.ok
+            assert ("Wings ?x[t]", "obligation") in edges(prover)["birds_fly"][1]
+        finally:
+            prover.close()
+
+    def test_a_presumed_open_site_is_refused_with_the_remedy(self):
+        prover, _svc, report = session("birds_fly_presumed_open")
         try:
             dixi, = [e for e in report.entries if e.kind == "dixi"]
             message = " ".join(d.message for d in dixi.diagnostics)
             assert "not added to the document graph" in message
-            assert "owes 'Wings x', which mentions x, bound by the argument" in message
-            assert "presume or owe a closed one" in message
-            assert prover.graph.edges == [] or "birds_fly" not in edges(prover)
+            assert "presumes 'Wings x', which mentions x, bound by the argument" in message
+            assert "presume a closed one" in message
+            assert "birds_fly" not in edges(prover)
         finally:
             prover.close()
 

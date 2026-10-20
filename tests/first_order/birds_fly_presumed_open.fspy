@@ -1,0 +1,18 @@
+# The same argument presuming the open formula Wings x under the binder:
+# refused at registration - only a closed statement can be presumed (a
+# referent presumption is deferred: tasks.org, aida-discourse-referents, (d)).
+lk.
+declare Animal : type.
+declare Bird, Wings, Flies : Animal -> bool.
+declare wf : (forall x:Animal, Wings [x] -> Flies [x]).
+argument birds_fly : (forall x:Animal, Bird [x] -> Flies [x]).
+elim.
+elim b.
+cut (forall x:Animal, Wings [x] -> Flies [x]) r.
+axiom wf.
+elim [x].
+elim.
+by default.
+next.
+axiom r.
+dixi.

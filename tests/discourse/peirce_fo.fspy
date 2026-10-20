@@ -1,5 +1,8 @@
-# First-order Peirce: the same debate under forall z. a's site is
-# Dr z -> false, which mentions the bound z: an open site, refused.
+# First-order Peirce as a debate (tasks.org, aida-discourse-referents).
+# a asks, under forall z, for Dr z -> false, owed under Dr z's
+# continuation g: the open site is the referent statement Dr ?z -> false.
+# sup states it for the referent ?x; filling a's site, ?x stands for z,
+# and sup's own presumed site (Dr ?x)⊥, now (Dr z)⊥, is captured by g.
 lk.
 declare Pub : type.
 declare Dr : Pub -> bool.
@@ -11,4 +14,10 @@ axiom f.
 elim.
 next.
 axiom g.
+dixi.
+argument sup : (Dr [?x] -> false).
+elim p.
+cut (Dr [?x]) m.
+axiom p.
+by default.
 dixi.

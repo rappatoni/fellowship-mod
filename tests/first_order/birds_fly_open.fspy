@@ -1,5 +1,6 @@
-# The same argument owing the open formula Wings x under the binder:
-# refused at registration (Q2) - only a statement can be owed.
+# The same argument owing the open formula Wings x under the binder: it
+# owes the referent statement Wings ?x, which an argument stating it
+# fills (tasks.org, aida-discourse-referents; before, Q2 refused it).
 lk.
 declare Animal : type.
 declare Bird, Wings, Flies : Animal -> bool.

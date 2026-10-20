@@ -28,8 +28,9 @@ from core.ac.ast import (
     LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
     first_order_node, FirstOrderNotSupported,
 )
+from core.ac import referents
 from core.ac.prop import (
-    Prop, PTrue, PFalse, PSym, PApp, PNeg, PBin, PQuant, BinOp, PropError,
+    Prop, PTrue, PFalse, PSym, PApp, PNeg, PBin, PQuant, BinOp, PropError, TSym,
 )
 from core.logging_util import TRACE, artifact
 from core.dc.discipline import free_variables, _is_negation_wrapper, _occurrences
@@ -1033,6 +1034,16 @@ def _fo_mentions(body) -> dict:
     return mentions
 
 
+def _referent_form(prop, bound) -> str:
+    """``prop`` with each first-order variable of ``bound`` it mentions
+    made the referent of that name: ``Dr z -> false`` under ``forall z``
+    is the referent statement ``Dr ?z -> false``."""
+    parsed = Prop.parse(prop)
+    for var in sorted(bound):
+        parsed = parsed.subst(var, TSym(referents.constant(var)))
+    return str(parsed)
+
+
 def _open_in(prop, bound) -> frozenset:
     """The first-order variables of ``bound`` that ``prop`` mentions: a
     statement mentioning one is open - it is no statement at all outside
@@ -1262,18 +1273,26 @@ class _Compiler:
                             f"Edge '{name}': open site {node.number!r} has no "
                             f"proposition; run enrichment first."
                         )
-                    bound = _open_in(node.prop, fo_scope.get(id(node)))
-                    if bound:
-                        # Only a statement can be presumed or owed, not an
-                        # open formula (the author, 2026-10-16).
+                    prop = node.prop
+                    bound = _open_in(prop, fo_scope.get(id(node)))
+                    if bound and kind == "presumption":
+                        # Presuming an open formula would be a referent
+                        # presumption, deferred (tasks.org,
+                        # aida-discourse-referents, (d)).
                         shown = ", ".join(sorted(bound))
                         raise DebateCompileError(
-                            f"Edge '{name}': it {'presumes' if kind == 'presumption' else 'owes'} "
-                            f"'{node.prop}', which mentions {shown}, bound by the argument; "
-                            f"only a statement can be presumed or owed - presume or owe a "
-                            f"closed one (for instance 'forall {shown}, ...', or whatever "
-                            f"proves it) and instantiate it.")
-                    return _Acc((Source(self.graph.add_node(node.prop), lside, kind,
+                            f"Edge '{name}': it presumes '{prop}', which mentions {shown}, "
+                            f"bound by the argument; only a closed statement can be presumed - "
+                            f"presume a closed one (for instance 'forall {shown}, ...') and "
+                            f"instantiate it.")
+                    if bound:
+                        # An owed open formula is a referent statement: the
+                        # variables bound by the argument become referents,
+                        # and an argument stating it fills the site, its
+                        # referents standing for them (tasks.org,
+                        # aida-discourse-referents).
+                        prop = _referent_form(prop, bound)
+                    return _Acc((Source(self.graph.add_node(prop), lside, kind,
                                         str(node.number), scope,
                                         getattr(node, "label", None)),))
             if isinstance(node, (ID, DI)):
