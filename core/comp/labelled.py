@@ -92,7 +92,9 @@ def statement_of(node):
     prop = _prop_of(node)
     if not prop:
         return None
-    key = _key(prop)
+    # a proposition in context (tasks.org, aida-discourse-referents) is the
+    # statement in that context; the cache would answer the plain one
+    key = canonical_prop(prop) if getattr(prop, "scope", None) else _key(prop)
     return None if key is None else (key, side)
 
 

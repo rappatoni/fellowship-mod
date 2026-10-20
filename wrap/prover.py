@@ -843,7 +843,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         try:
             return compile_debate(argument.body, argument.name,
                                   strict_names=self.declarations.keys(),
-                                  strict_kinds=declaration_kinds(self.declarations))
+                                  strict_kinds=declaration_kinds(self.declarations),
+                                  env=tuple(getattr(argument, "referent_env", None) or ()))
         except (DebateCompileError, FirstOrderNotSupported) as e:
             logger.warning("Argument '%s' not added to %s: %s", argument.name, into, e)
             return None
@@ -908,6 +909,13 @@ TODO: Mechanism to declare a scenario of default assumptions.
     def issue_of(argument: Any):
         """The statement an argument (or debate) is about."""
         side = "context" if getattr(argument, "is_anti", False) else "term"
+        env = getattr(argument, "referent_env", None)
+        if env:
+            # the statement in the argument's referent environment, the
+            # import (tasks.org, aida-discourse-referents)
+            from core.ac.referents import InContext
+            return (canonical_prop(InContext(argument.conclusion,
+                                             tuple((n, str(s)) for n, s in env))), side)
         return (canonical_prop(argument.conclusion), side)
 
     def anon_name(self, statement) -> str:

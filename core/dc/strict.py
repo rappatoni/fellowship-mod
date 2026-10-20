@@ -509,6 +509,10 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
             graph.defaults.setdefault((key, side), set()).update(kinds)
     for key, side in graph.statements():
         graph.nodes.setdefault(key, source.nodes.get(key, key))
+        if key in source.contexts:
+            graph.contexts.setdefault(key, source.contexts[key])
+    graph.referent_envs.update(source.referent_envs)
+    graph.has_contexts = source.has_contexts
     graph.quiet = False
     for edge in strict_edges:
         graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))

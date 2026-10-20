@@ -899,14 +899,20 @@ class Service:
         # instantiated where a referent statement is unfolded, which the
         # shared form does not do yet: such a debate is type-checked whole
         # on the unfolded route, and refused on the shared one.
-        referents = any("r#" in key for key, _side in document.reachable(issue))
+        reached = document.reachable(issue)
+        referents = any("r#" in key for key, _side in reached)
+        # A statement in a context (a site under a first-order binder) is
+        # reached by weakening, which only the unfolded route follows:
+        # such a debate is evaluated from its unfolded term on either
+        # pipeline (tasks.org, aida-discourse-referents).
+        contexts = any(key.startswith("[") for key, _side in reached)
         if referents and not s.pipeline_unfolded:
             raise UnfoldRefused(
                 f"the debate about '{document.nodes.get(issue[0], issue[0])}' reaches a statement "
                 f"with a discourse referent, which only the unfolded route instantiates: use "
                 f"`pipeline unfolded.`", stage="graph")
         try:
-            if referents:
+            if referents or contexts:
                 shared = None
             elif s.pipeline_unfolded:
                 # Built for the per-definition type check only: the term
@@ -954,8 +960,11 @@ class Service:
                         "typecheck: the expanded term is replayed, since the debate spells %s "
                         "in more than one way", ", ".join(sorted(clashes)))
                 if expanded_check:
+                    scope = document.contexts.get(issue[0]) or ()
+                    env = ", ".join(f"{n}:{srt}" for n, srt in scope
+                                    if n.startswith("?") and srt) or None
                     typecheck(s, term, check_name, document.nodes.get(issue[0], issue[0]),
-                              issue[1] == "context")
+                              issue[1] == "context", referents=env)
                 else:
                     # One replay per sub-debate instead of one of the whole
                     # unfolded term (tasks.org, aida-shared-subarguments, stage 2).

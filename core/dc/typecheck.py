@@ -44,7 +44,8 @@ def shape(node) -> tuple:
 
     def prop(p):
         try:
-            return canonical_prop(p) if p else None
+            # the spelling, not the context a proposition stands in
+            return canonical_prop(str(p)) if p else None
         except Exception:
             return p
 
@@ -115,10 +116,13 @@ def _path_text(path) -> str:
     return "/".join(str(p) for p in path) or "the root"
 
 
-def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool) -> ProofTerm:
+def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool,
+              referents: str = None) -> ProofTerm:
     """Replay ``term`` through Fellowship as a theorem (antitheorem if
-    ``is_anti``) for ``conclusion``.  Returns the proof term Fellowship
-    reconstructs; raises TypeCheckFailed otherwise."""
+    ``is_anti``) for ``conclusion``, in the referent environment
+    ``referents`` (``?x:Pub, ...``) if the debate is about a statement in
+    one.  Returns the proof term Fellowship reconstructs; raises
+    TypeCheckFailed otherwise."""
     import warnings
     # The replay is a check, not a step to narrate: silence the loggers that
     # would otherwise narrate it.  core.comp.enrich is here because its ~40
@@ -142,7 +146,8 @@ def typecheck(prover, term: ProofTerm, name: str, conclusion: str, is_anti: bool
     if logger.isEnabledFor(TRACE):
         for i, instruction in enumerate(instructions, 1):
             logger.log(TRACE, "  typecheck: [%d] %s", i, instruction)
-    check = Argument(prover, f"typecheck_{name}", conclusion, instructions, is_anti=is_anti)
+    check = Argument(prover, f"typecheck_{name}", conclusion, instructions, is_anti=is_anti,
+                     referents=referents)
     levels = [lg.level for lg in quiet]
     for lg in quiet:
         lg.setLevel(logging.WARNING)

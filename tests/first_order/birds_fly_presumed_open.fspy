@@ -1,6 +1,7 @@
 # The same argument presuming the open formula Wings x under the binder:
-# refused at registration - only a closed statement can be presumed (a
-# referent presumption is deferred: tasks.org, aida-discourse-referents, (d)).
+# since 2026-10-20 a presumption in its context, [?x:Animal] |- Wings ?x
+# (tasks.org, aida-discourse-referents); what a counter-instance does to it
+# is the follow-up (b)/(d).
 lk.
 declare Animal : type.
 declare Bird, Wings, Flies : Animal -> bool.

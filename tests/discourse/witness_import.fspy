@@ -1,0 +1,18 @@
+# A witness-only referent (tasks.org, aida-discourse-referents, decisions
+# of 2026-10-20). a leaves exists x, Q x open under y, with h : Q y in
+# scope: the site exports its context, [?y:Pub] |- exists x:Pub, Q x.
+# w imports a witness ?x through its environment - its conclusion does not
+# state it - proves the existential with it and owes Q ?x. At a's use ?x
+# stands for y, and h captures Q y.
+lk.
+# Referents are instantiated on the unfolded route only, for now.
+pipeline unfolded.
+declare Pub : type.
+declare Q : Pub -> bool.
+argument a : (forall y:Pub, Q [y] -> (exists x:Pub, Q [x])).
+elim y.
+elim h.
+dixi.
+argument w : [?x:Pub] (exists x:Pub, Q [x]).
+elim [?x].
+dixi.

@@ -264,16 +264,22 @@ def test_a_document_check_reports_every_command(svc):
     assert evaluation["span"]["line"] == 46 and evaluation["result"]["verdict"] == "open"
 
 
-def test_a_dropped_argument_is_marked_on_its_own_entry(svc):
+def test_a_dropped_argument_is_marked_on_its_own_entry(svc, monkeypatch):
     """tasks.org, aida-check-dropped-argument: an argument Fellowship
-    accepts but the document graph cannot take (here one that presumes an
-    open formula) carries the warning on its `dixi` entry, not only on the
-    report."""
-    from pathlib import Path
-    text = (Path(__file__).parent / "first_order" / "birds_fly_presumed_open.fspy").read_text()
+    accepts but the document graph cannot take carries the warning on its
+    `dixi` entry, not only on the report.  (The presumed open formula that
+    used to be dropped is a presumption in its context since 2026-10-20;
+    the refusal is forced here.)"""
+    import wrap.prover
+    from core.dc.debate_graph import DebateCompileError
+
+    def refuse(body, name, **kw):
+        raise DebateCompileError(f"Edge '{name}': refused for the test.")
+
+    monkeypatch.setattr(wrap.prover, "compile_debate", refuse)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        report = svc.check(text)
+        report = svc.check("lk.\ndeclare A : bool.\nargument a : (A -> A).\nelim h.\naxiom h.\ndixi.\n")
     dixi = [e for e in report.entries if e.kind == "dixi"]
     assert len(dixi) == 1 and dixi[0].status == "ok"
     assert any(d.level == "warning" and "not added to the document graph" in d.message

@@ -4,8 +4,8 @@ A referent ``?x`` is a pseudo-constant local to an argument: Fellowship
 holds it in the argument's goal environment (given as ``[?x:Pub]`` or
 collected from the statement), never in the signature, and refuses ``qed``
 on a theorem that has one - no referent is ever registered on the prover
-side.  AIDA, for now, also refuses a referent the conclusion does not
-state (deferred by design).
+side.  A referent the conclusion does not state is imported by an
+explicit environment (a witness-only referent).
 """
 
 import re
@@ -150,9 +150,10 @@ def test_qed_on_an_argument_with_a_referent_is_refused_by_fellowship():
         prover.close()
 
 
-def test_a_referent_the_conclusion_does_not_state_is_refused():
-    """Deferred (the author, 2026-10-20): a referent outside the conclusion
-    would be caught by a capture, not by the statement."""
+def test_a_witness_only_referent_is_imported_through_the_environment():
+    """Lifted 2026-10-20: a referent the conclusion does not state is
+    imported by the explicit environment, and the argument's node is its
+    statement in that context."""
     text = HEAD + """argument w : [?x:Pub] (exists y:Pub, Dr [y] -> Dr [y]).
 elim [?x].
 elim p.
@@ -161,10 +162,11 @@ dixi.
 """
     prover, _svc, report = session(text)
     try:
-        closing = entry(report, "dixi")
-        assert closing.status in ("refused", "error")
-        assert "does not state it" in closing.message
-        assert "w" not in prover.arguments
+        assert entry(report, "dixi").status == "ok", entry(report, "dixi").message
+        assert prover.arguments["w"].referent_env == [("?x", "Pub")]
+        edge = [e for e in prover.graph.edges if e.name == "w"][0]
+        assert edge.target_key.startswith("[Pub]⊢")
+        assert prover.graph.shown(edge.target_key).startswith("[?x:Pub] ⊢ exists y:Pub")
     finally:
         prover.close()
 
@@ -276,7 +278,7 @@ def test_the_drinker_is_a_debate_that_presumes_nothing_classical():
         cls, nf = evaluated(svc, "a")
         assert cls == "value"
         # (c, λh. λy. μk.<(y, λd. μm.<d || k>) || a>), up to names
-        assert nf.startswith("μalt5:exists x:Pub,Dr x->(forall y:Pub,Dr y).<(c,λ")
+        assert re.match(r"μ\w+:exists x:Pub,Dr x->\(forall y:Pub,Dr y\)\.<\(c,λh:Dr c\.λy:Pub\.μ", nf), nf
         assert ".<(y,λ" in nf and not referents_in(nf)
     finally:
         prover.close()
@@ -381,8 +383,12 @@ def test_a_horn_using_an_unstated_referent_is_no_horn():
         lemma = [e for e in prover.graph.edges if e.name == "sup.λ1"][0]
         against = [e for e in prover.graph.edges
                    if e.target_key == lemma.target_key and e.target_side == "context"]
-        assert against == []                    # k presumes it: a default marker
-        assert "presumption" in prover.graph.defaults[(lemma.target_key, "context")]
+        # the lemma is stated in sup's context [?x]; k presumes it false in
+        # none, which bears on it by weakening (a default marker on the
+        # plain statement)
+        assert [e.role for e in against] == ["weakening"]
+        plain_key = against[0].sources[0].key
+        assert "presumption" in prover.graph.defaults[(plain_key, "context")]
     finally:
         prover.close()
 
@@ -402,5 +408,97 @@ dixi.
         assert any(e.name == "c" and e.target_side == "context" and "r#" in e.target_key
                    for e in graph.edges)
         assert evaluated(svc, "a")[0] == "value"     # c owes false's context: it fails
+    finally:
+        prover.close()
+
+
+# -- export, import and weakening, step 5b -----------------------------------------
+
+def test_a_witness_only_referent_is_lined_up_with_the_context():
+    """a leaves exists x, Q x open under y with h : Q y; w imports ?x and
+    owes Q ?x: at a's use ?x stands for y and h captures Q y - the
+    intuitionistic proof, a value."""
+    prover, svc, report = session((DISCOURSE / "witness_import.fspy").read_text())
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "a")
+        assert cls == "value"
+        assert re.search(r"λy:Pub\.λh:Q y\.μw:exists x:Pub,Q x\.<\(y,h:Q y\)\|\|w", nf), nf
+        issue = svc.issue_term(svc.target("a"), want_term=False).issue
+        assert svc.label(svc.target("a")).labellings[0][issue] == "IN"
+        a, = [e for e in prover.graph.edges if e.name == "a"]
+        assert [prover.graph.shown(s.key) for s in a.sources] == [
+            "[?y:Pub] ⊢ exists x:Pub,Q x"]
+        # w alone owes its witness
+        assert evaluated(svc, "w")[0] == "open"
+    finally:
+        prover.close()
+
+
+def test_a_supporter_is_used_once_per_lineup_innermost_on_top():
+    prover, svc, report = session((DISCOURSE / "witness_two.fspy").read_text())
+    try:
+        assert report.ok
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
+        assert "μw:exists x:Pub,Q x.<(z,hz:Q z)" in term
+        assert "μw_2:exists x:Pub,Q x.<(y,hy:Q y)" in term
+        assert term.index("(z,hz") < term.index("(y,hy")      # y's use outermost: on top
+        cls, nf = evaluated(svc, "a")
+        assert cls == "value" and "(y,hy:Q y)" in nf
+        roles = [e.role for e in prover.graph.edges]
+        assert "weakening" in roles                            # [?x] to [?z, ?y]
+    finally:
+        prover.close()
+
+
+def test_a_witness_of_another_sort_does_not_line_up():
+    text = (DISCOURSE / "witness_two.fspy").read_text() + """declare Other : type.
+declare c : Pub.
+argument v : [?o:Other] (exists x:Pub, Q [x]).
+elim [c].
+dixi.
+"""
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        v, = [e for e in prover.graph.edges if e.name == "v"]
+        assert v.target_key.startswith("[Other]⊢")
+        assert not any(e.role == "weakening" and e.sources[0].key == v.target_key
+                       for e in prover.graph.edges)
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)
+        assert "μv" not in term
+    finally:
+        prover.close()
+
+
+def test_closed_supporters_and_counterarguments_bear_on_a_context_by_weakening():
+    prover, svc, report = session((DISCOURSE / "weakening.fspy").read_text())
+    try:
+        assert report.ok
+        g = prover.graph
+        a, = [e for e in g.edges if e.name == "a"]
+        site = [s for s in a.sources if s.kind == "obligation"][0]
+        assert g.shown(site.key) == "[?y:Pub] ⊢ Eff"
+        weak = {(e.target_side, g.shown(e.sources[0].key)) for e in g.edges
+                if e.role == "weakening" and e.target_key == site.key}
+        assert weak == {("term", "Eff"), ("context", "Eff")}
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
+        assert term.index("λy:Pub") < term.index("μe:Eff") and "μ'c:Eff" in term
+        assert evaluated(svc, "a")[0] == "open"        # Rain and Strike: undecided
+        dot = svc.graph(svc.target("a")).graph.to_dot()
+        assert 'style=dotted' in dot and 'label="weakening"' in dot
+    finally:
+        prover.close()
+
+
+def test_the_drinker_split_supplies_its_own_omission():
+    """The decision of 2026-10-20: with weakening, the claim reaches A's
+    site under y, so the split is not a form AIDA offers."""
+    prover, svc, report = session((DISCOURSE / "drinker_split.fspy").read_text())
+    try:
+        a, = [e for e in prover.graph.edges if e.name == "a"]
+        shown = [prover.graph.shown(s.key) for s in a.sources]
+        assert "[?y:Pub] ⊢ exists x:Pub,Dr x->(forall y:Pub,Dr y)" in shown
+        assert evaluated(svc, "a")[0] != "value"
     finally:
         prover.close()

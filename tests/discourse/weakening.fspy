@@ -1,0 +1,40 @@
+# Weakening (tasks.org, aida-discourse-referents, decisions of 2026-10-20).
+# a owes the closed Eff under y: the site exports its context,
+# [?y:Pub] |- Eff. The closed supporter e and the closed counterargument c
+# of Eff bear on it by weakening, and are placed at the site under y.
+lk.
+pipeline unfolded.
+declare Pub : type.
+declare Use, Eff, Strike, Rain : bool.
+declare r1 : (Eff -> Use).
+declare r2 : (Strike -> ~Eff).
+declare r3 : (Rain -> Eff).
+argument a : (forall y:Pub, Use).
+elim y.
+cut (Eff -> Use) th.
+axiom r1.
+elim.
+next.
+axiom.
+dixi.
+# e: Eff, presuming Rain.
+argument e : (Eff).
+cut (Rain -> Eff) th.
+axiom r3.
+elim.
+by default.
+next.
+axiom.
+dixi.
+# c: against Eff, presuming Strike.
+counterargument c : (Eff).
+cut (~Eff) x.
+cut (Strike -> ~Eff) th.
+axiom r2.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.

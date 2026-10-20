@@ -55,6 +55,9 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # have Fellowship collect it from the conclusion (tasks.org,
         # aida-discourse-referents).
         self.referents = referents
+        #: The referent environment Fellowship holds, [(name, sort)], in
+        #: the order written, else in order of occurrence in the conclusion.
+        self.referent_env = []
         self.instructions = instructions  # List of instruction strings
         self.assumptions = {}  # Dict of Assumptions: {goal_number : {prop : some_str, goal_index : some_int, label : some_str}
         self.delegations = {} # Dict of Delegations: {deleg_number : {prop : some_str, deleg_index : some_int, label : some_str}
@@ -397,6 +400,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             logger.info("Starting theorem '%s' for issue '%s'", self.name, self.conclusion)
             start_cmd = f'theorem {self.name} : {self._referent_env()}({prop_to_command(self.conclusion)}).'
         start_payload = self.prover.send_command(start_cmd)
+        self.referent_env = self._ordered_env(referents.env_of(start_payload))
         output = start_payload
         # Execute each instruction.  Ordinary Fellowship commands are batched
         # by default to avoid one pexpect round-trip per proof step.
@@ -557,13 +561,14 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         # conclusion does not state is deferred by design (tasks.org,
         # aida-discourse-referents), so refused here, not by the logic.
         held = self._referents_held() if declare is True or declare == "auto" else set()
-        unstated = held - referents.mentioned(self.conclusion)
-        if unstated:
+        unlisted = held - {name for name, _sort in self.referent_env}
+        if unlisted:
+            # Fellowship refuses a referent missing from the environment;
+            # this would be a payload the wrapper misread
             self.prover.send_command('discard theorem.')
             raise ReferentRefused(
-                f"'{self.name}' has the discourse referent {', '.join(sorted(unstated))} but its "
-                f"conclusion does not state it: a referent is caught through the statement an "
-                f"argument is used for, so for now it must occur in the conclusion")
+                f"'{self.name}' uses the discourse referent {', '.join(sorted(unlisted))}, which "
+                f"its referent environment does not list")
         if declare is True and open_sites:
             self.prover.send_command('discard theorem.')
             raise StrictnessRefused(
@@ -598,6 +603,21 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         the proof."""
         return (referents.mentioned(self.referents) | referents.mentioned(self.conclusion)
                 | referents.mentioned(self.proof_term))
+
+    def _ordered_env(self, env) -> list:
+        """Fellowship's environment, ordered as written, or by first
+        occurrence in the conclusion (``Prop.referent_order``)."""
+        from core.ac.prop import Prop
+        sorts = dict(env)
+        if self.referents:
+            order = [part.split(":", 1)[0].strip() for part in self.referents.split(",")]
+        else:
+            try:
+                order = Prop.parse(self.conclusion).referent_order()
+            except Exception:
+                order = []
+        order = [n for n in order if n in sorts] + [n for n, _s in env if n not in order]
+        return [(n, sorts[n]) for n in order]
 
     def _referent_env(self) -> str:
         """The referent environment as Fellowship reads it, or nothing."""

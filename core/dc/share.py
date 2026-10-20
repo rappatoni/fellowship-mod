@@ -155,13 +155,13 @@ class _Builder(Unfolder):
         return (statement, own_kind, top)
 
     def statement(self, statement, env, spine, presumed=False, own_kind=None):
-        if statement in env:
+        if self._literal(statement) in env:
             return super().statement(statement, env, spine, presumed)
         key = self._key(statement, own_kind)
         self._todo.append(key)
         return _cite(statement, self._prop(statement[0]), presumed, env, spine, debate=key)
 
-    def _exposed(self, node, sub, env, spine, names, primary, walk):
+    def _exposed(self, node, sub, env, spine, names, primary, walk, statement=None):
         """An exposed node (core/dc/unfold.py, ``Unfolder._exposed``):
         engaged by nobody, as written; otherwise a citation of the debate
         the unfolder builds there - an obligation root, a presumption of the
@@ -171,12 +171,13 @@ class _Builder(Unfolder):
         its citing sites, so whether the statement is captured is decided
         where the citation is written out, as for a site; a captured node
         is the captured variable alone."""
-        statement = (sub.target_key, sub.target_side)
-        if statement in env:
-            return super()._exposed(node, sub, env, spine, names, primary, walk)
+        if statement is None:
+            statement = (sub.target_key, sub.target_side)
+        if self._literal(statement) in env:
+            return super()._exposed(node, sub, env, spine, names, primary, walk, statement)
         kept = self._kept(node, sub, statement, env, spine, names, primary, walk)
         if not self._engaged(statement, sub):
-            out = super()._exposed(node, sub, env, spine, names, primary, walk)
+            out = super()._exposed(node, sub, env, spine, names, primary, walk, statement)
             # As written - unless a binder of an enclosing definition binds
             # the statement, which only expansion can see.
             out.exposed_as = statement
@@ -220,7 +221,7 @@ class _Builder(Unfolder):
         # A definition is built without the scope of its citing sites, so
         # whether the bare contrary is captured is decided where it is
         # written out.
-        if statement in env:
+        if self._literal(statement) in env:
             return super()._bare(statement, env)
         presumed = "presumption" in self.graph.defaults.get(statement, ())
         return _cite(statement, self._prop(statement[0]), presumed, env, (), bare=True)

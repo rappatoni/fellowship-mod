@@ -1,5 +1,9 @@
 # The drinker split for the discourse-referent experiments. B's witness
-# ?x is simulated by the constant x0 (no ?x yet).
+# ?x is simulated by the constant x0. Not a form AIDA offers (the author,
+# 2026-10-20): A's site under y is the claim itself in y's context, which
+# the claim reaches by weakening - A supplies its own omission, and the
+# claim's binder captures the site (the hoisting problem). The drinker is
+# argued through first-order Peirce instead (drinker_referent.fspy).
 lk.
 declare Pub : type.
 declare c : Pub.

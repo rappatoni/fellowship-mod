@@ -91,7 +91,9 @@ class TestTheGraph:
             assert report.ok
             assert edges(prover)["birds_fly"] == (
                 "forall x:Animal,Bird x->Flies x[t]",
-                [("forall x:Animal,Bird x->Wings x[t]", "obligation"),
+                # owed under x: the closed statement in x's context
+                # (tasks.org, aida-discourse-referents, 2026-10-20)
+                [("[?x:Animal] ⊢ forall x:Animal,Bird x->Wings x[t]", "obligation"),
                  ("forall x:Animal,Wings x->Flies x[t]", "subargument")], False)
         finally:
             prover.close()
@@ -116,19 +118,22 @@ class TestTheGraph:
         prover, _svc, report = session("birds_fly_open")
         try:
             assert report.ok
-            assert ("Wings ?x[t]", "obligation") in edges(prover)["birds_fly"][1]
+            assert ("[?x:Animal] ⊢ Wings ?x[t]", "obligation") in edges(prover)["birds_fly"][1]
         finally:
             prover.close()
 
-    def test_a_presumed_open_site_is_refused_with_the_remedy(self):
-        prover, _svc, report = session("birds_fly_presumed_open")
+    def test_a_presumed_open_site_is_a_presumption_in_its_context(self):
+        """Since 2026-10-20 (tasks.org, aida-discourse-referents): a site
+        exports its context, presumed or owed - Wings x under x is the
+        presumed statement [?x:Animal] |- Wings ?x."""
+        prover, svc, report = session("birds_fly_presumed_open")
         try:
             dixi, = [e for e in report.entries if e.kind == "dixi"]
-            message = " ".join(d.message for d in dixi.diagnostics)
-            assert "not added to the document graph" in message
-            assert "presumes 'Wings x', which mentions x, bound by the argument" in message
-            assert "presume a closed one" in message
-            assert "birds_fly" not in edges(prover)
+            assert not any("not added to the document graph" in d.message
+                           for d in dixi.diagnostics)
+            edge, = [e for e in prover.graph.edges if e.name == "birds_fly"]
+            site, = [src for src in edge.sources if src.kind == "presumption"]
+            assert prover.graph.shown(site.key) == "[?x:Animal] ⊢ Wings ?x"
         finally:
             prover.close()
 

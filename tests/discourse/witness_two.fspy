@@ -1,0 +1,18 @@
+# Two lineups (tasks.org, aida-discourse-referents, decisions of
+# 2026-10-20). a leaves exists x, Q x open under z and y, with hz : Q z
+# and hy : Q y: the site exports [?z:Pub, ?y:Pub] |- exists x:Pub, Q x.
+# w imports one witness ?x: it is used once with ?x for z and once with
+# ?x for y, the innermost binder's use on top of the stack.
+lk.
+pipeline unfolded.
+declare Pub : type.
+declare Q : Pub -> bool.
+argument a : (forall z:Pub, forall y:Pub, Q [z] -> Q [y] -> (exists x:Pub, Q [x])).
+elim z.
+elim y.
+elim hz.
+elim hy.
+dixi.
+argument w : [?x:Pub] (exists x:Pub, Q [x]).
+elim [?x].
+dixi.
