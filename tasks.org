@@ -1201,6 +1201,9 @@ Left for follow-ups: [[id:aida-referents-shared-route]],
 :VERIFY:         tests/test_discourse_referents.py passes on both pipelines with the same verdicts; the perf tests pass.
 :END:
 
+Deferred by the author 2026-10-21 until the referent design (the
+witness scaffold, instantiation) has settled.
+
 Plan step 7 of [[id:aida-discourse-referents]]. Today the shared route
 refuses a debate that reaches a referent (pointer to =pipeline
 unfolded.=) and evaluates one that reaches a statement in a context from
@@ -1233,6 +1236,16 @@ not record yet. A presumed site under a binder is a presumption in its
 context since 2026-10-21; only closed counterarguments reach it, by
 weakening.
 
+Includes question 3 of the referent design discussion of 2026-10-21:
+whether a presumed generic statement falls as one or per instance. With
+instantiation edges ([[id:aida-referents-instantiation]]) an attack on
+=P[c]= would defeat that instance only, an attack on =P[?x]= every
+instance.
+
+Decided by the author 2026-10-21: per instance. A presumed generic
+statement is a default for each instance; an attack on an instance
+defeats that instance only.
+
 ** BACKLOG Design: a lemma whose statement mentions a bound variable
 :PROPERTIES:
 :ID:             aida-referents-open-horns
@@ -1253,6 +1266,21 @@ Plan step 4b of [[id:aida-discourse-referents]]. Today such a horn is
 inlined (step 0, [[id:aida-fo-open-source-horn]]); a closed horn under a
 binder is already the node of its statement in its context.
 
+Decided by the author 2026-10-21:
+- Step 0's rule is lifted: every horn is a node in its context. A lemma
+  whose statement mentions a bound variable (birds_fly's =Wings x=) is
+  =[?x:Animal] |- Wings ?x=; a closed lemma whose content uses one is
+  =[?y:Pub] |- E=. In place the unfolder frames it with the variable, as
+  for sites; alone it is a statement with a referent, open and replayed
+  in its referent environment.
+- Hypotheses of the enclosing argument it uses (=b : Bird x=) are
+  captured sources in the same context, shown as captured variables are.
+- A generic counterargument (=molting : (Wings [?y])=) reaches the lemma
+  by instantiation; a closed one about =tweety= does not (it bears only
+  on a use of the argument at Tweety, the counter-instances task).
+- Test: hypothesis_horn.fspy and open_source_horn.fspy keep their
+  verdicts.
+
 ** BACKLOG Show a referent statement in one naming
 :PROPERTIES:
 :ID:             aida-referents-node-names
@@ -1272,6 +1300,151 @@ binder is already the node of its statement in its context.
 Found 2026-10-21: =graph sup= shows the node as =Dr ?z->false= (=a='s
 site registered it first) and owes "a witness for ?z", while =sup='s own
 source reads =Dr ?x=.
+
+** BACKLOG Design: keep the referents of unrelated arguments apart
+:PROPERTIES:
+:ID:             aida-referents-unrelated
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides when statements about the uncaught referents of different arguments are one node, and the document graph follows: one argument's presumption about its referent no longer discharges another argument's obligation about an unrelated one unless the decision says so.
+:VERIFY:         The decision is written here; tests/anaphora/donkey.fspy (with the missing =next.= before =moxia=) gives the labels it states for =farmer ?u= and =bite ?u ?v=; peirce_fo.fspy and the other referent fixtures keep their verdicts; the suite passes.
+:END:
+
+Found 2026-10-21 with tests/anaphora/donkey.fspy. Identity up to renaming
+of referents (decision (a) of [[id:aida-discourse-referents]]) makes
+=farmer ?u= of =interpretation1= and =farmer ?x= of
+=he_does_not_bite_him= one node, so the latter's presumption makes the
+former's obligation IN, although nothing says =?u= and =?x= are the same
+individual. Evaluation is not affected (an uncaught referent is open,
+decision (c)); the labels of intermediate nodes are. Related: the
+author's proposal of 2026-10-21 that a witness position (an existential
+right, a universal left) be filled from a supporter's constant, which
+also revises (a).
+
+Decided by the author 2026-10-21 (question 1, what a referent stands
+for):
+- A referent's role is fixed by how its own argument uses it. In a
+  witness position (=elim [t]= on an existential right or a universal
+  left) it is an individual the argument needs: a variable in scope
+  captures it first; if none does, it waits to be supported from below,
+  each constant a supporter supplies an alternative; if neither, it stays
+  owed (=?=) or presumed (=!=). Anywhere else in its statement it is a
+  parameter, renamed by variables in scope and instantiated by constants.
+- The rules that introduce a variable - =elim x= on a universal right
+  and on an existential left - capture downward; the witness positions
+  wait for support from below. Names flow downward, individuals upward.
+- Consequence for donkey.fspy: the referents of =interpretation1= and
+  =he_does_not_bite_him= are witness positions, each waiting for its own
+  individuals, so their statements must not be one node. This task
+  describes a bug.
+
+** BACKLOG Design: how a generic referent statement meets its instances
+:PROPERTIES:
+:ID:             aida-referents-instantiation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether a statement about an argument's referents meets the same statement about a constant, a bound variable or another argument's referent by identity up to renaming (today) or by directed instantiation edges built like weakening edges, and the graph and the unfolder follow.
+:VERIFY:         The decision is written here; a fixture where a referent argument fills a closed site about a constant (=beat [Conrad] [Peter]= by =beat [!x] [!y]=) and one where an attacker of an instance must not reach the generic statement give the labels it states; the referent fixtures keep their verdicts.
+:END:
+
+Question 2 of the referent design discussion of 2026-10-21. The author
+lifted the restriction on constants from above (decision (a) and
+=test_identity_does_not_instantiate= no longer bind). Depends on
+[[id:aida-referents-unrelated]].
+
+Decided by the author 2026-10-21: directed instantiation edges.
+- A statement about an argument's parameters (its referents outside
+  witness positions) is its own node, with an edge to every statement it
+  covers, on both sides: an instance is the same statement with terms
+  for the parameters, found by one-sided matching (the parameters
+  receive terms, never the reverse; =beat ?a ?b= covers =beat z z=,
+  =beat ?a ?a= does not cover =beat conrad peter=). The terms may be
+  constants, variables in scope, another argument's witness-position
+  referents (support without an individual) or other parameters.
+- Influence flows down only: a supporter or attacker of the generic
+  statement reaches every instance; one of an instance reaches neither
+  the generic statement nor the other instances, and a closed proof of
+  an instance does not support the generic statement.
+- Edges go to the nearest instances only (=beat ?x conrad= between
+  =beat ?x ?y= and =beat peter conrad=), only between statements some
+  argument states, and compose with weakening.
+- Generic statements equal up to renaming stay one node; statements about
+  witness-position referents stay scoped to their argument
+  ([[id:aida-referents-unrelated]]).
+- The unfolder takes the supporters and attackers of a site =P[c]= from
+  =P[c]= and from every generic statement covering it, lined up by the
+  match and substituted before capture.
+Example (Conrad and Peter): =supp : beat [!x] [!y]= by default; =calm=
+attacks =beat conrad peter=; =beat conrad peter= is contested,
+=beat peter conrad= IN, =beat ?x ?y= IN.
+
+** BACKLOG Design: the individuals of a sort
+:PROPERTIES:
+:ID:             aida-referents-individuals
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides what a sort node is (there is an individual of the sort, owed or presumed), what populates it (constants strictly, =!x:foo= by default, bound variables locally) and where it is a source (proposed: only of the alternative of a witness-position scaffold whose individual is still to be found).
+:VERIFY:         The decision is written here; a sort without constants is OUT, with a constant strictly IN, with =!x:foo= IN by default, in the fixtures it names.
+:END:
+
+Question 4 of the referent design discussion of 2026-10-21; step 5c of
+the plan.
+
+Decided by the author 2026-10-21:
+- The sort node is the ordinary statement =exists x:foo, true=: a
+  declared constant proves it strictly, writing =!x= of sort =foo=
+  presumes it, an argument that the sort is empty is a counterargument
+  of it.
+- Any use of =!x:foo= presumes it for the whole document: a presumption
+  that something exists is about the world, not about one argument.
+- It is a source only of the root alternative of a witness-position
+  scaffold, the individual still to be found; a constant is its own
+  strict witness. Variables in scope never feed it: where one captures
+  a witness position there is no scaffold (from above first).
+Example (=some_farmer : (exists x:iota, farmer [x]). elim [!x]. by
+default.=): IN by default without constants; open with =?x=; IN through
+Pedro once =pedro : iota= and =farmer [pedro]= are stated.
+
+** BACKLOG Design: the scaffold at a witness position
+:PROPERTIES:
+:ID:             aida-referents-witness-scaffold
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The author settles the details of the support scaffold at a witness position (=elim [t]= on an existential right or a universal left): at the quantified statement, one alternative per individual for which the statement's body is a node, the root an individual still to be found; then it is implemented.
+:VERIFY:         The tests of step 5c of the plan: donkey.fspy, an existential-introduction fixture where the alternative for =d= decides, a sort without constants with and without =!x=, the dual case for a universal on the left; the unfolded terms replay; the suite and the perf tests pass.
+:END:
+
+Question 5 of the referent design discussion of 2026-10-21; step 5c of
+the plan. The alternatives multiply with nested existentials; accepted
+by the author ("that's life").
 
 * Specification and verification
 
