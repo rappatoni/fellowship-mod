@@ -1,0 +1,232 @@
+# Lifschitz B1, linear inheritance (as commonly restated): animals normally
+# do not fly; birds are animals; birds normally fly; bats are animals and
+# normally fly; ostriches are birds and normally do not fly. Individuals: an
+# animal ann, a bird tweety, a bat bruce, an ostrich ozzy. Expected: ann
+# does not fly, tweety flies, bruce flies, ozzy does not fly.
+# Encoding (circumscription style): strict universal rules with
+# abnormality premises; the more specific class is abnormal for the more
+# general rule; "not abnormal" presumed per individual.
+#   animal & ~ab1 -> ~fly,  bird -> ab1, bat -> ab1
+#   bird & ~ab2 -> fly,     ostrich -> ab2
+#   bat & ~ab3 -> fly
+#   ostrich & ~ab4 -> ~fly
+lk.
+declare Thing : type.
+declare ann, tweety, bruce, ozzy : Thing.
+declare Animal, Bird, Bat, Ostrich, Fly, Ab1, Ab2, Ab3, Ab4 : Thing -> bool.
+declare animal_ann : (Animal [ann]).
+declare bird_tweety : (Bird [tweety]).
+declare bat_bruce : (Bat [bruce]).
+declare ostrich_ozzy : (Ostrich [ozzy]).
+declare birds_animals : (forall x:Thing, Bird [x] -> Animal [x]).
+declare bats_animals : (forall x:Thing, Bat [x] -> Animal [x]).
+declare ostriches_birds : (forall x:Thing, Ostrich [x] -> Bird [x]).
+declare r_animal : (forall x:Thing, Animal [x] -> (Ab1 [x] -> false) -> Fly [x] -> false).
+declare r_bird : (forall x:Thing, Bird [x] -> (Ab2 [x] -> false) -> Fly [x]).
+declare r_bat : (forall x:Thing, Bat [x] -> (Ab3 [x] -> false) -> Fly [x]).
+declare r_ostrich : (forall x:Thing, Ostrich [x] -> (Ab4 [x] -> false) -> Fly [x] -> false).
+declare bird_ab1 : (forall x:Thing, Bird [x] -> Ab1 [x]).
+declare bat_ab1 : (forall x:Thing, Bat [x] -> Ab1 [x]).
+declare ostrich_ab2 : (forall x:Thing, Ostrich [x] -> Ab2 [x]).
+# ann by the animal rule
+counterargument f_animal_ann : (Fly [ann]).
+cut (Fly [ann] -> false) n.
+cut (forall x:Thing, Animal [x] -> (Ab1 [x] -> false) -> Fly [x] -> false) r.
+axiom r_animal.
+elim [ann].
+elim.
+axiom animal_ann.
+elim.
+elim h.
+cut (Ab1 [ann]) k.
+axiom h.
+by default.
+next.
+axiom r.
+elim.
+axiom.
+elim.
+dixi.
+# tweety by the animal rule
+counterargument f_animal_tweety : (Fly [tweety]).
+cut (Fly [tweety] -> false) n.
+cut (forall x:Thing, Animal [x] -> (Ab1 [x] -> false) -> Fly [x] -> false) r.
+axiom r_animal.
+elim [tweety].
+elim.
+cut (forall x:Thing, Bird [x] -> Animal [x]) s.
+axiom birds_animals.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom s.
+elim.
+elim h.
+cut (Ab1 [tweety]) k.
+axiom h.
+by default.
+next.
+axiom r.
+elim.
+axiom.
+elim.
+dixi.
+# tweety by the bird rule
+argument f_bird_tweety : (Fly [tweety]).
+cut (forall x:Thing, Bird [x] -> (Ab2 [x] -> false) -> Fly [x]) r.
+axiom r_bird.
+elim [tweety].
+elim.
+axiom bird_tweety.
+elim.
+elim h.
+cut (Ab2 [tweety]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# bruce by the animal rule
+counterargument f_animal_bruce : (Fly [bruce]).
+cut (Fly [bruce] -> false) n.
+cut (forall x:Thing, Animal [x] -> (Ab1 [x] -> false) -> Fly [x] -> false) r.
+axiom r_animal.
+elim [bruce].
+elim.
+cut (forall x:Thing, Bat [x] -> Animal [x]) s.
+axiom bats_animals.
+elim [bruce].
+elim.
+axiom bat_bruce.
+axiom s.
+elim.
+elim h.
+cut (Ab1 [bruce]) k.
+axiom h.
+by default.
+next.
+axiom r.
+elim.
+axiom.
+elim.
+dixi.
+# bruce by the bat rule
+argument f_bat_bruce : (Fly [bruce]).
+cut (forall x:Thing, Bat [x] -> (Ab3 [x] -> false) -> Fly [x]) r.
+axiom r_bat.
+elim [bruce].
+elim.
+axiom bat_bruce.
+elim.
+elim h.
+cut (Ab3 [bruce]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# ozzy by the animal rule
+counterargument f_animal_ozzy : (Fly [ozzy]).
+cut (Fly [ozzy] -> false) n.
+cut (forall x:Thing, Animal [x] -> (Ab1 [x] -> false) -> Fly [x] -> false) r.
+axiom r_animal.
+elim [ozzy].
+elim.
+cut (forall x:Thing, Bird [x] -> Animal [x]) s.
+axiom birds_animals.
+elim [ozzy].
+elim.
+cut (forall x:Thing, Ostrich [x] -> Bird [x]) s2.
+axiom ostriches_birds.
+elim [ozzy].
+elim.
+axiom ostrich_ozzy.
+axiom s2.
+axiom s.
+elim.
+elim h.
+cut (Ab1 [ozzy]) k.
+axiom h.
+by default.
+next.
+axiom r.
+elim.
+axiom.
+elim.
+dixi.
+# ozzy by the bird rule
+argument f_bird_ozzy : (Fly [ozzy]).
+cut (forall x:Thing, Bird [x] -> (Ab2 [x] -> false) -> Fly [x]) r.
+axiom r_bird.
+elim [ozzy].
+elim.
+cut (forall x:Thing, Ostrich [x] -> Bird [x]) s.
+axiom ostriches_birds.
+elim [ozzy].
+elim.
+axiom ostrich_ozzy.
+axiom s.
+elim.
+elim h.
+cut (Ab2 [ozzy]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# ozzy by the ostrich rule
+counterargument f_ostrich_ozzy : (Fly [ozzy]).
+cut (Fly [ozzy] -> false) n.
+cut (forall x:Thing, Ostrich [x] -> (Ab4 [x] -> false) -> Fly [x] -> false) r.
+axiom r_ostrich.
+elim [ozzy].
+elim.
+axiom ostrich_ozzy.
+elim.
+elim h.
+cut (Ab4 [ozzy]) k.
+axiom h.
+by default.
+next.
+axiom r.
+elim.
+axiom.
+elim.
+dixi.
+argument ab1_tweety : (Ab1 [tweety]).
+cut (forall x:Thing, Bird [x] -> Ab1 [x]) r.
+axiom bird_ab1.
+elim [tweety].
+elim.
+axiom bird_tweety.
+axiom r.
+dixi.
+argument ab1_bruce : (Ab1 [bruce]).
+cut (forall x:Thing, Bat [x] -> Ab1 [x]) r.
+axiom bat_ab1.
+elim [bruce].
+elim.
+axiom bat_bruce.
+axiom r.
+dixi.
+argument ab1_ozzy : (Ab1 [ozzy]).
+cut (forall x:Thing, Bird [x] -> Ab1 [x]) r.
+axiom bird_ab1.
+elim [ozzy].
+elim.
+cut (forall x:Thing, Ostrich [x] -> Bird [x]) s.
+axiom ostriches_birds.
+elim [ozzy].
+elim.
+axiom ostrich_ozzy.
+axiom s.
+axiom r.
+dixi.
+argument ab2_ozzy : (Ab2 [ozzy]).
+cut (forall x:Thing, Ostrich [x] -> Ab2 [x]) r.
+axiom ostrich_ab2.
+elim [ozzy].
+elim.
+axiom ostrich_ozzy.
+axiom r.
+dixi.

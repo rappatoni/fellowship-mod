@@ -1,0 +1,140 @@
+# SerialisableRankingReasonerExample.java (aaf): arguments a, b1, b2, c, d, e, f, g, h; attacks a->b1, a->b2, b1->c, b2->c, c->d, c->e, d->a, e->f, g->h, h->f
+lk.
+declare A, B1, B2, C, D, E, F, G, H : bool.
+declare att_a_b1 : (A -> ~B1).
+declare att_a_b2 : (A -> ~B2).
+declare att_b1_c : (B1 -> ~C).
+declare att_b2_c : (B2 -> ~C).
+declare att_c_d : (C -> ~D).
+declare att_c_e : (C -> ~E).
+declare att_d_a : (D -> ~A).
+declare att_e_f : (E -> ~F).
+declare att_g_h : (G -> ~H).
+declare att_h_f : (H -> ~F).
+argument a : (A).
+by default.
+dixi.
+argument b1 : (B1).
+by default.
+dixi.
+argument b2 : (B2).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+argument f : (F).
+by default.
+dixi.
+argument g : (G).
+by default.
+dixi.
+argument h : (H).
+by default.
+dixi.
+counterargument a_on_b1 : (B1).
+cut (~B1) x.
+cut (A -> ~B1) th.
+axiom att_a_b1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_on_b2 : (B2).
+cut (~B2) x.
+cut (A -> ~B2) th.
+axiom att_a_b2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b1_on_c : (C).
+cut (~C) x.
+cut (B1 -> ~C) th.
+axiom att_b1_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b2_on_c : (C).
+cut (~C) x.
+cut (B2 -> ~C) th.
+axiom att_b2_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_d : (D).
+cut (~D) x.
+cut (C -> ~D) th.
+axiom att_c_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_e : (E).
+cut (~E) x.
+cut (C -> ~E) th.
+axiom att_c_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_a : (A).
+cut (~A) x.
+cut (D -> ~A) th.
+axiom att_d_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_f : (F).
+cut (~F) x.
+cut (E -> ~F) th.
+axiom att_e_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument g_on_h : (H).
+cut (~H) x.
+cut (G -> ~H) th.
+axiom att_g_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument h_on_f : (F).
+cut (~F) x.
+cut (H -> ~F) th.
+axiom att_h_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

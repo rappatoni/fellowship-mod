@@ -1,0 +1,80 @@
+== literature4/lif_a3.fspy: check ok=True (0.1s)
+-- red_a: issue Red a[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Heavy a[t]=IN Red a[t]=IN forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+      credulous -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+   preferred issue: ['IN']
+      [1] Heavy a[t]=IN Red a[t]=IN forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+      credulous -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+   stable    issue: ['IN']
+      [1] Heavy a[t]=IN Red a[t]=IN forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+      credulous -> value     μred_a:Red a.<!IN:forall x:Block,Heavy x->Red x||a*heavy_a:Heavy a*red_a:Red a>
+-- on_b: issue OnTable b[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+   preferred issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+   stable    issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+-- on_a: issue OnTable a[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+   preferred issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+   stable    issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt2:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+-- red_b: issue Red b[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+      credulous -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+   preferred issue: ['OUT']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+      credulous -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+   stable    issue: ['OUT']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+      credulous -> exception μalt2:Red b.<?OUT:Red b||not_red_b:Red b>
+-- a_off: issue OnTable a[c]; 3 edges
+   grounded  issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+   preferred issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+   stable    issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+-- b_not_red: issue Red b[c]; 3 edges
+   grounded  issue: ['IN']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+      credulous -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+   preferred issue: ['IN']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+      credulous -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+   stable    issue: ['IN']
+      [1] Heavy b[t]=IN Red b[c]=IN Red b[t]=OUT forall x:Block,Heavy x->Red x[t]=IN
+      skeptical -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+      credulous -> value     μ'b_not_red:Red b.<b_not_red:Red b||not_red_b:Red b>
+== done in 0.7s

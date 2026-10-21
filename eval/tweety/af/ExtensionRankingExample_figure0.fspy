@@ -1,0 +1,34 @@
+# ExtensionRankingExample.java (figure0): arguments 1, 2, 3; attacks 1->2, 2->3
+lk.
+declare A_1, A_2, A_3 : bool.
+declare att_a_1_a_2 : (A_1 -> ~A_2).
+declare att_a_2_a_3 : (A_2 -> ~A_3).
+argument a_1 : (A_1).
+by default.
+dixi.
+argument a_2 : (A_2).
+by default.
+dixi.
+argument a_3 : (A_3).
+by default.
+dixi.
+counterargument a_1_on_a_2 : (A_2).
+cut (~A_2) x.
+cut (A_1 -> ~A_2) th.
+axiom att_a_1_a_2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_2_on_a_3 : (A_3).
+cut (~A_3) x.
+cut (A_2 -> ~A_3) th.
+axiom att_a_2_a_3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

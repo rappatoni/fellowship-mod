@@ -1,0 +1,66 @@
+# The lottery paradox (Kyburg 1961), three tickets, exactly one wins.
+# Pollock (collective defeat): for no ticket is "it loses" justified.
+# Prakken (2016, "Rethinking the rationality postulates"): each "ticket i
+# loses" is skeptically justified, "exactly one wins" too, and the argument
+# Ai (the others lose, so i wins) is defeated. Encoding: "ticket i loses"
+# is presumed (a presumed refutation of Ti); "exactly one wins" as the
+# strict rules "if the other two lose, i wins".
+lk.
+declare T1, T2, T3 : bool.
+declare one1 : ((T2 -> false) -> (T3 -> false) -> T1).
+declare one2 : ((T1 -> false) -> (T3 -> false) -> T2).
+declare one3 : ((T1 -> false) -> (T2 -> false) -> T3).
+counterargument lose1 : (T1).
+by default.
+dixi.
+counterargument lose2 : (T2).
+by default.
+dixi.
+counterargument lose3 : (T3).
+by default.
+dixi.
+argument a1 : (T1).
+cut ((T2 -> false) -> (T3 -> false) -> T1) r.
+axiom one1.
+elim.
+elim h.
+cut (T2) k.
+axiom h.
+next.
+elim.
+elim h2.
+cut (T3) k2.
+axiom h2.
+next.
+axiom r.
+dixi.
+argument a2 : (T2).
+cut ((T1 -> false) -> (T3 -> false) -> T2) r.
+axiom one2.
+elim.
+elim h.
+cut (T1) k.
+axiom h.
+next.
+elim.
+elim h2.
+cut (T3) k2.
+axiom h2.
+next.
+axiom r.
+dixi.
+argument a3 : (T3).
+cut ((T1 -> false) -> (T2 -> false) -> T3) r.
+axiom one3.
+elim.
+elim h.
+cut (T1) k.
+axiom h.
+next.
+elim.
+elim h2.
+cut (T2) k2.
+axiom h2.
+next.
+axiom r.
+dixi.

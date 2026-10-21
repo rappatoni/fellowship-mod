@@ -1,0 +1,70 @@
+# RankingSemanticsExample2.java (example2): arguments x1, x2, x3, x4; attacks x2->x1, x2->x3, x3->x2, x3->x3, x4->x2
+lk.
+declare X1, X2, X3, X4 : bool.
+declare att_x2_x1 : (X2 -> ~X1).
+declare att_x2_x3 : (X2 -> ~X3).
+declare att_x3_x2 : (X3 -> ~X2).
+declare att_x3_x3 : (X3 -> ~X3).
+declare att_x4_x2 : (X4 -> ~X2).
+argument x1 : (X1).
+by default.
+dixi.
+argument x2 : (X2).
+by default.
+dixi.
+argument x3 : (X3).
+by default.
+dixi.
+argument x4 : (X4).
+by default.
+dixi.
+counterargument x2_on_x1 : (X1).
+cut (~X1) x.
+cut (X2 -> ~X1) th.
+axiom att_x2_x1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument x2_on_x3 : (X3).
+cut (~X3) x.
+cut (X2 -> ~X3) th.
+axiom att_x2_x3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument x3_on_x2 : (X2).
+cut (~X2) x.
+cut (X3 -> ~X2) th.
+axiom att_x3_x2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument x3_on_x3 : (X3).
+cut (~X3) x.
+cut (X3 -> ~X3) th.
+axiom att_x3_x3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument x4_on_x2 : (X2).
+cut (~X2) x.
+cut (X4 -> ~X2) th.
+axiom att_x4_x2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

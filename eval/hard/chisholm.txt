@@ -1,0 +1,54 @@
+== literature4/chisholm.fspy: check ok=True (0.1s)
+-- o_go: issue OGo[t]; 0 edges
+   grounded  issue: ['IN']
+      [1] OGo[t]=IN
+      skeptical -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+      credulous -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+   preferred issue: ['IN']
+      [1] OGo[t]=IN
+      skeptical -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+      credulous -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+   stable    issue: ['IN']
+      [1] OGo[t]=IN
+      skeptical -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+      credulous -> value     μx1:OGo.<!IN:OGo||x1:OGo>
+-- o_tell: issue OTell[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] Go->OTell[t]=IN Go[c]=IN Go[t]=OUT OTell[t]=OUT
+      skeptical -> open      ?OUT:OTell
+      credulous -> open      ?OUT:OTell
+   preferred issue: ['OUT']
+      [1] Go->OTell[t]=IN Go[c]=IN Go[t]=OUT OTell[t]=OUT
+      skeptical -> open      ?OUT:OTell
+      credulous -> open      ?OUT:OTell
+   stable    issue: ['OUT']
+      [1] Go->OTell[t]=IN Go[c]=IN Go[t]=OUT OTell[t]=OUT
+      skeptical -> open      ?OUT:OTell
+      credulous -> open      ?OUT:OTell
+-- o_not_tell: issue ONotTell[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] (Go->false)->ONotTell[t]=IN Go->false[t]=IN Go[c]=IN Go[t]=OUT ONotTell[t]=IN
+      skeptical -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+      credulous -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+   preferred issue: ['IN']
+      [1] (Go->false)->ONotTell[t]=IN Go->false[t]=IN Go[c]=IN Go[t]=OUT ONotTell[t]=IN
+      skeptical -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+      credulous -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+   stable    issue: ['IN']
+      [1] (Go->false)->ONotTell[t]=IN Go->false[t]=IN Go[c]=IN Go[t]=OUT ONotTell[t]=IN
+      skeptical -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+      credulous -> value     μo_not_tell:ONotTell.<!IN:(Go->false)->ONotTell||λb1:Go.μb2:false.<b1:Go||not_go:Go>*o_not_tell:ONotTell>
+-- violated: issue Violated[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Go->false[t]=IN OGo->(Go->false)->Violated[t]=IN Go[c]=IN Go[t]=OUT OGo[t]=IN Violated[t]=IN
+      skeptical -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+      credulous -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+   preferred issue: ['IN']
+      [1] Go->false[t]=IN OGo->(Go->false)->Violated[t]=IN Go[c]=IN Go[t]=OUT OGo[t]=IN Violated[t]=IN
+      skeptical -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+      credulous -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+   stable    issue: ['IN']
+      [1] Go->false[t]=IN OGo->(Go->false)->Violated[t]=IN Go[c]=IN Go[t]=OUT OGo[t]=IN Violated[t]=IN
+      skeptical -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+      credulous -> value     μviolated:Violated.<!IN:OGo->(Go->false)->Violated||!IN:OGo*λb1:Go.μb2:false.<b1:Go||not_go:Go>*violated:Violated>
+== done in 0.5s

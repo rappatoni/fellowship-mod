@@ -1,0 +1,6 @@
+Tiger_hobbes => Dangerous_hobbes
+Baby_hobbes => !Dangerous_hobbes
+Pet_hobbes => !Dangerous_hobbes
+-> Tiger_hobbes
+-> Baby_hobbes
+-> Pet_hobbes

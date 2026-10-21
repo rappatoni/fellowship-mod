@@ -1,0 +1,28 @@
+== literature4/pollock_selfdefeat.fspy: check ok=True (0.1s)
+-- reliable: issue Reliable[t]; 5 edges
+   grounded  issue: ['OUT']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+      credulous -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+   preferred issue: ['OUT']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+      credulous -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+   stable    issue: ['OUT']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+      credulous -> exception μalt1:Reliable.<testimony:Reliable->Says->~Reliable||?OUT:Reliable*says:Says*?OUT:Reliable*_F_>
+-- unreliable: issue Reliable[c]; 5 edges
+   grounded  issue: ['IN']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+   preferred issue: ['IN']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+   stable    issue: ['IN']
+      [1] Reliable->Says->~Reliable[t]=IN ~Reliable[t]=OUT Reliable[c]=IN Reliable[t]=OUT Says[t]=IN
+      skeptical -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+      credulous -> value     μ'alt7:Reliable.<testimony:Reliable->Says->~Reliable||μb2:Reliable.<alt7:Reliable||b2:Reliable>*says:Says*μb1:Reliable.<alt7:Reliable||b1:Reliable>*_F_>
+== done in 0.3s

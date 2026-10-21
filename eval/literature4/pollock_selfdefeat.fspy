@@ -1,0 +1,26 @@
+# Pollock's self-defeating argument (Pollock 1995, Cognitive Carpentry):
+# Smith is presumed reliable; Smith says that Smith is unreliable; what a
+# reliable witness says is true. The argument for "Smith is unreliable"
+# rests on Smith's reliability and so defeats itself. Pollock (OSCAR): a
+# self-defeating argument is defeated; it defeats nothing, so "Smith is
+# reliable" stays justified. Grounded semantics of the abstract framework
+# leaves both undecided.
+lk.
+declare Reliable, Says : bool.
+declare says : (Says).
+declare testimony : (Reliable -> Says -> ~Reliable).
+argument reliable : (Reliable).
+by default.
+dixi.
+counterargument unreliable : (Reliable).
+cut (~Reliable) x.
+cut (Reliable -> Says -> ~Reliable) th.
+axiom testimony.
+elim.
+next.
+elim.
+axiom says.
+axiom.
+elim.
+axiom.
+dixi.

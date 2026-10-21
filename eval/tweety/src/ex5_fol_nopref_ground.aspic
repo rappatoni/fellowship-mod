@@ -1,0 +1,10 @@
+=> Snores_bob
+=> Snores_alice
+=> Professor_bob
+AccessDenied_alice => !AccessAllowed_alice
+AccessDenied_bob => !AccessAllowed_bob
+Snores_alice => Misbehaves_alice
+Snores_bob => Misbehaves_bob
+Misbehaves_alice => AccessDenied_alice
+Misbehaves_bob => AccessDenied_bob
+Professor_bob => AccessAllowed_bob

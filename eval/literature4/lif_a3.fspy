@@ -1,0 +1,54 @@
+# Lifschitz A3, several defaults (as commonly restated): blocks A and B are
+# heavy; heavy blocks are normally on the table; heavy blocks are normally
+# red; A is not on the table; B is not red. Expected: A is red, B is on the
+# table. Two presumed general rules, each instantiated per block.
+lk.
+declare Block : type.
+declare a, b : Block.
+declare Heavy, OnTable, Red : Block -> bool.
+declare heavy_a : (Heavy [a]).
+declare heavy_b : (Heavy [b]).
+deny not_on_a : (OnTable [a]).
+deny not_red_b : (Red [b]).
+argument red_a : (Red [a]).
+cut (forall x:Block, Heavy [x] -> Red [x]) r.
+by default.
+next.
+elim [a].
+elim.
+axiom heavy_a.
+axiom r.
+dixi.
+argument on_b : (OnTable [b]).
+cut (forall x:Block, Heavy [x] -> OnTable [x]) r.
+by default.
+next.
+elim [b].
+elim.
+axiom heavy_b.
+axiom r.
+dixi.
+argument on_a : (OnTable [a]).
+cut (forall x:Block, Heavy [x] -> OnTable [x]) r.
+by default.
+next.
+elim [a].
+elim.
+axiom heavy_a.
+axiom r.
+dixi.
+argument red_b : (Red [b]).
+cut (forall x:Block, Heavy [x] -> Red [x]) r.
+by default.
+next.
+elim [b].
+elim.
+axiom heavy_b.
+axiom r.
+dixi.
+counterargument a_off : (OnTable [a]).
+moxia not_on_a.
+dixi.
+counterargument b_not_red : (Red [b]).
+moxia not_red_b.
+dixi.

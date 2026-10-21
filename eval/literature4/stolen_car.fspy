@@ -1,0 +1,36 @@
+# Kautz's stolen car problem (1986): the car is parked at 0; at 3 it is
+# gone; nothing is known about when it was stolen. Chronological
+# minimisation concludes it was there at 1 and 2 (stolen at the last
+# moment); the intuitive answer is that the time of the theft is unknown -
+# "parked at 1" and "parked at 2" should not both be concluded.
+lk.
+declare P0, P1, P2, P3 : bool.
+declare parked0 : (P0).
+deny gone3 : (P3).
+argument p1 : (P1).
+cut (P0 -> P1) r.
+by default.
+next.
+elim.
+axiom parked0.
+axiom r.
+dixi.
+argument p2 : (P2).
+cut (P1 -> P2) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+argument p3 : (P3).
+cut (P2 -> P3) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+counterargument gone : (P3).
+moxia gone3.
+dixi.

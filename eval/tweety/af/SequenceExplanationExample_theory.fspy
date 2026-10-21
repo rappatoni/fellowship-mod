@@ -1,0 +1,148 @@
+# SequenceExplanationExample.java (theory): arguments a, b, c, d, e, f, g, h; attacks a->g, b->a, b->h, c->b, d->e, e->a, e->d, f->c, f->h, g->a, h->g
+lk.
+declare A, B, C, D, E, F, G, H : bool.
+declare att_a_g : (A -> ~G).
+declare att_b_a : (B -> ~A).
+declare att_b_h : (B -> ~H).
+declare att_c_b : (C -> ~B).
+declare att_d_e : (D -> ~E).
+declare att_e_a : (E -> ~A).
+declare att_e_d : (E -> ~D).
+declare att_f_c : (F -> ~C).
+declare att_f_h : (F -> ~H).
+declare att_g_a : (G -> ~A).
+declare att_h_g : (H -> ~G).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+argument f : (F).
+by default.
+dixi.
+argument g : (G).
+by default.
+dixi.
+argument h : (H).
+by default.
+dixi.
+counterargument a_on_g : (G).
+cut (~G) x.
+cut (A -> ~G) th.
+axiom att_a_g.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom att_b_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_h : (H).
+cut (~H) x.
+cut (B -> ~H) th.
+axiom att_b_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_b : (B).
+cut (~B) x.
+cut (C -> ~B) th.
+axiom att_c_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_e : (E).
+cut (~E) x.
+cut (D -> ~E) th.
+axiom att_d_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_a : (A).
+cut (~A) x.
+cut (E -> ~A) th.
+axiom att_e_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_d : (D).
+cut (~D) x.
+cut (E -> ~D) th.
+axiom att_e_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument f_on_c : (C).
+cut (~C) x.
+cut (F -> ~C) th.
+axiom att_f_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument f_on_h : (H).
+cut (~H) x.
+cut (F -> ~H) th.
+axiom att_f_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument g_on_a : (A).
+cut (~A) x.
+cut (G -> ~A) th.
+axiom att_g_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument h_on_g : (G).
+cut (~G) x.
+cut (H -> ~G) th.
+axiom att_h_g.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

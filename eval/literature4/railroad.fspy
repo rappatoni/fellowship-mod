@@ -1,0 +1,31 @@
+# Gelfond & Lifschitz (1991), the railroad crossing: "cross if no train
+# approaches". Written with negation as failure (cross :- not train) a
+# school bus crosses when nothing is known about trains; with classical
+# negation (cross :- -train) it crosses only when it knows that no train
+# approaches. AIDA's onus distinguishes the two: the refutation of Train
+# presumed (negation as failure) or owed (classical negation).
+lk.
+declare Train, CrossNaf, CrossStrong : bool.
+argument cross_naf : (CrossNaf).
+cut ((Train -> false) -> CrossNaf) r.
+by default.
+next.
+elim.
+elim h.
+cut (Train) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument cross_strong : (CrossStrong).
+cut ((Train -> false) -> CrossStrong) r.
+by default.
+next.
+elim.
+elim h.
+cut (Train) k.
+axiom h.
+next.
+axiom r.
+dixi.

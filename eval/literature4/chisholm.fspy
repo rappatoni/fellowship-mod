@@ -1,0 +1,48 @@
+# Chisholm's contrary-to-duty paradox (1963): (1) Jones ought to go to help
+# his neighbours; (2) it ought to be that if he goes he tells them he is
+# coming; (3) if he does not go he ought not to tell them; (4) he does not
+# go. Standard deontic logic derives both O tell (from 1, 2) and O ~tell
+# (from 3, 4). Defeasible deontic logic and I/O logic keep O go (violated)
+# and O ~tell, without O tell. AIDA has no deontic operator: obligations
+# are atoms, (2) is written as the conditional obligation it is meant to be
+# (going obliges telling), and the conflict between O tell and O ~tell is a
+# declared exclusion.
+lk.
+declare Go, OGo, OTell, ONotTell, Violated : bool.
+deny not_go : (Go).
+declare tell_if_go : (Go -> OTell).
+declare excl : (ONotTell -> ~OTell).
+argument o_go : (OGo).
+by default.
+dixi.
+argument o_tell : (OTell).
+cut (Go -> OTell) r.
+axiom tell_if_go.
+elim.
+next.
+axiom r.
+dixi.
+argument o_not_tell : (ONotTell).
+cut ((Go -> false) -> ONotTell) r.
+by default.
+next.
+elim.
+elim h.
+cut (Go) k.
+axiom h.
+moxia not_go.
+axiom r.
+dixi.
+argument violated : (Violated).
+cut (OGo -> (Go -> false) -> Violated) r.
+by default.
+next.
+elim.
+next.
+elim.
+elim h.
+cut (Go) k.
+axiom h.
+moxia not_go.
+axiom r.
+dixi.

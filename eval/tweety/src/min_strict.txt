@@ -1,0 +1,3 @@
+Penguin(tweety).
+~Flies(X) <- Penguin(X).
+Flies(X) -< Penguin(X).

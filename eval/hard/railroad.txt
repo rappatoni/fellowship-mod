@@ -1,0 +1,28 @@
+== literature4/railroad.fspy: check ok=True (0.1s)
+-- cross_naf: issue CrossNaf[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=IN CrossNaf[t]=IN Train[c]=IN
+      skeptical -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+      credulous -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+   preferred issue: ['IN']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=IN CrossNaf[t]=IN Train[c]=IN
+      skeptical -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+      credulous -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+   stable    issue: ['IN']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=IN CrossNaf[t]=IN Train[c]=IN
+      skeptical -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+      credulous -> value     μcross_naf:CrossNaf.<!IN:(Train->false)->CrossNaf||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_naf:CrossNaf>
+-- cross_strong: issue CrossStrong[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=IN CrossStrong[t]=IN Train[c]=IN
+      skeptical -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+      credulous -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+   preferred issue: ['IN']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=IN CrossStrong[t]=IN Train[c]=IN
+      skeptical -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+      credulous -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+   stable    issue: ['IN']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=IN CrossStrong[t]=IN Train[c]=IN
+      skeptical -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+      credulous -> value     μcross_strong:CrossStrong.<!IN:(Train->false)->CrossStrong||λb1:Train.μb2:false.<b1:Train||IN:Train!>*cross_strong:CrossStrong>
+== done in 0.3s

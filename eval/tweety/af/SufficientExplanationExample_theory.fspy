@@ -1,0 +1,62 @@
+# SufficientExplanationExample.java (theory): arguments a, b, c, d, e; attacks a->b, b->c, b->d, d->e
+lk.
+declare A, B, C, D, E : bool.
+declare att_a_b : (A -> ~B).
+declare att_b_c : (B -> ~C).
+declare att_b_d : (B -> ~D).
+declare att_d_e : (D -> ~E).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_c : (C).
+cut (~C) x.
+cut (B -> ~C) th.
+axiom att_b_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_d : (D).
+cut (~D) x.
+cut (B -> ~D) th.
+axiom att_b_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_e : (E).
+cut (~E) x.
+cut (D -> ~E) th.
+axiom att_d_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

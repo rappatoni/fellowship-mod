@@ -1,0 +1,41 @@
+== literature4/railroad_train.fspy: check ok=True (0.1s)
+-- cross_naf: issue CrossNaf[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossNaf[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossNaf
+      credulous -> open      ?OUT:CrossNaf
+   preferred issue: ['OUT']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossNaf[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossNaf
+      credulous -> open      ?OUT:CrossNaf
+   stable    issue: ['OUT']
+      [1] (Train->false)->CrossNaf[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossNaf[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossNaf
+      credulous -> open      ?OUT:CrossNaf
+-- cross_strong: issue CrossStrong[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossStrong[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossStrong
+      credulous -> open      ?OUT:CrossStrong
+   preferred issue: ['OUT']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossStrong[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossStrong
+      credulous -> open      ?OUT:CrossStrong
+   stable    issue: ['OUT']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=OUT seen->Train[t]=IN CrossStrong[t]=OUT Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> open      ?OUT:CrossStrong
+      credulous -> open      ?OUT:CrossStrong
+-- train: issue Train[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] seen->Train[t]=IN Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+      credulous -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+   preferred issue: ['IN']
+      [1] seen->Train[t]=IN Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+      credulous -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+   stable    issue: ['IN']
+      [1] seen->Train[t]=IN Train[c]=OUT Train[t]=IN seen[t]=IN
+      skeptical -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+      credulous -> value     μalt4:Train.<seen_train:seen->Train||see:seen*alt4:Train>
+== done in 0.5s

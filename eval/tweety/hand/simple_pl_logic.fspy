@@ -1,0 +1,63 @@
+# SimplePlLogicExample: a, t, (a,t -> b), (b -> c), (-> d), (d -> ~a),
+# (d -> ~c). Tweety's arguments: <{a,t,..},b>, <{a,t,..},c>, <{d,..},~a>,
+# <{d,..},~c>; attacks ~a -> b, ~a -> c, ~c <-> c. Grounded: ~a and ~c in,
+# b and c out. Facts a, t presumed; rules strict; d a strict fact.
+lk.
+declare A, B, C, D, T : bool.
+declare r_b_rule : (A -> T -> B).
+declare r_c_rule : (B -> C).
+declare r_d_rule : (D).
+declare r_na_rule : (D -> ~A).
+declare r_nc_rule : (D -> ~C).
+# arg_a (defeasible): A
+argument arg_a : (A).
+by default.
+dixi.
+# arg_t (defeasible): T
+argument arg_t : (T).
+by default.
+dixi.
+# r_b (strict): A -> T -> B
+argument r_b : (B).
+cut (A -> T -> B) th.
+axiom r_b_rule.
+elim.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# r_c (strict): B -> C
+argument r_c : (C).
+cut (B -> C) th.
+axiom r_c_rule.
+elim.
+next.
+axiom th.
+dixi.
+# r_d (strict): D
+argument r_d : (D).
+axiom r_d_rule.
+dixi.
+# r_na (strict): D -> ~A
+counterargument r_na : (A).
+cut (~A) x.
+cut (D -> ~A) th.
+axiom r_na_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# r_nc (strict): D -> ~C
+counterargument r_nc : (C).
+cut (~C) x.
+cut (D -> ~C) th.
+axiom r_nc_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

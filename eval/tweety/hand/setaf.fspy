@@ -1,0 +1,48 @@
+# SetAfTheoryTest: arguments a, b, c, d; set attacks {b,d} -> a and
+# {a,c} -> c. Tweety: grounded {b,c,d}; preferred {b,c,d}.
+lk.
+declare A, B, C, D : bool.
+declare att_bd_a_rule : (B -> D -> ~A).
+declare att_ac_c_rule : (A -> C -> ~C).
+# arg_a (defeasible): A
+argument arg_a : (A).
+by default.
+dixi.
+# arg_b (defeasible): B
+argument arg_b : (B).
+by default.
+dixi.
+# arg_c (defeasible): C
+argument arg_c : (C).
+by default.
+dixi.
+# arg_d (defeasible): D
+argument arg_d : (D).
+by default.
+dixi.
+# att_bd_a (strict): B -> D -> ~A
+counterargument att_bd_a : (A).
+cut (~A) x.
+cut (B -> D -> ~A) th.
+axiom att_bd_a_rule.
+elim.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_ac_c (strict): A -> C -> ~C
+counterargument att_ac_c : (C).
+cut (~C) x.
+cut (A -> C -> ~C) th.
+axiom att_ac_c_rule.
+elim.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

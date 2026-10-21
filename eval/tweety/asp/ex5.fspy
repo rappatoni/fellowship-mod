@@ -1,0 +1,63 @@
+# Tweety lp-asp ex5.asp:
+# % Single-line comment
+# motive(harry).
+# motive(sally).
+# guilty(harry).
+# 
+# %* Multi-
+# *line 
+# *comment
+# *% 
+# innocent(Suspect) :- motive(Suspect), not guilty(Suspect).
+# #show guilty/1.
+# innocent(harry)?
+# Translation notes:
+#  - `#show guilty/1` (directive or query)
+#  - `innocent(harry)?` (directive or query)
+lk.
+declare Guilty_harry, Guilty_sally, Innocent_harry, Innocent_sally, Motive_harry, Motive_sally : bool.
+declare r0_rule : (Motive_harry).
+declare r1_rule : (Motive_sally).
+declare r2_rule : (Guilty_harry).
+declare r3_rule : (Motive_harry -> (Guilty_harry -> false) -> Innocent_harry).
+declare r4_rule : (Motive_sally -> (Guilty_sally -> false) -> Innocent_sally).
+# r0 (strict): Motive_harry
+argument r0 : (Motive_harry).
+axiom r0_rule.
+dixi.
+# r1 (strict): Motive_sally
+argument r1 : (Motive_sally).
+axiom r1_rule.
+dixi.
+# r2 (strict): Guilty_harry
+argument r2 : (Guilty_harry).
+axiom r2_rule.
+dixi.
+# r3 (strict): Motive_harry -> (Guilty_harry -> false) -> Innocent_harry
+argument r3 : (Innocent_harry).
+cut (Motive_harry -> (Guilty_harry -> false) -> Innocent_harry) th.
+axiom r3_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Guilty_harry) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r4 (strict): Motive_sally -> (Guilty_sally -> false) -> Innocent_sally
+argument r4 : (Innocent_sally).
+cut (Motive_sally -> (Guilty_sally -> false) -> Innocent_sally) th.
+axiom r4_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Guilty_sally) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.

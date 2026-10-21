@@ -1,0 +1,54 @@
+== literature4/stolen_car.fspy: check ok=True (0.1s)
+-- p1: issue P1[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] P0->P1[t]=IN P0[t]=IN P1[t]=IN
+      skeptical -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+      credulous -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+   preferred issue: ['IN']
+      [1] P0->P1[t]=IN P0[t]=IN P1[t]=IN
+      skeptical -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+      credulous -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+   stable    issue: ['IN']
+      [1] P0->P1[t]=IN P0[t]=IN P1[t]=IN
+      skeptical -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+      credulous -> value     μp1:P1.<!IN:P0->P1||parked0:P0*p1:P1>
+-- p2: issue P2[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN
+      skeptical -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+      credulous -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+   preferred issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN
+      skeptical -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+      credulous -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+   stable    issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN
+      skeptical -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+      credulous -> value     μp2:P2.<!IN:P1->P2||μb1:P1.<!IN:P0->P1||parked0:P0*b1:P1>*p2:P2>
+-- p3: issue P3[t]; 5 edges
+   grounded  issue: ['OUT']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+      credulous -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+   preferred issue: ['OUT']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+      credulous -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+   stable    issue: ['OUT']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+      credulous -> exception μalt2:P3.<?OUT:P3||gone3:P3>
+-- gone: issue P3[c]; 5 edges
+   grounded  issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> value     μ'gone:P3.<gone:P3||gone3:P3>
+      credulous -> value     μ'gone:P3.<gone:P3||gone3:P3>
+   preferred issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> value     μ'gone:P3.<gone:P3||gone3:P3>
+      credulous -> value     μ'gone:P3.<gone:P3||gone3:P3>
+   stable    issue: ['IN']
+      [1] P0->P1[t]=IN P1->P2[t]=IN P2->P3[t]=IN P0[t]=IN P1[t]=IN P2[t]=IN P3[c]=IN P3[t]=OUT
+      skeptical -> value     μ'gone:P3.<gone:P3||gone3:P3>
+      credulous -> value     μ'gone:P3.<gone:P3||gone3:P3>
+== done in 0.5s

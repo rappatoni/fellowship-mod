@@ -1,0 +1,45 @@
+# PAInconsistencyMeasureExample.java (theory): arguments A, B, C; attacks A->B, A->C, B->C
+lk.
+declare A_A, A_B, A_C : bool.
+declare att_a_A_a_B : (A_A -> ~A_B).
+declare att_a_A_a_C : (A_A -> ~A_C).
+declare att_a_B_a_C : (A_B -> ~A_C).
+argument a_A : (A_A).
+by default.
+dixi.
+argument a_B : (A_B).
+by default.
+dixi.
+argument a_C : (A_C).
+by default.
+dixi.
+counterargument a_A_on_a_B : (A_B).
+cut (~A_B) x.
+cut (A_A -> ~A_B) th.
+axiom att_a_A_a_B.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_A_on_a_C : (A_C).
+cut (~A_C) x.
+cut (A_A -> ~A_C) th.
+axiom att_a_A_a_C.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_B_on_a_C : (A_C).
+cut (~A_C) x.
+cut (A_B -> ~A_C) th.
+axiom att_a_B_a_C.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

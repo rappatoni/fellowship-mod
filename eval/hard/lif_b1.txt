@@ -1,0 +1,158 @@
+== literature4/lif_b1.fspy: check ok=True (0.5s)
+-- f_animal_ann: issue Fly ann[c]; 5 edges
+   grounded  issue: ['IN']
+      [1] Ab1 ann[c]=IN Animal ann[t]=IN Fly ann[c]=IN Ab1 ann->false[t]=IN Fly ann->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+      credulous -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+   preferred issue: ['IN']
+      [1] Ab1 ann[c]=IN Animal ann[t]=IN Fly ann[c]=IN Ab1 ann->false[t]=IN Fly ann->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+      credulous -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+   stable    issue: ['IN']
+      [1] Ab1 ann[c]=IN Animal ann[t]=IN Fly ann[c]=IN Ab1 ann->false[t]=IN Fly ann->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+      credulous -> value     μ'f_animal_ann:Fly ann.<r_animal:forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false||ann*animal_ann:Animal ann*λb4:Ab1 ann.μb5:false.<b4:Ab1 ann||IN:Ab1 ann!>*f_animal_ann:Fly ann*_F_>
+-- f_animal_tweety: issue Fly tweety[c]; 12 edges
+   grounded  issue: ['OUT']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+      credulous -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+   preferred issue: ['OUT']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+      credulous -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+   stable    issue: ['OUT']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+      credulous -> exception μ'alt15:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb4:Ab2 tweety.μb5:false.<b4:Ab2 tweety||IN:Ab2 tweety!>*OUT:Fly tweety?>
+-- f_bird_tweety: issue Fly tweety[t]; 12 edges
+   grounded  issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+      credulous -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+   preferred issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+      credulous -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+   stable    issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Ab2 tweety[c]=IN Animal tweety[t]=IN Bird tweety[t]=IN Fly tweety[c]=OUT Fly tweety[t]=IN Ab1 tweety->false[t]=OUT Ab2 tweety->false[t]=IN Fly tweety->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+      credulous -> value     μf_bird_tweety:Fly tweety.<r_bird:forall x:Thing,Bird x->(Ab2 x->false)->Fly x||tweety*bird_tweety:Bird tweety*λb1:Ab2 tweety.μb2:false.<b1:Ab2 tweety||IN:Ab2 tweety!>*f_bird_tweety:Fly tweety>
+-- f_animal_bruce: issue Fly bruce[c]; 12 edges
+   grounded  issue: ['OUT']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+      credulous -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+   preferred issue: ['OUT']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+      credulous -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+   stable    issue: ['OUT']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+      credulous -> exception μ'alt15:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb4:Ab3 bruce.μb5:false.<b4:Ab3 bruce||IN:Ab3 bruce!>*OUT:Fly bruce?>
+-- f_bat_bruce: issue Fly bruce[t]; 12 edges
+   grounded  issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+      credulous -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+   preferred issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+      credulous -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+   stable    issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Ab3 bruce[c]=IN Animal bruce[t]=IN Bat bruce[t]=IN Fly bruce[c]=OUT Fly bruce[t]=IN Ab1 bruce->false[t]=OUT Ab3 bruce->false[t]=IN Fly bruce->false[t]=OUT forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN forall x:Thing,Bat x->Animal x[t]=IN forall x:Thing,Bat x->(Ab3 x->false)->Fly x[t]=IN
+      skeptical -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+      credulous -> value     μf_bat_bruce:Fly bruce.<r_bat:forall x:Thing,Bat x->(Ab3 x->false)->Fly x||bruce*bat_bruce:Bat bruce*λb1:Ab3 bruce.μb2:false.<b1:Ab3 bruce||IN:Ab3 bruce!>*f_bat_bruce:Fly bruce>
+-- f_animal_ozzy: issue Fly ozzy[c]; 22 edges
+   grounded  issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+   preferred issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+   stable    issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_animal_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_animal_ozzy:Fly ozzy*_F_>
+-- f_bird_ozzy: issue Fly ozzy[t]; 22 edges
+   grounded  issue: ['OUT']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+      credulous -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+   preferred issue: ['OUT']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+      credulous -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+   stable    issue: ['OUT']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+      credulous -> exception μalt4:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb1:Ab4 ozzy.μb2:false.<b1:Ab4 ozzy||IN:Ab4 ozzy!>*?OUT:Fly ozzy*_F_>
+-- f_ostrich_ozzy: issue Fly ozzy[c]; 22 edges
+   grounded  issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+   preferred issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+   stable    issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ab4 ozzy[c]=IN Animal ozzy[t]=IN Bird ozzy[t]=IN Fly ozzy[c]=IN Fly ozzy[t]=OUT Ostrich ozzy[t]=IN Ab1 ozzy->false[t]=OUT Ab2 ozzy->false[t]=OUT Ab4 ozzy->false[t]=IN Fly ozzy->false[t]=IN forall x:Thing,Animal x->(Ab1 x->false)->Fly x->false[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Bird x->Animal x[t]=IN forall x:Thing,Bird x->(Ab2 x->false)->Fly x[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false[t]=IN
+      skeptical -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+      credulous -> value     μ'f_ostrich_ozzy:Fly ozzy.<r_ostrich:forall x:Thing,Ostrich x->(Ab4 x->false)->Fly x->false||ozzy*ostrich_ozzy:Ostrich ozzy*λb4:Ab4 ozzy.μb5:false.<b4:Ab4 ozzy||IN:Ab4 ozzy!>*f_ostrich_ozzy:Fly ozzy*_F_>
+-- ab1_tweety: issue Ab1 tweety[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Bird tweety[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+      credulous -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+   preferred issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Bird tweety[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+      credulous -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+   stable    issue: ['IN']
+      [1] Ab1 tweety[c]=OUT Ab1 tweety[t]=IN Bird tweety[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+      credulous -> value     μalt3:Ab1 tweety.<bird_ab1:forall x:Thing,Bird x->Ab1 x||tweety*bird_tweety:Bird tweety*alt3:Ab1 tweety>
+-- ab1_bruce: issue Ab1 bruce[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Bat bruce[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+      credulous -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+   preferred issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Bat bruce[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+      credulous -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+   stable    issue: ['IN']
+      [1] Ab1 bruce[c]=OUT Ab1 bruce[t]=IN Bat bruce[t]=IN forall x:Thing,Bat x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+      credulous -> value     μalt3:Ab1 bruce.<bat_ab1:forall x:Thing,Bat x->Ab1 x||bruce*bat_bruce:Bat bruce*alt3:Ab1 bruce>
+-- ab1_ozzy: issue Ab1 ozzy[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Bird ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN
+      skeptical -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+      credulous -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+   preferred issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Bird ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN
+      skeptical -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+      credulous -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+   stable    issue: ['IN']
+      [1] Ab1 ozzy[c]=OUT Ab1 ozzy[t]=IN Bird ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Bird x->Ab1 x[t]=IN forall x:Thing,Ostrich x->Bird x[t]=IN
+      skeptical -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+      credulous -> value     μalt3:Ab1 ozzy.<bird_ab1:forall x:Thing,Bird x->Ab1 x||ozzy*μb1:Bird ozzy.<ostriches_birds:forall x:Thing,Ostrich x->Bird x||ozzy*ostrich_ozzy:Ostrich ozzy*b1:Bird ozzy>*alt3:Ab1 ozzy>
+-- ab2_ozzy: issue Ab2 ozzy[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN
+      skeptical -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+      credulous -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+   preferred issue: ['IN']
+      [1] Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN
+      skeptical -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+      credulous -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+   stable    issue: ['IN']
+      [1] Ab2 ozzy[c]=OUT Ab2 ozzy[t]=IN Ostrich ozzy[t]=IN forall x:Thing,Ostrich x->Ab2 x[t]=IN
+      skeptical -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+      credulous -> value     μalt3:Ab2 ozzy.<ostrich_ab2:forall x:Thing,Ostrich x->Ab2 x||ozzy*ostrich_ozzy:Ostrich ozzy*alt3:Ab2 ozzy>
+== done in 3.7s

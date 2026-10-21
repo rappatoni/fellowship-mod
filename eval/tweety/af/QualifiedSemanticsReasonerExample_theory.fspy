@@ -1,0 +1,73 @@
+# QualifiedSemanticsReasonerExample.java (theory): arguments h, i, j, k, l; attacks h->j, i->h, j->i, j->k, k->l
+lk.
+declare H, I, J, K, L : bool.
+declare att_h_j : (H -> ~J).
+declare att_i_h : (I -> ~H).
+declare att_j_i : (J -> ~I).
+declare att_j_k : (J -> ~K).
+declare att_k_l : (K -> ~L).
+argument h : (H).
+by default.
+dixi.
+argument i : (I).
+by default.
+dixi.
+argument j : (J).
+by default.
+dixi.
+argument k : (K).
+by default.
+dixi.
+argument l : (L).
+by default.
+dixi.
+counterargument h_on_j : (J).
+cut (~J) x.
+cut (H -> ~J) th.
+axiom att_h_j.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument i_on_h : (H).
+cut (~H) x.
+cut (I -> ~H) th.
+axiom att_i_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument j_on_i : (I).
+cut (~I) x.
+cut (J -> ~I) th.
+axiom att_j_i.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument j_on_k : (K).
+cut (~K) x.
+cut (J -> ~K) th.
+axiom att_j_k.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument k_on_l : (L).
+cut (~L) x.
+cut (K -> ~L) th.
+axiom att_k_l.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

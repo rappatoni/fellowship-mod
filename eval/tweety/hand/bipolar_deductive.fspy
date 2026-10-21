@@ -1,0 +1,51 @@
+# DeductiveBipolarArgumentation: arguments a, b, c, x; attack x -> c;
+# deductive supports a => x and b => c (accepting the supporter commits to
+# the supported). Supports as strict rules. Tweety: preferred {a,x}.
+lk.
+declare A, B, C, X : bool.
+declare sup_a_x_rule : (A -> X).
+declare sup_b_c_rule : (B -> C).
+declare att_x_c_rule : (X -> ~C).
+# arg_a (defeasible): A
+argument arg_a : (A).
+by default.
+dixi.
+# arg_b (defeasible): B
+argument arg_b : (B).
+by default.
+dixi.
+# arg_c (defeasible): C
+argument arg_c : (C).
+by default.
+dixi.
+# arg_x (defeasible): X
+argument arg_x : (X).
+by default.
+dixi.
+# sup_a_x (strict): A -> X
+argument sup_a_x : (X).
+cut (A -> X) th.
+axiom sup_a_x_rule.
+elim.
+next.
+axiom th.
+dixi.
+# sup_b_c (strict): B -> C
+argument sup_b_c : (C).
+cut (B -> C) th.
+axiom sup_b_c_rule.
+elim.
+next.
+axiom th.
+dixi.
+# att_x_c (strict): X -> ~C
+counterargument att_x_c : (C).
+cut (~C) x.
+cut (X -> ~C) th.
+axiom att_x_c_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

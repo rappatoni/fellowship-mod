@@ -1,0 +1,18 @@
+# aida-negation-spelling-in-unfolding, smallest case across two arguments
+# (2026-10-21): c owes A -> false, not_a proves ~A from a declaration.
+# `graph c` is refused: "This is not trivial. Work some more." With one
+# spelling on both sides it labels IN and evaluates to a value.
+lk.
+declare A, C : bool.
+declare c1 : ((A -> false) -> C).
+declare na : (~A).
+argument not_a : (~A).
+axiom na.
+dixi.
+argument c : (C).
+cut ((A -> false) -> C) th.
+axiom c1.
+elim.
+next.
+axiom th.
+dixi.

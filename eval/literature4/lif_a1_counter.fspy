@@ -1,0 +1,44 @@
+# Lifschitz, Benchmark Problems for Formal Nonmonotonic Reasoning (1988),
+# A1 basic default reasoning and A2 default reasoning with irrelevant
+# information, as commonly restated: blocks A and B are heavy; heavy blocks
+# are normally on the table; A is not on the table [A2: B is red].
+# Expected: B is on the table. Here A's exception is written as a
+# counter-instance against the general rule itself (AIDA's Q4: the rule
+# stands or falls as one statement). Before: one presumed general rule,
+# instantiated per block; A's exception is a strict refutation of the
+# instance's conclusion.
+lk.
+declare Block : type.
+declare a, b : Block.
+declare Heavy, OnTable, Red : Block -> bool.
+declare heavy_a : (Heavy [a]).
+declare heavy_b : (Heavy [b]).
+declare red_b : (Red [b]).
+deny not_on_a : (OnTable [a]).
+argument on_a : (OnTable [a]).
+cut (forall x:Block, Heavy [x] -> OnTable [x]) r.
+by default.
+next.
+elim [a].
+elim.
+axiom heavy_a.
+axiom r.
+dixi.
+argument on_b : (OnTable [b]).
+cut (forall x:Block, Heavy [x] -> OnTable [x]) r.
+by default.
+next.
+elim [b].
+elim.
+axiom heavy_b.
+axiom r.
+dixi.
+counterargument a_off : (OnTable [a]).
+moxia not_on_a.
+dixi.
+counterargument rule_fails : (forall x:Block, Heavy [x] -> OnTable [x]).
+elim [a].
+elim.
+axiom heavy_a.
+moxia not_on_a.
+dixi.

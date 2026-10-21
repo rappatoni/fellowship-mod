@@ -1,0 +1,48 @@
+# ProbabilisticRankingReasonerExample.java (theory): arguments a1, a2, a3, a4; attacks a1->a2, a2->a3, a3->a4
+lk.
+declare A1, A2, A3, A4 : bool.
+declare att_a1_a2 : (A1 -> ~A2).
+declare att_a2_a3 : (A2 -> ~A3).
+declare att_a3_a4 : (A3 -> ~A4).
+argument a1 : (A1).
+by default.
+dixi.
+argument a2 : (A2).
+by default.
+dixi.
+argument a3 : (A3).
+by default.
+dixi.
+argument a4 : (A4).
+by default.
+dixi.
+counterargument a1_on_a2 : (A2).
+cut (~A2) x.
+cut (A1 -> ~A2) th.
+axiom att_a1_a2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a2_on_a3 : (A3).
+cut (~A3) x.
+cut (A2 -> ~A3) th.
+axiom att_a2_a3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a3_on_a4 : (A4).
+cut (~A4) x.
+cut (A3 -> ~A4) th.
+axiom att_a3_a4.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

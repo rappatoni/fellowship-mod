@@ -1,0 +1,55 @@
+# The drowning problem (Benferhat, Cayrol, Dubois, Lang, Prade 1993; Pearl's
+# System Z): birds normally fly, birds normally have wings, penguins are
+# birds, penguins normally do not fly. Do penguins have wings? System Z and
+# rational closure say no (the exception "drowns" the unrelated default);
+# lexicographic closure, ASPIC+-style rule-based systems and circumscription
+# with separate abnormalities say yes.
+lk.
+declare Thing : type.
+declare opus : Thing.
+declare Bird, Penguin, Fly, Wings, Ab1 : Thing -> bool.
+declare penguin_opus : (Penguin [opus]).
+declare penguins_birds : (forall x:Thing, Penguin [x] -> Bird [x]).
+declare birds_fly : (forall x:Thing, Bird [x] -> (Ab1 [x] -> false) -> Fly [x]).
+declare penguins_ab1 : (forall x:Thing, Penguin [x] -> Ab1 [x]).
+argument wings : (Wings [opus]).
+cut (forall x:Thing, Bird [x] -> Wings [x]) r.
+by default.
+next.
+elim [opus].
+elim.
+cut (forall x:Thing, Penguin [x] -> Bird [x]) s.
+axiom penguins_birds.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom s.
+axiom r.
+dixi.
+argument fly : (Fly [opus]).
+cut (forall x:Thing, Bird [x] -> (Ab1 [x] -> false) -> Fly [x]) r.
+axiom birds_fly.
+elim [opus].
+elim.
+cut (forall x:Thing, Penguin [x] -> Bird [x]) s.
+axiom penguins_birds.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom s.
+elim.
+elim h.
+cut (Ab1 [opus]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument ab1 : (Ab1 [opus]).
+cut (forall x:Thing, Penguin [x] -> Ab1 [x]) r.
+axiom penguins_ab1.
+elim [opus].
+elim.
+axiom penguin_opus.
+axiom r.
+dixi.

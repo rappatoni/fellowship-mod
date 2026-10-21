@@ -1,0 +1,62 @@
+== literature4/prakken_bm.fspy: check ok=True (0.1s)
+-- b: issue B[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] B->~M[t]=IN ~B[t]=UNDEC M->~B[t]=IN ~M[t]=UNDEC B[c]=UNDEC B[t]=UNDEC M[c]=UNDEC M[t]=UNDEC
+      skeptical -> open      ?UNDEC:B
+      credulous -> open      ?UNDEC:B
+   preferred issue: ['OUT', 'IN']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      ?UNDEC:B
+      credulous -> value     !IN:B
+   stable    issue: ['OUT', 'IN']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      ?UNDEC:B
+      credulous -> value     !IN:B
+-- m: issue M[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] B->~M[t]=IN ~B[t]=UNDEC M->~B[t]=IN ~M[t]=UNDEC B[c]=UNDEC B[t]=UNDEC M[c]=UNDEC M[t]=UNDEC
+      skeptical -> open      ?UNDEC:M
+      credulous -> open      ?UNDEC:M
+   preferred issue: ['IN', 'OUT']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      ?UNDEC:M
+      credulous -> value     !IN:M
+   stable    issue: ['IN', 'OUT']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      ?UNDEC:M
+      credulous -> value     !IN:M
+-- not_m: issue M[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] B->~M[t]=IN ~B[t]=UNDEC M->~B[t]=IN ~M[t]=UNDEC B[c]=UNDEC B[t]=UNDEC M[c]=UNDEC M[t]=UNDEC
+      skeptical -> open      μ'alt5:M.<alt5:M||UNDEC:M?>
+      credulous -> open      μ'alt5:M.<alt5:M||UNDEC:M?>
+   preferred issue: ['OUT', 'IN']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      μ'alt5:M.<alt5:M||UNDEC:M?>
+      credulous -> value     μ'alt5:M.<bm:B->~M||μb2:B.<mb:M->~B||μb1:M.<alt5:M||b1:M>*!IN:B*_F_>*μb1:M.<alt5:M||b1:M>*_F_>
+   stable    issue: ['OUT', 'IN']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      μ'alt5:M.<alt5:M||UNDEC:M?>
+      credulous -> value     μ'alt5:M.<bm:B->~M||μb2:B.<mb:M->~B||μb1:M.<alt5:M||b1:M>*!IN:B*_F_>*μb1:M.<alt5:M||b1:M>*_F_>
+-- not_b: issue B[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] B->~M[t]=IN ~B[t]=UNDEC M->~B[t]=IN ~M[t]=UNDEC B[c]=UNDEC B[t]=UNDEC M[c]=UNDEC M[t]=UNDEC
+      skeptical -> open      μ'alt5:B.<alt5:B||UNDEC:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||UNDEC:B?>
+   preferred issue: ['IN', 'OUT']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      μ'alt5:B.<alt5:B||UNDEC:B?>
+      credulous -> value     μ'alt5:B.<mb:M->~B||μb2:M.<bm:B->~M||μb1:B.<alt5:B||b1:B>*!IN:M*_F_>*μb1:B.<alt5:B||b1:B>*_F_>
+   stable    issue: ['IN', 'OUT']
+      [1] B->~M[t]=IN ~B[t]=IN M->~B[t]=IN ~M[t]=OUT B[c]=IN B[t]=OUT M[c]=OUT M[t]=IN
+      [2] B->~M[t]=IN ~B[t]=OUT M->~B[t]=IN ~M[t]=IN B[c]=OUT B[t]=IN M[c]=IN M[t]=OUT
+      skeptical -> open      μ'alt5:B.<alt5:B||UNDEC:B?>
+      credulous -> value     μ'alt5:B.<mb:M->~B||μb2:M.<bm:B->~M||μb1:B.<alt5:B||b1:B>*!IN:M*_F_>*μb1:B.<alt5:B||b1:B>*_F_>
+== done in 0.7s

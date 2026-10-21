@@ -1,0 +1,34 @@
+# EquivalenceExample.java (theory2): arguments a, b, c; attacks b->a, c->b
+lk.
+declare A, B, C : bool.
+declare att_b_a : (B -> ~A).
+declare att_c_b : (C -> ~B).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+counterargument b_on_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom att_b_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_b : (B).
+cut (~B) x.
+cut (C -> ~B) th.
+axiom att_c_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

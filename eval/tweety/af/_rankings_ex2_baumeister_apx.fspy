@@ -1,0 +1,174 @@
+# /rankings_ex2_baumeister.apx (apx): arguments a1, b1, b2, b3, b4, c1, c2, c3, c4, d1, d2, d3, e1; attacks b1->a1, b2->a1, b3->a1, b4->a1, c1->b1, c2->b1, c3->b2, c4->b3, d1->c1, d2->c2, d3->c3, e1->d1
+lk.
+declare A1, B1, B2, B3, B4, C1, C2, C3, C4, D1, D2, D3, E1 : bool.
+declare att_b1_a1 : (B1 -> ~A1).
+declare att_b2_a1 : (B2 -> ~A1).
+declare att_b3_a1 : (B3 -> ~A1).
+declare att_b4_a1 : (B4 -> ~A1).
+declare att_c1_b1 : (C1 -> ~B1).
+declare att_c2_b1 : (C2 -> ~B1).
+declare att_c3_b2 : (C3 -> ~B2).
+declare att_c4_b3 : (C4 -> ~B3).
+declare att_d1_c1 : (D1 -> ~C1).
+declare att_d2_c2 : (D2 -> ~C2).
+declare att_d3_c3 : (D3 -> ~C3).
+declare att_e1_d1 : (E1 -> ~D1).
+argument a1 : (A1).
+by default.
+dixi.
+argument b1 : (B1).
+by default.
+dixi.
+argument b2 : (B2).
+by default.
+dixi.
+argument b3 : (B3).
+by default.
+dixi.
+argument b4 : (B4).
+by default.
+dixi.
+argument c1 : (C1).
+by default.
+dixi.
+argument c2 : (C2).
+by default.
+dixi.
+argument c3 : (C3).
+by default.
+dixi.
+argument c4 : (C4).
+by default.
+dixi.
+argument d1 : (D1).
+by default.
+dixi.
+argument d2 : (D2).
+by default.
+dixi.
+argument d3 : (D3).
+by default.
+dixi.
+argument e1 : (E1).
+by default.
+dixi.
+counterargument b1_on_a1 : (A1).
+cut (~A1) x.
+cut (B1 -> ~A1) th.
+axiom att_b1_a1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b2_on_a1 : (A1).
+cut (~A1) x.
+cut (B2 -> ~A1) th.
+axiom att_b2_a1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b3_on_a1 : (A1).
+cut (~A1) x.
+cut (B3 -> ~A1) th.
+axiom att_b3_a1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b4_on_a1 : (A1).
+cut (~A1) x.
+cut (B4 -> ~A1) th.
+axiom att_b4_a1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c1_on_b1 : (B1).
+cut (~B1) x.
+cut (C1 -> ~B1) th.
+axiom att_c1_b1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c2_on_b1 : (B1).
+cut (~B1) x.
+cut (C2 -> ~B1) th.
+axiom att_c2_b1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c3_on_b2 : (B2).
+cut (~B2) x.
+cut (C3 -> ~B2) th.
+axiom att_c3_b2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c4_on_b3 : (B3).
+cut (~B3) x.
+cut (C4 -> ~B3) th.
+axiom att_c4_b3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d1_on_c1 : (C1).
+cut (~C1) x.
+cut (D1 -> ~C1) th.
+axiom att_d1_c1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d2_on_c2 : (C2).
+cut (~C2) x.
+cut (D2 -> ~C2) th.
+axiom att_d2_c2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d3_on_c3 : (C3).
+cut (~C3) x.
+cut (D3 -> ~C3) th.
+axiom att_d3_c3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e1_on_d1 : (D1).
+cut (~D1) x.
+cut (E1 -> ~D1) th.
+axiom att_e1_d1.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

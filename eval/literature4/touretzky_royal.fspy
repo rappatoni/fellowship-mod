@@ -1,0 +1,72 @@
+# Touretzky (1986), royal elephants with a redundant link: elephants are
+# normally grey; royal elephants are elephants; royal elephants are
+# normally not grey; Clyde is a royal elephant, and (redundantly) an
+# elephant. Specificity-based inheritance concludes Clyde is not grey;
+# path-based reasoners that count the redundant link Clyde -> elephant as a
+# separate path got this wrong (Touretzky's "redundant link" problem).
+# AIDA has no specificity: the exception is written as abnormality
+# (royal elephants are abnormal elephants), first order.
+lk.
+declare Thing : type.
+declare clyde : Thing.
+declare Elephant, Royal, Grey, AbE : Thing -> bool.
+declare royal_clyde : (Royal [clyde]).
+declare elephant_clyde : (Elephant [clyde]).
+declare royals_elephants : (forall x:Thing, Royal [x] -> Elephant [x]).
+declare elephants_grey : (forall x:Thing, Elephant [x] -> (AbE [x] -> false) -> Grey [x]).
+declare royals_abnormal : (forall x:Thing, Royal [x] -> AbE [x]).
+# Grey, by the redundant direct link.
+argument grey_direct : (Grey [clyde]).
+cut (forall x:Thing, Elephant [x] -> (AbE [x] -> false) -> Grey [x]) r.
+axiom elephants_grey.
+elim [clyde].
+elim.
+axiom elephant_clyde.
+elim.
+elim h.
+cut (AbE [clyde]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# Grey, by the path through royal elephant.
+argument grey_path : (Grey [clyde]).
+cut (forall x:Thing, Elephant [x] -> (AbE [x] -> false) -> Grey [x]) r.
+axiom elephants_grey.
+elim [clyde].
+elim.
+cut (forall x:Thing, Royal [x] -> Elephant [x]) s.
+axiom royals_elephants.
+elim [clyde].
+elim.
+axiom royal_clyde.
+axiom s.
+elim.
+elim h.
+cut (AbE [clyde]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# Not grey, royal elephants being normally not grey (presumed).
+counterargument not_grey : (Grey [clyde]).
+cut (forall x:Thing, Royal [x] -> Grey [x] -> false) r.
+by default.
+next.
+elim [clyde].
+elim.
+axiom royal_clyde.
+elim.
+axiom.
+elim.
+dixi.
+argument abnormal : (AbE [clyde]).
+cut (forall x:Thing, Royal [x] -> AbE [x]) r.
+axiom royals_abnormal.
+elim [clyde].
+elim.
+axiom royal_clyde.
+axiom r.
+dixi.

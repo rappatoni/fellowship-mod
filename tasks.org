@@ -594,6 +594,15 @@ s(CASP), defeasible logic with superiority and circumscription. An
 existential query (s(CASP)'s =?- flies(X)=) needs its witness supplied
 by hand.
 
+2026-10-19 (eval/REPORT.org part 5): Lifschitz's A4 (default reasoning
+in an open domain - "every heavy block other than A is on the table")
+needs equality or a universal with exceptions; written with a universal
+"not abnormal" presumption, A's exception refutes it and the universal
+conclusion goes OUT (lif_a4_open.fspy). A1 with the exception written
+as a counter-instance makes B leave the table too (lif_a1_counter.fspy,
+Q4); written as a refutation of the instance's conclusion, B stays
+(lif_a1.fspy).
+
 *Design decisions (the author, 2026-10-16).*
 - Q1, statement identity: as the spec says. A node is a proposition up
   to renaming of bound first-order variables, never the printed string;
@@ -799,6 +808,86 @@ and =argument all : (A).= are recorded and fail at =dixi= with
 Fellowship's bare parse error. The names are checked for uniqueness
 already (README, "Names are unique per document"); the keyword list is
 in wrap/fellowship/lexer.mll.
+
+** BACKLOG Recover the prover session after a command times out
+:PROPERTIES:
+:ID:             aida-prover-timeout-desync
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        After a Fellowship command exceeds =ACDC_TIMEOUT=, the session either waits for and discards the late reply or restarts the prover and replays the document, so that no later call reads a reply meant for an earlier command; the timed-out call fails with its own error naming the timeout.
+:VERIFY:         eval/tweety/aspic_random_01.fspy with the call sequence of eval/tweety/compare.py (grounded): every call after a timeout gives the result it gives in a fresh session (no "k0_2 is neither in your hypothesis", no AttributeError on 'proof-term'); a test forces a timeout with a small ACDC_TIMEOUT and checks the next call.
+:END:
+
+Found 2026-10-21 (eval/REPORT.org part 6) on a random ASPIC+ theory of
+Tweety's generator (79 rule instances), alone on the machine. Labelling
+and evaluating every argument in turn, the type-check replay of =p32=
+(credulous, grounded) exceeds the 5 s per-command timeout; from then on
+calls fail that succeed in a fresh session: =k34= is refused with "k0_2
+is neither in your hypothesis nor in your conclusion" (a name from
+another replay), =p50= raises =AttributeError: 'NoneType' object has no
+attribute 'strip'= in =Argument._parse_proof_state= (the reply has no
+proof term - it answers another command), others "This is not trivial"
+or "a step left Fellowship with no theorem open". 33 of 237 calls fail;
+=p50= alone labels and evaluates. The pipe is not drained after
+=pexpect= gives up, so the late reply is read as the answer to the next
+command. Related: [[id:aida-transport-limits]] (the timeout itself).
+With =ACDC_TIMEOUT=300= the same sequence passes 235 of 237 calls
+(single calls take up to 58 s), so the other 31 failures were the
+cascade. The two remaining: =k85= skeptical reports a prover I/O timeout
+after 5.4 s - well under the configured 300 s, cause not found (no
+other timeout is set in wrap/ or core/) - and the next call, =k85=
+credulous, is refused with "You need to specify an identifier", again a
+reply out of step.
+
+** BACKLOG Report a labeller timeout as a service error
+:PROPERTIES:
+:ID:             aida-labeller-timeout-error
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        When adf-bdd exceeds its timeout, =Service.label= and =evaluate= raise an =AidaError= (stage "label") that names the semantics and the number of statements, and the CLI prints it on one line; no =subprocess.TimeoutExpired= reaches a caller.
+:VERIFY:         eval/tweety/af/CF2Example_theory.fspy: =label document complete= ends with the one-line refusal; a unit test patches the timeout to 0.01 s and checks the error class.
+:END:
+
+Found 2026-10-21 (eval/REPORT.org part 6): seven of the 52 Tweety
+frameworks (6 to 10 arguments) get no complete or preferred labelling
+in 120 s, and the timeout surfaces as =subprocess.TimeoutExpired= from
+=core/comp/oracle.py:run_adf_bdd=. The cost itself is
+[[id:aida-multi-extension-labelling-cost]].
+
+** BACKLOG Name the hypothesis of =elim NAME= on a goal written =~A=
+:PROPERTIES:
+:ID:             aida-elim-name-negation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        =elim a.= on a goal =~A= names the new hypothesis =a=, as it does on the same goal written =A -> false=, or the documentation says why the name is ignored.
+:VERIFY:         In the REPL, =argument t : (~A). elim a.= shows =a : A= among the hypotheses; eval/tweety/logic/pl_example.fspy still checks.
+:END:
+
+Found 2026-10-21 (eval/REPORT.org part 6, Tweety's PlExample): on =~A=
+the hypothesis is named =H2=, so =axiom a.= later fails with "a is
+neither in your hypothesis nor in your conclusion". The name is Fellowship's
+choice for its primitive negation (=elim= builds mu'H:~A.<lambda H2:A...>).
 
 ** DONE Never register a discarded argument or a refused declaration
 CLOSED: [2026-10-19 Mon]
@@ -3325,6 +3414,20 @@ First order too (2026-10-17, eval/literature3/fo_seq.fspy): premises
 counter-instance written; preferred has three labellings where the
 maximal consistent subsets give two - the extra one accepts both
 =forall x, P x= and =~P a=.
+
+Hard cases (2026-10-19, eval/REPORT.org part 5, eval/literature4/):
+- prakken_bm_sources.fspy reproduces Prakken's (2016) counterexample to
+  closure - strict b -> ~m and m -> ~b with fallible premises b and m -
+  as a preferred labelling with b and m both IN; with b and m bare
+  presumptions (prakken_bm.fspy) the labelling does not arise.
+- lottery_sources.fspy (three tickets, exactly one wins): besides the
+  three one-winner labellings, one with every "ticket i loses" IN and
+  every "the others lose, so i wins" OUT.
+- stolen_car.fspy and murder_mystery.fspy: no reasoning runs backwards
+  from an observation; the car is concluded parked at 1 and 2, and the
+  loaded gun is not inferred from the death. Transposition of the
+  persistence rules would contest the first; the second needs more
+  (the clipping rule read as the only cause).
 *derivation*, and a strict rule applied to a defeasible premise is a
 strict rule: the premise is what is defeasible. The compiler merges the
 two into one edge and lets the premise decide its strictness, so no
@@ -3411,6 +3514,24 @@ built by hand with =kind="assumption"= sources, which no compiled term
 can produce. Related: =aida-strict-refutation-edges= (declared
 refutations are dropped; the same "strict references carry no side"
 problem at the leaf level).
+
+TweetyProject evaluation (2026-10-21, eval/REPORT.org part 6):
+- eval/tweety/logic/turkey_action.fspy (Giunchiglia et al.'s two
+  turkeys as persistence presumptions and strict effects): the gun is
+  loaded at 1 strictly and nothing unloads it, yet =Loaded_2= is
+  undecided in its issue graph. The persistence chain of "unloaded" runs
+  through the node =~Loaded_1[t]=, IN beside =Loaded_1[t]= IN, because no
+  derivation of Loaded_1 contests it - the missing negation bridge, in
+  the event-calculus shape.
+- eval/tweety/hand/bipolar_deductive.fspy: deductive support written as
+  strict rules; Tweety's preferred extension {a, x} drops the supporter
+  b of the attacked c, AIDA keeps b IN in both labellings, each
+  accepting a strict rule with an IN premise and a refuted conclusion.
+- eval/tweety/delp_counterarg.fspy (h <- a, ~h <- c, a and c
+  defeasible): h is undecided while a and c are IN; DeLP rejects a and c
+  through the strict rules. eval/tweety/example4.fspy (ABA): the
+  assumption c is accepted though it strictly yields the self-refuting
+  d; ABA's preferred extension excludes c.
 
 *** DONE Design: should the intermediate conclusions of curried implications be attack points?
 CLOSED: [2026-10-13 Tue]
@@ -3559,6 +3680,33 @@ cArg's cell for B->C.
 
 Raised and decided by the author 2026-09-25, while settling the
 asymmetric contrariness guard (see below).
+
+*** BACKLOG Design: one statement presumed by one argument and owed by another
+:PROPERTIES:
+:ID:             aida-onus-per-statement
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides whether the onus belongs to a statement (as now: one argument presuming it makes it presumed for an argument that owes it) or to each use of it, and records the decision with its effect on the two railroad documents.
+:VERIFY:         The decision is written here; eval/literature4/railroad.fspy and railroad_strong_alone.fspy give the verdicts it states for =cross_strong=.
+:END:
+
+Raised 2026-10-19 by the hard-cases evaluation (eval/REPORT.org part 5).
+Gelfond & Lifschitz's railroad crossing: =cross_naf= presumes the
+refutation of Train (negation as failure), =cross_strong= owes it
+(classical negation). Alone, =cross_strong= is OUT when nothing is known
+about trains, as intended; in one document with =cross_naf= it is IN:
+the statement Train[c] carries both markers ("obligation, presumption")
+and its presumption meets =cross_strong='s obligation. So a document
+cannot hold both readings of "no train" for the same proposition.
+Related: [[id:aida-onus-delegation-polarity]] (presumptions on opposite
+sides).
 
 *The rule.* "Presumption" is the implementation's word; *delegation* is
 the author's, and it is the accurate one. Writing =!1:P= does not just
@@ -6399,6 +6547,13 @@ issue's own term. The README allows issue graphs to differ; here two
 queries contradict each other. =strict_contradictions= is logged at
 DEBUG only. Related: [[id:aida-strict-layer]].
 
+TweetyProject evaluation (2026-10-21, eval/REPORT.org part 6): a fact,
+a strict rule ~Flies <- Penguin and a defeasible Flies <- Penguin
+(eval/tweety/min_strict.fspy, DeLP syntax): the issue graphs refute
+Flies (as DeLP and ASPIC+ do), the document graph leaves it undecided in
+grounded and splits it in preferred. Same in delp_birds.fspy (10
+literal/semantics pairs) and in ABA's example4.
+
 *** BACKLOG Design: a self-attack labelled per document and per issue
 :PROPERTIES:
 :ID:             aida-self-attack-document-vs-issue
@@ -6423,6 +6578,11 @@ the document agrees with Dung (a, b UNDEC, no stable labelling);
 issue graph. Over 60 random frameworks (eval/results/af_eval.txt) 101
 issue labels differ from Dung for this reason, 15 more because stable
 semantics is not local.
+
+Also Pollock's self-defeating witness (2026-10-19,
+eval/literature4/pollock_selfdefeat.fspy): the document labels Reliable
+UNDEC on both sides; the issue graphs label it OUT and "Smith is
+unreliable" IN (VALUE).
 
 *** BACKLOG Design: what skeptical evaluation of a floating conclusion returns
 :PROPERTIES:
@@ -7188,6 +7348,18 @@ so first check whether our export (statement naming, the guard
 disjuncts) or adf-bdd's enumeration is responsible; then consider
 enumerating per SCC, which the independent-loop case decomposes into, and
 computing preferred without the k^2 filter over complete labellings.
+
+TweetyProject evaluation (2026-10-21, eval/REPORT.org part 6): the cost
+is not the output size. The stable-marriage ABA example
+(eval/tweety/smp_fol.fspy) compiles to a 28-statement ADF with three
+complete models; adf-bdd =--com= takes 80 s with =naive= and =hybrid=
+and more than 150 s with =biodivine=, stable 1.7 s, grounded instant;
+16 of the 28 statements are decided by grounded (presumptions with
+condition true and what they fix), so solving only the rest would be a
+cheap first step. Seven of Tweety's 52 example frameworks (6 to 10
+arguments, e.g. CF2Example: 6 arguments, 6 attacks) time out at 120 s
+for complete and preferred, two of them for stable
+(eval/tweety/af.out).
 
 ** BACKLOG Design: registering tactics in the wrapper
 :PROPERTIES:
@@ -8143,6 +8315,15 @@ first is the smallest and removes =spelling_clashes= as a concept.
 
 Distinct from the negation bridge of [[id:aida-strict-layer]], which
 links the node =~K= to the contrary side of the node K.
+
+TweetyProject evaluation (2026-10-21, eval/REPORT.org part 6): the mix
+also breaks a single argument. eval/tweety/spelling_one_argument.fspy:
+a declared =(A -> false) -> C= applied to an inline proof whose steps
+spell =~A= passes =check=, and =graph c= is refused ("a is neither in
+your hypothesis nor in your conclusion"); spelled =~A= throughout
+(=~A -> C=) it is IN and a value. eval/tweety/spelling_two_arguments.fspy
+is the smallest case across arguments (an obligation on =A -> false= met
+by an argument for =~A=: "This is not trivial. Work some more.").
 
 ** BACKLOG Name output sites by number so unfolded terms parse back
 :PROPERTIES:

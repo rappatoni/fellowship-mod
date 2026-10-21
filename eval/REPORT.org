@@ -65,6 +65,14 @@ The headline results:
   theorems that throw an open statement cannot be argued; two new bugs
   (11: an exposed horn with an open source labels a strict theorem OUT;
   12: keyword names give a bare parse error).
+- *Part 5* (problem cases from the literature; 19 documents): Lifschitz's
+  default-reasoning and inheritance benchmarks, Touretzky, drowning,
+  Chisholm and the legal priority example come out as expected, with
+  specificity and priorities written as abnormality and undercuts; the
+  stolen car and the murder mystery fail for want of backward reasoning;
+  Prakken's closure counterexample is reproduced with derived premises;
+  one statement cannot be presumed by one argument and owed by another
+  (new design task).
 
 * How the testing was done
 
@@ -902,6 +910,358 @@ abnormality pattern.
     =minimal= or =all= fail at =dixi= with "Line 1, character 8: Parse
     error". Task [[id:aida-reserved-names]].
 
+* Part 5: problem cases from the literature
+
+Run 2026-10-19 on branch =eval-hard= at =6112299=: 19 documents in
+=eval/literature4/=, outputs in =eval/hard/=. The cases are those the
+literature uses against existing systems: Lifschitz's benchmark
+problems for nonmonotonic reasoning (1988; A1-A4 and B1, restated from
+the common secondary form - the original text was not available to me),
+Touretzky's redundant link, the drowning problem, the lottery paradox,
+Prakken's closure counterexample, Pollock's self-defeat, Chisholm's
+contrary-to-duty paradox, the stolen car and the Stanford murder
+mystery, Gelfond and Lifschitz's railroad crossing, and Prakken and
+Sartor's reasoning about priorities. Each header states the expected
+answer and whom it troubles. No adequacy mismatch or error occurred.
+The closure counterexample and the lottery formalisation are taken from
+Prakken, "Rethinking the Rationality Postulates for Argumentation-Based
+Inference" (https://webspace.science.uu.nl/~prakk101/pubs/lottery4.pdf);
+the other expected answers are the standard ones as I know them, not
+re-checked against the original papers.
+
+** Results
+
+| file                    | problem                                    | AIDA                                                                     | expected / literature                                   |
+|-------------------------+--------------------------------------------+--------------------------------------------------------------------------+---------------------------------------------------------|
+| lif_a1                  | A1/A2: heavy blocks on the table           | B on table IN, A OUT                                                     | B on the table                                          |
+| lif_a1_counter          | the same, exception as a counter-instance  | B OUT too                                                                | B on the table (rule kept for B)                        |
+| lif_a3                  | A3: two defaults, one exception each       | A red IN, B on table IN                                                  | the same                                                |
+| lif_a4_open             | A4: open domain                            | universal conclusion OUT                                                 | every heavy block other than A is on the table          |
+| lif_b1                  | B1: linear inheritance                     | ann ~fly, tweety fly, bruce fly, ozzy ~fly                               | the same                                                |
+| touretzky_royal         | royal elephant, redundant link             | Clyde not grey; both grey arguments OUT                                  | not grey                                                |
+| drowning                | do penguins have wings?                    | wings IN                                                                 | no drowning (System Z / rational closure drown it)      |
+| lottery_presumed        | lottery, "loses" presumed                  | three labellings, one winner each; grounded UNDEC                        | Pollock: no "loses" justified; Prakken: each justified  |
+| lottery_sources         | lottery, "loses" derived from sources      | four: the three one-winner ones and one with all "loses" IN              | (as above)                                              |
+| prakken_bm              | b->~m, m->~b, b, m presumed                | two labellings, never both                                               | {b, m} admissible under unrestricted rebut              |
+| prakken_bm_sources      | the same with derived premises             | three, one with b and m both IN                                          | the counterexample reproduced                           |
+| pollock_selfdefeat      | Smith says Smith is unreliable             | document: UNDEC; issue: Reliable OUT, Unreliable IN                      | Pollock: Reliable stays justified                       |
+| chisholm                | contrary-to-duty                           | O go IN (violated), O ~tell IN, O tell OUT                               | defeasible deontic logic, I/O logic: the same           |
+| stolen_car              | when was the car stolen?                   | parked at 1 and 2 IN, at 3 OUT                                           | unknown (chronological minimisation's answer is AIDA's) |
+| murder_mystery          | dead at 2, so the gun was loaded           | death IN; "loaded" not inferred                                          | loaded at 1 (postdiction)                               |
+| railroad                | NAF and classical negation side by side    | both cross with nothing known                                            | only the NAF rule crosses                               |
+| railroad_strong_alone   | classical negation alone                   | does not cross                                                           | does not cross                                          |
+| railroad_train          | a train is seen                            | neither crosses                                                          | neither crosses                                         |
+| legal_priorities        | lex specialis, lex posterior, meta-rule    | forbidden IN; the lex posterior undercut OUT                             | forbidden                                               |
+
+** Findings
+
+- *Specificity, inheritance, priorities* (A3, B1, Touretzky, legal
+  priorities): AIDA has no preference relation, but every case comes out
+  as expected once specificity is written as abnormality or undercut and
+  a priority principle as an undercut of the losing rule; meta-priorities
+  are undercuts of undercuts. The redundant link does no harm: the
+  direct and the path argument both rest on the same presumption of
+  normality, which the royal exception defeats. No drowning: an
+  exception defeats one rule, not the class.
+- *The onus belongs to a statement* (railroad): one argument presuming
+  the refutation of Train makes it presumed for another that owes it, so
+  negation as failure and classical negation of the same proposition
+  cannot both be written in one document. New design task
+  [[id:aida-onus-per-statement]].
+- *Prakken's closure counterexample reproduced* (prakken_bm_sources):
+  with fallible premises derived from sources, a preferred labelling
+  accepts b and m against the strict b -> ~m. With bare presumptions it
+  does not: a presumption keeps its guard, a derivation of its contrary
+  wins. The lottery shows the same (an "all tickets lose" labelling).
+  Note on [[id:aida-strict-layer]].
+- *The lottery*: no reading of either Pollock or Prakken is reproduced
+  skeptically; grounded is undecided throughout, credulous accepts any
+  single winner (and, with sources, also "all lose").
+- *No reasoning backwards* (stolen car, murder mystery): forward
+  persistence concludes the car was still there at 1 and 2 -
+  chronological minimisation's answer, which the literature rejects -
+  and the loaded gun is not inferred from the death. Transposition (not
+  implemented) would contest the first; the second also needs the
+  clipping rule read as the only cause (completion), which AIDA has no
+  means to state.
+- *Self-defeat* (Pollock): the issue graph proves Smith unreliable by
+  the classical reading of self-attack, where Pollock keeps him
+  reliable and the document is undecided; note on
+  [[id:aida-self-attack-document-vs-issue]].
+- *Open domains* (A4): a universal conclusion with an exception needs
+  equality or a per-individual universal; with a universal normality
+  presumption the exception refutes it; note on
+  [[id:aida-first-order-reduction]].
+- *Contrary-to-duty* (Chisholm): fine with obligations as atoms; no
+  deontic inference (from O go and "going obliges telling" no O tell
+  follows unless written), so the standard-deontic-logic paradox does
+  not arise - nor do its intended inferences.
+- *Not expressible*: Ross's paradox and free choice permission need
+  disjunction; the Russian turkey shoot needs a nondeterministic action
+  (disjunction); Lifschitz's A5-A8 (unknown exceptions, priorities
+  between defaults of different reliability) need disjunction,
+  existentials over exceptions with equality, or a preference relation.
+
+** Later problem cases, listed for when AIDA is a logical framework
+
+Asked 2026-10-21: most cases above are old because the old ones fit
+AIDA's fragment. The newer problem-case literature targets features AIDA
+does not have yet; the author expects them to become expressible once
+AIDA is a logical framework through superdeduction, so they are listed
+here as the next test set. References are as I know them, not
+re-checked against the papers; Tweety ships implementations or examples
+of most of them (part 6).
+
+- *Preferences between arguments.* Last-link versus weakest-link, elitist
+  versus democratic set comparison, and the examples showing which
+  orderings keep the rationality postulates (Modgil and Prakken, "A
+  general account of argumentation with preferences", AIJ 2013; the
+  postulates: Caminada and Amgoud, AIJ 2007). Preferences in ABA: ABA+
+  (Čyras and Toni, KR 2016) and its counterexamples to reverse defeat.
+  Tweety: =ex2.aspic=, =ex3.aspic= (rule orders), DeLP's generalized
+  specificity.
+- *Gradual and ranking semantics.* The h-categorizer (Besnard and Hunter
+  2001), the tuples of Cayrol and Lagasquie-Schiex (2005), Grossi and
+  Modgil's graded acceptability (IJCAI 2015), Amgoud and Ben-Naim's
+  ranking postulates, the counting and propagation semantics surveyed in
+  Delobelle's thesis (2017), Thimm, Cerutti and Rienstra's probabilistic
+  graded semantics (COMMA 2018). Tweety: the seven =arg.rankings=
+  examples and =RankingPostulatesExample=, which checks the postulates.
+- *Probabilistic and epistemic argumentation.* Constellations (Li, Oren
+  and Norman 2011), the epistemic approach (Hunter and Thimm), lotteries
+  over frameworks; epistemic AFs with constraints over labellings.
+  Tweety: =arg.prob=, =arg.eaf=.
+- *Values and audiences.* Bench-Capon's value-based frameworks (2003),
+  where an attack succeeds relative to an audience's value order.
+- *Dynamics and enforcement.* Enforcing an extension by adding arguments
+  or attacks (Baumann and Brewka 2010), change in frameworks (Cayrol, de
+  Saint-Cyr and Lagasquie-Schiex 2010), equivalence notions (strong,
+  expansion, serialisation equivalence). Tweety: =EquivalenceExample=,
+  =AFLearnerExample= and =LearningExample= (learning a framework from
+  labellings).
+- *Weights, votes, constraints, incompleteness.* Weighted frameworks
+  (Dunne et al., AIJ 2011), social frameworks with votes (Leite and
+  Martins 2011), constrained frameworks (Coste-Marquis et al. 2006),
+  incomplete frameworks with uncertain arguments and attacks. Tweety:
+  =arg.weighted=, =arg.social=, =arg.caf=, =IncompleteReasonerExample=.
+- *Further semantics.* CF2, stage, qualified and semi-qualified, weak
+  admissibility, undisputed (vacuous reduct), serialisable semantics
+  (Bengel and Thimm, COMMA 2022), stratified labellings. Tweety: the
+  corresponding =arg.dung= examples.
+- *Explanations.* Sufficient and sequence explanations of acceptance.
+  Tweety: =arg.explanations=.
+- *Causal and counterfactual reasoning* from structural equations,
+  abductively from observations, with interventions. Tweety: =causal=.
+
+* Part 6: the TweetyProject examples
+
+Run 2026-10-21 on branch =eval-hard= (fast-forwarded to main at
+=682b3c1=): every example of the TweetyProject (v1.31, git clone of
+2026-10-18) in the argumentation, logic and causal modules. Files in
+=eval/tweety/=. Tweety itself is the reference: its jars came from Maven
+Central, its 97 example programs were compiled and run (66 ran as is,
+26 failed - most of them because the example reads a resource file the
+jar does not expose, or calls a solver binary on the Tweety author's
+machine - and 5 timed out), and a small driver
+(=eval/tweety/java/TweetyRef.java=, =ref.sh=) queries Tweety's ASPIC+,
+DeLP, ABA, Dung and default-logic reasoners on every translated theory.
+Where Tweety has no reasoner for a case (non-flat ABA) or runs out of
+memory (the first-order default theory), the reference is a brute-force
+solver of mine (=aba.py=, =asp.py=, =../dung.py=, =../adf.py=) or the
+textbook answer.
+
+Translations are generated, not written by hand, wherever the source is
+a rule file: =tw2fspy.py= turns ASPIC+, DeLP, ABA and default-logic files
+into documents (one argument per ground rule instance, body literals
+owed and met by capture; encoding in its docstring), =extract_afs.py=
+reads the frameworks the Java examples build, =asp.py= translates and
+solves the ASP programs, =hand.py= builds the rest (set attacks,
+attacks on attacks, supports, claims, deductive knowledge bases).
+=compare.py= puts AIDA beside the reference literal by literal, in two
+views: the *issue view* (a literal is accepted when the issue of an
+argument for it is IN in its own issue graph; this is what =evaluate=
+answers) and the *document view* (the labelling of =graph document=).
+
+** Summary of part 6
+
+| family                       | Tweety examples                          | AIDA documents                    | agreement                                                                                  |
+|------------------------------+------------------------------------------+-----------------------------------+--------------------------------------------------------------------------------------------|
+| Dung frameworks              | 52 distinct AFs from 40 programs, 6 apx  | =af/= (52)                        | every labelling AIDA produced equals Tweety's and Dung's; 7 AFs time out in adf-bdd       |
+| ADF                          | 2 (one file, one program)                | =adf/= (2)                        | all four semantics                                                                         |
+| ASPIC+                       | ex1-ex5, the programmatic one            | =ex*.fspy=, =aspic_programmatic= | exact on ex1, ex4, ex5 (ground), programmatic; ex2, ex3 differ only by rule preferences    |
+| ASPIC+, random theories      | 50 from =AspicGeneratorExample=          | =src/random/=                     | 2 run (theory 02 over 50 min, stopped): all differences explained by the asymmetric guard |
+| DeLP                         | 7 programs                               | =delp_*.fspy=                     | issue view = ASPIC+ without preferences on 6 of 7; every DeLP difference is specificity   |
+| ABA                          | 6 propositional, 1 first order           | =example*.fspy=, =smp_fol.fspy=   | flat ones exact; non-flat: see findings; stable marriage exact                            |
+| default logic                | 2 theories                               | =simple_default_theory.fspy=      | both extensions as two labellings                                                          |
+| ASP                          | ex1-ex6, Krümpelmann's programs          | =asp/= (8)                        | stable labellings = answer sets on all six; the revision examples need priorities          |
+| set attacks, attacks on attacks, supports, claims | 6 programs          | =hand/= (9)                       | set attacks, extended and recursive extended, necessity support exact; see findings        |
+| deductive argumentation      | 2 programs                               | =hand/deductive_kb=, =simple_pl_logic= | simple PL logic exact; the categorizer's -2.0 has no counterpart                    |
+| propositional, first-order logic | =PlExample=, =FolExample=            | =logic/= (4)                      | the expressible queries are strict theorems; equality and connectives not expressible     |
+| action language              | turkey.desc (no program)                 | =logic/turkey_action.fspy=        | time 3 right; a persisting fluent wrongly undecided (negation bridge)                      |
+
+** Abstract frameworks
+
+=af_tweety.py= reads 60 frameworks from the examples (41 programs of
+=arg.dung=, =arg.caf=, =arg.eaf=, =arg.rankings=, =arg.prob=,
+=arg.social=, =arg.weighted=, =arg.explanations=) and the six apx files
+of =arg.dung= and =arg.rankings=; 52 are distinct plain Dung frameworks
+(two bipolar and two extended ones are treated below). Each is written
+with the encoding the cross-checks of part 1 use and labelled under the
+four semantics, against Tweety's own =SimpleXReasoner= and =dung.py=.
+
+- Every labelling AIDA computed agrees with both references (52 grounded,
+  45 complete, 45 preferred, 50 stable).
+- Seven frameworks of 6 to 10 arguments get no complete or preferred
+  labelling: adf-bdd hits its 120 s timeout (CF2Example, a
+  DungTheoryPlotterExample AF, IndependenceExample, OptimisationExample,
+  a SerialisedExtensionReasonerExample AF, SerialisableRankingReasoner,
+  Tweety's =ex3.apx=); for IndependenceExample (8 arguments, 10 attacks)
+  and =ex3.apx= (10 arguments, 25 attacks) stable times out too.
+  [[id:aida-multi-extension-labelling-cost]].
+- The timeout escapes =Service.label= as a raw
+  =subprocess.TimeoutExpired=, not as an =AidaError=.
+- What the examples demonstrate beyond the four semantics is not
+  expressible: CF2, qualified, weak, undisputed, serialisable and
+  stratified semantics, extension rankings, equivalence, independence,
+  divisions, learning, k-optimisation, incomplete, constrained,
+  epistemic, weighted, social, probabilistic and ranking-based
+  reasoning. Their frameworks are among the 52 above.
+
+** Structured argumentation
+
+- *ASPIC+* (=compare.py aspic=): ex1 (with an undercutter and strict
+  rules) and ex4 (married/bachelor) agree with Tweety on all 16 and 8
+  literals under all four semantics; ex2 and ex3 differ on exactly the
+  two literals the rule preference decides, and agree once the
+  preference line is removed. The first-order ex5 agrees with ASPIC+ on
+  its grounding.
+- *ASPIC+, random theories* (=random_batch.py=, labels only, grounded,
+  =ACDC_TIMEOUT=300=): Tweety's generator gives 50 theories of 35 atoms
+  and about 80 rules; the issue graph of a single argument takes up to
+  a minute, a whole theory 4 to 20 minutes and theory 02 more than 50,
+  so only 00 and 01 were run (=random.out=). Theory 01 has a consistent
+  strict part and differs from ASPIC+ on four literals, all accepted by
+  AIDA and by neither side in ASPIC+: =!A25= is strictly accepted, so
+  =!A25 => !A7= is a derivation of =!A7=, which defeats the bare premise
+  =A7= outright under the asymmetric guard
+  ([[id:aida-asymmetric-contrariness-guard]]), where ASPIC+ without
+  preferences lets the two rebut each other; =A19=, =!A31= and =A0=
+  follow by the same rule down the chain. Theory 00 has contradictory
+  axioms (=-> A19= and =-> !A19=), outside ASPIC+'s assumptions; two of
+  its labellings were refused. With the first encoding (a negative
+  premise derived rather than bare) theory 01 differed on six literals.
+- *DeLP* (=compare.py delp=): against DeLP's answers the differences are
+  all decided by generalized specificity (Tweety flies or not, tina,
+  nixon's gun, stocks, dtree); against ASPIC+ without preferences on the
+  same ground theory the issue view is identical on birds, birds2,
+  dtree, hobbes, nixon and stocks. On =counterarg= (h <- a, ~h <- c, a
+  and c defeasible) ASPIC+ accepts both h and ~h (no transposition),
+  DeLP rejects a and c (they disagree through the strict rules), AIDA
+  leaves h undecided and accepts a and c.
+- *ABA*: the two flat theories agree with Tweety and with =aba.py= under
+  all semantics. Tweety refuses the four non-flat ones; against
+  =aba.py= (Bondarenko et al.'s definitions) AIDA gives the reading one
+  expects of the flat version, which non-flat ABA does not: in example3
+  ABA has a preferred extension {c} that is not complete, in example4
+  no complete extension at all, in example5 no grounded one. The
+  stable-marriage example (first order, grounded) gives exactly
+  Tweety's two stable matchings.
+- *Default logic*: the simple theory's two extensions are AIDA's two
+  preferred and stable labellings, d and ~d credulous, a, b, c
+  skeptical. Tweety's reasoner runs out of heap on the first-order
+  theory; its single extension (Tweety flies, the penguin does not) is
+  AIDA's issue view.
+- *ASP*: on ex1-ex6 (with classical negation, a constraint, a shifted
+  disjunction and a choice rule) the stable labellings are the answer
+  sets. AIDA's one negation stands for both =not x= and =-x=; the
+  comparison has to be told which atoms the program negates
+  classically.
+
+** Other frameworks
+
+- Set attacks (SETAF), Modgil's extended frameworks and the recursive
+  ones: all exact, attacks on attacks written as undercutters of
+  presumed attack rules, attacks on those as undercutters of
+  undercutters.
+- Bipolar: necessity support (c argued only from a) is exact. Deductive
+  support as a strict rule a -> x is not: Tweety's preferred extension
+  {a, x} drops b, because b supports c and x attacks c; AIDA keeps b IN,
+  and both its labellings accept a strict rule with an IN premise whose
+  conclusion is refuted.
+- Claim-based: with an attack on the claim, as AIDA's attacks go, the
+  extension with both claims is lost; with each argument a premise that
+  yields its claim, AIDA's claim sets are Tweety's cl-preferred
+  ({c1}, {c2}, {c1, c2}).
+- Deductive argumentation: the Besnard-Hunter knowledge base leaves h
+  undecided (one argument, two undercuts); the categorizer's value -2.0
+  has no counterpart. The simple PL logic example is exact.
+- Causal reasoning (abduction from structural equations), dialogue
+  simulations (=agents.dialogues=, multi-agent protocols), conditional,
+  description, modal, probabilistic and Markov logics, QBF, inconsistency
+  measures, belief revision, the remaining action-language examples
+  (monkey and bananas needs planning), ASP aggregates, arithmetic and
+  optimisation: not expressible.
+
+** Findings
+
+1. *A solver timeout escapes the service.* =Service.label= raises
+   =subprocess.TimeoutExpired= from adf-bdd instead of an =AidaError=
+   (af.out, CF2Example). The complete semantics of a 28-statement ADF
+   with three models (=smp_fol.fspy=) takes 80 s in adf-bdd with any
+   backend, while grounded and stable are instant; 16 of the 28
+   statements are fixed by grounded. Evidence for
+   [[id:aida-multi-extension-labelling-cost]].
+2. *A prover timeout leaves the session out of step.* On =aspic_random_01.fspy=
+   (79 rule instances), labelling and evaluating every argument in one
+   session, alone on the machine: a type-check replay exceeds the 5 s
+   per-command timeout (=ACDC_TIMEOUT=), and from then on calls that
+   succeed in a fresh session fail - refusals naming variables of other
+   replays ("k0_2 is neither in your hypothesis"), =AttributeError:
+   'NoneType' object has no attribute 'strip'= when parsing a reply
+   without a proof term. 33 of 237 calls fail. With =ACDC_TIMEOUT=300=
+   235 pass (single calls take up to 58 s); one call still reports a
+   timeout after 5.4 s, cause not found, and the next fails out of step.
+   New task [[id:aida-prover-timeout-desync]].
+3. *Two spellings of a negation, inside one argument.*
+   =spelling_one_argument.fspy=: a declared (A -> false) -> C applied to
+   an inline proof that spells ~A passes =check=, but =graph= is
+   refused ("a is neither in your hypothesis nor in your conclusion");
+   spelled one way it is a value. =spelling_two_arguments.fspy= is the
+   smallest case across two arguments ("This is not trivial"). Evidence
+   for [[id:aida-negation-spelling-in-unfolding]], which so far
+   described the case across arguments only.
+4. *The negation bridge, in an action theory.*
+   =logic/turkey_action.fspy=: loaded at 1 strictly, nothing unloads the
+   gun, yet "loaded at 2" is undecided: the persistence chain of
+   "unloaded" runs through the node =~Loaded_1[t]=, which no derivation
+   of =Loaded_1= contests, so it stays IN beside =Loaded_1[t]= IN.
+   Evidence for [[id:aida-strict-layer]]; bipolar deductive support,
+   DeLP's =counterarg= and ABA's example4 show the missing transposition
+   of the same task.
+5. *Bare versus derived defeasible premises.* A defeasible premise ~X
+   written as a counterargument that derives ~X from a presumption
+   defeats the bare presumption of X outright (the asymmetric guard).
+   The translator now writes it as a bare presumption of the refutation,
+   which makes the two symmetric and AIDA warn about opposing
+   presumptions. A negative premise in a rule body is owed as the
+   refutation of X, so that counterarguments meet it - an obligation on
+   =~X[t]= would only be met by an argument for ~X, which nothing
+   contests. Both are encoding decisions the author may want to fix in
+   the documentation of how to write a rule with a negative premise.
+6. *Document view and issue view.* On the strict DeLP and action cases
+   the document graph leaves undecided what the issue graph decides by
+   strictness (=min_strict=, birds, turkey). Evidence for
+   [[id:aida-issue-relative-strict-labels]].
+7. *Elim names.* =elim a.= names the new hypothesis =a= when the goal is
+   written =A -> false=, but =H2= when it is written =~A= - the name
+   given is ignored.
+
+Bugs found in Tweety on the way, for the record: =SimpleClStableReasoner=
+never returns a claim set (=getModels= adds to the wrong set); the
+rule preference of the first-order ASPIC+ example has no effect (any
+order gives the same attacks); =DelpReasoner= answers UNDECIDED for
+literals that have no argument at all, where DeLP's answer is UNKNOWN.
+
 * Task changes made (tasks.org on this branch)
 
 New tasks, each citing its reproduction: [[id:aida-negation-cell-horn]]
@@ -929,19 +1289,37 @@ INFO message); the married-bachelor and non-interference documents into
 and [[id:aida-transport-limits]]. Part 4 added
 [[id:aida-fo-open-source-horn]], [[id:aida-reserved-names]] and
 [[id:aida-fo-classical-dialectics]], and notes on
-[[id:aida-first-order-reduction]] and [[id:aida-strict-layer]].
+[[id:aida-first-order-reduction]] and [[id:aida-strict-layer]]. Part 5
+added [[id:aida-onus-per-statement]] and notes on
+[[id:aida-strict-layer]], [[id:aida-self-attack-document-vs-issue]] and
+[[id:aida-first-order-reduction]]. Part 6 added
+[[id:aida-prover-timeout-desync]], [[id:aida-labeller-timeout-error]]
+and [[id:aida-elim-name-negation]], and notes on
+[[id:aida-negation-spelling-in-unfolding]], [[id:aida-strict-layer]],
+[[id:aida-issue-relative-strict-labels]] and
+[[id:aida-multi-extension-labelling-cost]].
 
 * Files
 
 - =eval/literature/*.fspy= - part 1's documents (48 with the two
   non-contradiction files); =eval/literature2/*.fspy= - part 2's (26);
   =eval/scasp/*.pl= - the s(CASP) programs.
+- =eval/literature4/*.fspy= - part 5's problem cases (19); =eval/hard/=
+  their outputs.
 - =eval/literature3/*.fspy= - part 4's first-order documents (16);
   =eval/fo/= - their outputs on both routes, and part 2's probes re-run.
 - =eval/results2/= - part 2's harness output; =eval/rerun/= - part 3's
   (=sub_share/=, =sub_preserve/=: the same under the other settings).
 - =eval/results/= - harness output for every document, the cross-checks,
   the fixture sweep, the scaling run.
+- =eval/tweety/= - part 6: the translators and comparison scripts
+  (=tw2fspy.py=, =compare.py=, =af_tweety.py=, =extract_afs.py=,
+  =asp.py=, =aba.py=, =hand.py=, =issue.py=, =doc.py=,
+  =random_batch.py=), Tweety's sources of the theories (=src/=), the
+  generated documents (top level, =af/=, =adf/=, =asp/=, =hand/=,
+  =logic/=), outputs (=*.out=) and the reference driver (=java/=,
+  =ref.sh=; =setup_tweety.sh= fetches Tweety 1.31 from Maven Central
+  into =eval/tweety/.tweety/=, which is not committed).
 - =eval/harness.py=, =eval/af_crosscheck.py=, =eval/af_eval_check.py=,
   =eval/adf_crosscheck.py=, =eval/dung.py=, =eval/adf.py=,
   =eval/scaling.py=, =eval/aida_env.py=, =eval/run.sh=, =eval/h=.

@@ -1,0 +1,342 @@
+# Tweety action module, turkey.desc (Giunchiglia et al. 2004, two turkeys):
+# inertial fluents loaded, alive(X), target(X); at most one target; load
+# causes loaded and !target(X); aim(X) causes target(X); shoot causes
+# !alive(X) if target(X), and !loaded. Scenario (ours; Tweety ships no
+# example program for the action module): alive, unloaded, no target at 0;
+# load at 0, aim(turkey1) at 1, shoot at 2. Expected at 3: turkey1 dead,
+# turkey2 alive, unloaded. Inertia is a presumed rule F_k -> F_k+1 (and
+# for the negated fluent), effects and the target constraint are strict.
+# Not translated: nonexecutable (preconditions on actions), the query
+# language (necessarily/possibly after), and planning.
+lk.
+declare Aim_t1_1, Alive_t1_0, Alive_t1_1, Alive_t1_2, Alive_t1_3, Alive_t2_0, Alive_t2_1, Alive_t2_2, Alive_t2_3, Load_0, Loaded_0, Loaded_1, Loaded_2, Loaded_3, Shoot_2, Target_t1_0, Target_t1_1, Target_t1_2, Target_t1_3, Target_t2_0, Target_t2_1, Target_t2_2, Target_t2_3 : bool.
+declare init_alive_t1_rule : (Alive_t1_0).
+declare init_alive_t2_rule : (Alive_t2_0).
+declare init_unloaded_rule : (~Loaded_0).
+declare init_t1_rule : (~Target_t1_0).
+declare init_t2_rule : (~Target_t2_0).
+declare do_load_rule : (Load_0).
+declare do_aim_rule : (Aim_t1_1).
+declare do_shoot_rule : (Shoot_2).
+declare one_target_2_rule : (Target_t1_2 -> ~Target_t2_2).
+declare one_target_3_rule : (Target_t1_3 -> ~Target_t2_3).
+declare load_loads_rule : (Load_0 -> Loaded_1).
+declare load_untargets_t1_rule : (Load_0 -> ~Target_t1_1).
+declare load_untargets_t2_rule : (Load_0 -> ~Target_t2_1).
+declare aim_targets_rule : (Aim_t1_1 -> Target_t1_2).
+declare shoot_kills_t1_rule : (Shoot_2 -> Target_t1_2 -> ~Alive_t1_3).
+declare shoot_unloads_rule : (Shoot_2 -> ~Loaded_3).
+# init_alive_t1 (strict): Alive_t1_0
+argument init_alive_t1 : (Alive_t1_0).
+axiom init_alive_t1_rule.
+dixi.
+# init_alive_t2 (strict): Alive_t2_0
+argument init_alive_t2 : (Alive_t2_0).
+axiom init_alive_t2_rule.
+dixi.
+# init_unloaded (strict): ~Loaded_0
+counterargument init_unloaded : (Loaded_0).
+cut (~Loaded_0) x.
+axiom init_unloaded_rule.
+elim.
+axiom.
+dixi.
+# init_t1 (strict): ~Target_t1_0
+counterargument init_t1 : (Target_t1_0).
+cut (~Target_t1_0) x.
+axiom init_t1_rule.
+elim.
+axiom.
+dixi.
+# init_t2 (strict): ~Target_t2_0
+counterargument init_t2 : (Target_t2_0).
+cut (~Target_t2_0) x.
+axiom init_t2_rule.
+elim.
+axiom.
+dixi.
+# do_load (strict): Load_0
+argument do_load : (Load_0).
+axiom do_load_rule.
+dixi.
+# do_aim (strict): Aim_t1_1
+argument do_aim : (Aim_t1_1).
+axiom do_aim_rule.
+dixi.
+# do_shoot (strict): Shoot_2
+argument do_shoot : (Shoot_2).
+axiom do_shoot_rule.
+dixi.
+# inertia_Alive_t1_0 (defeasible): Alive_t1_0 -> Alive_t1_1
+argument inertia_alive_t1_0 : (Alive_t1_1).
+cut (Alive_t1_0 -> Alive_t1_1) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_Alive_t2_0 (defeasible): Alive_t2_0 -> Alive_t2_1
+argument inertia_alive_t2_0 : (Alive_t2_1).
+cut (Alive_t2_0 -> Alive_t2_1) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_not_Loaded_0 (defeasible): ~Loaded_0 -> ~Loaded_1
+counterargument inertia_not_loaded_0 : (Loaded_1).
+cut (~Loaded_1) x.
+cut (~Loaded_0 -> ~Loaded_1) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_not_Target_t1_0 (defeasible): ~Target_t1_0 -> ~Target_t1_1
+counterargument inertia_not_target_t1_0 : (Target_t1_1).
+cut (~Target_t1_1) x.
+cut (~Target_t1_0 -> ~Target_t1_1) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_not_Target_t2_0 (defeasible): ~Target_t2_0 -> ~Target_t2_1
+counterargument inertia_not_target_t2_0 : (Target_t2_1).
+cut (~Target_t2_1) x.
+cut (~Target_t2_0 -> ~Target_t2_1) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_Alive_t1_1 (defeasible): Alive_t1_1 -> Alive_t1_2
+argument inertia_alive_t1_1 : (Alive_t1_2).
+cut (Alive_t1_1 -> Alive_t1_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_Alive_t2_1 (defeasible): Alive_t2_1 -> Alive_t2_2
+argument inertia_alive_t2_1 : (Alive_t2_2).
+cut (Alive_t2_1 -> Alive_t2_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_Loaded_1 (defeasible): Loaded_1 -> Loaded_2
+argument inertia_loaded_1 : (Loaded_2).
+cut (Loaded_1 -> Loaded_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_not_Loaded_1 (defeasible): ~Loaded_1 -> ~Loaded_2
+counterargument inertia_not_loaded_1 : (Loaded_2).
+cut (~Loaded_2) x.
+cut (~Loaded_1 -> ~Loaded_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_not_Target_t1_1 (defeasible): ~Target_t1_1 -> ~Target_t1_2
+counterargument inertia_not_target_t1_1 : (Target_t1_2).
+cut (~Target_t1_2) x.
+cut (~Target_t1_1 -> ~Target_t1_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_not_Target_t2_1 (defeasible): ~Target_t2_1 -> ~Target_t2_2
+counterargument inertia_not_target_t2_1 : (Target_t2_2).
+cut (~Target_t2_2) x.
+cut (~Target_t2_1 -> ~Target_t2_2) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_Alive_t1_2 (defeasible): Alive_t1_2 -> Alive_t1_3
+argument inertia_alive_t1_2 : (Alive_t1_3).
+cut (Alive_t1_2 -> Alive_t1_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_Alive_t2_2 (defeasible): Alive_t2_2 -> Alive_t2_3
+argument inertia_alive_t2_2 : (Alive_t2_3).
+cut (Alive_t2_2 -> Alive_t2_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_Loaded_2 (defeasible): Loaded_2 -> Loaded_3
+argument inertia_loaded_2 : (Loaded_3).
+cut (Loaded_2 -> Loaded_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_not_Loaded_2 (defeasible): ~Loaded_2 -> ~Loaded_3
+counterargument inertia_not_loaded_2 : (Loaded_3).
+cut (~Loaded_3) x.
+cut (~Loaded_2 -> ~Loaded_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_Target_t1_2 (defeasible): Target_t1_2 -> Target_t1_3
+argument inertia_target_t1_2 : (Target_t1_3).
+cut (Target_t1_2 -> Target_t1_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# inertia_not_Target_t1_2 (defeasible): ~Target_t1_2 -> ~Target_t1_3
+counterargument inertia_not_target_t1_2 : (Target_t1_3).
+cut (~Target_t1_3) x.
+cut (~Target_t1_2 -> ~Target_t1_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# inertia_not_Target_t2_2 (defeasible): ~Target_t2_2 -> ~Target_t2_3
+counterargument inertia_not_target_t2_2 : (Target_t2_3).
+cut (~Target_t2_3) x.
+cut (~Target_t2_2 -> ~Target_t2_3) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# one_target_2 (strict): Target_t1_2 -> ~Target_t2_2
+counterargument one_target_2 : (Target_t2_2).
+cut (~Target_t2_2) x.
+cut (Target_t1_2 -> ~Target_t2_2) th.
+axiom one_target_2_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# one_target_3 (strict): Target_t1_3 -> ~Target_t2_3
+counterargument one_target_3 : (Target_t2_3).
+cut (~Target_t2_3) x.
+cut (Target_t1_3 -> ~Target_t2_3) th.
+axiom one_target_3_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# load_loads (strict): Load_0 -> Loaded_1
+argument load_loads : (Loaded_1).
+cut (Load_0 -> Loaded_1) th.
+axiom load_loads_rule.
+elim.
+next.
+axiom th.
+dixi.
+# load_untargets_t1 (strict): Load_0 -> ~Target_t1_1
+counterargument load_untargets_t1 : (Target_t1_1).
+cut (~Target_t1_1) x.
+cut (Load_0 -> ~Target_t1_1) th.
+axiom load_untargets_t1_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# load_untargets_t2 (strict): Load_0 -> ~Target_t2_1
+counterargument load_untargets_t2 : (Target_t2_1).
+cut (~Target_t2_1) x.
+cut (Load_0 -> ~Target_t2_1) th.
+axiom load_untargets_t2_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# aim_targets (strict): Aim_t1_1 -> Target_t1_2
+argument aim_targets : (Target_t1_2).
+cut (Aim_t1_1 -> Target_t1_2) th.
+axiom aim_targets_rule.
+elim.
+next.
+axiom th.
+dixi.
+# shoot_kills_t1 (strict): Shoot_2 -> Target_t1_2 -> ~Alive_t1_3
+counterargument shoot_kills_t1 : (Alive_t1_3).
+cut (~Alive_t1_3) x.
+cut (Shoot_2 -> Target_t1_2 -> ~Alive_t1_3) th.
+axiom shoot_kills_t1_rule.
+elim.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# shoot_unloads (strict): Shoot_2 -> ~Loaded_3
+counterargument shoot_unloads : (Loaded_3).
+cut (~Loaded_3) x.
+cut (Shoot_2 -> ~Loaded_3) th.
+axiom shoot_unloads_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

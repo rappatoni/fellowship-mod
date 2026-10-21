@@ -1,0 +1,50 @@
+# DeductiveExample (Besnard & Hunter): KB {s, s -> h, f, f -> ~h, v, v -> ~h},
+# every formula a presumed premise; query h. Tweety's classical categorizer
+# with the simple accumulator: -2.0 (one argument for h, two undercuts).
+lk.
+declare F, H, S, V : bool.
+# arg_s (defeasible): S
+argument arg_s : (S).
+by default.
+dixi.
+# arg_f (defeasible): F
+argument arg_f : (F).
+by default.
+dixi.
+# arg_v (defeasible): V
+argument arg_v : (V).
+by default.
+dixi.
+# s_h (defeasible): S -> H
+argument s_h : (H).
+cut (S -> H) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# f_nh (defeasible): F -> ~H
+counterargument f_nh : (H).
+cut (~H) x.
+cut (F -> ~H) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# v_nh (defeasible): V -> ~H
+counterargument v_nh : (H).
+cut (~H) x.
+cut (V -> ~H) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

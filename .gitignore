@@ -78,3 +78,6 @@ papers/comma2026/.cecli/
 !wrap/schemas/*.json
 *.txt
 !eval/**/*.txt
+
+# Tweety jars for the reference driver (eval/tweety/setup_tweety.sh)
+eval/tweety/.tweety/
