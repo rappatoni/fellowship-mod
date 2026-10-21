@@ -1246,6 +1246,37 @@ Decided by the author 2026-10-21: per instance. A presumed generic
 statement is a default for each instance; an attack on an instance
 defeats that instance only.
 
+Settled 2026-10-22 (the author's correction of Claude's gap 8):
+- A closed counter-instance =~P c= defeats the instance node =P c= only,
+  through the instantiation edge from =P !z= to =P c= and the attack at
+  =P c=. It does not defeat a use at a binder entry (=[z?] |- P z?=, or
+  an existential-left =x?= with hypotheses): we do not know the context
+  in which the entry will be instantiated, and that context may rule
+  =c= out. So the binder kind (universal right or existential left) that
+  the paragraph above asks for is not needed; only binder against
+  witness entries ([[id:aida-referents-instantiation]]).
+- A closed universal =forall x, P x= that an argument =a= derives from
+  =P !z= is one node and falls as one: a counterargument
+  =no : [?c] ((forall x, P x) -> false)= instantiates it on the left at a
+  witness position whose alternative is =c= when =~P c= is a node, and
+  attacks =a='s conclusion. =a='s site =[z?] |- P z?= and the generic
+  =P !z= stay IN. Nothing in the decision of
+  [[id:aida-first-order-reduction]] changes; Claude's proposal to read a
+  universal's supporters at the instance where it is used is withdrawn.
+- Labelling per instance (Claude's gap 7, confirmed 2026-10-22): the
+  service labels through =document_issue_graph=, the document graph's
+  edges reachable from the issue plus the strict edges read off the
+  unfolded term (=issue_strict_edges=). The term's statements already
+  carry their contexts, so the keys agree. What is not read off the term
+  are the placed scions' default edges: they come from the document
+  graph generic (=beat ?x ?y <- Strong ?x=), and the scion placed at
+  =beat peter conrad= with =Strong peter= adds no edge. The same walk
+  must emit the instantiated edges of placed scions next to the strict
+  ones. =compile_issue=, which compiles the whole unfolded term, has
+  them already. Verified 2026-10-21 on witness_import: =w='s site
+  =[?x:Pub] |- Q ?x= labels OUT and =a= IN only through the term's
+  strict edge =a*=.
+
 ** BACKLOG Design: a lemma whose statement mentions a bound variable
 :PROPERTIES:
 :ID:             aida-referents-open-horns
@@ -1345,6 +1376,26 @@ for):
   individuals, so their statements must not be one node. This task
   describes a bug.
 
+Settled 2026-10-22:
+- A referent that occurs in the conclusion is a parameter even where
+  the body also uses it as a witness (=he_does_not_bite_him=: =elim [?x]=
+  closes =bite ?x ?y= by =axiom= against the hypothesis). Such an
+  argument cannot be supported from below: a constant supplied there
+  would prove the cut's existential at =pedro= and leave the hypothesis
+  about =?x=, so the argument no longer closes. Support from below
+  exists only for a witness the conclusion does not mention, e.g.
+  =cut (exists y, R y) h. elim [?w].= with =?w= nowhere in the conclusion.
+- The generic reading stands without restriction: an argument
+  =mayor [!x]. by default.= stated on its own discharges =mayor ?p= in
+  every discourse and =mayor conrad= wherever owed. The author: anaphora
+  are inherently ambiguous, that is the anaphora resolution problem, and
+  precluding it in the semantics would make the ambiguity inexpressible.
+  The anaphoric reading is written as a site inside the discourse
+  argument (tests/anaphora/donkey.fspy does this with =~bite x y=).
+- VERIFY accordingly: =farmer ?u= of =interpretation1= is a node of its
+  own, not discharged by =he_does_not_bite_him='s presumption; the labels
+  of =bite ?u ?v= follow the instantiation edges.
+
 ** BACKLOG Design: how a generic referent statement meets its instances
 :PROPERTIES:
 :ID:             aida-referents-instantiation
@@ -1391,6 +1442,92 @@ Decided by the author 2026-10-21: directed instantiation edges.
 Example (Conrad and Peter): =supp : beat [!x] [!y]= by default; =calm=
 attacks =beat conrad peter=; =beat conrad peter= is contested,
 =beat peter conrad= IN, =beat ?x ?y= IN.
+
+*** Context entries, their kinds, and the witness lineup (2026-10-22; to look at again)
+
+The author is not yet sure they understand this part and asked for it
+to be recorded for a later look. The terms used:
+
+- /Context entry/: a name in scope at a site, with its sort, as in
+  =[?u:Ind] |- P=.
+- /Binder entry/: an entry introduced by =elim z= on a universal right or
+  =elim x= on an existential left. The two rules are one rule seen from
+  the two sides (=λz.t= on the term side, =(x).e= on the context side),
+  so there is one kind of binder entry; the side is the node's side.
+- /Witness entry/: an entry introduced by =elim [?u]=, the argument's own
+  open choice, listed in its referent environment.
+- /Lineup/: today's matching of a supporter's referents to a site's
+  context entries (core/dc/unfold.py, =_lineups=).
+
+Both entries carry an onus, discharged by different things (the author,
+2026-10-22: the universal right /names/ an arbitrary individual and does
+not provide it; in a strict proof an axiom scheme provides it, otherwise
+a supporter). A binder entry owes /cover/: the statement shown for the
+arbitrary individual, which only something general gives - an axiom
+scheme instantiated at it, a generic supporter instantiated from above,
+a closed statement by weakening, a hypothesis about it in scope. A
+witness entry owes an /instance/: one individual with the statement
+shown for it - from below, from a constant, or generically.
+
+The problem, shown on the branch with this fixture:
+#+begin_example
+argument rally : [?u:Ind] (exists x:Ind, farmer [x] -> (exists y:Ind, donkey [y])).
+elim [?u]. elim h. dixi.
+argument some_donkey : [?w:Ind] (exists y:Ind, donkey [y]).
+elim [?w]. dixi.
+#+end_example
+=rally= owes the closed =exists y, donkey y= at the site
+=[?u:Ind] |- exists y:Ind, donkey y=. =some_donkey= is placed there; its
+=?w= is in its conclusion's witness position only, so the lineup gives
+it the one unmentioned entry of sort =Ind=, which is =?u=. The unfolded
+term shows =(?u, ?u3:donkey ?u)=: the donkey is declared the same
+individual as the farmer. Nothing is unsound, but =?u= is not an
+individual anyone has, it is =rally='s own unanswered question, so the
+alternative answers nothing and ties two unrelated choices together.
+Compare tests/discourse/witness_import.fspy, where the same lineup is
+right: the entry =y= is a binder entry and =h : Q y= captures the
+supporter's site, giving the closed pair =(y, h)=. The lineup cannot
+tell =y= from =?u= because contexts record names and sorts only.
+
+Who decided what: the lineup by sort and binder order was Claude's
+proposal in plan step 5b, confirmed by the author on 2026-10-20 for an
+export environment of bound variables (=[?z:foo, ?y, ?w]=, one use per
+lineup, innermost on top). That an argument's own referent environment
+is put into the context of every site inside it, so that =?u= became an
+entry the lineup could pick, was Claude's implementation choice when
+framing roots (commit d48f552), never discussed.
+
+Proposed fix (Claude, 2026-10-22; to be confirmed):
+- Record the kind of every context entry, binder or witness.
+- No lineup for a witness-only referent: it gets the witness scaffold
+  ([[id:aida-referents-witness-scaffold]]) at its quantified statement.
+  Its alternatives are declared constants about which the body has been
+  argued and the binder entries in scope; witness entries are never
+  alternatives. In the fixture =some_donkey= keeps =(?w, donkey ?w)= as
+  its root and gets =(pedro, ...)= once =donkey [pedro]= is argued; in
+  witness_import it gets =(y, h)= as today.
+- Parameters (referents the conclusion mentions) are instantiated from
+  above by whatever the site holds, binder entry, witness entry or
+  constant: =Wings [!y]= at =[z?] |- Wings z?= with =!y := z=;
+  =farmer [?x]= at =[?u] |- farmer ?u= with =?x := ?u= (the generic
+  reading, [[id:aida-referents-unrelated]]); =Wings [!y]= at
+  =Wings tweety= with =!y := tweety=.
+- The split of binder entries into universal-right and existential-left
+  is not needed anywhere ([[id:aida-referents-counter-instances]]).
+
+Spelling (the author, 2026-10-22: "Denote binder variables as x!, x?",
+"so that the user can also see/identify them"). Claude's reading, not
+yet confirmed: the sigil after the name marks a binder entry, before the
+name a witness entry; on a binder entry it shows the onus of the site,
+=[z?:Animal] |- Wings z?= owed, =[z!:Animal] |- Wings z!= presumed by
+default, so it is display derived from the site's kind and not part of
+the key (an owed and a presumed statement stay one node). Author input
+and Fellowship are unchanged (the kind follows from the rule applied;
+replay goes through regenerated instructions, not AIDA's printer); AIDA
+shows the sigil at the binder and at every occurrence, in printed terms
+(=λz?:Ind.…R z? c=, =(x?:Ind).…=), node names, contexts and graph
+labels. The unfolder's hole names =?u1=, =?u2= clash with a referent
+named =?u= and need another spelling ([[id:aida-referents-node-names]]).
 
 ** BACKLOG Design: the individuals of a sort
 :PROPERTIES:
@@ -1445,6 +1582,36 @@ Pedro once =pedro : iota= and =farmer [pedro]= are stated.
 Question 5 of the referent design discussion of 2026-10-21; step 5c of
 the plan. The alternatives multiply with nested existentials; accepted
 by the author ("that's life").
+
+Settled 2026-10-22:
+- The horn rule applies plainly (the author: "the general principle
+  stands unless there is a serious problem, not exemptions to
+  exemptions"). Terms: to /expose/ a subterm is to make it a node of its
+  own with an edge into it; to /inline/ it is to keep it inside its
+  parent's edge with no node. The compiler's rule: the spine of a body
+  is what carries the body's own variable; a subterm with no spine
+  variable is a horn and is exposed; a horn whose statement is the
+  edge's own statement is inlined. The exemption of
+  [[id:aida-first-order-reduction]] (=t * c= and =(t, v)= are steps of
+  the spine, never attack points) is undone by this design. At the root
+  the pair's statement is the root's own, so nothing changes
+  (=a : (exists x, P [x]). elim [c].= still rests on =P c=). Under a
+  binder it is exposed: =b : (forall z, exists x, R [z] [x]). elim z.
+  elim [c].= rests on =[z?] |- exists x, R z? x=, which rests on
+  =[z?] |- R z? c=; that node is where the scaffold hangs when the
+  witness is =?w=. For =t * c= the plain rule gives the dual the design
+  needs (alternatives =c * e= refuting the universal); a rule used on the
+  way to the conclusion keeps its instance chain on the spine, since the
+  chain carries the conclusion's continuation, so existing graphs
+  should not change (to be verified by the suite).
+- The alternatives of a scaffold come from the sites below the witness
+  position, not from =P[c]= of the whole body: a constant =c= is an
+  alternative when the sites that mention the witness have nodes about
+  =c=. Binder entries in scope are alternatives; witness entries are not
+  ([[id:aida-referents-instantiation]], 2026-10-22).
+- The obligation "a witness for ?x" (=witness_key=, =require_witnesses=)
+  is the same statement as the sort node =exists x:foo, true=
+  ([[id:aida-referents-individuals]]) and is unified with it.
 
 * Specification and verification
 
