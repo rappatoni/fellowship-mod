@@ -1213,7 +1213,8 @@ keys instances by it (core/dc/instances.py, =IssueResolver._at=), follows
 weakening for supporters and attackers, and type-checks instantiated
 definitions.
 
-** BACKLOG Design: counter-instances and referent presumptions
+** DONE Design: counter-instances and referent presumptions
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-counter-instances
 :AREA:           phd
@@ -1277,6 +1278,14 @@ Settled 2026-10-22 (the author's correction of Claude's gap 8):
   =[?x:Pub] |- Q ?x= labels OUT and =a= IN only through the term's
   strict edge =a*=.
 
+*Done 2026-10-22* (plan step G; =!x= in [[id:aida-referents-individuals]]).
+tests/discourse/counter_instance.fspy: =not_c= refutes =P c= strictly;
+=P c= is OUT, the generic =P ?z= and =a='s site under its binder stay IN;
+=no= refutes =a='s closed universal at its own choice, the witness
+scaffold tries =c=, and =a= is OUT.  The binder kind (universal right or
+existential left) is not recorded: it is not needed.
+=test_a_counter_instance_defeats_the_instance_and_the_closed_universal_only=.
+
 ** BACKLOG Design: a lemma whose statement mentions a bound variable
 :PROPERTIES:
 :ID:             aida-referents-open-horns
@@ -1312,7 +1321,27 @@ Decided by the author 2026-10-21:
 - Test: hypothesis_horn.fspy and open_source_horn.fspy keep their
   verdicts.
 
-** BACKLOG Show a referent statement in one naming
+Not done 2026-10-22, a conflict for the author.  Lifting step 0 (the
+compiler's =is_open=, the unfolder's inlining of a horn about a referent
+read at a use) makes such a horn an edge of its own that rests on the
+hypotheses of its argument it uses, as captured sources: birds_fly's
+lemma =[x?:Animal] |- Wings x?= rests on =[x?:Animal] |- Bird x?= (its
+=b : Bird x=).  The framework counts a captured source as owed, as it
+does for a closed lemma using a hypothesis; there the strict phase
+restores the verdict once the term is closed, but birds_fly's term is
+not closed (the rule it owes is presumed), so birds_fly is labelled OUT
+and evaluates as open instead of a value - against this task's own
+VERIFY (hypothesis_horn.fspy, open_source_horn.fspy keep their verdicts;
+test_first_order pins birds_fly a value).  Step 0 is kept.  Options: (a)
+keep step 0 for a horn that uses a hypothesis of its argument, lift it
+for one that only mentions a bound variable; (b) export the hypotheses a
+horn uses with its context, =[x:Animal] |- Bird x -> Wings x=, so the
+horn is closed in its context; (c) accept the changed verdicts.  The
+horn rule for pairs and cells (2026-10-22) is in: off the spine, with a
+statement, they are horns.
+
+** DONE Show a referent statement in one naming
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-node-names
 :AREA:           phd
@@ -1332,7 +1361,15 @@ Found 2026-10-21: =graph sup= shows the node as =Dr ?z->false= (=a='s
 site registered it first) and owes "a witness for ?z", while =sup='s own
 source reads =Dr ?x=.
 
-** BACKLOG Design: keep the referents of unrelated arguments apart
+*Done 2026-10-22*: a statement with referents an argument concludes is
+shown as the first argument concluding it states it (=DebateGraph.merge=),
+so =graph sup= on peirce_fo.fspy shows =[?x:Pub] ⊢ Dr ?x->false= and owes
+"a witness for ?x".  Holes are numbered =?1=, =?2= (presumed =!1=), which no
+referent can be; tests, docs/minicourses and the unfolder, shared route
+and instance resolver follow.
+
+** DONE Design: keep the referents of unrelated arguments apart
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-unrelated
 :AREA:           phd
@@ -1396,7 +1433,31 @@ Settled 2026-10-22:
   own, not discharged by =he_does_not_bite_him='s presumption; the labels
   of =bite ?u ?v= follow the instantiation edges.
 
-** BACKLOG Design: how a generic referent statement meets its instances
+*Done 2026-10-22* (branch discourse-referents, plan steps B and C).
+- A witness entry (an open choice) is rigid and its argument's in a key
+  (=referents.Entry=, =context_key=, =referents.rigid=): interpretation1's
+  =farmer ?u= is the node =A(S:farmer,t:w#interpretation1:?u)=, never
+  he_does_not_bite_him's =farmer ?x= (a generic statement).
+- They meet only as an instance: interpretation1 owes =bite ?u ?v=, an
+  instance of he_does_not_bite_him's contrary, so he_does_not_bite_him is
+  placed there, its parts with it, read at =?u=, =?v=.  Its presumptions
+  =farmer ?u=, =donkey ?v= are then presumptions /at that use/, and like any
+  presumption in the document they make interpretation1's owed =farmer ?u=
+  presumed.  This is not the conflation this task was about (a statement
+  about another argument's unrelated referent); it is the generic reading
+  the author confirmed on 2026-10-22, at the instance where the argument
+  is used.  The VERIFY's "not discharged by he_does_not_bite_him's
+  presumption" holds for the generic presumption, not for that use; for
+  the author to review.
+- Evidence: tests/discourse/donkey.fspy (a copy of tests/anaphora/donkey.fspy);
+  tests/test_discourse_referents.py
+  =test_a_statement_about_an_open_choice_is_its_arguments_own=,
+  =test_a_generic_argument_bears_on_an_instance_where_it_is_used=
+  (=bite ?u ?v= OUT, interpretation1 open, label and evaluation agree).
+  Suite: 2411 passed, 9 skipped, 16 deselected (perf), 2 xfailed, 1 xpassed; perf: 16 passed.
+
+** DONE Design: how a generic referent statement meets its instances
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-instantiation
 :AREA:           phd
@@ -1529,7 +1590,27 @@ shows the sigil at the binder and at every occurrence, in printed terms
 labels. The unfolder's hole names =?u1=, =?u2= clash with a referent
 named =?u= and need another spelling ([[id:aida-referents-node-names]]).
 
-** BACKLOG Design: the individuals of a sort
+*Done 2026-10-22* (plan step C).
+- =core/dc/matching.py=: one-sided matching; =DebateGraph.instantiate=
+  copies every argument deriving or contesting a generic statement (not
+  its parts alone: a part bears on an instance only where its argument is
+  placed) to each instance, sources instantiated, with the markers an
+  argument asserts of its own conclusion (=asserted=), never those a site
+  sets; a fixpoint over new nodes; =instantiations= holds the nearest
+  pairs, drawn dotted ("instance") in =graph=.
+- The unfolder matches a supporter's conclusion against the statement as
+  written at the use (=_lineups=); constants from above are allowed.
+- An open choice is never lined up (the decision recorded in the
+  subsection above, implemented as recommended; its review is
+  [[id:aida-referents-review-lineup]]).
+- Evidence: tests/discourse/conrad_peter.fspy (=beat peter conrad= IN,
+  =beat conrad peter= UNDEC), tests/discourse/beat_lattice.fspy (the six
+  nearest pairs, no =beat ?x ?y= to =beat peter conrad=), open_choice.fspy;
+  tests in tests/test_discourse_referents.py; adequacy over
+  tests/discourse/*.fspy.  Suite: 2411 passed, 9 skipped, 16 deselected (perf), 2 xfailed, 1 xpassed.
+
+** DONE Design: the individuals of a sort
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-individuals
 :AREA:           phd
@@ -1563,7 +1644,30 @@ Example (=some_farmer : (exists x:iota, farmer [x]). elim [!x]. by
 default.=): IN by default without constants; open with =?x=; IN through
 Pedro once =pedro : iota= and =farmer [pedro]= are stated.
 
-** BACKLOG Design: the scaffold at a witness position
+*Done 2026-10-22* (plan step E).
+- Fellowship: =!x= is a referent like =?x= (lexer.mll, core.ml), help.ml
+  and CHANGES; fsp rebuilt.  AIDA: =referents.is_referent= and the
+  grammar accept =!x=; =?x * e= (a referent in a cell) parses.
+- The sort node =exists x:foo, true=: where an argument names its open
+  choice =!w= it presumes it (=_Compiler._choice=); a declared constant
+  proves it strictly (=sort_individuals=); a counterargument of it
+  contests every presumed choice of that sort, in label and evaluation.
+- =?w= at its naming owes "a witness for ?w of A", which only an
+  alternative of the witness scaffold supplies; the evaluator judges an
+  open choice likewise (=Standing._open_choice=).  An uncaught =!x= in a
+  normal form is a value, an uncaught =?x= open.
+- Deviation from the decision: "a witness for ?x" is not unified with
+  the sort node for =?x=.  A declared constant proves the sort node, but
+  it does not answer which individual the argument means; unified, a
+  target with an open =?x= would be labelled IN where it evaluates as
+  open.  For =!x= the sort node is the source, as decided.
+- Evidence: tests/discourse/sort_node.fspy;
+  =test_a_presumed_choice_presumes_its_sort_has_an_individual=,
+  =test_a_declared_constant_proves_its_sort_and_is_an_alternative=,
+  =test_a_counterargument_of_the_sort_node_contests_a_presumed_choice=.
+
+** DONE Design: the scaffold at a witness position
+CLOSED: [2026-10-22 Thu]
 :PROPERTIES:
 :ID:             aida-referents-witness-scaffold
 :AREA:           phd
@@ -1612,6 +1716,54 @@ Settled 2026-10-22:
 - The obligation "a witness for ?x" (=witness_key=, =require_witnesses=)
   is the same statement as the sort node =exists x:foo, true=
   ([[id:aida-referents-individuals]]) and is unified with it.
+
+*Done 2026-10-22* (plan step F, with A and D's pair rule).
+- =Unfolder._edge=, =witness_scaffold=: where an argument names its own
+  open choice (an existential right =(?w, v)= or a universal left
+  =?w * e=), a support scaffold at the quantified statement in its
+  context; root the open choice; alternatives the declared constants some
+  statement is about at a site mentioning =?w=, then the variables
+  binders introduced in scope, the innermost on top (=_alternatives=);
+  each alternative is the whole pair or cell read for that individual.
+  An open choice is renamed where its name is taken.
+- Alternatives and instances placed with a substitution are marked, and
+  the strict phase reads their edges off the term (=strict.instance_edges=,
+  Claude's gap 7); the issue graph from the document also takes what the
+  document says about the statements those edges mention.
+- The horn rule applies plainly to pairs and cells: off the spine, with a
+  statement, they are horns (compiler); a pair inside a cell has no
+  statement and stays part of it.
+- Evidence: witness_import.fspy (=(y, h)= closes =w= under =a=),
+  witness_two.fspy (=(z, hz)= below =(y, hy)=), open_choice.fspy (no
+  =(?u, ...)= alternative; =pedro= tried), counter_instance.fspy (the
+  universal-left case); the unfolded terms replay through Fellowship.
+
+** BACKLOG Review: context entries and the witness lineup
+:PROPERTIES:
+:ID:             aida-referents-review-lineup
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author has reviewed the kinds of context entry, the spelling of binder entries (=x?=, =x!=) and the rule that an open choice is never lined up nor an alternative for another argument, implemented on 2026-10-22 as Claude recommended, and confirms or revises them.
+:VERIFY:         The author's verdict is written here; a revision has its own task.
+:END:
+
+Asked by the author 2026-10-22 ("Record this to look at again later, I
+am still not sure I understand"; "in the meantime, implement the open
+question as you recommended").  The recorded question is the subsection
+"Context entries, their kinds, and the witness lineup" under
+[[id:aida-referents-instantiation]]; the implementation is described
+under [[id:aida-referents-witness-scaffold]].  One reading still to
+confirm: the sigil after a binder entry's name shows the onus of the
+statement (=x?= owed, =x!= presumed); printed proof terms keep the plain
+binder (=λx:Animal.=), since a binder there carries no onus and the term
+must stay readable by the term parser.
 
 * Specification and verification
 
