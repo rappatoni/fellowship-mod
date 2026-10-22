@@ -55,9 +55,9 @@ def test_vanilla_lambda_nested_body_uses_continuation_guides():
 def test_a_support_stack_reads_as_one_sup():
     # SUP(root, SUP(P1, P2)): the stacked shape the unfolder builds
     p1, p2 = eta("p1", "A", DI("f", "A")), eta("p2", "A", DI("g", "A"))
-    term = t_sup("alt1", "b1", "A", Goal("u1", "A"), t_sup("alt2", "b2", "A", p1, p2))
+    term = t_sup("alt1", "b1", "A", Goal("1", "A"), t_sup("alt2", "b2", "A", p1, p2))
     assert pretty_natural(term, dialectical_rendering) == (
-        "SUP(?u1:A) (\n"
+        "SUP(?1:A) (\n"
         "├─ ++ μp1:A.<\n"
         "│     ├─ f:A||\n"
         "│     └─ p1:A\n"
@@ -72,10 +72,10 @@ def test_a_support_stack_reads_as_one_sup():
 
 def test_supports_nested_through_the_original_read_as_one_sup():
     # SUP(SUP(root, P1), P2): the legacy nesting
-    term = t_sup("alt2", "b2", "A", t_sup("alt1", "b1", "A", Deleg("u1", "A"), DI("f", "A")),
+    term = t_sup("alt2", "b2", "A", t_sup("alt1", "b1", "A", Deleg("1", "A"), DI("f", "A")),
                  DI("g", "A"))
     assert pretty_natural(term, dialectical_rendering) == (
-        "SUP(!u1:A) (\n"
+        "SUP(!1:A) (\n"
         "├─ ++ f:A\n"
         "└─ ++ g:A\n"
         ")"
@@ -83,16 +83,16 @@ def test_supports_nested_through_the_original_read_as_one_sup():
 
 
 def test_an_attack_by_the_contrarys_debate():
-    wing = c_sup("x1", "b3", "A", Laog("u2", "A"), ID("k", "A"))
+    wing = c_sup("x1", "b3", "A", Laog("2", "A"), ID("k", "A"))
     term = t_att("alt1", "b1", "A",
-                 t_sup("alt2", "b2", "A", Goal("u1", "A"), DI("f", "A")), wing)
+                 t_sup("alt2", "b2", "A", Goal("1", "A"), DI("f", "A")), wing)
     assert pretty_natural(term, dialectical_rendering) == (
         "ATT(\n"
-        "   SUP(?u1:A) (\n"
+        "   SUP(?1:A) (\n"
         "   └─ ++ f:A\n"
         "   )\n"
         ") (\n"
-        "└─ -- PUS(u2:A?) (\n"
+        "└─ -- PUS(2:A?) (\n"
         "      └─ ++ k:A\n"
         "      )\n"
         ")"
@@ -104,9 +104,9 @@ def test_the_context_side_attack_reads_tta():
                    Mu(ID("b", "A"), "A",
                       Mu(ID("_", "A"), "A", DI("x", "A"), ID("b", "A")),
                       Mutilde(DI("_", "A"), "A", DI("t", "A"), ID("b", "A"))),
-                   Geled("u1", "A"))
+                   Geled("1", "A"))
     assert pretty_natural(term, dialectical_rendering) == (
-        "TTA(u1:A!) (\n"
+        "TTA(1:A!) (\n"
         "└─ -- t:A\n"
         ")"
     )
@@ -125,18 +125,18 @@ def labelled(node, label):
 
 
 def test_vanilla_prints_the_labels_of_a_labelled_term():
-    term = labelled(Mu(ID("x", "A"), "A", labelled(Deleg("u1", "A"), "IN"),
+    term = labelled(Mu(ID("x", "A"), "A", labelled(Deleg("1", "A"), "IN"),
                        labelled(ID("x", "A"), "OUT")), "IN")
     assert pretty_natural(term, vanilla_rendering) == (
         "μx:A{IN}.<\n"
-        "├─ !u1:A{IN}||\n"
+        "├─ !1:A{IN}||\n"
         "└─ x:{OUT}A\n"
         ">"
     )
 
 
 def test_a_labelled_scaffold_carries_its_label_on_the_head():
-    term = labelled(t_sup("alt1", "b1", "A", labelled(Goal("u1", "A"), "IN"), DI("f", "A")), "IN")
-    assert pretty_natural(term, dialectical_rendering).splitlines()[0] == "SUP{IN}(?u1:A{IN}) ("
-    wing = labelled(c_sup("x1", "b3", "A", labelled(Laog("u2", "A"), "OUT"), ID("k", "A")), "OUT")
-    assert pretty_natural(wing, dialectical_rendering).splitlines()[0] == "{OUT}PUS(u2:{OUT}A?) ("
+    term = labelled(t_sup("alt1", "b1", "A", labelled(Goal("1", "A"), "IN"), DI("f", "A")), "IN")
+    assert pretty_natural(term, dialectical_rendering).splitlines()[0] == "SUP{IN}(?1:A{IN}) ("
+    wing = labelled(c_sup("x1", "b3", "A", labelled(Laog("2", "A"), "OUT"), ID("k", "A")), "OUT")
+    assert pretty_natural(wing, dialectical_rendering).splitlines()[0] == "{OUT}PUS(2:{OUT}A?) ("

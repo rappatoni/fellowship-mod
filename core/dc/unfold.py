@@ -91,6 +91,7 @@ from core.dc.debate_graph import (
     split_context_key, sub_multiset, contextualise, has_context, sort_text,
 )
 from core.comp.oracle_terms import uncaught_referents
+from core.dc import matching
 from core.logging_util import TRACE, artifact
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,51 @@ def _names_in(node) -> set:
 
 class UnfoldError(ValueError):
     """The graph cannot be unfolded from this issue."""
+
+
+def _with_witnesses(text, scope):
+    """``text`` carrying the witness entries of ``scope``: what keeps a
+    statement about an argument's open choice that argument's wherever it
+    stands (tasks.org, aida-referents-instantiation, 2026-10-22)."""
+    wit = referents.witnesses_of(scope or ())
+    if not wit or not isinstance(text, str) or not text:
+        return text
+    return referents.InContext(plain(text), wit)
+
+
+def _witness_part(text):
+    """``text`` with its context reduced to its witness entries: the
+    statement binders in scope capture, in any context."""
+    return _with_witnesses(text, getattr(text, "scope", ()))
+
+
+def _site_props(term) -> list:
+    """The propositions of the open sites of ``term``."""
+    found, stack = [], [term]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (Goal, Laog, Deleg, Geled)) and node.prop:
+            found.append(node.prop)
+        stack.extend(c for c in vars(node).values() if isinstance(c, ProofTerm))
+    return found
+
+
+def mark_instantiated(term) -> None:
+    """Mark every node of ``term``, an argument placed with a substitution
+    (or an alternative of a witness scaffold), as an instance."""
+    stack = [term]
+    while stack:
+        node = stack.pop()
+        node.instantiated = True
+        stack.extend(c for c in vars(node).values() if isinstance(c, ProofTerm))
+
+
+def _same_edge(edge, other) -> bool:
+    """Whether ``edge`` is ``other`` or its instance (``DebateGraph.instantiate``)."""
+    if other is None:
+        return False
+    return edge is other or (edge.generic is not None and edge.term is other.term
+                             and edge.name == other.name)
 
 
 def contrary(statement):
@@ -221,7 +267,7 @@ class Unfolder:
         scope = self.graph.contexts.get(key)
         if scope is None:
             scope = tuple((r, None) for r in Prop.parse(text).referent_order())
-        return text, tuple(scope)
+        return _with_witnesses(text, scope), tuple(scope)
 
     def _targeting(self, statement):
         """The edges deriving ``statement``: its own and, by weakening,
@@ -256,58 +302,92 @@ class Unfolder:
         """The statement as stated at this use, by the key binders in scope
         capture it with: a binder of P captures P in any context."""
         key, side = statement
-        if key not in self._frames and not key.startswith("[") and "r#" not in key:
+        if (key not in self._frames and not key.startswith("[") and "r#" not in key
+                and "w#" not in key):
             return statement
-        return (canonical_prop(plain(self._prop(key))), side)
+        return (canonical_prop(_witness_part(self._prop(key))), side)
 
     def _lineups(self, edge, statement):
         """The ways ``edge`` is used where ``statement`` is unfolded: each a
-        substitution of its referents by what they stand for here.  A
-        referent its conclusion states is lined up by the statement
-        (identity up to renaming, decision (a)); a witness-only one with
-        an entry of the context the statement does not mention, of its
-        sort, in every way the sorts allow - one use per way, the
-        innermost entry's last, so on top of the stack."""
+        substitution of its variables by what they stand for here.  Its
+        conclusion is matched against the statement as written here
+        (``core.dc.matching``, one-sided: the statement's names are fixed),
+        which gives each parameter its term - a constant, a variable in
+        scope, another argument's open choice (tasks.org,
+        aida-referents-instantiation, 2026-10-21).  A witness-only referent
+        is not lined up: it stays the argument's own open choice."""
+        if edge.term is None:
+            return [{}]
         frame = self._frames.get(statement[0])
-        if frame is None or edge.term is None:
-            return [{}]
-        literal, scope = frame
-        if not scope and "?" not in literal and edge.name not in self.graph.referent_envs:
-            return [{}]
-        names = [n for n, _s in scope]
-        parsed = Prop.parse(plain(literal))
-        free = parsed.free_vars()
-        for name in names:
-            if name in free and not referents.is_referent(name):
-                parsed = parsed.subst(name, TSym(f"?{name}'"))
-        site_order = [r[1:-1] if r.endswith("'") else r for r in parsed.referent_order()]
-        own = Prop.parse(plain(edge.term.prop)).referent_order()
-        if len(own) != len(site_order):
-            raise UnfoldError(f"Edge '{edge.name}': its referents do not line up with "
-                              f"'{literal}'.")
-        base = dict(zip(own, site_order))
+        concl = getattr(edge.term, "prop", None) or ""
         env = self.graph.referent_envs.get(edge.name) or ()
-        witnesses = [(n, s) for n, s in env if n not in base]
-        slots = [(i, n, s) for i, (n, s) in enumerate(scope) if n not in free]
-        lineups = []
+        if frame is None and edge.generic is None and not env and not referents.mentioned(str(concl)):
+            return [{}]
+        literal, scope = frame if frame is not None else (self._prop(statement[0]), ())
+        found = matching.pattern(concl, getattr(concl, "scope", ()))
+        if found is None:
+            return [{}]
+        eprop, evars = found
+        base = {}
+        if evars:
+            try:
+                target = Prop.parse(plain(literal))
+            except Exception:                       # noqa: BLE001 - an unreadable statement
+                return []
+            sigma = matching.match(eprop, target, evars)
+            if sigma is None:
+                logger.debug("unfold: '%s' does not match %s here", edge.name, literal)
+                return []
+            base = {n: t for n, t in sigma.items() if not (isinstance(t, TSym) and t.name == n)}
+        # A referent of the environment the conclusion does not state is the
+        # argument's own open choice: never lined up with what stands here,
+        # it gets a witness scaffold where the argument chooses
+        # (``_witness_scaffold``; tasks.org, aida-referents-instantiation,
+        # 2026-10-22).
+        return [base]
 
-        def assign(k, used, chosen):
-            if k == len(witnesses):
-                lineups.append((tuple(sorted(i for i, _n in chosen.values())),
-                                {**base, **{w: n for w, (_i, n) in chosen.items()}}))
-                return
-            w, sort = witnesses[k]
-            for i, n, s in slots:
-                if i not in used and sort_text(s) == sort_text(sort):
-                    assign(k + 1, used | {i}, {**chosen, w: (i, n)})
+    def _own_witnesses(self, edge, inst=()):
+        """The witness entries of ``edge``'s argument: the referents of its
+        environment its conclusion does not state, but those ``inst``
+        gives a value."""
+        env = self.graph.referent_envs.get(edge.name) or ()
+        if not env or edge.term is None:
+            return ()
+        stated = referents.mentioned(plain(getattr(edge.term, "prop", "") or ""))
+        return tuple(referents.Entry(n, s, "witness", edge.name) for n, s in env
+                     if n not in stated and n not in inst)
 
-        assign(0, frozenset(), {})
-        lineups.sort(key=lambda pair: pair[0])
-        if witnesses:
-            logger.debug("unfold: '%s' used %d way(s) at %s, its witness(es) %s lined up "
-                         "with the context", edge.name, len(lineups), literal,
-                         ", ".join(w for w, _s in witnesses))
-        return [{r: TSym(t) for r, t in inst.items() if r != t} for _pos, inst in lineups]
+    def _alternatives(self, body, wname, sort, fo, read) -> list:
+        """The individuals a witness scaffold tries for the open choice
+        ``wname`` of sort ``sort``, bottom of the stack first: the declared
+        constants some statement of the document is about where a site of
+        ``body`` mentioning ``wname`` stands (``read``: a site's proposition
+        as written here), then the variables binders introduced in scope
+        (``fo``), outermost first so that the innermost is on top."""
+        constants = []
+        for prop in _site_props(body):
+            text = read(prop)
+            try:
+                site = Prop.parse(plain(text))
+            except Exception:                       # noqa: BLE001
+                continue
+            if wname not in site.free_vars():
+                continue
+            for key, display in self.graph.nodes.items():
+                scope = self.graph.contexts.get(key, ())
+                target = matching.instance(display, scope)
+                if target is None:
+                    continue
+                sigma = matching.match(site, target, {wname})
+                value = (sigma or {}).get(wname)
+                if (isinstance(value, TSym) and not referents.is_referent(value.name)
+                        and not value.name.startswith("w#")
+                        and all(e[0] != value.name for e in scope)
+                        and value.name not in constants):
+                    constants.append(value.name)
+        binders = [e[0] for e in fo
+                   if not referents.is_witness(e) and e[1] is not None and sort_text(e[1]) == sort]
+        return [c for c in constants if c not in binders] + binders
 
     def _show(self, statement):
         """A statement for a log message: ``Prop[t]`` / ``Prop[c]``."""
@@ -325,7 +405,7 @@ class Unfolder:
     def _site(self, statement, presumed=None):
         key, side = statement
         prop = self._prop(key)
-        number = f"u{next(self._sites)}"
+        number = f"{next(self._sites)}"
         if presumed is None:
             presumed = self._presumed(statement)
         if side == "term":
@@ -422,7 +502,7 @@ class Unfolder:
         logger.debug("unfold: issue %s from a document of %d edge(s), %d node(s)",
                      self._show(issue), len(self.graph.edges), len(self.graph.nodes))
         key = issue[0]
-        if "r#" in key or key.startswith("["):
+        if "r#" in key or "w#" in key or key.startswith("["):
             text, scope = self._root_frame(key)
             self._fo_here = scope
             term = self._framed(key, text, scope, lambda: self.statement(issue, {}, frozenset()))
@@ -442,7 +522,7 @@ class Unfolder:
                      edge.name, self._show(issue), len(self.graph.edges), len(self.graph.nodes))
         def build():
             return self._eta_if_bare(issue, self._debate(issue, {}, frozenset({issue}), top=edge))
-        if "r#" in issue[0] or issue[0].startswith("["):
+        if "r#" in issue[0] or "w#" in issue[0] or issue[0].startswith("["):
             # a statement with referents or a context: read as the
             # document states it, each argument's referents renamed to its
             text, scope = self._root_frame(issue[0])
@@ -450,12 +530,11 @@ class Unfolder:
             return self._in_context(self._framed(issue[0], text, scope, build), scope)
         return self._in_context(build(), ())
 
-    @staticmethod
-    def _in_context(term, scope):
+    def _in_context(self, term, scope):
         """The unfolded term with its propositions in context, so that the
         labelling reads each as the statement it is where it stands."""
-        env = tuple((n, s) for n, s in scope if s is not None)
-        return contextualise(term, env) if has_context(term, env) else term
+        env = tuple(e for e in scope if e[1] is not None)
+        return contextualise(term, env) if (has_context(term, env) or self.graph.referent_envs) else term
 
     def _eta_if_bare(self, issue, term):
         if isinstance(term, (Goal, Laog, Deleg, Geled)):
@@ -567,7 +646,7 @@ class Unfolder:
         k-th scaffold, under that scaffold's alt and b; P1, a supported
         term, under the alts only (the statement stays bound by the
         enclosing support scaffold's b, in ``env``)."""
-        ordered = [e for e in edges if e is not top] + ([top] if top is not None else [])
+        ordered = ([e for e in edges if not _same_edge(e, top)] + ([top] if top is not None else []))
         # each supporter once per way it lines up here (discourse referents)
         uses = [(e, inst) for e in ordered for inst in self._lineups(e, statement)]
         if top is not None and not any(e is top for e, _inst in uses):
@@ -659,8 +738,26 @@ class Unfolder:
         # its sites meet the binders in scope.  ``fo0``: the first-order
         # variables bound around the place the body goes.
         inst = dict(inst or {})
-        fo0 = tuple(self._fo_here)
+        # the argument's own open choices, the referents of its environment
+        # its conclusion does not state, where no lineup gives them a value
+        # here: a statement about one is this argument's (tasks.org,
+        # aida-referents-instantiation, 2026-10-22)
         inst_vars = set().union(*(t.free_vars() for t in inst.values())) if inst else set()
+        choices, ren0 = [], {}
+        taken = {e[0] for e in self._fo_here} | inst_vars
+        for e in self._own_witnesses(edge, inst):
+            name = e[0]
+            if name in taken:
+                n = 2
+                while f"{name}_{n}" in taken:
+                    n += 1
+                ren0[name] = name = f"{name}_{n}"
+                logger.debug("unfold: '%s''s open choice %s renamed to %s (the name is taken here)",
+                             edge.name, e[0], name)
+            taken.add(name)
+            choices.append(e.with_(name=name))
+        own_names = {e[0] for e in choices}
+        fo0 = tuple(self._fo_here) + tuple(choices)
 
         # ``ren``: the body's own first-order binders renamed where their
         # names are taken here (a variable a referent stands for, or one
@@ -713,7 +810,7 @@ class Unfolder:
             first-order binders or with discourse referents, the statement
             in the context it stands in - the export of the horn
             (tasks.org, aida-discourse-referents, 2026-10-20)."""
-            literal = ip(prop, ren)
+            literal = _with_witnesses(ip(prop, ren), fo)
             here = (canonical_prop(literal), side)
             saved, self._fo_here = self._fo_here, fo
             try:
@@ -772,13 +869,14 @@ class Unfolder:
             fo = fo0 if fo is None else fo
 
             def p(prop):
-                return ip(prop, ren)
+                return _with_witnesses(ip(prop, ren), fo)
 
             exposed = self._node_edge.get(id(node)) if expose else None
             if exposed is not None and inst and uncaught_referents(node) & set(inst):
                 # a horn about a referent read at this use is a statement
                 # about the variable it stands for here: inlined, as any
-                # horn mentioning a variable bound above it (step 0)
+                # horn mentioning a variable bound above it (step 0, kept;
+                # tasks.org, aida-referents-open-horns, 2026-10-22)
                 exposed = None
             if exposed is not None and node is not edge.term:
                 rewalk = (lambda n, e, nm, expose=True: walk(n, e, nm, expose, fo, ren))
@@ -868,9 +966,15 @@ class Unfolder:
                 out = LamdaFO(var, node.sort, walk(node.term, env, names,
                                                    fo=fo + ((var, sort_text(node.sort)),), ren=ren2))
             elif isinstance(node, ConsFO):
-                out = ConsFO(it(node.fo_term, ren), walk(node.context, env, names, fo=fo, ren=ren))
+                chosen = it(node.fo_term, ren)
+                if isinstance(chosen, TSym) and chosen.name in own_names:
+                    return witness_scaffold(node, chosen.name, "context", env, names, fo, ren)
+                out = ConsFO(chosen, walk(node.context, env, names, fo=fo, ren=ren))
             elif isinstance(node, TermsPairFO):
-                out = TermsPairFO(it(node.witness, ren), walk(node.term, env, names, fo=fo, ren=ren))
+                chosen = it(node.witness, ren)
+                if isinstance(chosen, TSym) and chosen.name in own_names:
+                    return witness_scaffold(node, chosen.name, "term", env, names, fo, ren)
+                out = TermsPairFO(chosen, walk(node.term, env, names, fo=fo, ren=ren))
             elif isinstance(node, DestructTermsPairFO):
                 ren2, var = renamed(node, node.var, fo, ren)
                 out = DestructTermsPairFO(var, node.sort,
@@ -881,7 +985,74 @@ class Unfolder:
             out.prop = p(node.prop)
             return out
 
-        copy = walk(edge.term, env, {})
+        def witness_scaffold(node, wname, side, env, names, fo, ren):
+            """The witness scaffold (tasks.org, aida-referents-witness-scaffold,
+            aida-referents-instantiation, 2026-10-21/22): where the argument
+            names its own open choice ``wname`` - an existential right
+            (``side`` "term", the pair ``(?w, v)``) or a universal left
+            ("context", the cell ``?w * e``) - a support scaffold at the
+            quantified statement in its context.  Its root is the open
+            choice itself; its alternatives, each a whole pair (cell) with
+            the body read for one individual, are the declared constants
+            the sites mentioning ``wname`` are stated about somewhere, then
+            the variables binders introduced in scope, the innermost on
+            top.  Another argument's open choice is never an alternative."""
+            body = node.term if side == "term" else node.context
+            prop = _with_witnesses(ip(node.prop, ren), fo)
+            try:
+                quant = Prop.parse(plain(node.prop))
+            except Exception:                   # noqa: BLE001 - no quantified statement
+                quant = None
+            sort = sort_text(getattr(quant, "sort", None)) if quant is not None else None
+
+            def pair(value, ren2, env2):
+                inner = walk(body, env2, names, fo=fo, ren=ren2)
+                out = (TermsPairFO(TSym(value), inner) if side == "term"
+                       else ConsFO(TSym(value), inner))
+                out.prop = prop
+                return out
+
+            alternatives = self._alternatives(body, wname, sort, fo,
+                                              lambda text: ip(text, ren)) if sort else []
+            key = (canonical_prop(referents.InContext(plain(prop), fo)) if fo
+                   else canonical_prop(prop))
+            statement = (key, side)
+
+            def build():
+                root = pair(wname, ren, env)
+                if not alternatives:
+                    return root
+                logger.debug("unfold: '%s' chooses %s at %s; alternatives %s",
+                             edge.name, wname, self._show(statement), ", ".join(alternatives))
+                alt0, beta0 = self._fresh_alt(), self._fresh_beta()
+                scope0 = self._scaffold_scope(statement, alt0, beta0, env)
+                wiring = [(self._fresh_alt(), self._fresh_beta()) for _ in alternatives[1:]]
+                scopes = ([{**scope0, contrary(self._literal(statement)): wiring[0][0]}
+                           if wiring else scope0]
+                          + [self._scaffold_scope(statement, a, b, scope0) for a, b in wiring])
+
+                def element(k):
+                    out = pair(alternatives[k], {**(ren or {}), wname: alternatives[k]}, scopes[k])
+                    mark_instantiated(out)
+                    return out
+
+                stack = element(0)
+                for k in range(1, len(alternatives)):
+                    stack = self._support(statement, stack, element(k), *wiring[k - 1])
+                return self._support(statement, root, stack, alt0, beta0)
+
+            saved, self._fo_here = self._fo_here, fo
+            try:
+                return self._framed(key, prop, fo, build)
+            finally:
+                self._fo_here = saved
+
+        copy = walk(edge.term, env, {}, ren=ren0 or None)
+        if inst or ren0:
+            # an instance placed here, or a placement whose open choice was
+            # renamed: the strict phase reads its edges off the term
+            # (core/dc/strict.py, ``instance_edges``)
+            mark_instantiated(copy)
         if isinstance(copy, (Mu, Mutilde)):
             # the copy's root binder may be renamed (a1_0_2); it still
             # records the argument a1_0 (aida-fold-occurrences-names)
@@ -947,7 +1118,7 @@ class Unfolder:
         """Whether anybody but the node's own edge ``sub`` derives, contests
         or presumes ``statement``."""
         contra = contrary(statement)
-        others = [e for e in self._targeting(statement) if e is not sub]
+        others = [e for e in self._targeting(statement) if not _same_edge(e, sub)]
         return bool(others or self._targeting(contra) or self._defaults(contra))
 
 

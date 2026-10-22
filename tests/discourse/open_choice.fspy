@@ -1,0 +1,22 @@
+# An open choice is no individual for another argument (tasks.org,
+# aida-referents-instantiation, 2026-10-22).  rally chooses a farmer ?u and
+# owes exists y, donkey y under that choice; some_donkey chooses a donkey
+# ?w of its own.  Placed under rally, some_donkey keeps ?w: the farmer is
+# never taken for the donkey.  Once pedro is argued to be a donkey, the
+# witness scaffold at some_donkey's choice tries pedro.
+lk.
+pipeline unfolded.
+declare Ind : type.
+declare pedro : Ind.
+declare farmer : Ind -> bool.
+declare donkey : Ind -> bool.
+argument rally : [?u:Ind] (exists x:Ind, farmer [x] -> (exists y:Ind, donkey [y])).
+elim [?u].
+elim h.
+dixi.
+argument some_donkey : [?w:Ind] (exists y:Ind, donkey [y]).
+elim [?w].
+dixi.
+argument pd : donkey [pedro].
+by default.
+dixi.

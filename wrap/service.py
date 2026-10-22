@@ -900,12 +900,18 @@ class Service:
         # shared form does not do yet: such a debate is type-checked whole
         # on the unfolded route, and refused on the shared one.
         reached = document.reachable(issue)
-        referents = any("r#" in key for key, _side in reached)
+        # an argument with a referent environment, an open choice, or an
+        # instance of a generic argument (tasks.org,
+        # aida-referents-instantiation)
+        reaching = [e for e in document.edges if (e.target_key, e.target_side) in reached]
+        referents = (any("w#" in key for key, _side in reached)
+                     or any(e.generic is not None for e in reaching)
+                     or any(e.name.split(".")[0] in document.referent_envs for e in reaching))
         # A statement in a context (a site under a first-order binder) is
         # reached by weakening, which only the unfolded route follows:
         # such a debate is evaluated from its unfolded term on either
         # pipeline (tasks.org, aida-discourse-referents).
-        contexts = any(key.startswith("[") for key, _side in reached)
+        contexts = any(key.startswith("[") or "r#" in key for key, _side in reached)
         if referents and not s.pipeline_unfolded:
             raise UnfoldRefused(
                 f"the debate about '{document.nodes.get(issue[0], issue[0])}' reaches a statement "
@@ -960,9 +966,15 @@ class Service:
                         "typecheck: the expanded term is replayed, since the debate spells %s "
                         "in more than one way", ", ".join(sorted(clashes)))
                 if expanded_check:
-                    scope = document.contexts.get(issue[0]) or ()
-                    env = ", ".join(f"{n}:{srt}" for n, srt in scope
-                                    if n.startswith("?") and srt) or None
+                    # the referents the term carries: the root's and the
+                    # open choices of the arguments placed in it
+                    from core.dc.debate_graph import referent_scope
+                    from core.ac import referents as referents_mod
+                    scope = dict(referent_scope(term))
+                    for n, srt in document.contexts.get(issue[0]) or ():
+                        if referents_mod.is_referent(n) and srt:
+                            scope.setdefault(n, srt)
+                    env = ", ".join(f"{n}:{srt}" for n, srt in sorted(scope.items())) or None
                     typecheck(s, term, check_name, document.nodes.get(issue[0], issue[0]),
                               issue[1] == "context", referents=env)
                 else:

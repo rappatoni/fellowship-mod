@@ -53,9 +53,10 @@ tracked in `tasks.org`:
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
 - **Discourse referents are partial.** Referent debates run on the
-  unfolded route only, and counter-instances of a referent statement and
-  referent presumptions `!x` are not implemented (see *Discourse
-  referents*).
+  unfolded route only, and a lemma whose statement or content mentions a
+  variable bound in its argument stays part of the argument instead of
+  being a node in its context (tasks.org, `aida-referents-open-horns`;
+  see *Discourse referents*).
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet.
@@ -1025,11 +1026,18 @@ default) and the unfolded (decided with the author 2026-10-16; tasks.org,
   Owe the universal and instantiate it instead.
 - A general rule stands or falls as one statement. Instantiating it
   (`elim [tweety]`) is a step of the argument, not a point of attack: an
-  exception for one individual has to refute the rule itself.
+  exception for one individual has to refute the rule itself. A generic
+  argument about a referent, `gen : P [?z]`, is the other kind of rule:
+  an exception at `c` defeats its instance `P c` only (see *Discourse
+  referents*, `tests/discourse/counter_instance.fspy`).
 - A site under a binder is a statement in its context: `Wings [x]` owed
-  or presumed under `forall x` is `[?x:Animal] ⊢ Wings ?x` (see
-  *Discourse referents*). A lemma whose statement mentions such a
-  variable is part of its argument, not a node of its own.
+  under `forall x` is `[x?:Animal] ⊢ Wings x?` (see *Discourse
+  referents*). A lemma whose statement mentions such a variable is part
+  of its argument, not a node of its own.
+- An instantiation `elim [tweety]` or an existential's witness on the
+  spine of an argument is a step of it. Off the spine, where the cell or
+  pair is a part of its own, it is a node like any other part (the
+  horn rule, 2026-10-22).
 - Evaluation has two more rules, both strict: a universal introduction
   meeting an instantiation substitutes the instance
   (`<λx.t || u * e> → <t[u/x] || e>`), an existential's witness meeting its
@@ -1038,45 +1046,68 @@ default) and the unfolded (decided with the author 2026-10-16; tasks.org,
 ### Discourse referents
 
 A discourse referent `?x` is a pseudo-constant local to an argument
-(decided with the author 2026-10-20; tasks.org, `aida-discourse-referents`;
-examples in `tests/discourse/`). It lets an argument fill a site that
-depends on a variable bound elsewhere, which makes classical first-order
-debates such as first-order Peirce and the drinker paradox arguable
-without presuming a classical principle.
+(decided with the author 2026-10-20 to 2026-10-22; tasks.org,
+`aida-discourse-referents` and the `aida-referents-*` tasks; examples in
+`tests/discourse/`). It lets an argument fill a site that depends on a
+variable bound elsewhere, which makes classical first-order debates such
+as first-order Peirce and the drinker paradox arguable without presuming
+a classical principle.
 
 - **Import.** An argument states its referents in its referent
   environment: `argument sup : [?x:Pub] (Dr [?x] -> false).` The
   environment can be left out when the conclusion mentions every
-  referent: `argument sup : (Dr [?x] -> false).` Fellowship infers the
-  sorts, holds the referents in the theorem's goal environment and
-  refuses `qed` on such a theorem, so no referent is ever registered;
-  `dixi` keeps the argument. A referent the conclusion does not mention
-  (a witness, used in `elim [?x]`) needs the explicit environment.
-- **Export.** Every site exports its first-order context: the referents
-  of its argument and the variables bound above it. `Wings [x]` under
-  `forall x` is `[?x:Animal] ⊢ Wings ?x`, a closed `E` under `forall y` is
-  `[?y:Pub] ⊢ E`. `graph` shows a node with its context.
-- **Matching.** Statements are identified up to renaming of referents:
-  `Dr ?x -> false` and `Dr ?z -> false` are one statement, `P ?a ?b` and
-  `P ?c ?c` two. An argument fills a site whose statement is its
-  conclusion, each referent standing for what the site has in its place;
-  a witness lines up with a context entry of its sort that the statement
-  does not mention, once for each such entry, the use for the innermost
-  binder on top of the stack. The supporter's own sites are then captured
-  by the binders in scope: in `tests/discourse/peirce_fo.fspy`, `sup` fills
-  `a`'s site under `z` with `?x` standing for `z`, and `a`'s `g : Dr z`
-  captures `sup`'s presumed `(Dr z)⊥`.
+  referent. Fellowship infers the sorts, holds the referents in the
+  theorem's goal environment and refuses `qed` on such a theorem, so no
+  referent is ever registered; `dixi` keeps the argument.
+- **Two kinds of referent.** A referent the conclusion mentions is a
+  *parameter*: whoever uses the argument fixes it. A referent only the
+  body uses, at `elim [?x]`, is the argument's *open choice* of an
+  individual; it needs the explicit environment.
+- **Onus.** `?x` owes an individual, `!x` presumes one: `!x` of sort
+  `foo` presumes the *sort node* `exists x:foo, true` for the whole
+  document. A declared constant of the sort proves the sort node
+  strictly; a counterargument of it says the sort is empty.
+- **Contexts.** Every site exports its context: the variables binders
+  introduced above it and its argument's referents. `Wings [x]` owed
+  under `forall x` is `[x?:Animal] ⊢ Wings x?`; presumed, it reads
+  `[x!:Animal] ⊢ Wings x!`. The sigil after a name marks a variable a
+  binder introduced, with the onus of the statement; a referent keeps its
+  own sigil in front. A statement about an argument's open choice is that
+  argument's alone: `interpretation1`'s `farmer ?u` is never another
+  argument's `farmer ?x`. `graph` shows every node with its context.
+- **Instances.** A statement with parameters, or with variables a binder
+  introduced, covers every statement that is it with terms for them:
+  `beat ?x ?y` covers `beat conrad peter` and `beat ?x conrad`. Matching
+  is one-sided, so `beat ?a ?a` does not cover `beat conrad peter`.
+  Whatever derives or contests a generic statement bears on each of its
+  instances, its argument read at that instance; an attack on an
+  instance bears on that instance only. `graph` draws an edge from each
+  generic statement to its nearest instances.
+- **Witness scaffolds.** Where an argument names its own open choice,
+  the debate tries individuals for it: a support scaffold at the
+  quantified statement whose root is the open choice itself and whose
+  alternatives are the declared constants some statement of the document
+  is about there, then the variables binders introduced in scope, the
+  innermost on top. Another argument's open choice is never tried. In
+  `tests/discourse/witness_import.fspy`, `w` proves `exists x, Q x` by its
+  own choice `?x`, and under `a`'s `forall y` with `h : Q y` the
+  alternative `(y, h)` closes it.
 - **Weakening.** What bears on a statement bears on it in every larger
   context: closed supporters and counterarguments of `E` reach
-  `[?y:Pub] ⊢ E` (dotted grey `weakening` edges in `graph`), and a binder
+  `[y?:Pub] ⊢ E` (dotted grey `weakening` edges in `graph`), and a binder
   of `E` in scope captures it. A site stating an argument's own claim
   under a binder is therefore captured by the claim's own binder.
-- **An uncaught referent is open.** A normal form that still mentions one
-  is no value, and a referent statement as its own target owes "a witness
-  for ?x", so `label` and `evaluate` agree.
-- **Pipelines.** Referent debates need `pipeline unfolded.`; the shared
-  route refuses them. A debate that reaches a statement in a context
-  without referents is evaluated from its unfolded term on either route.
+- **An uncaught referent.** A normal form that still mentions an open
+  `?x` is no value; one that mentions only `!x` is. An argument that
+  leaves its own open choice owes "a witness for ?x", and a referent
+  statement as its own target owes one for each referent, so `label` and
+  `evaluate` agree.
+- **Holes.** The unfolder numbers the open sites of a debate term `?1`,
+  `?2`, ... (presumed: `!1`), which no referent can be.
+- **Pipelines.** Debates with referents, open choices or instances need
+  `pipeline unfolded.`; the shared route refuses them. A debate that
+  reaches a statement in a context without referents is evaluated from
+  its unfolded term on either route.
 
 ## Render styles
 

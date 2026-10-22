@@ -87,8 +87,10 @@ let help_theorem =
    "declared using \"declare\", except the discourse referents ?r1, ..., ?rn:" ^^
    "pseudo-constants held in the goal's environment, never declared. The" ^^
    "environment may be left out when P mentions every referent; a sort left" ^^
-   "out is inferred from P. A theorem with a referent cannot be registered:" ^^
-   "\"qed\" refuses it." )
+   "out is inferred from P. A referent may be written !r instead of ?r: the" ^^
+   "two are the same pseudo-constant to Fellowship (AIDA reads !r as" ^^
+   "presuming that its sort has an individual). A theorem with a referent" ^^
+   "cannot be registered: \"qed\" refuses it." )
 
 let help_declare =
   ("declare [A1,...,An : t | A : p]",

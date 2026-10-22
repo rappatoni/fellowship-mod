@@ -123,7 +123,7 @@ class TestShapes:
 
     def test_the_argument_keeps_its_own_binder_names(self, doc):
         term = unfold_argument(doc.graph, argument_edge(doc.graph, "p1"))
-        assert "μp1:B.<μth:B.<r1:A->B||!u2:A*th:B>||p1:B>" in pres_str(term)
+        assert "μp1:B.<μth:B.<r1:A->B||!2:A*th:B>||p1:B>" in pres_str(term)
 
     def test_a_counterargument_is_a_supporter_of_its_context_side_statement(self, doc):
         term = unfold_argument(doc.graph, argument_edge(doc.graph, "c1"))
@@ -136,9 +136,9 @@ class TestShapes:
         # q demands A; p1 presumes it.  In q's term the root of A's debate is
         # q's own obligation, and the presumption is A's only supporter.
         term = unfold_argument(doc.graph, argument_edge(doc.graph, "q"))
-        assert "μalt2:A.<?u2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<!u3:A||alt2:A>>>" in pres_str(term)
+        assert "μalt2:A.<?2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<!3:A||alt2:A>>>" in pres_str(term)
         # canonically A is presumed: the issue term of G has the presumption as A's root
-        assert "!u2:A*th:G" in pres_str(unfold(doc.graph, (K("G"), "term")))
+        assert "!2:A*th:G" in pres_str(unfold(doc.graph, (K("G"), "term")))
 
 
 class TestEvaluation:

@@ -306,35 +306,55 @@ Words in /italics/ inside an entry have an entry of their own.
 * Discourse referents
 
 No lesson covers these yet; the decisions are recorded in =tasks.org=,
-=aida-discourse-referents= (2026-10-20), and the README, /Discourse
-referents/. Examples in =tests/discourse/=.
+=aida-discourse-referents= (2026-10-20) and the =aida-referents-*= tasks
+(2026-10-21/22), and the README, /Discourse referents/. Examples in
+=tests/discourse/=.
 
-- Discourse referent :: A pseudo-constant =?x= local to an argument.
-  Fellowship holds it in the theorem's goal environment, never in the
-  signature, and refuses =qed= on a theorem that has one. Where the
-  argument fills a site, the referent stands for what the site has in its
-  place - typically a variable bound there.
+- Discourse referent :: A pseudo-constant =?x= or =!x= local to an
+  argument. Fellowship holds it in the theorem's goal environment, never
+  in the signature, and refuses =qed= on a theorem that has one. =?x=
+  owes an individual, =!x= presumes one; matching ignores the sigil.
 
 - Referent environment, import :: The referents an argument states,
   written before its conclusion: =argument sup : [?x:Pub] (Dr [?x] ->
-  false).= Left out, it is collected from the conclusion. A referent the
-  conclusion does not mention is a /witness/ and needs the environment.
+  false).= Left out, it is collected from the conclusion.
 
-- Witness :: A referent of the environment that the conclusion does not
-  mention, used in the body (=elim [?x]=). It is lined up with an entry of
-  the site's context of the same sort (see /lineup/).
+- Parameter :: A referent the argument's conclusion mentions. Whoever
+  uses the argument fixes it: the statement where the argument is placed
+  gives it a term.
+
+- Open choice :: A referent of the environment the conclusion does not
+  mention, used where the argument names an individual (=elim [?x]=). It
+  needs the explicit environment. A statement about it is that argument's
+  alone.
+
+- Context entry :: A name in scope at a site, with its sort. A /binder
+  entry/ is a variable a universal right or an existential left
+  introduced, or a parameter; it owes /cover/, the statement shown for
+  any individual. A /witness entry/ is an open choice; it owes an
+  /instance/, one individual with the statement shown for it.
 
 - Statement in a context, export :: A site's statement together with its
-  first-order context: the referents of its argument and the variables
-  bound above it. Shown =[?y:Pub] ⊢ E=. Every site exports its context,
-  owed or presumed; a variable the statement mentions is shown as the
-  referent standing for it (=[?x:Animal] ⊢ Wings ?x=).
+  context. Shown =[y?:Pub] ⊢ E=; a variable a binder introduced reads
+  =x?= where the statement is owed and =x!= where it is presumed
+  (=[x?:Animal] ⊢ Wings x?=), a referent keeps its own sigil in front.
 
-- Lineup :: How a supporter's referents meet a site: those its
-  conclusion states by the statement (identity up to renaming), each
-  witness with a context entry of its sort the statement does not
-  mention. Several lineups mean several uses of the supporter, the one
-  for the innermost binder on top of the stack.
+- Instance :: A statement that is a generic statement with terms for its
+  variables, found by one-sided matching: =beat ?x ?y= covers
+  =beat conrad peter=, =beat ?a ?a= does not. Whatever derives or contests
+  the generic statement bears on each instance; an attack on an instance
+  on that instance only. =graph= draws an edge to the nearest instances.
+
+- Witness scaffold, alternative :: Where an argument names its own open
+  choice, a support scaffold at the quantified statement: its root is the
+  open choice, its alternatives the individuals tried for it - declared
+  constants some statement is about there, then the variables binders
+  introduced in scope, the innermost on top. Another argument's open
+  choice is never an alternative.
+
+- Sort node :: The statement =exists x:foo, true=, that the sort =foo= has
+  an individual. A declared constant proves it strictly; a =!x:foo=
+  anywhere presumes it for the whole document.
 
 - Weakening edge :: A dotted grey edge from a statement to the same
   statement in a larger context: whatever supports or attacks the smaller

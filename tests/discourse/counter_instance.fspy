@@ -1,0 +1,26 @@
+# Counter-instances (tasks.org, aida-referents-counter-instances, settled
+# 2026-10-22).  gen presumes P of anybody; not_c refutes P c strictly.
+# The refutation defeats the instance P c only: a's site P x under its
+# binder x stays IN, x being any individual.  The closed universal a
+# derives falls as one, through no, which refutes it at an individual of
+# its own choice: the witness scaffold tries c, about which P c is stated.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare c : iota.
+declare P : iota -> bool.
+deny not_pc : (P [c]).
+argument gen : P [?z].
+by default.
+dixi.
+argument a : (forall x:iota, P [x]).
+elim x.
+next.
+dixi.
+counterargument not_c : P [c].
+moxia not_pc.
+dixi.
+counterargument no : [?c:iota] (forall x:iota, P [x]).
+elim [?c].
+next.
+dixi.

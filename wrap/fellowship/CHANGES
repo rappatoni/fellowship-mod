@@ -4,6 +4,11 @@
 
 5.27.2k5	First release 0.1.0
 
+2026-10-20	(AIDA) Discourse referents: "theorem x : [?r1:S1, ..., ?rn] P"
+		holds the referents ?r in the goal's environment, infers
+		their sorts, and refuses "qed" on such a theorem.
+2026-10-22	(AIDA) A referent may also be written !r.
+
 // http://www.lix.polytechnique.fr/Labo/Florent.Kirchner/fellowship
 
 

@@ -93,7 +93,7 @@ class TestTheGraph:
                 "forall x:Animal,Bird x->Flies x[t]",
                 # owed under x: the closed statement in x's context
                 # (tasks.org, aida-discourse-referents, 2026-10-20)
-                [("[?x:Animal] ⊢ forall x:Animal,Bird x->Wings x[t]", "obligation"),
+                [("[x?:Animal] ⊢ forall x:Animal,Bird x->Wings x[t]", "obligation"),
                  ("forall x:Animal,Wings x->Flies x[t]", "subargument")], False)
         finally:
             prover.close()
@@ -118,14 +118,15 @@ class TestTheGraph:
         prover, _svc, report = session("birds_fly_open")
         try:
             assert report.ok
-            assert ("[?x:Animal] ⊢ Wings ?x[t]", "obligation") in edges(prover)["birds_fly"][1]
+            assert ("[x?:Animal] ⊢ Wings x?[t]", "obligation") in edges(prover)["birds_fly"][1]
         finally:
             prover.close()
 
     def test_a_presumed_open_site_is_a_presumption_in_its_context(self):
         """Since 2026-10-20 (tasks.org, aida-discourse-referents): a site
         exports its context, presumed or owed - Wings x under x is the
-        presumed statement [?x:Animal] |- Wings ?x."""
+        presumed statement [x!:Animal] |- Wings x! (the variable x reads x!
+        where the statement is presumed, x? where it is owed; 2026-10-22)."""
         prover, svc, report = session("birds_fly_presumed_open")
         try:
             dixi, = [e for e in report.entries if e.kind == "dixi"]
@@ -133,7 +134,7 @@ class TestTheGraph:
                            for d in dixi.diagnostics)
             edge, = [e for e in prover.graph.edges if e.name == "birds_fly"]
             site, = [src for src in edge.sources if src.kind == "presumption"]
-            assert prover.graph.shown(site.key) == "[?x:Animal] ⊢ Wings ?x"
+            assert prover.graph.shown(site.key) == "[x!:Animal] ⊢ Wings x!"
         finally:
             prover.close()
 

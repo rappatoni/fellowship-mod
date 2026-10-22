@@ -1,0 +1,48 @@
+# The author's donkey sentence (tests/anaphora/donkey.fspy, 2026-10-21),
+# copied as a fixture.  interpretation1 chooses a farmer ?u and a donkey ?v
+# of its own; he_bites_him and he_does_not_bite_him are generic arguments
+# about any ?x, ?y.  Their statements meet interpretation1's only as
+# instances (tasks.org, aida-referents-unrelated, aida-referents-instantiation).
+lk.
+pipeline unfolded.
+declare iota : type.
+declare farmer, donkey : iota -> bool.
+declare has, beat, kick, bite : iota -> iota -> bool.
+declare a_farmer_has_a_donkey: (exists x:iota, exists y:iota, farmer [x] - ~donkey [y] - ~has [x] [y]).
+
+# declare a,b:iota.
+argument interpretation1 : [?u:iota,?v:iota](exists x:iota, exists y:iota, farmer [x] - ~donkey [y] - ~has [x] [y]- ~bite [x] [y]).
+elim [?u].
+elim [?v].
+elim.
+elim.
+next.
+elim.
+elim.
+next.
+elim.
+elim.
+next.
+dixi.
+
+argument he_bites_him : bite [?x] [?y].
+by default.
+dixi.
+
+deny no_farmer_bites_a_donkey : (exists x:iota, exists y:iota, farmer [x] - ~donkey [y] - ~bite [x] [y]).
+
+counterargument he_does_not_bite_him : bite [?x] [?y].
+cut (exists x:iota, exists y:iota, farmer [x] - ~donkey [y] - ~bite [x] [y]) sth.
+elim [?x].
+elim [?y].
+elim.
+elim.
+axiom.
+elim.
+elim.
+by default.
+next.
+by default.
+next.
+moxia no_farmer_bites_a_donkey.
+dixi.

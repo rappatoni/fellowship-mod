@@ -152,8 +152,10 @@ def test_qed_on_an_argument_with_a_referent_is_refused_by_fellowship():
 
 def test_a_witness_only_referent_is_imported_through_the_environment():
     """Lifted 2026-10-20: a referent the conclusion does not state is
-    imported by the explicit environment, and the argument's node is its
-    statement in that context."""
+    imported by the explicit environment.  Since 2026-10-22 it is a
+    witness entry, the argument's own open choice, and no part of a
+    statement that does not mention it: the argument's node is its closed
+    conclusion (tasks.org, aida-referents-instantiation)."""
     text = HEAD + """argument w : [?x:Pub] (exists y:Pub, Dr [y] -> Dr [y]).
 elim [?x].
 elim p.
@@ -165,8 +167,8 @@ dixi.
         assert entry(report, "dixi").status == "ok", entry(report, "dixi").message
         assert prover.arguments["w"].referent_env == [("?x", "Pub")]
         edge = [e for e in prover.graph.edges if e.name == "w"][0]
-        assert edge.target_key.startswith("[Pub]⊢")
-        assert prover.graph.shown(edge.target_key).startswith("[?x:Pub] ⊢ exists y:Pub")
+        assert edge.target_key == key("exists y:Pub, Dr y -> Dr y")
+        assert prover.graph.shown(edge.target_key) == "exists y:Pub,Dr y->Dr y"
     finally:
         prover.close()
 
@@ -212,9 +214,9 @@ DISCOURSE = Path(__file__).parent / "discourse"
 
 
 def referents_in(shown):
-    """The referents a displayed term mentions; AIDA displays its open
-    sites as ?u1, ?u2, ..."""
-    return {r for r in referents.mentioned(shown) if not re.fullmatch(r"\?u\d+", r)}
+    """The referents a displayed term mentions; AIDA numbers its open
+    sites ?1, ?2, ..., which no referent can be."""
+    return referents.mentioned(shown)
 
 
 def evaluated(svc, target):
@@ -428,30 +430,39 @@ def test_a_witness_only_referent_is_lined_up_with_the_context():
         assert svc.label(svc.target("a")).labellings[0][issue] == "IN"
         a, = [e for e in prover.graph.edges if e.name == "a"]
         assert [prover.graph.shown(s.key) for s in a.sources] == [
-            "[?y:Pub] ⊢ exists x:Pub,Q x"]
+            "[y?:Pub] ⊢ exists x:Pub,Q x"]
         # w alone owes its witness
         assert evaluated(svc, "w")[0] == "open"
     finally:
         prover.close()
 
 
-def test_a_supporter_is_used_once_per_lineup_innermost_on_top():
+def test_a_witness_scaffold_tries_the_variables_in_scope_innermost_on_top():
+    """Since 2026-10-22 (tasks.org, aida-referents-witness-scaffold): w's
+    open choice ?x is not lined up with a's variables; w is placed once,
+    with a scaffold at exists x, Q x whose root is its own choice and whose
+    alternatives are z and y, the innermost on top."""
     prover, svc, report = session((DISCOURSE / "witness_two.fspy").read_text())
     try:
         assert report.ok
         term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
-        assert "μw:exists x:Pub,Q x.<(z,hz:Q z)" in term
-        assert "μw_2:exists x:Pub,Q x.<(y,hy:Q y)" in term
-        assert term.index("(z,hz") < term.index("(y,hy")      # y's use outermost: on top
+        assert term.count("μw:") == 1
+        assert "(?x,?3:Q ?x)" in term                          # the root: w's own choice
+        assert "(z,hz:Q z)" in term and "(y,hy:Q y)" in term
+        assert term.index("(?x,") < term.index("(z,hz") < term.index("(y,hy")   # y on top
         cls, nf = evaluated(svc, "a")
         assert cls == "value" and "(y,hy:Q y)" in nf
         roles = [e.role for e in prover.graph.edges]
-        assert "weakening" in roles                            # [?x] to [?z, ?y]
+        assert "weakening" in roles                            # exists x, Q x to [z, y]
     finally:
         prover.close()
 
 
-def test_a_witness_of_another_sort_does_not_line_up():
+def test_an_open_choice_is_no_individual_for_another_argument():
+    """v's ?o is its own open choice (a witness entry, 2026-10-22): no
+    part of its closed conclusion and never lined up with a's variables.
+    v proves the existential with c wherever the closed statement reaches,
+    by weakening under a's binders too."""
     text = (DISCOURSE / "witness_two.fspy").read_text() + """declare Other : type.
 declare c : Pub.
 argument v : [?o:Other] (exists x:Pub, Q [x]).
@@ -462,11 +473,9 @@ dixi.
     try:
         assert report.ok
         v, = [e for e in prover.graph.edges if e.name == "v"]
-        assert v.target_key.startswith("[Other]⊢")
-        assert not any(e.role == "weakening" and e.sources[0].key == v.target_key
-                       for e in prover.graph.edges)
+        assert v.target_key == key("exists x:Pub, Q x")
         term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)
-        assert "μv" not in term
+        assert "μv:exists x:Pub,Q x.<(c," in term and "?o" not in term
     finally:
         prover.close()
 
@@ -478,7 +487,7 @@ def test_closed_supporters_and_counterarguments_bear_on_a_context_by_weakening()
         g = prover.graph
         a, = [e for e in g.edges if e.name == "a"]
         site = [s for s in a.sources if s.kind == "obligation"][0]
-        assert g.shown(site.key) == "[?y:Pub] ⊢ Eff"
+        assert g.shown(site.key) == "[y?:Pub] ⊢ Eff"
         weak = {(e.target_side, g.shown(e.sources[0].key)) for e in g.edges
                 if e.role == "weakening" and e.target_key == site.key}
         assert weak == {("term", "Eff"), ("context", "Eff")}
@@ -498,7 +507,217 @@ def test_the_drinker_split_supplies_its_own_omission():
     try:
         a, = [e for e in prover.graph.edges if e.name == "a"]
         shown = [prover.graph.shown(s.key) for s in a.sources]
-        assert "[?y:Pub] ⊢ exists x:Pub,Dr x->(forall y:Pub,Dr y)" in shown
+        assert "[y?:Pub] ⊢ exists x:Pub,Dr x->(forall y:Pub,Dr y)" in shown
         assert evaluated(svc, "a")[0] != "value"
+    finally:
+        prover.close()
+
+
+# -- witness entries and instantiation (2026-10-22) --------------------------------
+
+def statement_label(svc, target, key_text, side="term"):
+    found = svc.label(svc.target(target))
+    labels = found.labellings[0]
+    return {found.graph.shown(k): v for (k, s), v in labels.items() if s == side}.get(key_text)
+
+
+def test_a_statement_about_an_open_choice_is_its_arguments_own():
+    """A witness entry is rigid and its argument's: interpretation1's
+    farmer ?u is not he_does_not_bite_him's farmer ?x (tasks.org,
+    aida-referents-unrelated)."""
+    prover, _svc, report = session((DISCOURSE / "donkey.fspy").read_text())
+    try:
+        assert report.ok
+        g = prover.graph
+        farmers = {k for k, display in g.nodes.items() if display.startswith("farmer ?")}
+        own = {k for k in farmers if "w#interpretation1:?u" in k}
+        generic = {k for k in farmers if "r#" in k}        # he_does_not_bite_him's farmer ?x
+        assert own and generic and not own & generic
+    finally:
+        prover.close()
+
+
+def test_a_generic_argument_bears_on_an_instance_where_it_is_used():
+    """he_does_not_bite_him is generic; interpretation1 owes bite ?u ?v,
+    an instance of its contrary, so it attacks there - its presumptions
+    read at ?u and ?v - and the instance is OUT.  The document graph copies
+    the argument, with its parts, to the instance."""
+    prover, svc, report = session((DISCOURSE / "donkey.fspy").read_text())
+    try:
+        g = prover.graph
+        copies = [e for e in g.edges if e.name == "he_does_not_bite_him" and e.generic is not None]
+        assert copies and all("w#interpretation1" in e.target_key for e in copies)
+        assert any(e.name == "he_does_not_bite_him.c1" and e.generic is not None for e in g.edges)
+        assert statement_label(svc, "interpretation1", "[?u:iota, ?v:iota] ⊢ bite ?u ?v") == "OUT"
+        assert evaluated(svc, "interpretation1")[0] == "open"
+    finally:
+        prover.close()
+
+
+def test_a_generic_presumption_reaches_each_instance_and_an_attack_one_only():
+    prover, svc, report = session((DISCOURSE / "conrad_peter.fspy").read_text())
+    try:
+        assert report.ok
+        assert statement_label(svc, "brawl", "beat peter conrad") == "IN"
+        assert statement_label(svc, "brawl", "beat conrad peter") == "UNDEC"
+        g = prover.graph
+        assert (key("beat ?x ?y"), key("beat conrad peter")) in g.instantiations
+        assert "presumption" in g.defaults[(key("beat peter conrad"), "term")]
+    finally:
+        prover.close()
+
+
+def test_instances_form_a_lattice_of_nearest_generalisations():
+    prover, svc, report = session((DISCOURSE / "beat_lattice.fspy").read_text())
+    try:
+        assert report.ok
+        g = prover.graph
+        G, H, K = key("beat ?x ?y"), key("beat ?x conrad"), key("beat peter ?y")
+        I1, I2, I3 = key("beat peter conrad"), key("beat conrad conrad"), key("beat peter pedro")
+        assert set(g.instantiations) == {(G, H), (G, K), (H, I1), (H, I2), (K, I1), (K, I3)}
+        assert statement_label(svc, "fights", "beat peter pedro") == "IN"
+        assert statement_label(svc, "fights", "beat peter conrad") == "UNDEC"
+        assert statement_label(svc, "fights", "beat conrad conrad") == "UNDEC"
+        dot = g.to_dot()                                   # the document graph
+        assert 'label="instance"' in dot
+    finally:
+        prover.close()
+
+
+def test_an_open_choice_is_never_an_alternative_for_another():
+    """some_donkey under rally keeps its own choice ?w; the farmer ?u is
+    no alternative; pedro is, once somebody argues donkey pedro."""
+    prover, svc, report = session((DISCOURSE / "open_choice.fspy").read_text())
+    try:
+        assert report.ok
+        term = pres_str(svc.issue_term(svc.target("rally"), want_term=True).term)   # type-checked
+        assert "(?w,?3:donkey ?w)" in term and "(pedro," in term
+        assert "(?u,?" not in term.split("μsome_donkey")[1]
+        assert "donkey ?u" not in term
+        assert evaluated(svc, "some_donkey")[0] == "value"
+        assert statement_label(svc, "some_donkey", "exists y:Ind,donkey y") == "IN"
+    finally:
+        prover.close()
+
+
+# -- the individuals of a sort, !x (2026-10-21/22) -------------------------------
+
+SORTS = """lk.
+pipeline unfolded.
+declare iota : type.
+declare farmer : iota -> bool.
+"""
+
+
+def test_a_presumed_choice_presumes_its_sort_has_an_individual():
+    """!x presumes exists x:iota, true (the sort node) and is a value
+    where nothing catches it; ?x owes its individual and is open."""
+    prover, svc, report = session((DISCOURSE / "sort_node.fspy").read_text())
+    try:
+        assert report.ok
+        g = prover.graph
+        some, = [e for e in g.edges if e.name == "some_farmer"]
+        assert (key("exists x:iota, true"), "term", "presumption") in {
+            (s.key, s.side, s.kind) for s in some.sources}
+        assert "presumption" in g.defaults[(key("exists x:iota, true"), "term")]
+        assert evaluated(svc, "some_farmer")[0] == "value"
+        assert statement_label(svc, "some_farmer", "exists x:iota,farmer x") == "IN"
+    finally:
+        prover.close()
+    prover, svc, report = session(SORTS + """argument some_farmer_owed : [?x:iota] (exists x:iota, farmer [x]).
+elim [?x].
+by default.
+dixi.
+""")
+    try:
+        assert report.ok
+        assert evaluated(svc, "some_farmer_owed")[0] == "open"
+        assert statement_label(svc, "some_farmer_owed", "exists x:iota,farmer x") == "OUT"
+        assert statement_label(svc, "some_farmer_owed", "a witness for ?x of some_farmer_owed") == "OUT"
+    finally:
+        prover.close()
+
+
+def test_a_declared_constant_proves_its_sort_and_is_an_alternative():
+    prover, svc, report = session(SORTS + """declare pedro : iota.
+argument fp : farmer [pedro].
+by default.
+dixi.
+argument some_farmer_owed : [?x:iota] (exists x:iota, farmer [x]).
+elim [?x].
+by default.
+dixi.
+argument any : [!y:iota] (exists x:iota, farmer [x]).
+elim [!y].
+by default.
+dixi.
+""")
+    try:
+        assert report.ok
+        g = prover.graph
+        sort = key("exists x:iota, true")
+        assert any(e.name == "pedro" and e.target_key == sort and e.strict and not e.sources
+                   for e in g.edges)
+        cls, nf = evaluated(svc, "some_farmer_owed")
+        assert cls == "value" and "(pedro," in nf               # the alternative pedro decides
+        assert statement_label(svc, "some_farmer_owed", "exists x:iota,farmer x") == "IN"
+    finally:
+        prover.close()
+
+
+def test_a_referent_presumed_in_a_statement_is_a_referent():
+    from core.ac.prop import Prop
+    assert referents.is_referent("!x") and referents.is_presumed("!x")
+    assert Prop.parse("farmer !x").referent_order() == ["!x"]
+    assert key("farmer !x") == key("farmer ?y")                 # matching ignores the sigil
+
+
+# -- counter-instances (step G, settled 2026-10-22) --------------------------------
+
+def test_a_counter_instance_defeats_the_instance_and_the_closed_universal_only():
+    """not_c refutes P c strictly: the instance P c is OUT, the generic
+    P ?z and a's site under its binder stay IN; no refutes a's closed
+    universal at its own choice, which the witness scaffold settles at c,
+    and a falls as one."""
+    prover, svc, report = session((DISCOURSE / "counter_instance.fspy").read_text())
+    try:
+        assert report.ok
+        assert statement_label(svc, "no", "P c") == "OUT"
+        assert statement_label(svc, "no", "[?z:iota] ⊢ P ?z") == "IN"
+        assert statement_label(svc, "a", "forall x:iota,P x") == "OUT"
+        cls, nf = evaluated(svc, "no")
+        assert cls == "value" and "c*" in nf and "?c" not in nf
+        term = pres_str(svc.issue_term(svc.target("a"), want_term=True).term)   # type-checked
+        assert "?c*" in term and "c*μ'alt" in term
+    finally:
+        prover.close()
+
+
+def test_a_counterargument_of_the_sort_node_contests_a_presumed_choice():
+    text = (DISCOURSE / "sort_node.fspy").read_text() + """counterargument empty : (exists x:iota, true).
+by default.
+dixi.
+"""
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        assert statement_label(svc, "some_farmer", "exists x:iota,true") == "UNDEC"
+        assert statement_label(svc, "some_farmer", "exists x:iota,farmer x") == "UNDEC"
+        assert evaluated(svc, "some_farmer")[0] == "open"
+    finally:
+        prover.close()
+
+
+def test_a_concluded_referent_statement_is_shown_as_its_argument_states_it():
+    """tasks.org, aida-referents-node-names: a's site under z registers
+    Dr z -> false first; sup concludes it, and the node and its witness
+    read as sup names them."""
+    prover, svc, report = session((DISCOURSE / "peirce_fo.fspy").read_text())
+    try:
+        found = svc.graph(svc.target("sup")).graph
+        shown = {found.shown(k) for k, _s in found.statements()}
+        assert "[?x:Pub] ⊢ Dr ?x->false" in shown
+        assert "a witness for ?x" in shown
+        assert not any("?z" in text or "z?" in text for text in shown)
     finally:
         prover.close()

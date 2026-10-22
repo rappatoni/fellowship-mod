@@ -140,12 +140,40 @@ class Standing:
             return OUT
         if isinstance(node, (Deleg, Geled)):
             return getattr(node, "label", None) or UNDEC
+        choice = self._open_choice(node)
+        if choice is not None:
+            return conj([choice] + [self.of(getattr(node, slot, None), env)
+                                    for slot in ("term", "context")
+                                    if isinstance(getattr(node, slot, None), ProofTerm)])
         if isinstance(node, (ID, DI)):
             return self._variable(node, env)
         if isinstance(node, (Mu, Mutilde, Lamda, Admal)):
             env = {**env, _binder(node): OWN}
         return conj(self.of(getattr(node, slot, None), env) for slot in ("term", "context")
                     if isinstance(getattr(node, slot, None), ProofTerm))
+
+    def _open_choice(self, node):
+        """The standing of an argument's own open choice where it names it
+        (``elim [?w]``, tasks.org aida-referents-witness-scaffold): ``?w``
+        is an individual owed, OUT like an open obligation; ``!w`` stands
+        as its sort node, presumed (aida-referents-individuals).  None
+        where the node names no open choice."""
+        from core.ac import referents
+        from core.ac.ast import TermsPairFO, ConsFO
+        from core.ac.prop import TSym
+        if not isinstance(node, (TermsPairFO, ConsFO)):
+            return None
+        chosen = node.witness if isinstance(node, TermsPairFO) else node.fo_term
+        if not isinstance(chosen, TSym) or not referents.is_referent(chosen.name):
+            return None
+        entry = next((e for e in getattr(getattr(node, "prop", None), "scope", ())
+                      if e[0] == chosen.name and referents.is_witness(e)), None)
+        if entry is None:
+            return None
+        if referents.is_presumed(chosen.name) and entry[1]:
+            from core.dc.debate_graph import canonical_prop
+            return self.labels.get((canonical_prop(referents.sort_statement(entry[1])), "term")) or IN
+        return OUT
 
     def _variable(self, node, env) -> str:
         if _is_affine_binder(node.name) or node.name in self.strict_names:

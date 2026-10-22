@@ -426,7 +426,7 @@ let rec prop_infer p sign = match p with
    theorem's goal environment, never in the signature, and a theorem with
    one cannot be registered (qed refuses it).  Its sort is given in the
    theorem's referent environment or inferred from its uses. *)
-let is_referent name = String.length name > 1 && name.[0] = '?'
+let is_referent name = String.length name > 1 && (name.[0] = '?' || name.[0] = '!')
 
 let rec referents_of_term t acc = match t with
   | TSym n -> if is_referent n && not (List.mem n acc) then acc @ [n] else acc

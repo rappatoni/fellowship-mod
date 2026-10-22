@@ -471,12 +471,40 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
 
 
 def issue_strict_edges(term: ProofTerm, name: str, strict_names=None) -> list:
-    """The strict edges strictness on an issue's term contributes."""
+    """The strict edges strictness on an issue's term contributes, and the
+    edges of the instances placed in it (``instance_edges``)."""
     trace = []
     _, edges = strict_resolve(term, strict_names or (), trace=trace)
     logger.debug("strict: %d decision(s), %d strict edge(s) for '%s'",
                  len(trace), len(edges), name)
-    return edges
+    return edges + instance_edges(term, name, strict_names)
+
+
+def instance_edges(term: ProofTerm, name: str, strict_names=None) -> list:
+    """The edges of the arguments the unfolder placed with a substitution
+    (marked ``instantiated``, core/dc/unfold.py), read off the term:
+    an instance of a generic argument derives the instance of its
+    statement from the instances of its sources, which the document graph
+    holds only where somebody states them (tasks.org,
+    aida-referents-counter-instances, Claude's gap 7, 2026-10-22).  The
+    labelling of the issue then sees each instance."""
+    if not _has_instance(term):
+        return []
+    graph = compile_debate(term, name, strict_names=strict_names)
+    found = [e for e in graph.edges
+             if getattr(e.term, "instantiated", False) and e.role != "weakening"]
+    logger.debug("strict: %d edge(s) of placed instances for '%s'", len(found), name)
+    return found
+
+
+def _has_instance(term) -> bool:
+    stack = [term]
+    while stack:
+        node = stack.pop()
+        if getattr(node, "instantiated", False):
+            return True
+        stack.extend(c for c in vars(node).values() if isinstance(c, ProofTerm))
+    return False
 
 
 def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str = "issue") -> DebateGraph:
@@ -490,7 +518,14 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
     debate's graph (``ProverWrapper.debate_graph``) for a debate, which
     holds only its scope.  Built beside ``compile_issue`` and checked
     against it (tasks.org, aida-discuss-issue-graph-from-document)."""
-    keep = source.reachable(issue)
+    keep = set(source.reachable(issue))
+    # the statements the term's own edges mention (an instance placed in the
+    # term, an alternative of a witness scaffold) bring what the document
+    # says about them
+    for edge in strict_edges:
+        for statement in [(edge.target_key, edge.target_side)] + [(s.key, s.side) for s in edge.sources]:
+            if statement not in keep and statement[0] in source.nodes:
+                keep |= set(source.reachable(statement))
     kept = [e for e in source.edges if (e.target_key, e.target_side) in keep]
     # The document calls an atomic argument's edge an "argument"; in the
     # issue graph it is a supporter of a statement the debate uses (the

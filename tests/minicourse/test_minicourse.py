@@ -273,7 +273,7 @@ def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
         # aida-strict-edge-collector-condition)
         assert "bArg*" not in text
         term = pres_str(prover.debate_term(prover.debates["d2"]))
-        assert ("μalt2:B.<?u3:B||μ'b2:B.<μ_:B.<b2:B||alt2:B>||μ'_:B.<μbArg:B."
+        assert ("μalt2:B.<?3:B||μ'b2:B.<μ_:B.<b2:B||alt2:B>||μ'_:B.<μbArg:B."
                 "<axB:B||bArg:B>||alt2:B>>>") in term
     finally:
         prover.close()

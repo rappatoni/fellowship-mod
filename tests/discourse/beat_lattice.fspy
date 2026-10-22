@@ -1,0 +1,34 @@
+# Nearest instances (tasks.org, aida-referents-instantiation, decided
+# 2026-10-21; the example of 2026-10-22).  supp presumes beat ?x ?y,
+# everyone_beats_conrad beat ?x conrad, peter_beats_everyone beat peter ?y;
+# fights owes beat peter conrad, beat conrad conrad and beat peter pedro.
+# The instances form a lattice: beat peter conrad has two nearest
+# generalisations.  nobody_beats_conrad presumes the contrary of
+# beat ?a conrad: every instance about Conrad is contested, beat peter
+# pedro is not.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare conrad, peter, pedro : iota.
+declare beat : iota -> iota -> bool.
+argument fights : beat [peter] [conrad] - ~beat [conrad] [conrad] - ~beat [peter] [pedro].
+elim.
+elim.
+next.
+elim.
+elim.
+next.
+next.
+dixi.
+argument supp : beat [?x] [?y].
+by default.
+dixi.
+argument everyone_beats_conrad : beat [?x] [conrad].
+by default.
+dixi.
+argument peter_beats_everyone : beat [peter] [?y].
+by default.
+dixi.
+counterargument nobody_beats_conrad : beat [?a] [conrad].
+by default.
+dixi.

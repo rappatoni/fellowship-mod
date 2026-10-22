@@ -1,0 +1,23 @@
+# Instantiation (tasks.org, aida-referents-instantiation, decided
+# 2026-10-21): a generic statement bears on its instances, an attack on an
+# instance on that instance alone.  supp presumes that anybody beats
+# anybody; calm presumes that Conrad does not beat Peter.  brawl owes
+# beat conrad peter and beat peter conrad: the first is contested, the
+# second IN through supp, and the generic statement stays IN.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare conrad, peter : iota.
+declare beat : iota -> iota -> bool.
+argument brawl : beat [conrad] [peter] - ~beat [peter] [conrad].
+elim.
+elim.
+next.
+next.
+dixi.
+argument supp : beat [?x] [?y].
+by default.
+dixi.
+counterargument calm : beat [conrad] [peter].
+by default.
+dixi.

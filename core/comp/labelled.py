@@ -41,12 +41,13 @@ from functools import lru_cache
 
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Goal, Laog, Deleg, Geled, ID, DI,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
 from core.dc.debate_graph import canonical_prop, _is_affine_binder, DebateCompileError
 
 
-_TERM_SORTED = (Mu, Goal, Deleg, DI, Lamda)
-_CONTEXT_SORTED = (Mutilde, Laog, Geled, ID, Admal)
+_TERM_SORTED = (Mu, Goal, Deleg, DI, Lamda, LamdaFO, TermsPairFO)
+_CONTEXT_SORTED = (Mutilde, Laog, Geled, ID, Admal, ConsFO, DestructTermsPairFO)
 _SITES = (Goal, Laog, Deleg, Geled)
 
 

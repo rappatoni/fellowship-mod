@@ -17,6 +17,7 @@ This module is being built along propositional-fragment-plan.org:
 """
 
 import logging
+import re
 from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from functools import lru_cache
@@ -90,18 +91,26 @@ _CONTEXT_SEP = "]⊢"
 
 @lru_cache(maxsize=None)
 def context_key(text: str, scope: tuple) -> str:
-    """The key of the statement ``text`` in the context ``scope``
-    ((name, sort), outermost first) - tasks.org, aida-discourse-referents,
-    decisions of 2026-10-20.  An entry the statement mentions is a
-    referent of it, so identity up to renaming lines it up (a); one it
-    does not mention contributes its sort.  The unmentioned sorts are
-    kept as a multiset: a supporter's witness-only referents line up with
-    them in every way the sorts allow.  An empty context, or one the
+    """The key of the statement ``text`` in the context ``scope`` (context
+    entries, ``referents.Entry``, outermost first) - tasks.org,
+    aida-discourse-referents, decisions of 2026-10-20, and
+    aida-referents-instantiation, 2026-10-22.  A binder entry the
+    statement mentions is a referent of it, so identity up to renaming
+    lines it up (a); one it does not mention contributes its sort, kept
+    as a multiset for weakening.  A witness entry the statement mentions
+    is rigid and its argument's (``referents.rigid``): a statement about
+    one argument's open choice is never another's; one it does not
+    mention is no part of the statement.  An empty context, or one the
     statement mentions entirely, gives the plain key."""
     parsed = _unfold_neg(Prop.parse(text))
     free = parsed.free_vars()
     unmentioned = []
-    for name, sort in scope:
+    for item in scope:
+        name, sort = item
+        if referents.is_witness(item):
+            if name in free:
+                parsed = parsed.subst(name, TSym(referents.rigid(name, item.owner)))
+            continue
         if name in free:
             if not referents.is_referent(name):
                 # a referent for the key only, distinct from any ?name
@@ -155,15 +164,21 @@ def context_form(text: str, scope) -> str:
 def contextualise(term, env=()):
     """``term`` with every proposition as stated where it stands
     (``referents.InContext``): its context the discourse referents
-    ``env`` ((name, sort)) and the first-order variables bound above it.
-    A variable occurrence states its binder's proposition, in its
-    binder's context.  Propositions in an empty context stay plain.  In
-    place; returns ``term``."""
-    env = tuple((name, sort_text(sort)) for name, sort in env)
+    ``env`` (context entries) and the first-order variables bound above
+    it.  A variable occurrence states its binder's proposition, in its
+    binder's context.  A proposition that already carries witness entries
+    keeps them (a placed argument's own open choices, core/dc/unfold.py).
+    Propositions in an empty context stay plain.  In place; returns
+    ``term``."""
+    env = tuple(referents.entry(e).with_(sort=sort_text(e[1])) for e in env)
 
     def at(prop, scope):
         if not isinstance(prop, str) or not prop:
             return prop
+        names = {e[0] for e in scope}
+        extra = tuple(e for e in getattr(prop, "scope", ())
+                      if referents.is_witness(e) and e[0] not in names)
+        scope = scope + extra
         return referents.InContext(str(prop), scope) if scope else str(prop)
 
     def walk(node, scope, bound):
@@ -196,13 +211,32 @@ def contextualise(term, env=()):
             inner_bound = {**bound, ("context", node.id.id.name): node.id.id.prop}
         inner_scope = scope
         if isinstance(node, (LamdaFO, DestructTermsPairFO)):
-            inner_scope = scope + ((node.var, sort_text(node.sort)),)
+            inner_scope = scope + (referents.Entry(node.var, sort_text(node.sort)),)
         for child in vars(node).values():
             if isinstance(child, ProofTerm):
                 walk(child, inner_scope, inner_bound)
 
     walk(term, env, {})
     return term
+
+
+def referent_scope(term) -> list:
+    """[(name, sort)]: every discourse referent the propositions of a
+    contextualised ``term`` carry in their contexts, the first sort found
+    for each - the referent environment the term replays in (the root's,
+    and the open choices of the arguments placed in it)."""
+    found = {}
+    stack = [term]
+    while stack:
+        node = stack.pop()
+        for value in vars(node).values():
+            if isinstance(value, ProofTerm):
+                stack.append(value)
+            elif isinstance(value, str):
+                for e in getattr(value, "scope", ()):
+                    if referents.is_referent(e[0]) and e[1]:
+                        found.setdefault(e[0], e[1])
+    return sorted(found.items())
 
 
 def has_context(term, env=()) -> bool:
@@ -275,6 +309,9 @@ class Source:
     #: The label of the occurrence in a labelled term (core/comp/labelled.py),
     #: which sigma reads; not part of the source's identity.
     label: object = field(default=None, compare=False, repr=False)
+    #: The proposition as the body states it, in its context: what an
+    #: instance of the edge substitutes into (``DebateGraph.instantiate``).
+    prop: object = field(default=None, compare=False, repr=False)
 
 
 @dataclass(frozen=True)
@@ -300,6 +337,11 @@ class Edge:
     #: The label of the body's root in a labelled term; not part of the
     #: edge's identity.
     target_label: object = field(default=None, compare=False, repr=False)
+    #: For an instance of an edge (``DebateGraph.instantiate``): the
+    #: generic statement it was copied from, and the terms its variables
+    #: receive, ((name, term), ...).
+    generic: object = field(default=None, compare=False, repr=False)
+    inst: tuple = field(default=(), compare=False, repr=False)
 
 
 @dataclass(frozen=True)
@@ -319,12 +361,13 @@ _EMPTY = _Acc()
 
 # How to_dot draws an edge of each role, and what the legend says of it.
 _DOT_ROLE_COLOUR = {"supporter": "darkgreen", "attacker": "red", "subargument": "gray40",
-                    "strict": "black", "weakening": "gray60"}
+                    "strict": "black", "weakening": "gray60", "instantiation": "gray60"}
 _DOT_ROLE_TEXT = {"argument": "argument", "supporter": "supporter",
                   "attacker": "attacker:\\nderives\\nthe contrary",
                   "subargument": "subargument:\\npart of an\\nargument, or a\\ndeclared axiom",
                   "strict": "strict edge\\nread off the\\ndebate term",
-                  "weakening": "weakening:\\na smaller context\\nbears on a\\nlarger one"}
+                  "weakening": "weakening:\\na smaller context\\nbears on a\\nlarger one",
+                  "instantiation": "instantiation:\\na generic statement\\nbears on its\\ninstances"}
 _DOT_FILL = {"IN": "#cdebc5", "OUT": "#f2c4c4", "UNDEC": "#e0e0e0"}
 
 
@@ -352,6 +395,16 @@ class DebateGraph:
         #: Whether some node is a statement in a context with unmentioned
         #: entries (``context_key``): only then are there weakening edges.
         self.has_contexts = False
+        #: The default markers an argument asserts of its own conclusion (an
+        #: argument that presumes or owes its statement and nothing else):
+        #: what reaches the instances of a generic statement, unlike a
+        #: marker a site sets (tasks.org, aida-referents-instantiation).
+        self.asserted: dict[tuple, set] = {}
+        #: (generic, instance) for every instance nearest to its generic
+        #: statement, for display; the edges themselves are copied.
+        self.instantiations: list = []
+        #: The sort nodes, {sort: key} (``referents.sort_statement``).
+        self.sorts: dict = {}
 
     # -- construction -------------------------------------------------------
 
@@ -361,19 +414,35 @@ class DebateGraph:
         if key.startswith("["):
             self.has_contexts = True
         if scope:
+            # a witness entry the statement does not mention is no part of it
+            free = _prop_names(str(prop_text))
+            scope = tuple(e for e in scope if not (referents.is_witness(e) and e[0] not in free))
+        if scope:
             self.nodes.setdefault(key, display_prop(context_form(prop_text, scope)))
-            self.contexts.setdefault(key, tuple((referents.shown(n), s) for n, s in scope))
+            self.contexts.setdefault(key, tuple(referents.entry(e).with_(name=referents.shown(e[0]))
+                                                for e in scope))
         else:
-            self.nodes.setdefault(key, display_prop(prop_text))
+            self.nodes.setdefault(key, display_prop(str(prop_text)))
         return key
 
-    def shown(self, key: str) -> str:
-        """A node as the graph shows it: with its context, if it has one."""
+    def shown(self, key: str, side: Optional[str] = None) -> str:
+        """A node as the graph shows it: with its context, if it has one.
+        A variable a binder introduced reads ``z?`` or, where the statement
+        is presumed, ``z!``; a referent reads as written (tasks.org,
+        aida-referents-instantiation, 2026-10-22)."""
         prop = self.nodes.get(key, key)
         scope = self.contexts.get(key)
         if not scope:
             return prop
-        return "[" + ", ".join(f"{n}:{s}" for n, s in scope) + "] ⊢ " + prop
+        sides = (side,) if side else ("term", "context")
+        presumed = any("presumption" in self.defaults.get((key, s), ()) for s in sides)
+        names = []
+        for e in scope:
+            disp = referents.display_name(e, presumed)
+            if disp != e[0]:
+                prop = re.sub(r"(?<![\w?!])" + re.escape(e[0]) + r"(?![\w'])", disp, prop)
+            names.append(f"{disp}:{e[1]}")
+        return "[" + ", ".join(names) + "] ⊢ " + prop
 
     def weaken(self) -> None:
         """The weakening edges (tasks.org, aida-discourse-referents,
@@ -407,6 +476,148 @@ class DebateGraph:
                                 (Source(small, side, "obligation", "weakening"),),
                                 False, role="weakening"))
 
+    def instantiate(self, rounds: int = 6) -> None:
+        """The instances of generic statements (tasks.org,
+        aida-referents-instantiation, decided 2026-10-21).  A statement with
+        variables - parameters, or variables a binder introduced - covers
+        every statement of the graph that is it with terms for them
+        (``core.dc.matching``), in a context at least as large (with
+        weakening).  Influence flows down only: each edge deriving the
+        generic statement or its contrary, and each default marker an
+        argument asserts of it, is copied to every instance, its sources
+        instantiated alike, so that a supporter or attacker of the generic
+        statement bears on each instance and an attack on one instance on
+        that instance alone (per-instance defeat, question 3).  A marker a
+        site sets on the generic statement - an argument's own premise
+        about its parameter - stays there.  The copies' new sources are
+        nodes whose instances are found in the next round.  Recomputed
+        whenever the graph grows."""
+        from core.dc import matching
+        self.edges = [e for e in self.edges if e.generic is None]
+        self.instantiations = []
+        originals = {}
+        for e in self.edges:
+            # an argument's own conclusion; its parts come with it
+            if e.role in ("weakening", "presumed", "subargument") or e.term is None:
+                continue
+            originals.setdefault(e.target_key, []).append(e)
+        patterns, instances, matched = {}, {}, set()
+
+        def pattern_of(key):
+            if key not in patterns:
+                patterns[key] = matching.pattern(self.nodes.get(key, key), self.contexts.get(key, ()))
+            return patterns[key]
+
+        def instance_of(key):
+            if key not in instances:
+                instances[key] = matching.instance(self.nodes.get(key, key), self.contexts.get(key, ()))
+            return instances[key]
+
+        copies = 0
+        for _round in range(rounds):
+            before = len(self.nodes)
+            keys = list(self.nodes)
+            for g in [k for k in keys if "r#" in k]:
+                found = pattern_of(g)
+                if found is None:
+                    continue
+                gprop, gvars = found
+                gsorts, gbase = split_context_key(g)
+                for i in keys:
+                    if i == g or (g, i) in matched:
+                        continue
+                    isorts, ibase = split_context_key(i)
+                    if ibase == gbase or not sub_multiset(gsorts, isorts):
+                        continue
+                    iprop = instance_of(i)
+                    if iprop is None or matching.match(gprop, iprop, gvars) is None:
+                        continue
+                    matched.add((g, i))
+                    for side in ("term", "context"):
+                        for kind in self.asserted.get((g, side), ()):
+                            self.mark_default(i, side, kind)
+                        for e in originals.get(g, ()):
+                            if e.target_side != side:
+                                continue
+                            for copy in self._instance_edge(e, i, iprop):
+                                if not self._holds(copy):
+                                    self.add_edge(copy)
+                                    copies += 1
+            if len(self.nodes) == before:
+                break
+        else:
+            logger.warning("compile: instances of generic statements still growing after %d "
+                           "rounds; stopped", rounds)
+        self.instantiations = [(g, i) for g, i in matched
+                               if not any((g, h) in matched and (h, i) in matched
+                                          for h in self.nodes if h not in (g, i))]
+        if copies:
+            logger.debug("compile: %d instance edge(s) copied from generic statements, "
+                         "%d instantiation(s)", copies, len(self.instantiations))
+
+    def _instance_edge(self, edge: "Edge", key: str, target) -> list:
+        """``edge``, which derives a generic statement, as it derives the
+        instance ``key`` (``target``: its statement, names fixed), with the
+        parts of its argument (its horns, ``subargument`` sources) placed
+        alike - a part bears on an instance only where its argument is
+        placed.  [] if its conclusion or a source cannot be instantiated."""
+        from core.dc import matching
+        concl = getattr(edge.term, "prop", None)
+        found = matching.pattern(concl, getattr(concl, "scope", ())) if concl else None
+        if found is None:
+            return []
+        eprop, evars = found
+        sigma = matching.match(eprop, target, evars)
+        if sigma is None:
+            return []
+        owners = {}
+        values = {n: matching.unrigid(t, owners) for n, t in sigma.items()}
+        named = set().union(*(t.free_vars() for t in values.values())) if values else set()
+        # the entries of the instance's context the terms mention
+        extra = tuple(e for e in self.contexts.get(key, ()) if e[0] in named)
+        for name, owner in owners.items():
+            if not any(e[0] == name for e in extra):
+                extra += (referents.Entry(name, None, "witness", owner),)
+        return self._placed(edge, key, values, extra, depth=0)
+
+    def _placed(self, edge, key, values, extra, depth) -> list:
+        """``edge`` with its variables given ``values``, deriving ``key``,
+        and its parts likewise (``_instance_edge``)."""
+        from core.dc import matching
+        if depth > 32:
+            return []
+        out, sources = [], []
+        for source in edge.sources:
+            if source.prop is None:
+                if "r#" in source.key or "w#" in source.key or source.key.startswith("["):
+                    return []
+                sources.append(source)
+                continue
+            text = referents.plain(source.prop)
+            scope = getattr(source.prop, "scope", ())
+            try:
+                p = Prop.parse(text)
+            except PropError:
+                return []
+            here = {n: v for n, v in values.items() if n in p.free_vars()}
+            kept = tuple(e for e in scope if e[0] not in values)
+            if not here and len(kept) == len(scope):
+                new = source
+            else:
+                p = matching.subst_all(p, here)
+                new_scope = kept + tuple(e for e in extra if all(e[0] != k[0] for k in kept))
+                new_text = referents.InContext(str(p), new_scope) if new_scope else str(p)
+                new = replace(source, key=self.add_node(new_text), prop=new_text)
+            sources.append(new)
+            if source.kind == "subargument" and new.key != source.key:
+                for part in self.edges:
+                    if (part.generic is None and part.name == source.site
+                            and part.target_key == source.key and part.target_side == source.side):
+                        out.extend(self._placed(part, new.key, values, extra, depth + 1))
+        out.insert(0, replace(edge, target_key=key, sources=tuple(sources), generic=edge.target_key,
+                              inst=tuple(values.items())))
+        return out
+
     def mark_default(self, key: str, side: str, kind: str) -> None:
         if kind in ("obligation", "presumption"):
             self.defaults.setdefault((key, side), set()).add(kind)
@@ -419,6 +630,9 @@ class DebateGraph:
             and edge.sources[0].key == edge.target_key
             and edge.sources[0].side == edge.target_side
         ):
+            if edge.generic is None and edge.sources[0].kind in ("obligation", "presumption"):
+                self.asserted.setdefault((edge.target_key, edge.target_side), set()).add(
+                    edge.sources[0].kind)
             if not getattr(self, "quiet", False):
                 logger.debug("compile: '%s' is an identity edge on %s; kept as a default marker only",
                              edge.name, self._show_edge_target(edge))
@@ -444,7 +658,7 @@ class DebateGraph:
     # -- rendering for log messages ----------------------------------------
 
     def _show(self, key, side) -> str:
-        return f"{self.shown(key)}[{side[0]}]"
+        return f"{self.shown(key, side)}[{side[0]}]"
 
     def _show_edge_target(self, edge: Edge) -> str:
         return self._show(edge.target_key, edge.target_side)
@@ -461,12 +675,31 @@ class DebateGraph:
             self.nodes.setdefault(key, display)
         for key, scope in getattr(other, "contexts", {}).items():
             self.contexts.setdefault(key, scope)
+        # One naming (tasks.org, aida-referents-node-names): a statement with
+        # referents an argument concludes is shown as the first argument
+        # concluding it states it, whoever registered the node first - its
+        # witness then reads as the argument's own environment names it.
+        named = getattr(self, "_named", None)
+        if named is None:
+            named = self._named = set()
+        for edge in other.edges:
+            key = edge.target_key
+            if (edge.role == "argument" and key not in named and key in other.contexts
+                    and ("r#" in key or key.startswith("["))):
+                self.nodes[key] = other.nodes[key]
+                self.contexts[key] = other.contexts[key]
+                named.add(key)
         self.referent_envs.update(getattr(other, "referent_envs", {}))
         for (key, side), kinds in other.defaults.items():
             self.defaults.setdefault((key, side), set()).update(kinds)
+        for (key, side), kinds in getattr(other, "asserted", {}).items():
+            self.asserted.setdefault((key, side), set()).update(kinds)
+        self.sorts.update(getattr(other, "sorts", {}))
         self.edges.extend(e for e in other.edges
-                          if e.role != "weakening" and not self._holds(e))
+                          if e.role != "weakening" and e.generic is None and not self._holds(e))
         self.has_contexts = self.has_contexts or getattr(other, "has_contexts", False)
+        if any("r#" in key for key in self.nodes):
+            self.instantiate()
         if self.has_contexts:
             self.weaken()
 
@@ -615,6 +848,9 @@ class DebateGraph:
                     sub_branch = "`-- " if last_source else "|-- "
                     out.append(f"{child_prefix}{sub_branch}{annotate(child)}")
                     walk(child, child_prefix + ("    " if last_source else "|   "), path)
+            generic = [g for g, i in self.instantiations if i == statement[0]]
+            if generic and statement[1] == "term":
+                out.append(f"{prefix}    (an instance of {', '.join(self.shown(g) for g in generic)})")
             if show_contrary:
                 # The contrary side is a mutual attack: each statement's
                 # acceptance condition negates the other's.  Where the two
@@ -702,6 +938,11 @@ class DebateGraph:
             )
             if not edge.sources:
                 lines.append(f"  {ids[edge.target_key]} [peripheries=2];")
+        for generic, instance in self.instantiations:
+            if generic in ids and instance in ids:
+                colour = _DOT_ROLE_COLOUR["instantiation"]
+                lines.append(f'  {ids[generic]} -> {ids[instance]} [color={colour} style=dotted '
+                             f'arrowhead=onormal fontcolor=gray50 label="instance"];')
         if legend and (self.nodes or self.edges):
             lines.extend(self._dot_legend(labels, labelling))
         lines.append("}")
@@ -719,6 +960,9 @@ class DebateGraph:
         for role in dict.fromkeys(e.role for e in self.edges):
             colour = _DOT_ROLE_COLOUR.get(role, "black")
             samples.append((f"color={colour}", _DOT_ROLE_TEXT.get(role, role)))
+        if self.instantiations:
+            samples.append((f'color={_DOT_ROLE_COLOUR["instantiation"]} style=dotted arrowhead=onormal',
+                            _DOT_ROLE_TEXT["instantiation"]))
         sources = [s for e in self.edges for s in e.sources]
         if any(e.strict for e in self.edges):
             samples.append(("color=black penwidth=2", "thick:\\nstrict, rests\\non no site"))
@@ -1277,9 +1521,30 @@ def _referent_form(prop, bound) -> str:
     return str(parsed)
 
 
-def witness_key(referent: str) -> str:
-    """The node a referent target owes for ``referent``: a witness."""
-    return f"a witness for {referent}"
+def witness_key(referent: str, owner=None) -> str:
+    """The node a referent target owes for ``referent``, or an argument for
+    its own open choice (``owner``): a witness."""
+    return f"a witness for {referent}" + (f" of {owner}" if owner else "")
+
+
+def sort_individuals(graph, declarations) -> None:
+    """The declared constants of each sort a sort node is about, each a
+    strict proof that the sort has an individual (tasks.org,
+    aida-referents-individuals, decided 2026-10-21): the edge ``c`` with
+    the term ``(c, _T_)``."""
+    for sort, key in list(getattr(graph, "sorts", {}).items()):
+        if str(declarations.get(sort, "")).strip() != "type":
+            continue
+        for name, decl in declarations.items():
+            if str(decl).strip() != sort or name == sort:
+                continue
+            prop = referents.sort_statement(sort)
+            term = TermsPairFO(TSym(name), DI("_T_", "true"))
+            term.prop = prop
+            edge = Edge(name=name, target_key=key, target_side="term", sources=(), strict=True,
+                        role="subargument", term=term)
+            if not graph._holds(edge):
+                graph.add_edge(edge)
 
 
 def require_witnesses(graph, issue) -> None:
@@ -1295,18 +1560,27 @@ def require_witnesses(graph, issue) -> None:
         return
     scope = graph.contexts.get(key)
     if scope:
-        names = [name for name, _sort in scope]
+        names = [(name, sort) for name, sort in scope]
     else:
         try:
-            names = Prop.parse(graph.nodes.get(key, key)).referent_order()
+            names = [(n, None) for n in Prop.parse(graph.nodes.get(key, key)).referent_order()]
         except PropError:
             return
     if not names:
         return
-    owed = tuple(Source(witness_key(name), "term", "obligation", name) for name in names)
-    for source in owed:
-        graph.nodes.setdefault(source.key, source.key)
-        graph.mark_default(source.key, source.side, "obligation")
+    owed = []
+    for name, sort in names:
+        if referents.is_presumed(name) and sort:
+            # !x: the sort is presumed to have an individual (aida-referents-individuals)
+            source = Source(graph.add_node(referents.sort_statement(sort)), "term", "presumption", name)
+            graph.sorts.setdefault(str(sort), source.key)
+        else:
+            source = Source(witness_key(name), "term", "obligation", name)
+            graph.nodes.setdefault(source.key, source.key)
+        graph.mark_default(source.key, source.side, source.kind)
+        owed.append(source)
+    owed = tuple(owed)
+    names = [n for n, _s in names]
     graph.edges = [replace(edge, sources=edge.sources + owed, strict=False)
                    if (edge.target_key, edge.target_side) == issue else edge
                    for edge in graph.edges]
@@ -1362,6 +1636,28 @@ class _Compiler:
         #: before its source is recorded; the issue compiler uses it to
         #: compile the cited instance in place.
         self.on_citation = None
+
+    def _choice(self, node):
+        """The source an argument's own open choice adds where it names it
+        (``elim [?w]``): a witness for ``?w``, owed, which only an
+        alternative of the witness scaffold supplies (core/dc/unfold.py);
+        for ``!w`` the sort node, presumed - the sort has an individual
+        (tasks.org, aida-referents-individuals).  None elsewhere."""
+        chosen = node.witness if isinstance(node, TermsPairFO) else node.fo_term
+        if not isinstance(chosen, TSym) or not referents.is_referent(chosen.name):
+            return None
+        prop = getattr(node, "prop", None)
+        entry = next((e for e in getattr(prop, "scope", ())
+                      if e[0] == chosen.name and referents.is_witness(e)), None)
+        if entry is None:
+            return None
+        if referents.is_presumed(chosen.name) and entry[1]:
+            key = self.graph.add_node(referents.sort_statement(entry[1]))
+            self.graph.sorts.setdefault(str(entry[1]), key)
+            return _Acc((Source(key, "term", "presumption", chosen.name),))
+        key = witness_key(chosen.name, entry.owner)
+        self.graph.nodes.setdefault(key, key)
+        return _Acc((Source(key, "term", "obligation", chosen.name),))
 
     def _check_kind(self, declared: str, side: str, edge_name: str) -> None:
         """A declared name on a side must have the kind that side needs."""
@@ -1446,9 +1742,10 @@ class _Compiler:
             argument, so it stays part of the argument, like a spine step
             (the author, 2026-10-16; tasks.org, aida-fo-open-source-horn).
             Likewise a node that uses a discourse referent its statement
-            does not state: it argues in the argument's referent
-            environment, not for its closed statement (until a node
-            carries its context; tasks.org, aida-discourse-referents)."""
+            does not state.  Kept on 2026-10-22: lifting it (plan step 4b,
+            aida-referents-open-horns) makes such a horn rest on the
+            hypotheses of its argument as owed sources, which changes the
+            verdicts the decision meant to keep (birds_fly is no value)."""
             mentions = fo_mentions.get(id(node), frozenset())
             bound = fo_scope.get(id(node))
             if bound and mentions & bound:
@@ -1484,7 +1781,8 @@ class _Compiler:
                                     fo_outer=fo_scope.get(id(node), frozenset()))
             self.graph.add_edge(rec)
             return _Acc((Source(rec.target_key, rec.target_side, "subargument", label, (),
-                                rec.target_label),), not rec.strict)
+                                rec.target_label, prop=getattr(rec.term, "prop", None)),),
+                        not rec.strict)
 
         def axiom_edge(node, vside, env):
             """A declared name as a horn: its own strict edge, named after
@@ -1500,7 +1798,8 @@ class _Compiler:
             self.graph.add_edge(Edge(name=node.name, target_key=key, target_side=vside,
                                      sources=(), strict=True, role="subargument", term=node,
                                      target_label=getattr(node, "label", None)))
-            return _Acc((Source(key, vside, "subargument", node.name, (), getattr(node, "label", None)),))
+            return _Acc((Source(key, vside, "subargument", node.name, (), getattr(node, "label", None),
+                                prop=node.prop),))
 
         def variable(node, env, scope):
             vside = "context" if isinstance(node, ID) else "term"
@@ -1530,7 +1829,8 @@ class _Compiler:
                     self.on_citation(node, name)
                 return _Acc((Source(self.graph.add_node(node.prop), vside,
                                     getattr(node, "source_kind", "obligation"),
-                                    node.name, scope, getattr(node, "label", None)),))
+                                    node.name, scope, getattr(node, "label", None),
+                                    prop=node.prop),))
             enclosing = outer.get(node.name)
             if enclosing is not None and enclosing[1] == vside:
                 kind = "presumption" if getattr(node, "captured_presumption", False) else "obligation"
@@ -1539,7 +1839,7 @@ class _Compiler:
                              "(the sprung trap, shown as a cycle)",
                              name, node.name, kind, self.graph._show(captured_key, vside))
                 return _Acc((Source(captured_key, vside, kind, node.name, scope,
-                                    getattr(node, "label", None)),))
+                                    getattr(node, "label", None), prop=enclosing[0]),))
             raise DebateCompileError(
                 f"Edge '{name}': free {'context' if vside == 'context' else 'term'} "
                 f"variable '{node.name}' is neither bound nor a declared axiom; "
@@ -1567,7 +1867,7 @@ class _Compiler:
                     prop = node.prop
                     return _Acc((Source(self.graph.add_node(prop), lside, kind,
                                         str(node.number), scope,
-                                        getattr(node, "label", None)),))
+                                        getattr(node, "label", None), prop=prop),))
             if isinstance(node, (ID, DI)):
                 return variable(node, env, scope)
             if _is_negation_wrapper(node):
@@ -1632,18 +1932,31 @@ class _Compiler:
                     return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
                 return (visit(node.term, env, spine, scope, parent=node)
                         + visit(node.context, env, spine, scope, parent=node))
-            # First order (the author, 2026-10-16).  An instantiation
-            # ``t * c`` and an existential's introduction ``(t, v)`` are
-            # steps of the spine, never attack points: a rule stands or
-            # falls as one statement (Q4), so neither the step nor the
-            # instance chain under it is exposed.  The existential's
-            # elimination ``(x). c`` binds x for what follows.  A universal
-            # introduction ``lambda x. t`` is a horn like a lambda.
+            # First order: the horn rule as for every node (tasks.org,
+            # aida-referents-witness-scaffold, 2026-10-22, which undoes the
+            # exemption of 2026-10-17).  An instantiation ``t * c``, an
+            # existential's introduction ``(t, v)`` and its elimination
+            # ``(x). c`` off the spine are horns with the quantified
+            # statement, in the context they stand in; on the spine (at the
+            # root, under a binder of the spine) they are steps of it.
+            if isinstance(node, (ConsFO, TermsPairFO)):
+                choice = self._choice(node)
+                if choice is not None:
+                    return choice + visit_fo(node, env, spine, scope, spine_node)
+            return visit_fo(node, env, spine, scope, spine_node)
+
+        def visit_fo(node, env, spine, scope, spine_node):
             if isinstance(node, ConsFO):
+                if not spine_node and getattr(node, "prop", None):
+                    return sub_edge(node, f"{name}.c{next(self._fresh)}", env)
                 return visit(node.context, env, spine, scope, rest=True, parent=node)
             if isinstance(node, TermsPairFO):
+                if not spine_node and getattr(node, "prop", None):
+                    return sub_edge(node, f"{name}.p{next(self._fresh)}", env)
                 return visit(node.term, env, spine, scope, rest=True, parent=node)
             if isinstance(node, DestructTermsPairFO):
+                if not spine_node and getattr(node, "prop", None):
+                    return sub_edge(node, f"{name}.\u03bb\u0304{next(self._fresh)}", env)
                 return visit(node.context, env, spine, scope, rest=True, parent=node)
             if isinstance(node, LamdaFO):
                 if not spine_node:
@@ -1675,8 +1988,12 @@ class _Compiler:
             acc = visit(root.term, env, spine, (), parent=root) + visit(root.context, env, spine, (), parent=root)
         elif isinstance(root, (LamdaFO, TermsPairFO)):
             acc = visit(root.term, env, spine, (), rest=True, parent=root)
+            if isinstance(root, TermsPairFO):
+                acc = (self._choice(root) or _EMPTY) + acc
         elif isinstance(root, (ConsFO, DestructTermsPairFO)):
             acc = visit(root.context, env, spine, (), rest=True, parent=root)
+            if isinstance(root, ConsFO):
+                acc = (self._choice(root) or _EMPTY) + acc
         else:
             acc = visit(root, env, spine, ())
         # Strict = the derivation uses no indeterminate anywhere: none among
@@ -1785,6 +2102,9 @@ def compile_debate(body: ProofTerm, name: str, *, strict_names=None,
     on the result says which fragment the debate is in.
     """
     logger.debug("compile: framework of '%s'", name)
+    if env:
+        # parameters and witness entries (tasks.org, aida-referents-instantiation)
+        env = referents.entries(env, getattr(body, "prop", None), name)
     if env is not None and has_context(body, env):
         # an argument's body: every proposition in the context it is
         # stated in (``env``: the argument's referent environment)

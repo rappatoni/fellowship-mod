@@ -1,0 +1,16 @@
+# The individuals of a sort (tasks.org, aida-referents-individuals,
+# decided 2026-10-21).  some_farmer chooses its farmer with !x: it presumes
+# that iota has an individual (the sort node exists x:iota, true) and that
+# it is a farmer.  some_farmer_owed chooses with ?x: it owes the individual.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare farmer : iota -> bool.
+argument some_farmer : [!x:iota] (exists x:iota, farmer [x]).
+elim [!x].
+by default.
+dixi.
+argument some_farmer_owed : [?x:iota] (exists x:iota, farmer [x]).
+elim [?x].
+by default.
+dixi.

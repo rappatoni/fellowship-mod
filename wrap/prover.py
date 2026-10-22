@@ -830,6 +830,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if graph is None:
             return
         self.graph.merge(graph)
+        if self.graph.sorts:
+            from core.dc.debate_graph import sort_individuals
+            sort_individuals(self.graph, self.declarations)
         logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
 
     def _compile_argument(self, argument: Any, into: str):
@@ -913,9 +916,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if env:
             # the statement in the argument's referent environment, the
             # import (tasks.org, aida-discourse-referents)
-            from core.ac.referents import InContext
-            return (canonical_prop(InContext(argument.conclusion,
-                                             tuple((n, str(s)) for n, s in env))), side)
+            from core.ac.referents import InContext, entries
+            scope = entries(tuple((n, str(s)) for n, s in env), argument.conclusion, argument.name)
+            return (canonical_prop(InContext(argument.conclusion, scope)), side)
         return (canonical_prop(argument.conclusion), side)
 
     def anon_name(self, statement) -> str:

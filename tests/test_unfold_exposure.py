@@ -92,7 +92,7 @@ def verdict(svc, text):
 # -- the shapes -----------------------------------------------------------------
 
 KILLR = "μ'killR:R.<killR||μ'x:R.<nR||μ'H1:~R.<H1||x*_F_>>>"
-R_DEBATE = f"ATT[alt4,b4](!u3:R, SUP~[alt5,b5](alt4, {KILLR}))"
+R_DEBATE = f"ATT[alt4,b4](!3:R, SUP~[alt5,b5](alt4, {KILLR}))"
 
 
 class TestAnAxiomIsExposed:
@@ -106,18 +106,18 @@ class TestAnAxiomIsExposed:
             # r1's statement A->B: an obligation root (Q3), r1 on top (pro's
             # primacy extends to it), attackrule in the attacker wing
             assert term.startswith(
-                "SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<ATT[alt3,b3](SUP[alt2,b2](?u2:A->B, r1), "
-                "SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!u3:D*"
-                "μ'H1:~(A->B).<H1||th_2*_F_>>>))||ATT[alt5,b5](!u4:A, ")
+                "SUP[alt1,b1](?1:B, μpro:B.<μth:B.<ATT[alt3,b3](SUP[alt2,b2](?2:A->B, r1), "
+                "SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!3:D*"
+                "μ'H1:~(A->B).<H1||th_2*_F_>>>))||ATT[alt5,b5](!4:A, ")
             assert verdict(svc, "pro") == ("value", "μpro:B.<r1:A->B||!IN:A*pro:B>")
             # attackrule loses to the strict axiom in phase 1
             assert verdict(svc, "attackrule") == ("exception", "μ'alt2:A->B.<r1:A->B||OUT:A->B?>")
             assert pres_scaffolds(term_of(svc, "issue :A->B").term) == (
-                "ATT[alt2,b2](SUP[alt1,b1](?u1:A->B, r1), SUP~[alt3,b3](alt2, μ'attackrule:A->B."
-                "<attackrule||μ'th:A->B.<r3||!u2:D*μ'H1:~(A->B).<H1||th*_F_>>>))")
+                "ATT[alt2,b2](SUP[alt1,b1](?1:A->B, r1), SUP~[alt3,b3](alt2, μ'attackrule:A->B."
+                "<attackrule||μ'th:A->B.<r3||!2:D*μ'H1:~(A->B).<H1||th*_F_>>>))")
             assert verdict(svc, "issue :A->B") == ("value", "r1:A->B")
             # the axioms nobody engages are stacked at their own issue only
-            assert pres_scaffolds(term_of(svc, "issue :~C").term) == "SUP[alt1,b1](?u1:~C, nc)"
+            assert pres_scaffolds(term_of(svc, "issue :~C").term) == "SUP[alt1,b1](?1:~C, nc)"
         finally:
             prover.close()
 
@@ -147,7 +147,7 @@ class TestALemmaIsExposed:
             # the canonical term of P: argP, then the lemma (registration
             # order); inside argQ the lemma's P is bound by the root's b1
             assert pres_scaffolds(term_of(svc, "issue :P").term) == (
-                "SUP[alt1,b1](?u1:P, SUP[alt2,b2](μargP:P.<μth:P.<qp||SUP[alt3,b3](!u2:Q, "
+                "SUP[alt1,b1](?1:P, SUP[alt2,b2](μargP:P.<μth:P.<qp||SUP[alt3,b3](!2:Q, "
                 "μargQ:Q.<μth_2:Q.<pq||b1*th_2>||argQ>)*th>||argP>, "
                 f"μth2:P.<rp||{R_DEBATE}*th2>))")
             # judged by what it stands for, argQ's P (the root, inside P's
@@ -156,7 +156,7 @@ class TestALemmaIsExposed:
             # unfolded for argQ: the lemma is in argQ's body, at its own
             # statement's debate, with an obligation root and argP below it
             assert pres_scaffolds(term_of(svc, "argQ").term) == (
-                "SUP[alt1,b1](!u1:Q, μargQ:Q.<μth:Q.<pq||SUP[alt2,b2](?u2:P, SUP[alt3,b3]("
+                "SUP[alt1,b1](!1:Q, μargQ:Q.<μth:Q.<pq||SUP[alt2,b2](?2:P, SUP[alt3,b3]("
                 "μargP:P.<μth_2:P.<qp||b1*th_2>||argP>, "
                 f"μth2:P.<rp||{R_DEBATE}*th2>))*th>||argQ>)")
             assert verdict(svc, "argQ") == ("value", "μargQ:Q.<pq:P->Q||μb1:P.<qp:Q->P||!IN:Q*b1:P>*argQ:Q>")
@@ -170,8 +170,8 @@ class TestALemmaIsExposed:
         prover, svc = session("exposure/lemma_captured.fspy")
         try:
             assert pres_scaffolds(term_of(svc, "argP").term) == (
-                f"SUP[alt1,b1](?u1:P, SUP[alt2,b2](μth2:P.<rp||{R_DEBATE}*th2>, "
-                "μargP:P.<μth:P.<qp||SUP[alt3,b3](!u2:Q, μargQ:Q.<μth_2:Q.<pq||b2*th_2>||argQ>)"
+                f"SUP[alt1,b1](?1:P, SUP[alt2,b2](μth2:P.<rp||{R_DEBATE}*th2>, "
+                "μargP:P.<μth:P.<qp||SUP[alt3,b3](!2:Q, μargQ:Q.<μth_2:Q.<pq||b2*th_2>||argQ>)"
                 "*th>||argP>))")
             # b2 is the stack below argP - the refuted lemma - so argQ
             # stands OUT here and Q's scaffold keeps its presumption
@@ -185,7 +185,7 @@ class TestALemmaIsExposed:
         prover, svc = session("exposure/lemma_captured.fspy", "preserve")
         try:
             term = pres_scaffolds(term_of(svc, "argP").term)
-            assert "SUP[alt4,b4](b2, μth2:P.<rp||ATT[alt5,b5](!u3:R, " in term
+            assert "SUP[alt4,b4](b2, μth2:P.<rp||ATT[alt5,b5](!3:R, " in term
             assert verdict(svc, "argP") == ("value", "μargP:P.<qp:Q->P||!IN:Q*argP:P>")
         finally:
             prover.close()
@@ -215,8 +215,8 @@ class TestNothingNewWhereNobodyEngages:
         prover, svc = session("exposure/two_sites.fspy")
         try:
             assert pres_scaffolds(term_of(svc, "two").term) == (
-                "SUP[alt1,b1](?u1:B, μtwo:B.<μth:B.<r||SUP[alt2,b2](!u2:A, μaArg:A.<μth_2:A.<rc||"
-                "!u3:C*th_2>||aArg>)*SUP[alt3,b3](!u4:A, μaArg_2:A.<μth_3:A.<rc||!u5:C*th_3>||"
+                "SUP[alt1,b1](?1:B, μtwo:B.<μth:B.<r||SUP[alt2,b2](!2:A, μaArg:A.<μth_2:A.<rc||"
+                "!3:C*th_2>||aArg>)*SUP[alt3,b3](!4:A, μaArg_2:A.<μth_3:A.<rc||!5:C*th_3>||"
                 "aArg_2>)*th>||two>)")
             assert verdict(svc, "two") == (
                 "value", "μtwo:B.<r:A->A->B||μb1:A.<rc:C->A||!IN:C*b1:A>*μb3:A.<rc:C->A||!IN:C*b3:A>*two:B>")
@@ -230,8 +230,8 @@ class TestNothingNewWhereNobodyEngages:
         prover, svc = session("exposure/curried_cell.fspy")
         try:
             term = pres_scaffolds(term_of(svc, "cArg").term)
-            assert term == ("SUP[alt1,b1](?u1:C, μcArg:C.<μr:C.<abc||SUP[alt2,b2](?u2:A, "
-                            "μaArg:A.<axA||aArg>)*!u3:B*r>||cArg>)")
+            assert term == ("SUP[alt1,b1](?1:C, μcArg:C.<μr:C.<abc||SUP[alt2,b2](?2:A, "
+                            "μaArg:A.<axA||aArg>)*!3:B*r>||cArg>)")
             assert "test" not in term
             assert verdict(svc, "cArg") == ("value", "μcArg:C.<abc:A->B->C||μb1:A.<axA:A||b1:A>*!IN:B*cArg:C>")
             assert [e.name for e in prover.graph.edges] == ["abc", "cArg", "aArg"]
@@ -242,7 +242,7 @@ class TestNothingNewWhereNobodyEngages:
         prover, svc = session("minicourse/lesson8a_cycle.fspy")
         try:
             assert pres_scaffolds(term_of(svc, "pro").term) == (
-                "SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<r1||SUP[alt2,b2](?u2:A, μback:A.<μth_2:A.<r3||"
+                "SUP[alt1,b1](?1:B, μpro:B.<μth:B.<r1||SUP[alt2,b2](?2:A, μback:A.<μth_2:A.<r3||"
                 "b1*th_2>||back>)*th>||pro>)")
             assert verdict(svc, "pro") == ("open", "?UNDEC:B")
         finally:
@@ -256,12 +256,12 @@ class TestPrimacyAndLambdas:
         prover, svc = session("entrypoints.fspy")
         try:
             c1 = pres_scaffolds(term_of(svc, "c1").term)
-            assert "μ'c1:F.<c1||μ'x:F.<SUP[alt3,b3](?u2:~F, SUP[alt4,b4](n2, n1))" in c1
-            assert "μ'c2:F.<c2||μ'x_2:F.<SUP[alt5,b5](?u3:~F, SUP[alt6,b6](n1, n2))" in c1
+            assert "μ'c1:F.<c1||μ'x:F.<SUP[alt3,b3](?2:~F, SUP[alt4,b4](n2, n1))" in c1
+            assert "μ'c2:F.<c2||μ'x_2:F.<SUP[alt5,b5](?3:~F, SUP[alt6,b6](n1, n2))" in c1
             assert verdict(svc, "c1") == ("value", "μ'c1:F.<n1:~F||c1:F*_F_>")
             assert verdict(svc, "c2") == ("value", "μ'c2:F.<n2:~F||c2:F*_F_>")
             # the canonical issue: registration order, nobody on top
-            assert pres_scaffolds(term_of(svc, "issue :~F").term) == "SUP[alt1,b1](?u1:~F, SUP[alt2,b2](n1, n2))"
+            assert pres_scaffolds(term_of(svc, "issue :~F").term) == "SUP[alt1,b1](?1:~F, SUP[alt2,b2](n1, n2))"
             assert verdict(svc, "issue :~F") == ("value", "n2:~F")
         finally:
             prover.close()
@@ -273,7 +273,7 @@ class TestPrimacyAndLambdas:
         prover, svc = session("rationality/self_attack_lk.fspy")
         try:
             assert pres_scaffolds(term_of(svc, "issue :P->false").term) == (
-                "SUP[alt1,b1](?u1:P->false, λh:P.μalpha:false.<h||ATT~[alt2,b2](P:!u2, "
+                "SUP[alt1,b1](?1:P->false, λh:P.μalpha:false.<h||ATT~[alt2,b2](P:!2, "
                 "SUP[alt3,b3](alt2, μSelfAttack:P.<μrule:P.<pRule||b1*rule>||SelfAttack>))>)")
             assert verdict(svc, "issue :P->false") == ("open", "?UNDEC:P->false")
             assert verdict(svc, "SelfAttack")[0] == "value"
@@ -457,7 +457,7 @@ class TestALemmaStaysInItsScope:
         prover, svc = session("exposure/lemma_scope_cases.fspy")
         try:
             shown = pres_scaffolds(term_of(svc, "p1").term)
-            assert "μy:B.<f||?u4:A*y>" in shown          # was <f||h*y>, h free
+            assert "μy:B.<f||?4:A*y>" in shown          # was <f||h*y>, h free
             assert "λh:A.μk:false.<b2||x>" in shown       # inside, captured as before
         finally:
             prover.close()

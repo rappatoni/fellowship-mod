@@ -89,6 +89,8 @@ varlist:    NAME ("," NAME)*
           | tight_term
 ?context:   tight_term _STAR context            -> cons
           | fo_app _STAR context                -> consfo
+          // a discourse referent is a first-order term, never a proof
+          | REFNAME _STAR context               -> consref
           | tight_context
 
 // At least two atoms: `S (S O)*c` is first-order beyond doubt, whereas a lone
@@ -144,7 +146,7 @@ _SET.3:     /type(?![A-Za-z0-9_])/
 _BOOL.3:    /bool(?![A-Za-z0-9_])/
 NAME:       /(?!(?:true|false|forall|exists|type|bool)\b)[A-Za-z_][A-Za-z0-9_]*/
 // A discourse referent ?x (an open goal ?1 is a number).
-REFNAME:    /\?[A-Za-z][A-Za-z0-9_]*/
+REFNAME:    /[?!][A-Za-z][A-Za-z0-9_]*/
 NUMBER:     /[0-9]+/
 %import common.WS
 %ignore WS
@@ -280,6 +282,9 @@ class _Build(Transformer):
 
     def consfo(self, fo_term, context):
         return ConsFO(fo_term, context)
+
+    def consref(self, name, context):
+        return ConsFO(TSym(str(name)), context)
 
     def lamda(self, name, prop, body):
         return Lamda(Hyp(DI(str(name)), str(prop)), body)

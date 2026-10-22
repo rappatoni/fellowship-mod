@@ -76,9 +76,10 @@ let letter = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let sep = ['_']
 let ident = letter (letter | digit | sep)* | "_"
-(* A discourse referent ?x: a pseudo-constant local to a theorem, never
-   declared (AIDA, tasks.org aida-discourse-referents). *)
-let refident = '?' letter (letter | digit | sep)*
+(* A discourse referent ?x or !x: a pseudo-constant local to a theorem,
+   never declared (AIDA, tasks.org aida-discourse-referents; !x presumes
+   that its sort has an individual, aida-referents-individuals). *)
+let refident = ['?' '!'] letter (letter | digit | sep)*
 let integer = ['0'-'9']+
 let space = [' ' '\t']
 

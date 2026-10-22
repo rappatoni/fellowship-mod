@@ -95,7 +95,7 @@ def test_a_circular_supporter_rests_on_b(fresh):
     match = _match_scaffold(term, set(fresh.declarations))
     beta = term.context.di.name
     assert match[0] == "supporter" and "r3:B->A||%s:B*" % beta in pres_str(term)
-    assert len(re.findall(r"\?u\d+:B", pres_str(term))) == 1
+    assert len(re.findall(r"\?\d+:B", pres_str(term))) == 1
     nf, cls, *_ = evaluate(fresh, term, "skeptical")
     assert cls == "open" and pres_str(nf) == "?UNDEC:B"
     nf, cls, *_ = evaluate(fresh, term, "credulous")

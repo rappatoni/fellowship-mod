@@ -612,7 +612,9 @@ def classify_nf(v) -> str:
     if _contains(v, (Goal, Laog)):
         logger.debug("classify: OPEN%s", _because_open(v))
         return "open"
-    uncaught = uncaught_referents(v)
+    # an uncaught !x is presumed: its sort has an individual (tasks.org,
+    # aida-referents-individuals); only ?x asks for one
+    uncaught = {r for r in uncaught_referents(v) if not r.startswith("!")}
     if uncaught:
         # decision (c) of aida-discourse-referents: a caught referent is
         # substituted by the variable that caught it, so one left in the
