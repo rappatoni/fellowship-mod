@@ -1,0 +1,27 @@
+# Anaphora whose latest reading is contested (tasks.org,
+# aida-referents-anaphora). "A queen walks. A knight walks silently. He
+# whistles." The knight's argument presumes he does not whistle; the
+# pronoun's reading for the knight presumes he does, so neither holds and
+# the scaffold falls back to the queen.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare knight,queen,whistles,walks : iota -> bool.
+argument queen_walks : [!a:iota](exists x:iota, queen [x] - ~walks [x]).
+elim [!a].
+by default.
+dixi.
+argument knight_walks_silently : [!a:iota](exists x:iota, knight [x] - ~walks [x] - whistles [x]).
+elim [!a].
+elim.
+by default.
+next.
+elim.
+by default.
+next.
+by default.
+dixi.
+argument he_whistles : [?c:iota](exists x:iota, whistles [x]).
+elim [?c].
+by default.
+dixi.

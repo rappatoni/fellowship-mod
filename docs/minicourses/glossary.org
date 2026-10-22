@@ -348,9 +348,18 @@ No lesson covers these yet; the decisions are recorded in =tasks.org=,
 - Witness scaffold, alternative :: Where an argument names its own open
   choice, a support scaffold at the quantified statement: its root is the
   open choice, its alternatives the individuals tried for it - declared
-  constants some statement is about there, then the variables binders
-  introduced in scope, the innermost on top. Another argument's open
-  choice is never an alternative.
+  constants, the =!= open choices of earlier arguments without
+  parameters, then the variables binders introduced in scope, the
+  innermost on top. A =?= choice is never an alternative: it supplies no
+  individual.
+
+- Indefinite, pronoun :: An open choice written =!w= is an indefinite ("a
+  man"): it presumes an individual of its own, and an alternative wins
+  only where its statement is argued of that individual elsewhere. One
+  written =?w= is a pronoun ("he"): it owes the individual, and each
+  alternative's sites keep the onus the argument wrote, so the pronoun's
+  claim holds of whoever answers. The scaffold keeps one alternative, so
+  a pronoun resolves to one individual.
 
 - Sort node :: The statement =exists x:foo, true=, that the sort =foo= has
   an individual. A declared constant proves it strictly; a =!x:foo=

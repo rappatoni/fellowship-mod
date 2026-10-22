@@ -74,7 +74,7 @@ from core.comp.oracle_terms import (
 )
 from core.dc.debate_graph import (
     DebateGraph, Edge, canonical_prop, compile_debate, _match_scaffold, _restore_scion,
-    scaffold_parts, BUILTIN_LEAVES, binder_origin, require_witnesses,
+    scaffold_parts, BUILTIN_LEAVES, binder_origin, require_witnesses, take_shown,
 )
 from core.logging_util import TRACE, artifact
 
@@ -463,6 +463,7 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     from core.comp.evaluate import issue_of
     graph = compile_debate(term, name, strict_names=strict_names, strict_kinds=strict_kinds)
     for edge in issue_strict_edges(term, name, strict_names):
+        take_shown(graph, edge)
         graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)
@@ -491,7 +492,9 @@ def instance_edges(term: ProofTerm, name: str, strict_names=None) -> list:
     if not _has_instance(term):
         return []
     graph = compile_debate(term, name, strict_names=strict_names)
-    found = [e for e in graph.edges
+    found = [replace(e, shown=tuple((key, graph.nodes.get(key, key), graph.contexts.get(key))
+                                    for key in [e.target_key] + [s.key for s in e.sources]))
+             for e in graph.edges
              if getattr(e.term, "instantiated", False) and e.role != "weakening"]
     logger.debug("strict: %d edge(s) of placed instances for '%s'", len(found), name)
     return found
@@ -550,6 +553,7 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
     graph.has_contexts = source.has_contexts
     graph.quiet = False
     for edge in strict_edges:
+        take_shown(graph, edge)
         graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)

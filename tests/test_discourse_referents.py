@@ -721,3 +721,132 @@ def test_a_concluded_referent_statement_is_shown_as_its_argument_states_it():
         assert not any("?z" in text or "z?" in text for text in shown)
     finally:
         prover.close()
+
+
+# -- anaphora (2026-10-22) ---------------------------------------------------------
+
+def test_a_pronoun_resolves_to_the_latest_antecedent_alone():
+    """tasks.org, aida-referents-anaphora: he_whistles tries the plumber
+    and the knight, the knight on top, and keeps the knight's reading only;
+    that reading is about knight_walks's own choice."""
+    prover, svc, report = session((DISCOURSE / "anaphora.fspy").read_text())
+    try:
+        assert report.ok
+        term = pres_str(svc.issue_term(svc.target("he_whistles"), want_term=True).term)
+        assert "(?c," in term and "(!a,!" in term and "(!a_2,!" in term
+        cls, nf = evaluated(svc, "he_whistles")
+        assert cls == "value" and "(!a_2,!IN:whistles !a_2)" in nf and "whistles !a)" not in nf
+        graph = svc.label(svc.target("he_whistles")).graph
+        assert any("w#knight_walks:!a" in k and "whistles" in k for k, _s in graph.statements())
+    finally:
+        prover.close()
+
+
+def test_a_resolution_supports_nothing_outside_the_pronouns_argument():
+    """The readings' statements are no nodes of the document: nothing else
+    can use "the knight whistles" (aida-referents-anaphora-export)."""
+    prover, _svc, report = session((DISCOURSE / "anaphora.fspy").read_text())
+    try:
+        assert report.ok
+        assert not any("whistles" in k and "w#knight_walks" in k for k in prover.graph.nodes)
+    finally:
+        prover.close()
+
+
+def test_a_contested_reading_moves_the_resolution_to_the_next():
+    prover, svc, report = session((DISCOURSE / "anaphora_silent.fspy").read_text())
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "he_whistles")
+        assert cls == "value" and "(!a,!IN:whistles !a)" in nf
+    finally:
+        prover.close()
+
+
+ANAPHORA = """lk.
+pipeline unfolded.
+declare iota : type.
+declare man,walks,whistles : iota -> bool.
+declare R : iota -> iota -> bool.
+"""
+
+
+def test_a_pronoun_without_antecedent_owes_its_individual():
+    _prover, svc, report = session(ANAPHORA + """
+argument alone : [?c:iota](exists x:iota, whistles [x]). elim [?c]. by default. dixi.
+""")
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "alone")
+        assert cls == "open" and "?OUT" in nf
+    finally:
+        _prover.close()
+
+
+def test_an_indefinite_is_identified_only_where_its_statement_is_argued():
+    """!w keeps its own individual unless its statement is argued of an
+    earlier one: the knight is no plumber, the second man walking may be
+    the first; the first never takes the second's."""
+    prover, svc, report = session((DISCOURSE / "anaphora.fspy").read_text())
+    try:
+        assert report.ok
+        assert "(!a,!IN:knight !a-~walks !a)" in evaluated(svc, "knight_walks")[1]
+    finally:
+        prover.close()
+    prover, svc, report = session(ANAPHORA + """
+argument first : [!a:iota](exists x:iota, man [x] - ~walks [x]). elim [!a]. by default. dixi.
+argument second : [!b:iota](exists x:iota, man [x] - ~walks [x]). elim [!b]. by default. dixi.
+""")
+    try:
+        assert report.ok
+        assert "(!a,!IN:man !a-~walks !a)" in evaluated(svc, "second")[1]
+        term = pres_str(svc.issue_term(svc.target("first"), want_term=True).term)
+        assert "(!b," not in term.split("μfirst:")[1].split("||first:")[0]
+    finally:
+        prover.close()
+
+
+def test_the_choice_of_an_argument_with_parameters_is_no_antecedent():
+    """tasks.org, aida-referents-choice-under-parameter: sup's !w is one
+    individual for all its instances, so it is offered to nobody."""
+    prover, svc, report = session(ANAPHORA + """
+argument sup : [!x:iota, !w:iota] (exists y:iota, R [!x] [y]). elim [!w]. by default. dixi.
+argument he : [?c:iota](exists x:iota, whistles [x]). elim [?c]. by default. dixi.
+""")
+    try:
+        assert report.ok
+        assert "!w" not in pres_str(svc.issue_term(svc.target("he"), want_term=True).term)
+        assert evaluated(svc, "he")[0] == "open"
+    finally:
+        prover.close()
+
+
+BINDER = ANAPHORA + """
+argument all_r : (forall z:iota, exists y:iota, R z y). elim z. next. dixi.
+"""
+
+
+def test_a_binder_captures_a_pronoun_but_not_an_indefinite():
+    """Under forall z, the !w choice is offered z and keeps its own
+    individual (R z z is argued by nobody); a ?w choice's by default is
+    about whoever answers, so z answers: bound anaphora."""
+    prover, svc, report = session(BINDER + """
+argument sup : [!x:iota, !w:iota] (exists y:iota, R [!x] [y]). elim [!w]. by default. dixi.
+""")
+    try:
+        assert report.ok
+        assert "(!w,!IN:R z !w)" in evaluated(svc, "all_r")[1]
+        found = svc.label(svc.target("all_r"))
+        # every labelled statement is one the issue graph shows (the label
+        # display failed on the losing alternative's R z z)
+        assert all(k in found.graph.nodes for (k, _s) in found.labellings[0])
+    finally:
+        prover.close()
+    prover, svc, report = session(BINDER + """
+argument sup : [!x:iota, ?w:iota] (exists y:iota, R [!x] [y]). elim [?w]. by default. dixi.
+""")
+    try:
+        assert report.ok
+        assert "(z,!IN:R z z)" in evaluated(svc, "all_r")[1]
+    finally:
+        prover.close()

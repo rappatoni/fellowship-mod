@@ -83,27 +83,33 @@ class Entry(tuple):
     - ``witness``: a referent of an argument's environment its conclusion
       does not state, the argument's own open choice, which owes an
       instance.  ``owner`` is the argument: a statement about it is that
-      argument's, never another's (``context_key``)."""
+      argument's, never another's (``context_key``).  ``base``: the name
+      the owner gave it, where the entry is renamed here (another
+      argument's open choice borrowed by a witness scaffold whose name is
+      taken; tasks.org, aida-referents-anaphora); statements keep the
+      owner's name (``rigid``)."""
 
-    def __new__(cls, name, sort, kind="bound", owner=None):
+    def __new__(cls, name, sort, kind="bound", owner=None, base=None):
         obj = super().__new__(cls, (name, sort))
         obj.kind = kind
         obj.owner = owner
+        obj.base = base if base is not None else name
         return obj
 
     def __eq__(self, other):
         return (tuple.__eq__(self, other)
                 and getattr(other, "kind", "bound") == self.kind
-                and getattr(other, "owner", None) == self.owner)
+                and getattr(other, "owner", None) == self.owner
+                and getattr(other, "base", self[0]) == self.base)
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((tuple(self), self.kind, self.owner))
+        return hash((tuple(self), self.kind, self.owner, self.base))
 
     def __reduce__(self):
-        return (Entry, (self[0], self[1], self.kind, self.owner))
+        return (Entry, (self[0], self[1], self.kind, self.owner, self.base))
 
     def __copy__(self):
         return self
@@ -112,7 +118,8 @@ class Entry(tuple):
         return self
 
     def __repr__(self):
-        return f"Entry({self[0]!r}, {self[1]!r}, {self.kind!r}, {self.owner!r})"
+        base = "" if self.base == self[0] else f", base={self.base!r}"
+        return f"Entry({self[0]!r}, {self[1]!r}, {self.kind!r}, {self.owner!r}{base})"
 
     def with_(self, name=None, sort=None):
         return Entry(self[0] if name is None else name, self[1] if sort is None else sort,

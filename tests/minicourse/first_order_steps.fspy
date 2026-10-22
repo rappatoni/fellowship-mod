@@ -1,0 +1,32 @@
+# The four first-order steps of Fellowship's proof terms
+# (docs/minicourses/minicourse-first-order.org, lesson 1).
+lk.
+declare Pub : type.
+declare c : Pub.
+declare Dr : Pub -> bool.
+# universal on the right: elim z names an arbitrary individual
+argument everyone : (forall z:Pub, Dr [z]).
+elim z.
+by default.
+dixi.
+# existential on the right: elim [c] names the witness
+argument someone : (exists x:Pub, Dr [x]).
+elim [c].
+by default.
+dixi.
+# universal on the left: elim [c] instantiates the hypothesis
+argument from_everyone : (forall z:Pub, Dr [z]) -> Dr [c].
+elim h.
+cut (forall z:Pub, Dr [z]) k.
+axiom h.
+elim [c].
+next.
+dixi.
+# existential on the left: elim unpacks the hypothesis
+argument from_someone : (exists x:Pub, Dr [x]) -> Dr [c].
+elim h.
+cut (exists x:Pub, Dr [x]) k.
+axiom h.
+elim.
+next.
+dixi.

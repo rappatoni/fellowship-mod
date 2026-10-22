@@ -1765,6 +1765,233 @@ statement (=x?= owed, =x!= presumed); printed proof terms keep the plain
 binder (=λx:Animal.=), since a binder there carries no onus and the term
 must stay readable by the term parser.
 
+*** Found 2026-10-22 in the anaphora discussion (for review)
+
+The author asked for these to be documented for review ("I am not sure
+I understand this").
+
+- /Rally, corrected./ The subsection under
+  [[id:aida-referents-instantiation]] says the old lineup "ties two
+  unrelated choices together". Nothing in rally rules out that the
+  farmer is the donkey (the author, 2026-10-22). What was wrong was a
+  forced and empty resolution: identity was the only reading, nothing
+  could argue against it, and =?u= is rally's own owed choice, so
+  =(?u, donkey ?u)= met one obligation with another.
+- /Two onuses./ The sigil before a referent's name is the onus of the
+  individual (=?x= owed, =!x= presumed). How the argument leaves a site
+  (=by default=, =next=) is the onus of the statement about it. They
+  combine freely: man.fspy's first =interpretation= presumed =!d= but
+  owed =man !d - ~walks !d=, hence OUT.
+- /Binder entries./ A binder names an arbitrary individual and provides
+  it, so its individual has no onus; the only onus is the cover, the
+  statement shown for it. So for a binder entry the two onuses coincide,
+  and =z?= reads "the statement about z is owed here". The mark belongs
+  to the site, not to the individual: the same =z= can be shown =z?= at
+  one site and =z!= at another.
+- /The sigil on a parameter/ matters only where nothing instantiates it,
+  that is where the argument's own conclusion is the issue: =?c= makes
+  the issue owe a witness and the term open; =!c= rests on the presumed
+  sort node and the term is a value. So =whistles [!c]= alone reads
+  "someone whistles".
+- /Are parameters needed?/ Yes, for two jobs open choices cannot do: a
+  site about a binder's individual (peirce_fo's =sup= fills
+  =[z?:Pub] |- Dr z? -> false=; there is no existential to support), and
+  defeat one instance at a time (counter_instance.fspy: =gen= stays IN
+  when =~P c= is argued). peirce_fo can do without the parameter by
+  cutting on the closed universal =forall x:Pub, Dr x -> false= and
+  instantiating it at =z=; the universal then falls as a whole to one
+  counter-instance.
+- /Capture by a binder, for individuals./ A proof binder carries a
+  statement and captures sites by content. An individual binder carries
+  only a sort; capture by sort alone would identify every open choice of
+  that sort with it, saying nothing. So a binder's individual is offered
+  as a candidate, and wins only where the choice's statements hold of
+  it, decided by statement-level capture (=h : Q y= in witness_import).
+  Checked: an =!w= choice with a =by default= body placed under
+  =forall z= is offered =z=; its site =R z z= is owed, OUT, and the root
+  =(!w, R z !w)= is kept.
+- An open choice in an argument with parameters is
+  [[id:aida-referents-choice-under-parameter]].
+
+** BACKLOG Review: an open choice does not depend on its argument's parameters
+:PROPERTIES:
+:ID:             aida-referents-choice-under-parameter
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides how an open choice in an argument with parameters is read: as one individual for all instances (today), as an individual per instance, or not allowed.
+:VERIFY:         The decision is written here; a change has its own task with a fixture showing the instances of the choice.
+:END:
+
+Found 2026-10-22 while discussing anaphora; the author was not sure they
+understood it and asked for it to be documented for review.
+
+#+begin_example
+argument sup : [!x:Ind, !w:Ind] (exists y:Ind, R [!x] [y]). elim [!w]. by default. dixi.
+argument cc : (exists y:Ind, R [c] [y]). next. dixi.
+argument dd : (exists y:Ind, R [d] [y]). next. dixi.
+#+end_example
+
+=cc= evaluates to =(!w, R c !w)=, =dd= to =(!w, R d !w)=: both instances
+of =sup= choose the same =!w=, and statements about it are scoped to
+=sup=. So =sup= read generically says "someone is R'd by everyone", not
+"everyone R's someone": the quantifiers are swapped. The parameter
+=!x= is a schema (one copy per individual, by substitution, each copy
+checked as a plain first-order term); the open choice is not copied
+with it.
+
+Consequences today are small: no other argument can name =sup='s
+choice. They grow with [[id:aida-referents-anaphora]], where other
+arguments' =!= choices become candidates: =sup='s =!w= would be one
+candidate that both =c= and =d= R.
+
+Options:
+- /Per instance./ The choice becomes a function of the parameter,
+  =w(c)=, =w(d)=: a function symbol naming, for each individual, the
+  witness the existential promises. Choices become terms with
+  arguments, candidates multiply per instance, and matching meets
+  function terms of choices. This moves toward types that depend on
+  terms, which the author is wary of (2026-10-22: "Parameters are
+  dangerously close to dependent types").
+- /Pure schema./ An open choice of an argument with parameters is never
+  a candidate (or such arguments are refused). "Every farmer owns a
+  donkey" is then a closed universal with the existential inside.
+
+Claude's recommendation: the pure schema; implemented meanwhile for
+candidates only ([[id:aida-referents-anaphora]]). The reading of =sup=
+itself is unchanged.
+
+** DONE Anaphora: a =?= choice resolves to an individual introduced elsewhere
+CLOSED: [2026-10-22 Thu]
+:PROPERTIES:
+:ID:             aida-referents-anaphora
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        In "A plumber walks. A knight walks. He whistles." the pronoun's argument evaluates to one reading, the latest antecedent, and to the other when an argument contests the first; an indefinite stays new unless its statement is argued of an existing individual.
+:VERIFY:         Fixture tests in tests/test_discourse_referents.py for the two-antecedent case, an attack moving the resolution, a pronoun without antecedent (OUT), an indefinite not identified, rally unchanged; the unfolded terms replay; the suite and the perf tests pass.
+:END:
+
+The author observed (2026-10-22) that a pronoun resolves to one referent,
+unlike a parameter: in tests/anaphora/man.fspy the generic
+=he_whistles : whistles [!c]= makes both =interpretation1= (plumber) and
+=interpretation2= (knight) IN. Helper axioms ("if the knight whistles the
+plumber does not") prove too much; a distinctness constraint
+=[!a] \neq [!b]= answers a different question (the knight may be the
+plumber; nothing presumes identity or distinctness) and AIDA has no
+equality.
+
+Decided 2026-10-22 (the author: "proceed with the implementation as
+you suggested"):
+- Candidates of a witness scaffold, for =?w= and =!w= alike: declared
+  constants, other arguments' =!= open choices, binder entries in scope.
+  Never a =?= choice (a question supplies no individual). Never the
+  choice of an argument with parameters
+  ([[id:aida-referents-choice-under-parameter]]).
+- Order, bottom of the stack first: constants, other arguments' choices
+  in document order, binder entries (innermost on top). The latest
+  antecedent is tried first.
+- The difference between the sigils is where the argument's own onus
+  goes. =!w= ("a man whistles") presumes an individual of its own; its
+  =by default= is about that individual, and a candidate wins only where
+  the statement is argued of it elsewhere (today's rule). =?w= ("he
+  whistles") owes the individual; its =by default= is about whoever
+  answers, so each candidate's sites take the kind the argument wrote.
+- Roots: =?w= unresolved is owed (OUT); =!w= unresolved is presumed.
+- A resolution supports nothing outside the pronoun's argument (part 2,
+  [[id:aida-referents-anaphora-export]]).
+
+The candidates of a =?w= choice are not filtered by statements; with
+many introduced individuals the scaffold grows with them.
+
+Implemented 2026-10-22 (part 1). Choices Claude made while implementing,
+for the author to review:
+- /Antecedents come before./ Only arguments registered before the
+  choosing one offer their =!= choices. Without this, two indefinites
+  "A man walks. A man walks." took each other's individual; now the
+  second is identified with the first (its statement is argued of the
+  first man) and the first keeps its own.
+- /A borrowed reading rests on the sort node/, as its owner's choice
+  does: if the sort is argued empty, the reading does not stand
+  (sort_node.fspy's =empty= keeps =some_farmer_owed= from standing on
+  =some_farmer='s farmer).
+- /A =!= choice's alternatives take the document's kind/ also in the
+  argument being unfolded; before, they kept the kind the argument
+  wrote there.
+- /Generic arguments reach a reading./ A reading's statement, such as
+  =whistles= of the knight, is no node of the document; the unfolder
+  matches generic arguments against it directly, without adding it to
+  the document.
+- /Display./ A borrowed choice keeps its owner's name unless taken in
+  the pronoun's term (the knight's =!a= is shown =!a_2= next to the
+  plumber's =!a=); statement keys keep the owner's name. =label= then
+  lists several statements as =whistles !a=, one per owner, which reads
+  ambiguously.
+- /Every =?= choice is now a pronoun./ sort_node.fspy's
+  =some_farmer_owed= (=?x=) resolves to =some_farmer='s farmer,
+  =(!x,!IN:farmer !x)=; before, it stayed with its own owed choice.
+- /Constants for a =?= choice/ are read off the sort node, which exists
+  only where some =!= choice of that sort does: in open_choice.fspy
+  =rally='s =?u= is not offered =pedro=. A gap, not a decision.
+- /Label display crash fixed./ =label= failed with a =KeyError= on a
+  losing alternative's statement (=R z z= under =forall z=): edges read
+  off the term now carry how their statements are shown
+  (=Edge.shown=, =take_shown=).
+
+Evidence 2026-10-22: tests/test_discourse_referents.py (56 passed),
+seven new: two antecedents (=he_whistles= keeps the knight,
+=(!a_2,!IN:whistles !a_2)=; the reading is about =w#knight_walks:!a=;
+the document holds no reading), a contested reading
+(anaphora_silent.fspy falls back to the queen), no antecedent (open,
+root OUT), indefinites (=knight_walks= keeps its own; a second "man
+walks" is identified with the first, the first never with the second),
+a generic argument's choice offered to nobody, a binder capturing a =?=
+choice but not a =!= one (and the label display crash). The unfolded
+terms replay through Fellowship (=issue_term= type checks). Full suite
+2420 passed, 9 skipped, 16 deselected, 2 xfailed, 1 xpassed; perf 16
+passed. The choices above are for the author's review together with
+[[id:aida-referents-review-lineup]].
+
+** BACKLOG Anaphora: a resolution used by other arguments
+:PROPERTIES:
+:ID:             aida-referents-anaphora-export
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The author decides how a pronoun's resolution can support statements in other arguments ("the knight whistles, so he is happy") while only the kept reading counts, and what happens when two readings both stand.
+:VERIFY:         The decision is written here; an implementation has its own task.
+:END:
+
+Part 2 of [[id:aida-referents-anaphora]]. Labels are computed before
+evaluation, and evaluation picks the kept reading, so the document graph
+cannot simply hold the readings' statements: both would count ("he"
+would again be both). Directions:
+- /Two passes./ Evaluate the pronoun's argument, then add only the kept
+  reading's statements to the document graph.
+- /Readings as nodes./ Each reading is a node and the readings exclude
+  each other; grounded labelling leaves an ambiguous pronoun undecided.
+  Needs a node that is not a proposition.
+Ties: today the scaffold keeps the top reading (the latest antecedent)
+when both stand; the alternative is to leave the pronoun undecided.
+
 * Specification and verification
 
 Verification targets T1-T6 from [[file:debate-graph-spec.org]] (drafted from the
@@ -3940,6 +4167,29 @@ LABEL_CHANGES issue.
 The author's review; the agent only prepares. Lesson 8a alone raised
 [[id:aida-unfold-design-review]] and its children, which changed the
 unfolder, the strict phase and evaluation substantially.
+
+*** NEXT Review docs/minicourses/minicourse-first-order.org
+:PROPERTIES:
+:ID:             aida-review-minicourse-first-order
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The author has read docs/minicourses/minicourse-first-order.org (the AI-drafted course on the first-order implementation) and recorded every issue it raises as a task or a decision.
+:VERIFY:         Each lesson is marked reviewed in the file or here, with the tasks it raised linked.
+:END:
+
+Requested by the author 2026-10-22 ("write a minicourse on the whole
+first order implementation"). Eight lessons, from Fellowship's four
+quantifier steps to pronouns; tests/minicourse/test_first_order_course.py
+pins every quoted output. Lessons 6 and 7 describe the anaphora rules of
+[[id:aida-referents-anaphora]], still to be reviewed with
+[[id:aida-referents-review-lineup]].
 
 *** NEXT Review docs/minicourses/minicourse-sharing.org
 :PROPERTIES:

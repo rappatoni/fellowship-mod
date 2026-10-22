@@ -1,0 +1,25 @@
+# Anaphora (tasks.org, aida-referents-anaphora; the author's
+# tests/anaphora/man.fspy, 2026-10-22). "A plumber walks. A knight walks.
+# He whistles." The indefinites introduce individuals (!a, each its
+# argument's own); the pronoun owes one (?c). Its witness scaffold tries
+# the individuals introduced before it, the latest on top, and keeps one:
+# he_whistles evaluates to the knight's reading alone. Its by default is
+# about whoever answers, so each reading presumes whistling of its
+# candidate. The knight's !a is shown !a_2 in the pronoun's term (the name
+# !a is the plumber's there).
+lk.
+pipeline unfolded.
+declare iota : type.
+declare knight,plumber,whistles,walks : iota -> bool.
+argument plumber_walks : [!a:iota](exists x:iota, plumber [x] - ~walks [x]).
+elim [!a].
+by default.
+dixi.
+argument knight_walks : [!a:iota](exists x:iota, knight [x] - ~walks [x]).
+elim [!a].
+by default.
+dixi.
+argument he_whistles : [?c:iota](exists x:iota, whistles [x]).
+elim [?c].
+by default.
+dixi.

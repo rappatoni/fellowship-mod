@@ -109,7 +109,7 @@ def context_key(text: str, scope: tuple) -> str:
         name, sort = item
         if referents.is_witness(item):
             if name in free:
-                parsed = parsed.subst(name, TSym(referents.rigid(name, item.owner)))
+                parsed = parsed.subst(name, TSym(referents.rigid(getattr(item, "base", name), item.owner)))
             continue
         if name in free:
             if not referents.is_referent(name):
@@ -342,6 +342,20 @@ class Edge:
     #: receive, ((name, term), ...).
     generic: object = field(default=None, compare=False, repr=False)
     inst: tuple = field(default=(), compare=False, repr=False)
+    #: For an edge compiled off a term (core/dc/strict.py,
+    #: ``instance_edges``): how the graph it came from shows its target
+    #: and sources, ((key, display, context), ...), so that a graph taking
+    #: the edge can show statements it does not hold.
+    shown: tuple = field(default=(), compare=False, repr=False)
+
+
+def take_shown(graph, edge) -> None:
+    """The statements ``edge`` mentions, shown in ``graph`` as in the graph
+    the edge was compiled in (``Edge.shown``) where ``graph`` lacks them."""
+    for key, display, context in edge.shown:
+        graph.nodes.setdefault(key, display)
+        if context is not None:
+            graph.contexts.setdefault(key, context)
 
 
 @dataclass(frozen=True)

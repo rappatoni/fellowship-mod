@@ -63,10 +63,12 @@ tracked in `tasks.org`:
 
 Smaller design questions are open as well.
 
-`docs/minicourses/` holds five minicourses, each lesson by lesson with
+`docs/minicourses/` holds six minicourses, each lesson by lesson with
 exercises: `minicourse.org` (arguments, graphs and labels),
 `minicourse-evaluation.org` (the evaluation pipeline),
 `minicourse-sharing.org` (sub-debates shared by name),
+`minicourse-first-order.org` (quantifiers, discourse referents,
+instances, open choices and pronouns),
 `minicourse-superdeduction.org` and `minicourse-api.org` (AIDA from a
 program), and `glossary.org` explains their terminology. They are drafted by an AI agent, pinned by the tests under
 `tests/minicourse/`, and still await the author's review.
@@ -1086,12 +1088,27 @@ a classical principle.
 - **Witness scaffolds.** Where an argument names its own open choice,
   the debate tries individuals for it: a support scaffold at the
   quantified statement whose root is the open choice itself and whose
-  alternatives are the declared constants some statement of the document
-  is about there, then the variables binders introduced in scope, the
-  innermost on top. Another argument's open choice is never tried. In
-  `tests/discourse/witness_import.fspy`, `w` proves `exists x, Q x` by its
-  own choice `?x`, and under `a`'s `forall y` with `h : Q y` the
-  alternative `(y, h)` closes it.
+  alternatives are, bottom first, declared constants, the `!` open
+  choices of arguments registered earlier (those without parameters),
+  then the variables binders introduced in scope, the innermost on top.
+  The kept alternative is the top one that stands. A `?` choice is never
+  tried. In `tests/discourse/witness_import.fspy`, `w` proves
+  `exists x, Q x` by its own choice `?x`, and under `a`'s `forall y` with
+  `h : Q y` the alternative `(y, h)` closes it.
+- **Indefinites and pronouns.** The two sigils differ in where an
+  argument's own onus goes. `!w` ("a man whistles") presumes an
+  individual of its own: an alternative wins only where its statement is
+  argued of that individual elsewhere, so an indefinite stays new unless
+  identified by argument. `?w` ("he whistles") owes the individual: each
+  alternative's sites keep the kind the argument wrote, so its
+  `by default` holds of whoever answers. In
+  `tests/discourse/anaphora.fspy` ("A plumber walks. A knight walks. He
+  whistles.") `he_whistles` keeps the knight's reading alone; in
+  `anaphora_silent.fspy` the knight's reading is contested and the
+  pronoun falls back to the queen. A reading borrowed from another
+  argument rests on the sort node, as its owner's choice does. A
+  resolution supports nothing outside the pronoun's own argument yet
+  (tasks.org, aida-referents-anaphora-export).
 - **Weakening.** What bears on a statement bears on it in every larger
   context: closed supporters and counterarguments of `E` reach
   `[y?:Pub] ⊢ E` (dotted grey `weakening` edges in `graph`), and a binder

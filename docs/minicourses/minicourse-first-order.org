@@ -1,0 +1,538 @@
+#+title: First Order in AIDA - A Minicourse
+#+startup: overview
+
+# AI NOTE: Drafted by an AI agent (Claude) at the author's request,
+# 2026-10-22. Teaching material about the implementation, not manuscript
+# prose. Every output quoted below was produced by running the code;
+# tests/minicourse/test_first_order_course.py pins the quoted values so
+# this file cannot silently go stale. The design decisions it describes
+# are the author's, recorded in tasks.org under aida-first-order-reduction,
+# aida-discourse-referents and the aida-referents-* tasks; where Claude
+# chose something still to be reviewed, the lesson says so.
+
+* About this course
+
+Eight lessons on how AIDA handles quantifiers: from Fellowship's four
+first-order steps, through statements under a binder, to the individuals
+arguments talk about - generic ones, chosen ones, and the ones a pronoun
+points back to. Each lesson has a *definition*, a *worked example* with
+real output, and *exercises*. Solutions are in the appendix.
+
+It assumes the first minicourse (minicourse.org: statements, sides,
+hyperedges, labels) and lesson 8a of minicourse-evaluation.org
+(unfolding a debate into one term). Words from the glossary
+(glossary.org) are used as defined there; new ones are defined where
+they first appear.
+
+The fixtures are in =tests/discourse/= and =tests/minicourse/=. Every
+first-order debate with referents needs the unfolded route, so each
+fixture starts with =pipeline unfolded.=
+
+: .venv/bin/acdc --script tests/minicourse/first_order_steps.fspy
+: .venv/bin/acdc --interactive --load tests/discourse/peirce_fo.fspy
+: .venv/bin/python -m pytest tests/minicourse/test_first_order_course.py -q
+
+* Lesson 1 - Individuals, sorts and the four steps
+
+** Definition
+
+A *sort* is a declared type of individuals, =declare Pub : type.= A
+*constant* is a declared individual, =declare c : Pub.= A predicate takes
+individuals, =declare Dr : Pub -> bool.=, and a term in a proposition is
+written in brackets, =Dr [c]=, =Dr [x]=.
+
+Fellowship has four rules for the quantifiers, one per quantifier and
+side. Each leaves a mark in the proof term:
+
+| step                   | tactic      | proof term   | what the argument does            |
+|------------------------+-------------+--------------+-----------------------------------|
+| universal, right       | =elim z=    | =λz:Pub.v=   | names an arbitrary individual =z= |
+| existential, right     | =elim [c]=  | =(c, v)=     | names the witness =c=             |
+| universal, left        | =elim [c]=  | =c * e=      | instantiates a hypothesis at =c=  |
+| existential, left      | =elim=      | =(x:Pub).e=  | unpacks a hypothesis into =x=     |
+
+Two of them introduce a variable: the universal on the right and the
+existential on the left. Such a variable names an individual nobody
+chose - any individual for the universal, an unknown one for the
+existential. The course calls these two the *binders*. The other two,
+the existential on the right and the universal on the left, are *witness
+positions*: there the argument itself says which individual it means.
+
+** Example
+
+=tests/minicourse/first_order_steps.fspy= has one argument per step.
+The terms Fellowship builds (=Enriched proof term= in the log):
+
+#+begin_example
+everyone      μeveryone:forall z:Pub,Dr z.<λz:Pub.!1.1:Dr z||everyone:...>
+someone       μsomeone:exists x:Pub,Dr x.<(c,!1.1:Dr c)||someone:...>
+from_everyone ...μk:Dr c.<h:forall z:Pub,Dr z||c*1.1.2.1:Dr c?>...
+from_someone  ...μk:Dr c.<h:exists x:Pub,Dr x||(x:Pub).1.1.2.1:Dr x?>...
+#+end_example
+
+=!1.1:Dr z= is a presumed site (=by default=), =1.1.2.1:Dr c?= an owed
+site on the left (=next=): the open places of an argument, as in the
+propositional fragment. What is new is what surrounds them. In
+=everyone= the site =Dr z= sits under =λz=, so it is a claim about an
+arbitrary individual. In =from_someone= the site =Dr x= sits under
+=(x:Pub).=, so it is about the unknown individual the hypothesis
+promised.
+
+** Exercises
+
+1. Which of the four arguments leaves a site that mentions a variable
+   only a binder gives it?
+2. Replace =elim [c].= in =someone= by =elim [!w].= and add the
+   environment =[!w:Pub]= before the statement (lesson 6 explains the
+   notation). What term comes out?
+
+* Lesson 2 - Statements under a binder
+
+** Definition
+
+A site under a binder states something about the binder's variable, and
+the variable means nothing outside the argument. AIDA therefore keeps
+the variable's *context* with the statement: the names in scope at the
+site, each with its sort. The statement in its context is written
+
+: [y?:Pub] ⊢ Eff
+
+and is a node of its own, different from the closed =Eff=. A name a
+binder introduced is a *binder entry*; the mark after its name shows the
+onus of the statement at that site, =y?= owed, =y!= presumed. It is
+display only: an owed and a presumed statement are one node.
+
+A closed statement bears on itself in every larger context. If =Eff=
+holds, it holds for any =y=. AIDA adds a *weakening* edge from =Eff= to
+=[y?:Pub] ⊢ Eff=, on both sides, so closed supporters and
+counterarguments reach the site.
+
+In the debate graph a first-order argument keeps its quantifier steps
+together: the steps that carry the binder's variable are the *spine* of
+the argument and are not split. The parts off the spine are *horns*
+(glossary): each becomes a node of its own where another argument
+engages its statement. One exception is still open: a horn whose
+statement mentions a variable bound inside the argument is kept in
+place (tasks.org, aida-referents-open-horns).
+
+** Example
+
+=tests/discourse/weakening.fspy=: =a= argues =forall y:Pub, Use= from the
+rule =Eff -> Use= and leaves =Eff= owed under =y=. The closed =e= argues
+=Eff= from a presumed =Rain=, the closed counterargument =c= argues
+against it from a presumed =Strike=. =graph a= (abridged):
+
+#+begin_example
+forall y:Pub,Use[term]
+`-- a  (supporter, defeasible)
+    |-- Eff->Use[term]
+    |   `-- r1  (subargument, strict)
+    `-- [y?:Pub] ⊢ Eff[term]  [obligation]
+        |-- weakening  (weakening, defeasible)
+        |   `-- Eff[term]
+        |       |-- e  (supporter, defeasible)
+        ...
+        `-- contested by [y?:Pub] ⊢ Eff[context]
+            `-- weakening  (weakening, defeasible)
+                `-- Eff[context]
+                    |-- c  (supporter, defeasible)
+#+end_example
+
+=label a= gives =[y?:Pub] ⊢ Eff= UNDEC on both sides, and so
+=forall y:Pub,Use= UNDEC: =e= and =c= rest on presumptions that oppose
+each other, and the conflict reaches the site by weakening.
+=evaluate a= is open, =?UNDEC:forall y:Pub,Use=.
+
+** Exercises
+
+1. Why is =a='s site shown =[y?:Pub] ⊢ Eff= and not =Eff=?
+2. Would a closed argument for =Eff= alone, without =c=, make =a= a
+   value?
+
+* Lesson 3 - Discourse referents and generic arguments
+
+** Definition
+
+A *discourse referent* is a name an argument uses for an individual it
+does not declare: =?x= or =!x=. Fellowship keeps it in the argument's
+environment, never in the signature. An argument can list its referents
+before its statement, =[?x:Pub]=, or have them collected from it.
+
+The sigil before the name is the onus of the *individual*: =?x= owes an
+individual, =!x= presumes one. It is separate from the onus of a
+statement about it, which is how the argument leaves the site
+(=by default= presumes, =next= owes). The two combine freely.
+
+A referent the argument's conclusion mentions is a *parameter*. The
+argument is then *generic*: it stands for one copy per individual, made
+by substitution. Where it fills a site, AIDA matches its conclusion
+against the site's statement *one-sidedly*: the generic argument's
+parameters receive terms, the site's names stay fixed (core/dc/matching.py).
+So =Dr ?x -> false= matches =Dr z -> false= with =?x := z=, and never the
+other way round.
+
+A parameter's sigil matters only where nothing gives it a value, that
+is where the generic argument's own conclusion is the issue: =?x= owes a
+witness and the term stays open; =!x= presumes the sort has an
+individual (lesson 6) and the term can be a value.
+
+** Example
+
+=tests/discourse/peirce_fo.fspy=: =a= proves Peirce's law for every =z=
+and leaves =Dr z -> false= owed under =z=. =sup : (Dr [?x] -> false)= is
+generic and fills that site with =?x := z=. =graph a=:
+
+#+begin_example
+forall z:Pub,((Dr z->false)->Dr z)->Dr z[term]
+|-- a  (supporter, defeasible)
+|   `-- [?x:Pub] ⊢ Dr ?x->false[term]  [obligation]
+|       `-- sup  (supporter, defeasible)
+|           `-- [?x:Pub] ⊢ Dr ?x[context]  [presumption]
+`-- a*  (strict, strict)
+#+end_example
+
+The site is shown as =sup= states it, =[?x:Pub] ⊢ Dr ?x->false= (one
+statement, one name). =evaluate a= is a value; =sup= appears in it
+instantiated:
+
+#+begin_example
+...μsup:Dr z->false.<λp:Dr z.μm:false.<p:Dr z||g:Dr z>||sup:Dr z->false>*g:Dr z>...
+#+end_example
+
+=sup='s presumed =Dr ?x= on the left became =Dr z= and was captured by
+=a='s own =g=.
+
+The parameter's sigil at the top: in =tests/discourse/counter_instance.fspy=
+the generic =gen : P [?z]= labelled as its own issue gives
+=a witness for ?z= OUT and =[?z:iota] ⊢ P ?z= OUT; =evaluate gen= is
+open, =μx2:P ?z.<?OUT:P ?z||x2:P ?z>=.
+
+** Exercises
+
+1. Replace =?x= by =!x= in =sup=. Does =evaluate a= change?
+2. Why can =sup= not fill a site =Dr c -> false= /and/ a site
+   =Dr d -> false= with the same =?x=?
+
+* Lesson 4 - Instances
+
+** Definition
+
+A generic statement *covers* every statement that is it with terms for
+its parameters, by the same one-sided matching: =beat ?x ?y= covers
+=beat peter conrad= and =beat conrad conrad=; =beat ?x ?x= does not cover
+=beat conrad peter=. AIDA copies every argument deriving or contesting a
+generic statement to each *instance* that is a node of the document,
+with its sources instantiated (=DebateGraph.instantiate=). The default
+an argument asserts of its own conclusion goes along; the onus a site
+sets elsewhere does not. Influence runs downwards only: an instance's
+fate never reaches the generic statement.
+
+Instances form a lattice: =beat ?x conrad= lies between =beat ?x ?y= and
+=beat peter conrad=. =graph= draws a dotted =instance= edge from each
+generic statement to its *nearest* instances only.
+
+** Example
+
+=tests/discourse/conrad_peter.fspy=: =brawl= owes =beat conrad peter=
+and the contrary of =beat peter conrad=; the generic =supp : beat [?x] [?y]=
+presumes everybody beats everybody; the closed counterargument
+=calm : beat [conrad] [peter]= presumes the contrary of one instance.
+=label brawl=:
+
+#+begin_example
+beat peter conrad [term] IN
+~beat peter conrad [context] IN
+beat conrad peter [term] UNDEC
+beat conrad peter [context] UNDEC
+beat conrad peter-~beat peter conrad [term] UNDEC
+#+end_example
+
+=supp='s presumption reaches both instances; =calm= opposes it at
+=beat conrad peter= only, so that instance is UNDEC and the other IN.
+
+=tests/discourse/beat_lattice.fspy= adds =everyone_beats_conrad : beat [?x] [conrad]=,
+=peter_beats_everyone : beat [peter] [?y]= and the counterargument
+=nobody_beats_conrad : beat [?a] [conrad]=. =label fights= gives
+=beat peter pedro= IN, while =beat peter conrad= and
+=beat conrad conrad= are UNDEC: the counterargument covers exactly the
+instances ending in =conrad=.
+
+** Exercises
+
+1. In beat_lattice, which arguments bear on =beat peter pedro=?
+2. =calm= contests =beat conrad peter=. Does it reach
+   =beat peter conrad=?
+
+* Lesson 5 - Counter-instances and the closed universal
+
+** Definition
+
+A generic argument and a closed universal say different things. A
+generic =gen : P [?z]= by default is a *default for each individual*: a
+counter-instance =~P c= defeats the instance =P c= and nothing else. A
+closed =forall x, P x= is *one statement*: it falls as a whole when a
+counterargument instantiates it at an individual that fails
+(tasks.org, aida-referents-counter-instances). AIDA makes no difference
+between a universal introduced on the right and one used on the left.
+
+** Example
+
+=tests/discourse/counter_instance.fspy=: =gen : P [?z]= by default; =a=
+argues =forall x, P x= leaving =P x= owed under =x= (filled by =gen=);
+=not_c= refutes =P c= strictly from the denial =not_pc=; =no= argues
+against the universal on the left, =[?c:iota] (forall x:iota, P [x]). elim [?c]. next.=
+=label a=:
+
+#+begin_example
+forall x:iota,P x [term] OUT
+forall x:iota,P x [context] IN
+P c [term] OUT
+P c [context] IN
+[?z:iota] ⊢ P ?z [term] IN
+#+end_example
+
+=evaluate a= is an exception:
+=μalt3:forall x:iota,P x.<?OUT:forall x:iota,P x||c*μ'b1:P c.<b1:P c||not_pc:P c>>=.
+=no='s open choice found the individual =c= (lesson 6), where =not_c=
+refutes =P c=, so the universal falls as one. The generic statement
+=[?z:iota] ⊢ P ?z= stays IN: =gen= has lost only its instance at =c=.
+
+** Exercises
+
+1. Remove =no=. What does =evaluate a= give, and why does =not_c= not
+   defeat =a= on its own?
+
+* Lesson 6 - Open choices, the sort node and witness scaffolds
+
+** Definition
+
+A referent in an argument's environment that its conclusion does *not*
+mention is the argument's *open choice*: an individual it names at a
+witness position, =elim [?w]=, and nobody gives it from outside.
+Statements about it are that argument's own: another argument's
+statement with the same wording is about another individual. In keys
+AIDA writes it =w#owner:name=.
+
+Where the argument names its open choice, it rests on one more source:
+
+- =?w= owes /a witness for ?w of A/, an individual it must still find;
+- =!w= presumes the *sort node* =exists x:Pub, true=, that the sort has
+  an individual. A declared constant proves the sort node strictly; a
+  counterargument can contest it.
+
+AIDA then tries individuals for the choice. At the quantified statement
+it builds a *witness scaffold*: a support scaffold whose root is the
+open choice itself and whose *alternatives* each read the argument's body
+for one individual. The candidates, bottom of the stack first: declared
+constants, the =!= choices of earlier arguments (lesson 7), and the
+variables of binders in scope, the innermost on top. The scaffold keeps
+the top alternative that stands; if none does, the root. A =?= choice is
+never a candidate: a question supplies no individual.
+
+For a =!= choice an alternative wins only where its statement is argued
+of that individual elsewhere: its =by default= is about its own
+individual, not about the candidate. So an indefinite stays new unless
+somebody argues otherwise.
+
+** Example
+
+=tests/discourse/witness_import.fspy=: =a= argues
+=forall y, Q y -> exists x, Q x=, introduces =y= and the hypothesis
+=h : Q y=, and leaves the existential owed. =w : [?x:Pub] (exists x:Pub, Q [x]). elim [?x].=
+fills it with its own choice. In =graph a=, =w= owes
+=a witness for ?x of w= and =[?x:Pub] ⊢ Q ?x=. Under =a='s binder the
+scaffold tries =y=, and =h= captures =Q y=. =evaluate a= is a value:
+
+#+begin_example
+μa:...<λy:Pub.λh:Q y.μw:exists x:Pub,Q x.<(y,h:Q y)||w:exists x:Pub,Q x>||a:...>
+#+end_example
+
+=tests/discourse/open_choice.fspy=: =some_donkey= chooses =?w= for
+=exists y, donkey y=; =pd= argues =donkey [pedro]=. =evaluate some_donkey=:
+=(pedro,!IN:donkey pedro)=. =rally='s own =?u= is never offered to
+=some_donkey=.
+
+=tests/discourse/sort_node.fspy=: =some_farmer : [!x:iota] (exists x:iota, farmer [x]). elim [!x]. by default.=
+=label some_farmer= gives =exists x:iota,true= IN (presumed) and the
+argument is a value, =(!x,!IN:farmer !x)=.
+
+** Exercises
+
+1. Remove =pd= from open_choice.fspy. What does =evaluate some_donkey=
+   give?
+2. Why does the scaffold for =w= in witness_import try =y= but not a
+   constant?
+
+* Lesson 7 - Indefinites and pronouns
+
+** Definition
+
+The two sigils of an open choice differ in where the argument's own
+onus goes (decided 2026-10-22, tasks.org, aida-referents-anaphora):
+
+- =!w=, an *indefinite* ("a knight walks"), presumes an individual of
+  its own. Its =by default= is about that individual. A candidate wins
+  only where the statement is argued of it elsewhere.
+- =?w=, a *pronoun* ("he whistles"), owes the individual. Its
+  =by default= is about whoever answers: each alternative's sites keep
+  the onus the argument wrote.
+
+The candidates are the same for both: constants, binder variables in
+scope, and the =!= choices of arguments registered *before* the
+choosing one, its *antecedents*, the latest on top. An argument with
+parameters offers none of its choices, since its choice is one for all
+its instances (tasks.org, aida-referents-choice-under-parameter, under
+review). A borrowed individual rests on its sort node, as its owner's
+choice does.
+
+Because a scaffold keeps one alternative, a pronoun resolves to one
+individual. A generic =whistles [!c]= would instead make every
+individual whistle.
+
+** Example
+
+=tests/discourse/anaphora.fspy= ("A plumber walks. A knight walks. He
+whistles."): two indefinites, each with its own =!a=, then
+=he_whistles : [?c:iota](exists x:iota, whistles [x]). elim [?c]. by default.=
+=label he_whistles=:
+
+#+begin_example
+exists x:iota,whistles x [term] IN
+a witness for ?c of he_whistles [term] OUT
+[!a:iota] ⊢ whistles !a [term] IN
+[!a_2:iota] ⊢ whistles !a_2 [term] IN
+#+end_example
+
+=!a_2= is the knight's =!a=, renamed in the pronoun's term because =!a=
+is taken there by the plumber's. Both readings stand; the scaffold keeps
+the top one. =evaluate he_whistles=:
+
+#+begin_example
+μhe_whistles:exists x:iota,whistles x.<(!a_2,!IN:whistles !a_2)||he_whistles:...>
+#+end_example
+
+=tests/discourse/anaphora_silent.fspy= ("A queen walks. A knight walks
+silently. He whistles."): the knight's argument presumes he does not
+whistle, so the knight's reading meets opposing presumptions and is
+UNDEC, and the scaffold falls back to the queen,
+=(!a,!IN:whistles !a)=.
+
+The same rule applies to any =?= choice. In sort_node.fspy
+=some_farmer_owed= (=?x=) now resolves to =some_farmer='s farmer:
+=(!x,!IN:farmer !x)=.
+
+Not done yet: a resolution supports nothing outside the pronoun's own
+argument, so no other argument can use "the knight whistles"
+(tasks.org, aida-referents-anaphora-export).
+
+** Exercises
+
+1. Swap =plumber_walks= and =knight_walks= in anaphora.fspy. Which
+   reading does =he_whistles= keep?
+2. Write the pronoun with =!c= instead of =?c=. What does
+   =evaluate he_whistles= give, and what does it mean?
+
+* Lesson 8 - Labels, terms, and what is still open
+
+** Definition
+
+A first-order debate is labelled on the *issue graph*: the part of the
+document graph its issue reaches, plus the edges AIDA reads off the
+unfolded term for what the document does not hold - the copies of
+generic arguments placed in it and the alternatives of witness
+scaffolds (=strict.instance_edges=). Evaluation then judges the term
+itself: an expression stands for what it is in the term, and labels
+decide only what the term cannot (core/comp/standing.py). A normal form
+that still mentions an open =?x= is no value; one that mentions only
+=!x= can be.
+
+Debates with referents, open choices or instances need
+=pipeline unfolded.=; the shared route refuses them.
+
+** Example
+
+In witness_import.fspy, =label a= gives =a='s issue IN but the site
+=[y?:Pub] ⊢ exists x:Pub,Q x= OUT. The document graph does not know
+that =h= captures =Q y= inside =a='s term; the term does, so =evaluate a=
+is a value (lesson 6). =evaluate w= alone is open,
+=?OUT:exists x:Pub,Q x=: outside =a= nothing answers =w='s question.
+
+** Open questions (tasks.org)
+
+- =aida-referents-open-horns=: lifting the exception of lesson 2 makes a
+  lemma rest on its argument's hypotheses as owed sources.
+- =aida-referents-review-lineup=: kinds of context entry, the =x?=/=x!=
+  display, and the notes of 2026-10-22.
+- =aida-referents-choice-under-parameter=: an open choice in a generic
+  argument is one individual for all its instances.
+- =aida-referents-anaphora-export=: using a pronoun's resolution in other
+  arguments; what to do when two readings stand.
+- =aida-referents-shared-route=: the shared route for referent debates.
+
+** Exercises
+
+1. Why can a statement be labelled OUT while the argument that owes it
+   evaluates to a value?
+
+* Appendix - Solutions
+
+** Lesson 1
+
+1. =everyone= (=Dr z= under =λz=) and =from_someone= (=Dr x= under
+   =(x:Pub).=). =someone= and =from_everyone= mention the constant =c=.
+2. =evaluate someone= gives
+   =μsomeone:exists x:Pub,Dr x.<(!w,!IN:Dr !w)||someone:...>= (with
+   =pipeline unfolded.=): the open choice =!w= is the witness, presumed
+   through the sort node, and =Dr !w= is presumed.
+
+** Lesson 2
+
+1. The site mentions nothing but sits under =a='s binder =y=: its context
+   records =y:Pub=, and =y?= shows the site is owed. =Eff= and
+   =[y?:Pub] ⊢ Eff= are different nodes, joined by weakening.
+2. Yes: with =c= gone nothing opposes =e=, =Eff= is IN, and weakening
+   carries it to the site. =evaluate a= gives =!IN:forall y:Pub,Use=.
+
+** Lesson 3
+
+1. No. =evaluate a= gives the same value: matching ignores the sigil, and
+   =sup='s parameter receives =z=.
+2. A generic argument is a schema: each use is its own copy with its own
+   value for =?x=, so the two sites get two copies, =?x := c= and
+   =?x := d=.
+
+** Lesson 4
+
+1. =supp= (=beat ?x ?y=) and =peter_beats_everyone= (=beat peter ?y=).
+   =everyone_beats_conrad= and =nobody_beats_conrad= end in =conrad= and
+   do not cover it.
+2. No. A closed statement covers nothing but itself; =beat peter conrad=
+   stays IN through =supp='s instance.
+
+** Lesson 5
+
+1. A value, =μa:forall x:iota,P x.<λx:iota.!IN:P x||a:...>=. =not_c=
+   defeats the instance =P c=; =a='s site is about the arbitrary =x= and
+   is covered by =gen=, which is unaffected.
+
+** Lesson 6
+
+1. Open, =?OUT:exists y:Ind,donkey y=: no constant has =donkey= argued of
+   it, and the root =?w= owes its witness.
+2. =y= is the binder variable in scope. No constant of =Pub= is
+   declared.
+
+** Lesson 7
+
+1. The plumber's, now the latest antecedent and shown =!a_2=:
+   =(!a_2,!IN:whistles !a_2)=.
+2. =(!c,!IN:whistles !c)=. As an indefinite it keeps its own new
+   individual (nobody argues =whistles= of the knight or the plumber):
+   "someone whistles", not "he whistles".
+
+** Lesson 8
+
+1. The label is the document's verdict on the statement, from the issue
+   graph. The term may answer the statement in a way the graph cannot
+   see, here by a hypothesis of the argument itself, and evaluation
+   judges the term.

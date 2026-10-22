@@ -232,6 +232,7 @@ class Unfolder:
         #: statement is being unfolded.
         self._frames = {}
         self._fo_here = ()
+        self._generic = None                # ``_generic_edges``
         if order:
             for edges in self._by_target.values():
                 # stable: unranked edges keep registration order
@@ -281,11 +282,50 @@ class Unfolder:
                 found.extend(self._by_target.get((other, side), []))
         if not found and key not in dict(self._bases.get(base, ())):
             found = list(self._by_target.get(statement, []))
+        if not found and key not in self.graph.nodes and key in self._frames:
+            found = self._covering(statement)
         if len(found) > 1:
             order = self._order
             found.sort(key=lambda e: (e.name in order, order.get(e.name, 0),
                                       self._position.get(id(e), 0)))
         return found
+
+    def _covering(self, statement):
+        """The edges of the generic statements covering ``statement``, a
+        statement the document does not hold, as written here: one an
+        alternative of a witness scaffold states about a candidate
+        (tasks.org, aida-referents-anaphora).  The document's instances of
+        a generic statement are its nodes (``DebateGraph.instantiate``);
+        this finds them for a statement that is no node, without adding it
+        to the document.  ``_lineups`` gives each its substitution."""
+        literal, scope = self._frames[statement[0]]
+        target = matching.instance(literal, scope)
+        if target is None:
+            return []
+        found = []
+        for edge, (eprop, evars) in self._generic_edges():
+            if edge.target_side == statement[1] and matching.match(eprop, target, evars) is not None:
+                found.append(edge)
+        if found:
+            logger.debug("unfold: %s, no node of the document, is covered by %s",
+                         self._show(statement), ", ".join(e.name for e in found))
+        return found
+
+    def _generic_edges(self):
+        """The edges deriving or contesting a generic statement (one with
+        parameters), not their instances, each with the statement and its
+        variables (``matching.pattern``): [(edge, (statement, variables))]."""
+        if self._generic is None:
+            self._generic = []
+            for edges in self._by_target.values():
+                for edge in edges:
+                    if edge.generic is not None or edge.term is None or edge.role == "subargument":
+                        continue
+                    concl = getattr(edge.term, "prop", None) or ""
+                    found = matching.pattern(concl, getattr(concl, "scope", ()))
+                    if found is not None and found[1]:
+                        self._generic.append((edge, found))
+        return self._generic
 
     def _defaults(self, statement):
         """The default markers on ``statement`` or on it in a smaller
@@ -357,14 +397,27 @@ class Unfolder:
         return tuple(referents.Entry(n, s, "witness", edge.name) for n, s in env
                      if n not in stated and n not in inst)
 
-    def _alternatives(self, body, wname, sort, fo, read) -> list:
+    def _alternatives(self, body, wname, sort, fo, read, owner=None) -> list:
         """The individuals a witness scaffold tries for the open choice
-        ``wname`` of sort ``sort``, bottom of the stack first: the declared
-        constants some statement of the document is about where a site of
-        ``body`` mentioning ``wname`` stands (``read``: a site's proposition
-        as written here), then the variables binders introduced in scope
-        (``fo``), outermost first so that the innermost is on top."""
-        constants = []
+        ``wname`` of sort ``sort``, bottom of the stack first, each as
+        (name in the term, context entry or None):
+
+        - the declared constants some statement of the document is about
+          where a site of ``body`` mentioning ``wname`` stands (``read``:
+          a site's proposition as written here); for a ``?`` choice every
+          constant of the sort;
+        - the ``!`` open choices of earlier arguments (``_introduced``),
+          those a statement is about likewise, for a ``?`` choice all,
+          in document order; each with a witness entry of its owner, so
+          that statements about it are its owner's;
+        - the variables binders introduced in scope (``fo``), outermost
+          first so that the innermost is on top.
+
+        tasks.org, aida-referents-witness-scaffold, aida-referents-anaphora
+        (2026-10-22)."""
+        asked = not referents.is_presumed(wname)
+        introduced = self._introduced(sort, owner)
+        constants, borrowed = [], []
         for prop in _site_props(body):
             text = read(prop)
             try:
@@ -380,14 +433,65 @@ class Unfolder:
                     continue
                 sigma = matching.match(site, target, {wname})
                 value = (sigma or {}).get(wname)
-                if (isinstance(value, TSym) and not referents.is_referent(value.name)
-                        and not value.name.startswith("w#")
+                if not isinstance(value, TSym):
+                    continue
+                if value.name.startswith("w#"):
+                    choice = tuple(value.name[2:].rsplit(":", 1))
+                    if choice in introduced and choice not in borrowed:
+                        borrowed.append(choice)
+                elif (not referents.is_referent(value.name)
                         and all(e[0] != value.name for e in scope)
                         and value.name not in constants):
                     constants.append(value.name)
+        if asked:
+            constants += [c for c in self._constants(sort) if c not in constants]
+            borrowed = list(introduced)
+        else:
+            borrowed = [c for c in introduced if c in borrowed]
         binders = [e[0] for e in fo
                    if not referents.is_witness(e) and e[1] is not None and sort_text(e[1]) == sort]
-        return [c for c in constants if c not in binders] + binders
+        taken = {e[0] for e in fo} | {e[0] for e in self._fo_here} | {wname} | set(binders)
+        out = [(c, None) for c in constants if c not in binders]
+        for choice_owner, name in borrowed:
+            shown = name
+            n = 2
+            while shown in taken:
+                shown = f"{name}_{n}"
+                n += 1
+            taken.add(shown)
+            out.append((shown, referents.Entry(shown, sort, "witness", choice_owner, base=name)))
+        return out + [(b, None) for b in binders]
+
+    def _introduced(self, sort, owner=None) -> list:
+        """The individuals introduced before ``owner``, (argument, name) in
+        document order: the ``!`` open choices of sort ``sort`` of the
+        arguments registered before it, its antecedents.  An argument
+        with parameters introduces none: its open choice is one for all
+        its instances (tasks.org, aida-referents-choice-under-parameter)."""
+        found = []
+        conclusions = {e.name: plain(getattr(e.term, "prop", "") or "")
+                       for e in self.graph.edges if e.term is not None}
+        for name, env in self.graph.referent_envs.items():
+            if name == owner:
+                break
+            if name not in conclusions:
+                continue
+            stated = referents.mentioned(conclusions[name])
+            if any(n in stated for n, _s in env):
+                continue
+            found += [(name, n) for n, s in env
+                      if referents.is_presumed(n) and s is not None and sort_text(s) == sort]
+        return found
+
+    def _constants(self, sort) -> list:
+        """The declared constants of ``sort``, as the sort node records
+        them (core/dc/debate_graph.py, ``sort_individuals``)."""
+        key = self.graph.sorts.get(sort) if sort else None
+        if key is None:
+            return []
+        return [e.term.witness.name for e in self.graph.edges
+                if e.target_key == key and e.strict and isinstance(e.term, TermsPairFO)
+                and isinstance(e.term.witness, TSym)]
 
     def _show(self, statement):
         """A statement for a log message: ``Prop[t]`` / ``Prop[c]``."""
@@ -851,8 +955,20 @@ class Unfolder:
                            edge.name, name, candidate)
             return candidate
 
+        # how the sites of a witness scaffold's alternative being walked
+        # take their kind: None as anywhere else; "written", the kind the
+        # argument wrote (a ``?`` choice: its onus is about whoever
+        # answers); "document", the kind the document gives the statement
+        # (a ``!`` choice: its onus is about its own individual; tasks.org,
+        # aida-referents-anaphora, 2026-10-22)
+        alt_kind = [None]
+
         def own_kind(presumed):
             # the sites of the argument unfolded keep the kind it wrote
+            if alt_kind[0] == "written":
+                return {"own_kind": presumed}
+            if alt_kind[0] == "document":
+                return {}
             return {"own_kind": presumed} if own else {}
 
         def scoped(env, statement, new):
@@ -993,10 +1109,12 @@ class Unfolder:
             ("context", the cell ``?w * e``) - a support scaffold at the
             quantified statement in its context.  Its root is the open
             choice itself; its alternatives, each a whole pair (cell) with
-            the body read for one individual, are the declared constants
-            the sites mentioning ``wname`` are stated about somewhere, then
-            the variables binders introduced in scope, the innermost on
-            top.  Another argument's open choice is never an alternative."""
+            the body read for one individual, are those ``_alternatives``
+            gives: constants, earlier arguments' ``!`` choices, the
+            variables binders introduced in scope, the innermost on top.
+            An alternative's sites keep the kind the argument wrote for a
+            ``?`` choice (a pronoun) and take the document's for a ``!``
+            choice (an indefinite; aida-referents-anaphora, 2026-10-22)."""
             body = node.term if side == "term" else node.context
             prop = _with_witnesses(ip(node.prop, ren), fo)
             try:
@@ -1005,15 +1123,20 @@ class Unfolder:
                 quant = None
             sort = sort_text(getattr(quant, "sort", None)) if quant is not None else None
 
-            def pair(value, ren2, env2):
-                inner = walk(body, env2, names, fo=fo, ren=ren2)
+            def pair(value, ren2, env2, fo2=None):
+                inner = walk(body, env2, names, fo=fo if fo2 is None else fo2, ren=ren2)
                 out = (TermsPairFO(TSym(value), inner) if side == "term"
                        else ConsFO(TSym(value), inner))
-                out.prop = prop
+                # an individual borrowed from an earlier argument: its entry
+                # in the pair's context, so that the pair rests on what its
+                # owner presumes of it, the sort node (debate_graph.py,
+                # ``_choice``; core/comp/standing.py, ``_open_choice``)
+                out.prop = prop if fo2 is None else _with_witnesses(ip(node.prop, ren), fo2)
                 return out
 
-            alternatives = self._alternatives(body, wname, sort, fo,
-                                              lambda text: ip(text, ren)) if sort else []
+            candidates = self._alternatives(body, wname, sort, fo, lambda text: ip(text, ren),
+                                            owner=edge.name) if sort else []
+            alternatives = [c for c, _e in candidates]
             key = (canonical_prop(referents.InContext(plain(prop), fo)) if fo
                    else canonical_prop(prop))
             statement = (key, side)
@@ -1032,7 +1155,14 @@ class Unfolder:
                           + [self._scaffold_scope(statement, a, b, scope0) for a, b in wiring])
 
                 def element(k):
-                    out = pair(alternatives[k], {**(ren or {}), wname: alternatives[k]}, scopes[k])
+                    value, entry = candidates[k]
+                    saved_kind = alt_kind[0]
+                    alt_kind[0] = "document" if referents.is_presumed(wname) else "written"
+                    try:
+                        out = pair(value, {**(ren or {}), wname: value}, scopes[k],
+                                   fo + (entry,) if entry is not None else None)
+                    finally:
+                        alt_kind[0] = saved_kind
                     mark_instantiated(out)
                     return out
 

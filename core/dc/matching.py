@@ -105,7 +105,7 @@ def rigid_scope(p: Prop, scope) -> Prop:
     free = p.free_vars()
     for e in scope or ():
         if referents.is_witness(e) and e[0] in free:
-            p = p.subst(e[0], TSym(referents.rigid(e[0], e.owner)))
+            p = p.subst(e[0], TSym(referents.rigid(getattr(e, "base", e[0]), e.owner)))
     return p
 
 
