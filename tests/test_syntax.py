@@ -52,7 +52,8 @@ def test_comments_stop_and_incomplete():
     ("evaluate issue :B credulous all", "evaluate",
      {"target": "issue :B", "mode": "credulous", "semantics": "preferred", "base": "cbn",
       "witness": "all", "favour": False}),
-    ('load "tests/demo/01.fspy"', "load", {"path": "tests/demo/01.fspy"}),
+    ('load "tests/demo/01.fspy"', "load", {"path": "tests/demo/01.fspy", "silent": False}),
+    ('load silent "tests/demo/01.fspy"', "load", {"path": "tests/demo/01.fspy", "silent": True}),
     ('decorate p : "a. b"', "decorate", {"name": "p", "template": "a. b"}),
     ("declare A : bool", "opaque", {"word": "declare"}),
 ])
@@ -233,6 +234,105 @@ def test_a_refused_live_step_carries_fellowships_reply(prover):
     assert ";;BEGIN_ML_DATA;;" not in step.message
     script = list(Interpreter(prover).run("lk.\nfrobnicate.\n"))
     assert script[-1].status == "error" and "\n" not in script[-1].message   # scripts: one line
+
+
+# -- a script with the REPL's output (--verbose, --prompt-on-error) ------------
+
+VERBOSE_SCRIPT = """# a session
+lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument a : (A -> B).
+axiom nonsense.
+axiom r.
+dixi.
+elim x.
+"""
+
+
+def _type_at_the_prompt(monkeypatch, lines):
+    """The REPL's line reader fed ``lines``, each echoed after its prompt as
+    a terminal shows it."""
+    from wrap import cli
+    typed = iter(lines)
+
+    def keyboard(prompt):
+        line = next(typed, None)
+        if line is None:
+            raise EOFError
+        print(prompt + line)
+        return line.strip()
+    monkeypatch.setattr(cli, "_read_line", keyboard)
+    monkeypatch.setattr(cli, "_setup_readline", lambda: None)
+
+
+def test_a_verbose_script_prints_what_the_repl_prints(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    verbose = capsys.readouterr().out
+    _type_at_the_prompt(monkeypatch, VERBOSE_SCRIPT.splitlines())
+    cli.interactive_mode(cli.setup_prover())
+    by_hand = capsys.readouterr().out
+    stop = f"Stopped at {script}:9.\n"          # `elim x.` outside an argument: a script stops
+    assert verbose.endswith(stop)
+    assert (verbose[:-len(stop)] + "\nEOFError: No input detected. Exiting interactive mode.\n"
+            == by_hand)
+    assert "nonsense is neither in your hypothesis" in verbose        # Fellowship's reply
+    assert "1 goal yet to prove!" in verbose                           # the goals
+
+
+def test_a_verbose_script_still_stops_on_a_prover_error(capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text("lk.\nfrobnicate.\ndeclare A : bool.\n")
+    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    out = capsys.readouterr().out
+    assert out.rstrip().endswith(f"Stopped at {script}:2.")
+    assert "acdc> declare A" not in out
+
+
+def test_load_with_prompt_on_error_opens_the_prompt_where_it_stopped(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script, fixed = tmp_path / "s.fspy", tmp_path / "fixed.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    _type_at_the_prompt(monkeypatch, ["axiom r.", "dixi.", f'save "{fixed}".'])
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script),
+                                     "--prompt-on-error"])
+    cli.main()
+    out = capsys.readouterr().out
+    assert "acdc (recording)> axiom nonsense." in out             # --load is verbose
+    assert f"Stopped at {script}:6; the prompt is open there." in out
+    assert "acdc (recording)> axiom r." in out                     # still inside 'a'
+    assert fixed.read_text().splitlines() == [
+        "# a session", "lk.", "declare A, B : bool.", "declare r : (A -> B).",
+        "argument a : (A -> B).", "axiom r.", "dixi."]
+
+
+def test_load_without_prompt_on_error_exits(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script)])
+    with pytest.raises(SystemExit, match=r"load: stopped at .*s\.fspy:6\.$"):
+        cli.main()
+    assert "nonsense is neither in your hypothesis" in capsys.readouterr().out
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script), "--silent"])
+    with pytest.raises(SystemExit, match="load: stopped: .*nonsense"):
+        cli.main()
+    out = capsys.readouterr().out
+    assert "acdc>" not in out and "nonsense is neither" not in out
+
+
+def test_load_at_the_prompt_is_verbose_unless_silent(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text("lk.\ndeclare A : bool.\n")
+    _type_at_the_prompt(monkeypatch, [f'load "{script}".', f'load silent "{script}".'])
+    cli.interactive_mode(cli.setup_prover())
+    out = capsys.readouterr().out
+    assert out.count("acdc> declare A : bool.") == 1               # only the first load
 
 
 # -- proof steps outside an argument -------------------------------------------

@@ -178,6 +178,8 @@ The prompt has readline line editing (emacs bindings) and a history file
 time; lines starting with `#` are echoed as narration and lines starting
 with `%` are ignored, as in scripts. `load "FILE".` runs a script inside the
 session, in a new document: whatever the session held before is gone.
+It prints what typing the file at the prompt would (see `--verbose`
+under Script mode); `load silent "FILE".` runs it with a script's output.
 A script loaded with `--load` or `load` stops at a `%stop` line,
 so a demo file can hold its setup above the marker and the commands to
 paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
@@ -197,7 +199,17 @@ written.
 
 ```bash
 .venv/bin/acdc --script tests/debates.fspy
+.venv/bin/acdc --script tests/debates.fspy --verbose
 ```
+
+By default a script narrates through the logger and keeps Fellowship's
+replies to itself. `--verbose` prints what interactive mode prints for the
+same commands: each command after its prompt, as a terminal shows what
+you type, Fellowship's notes and replies, the goals after every step of
+an argument, and refusals in full. The steps of an argument go to
+Fellowship as they come, as at the prompt, instead of being replayed at
+`dixi.`. The run stops as a script does, at the first Fellowship error,
+with `Stopped at FILE:LINE.`; the prompt would carry on.
 
 ### Via the Makefile
 
@@ -213,7 +225,18 @@ before dropping into the REPL. It can only be combined with `--interactive`:
 
 ```bash
 .venv/bin/acdc --interactive --load tests/debates.fspy
+.venv/bin/acdc --interactive --load tests/debates.fspy --prompt-on-error
+.venv/bin/acdc --interactive --load tests/debates.fspy --silent
 ```
+
+The load prints what typing the file at the prompt would, as `--script
+--verbose` does; `--silent` gives it a script's output instead. On an
+error or a refusal the load exits with `load: stopped at FILE:LINE.`
+(with `--silent`, `load: stopped: FILE:LINE: ...`). With `--prompt-on-error` it opens the prompt where the script
+stopped instead, inside the argument if it stopped in one, so you can try
+the step again; the rest of the file is not run. The session goes on
+from the load, so `save "FILE".` writes the loaded commands that were
+accepted and what you typed after.
 
 ### Importing from other formalisms
 

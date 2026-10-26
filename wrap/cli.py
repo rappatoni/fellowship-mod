@@ -193,12 +193,12 @@ def _run_cli_only(prover: ProverWrapper, c, *, interactive: bool = False,
             return
         try:
             execute_script(prover, str(path), strict=False, stop_on_error=False, isolate=False,
-                           new_document=True)
+                           new_document=True, verbose=interactive and not c["silent"])
         except (ProverError, MachinePayloadError) as e:
             print(f"load: stopped: {e}")
 
 
-def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None, new_document: bool = False) -> None:
+def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = False, stop_on_error: bool = True, echo_notes: bool = False, isolate: bool = True, stop_marker: bool = True, render_files: Optional[bool] = None, new_document: bool = False, verbose: bool = False, interpreter=None) -> None:
     """Run a .fspy script through the interpreter (wrap/interpreter.py; the
     syntax is wrap/syntax.py's, see the README).
 
@@ -207,10 +207,19 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
     error stops the script if ``stop_on_error``.  ``isolate`` runs it in a
     session of its own; ``new_document`` (``load``) replaces the session's
     document first; ``stop_marker`` stops at ``%stop``.
+
+    ``verbose`` (``--verbose``) prints what interactive mode prints for
+    the same commands - each command after its prompt, Fellowship's
+    notes and replies, the goals after every step of an argument (the
+    steps go to Fellowship as they come, as at the prompt), refusals in
+    full - and stops as a script does.  ``interpreter`` runs the script
+    in one the caller goes on with (``--load ... --prompt-on-error``),
+    not in a new one.
     """
     from wrap.interpreter import Interpreter
     from wrap.syntax import parse_units
-    logger.info(
+    narrate = logger.debug if verbose else logger.info
+    narrate(
         "Running script %s (strict=%s, stop_on_error=%s, echo_notes=%s)",
         script_path, strict, stop_on_error, echo_notes
     )
@@ -219,32 +228,47 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
     elif new_document:
         prover.new_document()
     prev_echo = getattr(prover, "echo_notes", False)
-    prover.echo_notes = echo_notes
+    if not verbose:                     # the REPL shows the session's notes
+        prover.echo_notes = echo_notes
     # render_files=None keeps whatever the session has (ACDC_NO_RENDER); False
     # stops `graph ... show` and `tree` writing images and opening a viewer.
     prev_render = getattr(prover, "render_files", True)
     if render_files is not None:
         prover.render_files = render_files
-    interpreter = Interpreter(prover)
+    handed_in = interpreter is not None
+    if interpreter is None:
+        interpreter = Interpreter(prover, live=verbose)
+    prev_ui = interpreter.show_ui
+    interpreter.show_ui = _print_ui if verbose else (lambda state: None)
     try:
         with open(script_path, "r") as handle:
             text = handle.read()
+        lines, echoed = text.splitlines(), 0
         for item in parse_units(text):
+            span = getattr(item, "span", None)
+            if verbose and span:            # the command, as typed at the prompt
+                prompt = _prompt(prover, interpreter)
+                for n in range(max(span.line, echoed + 1), span.end_line + 1):
+                    print((prompt if n == span.line else "... ") + lines[n - 1].strip())
+                echoed = max(echoed, span.end_line)
             o = interpreter.execute(item)
             where = f"{script_path}:{o.span.line if o.span else '?'}"
             if o.status == "stop":
                 if stop_marker:
-                    logger.info("Stopped at %%stop (%s); the rest of the file is yours to paste.", where)
+                    narrate("Stopped at %%stop (%s); the rest of the file is yours to paste.", where)
                     break
                 continue
             if o.status == "cli":
-                _run_cli_only(prover, o.command, interpreter=interpreter)
+                _run_cli_only(prover, o.command, interactive=verbose, interpreter=interpreter)
                 continue
             if o.status in ("ok", "comment", "reported"):
-                _render(prover, o)
+                _render(prover, o, interactive=verbose)
                 continue
+            if verbose:
+                _print_failure(o)
             if o.status == "refused":
-                logger.warning("Refused (%s): %s", where, o.message)
+                if not verbose:
+                    logger.warning("Refused (%s): %s", where, o.message)
                 if strict:
                     raise ProverError(f"{where}: {o.message}")
                 continue
@@ -253,10 +277,15 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
             # "error": Fellowship refused a command
             if strict:
                 raise ProverError(f"{where}: {o.message}")
-            logger.error("Prover error: %s", o.message)
+            if not verbose:
+                logger.error("Prover error: %s", o.message)
             if stop_on_error:
+                if verbose:
+                    print(f"Stopped at {where}.")
                 break
-        if interpreter.recording is not None:
+        if handed_in:
+            pass                            # the caller goes on with what is open
+        elif interpreter.recording is not None:
             logger.warning("'%s' was not closed with `dixi.`; it is not registered.",
                            interpreter.recording["name"])
         if getattr(prover, "recording_debate", None) is not None:
@@ -264,6 +293,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                            "move(s) recorded so far.", prover.recording_debate,
                            len(prover.debates[prover.recording_debate].moves))
     finally:
+        interpreter.show_ui = prev_ui
         if isolate:
             try:
                 prover.close()
@@ -272,7 +302,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         else:
             prover.echo_notes = prev_echo
             prover.render_files = prev_render
-        logger.info("Finished script %s", script_path)
+        narrate("Finished script %s", script_path)
 
 
 def _print_ui(state: Any) -> None:
@@ -335,7 +365,38 @@ def _read_line(prompt: str) -> str:
     return _pending_lines.popleft().strip()
 
 
-def interactive_mode(prover: ProverWrapper) -> None:
+def _prompt(prover: ProverWrapper, interpreter) -> str:
+    """The REPL's prompt for the next command."""
+    if interpreter.recording is not None:
+        return 'acdc (recording)> '
+    if getattr(prover, "recording_debate", None):
+        return f'acdc (debate {prover.recording_debate})> '
+    return 'acdc> '
+
+
+def _print_failure(o) -> None:
+    """A refused or failed command, as the REPL prints it."""
+    if o.status == "refused":
+        print("refused:" + ("\n" if "\n" in o.message else " ") + o.message)
+        logger.debug("Refused: %s", o.message)
+    elif o.status == "error":
+        print("acdc: ignored command due to prover error:"
+              + ("\n" if "\n" in o.message else " ") + o.message)
+        logger.debug("Prover error: %s", o.message)
+    elif o.status == "fatal":
+        print(f"acdc: fatal prover communication error: {o.message}")
+        logger.error("Fatal prover communication error: %s", o.message)
+
+
+def repl_interpreter(prover: ProverWrapper):
+    """The interpreter the REPL runs commands with: live, showing
+    Fellowship's replies."""
+    from wrap.interpreter import Interpreter
+    return Interpreter(prover, live=True, show_ui=_print_ui,
+                       read_more=lambda: _read_line('... '))
+
+
+def interactive_mode(prover: ProverWrapper, interpreter=None) -> None:
     """The REPL: commands in the syntax of scripts (wrap/syntax.py), each
     ending in "." - a command without one asks for more with `...` - run by
     the interpreter (wrap/interpreter.py) live: an argument block sends
@@ -343,23 +404,16 @@ def interactive_mode(prover: ProverWrapper) -> None:
     starting with '#' are echoed, '%' lines ignored; `load 'FILE'.` runs a
     script in a new document; `save [all] "FILE".` writes the session
     back as a script; `exit` or `quit` leaves.  Line editing and
-    history come from readline (emacs bindings)."""
-    from wrap.interpreter import Interpreter
+    history come from readline (emacs bindings).  ``interpreter`` goes
+    on with a session already under way (``--prompt-on-error``)."""
     from wrap.syntax import parse_units, split
     _setup_readline()
-    interpreter = Interpreter(prover, live=True, show_ui=_print_ui,
-                              read_more=lambda: _read_line('... '))
+    if interpreter is None:
+        interpreter = repl_interpreter(prover)
     buffer = ""
     try:
         while True:
-            if buffer:
-                prompt = '... '
-            elif interpreter.recording is not None:
-                prompt = 'acdc (recording)> '
-            elif getattr(prover, "recording_debate", None):
-                prompt = f'acdc (debate {prover.recording_debate})> '
-            else:
-                prompt = 'acdc> '
+            prompt = '... ' if buffer else _prompt(prover, interpreter)
             try:
                 line = _read_line(prompt)
             except EOFError:
@@ -379,18 +433,11 @@ def interactive_mode(prover: ProverWrapper) -> None:
                     _run_cli_only(prover, o.command, interactive=True, interpreter=interpreter)
                 elif o.status in ("ok", "comment", "reported"):
                     _render(prover, o, interactive=True)
-                elif o.status == "refused":
-                    print("refused:" + ("\n" if "\n" in o.message else " ") + o.message)
-                    logger.debug("Refused: %s", o.message)
-                elif o.status == "error":
-                    print("acdc: ignored command due to prover error:"
-                          + ("\n" if "\n" in o.message else " ") + o.message)
-                    logger.debug("Prover error: %s", o.message)
-                elif o.status == "fatal":
-                    print(f"acdc: fatal prover communication error: {o.message}")
-                    logger.error("Fatal prover communication error: %s", o.message)
-                    fatal = True
-                    break
+                elif o.status in ("refused", "error", "fatal"):
+                    _print_failure(o)
+                    if o.status == "fatal":
+                        fatal = True
+                        break
             if fatal:
                 break
     finally:
@@ -1465,6 +1512,15 @@ def main() -> None:
                    help='start an interactive Fellowship REPL')
     g.add_argument('--script', metavar='FILE',
                    help='execute commands in FILE (same grammar as interactive mode)')
+    ap.add_argument('--verbose', action='store_true',
+                    help='with --script: print what interactive mode prints for the same '
+                         'commands (each command after its prompt, Fellowship\'s replies, '
+                         'the goals after every step); --load does this by default')
+    ap.add_argument('--silent', action='store_true',
+                    help='with --load: run the script with a script\'s output, not the prompt\'s')
+    ap.add_argument('--prompt-on-error', dest='prompt_on_error', action='store_true',
+                    help='with --load: when the script stops on an error, open the prompt '
+                         'where it stopped instead of exiting')
     g.add_argument('--import', dest='import_args', nargs='+', metavar='IMPORT_ARG',
                    help='import SOURCE_LANGUAGE SOURCE_JSON MODE [TARGET_FILE_NAME]; MODE is file or interactive')
     args = ap.parse_args()
@@ -1474,6 +1530,14 @@ def main() -> None:
 
     if args.load and not args.interactive:
         ap.error('--load can only be used together with --interactive')
+
+    if args.verbose and not args.script:
+        ap.error('--verbose can only be used together with --script (--load is verbose unless --silent)')
+    if args.silent and not args.load:
+        ap.error('--silent can only be used together with --load')
+    verbose = args.verbose or (args.load is not None and not args.silent)
+    if args.prompt_on_error and not args.load:
+        ap.error('--prompt-on-error can only be used together with --load')
 
     if args.import_args is not None:
         _handle_import_command(ap, args.import_args)
@@ -1487,14 +1551,39 @@ def main() -> None:
             load_script = Path(args.load).expanduser()
             if not load_script.is_file():
                 ap.error(f'load file {load_script} does not exist')
-            execute_script(prover, str(load_script), strict=True, stop_on_error=True, isolate=False)
+            if not args.prompt_on_error:
+                try:
+                    execute_script(prover, str(load_script), strict=True, stop_on_error=True,
+                                   isolate=False, verbose=verbose)
+                except (ProverError, MachinePayloadError) as e:
+                    prover.close()
+                    sys.exit(f"load: stopped at {str(e).split(': ', 1)[0]}." if verbose
+                             else f"load: stopped: {e}")
+                interactive_mode(prover)
+                return
+            # The REPL goes on in the load's interpreter, so an argument
+            # stopped mid-block is still open at the prompt.
+            interpreter = repl_interpreter(prover)
+            try:
+                execute_script(prover, str(load_script), strict=True, stop_on_error=True,
+                               isolate=False, verbose=verbose, interpreter=interpreter)
+            except (ProverError, MachinePayloadError) as e:
+                if verbose:
+                    print(f"Stopped at {str(e).split(': ', 1)[0]}; the prompt is open there.")
+                else:
+                    print(f"load: stopped: {e}")
+                    print("The prompt is open where the script stopped.")
+                if isinstance(e, MachinePayloadError):
+                    raise
+            interactive_mode(prover, interpreter)
+            return
         interactive_mode(prover)
 
     else:                               # --- batch ----------------
         script = Path(args.script).expanduser()
         if not script.is_file():
             ap.error(f'script file {script} does not exist')
-        execute_script(prover, script)
+        execute_script(prover, script, verbose=args.verbose)
 
 if __name__ == '__main__':
     main()

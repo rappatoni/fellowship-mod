@@ -1074,6 +1074,55 @@ reopen.
 Evidence: the new test in tests/test_syntax.py passes and fails with the
 fix reverted; full suite 2320 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
+** DONE Run a script with the REPL's output
+CLOSED: [2026-10-26 Mon]
+:PROPERTIES:
+:ID:             aida-script-as-interactive
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:30
+:DEFERRALS:      0
+:OUTCOME:        =--script FILE --verbose= prints what typing FILE at the prompt prints, and still stops on the first Fellowship error; =--load FILE= and the REPL's =load "FILE".= print that way by default (=--silent=, =load silent "FILE".= switch it off); =--interactive --load FILE --prompt-on-error= opens the prompt where the load stopped instead of exiting.
+:VERIFY:         tests/test_syntax.py: a verbose script's output equals the REPL's for the same lines up to the script's stop; a verbose script stops on a Fellowship error; a load with =--prompt-on-error= leaves the prompt inside the stopped argument, where a fix and =save= give the corrected script; a load without it exits with =load: stopped at FILE:LINE.= (=load: stopped: ...= and no prompt output under =--silent=); the REPL's =load= prints the prompt's output and =load silent= does not; the documented test suite passes.
+:END:
+
+Asked 2026-10-26 by the author: no log level of =--script= gave the
+output of stepping through the file at the prompt; Fellowship's replies
+were silent at every level. A first version fed the file to the REPL
+(=--as-interactive=); the author rejected it: the script run must stay a
+script run (stopping on error) with a verbosity matching the REPL, and
+=--load= should get an option to open the prompt on error. The author
+then asked for verbose to be the default when loading (=--load=, the
+REPL's =load=), switched off with a =silent= option, and to stay off by
+default for =--script=.
+
+Done 2026-10-26. =execute_script(verbose=True)= runs the interpreter
+live, prints each unit's source lines after the REPL's prompt, shows
+Fellowship's replies (=_print_ui=), renders outcomes and failures as the
+REPL does (=_print_failure=, shared with the REPL) and leaves the
+session's note echo on; a Fellowship error still stops it, with
+=Stopped at FILE:LINE.=. =--prompt-on-error= runs the load in the REPL's
+own interpreter (=repl_interpreter=), so an argument stopped mid-block
+is still being recorded at the prompt and =save= includes the loaded
+commands. Without it, a stopped load now exits with =load: stopped at
+FILE:LINE.= (=load: stopped: ...= under =--silent=) instead of a
+traceback. Loading is verbose by default: =--load= unless =--silent=,
+the REPL's =load= unless written =load silent "FILE".= (=_p_load= in
+=wrap/syntax.py=); a =load= inside a script follows the script's
+verbosity. =--verbose= is for =--script= only, =--silent= for =--load=
+only.
+
+Evidence: the five tests above pass, with the =load [silent]= syntax. By hand: =--script ok.fspy
+--verbose= and =--interactive < ok.fspy= print the same lines apart from
+the echoed commands; =--load bad.fspy --prompt-on-error= opened
+=acdc (recording)>= at the refused step, and the fixed session saved as
+the corrected script. Full suite 2350 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
 ** BACKLOG Design: classical first-order theorems that throw an open statement
 :PROPERTIES:
 :ID:             aida-fo-classical-dialectics

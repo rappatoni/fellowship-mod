@@ -420,9 +420,11 @@ def _p_choice(kind, choices):
 
 
 def _p_load(words, rest, text):
-    if not rest.strip():
-        raise SyntaxRefused('Use: load "FILE".')
-    return Command("load", text, args={"path": unquote(rest)})
+    silent = bool(words) and words[0] == "silent"
+    path = rest.strip()[len("silent"):] if silent else rest
+    if not path.strip():
+        raise SyntaxRefused('Use: load [silent] "FILE".')
+    return Command("load", text, args={"path": unquote(path), "silent": silent})
 
 
 def _p_save(words, rest, text):
