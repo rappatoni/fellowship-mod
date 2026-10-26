@@ -850,3 +850,22 @@ argument sup : [!x:iota, ?w:iota] (exists y:iota, R [!x] [y]). elim [?w]. by def
         assert "(z,!IN:R z z)" in evaluated(svc, "all_r")[1]
     finally:
         prover.close()
+
+
+def test_two_pronouns_each_get_a_scaffold_and_owed_sites_steer_them():
+    """A pronoun in an inner pair gets its witness scaffold (its statement
+    is read off the outer one, core/comp/enrich.py), and the outer reading
+    rests on the inner statement, not on the inner root's witness. Bare,
+    both pronouns take the latest antecedent; owing farmer ?c and donkey ?d
+    steers them (tasks.org, aida-referents-anaphora, 2026-10-23)."""
+    prover, svc, report = session((DISCOURSE / "anaphora_two.fspy").read_text())
+    try:
+        assert report.ok
+        cls, nf = evaluated(svc, "he_bites_him")
+        assert cls == "value" and "(!b,(!b,!IN:bites !b !b))" in nf
+        cls, nf = evaluated(svc, "he_bites_it")       # replays through Fellowship
+        assert cls == "value"
+        assert "(!a,(!b," in nf and "!IN:bites !a !b" in nf and "!IN:farmer !a" in nf
+        assert "?d" not in nf and "?c" not in nf
+    finally:
+        prover.close()

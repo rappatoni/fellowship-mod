@@ -27,6 +27,35 @@ def _cell_from_command(node) -> None:
                 and getattr(other, "prop", None)):
             cell.prop = other.prop
             logger.debug("Enriching cell with type %s from its command", cell.prop)
+        _nested_from_quantifier(cell)
+
+
+def _nested_from_quantifier(cell) -> None:
+    """The type of a pair inside a pair, ``(t, (u, v))``, or of a cell inside
+    a cell, ``t * (u * e)``: Fellowship types neither, and the inner one is
+    in no command. It is the outer quantified statement's body for ``t``:
+    ``exists x, exists y, B`` gives the inner ``exists y, B[t/x]``, and a
+    quantifier over several names ``exists x y:S, B`` the inner
+    ``exists y:S, B[t/x]`` (tasks.org, aida-referents-anaphora: a pronoun
+    in the inner pair needs its statement for its witness scaffold)."""
+    while isinstance(cell, (TermsPairFO, ConsFO)) and cell.prop:
+        inner = cell.term if isinstance(cell, TermsPairFO) else cell.context
+        if type(inner) is not type(cell) or inner.prop is not None:
+            return
+        try:
+            quant = Prop.parse(str(cell.prop).strip())
+        except PropError:
+            return
+        if not isinstance(quant, PQuant):
+            return
+        witness = cell.witness if isinstance(cell, TermsPairFO) else cell.fo_term
+        first, rest = quant.names[0], quant.names[1:]
+        body = (PQuant(quant.quantifier, rest, quant.sort, quant.body) if rest
+                else quant.body)
+        inner.prop = str(body.subst(first, witness))
+        logger.debug("Enriching nested %s with type %s from the enclosing one",
+                     type(inner).__name__, inner.prop)
+        cell = inner
 
 
 class PropEnrichmentVisitor(ProofTermVisitor):

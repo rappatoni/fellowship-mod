@@ -1950,6 +1950,20 @@ for the author to review:
   off the term now carry how their statements are shown
   (=Edge.shown=, =take_shown=).
 
+Fixed 2026-10-23 (the author's tests/anaphora/multiple_dynamic.fspy,
+"He bites him"): a pronoun in an inner pair had no witness scaffold,
+since Fellowship does not type a pair inside a pair; its statement is
+now read off the outer one (core/comp/enrich.py,
+=_nested_from_quantifier=). A nested scaffold's root is one more
+supporter of its own statement and the outer reading rests on that
+statement (core/dc/debate_graph.py), where it used to owe the inner
+root's witness. A part of the argument about a choice an alternative
+replaces stays in place, as for a parameter (unfold.py, step 0). An
+individual borrowed by an enclosing reading keeps its name. Fixture
+tests/discourse/anaphora_two.fspy: bare, both pronouns take the latest
+antecedent (the donkey bites itself); owing =farmer ?c= and =donkey ?d=
+steers them to the farmer biting the donkey.
+
 Evidence 2026-10-22: tests/test_discourse_referents.py (56 passed),
 seven new: two antecedents (=he_whistles= keeps the knight,
 =(!a_2,!IN:whistles !a_2)=; the reading is about =w#knight_walks:!a=;
@@ -1963,6 +1977,33 @@ terms replay through Fellowship (=issue_term= type checks). Full suite
 2420 passed, 9 skipped, 16 deselected, 2 xfailed, 1 xpassed; perf 16
 passed. The choices above are for the author's review together with
 [[id:aida-referents-review-lineup]].
+
+** BACKLOG The term route drops a presumption marker inside a universal-left node
+:PROPERTIES:
+:ID:             aida-fo-cell-presumption-marker
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The issue graph compiled from the unfolded term and the one taken from the document agree on tests/minicourse/first_order_steps.fspy up to the accepted classes, or the difference is accepted with a reason.
+:VERIFY:         tests/test_issue_graph_from_document.py: the fixture's xfail (KNOWN) is removed and the test passes.
+:END:
+
+Found 2026-10-23: the minicourse fixture added in f693db7 failed
+=test_fixture[minicourse/first_order_steps.fspy]= (the full suite had
+been run before the fixture existed). For =from_everyone=, whose
+universal-left cell =c * ?:Dr c= is a node of its own (the horn rule of
+2026-10-22), the document's issue graph carries =someone='s presumption
+on =Dr c=[t], the contrary of the owed =Dr c=[c]; the graph compiled from
+the term does not, and calls the cell's source an obligation where the
+document calls it a subargument. The test classifies this as "other
+markers". Labels agree on every entry of the fixture under grounded,
+preferred and stable. Marked xfail (strict) meanwhile.
 
 ** BACKLOG Anaphora: a resolution used by other arguments
 :PROPERTIES:

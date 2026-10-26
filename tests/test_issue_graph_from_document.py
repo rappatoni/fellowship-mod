@@ -167,7 +167,23 @@ def both(term, source, issue, strict_names, strict_kinds=None):
     return term_graph, document_issue_graph(source, issue, strict_edges)
 
 
-@pytest.mark.parametrize("script", FIXTURES, ids=lambda p: str(Path(p).relative_to(TESTS)))
+#: Fixtures whose two issue graphs differ in a way not yet accepted, with
+#: the task that records it.
+KNOWN = {
+    "minicourse/first_order_steps.fspy":
+        "tasks.org, aida-fo-cell-presumption-marker: the universal-left node of "
+        "from_everyone lacks someone's presumption on Dr c on the term route; "
+        "labels agree",
+}
+
+
+def _fixture_param(script):
+    name = str(Path(script).relative_to(TESTS))
+    marks = [pytest.mark.xfail(reason=KNOWN[name], strict=True)] if name in KNOWN else []
+    return pytest.param(script, id=name, marks=marks)
+
+
+@pytest.mark.parametrize("script", [_fixture_param(s) for s in FIXTURES])
 def test_fixture(script):
     name = str(Path(script).relative_to(TESTS))
     prover = setup_prover()

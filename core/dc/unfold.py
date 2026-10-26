@@ -452,7 +452,15 @@ class Unfolder:
                    if not referents.is_witness(e) and e[1] is not None and sort_text(e[1]) == sort]
         taken = {e[0] for e in fo} | {e[0] for e in self._fo_here} | {wname} | set(binders)
         out = [(c, None) for c in constants if c not in binders]
+        # an individual borrowed already, by an enclosing scaffold: the
+        # same entry, under the same name
+        known = {(e.owner, e.base): e for e in (*fo, *self._fo_here)
+                 if referents.is_witness(e) and getattr(e, "base", None)}
         for choice_owner, name in borrowed:
+            entry = known.get((choice_owner, name))
+            if entry is not None:
+                out.append((entry[0], entry))
+                continue
             shown = name
             n = 2
             while shown in taken:
@@ -988,11 +996,13 @@ class Unfolder:
                 return _with_witnesses(ip(prop, ren), fo)
 
             exposed = self._node_edge.get(id(node)) if expose else None
-            if exposed is not None and inst and uncaught_referents(node) & set(inst):
-                # a horn about a referent read at this use is a statement
-                # about the variable it stands for here: inlined, as any
-                # horn mentioning a variable bound above it (step 0, kept;
-                # tasks.org, aida-referents-open-horns, 2026-10-22)
+            if exposed is not None and (inst or ren) and uncaught_referents(node) & {*inst, *(ren or {})}:
+                # a horn about a referent read at this use - a parameter, or
+                # an open choice an alternative of a witness scaffold
+                # replaces - is a statement about what it stands for here:
+                # inlined, as any horn mentioning a variable bound above it
+                # (step 0, kept; tasks.org, aida-referents-open-horns,
+                # 2026-10-22; aida-referents-anaphora)
                 exposed = None
             if exposed is not None and node is not edge.term:
                 rewalk = (lambda n, e, nm, expose=True: walk(n, e, nm, expose, fo, ren))

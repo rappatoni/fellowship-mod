@@ -1916,6 +1916,23 @@ class _Compiler:
                     self.graph.add_edge(self.compile_body(element, label, srole, element_outer,
                                                           expect_side=target_side, expect_prop=sprop,
                                                           fo_outer=fo_scope.get(id(node), frozenset())))
+                if (srole == "supporter" and isinstance(orig, (TermsPairFO, ConsFO))
+                        and statement_of(orig) not in (None, own)):
+                    # A witness scaffold about another statement than this
+                    # edge's: a pronoun in an inner pair, ``(?c, (?d, v))``
+                    # (tasks.org, aida-referents-anaphora).  Its root is one
+                    # more supporter of that statement, beside the
+                    # alternatives, and this derivation rests on the
+                    # statement: inlining the root would make it owe the
+                    # root's witness whatever the alternatives give.
+                    label = f"{name}.{srole}{next(self._fresh)}"
+                    rec = self.compile_body(orig, label, srole,
+                                            {**outer, **{k: (*v, name) for k, v in env.items()}},
+                                            fo_outer=fo_scope.get(id(node), frozenset()))
+                    self.graph.add_edge(rec)
+                    return _Acc((Source(rec.target_key, rec.target_side, "subargument", label, (),
+                                        rec.target_label, prop=getattr(rec.term, "prop", None)),),
+                                not rec.strict)
                 # the site stays a source of this derivation; the scion is
                 # its own edge
                 return visit(orig, env, spine, scope, rest=rest, parent=node)
