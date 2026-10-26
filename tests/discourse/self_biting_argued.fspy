@@ -1,0 +1,28 @@
+# self_biting.fspy with the knowledge argued (tasks.org,
+# aida-referents-anaphora-knowledge): self_biting_is_odd derives the attack
+# on bites !z !z from a premise it presumes, ~bites !z !z. Placed at a
+# reading, the instance keeps that presumption; a derivation defeats a
+# bare presumption, so bites !donkey !donkey is OUT, and the second
+# pronoun falls back to the farmer.
+lk.
+pipeline unfolded.
+declare iota : type.
+declare farmer, donkey : iota -> bool.
+declare has, bites : iota -> iota -> bool.
+argument a_farmer_has_a_donkey : [!farmer:iota,!donkey:iota] exists x:iota, exists y:iota, farmer [x] - ~donkey [y] - ~has [x] [y].
+elim [!farmer].
+elim [!donkey].
+by default.
+dixi.
+argument he_bites_him : [?c:iota,?d:iota] exists x:iota, exists y:iota, bites [x] [y].
+elim [?c].
+elim [?d].
+by default.
+dixi.
+counterargument self_biting_is_odd : [!z:iota] bites [!z] [!z].
+cut (~bites [!z] [!z]) n.
+by default.
+next.
+elim n.
+axiom.
+dixi.

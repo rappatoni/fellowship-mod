@@ -2076,6 +2076,66 @@ with =some_dont_bite= registered: =graph=, =label= and =evaluate
 he_bites_him= succeed (value, =(!b,(!b,!IN:bites !b !b))=); suite 2446
 passed, 9 skipped, 16 deselected, 3 xfailed, 1 xpassed; perf 16 passed.
 
+** DONE Anaphora: knowledge against a reading
+CLOSED: [2026-10-26 Mon]
+:PROPERTIES:
+:ID:             aida-referents-anaphora-knowledge
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A generic argument bears on a pronoun's reading as on an instance the document holds: a presumption asserted of a covering generic statement, and a generic argument placed at the reading with the premises it presumes.
+:VERIFY:         tests/discourse/self_biting.fspy and self_biting_argued.fspy: he_bites_him falls back from the donkey biting itself to the donkey biting the farmer; the reading's labels equal those of a closed instance meeting the same rule; suite and perf tests pass.
+:END:
+
+From the author's tests/anaphora/multiple_dynamic.fspy (2026-10-26):
+dynamic updating of a resolution by knowledge. "A farmer has a donkey.
+He bites him." resolves both pronouns to the donkey (the latest
+antecedent); "normally nobody bites themselves" should move the
+resolution on. The author's route a: a generic counterargument against
+=bites !z !z=, whose repeated parameter covers exactly the readings in
+which both pronouns are one individual. Route b (a closed existential
+counterargument against the conclusion) does not work and is recorded
+for phase 2 in the plan for [[id:aida-referents-anaphora-export]].
+
+A reading's statement is no node of the document, so two things the
+document gives its own instances were missing there:
+- (a) a marker asserted of a generic statement (=DebateGraph.instantiate=
+  copies it to instances it holds). Now =DebateGraph.generic_asserted= and
+  =covering_kinds=, used by the unfolder's =_defaults= and by
+  =strict.document_issue_graph= for a statement the document does not
+  hold (both, so that labels and evaluation agree).
+- (b) the kind a generic argument wrote on its premise (the document's
+  copy of its edge marks the instance's premise, =add_edge=). Now the
+  unfolder keeps a presumption an argument placed with a substitution
+  wrote on its own sites.
+Neither changes the document graph; for its own instances the behaviour
+is unchanged.
+
+Behaviour: the bare spelling (=no_self_biting : [!z:iota] bites [!z] [!z].
+by default.=) gives two presumptions on the reading, an onus conflict:
+both sides UNDEC, warned; the argued spelling (premise =~bites !z !z=
+presumed) defeats the reading's bare presumption (README, =label=: a
+derivation defeats a bare presumption). Either way the reading does not
+stand and the second pronoun takes the farmer.
+
+Evidence: tests/test_discourse_referents.py, four new tests (one per
+spelling; the reading's labels equal those of =bites pedro pedro= stated
+and met by the same rule, per spelling), all fail without the change;
+the author's multiple_dynamic.fspy gives
+=(!donkey,(!farmer,!IN:bites !donkey !farmer))=; suite 2453 passed,
+9 skipped, 16 deselected, 3 xfailed, 1 xpassed; perf 16 passed.
+
+Seen meanwhile, not changed: a nested reading reusing a borrowed
+individual shows it twice in its context
+(=[!donkey:iota, !donkey:iota] ⊢ bites !donkey !donkey=, since 9c84a63);
+display at least, the key unchecked. Recorded in the phase 2 plan.
+
 ** BACKLOG Anaphora: a resolution used by other arguments
 :PROPERTIES:
 :ID:             aida-referents-anaphora-export

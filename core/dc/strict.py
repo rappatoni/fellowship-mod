@@ -556,6 +556,23 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
         take_shown(graph, edge)
         graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
+    # a statement the term brings that the document does not hold (a
+    # reading of a pronoun) takes the markers asserted of a generic
+    # statement covering it, as the unfolder gives them (_defaults) and
+    # as the document gives its own instances (tasks.org,
+    # aida-referents-anaphora-knowledge)
+    generic = None
+    for key in {k for k, _side in graph.statements()} - set(source.nodes):
+        if generic is None:
+            generic = source.generic_asserted()
+            if not generic:
+                break
+        for side in ("term", "context"):
+            for kind in DebateGraph.covering_kinds(generic, graph.nodes.get(key, key),
+                                                   graph.contexts.get(key, ()), side):
+                logger.debug("issue graph: %s[%s] takes a %s from a generic statement covering it",
+                             graph.nodes.get(key, key), side[0], kind)
+                graph.mark_default(key, side, kind)
     fold_occurrences(graph)
     require_witnesses(graph, issue)
     logger.debug("issue graph from the document: %d of %d statement(s) reachable, %d edge(s), "

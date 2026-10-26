@@ -490,6 +490,37 @@ class DebateGraph:
                                 (Source(small, side, "obligation", "weakening"),),
                                 False, role="weakening"))
 
+    def generic_asserted(self) -> list:
+        """The markers arguments assert of a generic statement (their own
+        conclusion, ``asserted``), each with the statement and its
+        variables (``matching.pattern``): [((statement, variables), side,
+        kinds)].  ``instantiate`` copies them to the instances the graph
+        holds; ``covering_kinds`` finds them for a statement it does not
+        hold."""
+        from core.dc import matching
+        found = []
+        for (key, side), kinds in self.asserted.items():
+            pattern = matching.pattern(self.nodes.get(key, key), self.contexts.get(key, ()))
+            if pattern is not None and pattern[1]:
+                found.append((pattern, side, set(kinds)))
+        return found
+
+    @staticmethod
+    def covering_kinds(generic, text, scope, side) -> set:
+        """The markers of ``generic`` (``generic_asserted``) whose generic
+        statement covers ``text`` in the context ``scope`` on ``side``: a
+        statement no graph holds as a node, as a reading of a pronoun states
+        it (tasks.org, aida-referents-anaphora-knowledge)."""
+        from core.dc import matching
+        target = matching.instance(text, scope)
+        if target is None:
+            return set()
+        kinds = set()
+        for (gprop, gvars), gside, marked in generic:
+            if gside == side and matching.match(gprop, target, gvars) is not None:
+                kinds |= marked
+        return kinds
+
     def instantiate(self, rounds: int = 6) -> None:
         """The instances of generic statements (tasks.org,
         aida-referents-instantiation, decided 2026-10-21).  A statement with

@@ -233,6 +233,7 @@ class Unfolder:
         self._frames = {}
         self._fo_here = ()
         self._generic = None                # ``_generic_edges``
+        self._generic_asserted = None       # ``_generic_markers``
         if order:
             for edges in self._by_target.values():
                 # stable: unranked edges keep registration order
@@ -327,15 +328,33 @@ class Unfolder:
                         self._generic.append((edge, found))
         return self._generic
 
+    def _covering_markers(self, statement):
+        """The markers asserted of the generic statements covering
+        ``statement``, a statement the document does not hold, as written
+        here.  The document copies them to its own instances
+        (``DebateGraph.instantiate``); a reading's statement is none
+        (tasks.org, aida-referents-anaphora-knowledge)."""
+        if self._generic_asserted is None:
+            self._generic_asserted = self.graph.generic_asserted()
+        literal, scope = self._frames[statement[0]]
+        kinds = DebateGraph.covering_kinds(self._generic_asserted, literal, scope, statement[1])
+        if kinds:
+            logger.debug("unfold: %s, no node of the document, takes %s from a generic "
+                         "statement covering it", self._show(statement), ", ".join(sorted(kinds)))
+        return kinds
+
     def _defaults(self, statement):
         """The default markers on ``statement`` or on it in a smaller
-        context (weakening)."""
+        context (weakening); for a statement the document does not hold,
+        also those asserted of a generic statement covering it."""
         key, side = statement
         sorts, base = split_context_key(key)
         kinds = set(self.graph.defaults.get(statement, ()))
         for other, other_sorts in self._bases.get(base, ()):
             if other != key and len(other_sorts) < len(sorts) and sub_multiset(other_sorts, sorts):
                 kinds |= set(self.graph.defaults.get((other, side), ()))
+        if key not in self.graph.nodes and key in self._frames:
+            kinds |= self._covering_markers(statement)
         return kinds
 
     def _literal(self, statement):
@@ -977,7 +996,16 @@ class Unfolder:
                 return {"own_kind": presumed}
             if alt_kind[0] == "document":
                 return {}
-            return {"own_kind": presumed} if own else {}
+            if own:
+                return {"own_kind": presumed}
+            # an instance keeps a presumption it wrote: the document marks
+            # its premise so where it copies the edge to an instance it
+            # holds (DebateGraph.add_edge), and a statement it does not
+            # hold - a reading's - gets no marker (tasks.org,
+            # aida-referents-anaphora-knowledge)
+            if inst and presumed:
+                return {"own_kind": True}
+            return {}
 
         def scoped(env, statement, new):
             # an affine binder (``_``) binds nothing a site could be met by,

@@ -1109,6 +1109,17 @@ a classical principle.
   argument rests on the sort node, as its owner's choice does. A
   resolution supports nothing outside the pronoun's own argument yet
   (tasks.org, aida-referents-anaphora-export).
+- **Knowledge against a reading.** A reading's statement is no node of
+  the document, but it meets a generic argument as the document's own
+  instances do: a presumption asserted of a generic statement covering
+  it, and a generic argument placed there with the premises it presumes.
+  In `tests/discourse/self_biting.fspy` ("A farmer has a donkey. He bites
+  him.") `he_bites_him` alone resolves both pronouns to the donkey;
+  `no_self_biting : [!z:iota] bites [!z] [!z]` by default contests the
+  reading `bites !donkey !donkey` (both sides UNDEC, an onus conflict),
+  and the second pronoun falls back to the farmer. Argued from a presumed
+  premise (`self_biting_argued.fspy`), the knowledge defeats that reading
+  (tasks.org, aida-referents-anaphora-knowledge).
 - **Weakening.** What bears on a statement bears on it in every larger
   context: closed supporters and counterarguments of `E` reach
   `[y?:Pub] ⊢ E` (dotted grey `weakening` edges in `graph`), and a binder

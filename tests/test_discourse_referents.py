@@ -869,3 +869,83 @@ def test_two_pronouns_each_get_a_scaffold_and_owed_sites_steer_them():
         assert "?d" not in nf and "?c" not in nf
     finally:
         prover.close()
+
+
+def shown_labels(svc, target):
+    """Labels by statement and side, the statement without its context."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        found = svc.label(svc.target(target))
+    return {(found.graph.shown(k).split(" ⊢ ")[-1], s): v
+            for (k, s), v in found.labellings[0].items()}
+
+
+SELF_BITING = "(!donkey,(!farmer,!IN:bites !donkey !farmer))"
+
+
+def test_a_generic_presumption_contests_a_reading():
+    """no_self_biting presumes the contrary of bites !z !z; the reading
+    bites !donkey !donkey is no node of the document, and takes that
+    presumption from the generic statement covering it (fix (a), tasks.org,
+    aida-referents-anaphora-knowledge). Two presumptions: UNDEC; the second
+    pronoun falls back to the farmer. Without it, both are the donkey
+    (anaphora_two.fspy)."""
+    prover, svc, report = session((DISCOURSE / "self_biting.fspy").read_text())
+    try:
+        assert report.ok
+        got = shown_labels(svc, "he_bites_him")
+        assert got[("bites !donkey !donkey", "term")] == "UNDEC"
+        assert got[("bites !donkey !donkey", "context")] == "UNDEC"
+        assert got[("bites !farmer !farmer", "context")] == "UNDEC"
+        assert got[("bites !donkey !farmer", "term")] == "IN"
+        assert got[("bites !farmer !donkey", "term")] == "IN"
+        assert got[("exists x:iota,exists y:iota,bites x y", "term")] == "IN"
+        cls, nf = evaluated(svc, "he_bites_him")
+        assert cls == "value" and SELF_BITING in nf
+    finally:
+        prover.close()
+
+
+def test_an_argued_rule_defeats_a_reading():
+    """self_biting_is_odd derives the attack from a premise it presumes;
+    placed at a reading, the instance keeps that presumption (fix (b)), and
+    a derivation defeats the reading's bare presumption."""
+    prover, svc, report = session((DISCOURSE / "self_biting_argued.fspy").read_text())
+    try:
+        assert report.ok
+        got = shown_labels(svc, "he_bites_him")
+        assert got[("bites !donkey !donkey", "term")] == "OUT"
+        assert got[("bites !donkey !donkey", "context")] == "IN"
+        assert got[("~bites !donkey !donkey", "term")] == "IN"
+        assert got[("bites !farmer !farmer", "term")] == "OUT"
+        assert got[("bites !donkey !farmer", "term")] == "IN"
+        cls, nf = evaluated(svc, "he_bites_him")
+        assert cls == "value" and SELF_BITING in nf
+    finally:
+        prover.close()
+
+
+@pytest.mark.parametrize("fixture", ["self_biting.fspy", "self_biting_argued.fspy"])
+def test_a_reading_meets_a_rule_as_a_stated_instance_does(fixture):
+    """The labels of the reading bites !donkey !donkey are those of a closed
+    bites pedro pedro the document holds, presumed and met by the same
+    rule (the document instantiates the rule there itself)."""
+    text = (DISCOURSE / fixture).read_text()
+    rule = text[text.index("counterargument"):]
+    stated = ("lk.\npipeline unfolded.\ndeclare iota : type.\ndeclare pedro : iota.\n"
+              "declare bites : iota -> iota -> bool.\n"
+              "argument pedro_bites_himself : bites [pedro] [pedro].\nby default.\ndixi.\n" + rule)
+    prover, svc, report = session(text)
+    try:
+        assert report.ok
+        got = shown_labels(svc, "he_bites_him")
+        reading = {side: got[("bites !donkey !donkey", side)] for side in ("term", "context")}
+    finally:
+        prover.close()
+    prover, svc, report = session(stated)
+    try:
+        assert report.ok
+        got = shown_labels(svc, "pedro_bites_himself")
+        assert {side: got[("bites pedro pedro", side)] for side in ("term", "context")} == reading
+    finally:
+        prover.close()
