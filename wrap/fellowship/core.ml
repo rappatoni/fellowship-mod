@@ -298,19 +298,59 @@ let rec get_prop_symbols p sign ret = match p with
 	get_prop_symbols prop' sign ret'
   | Quant (q,(names,sort),prop) -> get_prop_symbols prop sign ret
       
-(*Substitution*) 
+(*Substitution*)
+(* The term symbols of a term, and those of a proposition not bound in
+   it; predicate symbols are not counted. *)
+let rec term_names t acc = match t with
+  | TSym name -> name :: acc
+  | TApp (term,term') -> term_names term (term_names term' acc)
+
+let rec prop_free p = match p with
+  | True | False | PSym _ -> []
+  | PApp (prop,term) -> prop_free prop @ term_names term []
+  | UProp (_,prop) -> prop_free prop
+  | BProp (prop,_,prop') -> prop_free prop @ prop_free prop'
+  | Quant (_,(names,_),prop) ->
+      List.filter (fun n -> not (List.mem n names)) (prop_free prop)
+
+(* [base] itself when free, else [base2], [base3], ... *)
+let fresh_variant base taken =
+  if not (List.mem base taken) then base else
+  let rec aux n =
+    let name = base ^ string_of_int n in
+    if List.mem name taken then aux (n + 1) else name
+  in aux 2
+
+(* Capture-avoiding: the substitution stops at a quantifier that binds
+   [name] or under which [name] is not free, and otherwise a quantifier
+   binding a name of [t] is renamed first.  The
+   original went under every quantifier unchecked, so that [elim [y]] on
+   [exists x, forall y, R x y] gave [forall y, R y y].  The fresh names
+   are the ones AIDA chooses (core/ac/prop.py, [PQuant.subst]), so that
+   AIDA's replayed statements match Fellowship's. *)
 let rec prop_subst name t p = match p with
   | True -> True
   | False -> False
   | PSym name' -> assert(name <> name'); PSym name'
-  | PApp (prop,term) -> 
+  | PApp (prop,term) ->
       PApp (prop_subst name t prop, term_subst name t term)
-  | UProp (Neg,prop) -> 
+  | UProp (Neg,prop) ->
       UProp (Neg, prop_subst name t prop)
-  | BProp (prop,op,prop') -> 
+  | BProp (prop,op,prop') ->
       BProp (prop_subst name t prop, op, prop_subst name t prop')
+  | Quant(q,(names,sort),prop)
+    when List.mem name names || not (List.mem name (prop_free prop)) -> p
   | Quant(q,(names,sort),prop) ->
-      Quant (q,(names,sort), prop_subst name t prop)
+      let captured = term_names t [] in
+      let taken = ref (name :: captured @ prop_free prop) in
+      let rename (ns, prop) n =
+	if List.mem n captured then
+	  let n' = fresh_variant n !taken in
+	  taken := n' :: !taken;
+	  n' :: ns, prop_subst n (TSym n') prop
+	else n :: ns, prop in
+      let names', prop' = List.fold_left rename ([], prop) names in
+      Quant (q,(List.rev names',sort), prop_subst name t prop')
 
 (*Typechecking*)
 type type_error = 

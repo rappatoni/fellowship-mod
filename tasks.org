@@ -2005,6 +2005,77 @@ document calls it a subargument. The test classifies this as "other
 markers". Labels agree on every entry of the fixture under grounded,
 preferred and stable. Marked xfail (strict) meanwhile.
 
+** DONE Fellowship's substitution captures bound variables: the prover is unsound
+CLOSED: [2026-10-26 Mon]
+:PROPERTIES:
+:ID:             aida-fellowship-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Fellowship's =prop_subst= (wrap/fellowship/core.ml) stops at a quantifier binding the substituted name and renames a binder that would capture a variable of the substituted term; the false theorem below is refused.
+:VERIFY:         The theorem below no longer closes; =elim [y]= on =exists x, exists y, R x y= with =y= in scope gives =exists y_1, R y y_1= (or another fresh name); Fellowship's tests and the suite pass; tests/anaphora/multiple_dynamic.fspy's =graph he_bites_him= type-checks with =some_dont_bite= registered.
+:END:
+
+Found 2026-10-23 from the author's type-check failure on
+tests/anaphora/multiple_dynamic.fspy (=graph he_bites_him=, with the
+counterargument =some_dont_bite= registered without its refused =cite=
+step). AIDA's replay instructions and its own substitution
+(core/ac/prop.py, =PQuant.subst=, capture-avoiding) gave
+=farmer y - ~donkey !b - ~has y !b=; Fellowship rebuilt
+=farmer !b - ~donkey !b - ~has !b !b=. The type check was right.
+
+=prop_subst= in core.ml goes under =Quant= without looking at what it
+binds: it neither stops at a binder of the substituted name nor avoids
+capture. With =y= in scope, =elim [y]= on =exists x:iota, exists y:iota, R x y=
+gives =exists y:iota, R y y=. This makes Fellowship unsound; it accepts:
+
+#+begin_example
+declare iota : type.
+declare R : iota -> iota -> bool.
+theorem bad : ((forall z:iota, R [z] [z]) -> forall y:iota, exists x:iota, forall y:iota, R [x] [y]).
+elim h. elim y. elim [y]. elim w.
+cut (forall z:iota, R [z] [z]) k. axiom h. elim [w]. axiom.
+qed.     (* bad defined. *)
+#+end_example
+
+false where =iota= has two individuals and =R= is identity.
+
+Checked 2026-10-26: the bug is in the original distribution, not
+introduced by AIDA. The repository's first commit (1a808aa, the SVN
+import) holds Fellowship 0.1.0 under =fsp/tags/fellowship-0.1.0=; its
+=prop_subst= is identical to ours, and its quantifier rules in
+tactics.ml differ only in two renamed helpers. Built from that tag with
+OCaml 5.5.0, it accepts the theorem above (=bad defined.=). Trunk and
+the =ljq-fsp= and =parser-rw= branches have the same =prop_subst=; the
+=multisorted-fsp= tag has a different one that drops the substitution
+under a quantifier altogether.
+
+Fixed 2026-10-26. =prop_subst= leaves a quantifier alone when it binds
+the substituted name or the name is not free under it; otherwise it
+renames each binder that is a name of the substituted term, to =y2=,
+=y3=, ... (the name itself if not taken). These are the names AIDA's
+=PQuant.subst= chooses, so the replayed statements match: Fellowship's
+=axiom= compares statements literally. A first version that named the
+binder =y_1= left multiple_dynamic.fspy failing with "This is not
+trivial"; one that renamed where nothing was substituted broke
+hypothesis_horn and drinker_referent, so AIDA's =PQuant.subst= now
+leaves such a quantifier alone too.
+
+Evidence: the theorem above is refused at its last =axiom= ("This is
+not trivial"), the goal after =elim [y]= being =forall y2:iota,R y y2=;
+tests/test_prover_substitution.py, five tests, pass, and all fail on
+the old binary; Fellowship's .fsp files in tests/ give byte-identical
+output with the old and new binary; multiple_dynamic.fspy replayed
+with =some_dont_bite= registered: =graph=, =label= and =evaluate
+he_bites_him= succeed (value, =(!b,(!b,!IN:bites !b !b))=); suite 2446
+passed, 9 skipped, 16 deselected, 3 xfailed, 1 xpassed; perf 16 passed.
+
 ** BACKLOG Anaphora: a resolution used by other arguments
 :PROPERTIES:
 :ID:             aida-referents-anaphora-export

@@ -455,8 +455,10 @@ class PQuant(Prop):
         return self.body.free_vars() - set(self.names)
 
     def subst(self, name: str, replacement: Term) -> Prop:
-        if name in self.names:
-            return self  # shadowed: no free occurrence below here
+        if name in self.names or name not in self.body.free_vars():
+            # Shadowed, or no free occurrence below here: nothing to rename
+            # (Fellowship's prop_subst in core.ml decides the same way).
+            return self
         captured = set(self.names) & replacement.free_vars()
         if not captured:
             return PQuant(self.quantifier, self.names, self.sort, self.body.subst(name, replacement))

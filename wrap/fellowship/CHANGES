@@ -8,6 +8,10 @@
 		holds the referents ?r in the goal's environment, infers
 		their sorts, and refuses "qed" on such a theorem.
 2026-10-22	(AIDA) A referent may also be written !r.
+2026-10-26	(AIDA) Instantiating a quantifier no longer captures: the
+		substitution stops at a binder of the substituted name and,
+		where it substitutes, renames a binder of a name in the
+		substituted term (y to y2, y3, ..., as AIDA does).  0.1.0 accepted false theorems.
 
 // http://www.lix.polytechnique.fr/Labo/Florent.Kirchner/fellowship
 
