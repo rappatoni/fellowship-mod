@@ -7734,6 +7734,68 @@ declarations (=prover.declarations=). A multi-name =declare g, h : S.=
 that fails must claim none of them; check whether Fellowship can accept
 some names of such a command and reject others.
 
+** BACKLOG A rule applied to a presumed goal leaves an untyped site and a silently unregistered argument
+:PROPERTIES:
+:ID:             aida-delegation-subgoal-kind
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A tactic other than =by default.= on a goal already marked =by default.= either is refused with a message naming the presumed goal, or its subgoals have one kind in Fellowship's goal list and in its proof term (the author decides which); an argument whose site has no proposition is refused at =dixi.=, never reported as registered while missing from the document graph.
+:VERIFY:         The script below and the two variants named after it no longer print "not added to the document graph"; a test in tests/ pins the chosen behaviour for =by default.= followed by =elim h.= on =A -> B= and for =by default.= followed by =elim.= on a left =~A=; Fellowship rebuilt and its tests pass; the documented suite passes.
+:END:
+
+Found 2026-10-26 while testing anaphoric parallelism on the
+discourse-referents branch; reproduced on main. Minimal script:
+
+#+begin_example
+lk.
+declare A, B : bool.
+argument t : (A -> B).
+by default.
+elim h.
+dixi.
+#+end_example
+
+gives =Argument term: 'μthesis:A->B.<λh:A.?1.1||thesis>'=, then "Argument
+'t' not added to the document graph: Edge 't': open site '1.1' has no
+proposition; run enrichment first", then "Argument 't' executed and
+registered". The same happens with =bites [c] [c] - ~has [c] [c]= and
+=elim. by default. elim. next.= (the presumption lands on the left goal
+=~has c c=, the next =elim= splits it), and with the same shape under two
+referents.
+
+Cause (wrap/fellowship/tactics.ml): =by_default= sets
+=kind = DelegationObligation= on the goal and marks its hole =!n= in the
+term. Every rule then builds its subgoals as ={g with ...}=, which copies
+that kind, but puts plain =TermMeta=/=ContextMeta= holes into the term
+(e.g. left negation, =ContextMeta id1=). Fellowship's machine payload then
+lists the subgoal as =(kind delegation)= while the term prints it =?n=.
+=Argument= (core/dc/argument.py, the goal-table reader near line 800)
+files delegations and obligations in separate tables; enrichment
+(core/comp/enrich.py, =visit_Goal=) looks a =?n= hole up in the
+obligations only, finds nothing, and leaves the site without a
+proposition. Registration reports success although the document graph
+refused the edge.
+
+Options for the first half of the outcome:
+- /Refuse./ A rule on a presumed goal is refused ("goal 1.1 is presumed;
+  undo =by default.= first"). Keeps =by default.= a leaf, as a
+  presumption is one.
+- /Reset./ Rules give their subgoals =kind = GoalObligation=: refining a
+  presumed goal turns it back into obligations. Changes what the author
+  wrote without saying so.
+- /Propagate./ Rules mark the new holes as delegations too. Presumes
+  every part, which is not what =by default.= said either.
+
+Claude's recommendation: refuse. The second half (no silent registration)
+holds whichever is chosen.
+
 ** BACKLOG Parse lambda binders of sort bool and of arrow sorts
 :PROPERTIES:
 :ID:             aida-parse-higher-order-binders
