@@ -356,6 +356,30 @@ the legacy context-side attack is
 Exchanging the halves is meaning-preserving only read as an attack: in
 =<mu_.c1 || mu'_.c2>= cbv takes c1 and cbn c2. Say so in the code.
 
+*Implemented 2026-10-29* (core/dc/shapes.py, =modernise_scaffolds=;
+tests/test_shapes.py, 26 tests). Evidence against VERIFY:
+- simple, rewritten and replayed through Fellowship: 8 edges, acyclic,
+  =b= (and =c=) a strict attacker of the presumed =B[c]= (=C[c]=), two
+  attackers of =H_A[c]=; A, B, C IN, their refutations and H_A's OUT,
+  as in the hand-exchange probe. Unrewritten, the same term is cyclic
+  with =B[c]= among its own sources (pinned). simple_pred and orphans
+  likewise: acyclic, the query IN, every premise's refutation OUT.
+- No fixture argument holds an M3 shape (census over every
+  tests/**/*.fspy, 2026-10-29: 0), so the fixture clause is met on built
+  terms instead: each of the four M3 shapes, and both attacks with a
+  rerouted scion, compile to the same graph (edges up to names and
+  roles, default markers) and the same grounded labels after the
+  rewrite. Roles are left out of the comparison: a stack the compiler
+  read as supporter edges in the M3 shape is one attacker wing in the
+  paper shape (simple's two refutations of H_A).
+- Paper scaffolds and their wiring are left alone; an M3 scaffold inside
+  a paper scion is rewritten; the exchanged attack is read only when
+  asked (=exchanged_context_attacks=).
+- Suite: 2376 passed, 9 skipped, 2 xfailed, 1 xpassed (perf deselected).
+Open: "runs only on an importer result that declares the old shapes" is
+the =legacy= flag of =register debate=
+([[id:aida-register-debate-command]]); close this task once that is wired.
+
 *** BACKLOG Give each registered debate its own Fellowship session
 :PROPERTIES:
 :ID:             aida-debate-sessions

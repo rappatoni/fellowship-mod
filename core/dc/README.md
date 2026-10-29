@@ -13,6 +13,8 @@ Files
   - Unfolding: document graph -> debate term, for an issue or an argument entrypoint; every exposed node (an axiom applied, a lemma, a lambda) becomes the debate about its statement where it stands.
 - strict.py
   - Strictness, read off the concrete debate term.
+- shapes.py
+  - The deprecated M3 scaffold shapes (and scasp-aida's exchanged context attack) rewritten into the paper shapes, so an imported debate can be unfolded from and compared (`modernise_scaffolds`; tasks.org, aida-legacy-shape-shim).
 - typecheck.py
   - Type checking by Fellowship replay (the type oracle).
 - cite.py
