@@ -265,6 +265,272 @@ Phase 5c of [[id:aida-dui-api]].
 - Binder names link the registered term back to the justification tree:
   they survive the text round trip, where AST attributes would not.
 
+** BACKLOG Register debates given by a term, reverse-compiled into debate-local arguments
+:PROPERTIES:
+:ID:             aida-registered-debates
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         40:00
+:DEFERRALS:      0
+:OUTCOME:        A debate can be registered from a term, or imported from a source language; AIDA reverse-compiles it into a closed debate of debate-local arguments in its own Fellowship session, warns when the round trip does not reproduce the term, and lets the debate be extended through the CLI and the service.
+:VERIFY:         Every child below is DONE or DROPPED with its evidence; the eight programs of scasp-aida's tests/fixtures import as registered debates and evaluate as s(CASP) answers them; the suite passes.
+:END:
+
+*Found 2026-10-29.* Since [[id:aida-argument-lj-restriction]] (2ea2a7a),
+=register= refuses every s(CASP) import whose answer uses a rule with two
+or more positive premises or combines several answers. s(CASP) ->
+=acdc --import= -> =acdc --script= on scasp-aida's eight fixture
+programs: simple, simple_pred and orphans refused ("not linear ... holds
+a debate scaffold"); neg, tweety, workshop and ergebniszulaessigkeit
+replay; car_return_prop fails apart from this, on =declare
+true:(True).= (scasp-aida, scasp-aida-reserved-names). With the check
+patched out in a scratch driver the three register. The importer's three
+constructions that build scaffolds (src/scasp_aida/importer.py):
+=_translate_multi_child= (=alt= used under a second mu: not linear),
+=_pair_minus= (a pure command sharing =alt=), =_pair_answers= (=alt= used
+twice, and a pure command sharing it); a fact or a chain of
+single-premise rules passes. Neither repository's tests replay an import
+through Fellowship (AIDA's stub the importer), so nothing caught it.
+
+Probe of the reverse direction on simple (check patched out): the
+document compiler reads the imported term with supporter and attacker
+roles and labels as s(CASP) answers (A, B, C IN; their refutations and
+H_A's OUT); 8 of its 10 edge terms pass the discipline, the two failing
+being the edges that hold a stack. =_barred= matches no scaffold shape
+and compiles to a self-supporting edge =B[c] <- B[c:pres], B[t:suba],
+B[c:pres]=; with its two halves exchanged it is the legacy context-side
+attack, and the graph becomes acyclic with 8 edges and the same labels.
+Every edge's =term= holds its whole subterm, scions inline, and a child
+edge's term is the same object inside its parent's (all 7 links on
+simple).
+
+*Decisions (the author, 2026-10-29).*
+- The importer acts as a guest compiler and takes precedence: the given
+  term's graph, labelling and evaluation are the registered debate's
+  record. AIDA's recompilation is a check; a literal mismatch up to alpha
+  (site numbers counted as names) is a warning, and the debate may still
+  be extended. Which equivalence is sufficient is to be found out
+  ([[id:aida-round-trip-equivalence-study]]).
+- Extensions build on the extracted arguments and their graph (the
+  term-compiled graph cannot be unfolded from: its edges hold their scions
+  inline). No incremental compilation for now
+  ([[id:aida-incremental-compilation]]).
+- The points a move can reach are the debate's arguments, never its term.
+- A Fellowship session per debate, holding the declarations its scope
+  needs; local names prefixed with the debate's name.
+- The shim for the deprecated shapes lives in AIDA, generic over AIDA's
+  own M3 shapes, and runs when the importer declares that it uses them;
+  a student's work on scasp-aida still emits them.
+- In a document the command is =register debate NAME import LANGUAGE
+  "SOURCE".=; =acdc --import ... file= writes the expanded form.
+
+Measured 2026-10-29 (current fsp): a Fellowship session starts and runs
+its first command in about 8 ms; declaring 100 / 400 names takes 0.065 /
+0.80 s, quadratic as in [[id:aida-quadratic-hotspots]], so a debate
+session redeclares its scope's declarations, not the document's.
+
+*** NEXT Rewrite the deprecated scaffold shapes into the current ones
+:PROPERTIES:
+:ID:             aida-legacy-shape-shim
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A pass rewrites the M3 shapes (=_match_legacy_scaffold=, core/dc/debate_graph.py) and the halves-exchanged context-side attack that scasp-aida's =_barred= emits into the four paper shapes, dropping the stolen-value slot; it runs only on an importer result that declares the old shapes.
+:VERIFY:         simple's imported term compiles after the pass to 8 edges, acyclic, =b= an attacker of =B[c]=, with the labels it has today (the hand-exchange probe of 2026-10-29); every fixture that compiles through the legacy matcher gives the same graph and labels after the pass; the suite passes.
+:END:
+
+=_barred= is =mu'att:B.< mu_:B.< att || B:3? > || mu'_:B.< b || B:4? > >=;
+the legacy context-side attack is
+=mu'alt:P.< mu_:P.< ATTACKER || P:site > || mu'_:P.< alt || ORIGINAL > >=.
+Exchanging the halves is meaning-preserving only read as an attack: in
+=<mu_.c1 || mu'_.c2>= cbv takes c1 and cbn c2. Say so in the code.
+
+*** BACKLOG Give each registered debate its own Fellowship session
+:PROPERTIES:
+:ID:             aida-debate-sessions
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        A registered debate owns a child ProverWrapper, started on first use and closed when the debate is discarded; it holds the declarations its scope mentions (closed over their types) and, as axioms, the document's held theorems it uses; Service routes the debate's queries to it.
+:VERIFY:         A declaration added to the document after registration does not change the debate; discarding the debate closes its process; on the debates of tests/debates.fspy re-registered by term, graph, label and evaluate agree with today's route; the suite passes.
+:END:
+
+Open: whether a debate session runs lk inside an lj document (debates
+are refused there today; minimal logic stays refused, its negation terms
+are untested in the compiler).
+
+*** BACKLOG Register a debate by its term
+:PROPERTIES:
+:ID:             aida-register-debate-command
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        =register debate NAME : ISSUE= with its local declarations and its term registers a closed debate (onus from the issue's side), type-checked by Fellowship in the debate's session and not held to the argument discipline; its term, graph, labelling and evaluation are stored with it; it is refused in a document whose logic admits no debates. The block syntax for the local declarations is settled here.
+:VERIFY:         simple's term (after the shim) registers, and =graph=, =label= and =evaluate= on it answer from the stored result; an ill-typed term is refused with Fellowship's reply; the suite passes.
+:END:
+
+*** BACKLOG Give a debate declarations and arguments of its own
+:PROPERTIES:
+:ID:             aida-debate-local-arguments
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Local declarations and arguments live in the debate's own session (aida-debate-sessions) under the names DEBATE__name, in the debate's scope and nowhere in the document graph, so a counterfactual, a transcript or an import does not leak into the document; propositions and sorts go to the document (an identical declaration is reused, a conflicting one refused); `__` is refused in debate names and a debate's prefix in user names (claim_name, wrap/prover.py); a debate's own prefix is left out where it renders its own names.
+:VERIFY:         A closed debate with a local counterargument changes its verdict while =evaluate= on the document and =graph document= are unchanged; the local argument's name is still claimed; a document =b= and a local =b= of an import coexist; the two prefix refusals; tests cover each.
+:END:
+
+Stretch goal (author, 2026-10-08). Until then the same is done in reverse:
+a closed debate whose scope is edited. Obstacle: registering an argument
+puts it into the document (=ProverWrapper.register_argument=), and its name
+is claimed in Fellowship's namespace too.
+
+Rescoped 2026-10-29 (the author) as a part of [[id:aida-registered-debates]]
+and moved here from [[id:aida-debate-compiler-completion]]: a registered
+debate's extracted arguments are its local arguments. The obstacle above
+is met by a session per debate and prefixed names; prefixes are needed
+even with separate sessions, because the debate's session also holds the
+document's redeclared names, and names must stay unique across the
+document (UI, inventory, provenance, =adopt=). Fellowship's identifiers
+are =letter (letter | digit | _)*= (wrap/fellowship/lexer.mll), so =__=
+is the only separator available. AIDA prefixes at registration (the
+declarations, the term and the provenance blocks together), so
+importers keep writing plain names.
+
+*** BACKLOG Extract a registered debate's arguments
+:PROPERTIES:
+:ID:             aida-debate-reverse-compilation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        =compile_issue= (core/dc/strict.py) gives the debate's graph; every argument, supporter and attacker edge is cut into an argument (step edges stay inline; a scaffold is replaced by its original via =scaffold_parts=; =_restore_scion= and captured variables give back sites of the recorded kind), held to the discipline (core/dc/discipline.py) and registered as a local argument; they become the debate's moves in the order its stacks encode (the opening is the root edge, the outermost was uttered last).
+:VERIFY:         On simple, simple_pred and orphans every extracted argument passes the discipline and the graph of the moves equals the stored graph up to edge names; a test pins the cut of each scaffold shape; the suite passes.
+:END:
+
+*** BACKLOG Warn when the recompiled term differs from the given one
+:PROPERTIES:
+:ID:             aida-debate-round-trip-warning
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        After extraction, =unfold_debate= over the extracted arguments is compared with the shimmed term as syntax trees, up to alpha with site numbers counted as names; a mismatch is a warning naming the first differing subterm, and the debate stays usable.
+:VERIFY:         A matching import and a perturbed one, one test each; the outcome on each of the eight fixture programs is recorded here.
+:END:
+
+Compared in-process, as syntax trees: printed unfolded terms do not parse
+back yet ([[id:aida-site-names-round-trip]]).
+
+*** BACKLOG Extend a registered debate
+:PROPERTIES:
+:ID:             aida-debate-extends
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        =debate ... NAME extends PARENT.= makes a new closed debate that copies the parent's argument graph and moves, takes new local or moved arguments, and recomputes its term and labels in full; the parent is unchanged; a move may target any argument of the debate, the parent's included.
+:VERIFY:         Extending simple by an attack on =b= changes the child's verdict and not the parent's; the suite passes.
+:END:
+
+*** BACKLOG Import a debate from a source language
+:PROPERTIES:
+:ID:             aida-registered-debate-import
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:scasp-aida-register-debate-output
+:OUTCOME:        =register debate NAME import LANGUAGE "SOURCE".= runs the importer on JSON, or on the program through an optional =from_source(path)= of the importer protocol (wrap/importers.py), and registers the result in the current document, its local names and its provenance prefixed; =acdc --import ... file= writes the expanded =register debate= form.
+:VERIFY:         The eight fixture programs import from their =.pl= with scasp installed (skipped otherwise); the provenance maps each extracted argument's binders to justification nodes; the suite passes.
+:END:
+
+*** BACKLOG Offer registered debates through the service and HTTP
+:PROPERTIES:
+:ID:             aida-debate-api-endpoints
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Service registers, imports and extends debates and takes moves on them, and =Service.import_document= can add to the current document instead of starting a new one; examples/http_adapter.py and wrap/schemas/aida.schema.json expose them.
+:VERIFY:         tests/test_service.py covers each operation; an HTTP round trip through the adapter covers one.
+:END:
+
+The adapter offers check, import, inventory and query today, no move.
+
+*** BACKLOG Find out which equivalence the round trip needs
+:PROPERTIES:
+:ID:             aida-round-trip-equivalence-study
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:scasp-aida-export-to-scasp
+:OUTCOME:        For imported and extended debates, a recorded comparison at four levels - literal terms, graphs, shared labels, normal forms under every semantics and mode - and against the answers of the exported, extended s(CASP) program, with the author's decision on the level the round-trip check enforces.
+:VERIFY:         The comparison table on the scasp-aida fixture programs is recorded here and the author has decided.
+:END:
+
+The author, 2026-10-29: it is not clear a priori which degree of
+equivalence is sufficient; evaluation probably needs the translation
+back to s(CASP), running the extended program and comparing the result.
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
 :ID:             aida-dui-handover
@@ -2900,6 +3166,8 @@ Its open children moved here. Related work tracked elsewhere:
 - the s(CASP) correspondence and importer:
   [[id:aida-scasp-stable-correspondence]],
   [[file:../scasp-aida/tasks.org::*Translate negative justifications in the s(CASP) importer][aida-scasp-import-negative-justifications]] (scasp-aida repository);
+- registered (imported) debates and debate-local arguments:
+  [[id:aida-registered-debates]];
 - the theory tasks T1-T6 (top-level, below).
 
 *** DONE Record debates as named, ordered, scoped selections of the document
@@ -3040,27 +3308,6 @@ Open questions:
   than copying a term.
 - Hand-written terms in the legacy shapes (=register=): still projectable,
   or only renderable?
-
-*** BACKLOG Let a debate hold arguments of its own (stretch)
-:PROPERTIES:
-:ID:             aida-debate-local-arguments
-:AREA:           phd
-:PROJECT:        aida
-:REPO:           AIDA
-:IMPORTANT:      no
-:URGENT:         no
-:EISENHOWER:     Q4
-:ICK:            2
-:EFFORT:         4:00
-:DEFERRALS:      0
-:OUTCOME:        An argument can be registered into a debate only: it is in the debate's scope and nowhere in the document graph, so a counterfactual or a transcript does not leak into the document.
-:VERIFY:         A closed debate with a local counterargument changes its verdict while =evaluate= on the document and =graph document= are unchanged; the local argument's name is still claimed; a test covers both.
-:END:
-
-Stretch goal (author, 2026-10-08). Until then the same is done in reverse:
-a closed debate whose scope is edited. Obstacle: registering an argument
-puts it into the document (=ProverWrapper.register_argument=), and its name
-is claimed in Fellowship's namespace too.
 
 *** BACKLOG Design: should identical derivations be one edge?
 :PROPERTIES:
@@ -8378,6 +8625,11 @@ refused, both kept as fixtures of the refusal with a note
 admaltest). Full suite 2030 passed, 2 skipped, 2 xfailed, 1 xpassed.
 README (Recording commands; Sessions and documents), wrap/README.md,
 core/dc/README.md and docs/dui-integration.md describe it.
+
+Found 2026-10-29: imported terms were outside the census. scasp-aida's
+terms for a rule with several premises or for several answers hold
+debate scaffolds and are refused at =register=; handled by
+[[id:aida-registered-debates]].
 
 ** BACKLOG Make a debate that spells a negation two ways replay in Fellowship
 :PROPERTIES:
