@@ -115,6 +115,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         env_used = (env or os.environ).copy()
         env_used.setdefault("FSP_MACHINE", "1")
+        #: How this Fellowship was started: a debate session starts its own
+        #: the same way (``spawn_child``).
+        self.prover_cmd, self.env = prover_cmd, env_used
 
         self.prover = _spawn(prover_cmd, env_used)
         self.prover.expect(REPLY_END)
@@ -210,8 +213,32 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 raise ProverError(
                     f"Fellowship did not switch to {Document(logic, minimal).logic_name}; "
                     f"it reports {self.doc.logic_name}.")
+            self._close_debate_sessions(old)
             logger.debug("New document (%s).", self.doc.logic_name)
             return self.doc
+
+    # -- debate sessions (wrap/debate_session.py) ----------------------------
+
+    def spawn_child(self) -> "ProverWrapper":
+        """A new session with its own Fellowship, started as this one was,
+        holding a classical document (debates are classical) and this
+        session's settings.  The caller owns it and closes it."""
+        child = ProverWrapper(self.prover_cmd, env=self.env)
+        try:
+            child.new_document("lk")
+        except BaseException:
+            child.close()
+            raise
+        for setting in ("echo_notes", "render_files", "typecheck_enabled", "typecheck_expanded",
+                        "pipeline_unfolded", "subarguments", "undecided"):
+            setattr(child, setting, getattr(self, setting))
+        return child
+
+    @staticmethod
+    def _close_debate_sessions(doc: Document) -> None:
+        """Close the debate sessions a dropped document holds."""
+        for debate_session in list(doc.debate_sessions):
+            debate_session.close()
 
     @staticmethod
     def _unquote(atom: Any) -> Any:
@@ -985,7 +1012,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         return self.arguments.get(name)
     
     def close(self) -> None:
-        """ Close the prover """
+        """Close the prover, and the debate sessions its document holds."""
+        self._close_debate_sessions(self.doc)
         try:
             self.prover.sendline('quit.')
         finally:

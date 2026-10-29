@@ -400,6 +400,34 @@ Open: whether a debate session runs lk inside an lj document (debates
 are refused there today; minimal logic stays refused, its negation terms
 are untested in the compiler).
 
+*Implemented 2026-10-29* (wrap/debate_session.py; =ProverWrapper.spawn_child=,
+=Document.debate_sessions=; =Service.register_body= split out of
+=register=; tests/test_debate_session.py, 16 tests). Evidence against
+VERIFY:
+- Same results: every finished debate of the fixtures (38, all open
+  scope, 2026-10-29 probe), rebuilt in its own session from its scope's
+  arguments and the same moves, gives the same graph (edges with names),
+  grounded labels, normal-form class and normal form (alpha) as today's
+  route; a closed debate over tests/debates.fspy and five fixture
+  debates are kept as tests. Each session took 0.06-0.7 s to start,
+  replay and evaluate. Re-registration by term waits for
+  [[id:aida-register-debate-command]]; until then the session is filled
+  from the arguments, which is what extraction will do.
+- Isolation: an open debate in the document flips from value to
+  exception when a strict argument for Penguin is registered; its copy in
+  the session stays a value, and neither the new declaration nor the
+  argument reaches the session; a declaration made in the session does
+  not reach the document. A closed debate's own route already ignores a
+  later declaration (it uses only names its terms mention), so a
+  declaration alone shows nothing; the argument does.
+- Discarding: =close= ends the Fellowship process (exit observed); the
+  spec starts it again on the next use; a new document and closing the
+  owner close it; a refused declaration is named and nothing is left
+  running.
+- The spec holds only what the scope mentions, closed over sorts, in
+  document order (tweety and penguin: 5 of the fixture's 8 declarations).
+- Suite: 2392 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
 *** BACKLOG Register a debate by its term
 :PROPERTIES:
 :ID:             aida-register-debate-command

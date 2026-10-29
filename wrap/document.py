@@ -45,6 +45,10 @@ class Document:
         #: Recorded debates (core/dc/debate.py) and the one being recorded.
         self.debates: Dict[str, Any] = {}
         self.recording_debate: Optional[str] = None
+        #: The debate sessions started for this document's debates
+        #: (wrap/debate_session.py), each with its own Fellowship; closed
+        #: when the document is dropped or the session closes.
+        self.debate_sessions: list = []
         #: ``anon_k`` names of shared sub-debates (core/dc/share.py).
         self.anon: Dict[Any, str] = {}
         #: Changes whenever the document does; terms cached at an older

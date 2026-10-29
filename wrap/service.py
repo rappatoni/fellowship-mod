@@ -640,7 +640,6 @@ class Service:
         """Register an argument from its proof term; with ``strict``,
         Fellowship also holds it as a theorem (or refuses it)."""
         from core.ac.grammar import Grammar, ProofTermTransformer
-        from core.ac.ast import Mutilde
         from core.dc.argument import Argument
         from core.dc.cite import mark_citations
         s = self.session
@@ -660,6 +659,16 @@ class Service:
         # A term typed as a string has lost its citation marks: a free leaf
         # naming a registered argument is a citation (core/dc/cite.py).
         mark_citations(body, lambda n: n in s.arguments and n != name)
+        return self.register_body(name, conclusion, body, strict=strict)
+
+    @_operation
+    def register_body(self, name: str, conclusion: str, body, *, strict: bool = False) -> Done:
+        """``register`` for a term already read: resolved, its citations
+        marked.  A debate session receives its arguments this way
+        (wrap/debate_session.py)."""
+        from core.ac.ast import Mutilde
+        from core.dc.argument import Argument
+        s = self.session
         arg = Argument(s, name=name, conclusion=conclusion, is_anti=isinstance(body, Mutilde))
         arg.body = body
         try:

@@ -19,6 +19,12 @@ Files
   - Document: everything a new document replaces - logic, declarations,
     decorations, names, arguments, the document graph, debates, caches.
     Nothing module-global: two sessions never share one.
+- debate_session.py
+  - DebateSession: a debate's own session - a second Fellowship
+    (`ProverWrapper.spawn_child`, classical, the owner's settings) holding
+    the declarations a debate needs and its arguments, replayed from a
+    DebateSpec on first use; `scope_spec` builds the spec for arguments of
+    the owning document. A new document, or closing the owner, closes it.
 - registry.py
   - The argument discipline at `dixi` (`enforce_discipline`,
     `DisciplineRefused`; the checks are core/dc/discipline.py), and
