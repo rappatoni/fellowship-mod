@@ -477,6 +477,31 @@ is the only separator available. AIDA prefixes at registration (the
 declarations, the term and the provenance blocks together), so
 importers keep writing plain names.
 
+*Implemented 2026-10-29* (wrap/prefix.py; =local_spec= in
+wrap/debate_session.py; =claim_name= and =reserve_prefix= in
+wrap/prover.py; tests/test_prefix.py, 19 tests). Evidence against VERIFY:
+- In a closed debate rebuilt in its own session (tweety, penguin rebuts
+  it), a local strict argument for Penguin (=d__seen=, on a local
+  declaration =d__seen_penguin=) turns the verdict from open to
+  exception; =evaluate d= on the document and =graph document= are
+  unchanged. The session is filled by hand until =register debate= fills
+  it ([[id:aida-register-debate-command]]).
+- "The local argument's name is still claimed": the document refuses any
+  name starting with a reserved =d__=, so =d__seen= cannot be taken there
+  (the locals themselves are claimed only in the debate's session).
+- A document =bird= and the debate's =d__bird= coexist in the session;
+  =d__bird= is then shown with its prefix, =d__a1= as =a1=.
+- Refusals: =__= in a debate name; a document name starting with a
+  reserved prefix; reserving a prefix a document name already starts
+  with.
+- Which declarations are local is syntactic: =declare n : (P).= and
+  =deny= are, a sort is not (refused inside the block by =local_spec=;
+  the =register debate= command declares it in the document).
+- Suite: 2411 passed, 9 skipped, 2 xfailed, 1 xpassed.
+Open: showing a debate's names without its prefix is the =shown= /
+=display_names= pair; the result printers apply it once registered
+debates exist (phase 4).
+
 *** BACKLOG Extract a registered debate's arguments
 :PROPERTIES:
 :ID:             aida-debate-reverse-compilation

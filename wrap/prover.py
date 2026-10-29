@@ -5,6 +5,7 @@ from pexpect.exceptions import EOF as PexpectEOF, TIMEOUT as PexpectTIMEOUT
 from .sexp_parser import SexpParser
 from core.ac.signature import Declaration
 from wrap.document import Document
+from wrap.prefix import SEPARATOR, prefix
 from core.dc.debate_graph import (
     DebateGraph, DebateCompileError, compile_debate, declaration_kinds, canonical_prop,
     SYNTHETIC_PREFIX,
@@ -724,6 +725,15 @@ TODO: Mechanism to declare a scenario of default assumptions.
                 f"'{name}' starts with a prefix the wrapper reserves for the names it "
                 f"generates itself ({', '.join(RESERVED_PREFIXES)}); choose another name."
             )
+        if kind == "debate" and SEPARATOR in name:
+            raise NameClash(
+                f"'{name}' contains '{SEPARATOR}', which separates a debate's name from "
+                f"its own names (wrap/prefix.py); choose another name.")
+        for reserved in self.doc.local_prefixes:
+            if name.startswith(reserved):
+                raise NameClash(
+                    f"'{name}' starts with '{reserved}', which debate '{reserved[:-len(SEPARATOR)]}' "
+                    f"keeps for its own names; choose another name.")
         held = self.names.get(name)
         if held is not None and not (refine and held in _REFINABLE):
             raise NameClash(
@@ -732,6 +742,18 @@ TODO: Mechanism to declare a scenario of default assumptions.
             )
         if not dry_run:
             self.names[name] = kind
+
+    def reserve_prefix(self, debate: str) -> None:
+        """Keep ``DEBATE__`` for the debate's own names: from now on the
+        document refuses any name that starts with it.  Refused if a name
+        of the document already does."""
+        reserved = prefix(debate)
+        taken = sorted(n for n in self.names if n.startswith(reserved))
+        if taken:
+            raise NameClash(
+                f"debate '{debate}' would keep '{reserved}' for its own names, but "
+                f"{', '.join(repr(n) for n in taken)} already start(s) with it.")
+        self.doc.local_prefixes.add(reserved)
 
     def claim_declared_names(self, command: str) -> list[str]:
         """The names a `declare N1, N2 : TYPE.` command introduces, all

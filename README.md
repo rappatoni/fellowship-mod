@@ -808,6 +808,9 @@ ARG.
 cedat tempus.
 ```
 
+- The **name** may not contain `__`, which separates a registered debate's
+  name from the names of its own declarations and arguments
+  (`DEBATE__name`, `wrap/prefix.py`).
 - The **onus** says who opens: `pro`, an argument for ISSUE; `con`, a
   counterargument. The opening move must match it.
 - The **scope** says what the debate hears. A `closed` debate is compiled

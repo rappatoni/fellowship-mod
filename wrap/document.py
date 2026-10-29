@@ -49,6 +49,9 @@ class Document:
         #: (wrap/debate_session.py), each with its own Fellowship; closed
         #: when the document is dropped or the session closes.
         self.debate_sessions: list = []
+        #: ``DEBATE__`` prefixes kept for registered debates' own names
+        #: (wrap/prefix.py): the document refuses names that start with one.
+        self.local_prefixes: set = set()
         #: ``anon_k`` names of shared sub-debates (core/dc/share.py).
         self.anon: Dict[Any, str] = {}
         #: Changes whenever the document does; terms cached at an older

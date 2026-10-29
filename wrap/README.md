@@ -19,6 +19,12 @@ Files
   - Document: everything a new document replaces - logic, declarations,
     decorations, names, arguments, the document graph, debates, caches.
     Nothing module-global: two sessions never share one.
+- prefix.py
+  - Debate-local names `DEBATE__name`: which declarations of a
+    `register debate` block are local (proof constants and moxias; sorts
+    are the document's), renaming a term's free leaves, the prefix the
+    owning document reserves (`ProverWrapper.reserve_prefix`), and how a
+    debate shows its own names (`display_names`, `shown`).
 - debate_session.py
   - DebateSession: a debate's own session - a second Fellowship
     (`ProverWrapper.spawn_child`, classical, the owner's settings) holding

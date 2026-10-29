@@ -151,6 +151,30 @@ def scope_spec(parent, names: Iterable[str]) -> DebateSpec:
                       arguments, dict(parent.decorations))
 
 
+def local_spec(parent, debate: str, local_declarations: Iterable[str], bodies: Iterable[Any]):
+    """The spec of a debate given by its own declarations and terms (a
+    ``register debate`` block): the local declarations with their names
+    prefixed (wrap/prefix.py), after the document's declarations that they
+    and the terms mention; and the terms, renamed alike.  Returns (spec,
+    renamed terms, {name: local name}).  Every declaration must be local -
+    a sort is the document's, declared there first."""
+    from wrap.prefix import is_local, localise_declaration, parse_declaration, rename_term
+    commands, mapping, mentioned = [], {}, set()
+    for command in local_declarations:
+        if not is_local(command):
+            raise DebateSessionError(f"`{command.strip()}` declares a sort, which belongs to the "
+                                     f"document, not to debate '{debate}'.")
+        renamed, names = localise_declaration(command, debate)
+        commands.append(renamed)
+        mapping.update(names)
+        mentioned |= _identifiers(parse_declaration(command)[2])
+    renamed_bodies = [rename_term(body, mapping) for body in bodies]
+    for body in renamed_bodies:
+        mentioned |= mentions(body)
+    shared = declarations_needed(parent.declarations, mentioned, exclude=set(mapping.values()))
+    return DebateSpec(shared + commands, [], dict(parent.decorations)), renamed_bodies, mapping
+
+
 def declarations_needed(declarations: Dict[str, Any], mentioned: Iterable[str], *,
                         exclude: Iterable[str] = ()) -> List[str]:
     """The commands declaring the names ``mentioned`` and, transitively,
