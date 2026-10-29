@@ -9,7 +9,8 @@ import warnings
 import pytest
 
 from core.ac.grammar import Grammar, ProofTermTransformer
-from core.ac.ast import Mu, Mutilde, ID, DI
+from core.ac.ast import Mu, Mutilde, ID, DI, ConsFO
+from core.ac.prop import TSym
 from core.comp.oracle_terms import alpha_equal
 from wrap.cli import execute_script, setup_prover
 from wrap.debate_session import (
@@ -17,8 +18,8 @@ from wrap.debate_session import (
 )
 from wrap.interpreter import Interpreter
 from wrap.prefix import (
-    display_names, is_local, local_name, localise_declaration, parse_declaration,
-    rename_term, shown,
+    display_names, local_name, localise_declarations, parse_declaration, rename_term,
+    rename_text, shown,
 )
 from wrap.prover import NameClash
 from wrap.service import AidaError, Service
@@ -46,19 +47,21 @@ class TestDeclarations:
         with pytest.raises(ValueError):
             parse_declaration("lk.")
 
-    @pytest.mark.parametrize("command, local", [
-        ("declare b : (B).", True),
-        ("deny h : (H - B).", True),
-        ("declare A, B : bool.", False),
-        ("declare iota : type.", False),
-        ("declare Bird : iota -> bool.", False),
-    ])
-    def test_proof_constants_and_moxias_are_local_sorts_are_not(self, command, local):
-        assert is_local(command) is local
+    def test_everything_in_the_block_is_local_and_renamed_where_mentioned(self):
+        commands, mapping = localise_declarations(
+            ["declare H_A, B : bool.", "declare iota : type.", "declare Bird : iota -> bool.",
+             "declare f : (H_A -> A).", "deny h : (H_A - B)."], "simple")
+        assert commands == [
+            "declare simple__H_A, simple__B : bool.", "declare simple__iota : type.",
+            "declare simple__Bird : simple__iota -> bool.",
+            "declare simple__f : (simple__H_A -> A).", "deny simple__h : (simple__H_A - simple__B).",
+        ]
+        assert set(mapping) == {"H_A", "B", "iota", "Bird", "f", "h"}
 
-    def test_localise(self):
-        assert localise_declaration("declare b, c : (B).", "simple") == (
-            "declare simple__b, simple__c : (B).", {"b": "simple__b", "c": "simple__c"})
+    def test_a_quantifier_binding_a_local_name_is_refused(self):
+        with pytest.raises(ValueError, match="binds x"):
+            localise_declarations(["declare x : iota.", "declare all : (forall x:iota, P x)."], "d")
+        assert rename_text("forall y:iota, P x", {"x": "d__x"}) == "forall y:iota, P d__x"
 
 
 class TestRenameTerm:
@@ -72,6 +75,16 @@ class TestRenameTerm:
         # mu'b binds a hypothesis b: the term-side leaf under it is the bound one
         body = Mutilde(DI("b", "A"), "A", DI("b", "A"), ID("k", "A"))
         assert alpha_equal(rename_term(body, {"b": "d__b"}), body)
+
+    def test_first_order_constants_and_propositions_are_renamed(self):
+        # mu k:Bird tweety.< all || tweety * k >, as resolve leaves it
+        body = Mu(ID("k", "Bird tweety"), "Bird tweety", DI("all", "forall x:iota, Bird x"),
+                  ConsFO(TSym("tweety"), ID("k", "Bird tweety")))
+        renamed = rename_term(body, {"tweety": "d__tweety", "Bird": "d__Bird"})
+        assert renamed.prop == "d__Bird d__tweety"
+        assert renamed.term.prop == "forall x:iota, d__Bird x"
+        assert renamed.context.fo_term == TSym("d__tweety")
+        assert renamed.context.context.prop == "d__Bird d__tweety"
 
     def test_only_the_kind_a_binder_binds_is_shadowed(self):
         # mu b binds a continuation b; the term-side leaf b is the declared one
@@ -118,9 +131,16 @@ class TestLocalSpec:
         assert mapping == {"bird": "d__bird", "not_flying": "d__not_flying"}
         assert body.term.name == "d__bird"
 
-    def test_a_sort_in_the_block_is_refused(self, prover):
-        with pytest.raises(DebateSessionError, match="sort"):
-            local_spec(prover, "d", ["declare X : bool."], [])
+    def test_a_local_sort_is_renamed_in_the_terms_propositions(self, prover):
+        spec, (body,), mapping = local_spec(
+            prover, "d", ["declare H : bool.", "declare f : (H -> Bird)."],
+            [term("μa:Bird.<f||μb:H.<?1:H||b>*a>")])
+        assert spec.declarations == ["declare Bird : bool.", "declare d__H : bool.",
+                                     "declare d__f : (d__H -> Bird)."]
+        assert body.term.name == "d__f" and body.context.term.prop == "d__H"
+        child = DebateSession(prover, spec, name="d").session
+        Service.of(child).register_body("d__a1", "Bird", body)   # Fellowship accepts it
+        assert "d__a1" in child.arguments
 
     def test_a_document_name_and_a_local_one_coexist(self, prover):
         spec, (body,), mapping = local_spec(prover, "d", ["declare bird : (Bird)."],

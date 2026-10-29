@@ -456,7 +456,7 @@ VERIFY:
 :ICK:            2
 :EFFORT:         4:00
 :DEFERRALS:      0
-:OUTCOME:        Local declarations and arguments live in the debate's own session (aida-debate-sessions) under the names DEBATE__name, in the debate's scope and nowhere in the document graph, so a counterfactual, a transcript or an import does not leak into the document; propositions and sorts go to the document (an identical declaration is reused, a conflicting one refused); `__` is refused in debate names and a debate's prefix in user names (claim_name, wrap/prover.py); a debate's own prefix is left out where it renders its own names.
+:OUTCOME:        Local declarations and arguments live in the debate's own session (aida-debate-sessions) under the names DEBATE__name, in the debate's scope and nowhere in the document graph, so a counterfactual, a transcript or an import does not leak into the document; everything declared inside the block is local, sorts included, and is renamed wherever it occurs - in the term's leaves, in the propositions written on its nodes and in first-order terms - while what the debate shares with the document is declared before the block; `__` is refused in debate names and a debate's prefix in user names (claim_name, wrap/prover.py); a debate's own prefix is left out where it renders its own names.
 :VERIFY:         A closed debate with a local counterargument changes its verdict while =evaluate= on the document and =graph document= are unchanged; the local argument's name is still claimed; a document =b= and a local =b= of an import coexist; the two prefix refusals; tests cover each.
 :END:
 
@@ -494,13 +494,29 @@ wrap/prover.py; tests/test_prefix.py, 19 tests). Evidence against VERIFY:
 - Refusals: =__= in a debate name; a document name starting with a
   reserved prefix; reserving a prefix a document name already starts
   with.
-- Which declarations are local is syntactic: =declare n : (P).= and
-  =deny= are, a sort is not (refused inside the block by =local_spec=;
-  the =register debate= command declares it in the document).
+- (Superseded the same day, below.) Which declarations were local was
+  syntactic: proof constants and moxias, not sorts.
 - Suite: 2411 passed, 9 skipped, 2 xfailed, 1 xpassed.
 Open: showing a debate's names without its prefix is the =shown= /
 =display_names= pair; the result printers apply it once registered
 debates exist (phase 4).
+
+*Decision (the author, 2026-10-29): everything inside the block is local,
+sorts included.* What the debate shares with the document is declared
+before the block. Reason: the importer's helper atoms (=H_A=, with
+=H_A -> A= and =H_A - B=) are devices of the translation, not the
+program's vocabulary; shared, they entered the document's vocabulary,
+and two imports concluding =a= would share an =H_A= each means
+differently. Cost: a local sort occurs inside propositions, so renaming
+reaches the proposition text on every node and the constants of
+first-order terms (=rename_text=, =rename_term=), not only the term's
+leaves. A proposition binding a local name as a quantifier variable is
+refused, not guessed at. Implemented the same day:
+=localise_declarations= renames every name the block declares, where it
+is declared and where another declaration mentions it; =local_spec= no
+longer refuses a sort; tests/test_prefix.py (16 tests) covers a local
+sort renamed in a term's propositions and accepted by Fellowship, a
+first-order constant and predicate, and the quantifier refusal.
 
 *** BACKLOG Extract a registered debate's arguments
 :PROPERTIES:

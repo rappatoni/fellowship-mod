@@ -20,10 +20,11 @@ Files
     decorations, names, arguments, the document graph, debates, caches.
     Nothing module-global: two sessions never share one.
 - prefix.py
-  - Debate-local names `DEBATE__name`: which declarations of a
-    `register debate` block are local (proof constants and moxias; sorts
-    are the document's), renaming a term's free leaves, the prefix the
-    owning document reserves (`ProverWrapper.reserve_prefix`), and how a
+  - Debate-local names `DEBATE__name`: everything a `register debate`
+    block declares is local, sorts included (what is shared is declared
+    before the block); renaming in declarations, a term's leaves, the
+    propositions on its nodes and first-order terms; the prefix the
+    owning document reserves (`ProverWrapper.reserve_prefix`); and how a
     debate shows its own names (`display_names`, `shown`).
 - debate_session.py
   - DebateSession: a debate's own session - a second Fellowship
