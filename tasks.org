@@ -551,7 +551,8 @@ longer refuses a sort; tests/test_prefix.py (16 tests) covers a local
 sort renamed in a term's propositions and accepted by Fellowship, a
 first-order constant and predicate, and the quantifier refusal.
 
-*** BACKLOG Extract a registered debate's arguments
+*** DONE Extract a registered debate's arguments
+CLOSED: [2026-10-29 Thu]
 :PROPERTIES:
 :ID:             aida-debate-reverse-compilation
 :AREA:           phd
@@ -566,6 +567,30 @@ first-order constant and predicate, and the quantifier refusal.
 :OUTCOME:        =compile_issue= (core/dc/strict.py) gives the debate's graph; every argument, supporter and attacker edge is cut into an argument (step edges stay inline; a scaffold is replaced by its original via =scaffold_parts=; =_restore_scion= and captured variables give back sites of the recorded kind), held to the discipline (core/dc/discipline.py) and registered as a local argument; they become the debate's moves in the order its stacks encode (the opening is the root edge, the outermost was uttered last).
 :VERIFY:         On simple, simple_pred and orphans every extracted argument passes the discipline and the graph of the moves equals the stored graph up to edge names; a test pins the cut of each scaffold shape; the suite passes.
 :END:
+
+*Implemented 2026-10-29* (core/dc/extract.py; =Service._extract=, run by
+=register_debate=; tests/test_extract.py, 13 tests). The edges are those
+of a compilation of the given term itself (not a copy), so a scion's
+place in its stack is known by identity; ranks come from a walk of the
+term - in every scaffold its original (the lower levels of a nested
+stack) first, then its scion's elements bottom first - because the
+compiler's edge order is outermost first for nested scaffolds but bottom
+first within a stacked scion. An opening that is a bare claim (the
+issue's site under its scaffolds: a default marker, no edge) is still
+cut from the root as the opening move. Copies of an argument (same name,
+target and sources) are cut once. Evidence against VERIFY:
+- simple, simple_pred and orphans: 5, 5 and 13 arguments, all registered
+  in the debate's session under the discipline (none refused); the
+  session's document graph equals the record graph up to edge names,
+  default markers included (8, 8 and 21 edges); the arguments are the
+  moves of the debate there, which evaluates to a value.
+- The cut of each scaffold shape is pinned (T-SUP, T-ATT, C-ATT - the
+  shape =_barred= is rewritten into - and a context attack's presumed
+  refutation as the opening), a captured variable becoming an obligation
+  or a presumption site, sites renumbered; ranks of a flat stack and of
+  nested scaffolds; a copy cut once; a refused argument reported while
+  the others stay moves.
+- Suite: 2443 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
 *** BACKLOG Warn when the recompiled term differs from the given one
 :PROPERTIES:

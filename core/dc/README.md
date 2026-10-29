@@ -13,6 +13,8 @@ Files
   - Unfolding: document graph -> debate term, for an issue or an argument entrypoint; every exposed node (an axiom applied, a lemma, a lambda) becomes the debate about its statement where it stands.
 - strict.py
   - Strictness, read off the concrete debate term.
+- extract.py
+  - A registered debate's arguments cut out of its term: each argument, supporter and attacker edge, scaffolds replaced by their originals, captured variables by sites; ranked bottom of each stack first, for the debate's moves (`extract_arguments`; tasks.org, aida-debate-reverse-compilation).
 - shapes.py
   - The deprecated M3 scaffold shapes (and scasp-aida's exchanged context attack) rewritten into the paper shapes, so an imported debate can be unfolded from and compared (`modernise_scaffolds`; tasks.org, aida-legacy-shape-shim).
 - typecheck.py

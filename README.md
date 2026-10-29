@@ -886,6 +886,12 @@ cedat tempus.
   kept. They show the debate's own names without the prefix, unless the
   short name is taken in the document too. A strict edge of a registered
   debate cannot be adopted.
+- Its arguments are cut out of the term (`core/dc/extract.py`) and
+  registered in its session as `simple__a1`, `simple__a2`, ... - the
+  opening first, then each stack from the bottom - under the argument
+  discipline; they are the debate's moves. `graph simple all` shows them.
+  Compiled again they give the graph the term was compiled to. An argument
+  the session refuses is reported, and the others stay.
 
 ## Script files (`.fspy`)
 

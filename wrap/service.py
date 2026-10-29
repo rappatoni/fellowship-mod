@@ -148,6 +148,17 @@ def _unsupported_syntax(name: str, error) -> str:
     return f"'{name}' cannot be read by AIDA ({text.splitlines()[0]}); the argument is not registered."
 
 
+def _command_conclusion(prop: str) -> str:
+    """A proposition as a graph prints it (``Bird Tweety``) in Fellowship's
+    command syntax (``Bird[Tweety]``), which a replayed conclusion needs;
+    as written if AIDA cannot parse it."""
+    from core.ac.prop_render import prop_to_command
+    try:
+        return prop_to_command(prop)
+    except Exception:
+        return prop
+
+
 def _operation(method):
     """Run a service method under the session lock, collecting its
     diagnostics onto the result (a dataclass with ``diagnostics``) or onto
@@ -945,7 +956,44 @@ class Service:
         s.reserve_prefix(name)
         logger.info("Registered debate '%s' (%s) about %s: %d edge(s) over %d statement(s).",
                     name, onus, issue, len(graph.edges), len(graph.nodes))
-        return Done(f"Registered debate '{name}' ({onus}) about {issue}.", debate)
+        self._extract(debate)
+        return Done(f"Registered debate '{name}' ({onus}) about {issue}: "
+                    f"{len(debate.extracted)} argument(s).", debate)
+
+    def _extract(self, debate) -> None:
+        """Cut a registered debate's arguments out of its term
+        (core/dc/extract.py), register them in its session under the
+        argument discipline, and make them the moves of the debate there,
+        in their ranks.  An argument the session refuses is a warning: the
+        others stay usable."""
+        from core.dc.debate import Move
+        from core.dc.extract import extract_arguments
+        child = debate.debate_session.session
+        service = Service.of(child)
+        extracted, _ = extract_arguments(debate.given_term, debate.name,
+                                         strict_names=child.declarations.keys(),
+                                         strict_kinds=declaration_kinds(child.declarations))
+        for argument in extracted:
+            try:
+                service.register_body(argument.name, _command_conclusion(argument.conclusion),
+                                      argument.body)
+            except AidaError as e:
+                debate.refused[argument.name] = str(e)
+                logger.warning("Debate '%s': argument %s (edge %s) not taken into its session: %s",
+                               debate.name, argument.name, argument.edge, e)
+                continue
+            debate.extracted[argument.edge] = argument.name
+        moves = [a.name for a in extracted if a.name in debate.extracted.values()]
+        if not moves or extracted[0].name not in moves:
+            logger.warning("Debate '%s' has no opening argument; it has no moves.", debate.name)
+            return
+        service.start_debate(debate.name, debate.issue_prop, debate.onus, "open")
+        for name in moves:
+            service.move(name)
+        service.close_debate()
+        debate.moves = [Move(name) for name in moves]
+        logger.info("Debate '%s': %d argument(s) cut from its term, %d move(s).",
+                    debate.name, len(extracted), len(moves))
 
     def _registered(self, target) -> Optional[Any]:
         """The registered debate ``target`` names, or None."""

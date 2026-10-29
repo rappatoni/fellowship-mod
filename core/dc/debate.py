@@ -134,6 +134,11 @@ class RegisteredDebate(Debate):
     legacy: bool = False
     #: evaluations by (mode, semantics, base, witness, undecided)
     evaluations: dict = field(default_factory=dict, repr=False, compare=False)
+    #: the arguments cut from the term (core/dc/extract.py): {edge of the
+    #: record graph: argument in the debate's session}; they are its moves
+    extracted: dict = field(default_factory=dict, repr=False, compare=False)
+    #: {argument: why the debate's session refused it}
+    refused: dict = field(default_factory=dict, repr=False, compare=False)
 
     def header(self) -> str:
         return f"register debate {self.name}{' legacy' if self.legacy else ''} : {self.issue_prop}."
