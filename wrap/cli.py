@@ -1,6 +1,7 @@
 from __future__ import annotations
 import os, re, sys
 import copy
+import dataclasses
 import atexit
 import collections
 import json
@@ -26,6 +27,9 @@ from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Mutilde
 from core.comp.oracle import AdfBddNotFound
 from wrap.importers import ImporterNotFound, SourceImportError, load_importer, missing_importer_message
+from wrap.interpreter import QUERIES
+from wrap.prefix import shown
+from core.dc.debate_graph import DebateGraph
 from pres.decorations import parse_decorate_command
 
 logger = logging.getLogger('fsp.wrapper')
@@ -89,10 +93,55 @@ def _refuse_in_script(error: Exception, strict: bool, script_path: str, lineno: 
         raise ProverError(f"{script_path}:{lineno}: {error}") from error
 
 
+class _ShownNames(logging.Filter):
+    """Print a registered debate's own names as the debate shows them:
+    without its prefix where that is unambiguous (wrap/prefix.py)."""
+
+    def __init__(self, names):
+        super().__init__()
+        self.names = names
+
+    def filter(self, record):
+        record.msg, record.args = shown(record.getMessage(), self.names), ()
+        return True
+
+
 def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
     """Print an outcome of the interpreter (wrap/interpreter.py) as the CLI
     always has: query results in full, refusals as `STAGE: refused: ...`,
-    and the messages of what the document took."""
+    and the messages of what the document took.  A query on a registered
+    debate shows the debate's own names as the debate does."""
+    target = o.command.get("target") if o.command is not None and o.kind in QUERIES else None
+    names = {}
+    if isinstance(target, str):
+        try:
+            names = Service.of(prover).display_names(target)
+        except AidaError:
+            names = {}
+    if not names:
+        return _render_outcome(prover, o, interactive=interactive)
+    if isinstance(getattr(o.value, "graph", None), DebateGraph):
+        # renamed before the printers pad their columns
+        o = dataclasses.replace(o, value=dataclasses.replace(
+            o.value, graph=_shown_graph(o.value.graph, names)))
+    shown_names = _ShownNames(names)
+    logger.addFilter(shown_names)
+    try:
+        _render_outcome(prover, o, interactive=interactive)
+    finally:
+        logger.removeFilter(shown_names)
+
+
+def _shown_graph(graph: DebateGraph, names) -> DebateGraph:
+    """A copy of ``graph`` whose statements and edges are named as a
+    registered debate shows them."""
+    out = copy.copy(graph)
+    out.nodes = {key: shown(text, names) for key, text in graph.nodes.items()}
+    out.edges = [dataclasses.replace(e, name=shown(e.name, names)) for e in graph.edges]
+    return out
+
+
+def _render_outcome(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
     say = print if interactive else logger.info
     c = o.command
     if o.status == "comment":
@@ -142,7 +191,8 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
         logger.info("Undecided under a credulous witness: %s", o.message)
     elif k in ("fellowship", "instruction"):
         return
-    elif k in ("statement", "register", "adopt", "debate", "move", "close_debate") and not interactive:
+    elif k in ("statement", "register", "register_debate", "adopt", "debate", "move",
+               "close_debate") and not interactive:
         return                              # the service has logged it
     elif o.message:
         say(o.message)

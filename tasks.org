@@ -334,7 +334,8 @@ its first command in about 8 ms; declaring 100 / 400 names takes 0.065 /
 0.80 s, quadratic as in [[id:aida-quadratic-hotspots]], so a debate
 session redeclares its scope's declarations, not the document's.
 
-*** NEXT Rewrite the deprecated scaffold shapes into the current ones
+*** DONE Rewrite the deprecated scaffold shapes into the current ones
+CLOSED: [2026-10-29 Thu]
 :PROPERTIES:
 :ID:             aida-legacy-shape-shim
 :AREA:           phd
@@ -379,6 +380,9 @@ tests/test_shapes.py, 26 tests). Evidence against VERIFY:
 Open: "runs only on an importer result that declares the old shapes" is
 the =legacy= flag of =register debate=
 ([[id:aida-register-debate-command]]); close this task once that is wired.
+Wired 2026-10-29: =register debate NAME legacy : ISSUE.= runs the rewrite,
+and only then (tests/test_registered_debate.py,
+=test_without_legacy_the_old_shapes_stay=).
 
 *** BACKLOG Give each registered debate its own Fellowship session
 :PROPERTIES:
@@ -428,7 +432,8 @@ VERIFY:
   document order (tweety and penguin: 5 of the fixture's 8 declarations).
 - Suite: 2392 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
-*** BACKLOG Register a debate by its term
+*** DONE Register a debate by its term
+CLOSED: [2026-10-29 Thu]
 :PROPERTIES:
 :ID:             aida-register-debate-command
 :AREA:           phd
@@ -444,7 +449,35 @@ VERIFY:
 :VERIFY:         simple's term (after the shim) registers, and =graph=, =label= and =evaluate= on it answer from the stored result; an ill-typed term is refused with Fellowship's reply; the suite passes.
 :END:
 
-*** BACKLOG Give a debate declarations and arguments of its own
+*Implemented 2026-10-29.* =register debate NAME [legacy] : ISSUE.=, its
+own =declare=/=deny= lines, =term "…".=, =cedat tempus.= (wrap/syntax.py;
+the interpreter's block, wrap/interpreter.py; =Service.register_debate=;
+=RegisteredDebate=, core/dc/debate.py). The term is parsed, renamed
+(everything the block declares is local, wrap/prefix.py), rewritten if
+=legacy= (core/dc/shapes.py), resolved and replayed through Fellowship in
+the debate's own session - the type check and the enrichment - and must
+prove ISSUE (pro) or refute it (con). Its graph (=compile_issue=) and
+grounded labels are stored; =graph=, =label=, =evaluate=, =render= and
+=tree= answer from them, evaluations kept by their options. The CLI shows
+the debate's own names without the prefix where the short name is free
+(=Service.display_names=; the printers get a renamed copy of the graph,
+so columns stay aligned). tests/test_registered_debate.py, 22 tests.
+Evidence against VERIFY:
+- simple, as a block (the program's atoms before it, =H_A= and the rest
+  inside), registers: 8 edges, acyclic, A IN, B's refutation OUT,
+  =evaluate= a value; =label= equals the stored labels; the evaluated
+  normal form is kept across document changes. simple_pred and orphans
+  likewise. Without =legacy= simple's graph is cyclic, as in phase 1.
+- Refused, leaving no name, prefix or session behind: an ill-typed term
+  (Fellowship's reply quoted), a term for another issue, a block without
+  a term, a second term, a foreign command in the block, =term= outside a
+  block, a taken name, =__= in the name, an =lj= document. A strict edge
+  of a registered debate cannot be adopted.
+- A refutation registers as a =con= debate.
+- Suite: 2430 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+*** DONE Give a debate declarations and arguments of its own
+CLOSED: [2026-10-29 Thu]
 :PROPERTIES:
 :ID:             aida-debate-local-arguments
 :AREA:           phd

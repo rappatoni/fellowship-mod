@@ -84,6 +84,9 @@ class Interpreter:
         #: The argument block being recorded: its name, conclusion,
         #: instructions, whether it is anti, and (live) Fellowship's state.
         self.recording: Optional[dict] = None
+        #: The `register debate` block being read: its name, issue, whether
+        #: legacy, its own declarations and its term.
+        self.registering: Optional[dict] = None
         #: Every unit run, in order: its text as written back, why it
         #: failed (None if it did not), and whether the accepted transcript
         #: keeps it - not a line of a block that was refused or abandoned.
@@ -141,6 +144,9 @@ class Interpreter:
         if self.recording is not None:
             lines.append(f"% '{self.recording['name']}' was still being recorded; "
                          f"end it with `dixi.` (or `qed.`).")
+        if self.registering is not None:
+            lines.append(f"% debate '{self.registering['name']}' was still being registered; "
+                         f"end it with `cedat tempus.`")
         with open(path, "w", encoding="utf-8") as handle:
             handle.write("\n".join(lines) + "\n")
         return len(lines)
@@ -173,11 +179,26 @@ class Interpreter:
             if self.recording is not None:
                 self._abandoned = self.recording
                 self._drop_recording()
+            if self.registering is not None:
+                self._abandoned, self.registering = self.registering, None
             return self._service(c, svc.new_document, c["logic"], c["minimal"])
         if c.kind == "save":
             return Outcome(None, c.text, c.kind, "cli")
         if self.recording is not None:
             return self._in_block(c)
+        if self.registering is not None:
+            return self._in_debate_block(c)
+        if c.kind == "register_debate":
+            self.registering = {"name": c["name"], "issue": c["issue"], "legacy": c["legacy"],
+                                "declarations": [], "term": None, "_opened_at": c.span,
+                                "_transcript_from": len(self.transcript)}
+            return Outcome(None, c.text, c.kind, "ok",
+                           f"Registering debate '{c['name']}': its own declarations, "
+                           f"`term \"…\".`, then `cedat tempus.`")
+        if c.kind == "debate_term":
+            return Outcome(None, c.text, c.kind, "refused",
+                           "`term` gives the term of a debate being registered; open one with "
+                           "`register debate NAME : ISSUE.`")
         if c.kind == "argument":
             return self._open(c)
         if c.kind == "refine":
@@ -364,6 +385,47 @@ class Interpreter:
             return Outcome(None, c.text, "instruction", "ok")
         status, message = self._live_step(self.recording, c.text)
         return Outcome(None, c.text, "instruction", status, message)
+
+    # -- register debate blocks ------------------------------------------------
+
+    def _in_debate_block(self, c: Command) -> Outcome:
+        """A line of a `register debate` block: a declaration of the
+        debate's own, its term, or `cedat tempus.`"""
+        current = self.registering
+        if c.kind == "close_debate":
+            return self._register_debate(c)
+        if c.kind == "debate_term":
+            if current["term"] is not None:
+                return Outcome(None, c.text, c.kind, "refused",
+                               f"debate '{current['name']}' already has its term.")
+            current["term"] = c["proof_term"]
+            return Outcome(None, c.text, c.kind, "ok")
+        if c.kind == "opaque" and c["word"] in ("declare", "deny"):
+            current["declarations"].append(c.text + ".")
+            return Outcome(None, c.text, "declaration", "ok")
+        return Outcome(None, c.text, c.kind, "refused",
+                       f"debate '{current['name']}' is being registered: only its own "
+                       f"`declare`/`deny`, `term \"…\".` and `cedat tempus.` go here.")
+
+    def _register_debate(self, c: Command) -> Outcome:
+        current, self.registering = self.registering, None
+        if current["term"] is None:
+            self._abandoned = current
+            return Outcome(None, c.text, c.kind, "refused",
+                           f"debate '{current['name']}' has no term; give it with `term \"…\".`")
+        try:
+            done = self.service.register_debate(current["name"], current["issue"], current["term"],
+                                                current["declarations"], legacy=current["legacy"])
+        except AidaError as e:
+            self._abandoned = current
+            return Outcome(None, c.text, "register_debate", "refused", str(e), error=e,
+                           diagnostics=list(e.diagnostics))
+        debate = done.value
+        opened = current.get("_opened_at")
+        if opened is not None and c.span is not None:
+            debate.span = Span(opened.line, opened.col, c.span.end_line, c.span.end_col)
+        return Outcome(None, c.text, "register_debate", "ok", done.message, value=debate,
+                       diagnostics=list(done.diagnostics))
 
     def _close(self, c: Command, *, demand_strict: bool) -> Outcome:
         s = self.session

@@ -854,6 +854,39 @@ reaches; `graph NAME all` shows its whole scope, non sequiturs included.
 While a debate is being recorded these commands compile it as it stands.
 The term is cached until the document or the debate changes.
 
+#### Registered debates
+
+A debate can also be registered by its term, as a source-language
+importer produces it (`aida-registered-debates` in `tasks.org`):
+
+```
+declare A, B, C : bool.              % what it shares with the document
+register debate simple [legacy] : A.
+declare H_A : bool.                  % its own: simple__H_A
+declare b : (B).
+deny h_H_A_B : (H_A-B).
+term "μalpha9:A.<…>".
+cedat tempus.
+```
+
+- Everything declared inside the block is the debate's own, sorts
+  included, and is renamed `simple__x` wherever it occurs (`wrap/prefix.py`);
+  the document then refuses any name starting with `simple__`. What the
+  debate shares with the document is declared before the block.
+- The debate lives in a Fellowship session of its own
+  (`wrap/debate_session.py`), which holds its declarations and the
+  document's declarations it mentions; the document's later changes do not
+  reach it. The term is type-checked there and must prove ISSUE (onus
+  `pro`) or refute it (`con`); it is not held to the argument discipline -
+  it is a debate.
+- `legacy` first rewrites the deprecated scaffold shapes older importers
+  emit into the current ones (`core/dc/shapes.py`).
+- The term is the debate's record: `graph`, `label`, `evaluate`, `render`
+  and `tree` answer from it, its graph compiled once and its evaluations
+  kept. They show the debate's own names without the prefix, unless the
+  short name is taken in the document too. A strict edge of a registered
+  debate cannot be adopted.
+
 ## Script files (`.fspy`)
 
 Script mode uses the same general command language as the interactive wrapper.

@@ -280,8 +280,35 @@ def _p_verb(verb):
     return parse
 
 
+_REGISTER_DEBATE = re.compile(r"^debate\s+([^\s:]+)(\s+legacy)?\s*:\s*(.+)$", re.S)
+
+
+def _p_register_debate(rest: str, text: str):
+    """``register debate NAME [legacy] : ISSUE.`` opens a block: the
+    debate's own declarations, ``term "…".``, ``cedat tempus.``."""
+    match = _REGISTER_DEBATE.match(rest.strip())
+    if match is None:
+        raise SyntaxRefused('Use: register debate NAME [legacy] : ISSUE.  then its own '
+                            'declarations, `term "TERM".` and `cedat tempus.`')
+    name, legacy, issue = match.groups()
+    return Command("register_debate", text, args={"name": name, "legacy": bool(legacy),
+                                                   "issue": issue.strip()})
+
+
+def _p_debate_term(words, rest, text):
+    term = rest.strip()
+    if not (len(term) >= 2 and term[0] == term[-1] == '"'):
+        raise SyntaxRefused('Use: term "TERM".  (the term of the debate being registered, '
+                            'double-quoted: it contains dots)')
+    return Command("debate_term", text, args={"proof_term": unquote(term)})
+
+
 def _p_register(words, rest, text):
     usage = 'Use: register NAME [strict] : PROPOSITION := "PROOF_TERM".'
+    # `register debate NAME : ISSUE.` - an argument named `debate` is still
+    # `register debate : P := "...".`, which has a `:=`.
+    if words[:1] == ["debate"] and len(words) > 1 and words[1] != ":" and ":=" not in rest:
+        return _p_register_debate(rest, text)
     try:
         name, body = rest.strip().split(maxsplit=1)
     except ValueError:
@@ -487,6 +514,7 @@ COMMANDS = {
     "cedat": _p_cedat,
     "ct": _p_bare("close_debate", "Use: ct.  (short for cedat tempus.)"),
     "register": _p_register,
+    "term": _p_debate_term,
     "decorate": _p_decorate,
     "adopt": _p_adopt,
     "graph": _p_query("graph"),

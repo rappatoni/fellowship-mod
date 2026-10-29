@@ -38,7 +38,7 @@ on demand from the recipe and the document as they stand.
 """
 
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Optional
+from typing import Any, Callable, Iterable, Optional
 
 from core.dc.debate_graph import DebateGraph, canonical_prop
 from core.dc.unfold import Unfolder, contrary
@@ -111,6 +111,32 @@ class Debate:
 
     def header(self) -> str:
         return f"debate {self.onus} {self.scope} {self.name} : {self.issue_prop}."
+
+
+@dataclass
+class RegisteredDebate(Debate):
+    """A debate registered by its term (tasks.org, aida-registered-debates):
+    ``register debate NAME : ISSUE.``, its own declarations, ``term "…".``,
+    ``cedat tempus.``.  It lives in a session of its own (``debate_session``,
+    wrap/debate_session.py) under its local names (``local``: {name as
+    written: DEBATE__name}, wrap/prefix.py).  The term was given, so it is
+    the debate's record: its graph is compiled from it once, at
+    registration, and its evaluations are kept for good - the term and the
+    declarations it rests on cannot change."""
+
+    #: the given term, rewritten into the paper shapes if ``legacy``,
+    #: renamed, type-checked and enriched in the debate's session
+    given_term: Any = field(default=None, repr=False, compare=False)
+    record_graph: Any = field(default=None, repr=False, compare=False)
+    record_labels: Any = field(default=None, repr=False, compare=False)
+    debate_session: Any = field(default=None, repr=False, compare=False)
+    local: dict = field(default_factory=dict, repr=False, compare=False)
+    legacy: bool = False
+    #: evaluations by (mode, semantics, base, witness, undecided)
+    evaluations: dict = field(default_factory=dict, repr=False, compare=False)
+
+    def header(self) -> str:
+        return f"register debate {self.name}{' legacy' if self.legacy else ''} : {self.issue_prop}."
 
 
 def scope_names(debate: Debate, cited: Callable[[str], Iterable[str]]) -> list:

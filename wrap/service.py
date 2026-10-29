@@ -601,7 +601,7 @@ class Service:
         `issue-graph term` until 2026-10-16 (tasks.org,
         aida-discuss-issue-graph-from-document)."""
         s = self.session
-        if found.own_term or found.issue is None:
+        if found.own_term or found.issue is None or self._registered_debate(found.debate):
             return None
         return s.debate_graph(found.debate) if found.debate is not None else s.graph
 
@@ -768,6 +768,10 @@ class Service:
             raise NotFound(f"no strict edge '{edge_name}' has been shown in this document; "
                            f"run `graph ARG` for the argument whose graph has it.", stage="adopt")
         issue_name, edge, conclusion = seen[edge_name]
+        if self._registered(issue_name) is not None:
+            raise Refused(f"'{edge_name}' is a strict edge of registered debate '{issue_name}', in "
+                          f"the debate's own names and session; it cannot become a theorem of "
+                          f"the document.", stage="adopt")
         try:
             s.claim_name(name, "argument", dry_run=True)
             arg = Argument(s, name=name, conclusion=conclusion, is_anti=edge.target_side == "context")
@@ -858,6 +862,160 @@ class Service:
         s.recording_debate = None
         logger.info("Debate '%s' recorded: %d move(s).", name, len(debate.moves))
         return Done(f"Debate '{name}' recorded: {len(debate.moves)} move(s).", debate)
+
+    # -- registered debates (tasks.org, aida-registered-debates) ---------------
+
+    @_operation
+    def register_debate(self, name: str, issue: str, term: str, declarations=(), *,
+                        legacy: bool = False) -> Done:
+        """Register a debate by its term: ``declarations`` are its own (all
+        local, renamed ``NAME__x``; what it shares with the document is
+        declared there before), ``legacy`` rewrites the deprecated scaffold
+        shapes first (core/dc/shapes.py).  The term is type-checked in the
+        debate's own session (wrap/debate_session.py) and is the debate's
+        record: its graph is compiled from it here, once.  The onus is the
+        term's side: a proof of ISSUE is pro, a refutation con."""
+        from core.ac.ast import Mutilde
+        from core.ac.grammar import Grammar, ProofTermTransformer
+        from core.ac.resolve import resolve, ResolutionError
+        from core.comp.adf_label import grounded_labels
+        from core.dc.argument import Argument
+        from core.dc.debate import RegisteredDebate
+        from core.dc.shapes import modernise_scaffolds
+        from core.dc.strict import compile_issue
+        from wrap.debate_session import DebateSession, DebateSessionError, local_spec
+        from wrap.prefix import local_name, rename_text
+        s = self.session
+        refusal = self._logic_refusal()
+        if refusal:
+            raise LogicRefused(refusal, stage="register debate")
+        try:
+            s.claim_name(name, "debate", dry_run=True)
+            s.reserve_prefix(name, dry_run=True)
+        except ProverError as e:
+            raise ContentRefused(str(e), stage="register debate", cause=e)
+        try:
+            body = ProofTermTransformer().transform(
+                Grammar().parser.parse(Argument._normalize_pt_to_unicode(term)))
+        except Exception as e:
+            raise InvalidRequest(f"register debate: cannot read the term: {e}", cause=e)
+        try:
+            spec, (body,), local = local_spec(s, name, declarations, [body])
+            issue = rename_text(issue, local)
+        except (DebateSessionError, ValueError) as e:
+            raise InvalidRequest(f"register debate: {e}", stage="register debate", cause=e)
+        if legacy:
+            body = modernise_scaffolds(body, set(s.declarations) | set(local.values()))
+        onus = "con" if isinstance(body, Mutilde) else "pro"
+        if canonical_prop(body.prop or "") != canonical_prop(issue):
+            raise InvalidRequest(f"register debate: the term {'refutes' if onus == 'con' else 'proves'} "
+                                 f"'{body.prop}', not the issue '{issue}'.", stage="register debate")
+        debate_session = DebateSession(s, spec, name=name)
+        try:
+            child = debate_session.session
+            body = resolve(body, child.declarations)
+            given = Argument(child, name=local_name(name, "term"), conclusion=issue,
+                             is_anti=onus == "con")
+            given.body = body
+            given.execute(preserve_input_body=True)       # the type check, and enrichment
+            graph = compile_issue(given.body, name, strict_names=child.declarations.keys(),
+                                  strict_kinds=declaration_kinds(child.declarations))
+        except DebateSessionError as e:
+            debate_session.close()
+            raise ContentRefused(str(e), stage="register debate", cause=e)
+        except ResolutionError as e:
+            debate_session.close()
+            raise InvalidRequest(f"register debate: {e}", stage="register debate", cause=e)
+        except ProverError as e:
+            debate_session.close()
+            raise ContentRefused(f"register debate: Fellowship refused the term of '{name}': {e}",
+                                 stage="register debate", cause=e)
+        except (DebateCompileError, FirstOrderNotSupported) as e:
+            debate_session.close()
+            raise CompileRefused(f"register debate: {e}", stage="register debate", cause=e)
+        try:
+            labels = grounded_labels(graph)
+        except AdfBddNotFound as e:
+            logger.warning("Debate '%s' registered without labels: %s", name, e)
+            labels = None
+        debate = RegisteredDebate(name, issue, onus, "closed", finished=True, given_term=given.body,
+                                  record_graph=graph, record_labels=labels,
+                                  debate_session=debate_session, local=local, legacy=legacy)
+        s.register_debate(debate)
+        s.reserve_prefix(name)
+        logger.info("Registered debate '%s' (%s) about %s: %d edge(s) over %d statement(s).",
+                    name, onus, issue, len(graph.edges), len(graph.nodes))
+        return Done(f"Registered debate '{name}' ({onus}) about {issue}.", debate)
+
+    def _registered(self, target) -> Optional[Any]:
+        """The registered debate ``target`` names, or None."""
+        from core.dc.debate import RegisteredDebate
+        target = self._as_target(target)
+        debate = self.session.debates.get(target.text) if target.kind == "debate" else None
+        return debate if isinstance(debate, RegisteredDebate) else None
+
+    @staticmethod
+    def _registered_debate(debate) -> bool:
+        from core.dc.debate import RegisteredDebate
+        return isinstance(debate, RegisteredDebate)
+
+    def _vocabulary(self, target):
+        """The declarations and decorations ``target`` is written in: a
+        registered debate's session's, the document's otherwise."""
+        debate = self._registered(target)
+        if debate is not None:
+            child = debate.debate_session.session
+            return child.declarations, child.decorations
+        return self.session.declarations, self.session.decorations
+
+    def display_names(self, target) -> Dict[str, str]:
+        """How a registered debate shows its own names: {DEBATE__x: x} where
+        ``x`` is taken neither in the document nor in the debate's session
+        (wrap/prefix.py).  Empty for any other target."""
+        from wrap.prefix import display_names
+        debate = self._registered(target)
+        if debate is None:
+            return {}
+        local = set(debate.local.values())
+        taken = set(self.session.names) | set(self.session.declarations)
+        if debate.debate_session.alive:
+            child = debate.debate_session.session
+            taken |= set(child.declarations) | set(child.arguments)
+        return display_names(debate.name, local, taken - local)
+
+    def _evaluate_registered(self, debate, target, mode, semantics, base, witness, favour):
+        """``evaluate`` on a registered debate: from its given term, with the
+        declarations of its session; kept for good."""
+        from core.comp.evaluate import evaluate_debate, evaluate_witnesses, EvaluationRefused
+        if favour:
+            raise InvalidRequest("'favour' needs an argument; a registered debate has none yet.",
+                                 stage="evaluate")
+        s = self.session
+        child = debate.debate_session.session
+        key = (mode, semantics, base, witness, s.undecided)
+        common = dict(strict_names=child.declarations.keys(),
+                      strict_kinds=declaration_kinds(child.declarations),
+                      base=base, semantics=semantics, source=None, undecided=s.undecided)
+        if key not in debate.evaluations:
+            term = copy.deepcopy(debate.given_term)
+            try:
+                if witness == "all":
+                    debate.evaluations[key] = evaluate_witnesses(term, debate.name, **common)
+                else:
+                    debate.evaluations[key] = evaluate_debate(term, debate.name, mode=mode,
+                                                              witness=witness, **common)
+            except AdfBddNotFound as e:
+                raise LabellerMissing(str(e), stage="evaluate", cause=e)
+            except (EvaluationRefused, DebateCompileError, FirstOrderNotSupported) as e:
+                raise EvaluationFailed(str(e), stage="evaluate", cause=e)
+        if witness == "all":
+            results, _ = debate.evaluations[key]
+            if results:
+                debate.labelled_nf = results[-1][1]
+            return WitnessEvaluations(target, semantics, base, list(results))
+        nf, nf_class, sigma, graph = debate.evaluations[key]
+        debate.labelled_nf = nf
+        return Evaluation(target, mode, semantics, base, witness, favour, nf, nf_class, sigma, graph)
 
     # -- the issue of a target -----------------------------------------------
 
@@ -976,6 +1134,9 @@ class Service:
         has no shared form."""
         from core.dc.unfold import UnfoldError
         s = self.session
+        if self._registered_debate(debate):
+            # its record: the term it was registered with, checked then
+            return IssueTerm(target, None, debate, debate.issue, debate.given_term, None)
         refusal = self._logic_refusal()
         if refusal:
             raise LogicRefused(refusal, stage="graph")
@@ -1047,7 +1208,14 @@ class Service:
             if target.kind != "debate":
                 raise InvalidRequest(f"graph: 'all' is for debates; '{name}' is not one.")
             debate = s.debates[name]
-            result = GraphResult(target, None, debate, s.debate_graph(debate), whole=True)
+            scope = (debate.debate_session.session.graph if self._registered_debate(debate)
+                     else s.debate_graph(debate))
+            result = GraphResult(target, None, debate, scope, whole=True)
+        elif self._registered(target) is not None:
+            debate = self._registered(target)
+            issue = debate.issue
+            self._remember_strict_edges(debate.record_graph, name)
+            result = GraphResult(target, None, debate, debate.record_graph, debate.given_term)
         elif target.kind == "document":
             self._report_onus_conflicts(s.graph)
             result = GraphResult(target, None, None, s.graph)
@@ -1180,6 +1348,9 @@ class Service:
         name = target.text
         if target.kind == "document":
             raise InvalidRequest("evaluate needs an argument or debate name; 'document' has no issue.")
+        registered = self._registered(target)
+        if registered is not None:
+            return self._evaluate_registered(registered, target, mode, semantics, base, witness, favour)
         found = self.issue_term(target, want_term=s.pipeline_unfolded)
         arg, issue, term, shared = found.argument, found.issue, found.term, found.shared
         holder = arg if arg is not None else found.debate
@@ -1260,7 +1431,9 @@ class Service:
         if target.kind == "debate":
             debate = s.debates[name]
             if which == "evaluated":
-                if debate.labelled_nf is None or debate.labelled_nf_revision != s.revision:
+                stale = (debate.labelled_nf_revision != s.revision
+                         and not self._registered_debate(debate))
+                if debate.labelled_nf is None or stale:
                     raise NotFound(f"Debate '{name}' has no evaluation at the document's current "
                                    f"revision; run `evaluate {name}` first.")
                 return TermResult(target, which, "the normal form of the last evaluation",
@@ -1336,7 +1509,8 @@ class Service:
         elif style is None:
             text = pres_str(term) + "\n" + pres_tree(term)
         else:
-            text = render_term(term, style, s.declarations, s.decorations)
+            declarations, decorations = self._vocabulary(target)
+            text = render_term(term, style, declarations, decorations)
         return Rendering(target, found.which, style, found.description, text)
 
     @_operation
@@ -1409,10 +1583,11 @@ class Service:
             if arg.normal_body is None:
                 arg.normalize()
             drawn = arg.normal_body
+        declarations, decorations = self._vocabulary(target)
         try:
             dot = render_acceptance_tree_dot(
                 drawn, verbose=False, label_mode="proof" if mode != "nl" else "nl",
-                nl_style=nl_style, declarations=s.declarations, decorations=s.decorations,
+                nl_style=nl_style, declarations=declarations, decorations=decorations,
                 labels=labels)
         except Exception as e:
             logger.error("Failed to build acceptance tree for '%s': %s", name, e)

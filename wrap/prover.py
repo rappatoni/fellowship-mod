@@ -743,7 +743,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         if not dry_run:
             self.names[name] = kind
 
-    def reserve_prefix(self, debate: str) -> None:
+    def reserve_prefix(self, debate: str, *, dry_run: bool = False) -> None:
         """Keep ``DEBATE__`` for the debate's own names: from now on the
         document refuses any name that starts with it.  Refused if a name
         of the document already does."""
@@ -753,7 +753,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
             raise NameClash(
                 f"debate '{debate}' would keep '{reserved}' for its own names, but "
                 f"{', '.join(repr(n) for n in taken)} already start(s) with it.")
-        self.doc.local_prefixes.add(reserved)
+        if not dry_run:
+            self.doc.local_prefixes.add(reserved)
 
     def claim_declared_names(self, command: str) -> list[str]:
         """The names a `declare N1, N2 : TYPE.` command introduces, all

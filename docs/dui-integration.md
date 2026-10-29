@@ -169,6 +169,13 @@ justification node it came from (a JSON pointer into the s(CASP) output),
 and every binder of the imported term with its node. Errors and labels can
 then be shown against the s(CASP) source.
 
+A debate can also be registered by its term, its own declarations local to
+it: `svc.register_debate(name, issue, term, declarations, legacy=False)`
+(the `register debate` block of the README). It lives in a Fellowship
+session of its own; `graph`, `label`, `evaluate` and `term` on its name
+answer from the term it was given, and `svc.display_names(name)` gives how
+it shows its own `NAME__x` names.
+
 ## JSON formats
 
 Every object is a versioned envelope `{"aida": "1.1", "kind": ...}`,
