@@ -862,7 +862,7 @@ Suite: 2500 passed, 9 skipped, 2 xfailed, 1 xpassed.
 :ICK:            2
 :EFFORT:         8:00
 :DEFERRALS:      0
-:SYNC_WITH:      id:scasp-aida-export-to-scasp
+:SYNC_WITH:      id:scasp-aida-export-to-scasp id:scasp-aida-round-trip-study
 :OUTCOME:        For imported and extended debates, a recorded comparison at four levels - literal terms, graphs, shared labels, normal forms under every semantics and mode - and against the answers of the exported, extended s(CASP) program, with the author's decision on the level the round-trip check enforces.
 :VERIFY:         The comparison table on the scasp-aida fixture programs is recorded here and the author has decided.
 :END:
@@ -910,14 +910,15 @@ extended debates, and the answers of the exported program.
 *Second data (2026-10-30): all eight fixture programs and eval/scasp/.*
 The seven programs of eval/scasp/ with the queries of eval/REPORT.org
 (13 cases; =flies(sam)= and =flies(opus)= are refused by the importer:
-an empty answer needs a query that is a plain atom, =_query_prop=), and
-scasp-aida's eight fixtures, each imported from its =.pl= with
-=register debate NAME import scasp=. 19 debates; the scripts are
-reproducible from those two inputs (an investigation, not a test).
-1. *Terms.* In 16 of 19 the root wrapper (difference 1) is the only
+an empty answer needs a query that is a plain atom, =_query_prop=;
+[[id:scasp-aida-refused-queries]]), and scasp-aida's eight fixtures, each
+imported from its =.pl= with =register debate NAME import scasp=. 19
+debates; scasp-aida's scripts/roundtrip_study.py runs the comparison.
+1. *Terms.* In 12 of 19 the root wrapper (difference 1) is the only
    difference: the recompiled term is T-SUP(=?1:Q=, given), and its scion
-   is alpha-equal to the given term. The three queries without an answer
-   (odd p, odd r, positive a) are a bare claim and literally equal.
+   is alpha-equal to the given term. The four queries without an answer
+   (odd p, odd r, positive a, constraint p) are a bare claim and literally
+   equal.
    simple, simple_pred and orphans differ below the root only inside the
    helper atom's refutation wing: differences 2 and 3, nothing else.
    Compared after the shim.
@@ -948,6 +949,18 @@ reproducible from those two inputs (an investigation, not a test).
    test the stable semantics at all; that needs negation in the
    translation (the blocked translation tasks in scasp-aida) and
    conflict - extended debates, several answers.
+
+*Repeat as the importer's coverage grows (the author, 2026-10-30).* The
+comparison above is to be run again whenever importer coverage increases,
+that is, as the importer comes to cover:
+a) the negative fragments;
+b) the first-order fragment;
+c) global consistency checks;
+d) any remaining s(CASP) feature.
+The 19 debates above are the baseline; they cover none of these
+in substance. To repeat it: scasp-aida's scripts/roundtrip_study.py, =make
+study= there (its README lists the programs: tests/fixtures/*.pl and this
+repository's eval/scasp/*.pl with the queries of eval/REPORT.org).
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
 :ID:             aida-dui-handover
