@@ -30,8 +30,10 @@ Files
   - DebateSession: a debate's own session - a second Fellowship
     (`ProverWrapper.spawn_child`, classical, the owner's settings) holding
     the declarations a debate needs and its arguments, replayed from a
-    DebateSpec on first use; `scope_spec` builds the spec for arguments of
-    the owning document. A new document, or closing the owner, closes it.
+    DebateSpec on first use - its declarations, arguments and the debate it
+    holds, with its moves - so a restart or an extension replays all of it;
+    `scope_spec` builds the spec for arguments of the owning document. A new
+    document, or closing the owner, closes it.
 - registry.py
   - The argument discipline at `dixi` (`enforce_discipline`,
     `DisciplineRefused`; the checks are core/dc/discipline.py), and

@@ -214,6 +214,8 @@ class Interpreter:
             return o
         if c.kind == "debate":
             return self._service(c, svc.start_debate, c["name"], c["issue"], c["onus"], c["scope"])
+        if c.kind == "extend_debate":
+            return self._service(c, svc.start_extension, c["name"], c["parent"])
         if c.kind == "close_debate":
             return self._service(c, svc.close_debate)
         if c.kind == "move":
@@ -241,10 +243,12 @@ class Interpreter:
         # Fellowship command
         words = c.text.split()
         if (getattr(s, "recording_debate", None) is not None
-                and words[0] in getattr(s, "arguments", {}) and len(words) <= 2):
+                and svc.movable(words[0]) and len(words) <= 2):
             o = self._service(c, svc.move, words[0], None, words[1] if len(words) == 2 else None)
             o.kind = "move"
             return o
+        if svc._recording_extension() is not None and c.get("word") in ("declare", "deny"):
+            return self._service(c, svc.command, c.text + ".")    # the extension's own
         return self._fellowship(c)
 
     def _service(self, c: Command, method, *args, **kwargs) -> Outcome:
@@ -311,16 +315,26 @@ class Interpreter:
 
     # -- argument blocks -----------------------------------------------------
 
+    def _block_session(self):
+        """Where an argument block goes: the document's session, or, while
+        an extension is recorded, the extension's (as ``NAME__x``)."""
+        return self.service._recording_extension()
+
     def _open(self, c: Command) -> Outcome:
+        from wrap.prefix import local_name
         from wrap.registry import start_recording
         s = self.session
         name, conclusion, anti = c["name"], c["conclusion"], c["anti"]
+        extension = self._block_session()
+        if extension is not None:
+            s, name = extension.debate_session.session, local_name(extension.name, name)
         try:
             start_recording(s, name, anti)
         except ProverError as e:
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e)
         current = {"name": name, "conclusion": conclusion, "instructions": [], "is_anti": anti,
-                   "_opened_at": c.span, "_transcript_from": len(self.transcript)}
+                   "_opened_at": c.span, "_transcript_from": len(self.transcript),
+                   "_session": s, "_short": c["name"] if extension is not None else None}
         kind = "counterargument" if anti else "argument"
         if self.live:
             opener = "antitheorem" if anti else "theorem"
@@ -342,6 +356,10 @@ class Interpreter:
     def _reopen(self, c: Command) -> Outcome:
         from wrap.registry import reopen, abandon
         s = self.session
+        if self._block_session() is not None:
+            return Outcome(None, c.text, c.kind, "refused",
+                           "refining an argument while an extension is recorded is not supported; "
+                           "close the extension with `cedat tempus.` first.")
         try:
             current = reopen(s, c["name"])
         except ProverError as e:
@@ -428,8 +446,8 @@ class Interpreter:
                        diagnostics=list(done.diagnostics))
 
     def _close(self, c: Command, *, demand_strict: bool) -> Outcome:
-        s = self.session
         current, self.recording = self.recording, None
+        s = current.get("_session", self.session)
         if self.live:
             try:
                 self.show_ui(s.send_command("discard theorem.", include_ui=True))
@@ -438,12 +456,14 @@ class Interpreter:
             except ProverError:
                 pass
         try:
-            done = self.service.finish_recording(current, demand_strict=demand_strict)
+            done = Service.of(s).finish_recording(current, demand_strict=demand_strict)
         except AidaError as e:
             self._abandoned = current
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e,
                            diagnostics=list(e.diagnostics))
         arg = done.value
+        if current.get("_short") is not None:
+            self.service.keep_in_extension(current["_short"], arg)
         opened = current.get("_opened_at")
         if opened is not None and c.span is not None:
             # where the argument sits in the text: its whole block
@@ -461,7 +481,7 @@ class Interpreter:
         current = self.recording
         self._abandoned = current
         self._drop_recording()
-        abandon(self.session, current)
+        abandon(current.get("_session", self.session), current)
         return Outcome(None, c.text, c.kind, "ok",
                        f"Discarded the recording of '{current['name']}'; nothing registered.")
 
@@ -469,7 +489,7 @@ class Interpreter:
         current, self.recording = self.recording, None
         if self.live:
             try:
-                self.session.send_command("discard theorem.")
+                current.get("_session", self.session).send_command("discard theorem.")
             except ProverError:
                 pass
 
@@ -482,7 +502,7 @@ class Interpreter:
         author is concerned, so no later step may land on it: the focus is
         moved off first, and a step with only cited sites left is refused."""
         from core.dc.argument import Argument
-        s = self.session
+        s = current.get("_session", self.session)
         probe = Argument(s, name=current["name"], conclusion=current["conclusion"])
         state = current.get("_state")
         cited_sites = current.setdefault("_cited_sites", set())

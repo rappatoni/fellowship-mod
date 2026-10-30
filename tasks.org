@@ -656,7 +656,8 @@ replay into a debate session (tests/test_debate_session.py).
 Compared in-process, as syntax trees: printed unfolded terms do not parse
 back yet ([[id:aida-site-names-round-trip]]).
 
-*** BACKLOG Extend a registered debate
+*** DONE Extend a registered debate
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-debate-extends
 :AREA:           phd
@@ -671,6 +672,38 @@ back yet ([[id:aida-site-names-round-trip]]).
 :OUTCOME:        =debate ... NAME extends PARENT.= makes a new closed debate that copies the parent's argument graph and moves, takes new local or moved arguments, and recomputes its term and labels in full; the parent is unchanged; a move may target any argument of the debate, the parent's included.
 :VERIFY:         Extending simple by an attack on =b= changes the child's verdict and not the parent's; the suite passes.
 :END:
+
+*Implemented 2026-10-30* (=Service.start_extension= and the routing of
+moves, =register=, declarations, argument blocks, =cedat tempus= and the
+queries; =debate NAME extends PARENT.= in wrap/syntax.py; the
+interpreter's blocks open in the extension's session; tests/test_extends.py,
+12 tests). The extension's session is started from the parent's spec - its
+declarations, its arguments (replayed and compiled again, which gives the
+same graph, since an Argument holds its session and is not copied) and its
+moves - and the parent's session is not touched. What it adds while
+recorded is its own (=NAME__x=): declarations, =register= (whose term may
+name its own declarations as written), argument blocks (as =NAME__x=;
+tactics name the debate's other names in full). A move resolves a name in
+the session, then as the extension's own, then as a document argument,
+which is brought in with the declarations it needs. Queries on an
+extension are its session's, in full (no incremental compilation).
+Evidence against VERIFY:
+- simple extended by =deny nb : (B).=, an argument from it and =attack
+  nb_arg simple__a5.=: in the extension A is OUT and the verdict no longer
+  a value; =simple= still evaluates to a value with A IN, its session and
+  arguments unchanged.
+- An argument block and a document argument join the extension; an
+  extension of an extension carries its parent's moves and shows both
+  prefixes' names short; refusals: extending a recipe debate, extending
+  while recording, refining inside an extension, a bad or taken name.
+- Found and fixed on the way: a debate session's spec did not keep the
+  debate it holds, so a restarted session - a registered debate's or an
+  extension's - came back without its moves; =DebateSpec.debate= now
+  keeps it, and the session's =start_debate= / =move= / =close_debate=
+  record it (=test_its_session_restarts_with_its_moves=).
+- A session without =recording_debate= (the tests' fake prover) broke
+  =register= on the first run (7 failures); the lookup now tolerates it.
+- Suite: 2466 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
 *** BACKLOG Import a debate from a source language
 :PROPERTIES:

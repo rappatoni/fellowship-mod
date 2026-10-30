@@ -899,6 +899,29 @@ cedat tempus.
   usually not in the unfolder's shapes, so it warns once; the term its
   arguments unfold to comes back unchanged.
 
+A registered debate is extended, not edited:
+
+```
+debate s3 extends simple.
+deny nb : (B).                       % its own: s3__nb
+register nb_arg : B := "μ'x:B.<x||nb>".
+attack nb_arg simple__a5.
+cedat tempus.
+```
+
+- The extension starts where its parent is - the parent's declarations,
+  arguments and moves, in a session of its own - and the parent is not
+  changed. An extension can be extended in turn.
+- What it adds while it is recorded is its own, `s3__x`: declarations,
+  `register`, and `argument ... dixi` blocks. Its terms and tactics name
+  the debate's other names in full (`simple__b`); its own declarations may
+  be named as written.
+- A move names an argument of the debate (the parent's included), one the
+  extension added (`nb_arg`), or a document argument, which is brought
+  into the extension's session with the declarations it needs.
+- `graph`, `label`, `evaluate`, `render` and `tree` on an extension answer
+  from its session, compiled in full from everything it holds.
+
 ## Script files (`.fspy`)
 
 Script mode uses the same general command language as the interactive wrapper.

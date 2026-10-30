@@ -56,6 +56,9 @@ class DebateSpec:
     arguments: List[ArgumentSpec] = field(default_factory=list)
     #: Wrapper-side decorations (pres/decorations.py).
     decorations: Dict[str, str] = field(default_factory=dict)
+    #: The debate held in the session, if any: {"name", "issue", "onus",
+    #: "moves": [(argument, verb, target)], "finished"}.
+    debate: Optional[dict] = None
 
 
 class DebateSession:
@@ -103,11 +106,86 @@ class DebateSession:
                     raise DebateSessionError(
                         f"debate '{self.name}': argument '{argument.name}' refused in its "
                         f"session: {e}") from e
+            debate = self.spec.debate
+            if debate is not None:
+                try:
+                    service.start_debate(debate["name"], debate["issue"], debate["onus"], "open")
+                    for move in debate["moves"]:
+                        service.move(*move)
+                    if debate["finished"]:
+                        service.close_debate()
+                except AidaError as e:
+                    raise DebateSessionError(
+                        f"debate '{self.name}': its moves refused in its session: {e}") from e
         except BaseException:
             self.close()
             raise
         logger.debug("Debate session '%s' started: %d declaration(s), %d argument(s).",
                      self.name, len(self.spec.declarations), len(self.spec.arguments))
+
+    # -- adding to the debate: to the spec and the running session alike, so
+    #    that a restart, or an extension of the debate, replays it too -----
+
+    def declare(self, command: str) -> None:
+        """Send a declaration to the debate's session and keep it."""
+        try:
+            self.session.send_top_level(command)
+        except ProverError as e:
+            raise DebateSessionError(f"debate '{self.name}': `{command}` refused: {e}") from e
+        self.spec.declarations.append(command)
+
+    def register(self, name: str, conclusion: str, body) -> Any:
+        """Register an argument in the debate's session (under the argument
+        discipline) and keep it; the registered Argument."""
+        from wrap.service import Service
+        done = Service.of(self.session).register_body(name, conclusion, deepcopy(body))
+        self.spec.arguments.append(ArgumentSpec(name, conclusion, deepcopy(body)))
+        return done.value
+
+    def start_debate(self, name: str, issue: str, onus: str, moves=()) -> None:
+        """Hold the debate in the session - in its open scope, the session's
+        own arguments - with ``moves`` [(argument, verb, target)], still
+        being recorded; and keep it."""
+        from wrap.service import Service
+        service = Service.of(self.session)
+        service.start_debate(name, issue, onus, "open")
+        for move in moves:
+            service.move(*move)
+        self.spec.debate = {"name": name, "issue": issue, "onus": onus,
+                            "moves": [tuple(m) for m in moves], "finished": False}
+
+    def move(self, argument: str, verb=None, target=None):
+        """A move of the debate held in the session, kept."""
+        from wrap.service import Service
+        done = Service.of(self.session).move(argument, verb, target)
+        self.spec.debate["moves"].append((argument, verb, target))
+        return done
+
+    def close_debate(self) -> None:
+        from wrap.service import Service
+        Service.of(self.session).close_debate()
+        self.spec.debate["finished"] = True
+
+    def take_from_document(self, name: str) -> Any:
+        """Bring the document's argument ``name`` into the debate: the
+        declarations it needs that the debate lacks, then the argument,
+        under its own name (a document name is unique)."""
+        session = self.session
+        if name in session.arguments:
+            return session.arguments[name]
+        spec = scope_spec(self.parent, [name])
+        for command in spec.declarations:
+            from wrap.prefix import parse_declaration
+            if all(n in session.declarations for n in parse_declaration(command)[1]):
+                continue
+            self.declare(command)
+        argument, = spec.arguments
+        from wrap.service import AidaError
+        try:
+            return self.register(argument.name, argument.conclusion, argument.body)
+        except AidaError as e:
+            raise DebateSessionError(f"debate '{self.name}': the document's '{name}' "
+                                     f"refused in its session: {e}") from e
 
     def close(self) -> None:
         """Stop the debate's Fellowship.  The spec stays: ``session``

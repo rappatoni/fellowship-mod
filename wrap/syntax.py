@@ -246,7 +246,15 @@ def _p_bare(kind, usage):
 _DEBATE = re.compile(r"^(\S+)\s+(\S+)\s+([^\s:]+)\s*:\s*(.+)$", re.S)
 
 
+_EXTENDS = re.compile(r"^([^\s:]+)\s+extends\s+([^\s:]+)$")
+
+
 def _p_debate(words, rest, text):
+    extends = _EXTENDS.match(rest.strip())
+    if extends is not None:
+        # `debate NAME extends PARENT.`: a registered debate extended
+        name, parent = extends.groups()
+        return Command("extend_debate", text, args={"name": name, "parent": parent})
     match = _DEBATE.match(rest.strip())
     if match is None:
         raise SyntaxRefused("Use: debate pro|con open|closed NAME : ISSUE.  "

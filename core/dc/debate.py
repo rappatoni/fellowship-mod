@@ -142,8 +142,19 @@ class RegisteredDebate(Debate):
     #: the given term against what its arguments unfold to
     #: (core/dc/roundtrip.py, RoundTrip), or None if they were not unfolded
     roundtrip: Any = field(default=None, repr=False, compare=False)
+    #: an extension (``debate NAME extends PARENT.``): the registered debate
+    #: or extension it extends.  It has no term of its own: its session
+    #: starts with the parent's declarations, arguments and moves, and what
+    #: it answers is compiled from them, with what it adds.
+    parent: Optional[str] = None
+
+    @property
+    def extension(self) -> bool:
+        return self.parent is not None
 
     def header(self) -> str:
+        if self.extension:
+            return f"debate {self.name} extends {self.parent}."
         return f"register debate {self.name}{' legacy' if self.legacy else ''} : {self.issue_prop}."
 
 

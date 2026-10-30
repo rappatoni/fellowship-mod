@@ -639,7 +639,12 @@ class Service:
     def command(self, text: str) -> Done:
         """A Fellowship command (``declare``, ``deny``, a logic toggle ...).
         A ``declare`` takes its names first, so a clash is refused before
-        Fellowship sees it, and gives them back if Fellowship refuses it."""
+        Fellowship sees it, and gives them back if Fellowship refuses it.
+        While an extension is recorded, a ``declare``/``deny`` is the
+        extension's own (``NAME__x``, in its session)."""
+        extension = self._recording_extension()
+        if extension is not None and text.split()[:1] in (["declare"], ["deny"]):
+            return self._declare_in_extension(extension, text)
         try:
             state = self.session.send_top_level(text)
         except ProverError as e:
@@ -662,6 +667,9 @@ class Service:
         # The first-order reading of the ambiguous constructors, strict: a
         # name the declarations do not account for is refused, not guessed
         # (tasks.org, aida-fo-resolve-unwired).
+        extension = self._recording_extension()
+        if extension is not None:
+            return self._register_in_extension(extension, name, conclusion, body)
         from core.ac.resolve import resolve, ResolutionError
         try:
             body = resolve(body, s.declarations)
@@ -835,6 +843,8 @@ class Service:
                                  stage="debate")
         if verb is not None and verb not in VERBS:
             raise InvalidRequest(f"unknown verb '{verb}' (one of {', '.join(VERBS)})", stage="debate")
+        if self._registered_debate(s.debates[name]):
+            return self._move_in_extension(s.debates[name], argument, verb, target)
         move = Move(argument, verb, target)
         debate = s.debates[name]
         graph = s.debate_graph(replace(debate, moves=debate.moves + [move], _term=None))
@@ -869,6 +879,8 @@ class Service:
         if not debate.moves:
             raise ContentRefused(f"debate '{name}' has no move yet; open it with an argument.",
                                  stage="debate")
+        if self._registered_debate(debate):
+            debate.debate_session.close_debate()
         debate.finished = True
         s.recording_debate = None
         logger.info("Debate '%s' recorded: %d move(s).", name, len(debate.moves))
@@ -995,14 +1007,13 @@ class Service:
         from core.dc.debate import Move
         from core.dc.extract import extract_arguments
         child = debate.debate_session.session
-        service = Service.of(child)
         extracted, _ = extract_arguments(debate.given_term, debate.name,
                                          strict_names=child.declarations.keys(),
                                          strict_kinds=declaration_kinds(child.declarations))
         for argument in extracted:
             try:
-                service.register_body(argument.name, _command_conclusion(argument.conclusion),
-                                      argument.body)
+                debate.debate_session.register(argument.name, _command_conclusion(argument.conclusion),
+                                               argument.body)
             except AidaError as e:
                 debate.refused[argument.name] = str(e)
                 logger.warning("Debate '%s': argument %s (edge %s) not taken into its session: %s",
@@ -1013,10 +1024,9 @@ class Service:
         if not moves or extracted[0].name not in moves:
             logger.warning("Debate '%s' has no opening argument; it has no moves.", debate.name)
             return
-        service.start_debate(debate.name, debate.issue_prop, debate.onus, "open")
-        for name in moves:
-            service.move(name)
-        service.close_debate()
+        debate.debate_session.start_debate(debate.name, debate.issue_prop, debate.onus,
+                                           [(name, None, None) for name in moves])
+        debate.debate_session.close_debate()
         debate.moves = [Move(name) for name in moves]
         logger.info("Debate '%s': %d argument(s) cut from its term, %d move(s).",
                     debate.name, len(extracted), len(moves))
@@ -1027,6 +1037,155 @@ class Service:
         target = self._as_target(target)
         debate = self.session.debates.get(target.text) if target.kind == "debate" else None
         return debate if isinstance(debate, RegisteredDebate) else None
+
+    def _extension(self, target) -> Optional[Any]:
+        """The extension ``target`` names, or None."""
+        debate = self._registered(target)
+        return debate if debate is not None and debate.extension else None
+
+    def _recording_extension(self) -> Optional[Any]:
+        """The extension being recorded, or None."""
+        name = getattr(self.session, "recording_debate", None)
+        return self._extension(Target("debate", name)) if name else None
+
+    @staticmethod
+    def _in_session(debate) -> "Service":
+        return Service.of(debate.debate_session.session)
+
+    @_operation
+    def start_extension(self, name: str, parent: str) -> Done:
+        """``debate NAME extends PARENT.``: a new debate that starts where
+        the registered debate (or extension) ``parent`` is - its
+        declarations, arguments and moves, in a session of its own - and
+        takes moves, arguments and declarations of its own until
+        ``cedat tempus.``.  The parent is not changed."""
+        from core.dc.debate import RegisteredDebate
+        from wrap.debate_session import DebateSession, DebateSessionError, DebateSpec
+        s = self.session
+        refusal = self._logic_refusal()
+        if refusal:
+            raise LogicRefused(refusal, stage="debate")
+        if s.recording_debate is not None:
+            raise ContentRefused(f"debate '{s.recording_debate}' is still being recorded; "
+                                 f"close it with `cedat tempus.` first.", stage="debate")
+        base = self._registered(parent)
+        if base is None:
+            raise NotFound(f"no registered debate '{parent}' to extend.", stage="debate")
+        if not base.finished:
+            raise ContentRefused(f"debate '{parent}' is still being recorded.", stage="debate")
+        try:
+            s.claim_name(name, "debate", dry_run=True)
+            s.reserve_prefix(name, dry_run=True)
+        except ProverError as e:
+            raise ContentRefused(str(e), stage="debate", cause=e)
+        spec = base.debate_session.spec
+        debate_session = DebateSession(s, DebateSpec(list(spec.declarations), list(spec.arguments),
+                                                     dict(spec.decorations)), name=name)
+        try:
+            debate_session.start_debate(name, base.issue_prop, base.onus,
+                                        [(m.argument, m.verb, m.target) for m in base.moves])
+        except (DebateSessionError, AidaError) as e:
+            debate_session.close()
+            raise ContentRefused(f"debate '{name}' could not start from '{parent}': {e}",
+                                 stage="debate", cause=e)
+        debate = RegisteredDebate(name, base.issue_prop, base.onus, "closed", moves=list(base.moves),
+                                  debate_session=debate_session, parent=base.name)
+        s.register_debate(debate)
+        s.reserve_prefix(name)
+        s.recording_debate = name
+        logger.info("Extending debate '%s' as '%s': %d move(s) taken over.",
+                    parent, name, len(base.moves))
+        return Done(f"Extending debate '{parent}' as '{name}'.", debate)
+
+    def _move_in_extension(self, debate, argument, verb, target) -> Done:
+        """A move of an extension: names an argument of its session (the
+        parent's included), one it registered (``NAME__x``, or just ``x``),
+        or a document argument, which is first brought into its session."""
+        from core.dc.debate import Move
+        from wrap.debate_session import DebateSessionError
+        from wrap.prefix import local_name
+        child = debate.debate_session.session
+
+        def resolve(n):
+            if n is None or n in child.arguments:
+                return n
+            if local_name(debate.name, n) in child.arguments:
+                return local_name(debate.name, n)
+            if n in self.session.arguments:
+                try:
+                    debate.debate_session.take_from_document(n)
+                except DebateSessionError as e:
+                    raise ContentRefused(str(e), stage="debate", cause=e)
+            return n
+
+        argument, target = resolve(argument), resolve(target)
+        done = debate.debate_session.move(argument, verb, target)
+        debate.moves.append(Move(argument, verb, target))
+        return done
+
+    def _register_in_extension(self, debate, name, conclusion, body) -> Done:
+        """``register`` while an extension is recorded: the argument is the
+        extension's own, ``NAME__x`` in its session; its term may name the
+        extension's own declarations as written."""
+        from core.ac.resolve import resolve, ResolutionError
+        from core.dc.cite import mark_citations
+        from wrap.prefix import local_name, rename_term, rename_text
+        child = debate.debate_session.session
+        body = rename_term(body, debate.local)
+        conclusion = rename_text(conclusion, debate.local)
+        full = local_name(debate.name, name)
+        try:
+            body = resolve(body, child.declarations)
+        except ResolutionError as e:
+            raise InvalidRequest(f"register: {e}", cause=e)
+        mark_citations(body, lambda n: n in child.arguments)
+        try:
+            argument = debate.debate_session.register(full, conclusion, body)
+        except AidaError:
+            raise
+        debate.local[name] = full
+        return Done(f"Registered argument '{full}' in debate '{debate.name}' with conclusion "
+                    f"'{argument.conclusion}'.", argument)
+
+    def _declare_in_extension(self, debate, text: str) -> Done:
+        """A declaration while an extension is recorded: its own, renamed."""
+        from wrap.debate_session import DebateSessionError
+        from wrap.prefix import local_name, parse_declaration, rename_text
+        try:
+            verb, names, typ = parse_declaration(text)
+            mapping = {n: local_name(debate.name, n) for n in names}
+            command = (f"{verb} {', '.join(mapping[n] for n in names)} : "
+                       f"{rename_text(typ, {**debate.local, **mapping})}.")
+        except ValueError as e:
+            raise InvalidRequest(str(e), stage="prover", cause=e)
+        try:
+            debate.debate_session.declare(command)
+        except DebateSessionError as e:
+            raise ContentRefused(str(e), stage="prover", cause=e)
+        debate.local.update(mapping)
+        return Done(command, None)
+
+    def movable(self, word: str) -> bool:
+        """Whether ``word`` names something the debate being recorded can
+        move: a document argument, or, for an extension, an argument of
+        its session."""
+        from wrap.prefix import local_name
+        if word in self.session.arguments:
+            return True
+        extension = self._recording_extension()
+        if extension is None:
+            return False
+        child = extension.debate_session.session
+        return word in child.arguments or local_name(extension.name, word) in child.arguments
+
+    def keep_in_extension(self, name: str, argument) -> None:
+        """An argument recorded as a block into the extension being
+        recorded: kept in its spec and its own names."""
+        from wrap.debate_session import ArgumentSpec
+        extension = self._recording_extension()
+        extension.debate_session.spec.arguments.append(
+            ArgumentSpec(argument.name, argument.conclusion, copy.deepcopy(argument.body)))
+        extension.local[name] = argument.name
 
     @staticmethod
     def _registered_debate(debate) -> bool:
@@ -1046,16 +1205,25 @@ class Service:
         """How a registered debate shows its own names: {DEBATE__x: x} where
         ``x`` is taken neither in the document nor in the debate's session
         (wrap/prefix.py).  Empty for any other target."""
-        from wrap.prefix import display_names
+        from collections import Counter
+        from wrap.prefix import prefix
         debate = self._registered(target)
         if debate is None:
             return {}
-        local = set(debate.local.values())
-        taken = set(self.session.names) | set(self.session.declarations)
-        if debate.debate_session.alive:
-            child = debate.debate_session.session
-            taken |= set(child.declarations) | set(child.arguments)
-        return display_names(debate.name, local, taken - local)
+        owners = []                             # the debate, then what it extends
+        while debate is not None and debate.name not in owners:
+            owners.append(debate.name)
+            debate = self._registered(debate.parent) if debate.parent else None
+        names = set(self.session.names) | set(self.session.declarations)
+        session = self._registered(target).debate_session
+        if session.alive:
+            names |= set(session.session.declarations) | set(session.session.arguments)
+        names |= {n for owner in owners for n in self._registered(owner).local.values()}
+        local = {n: n[len(prefix(owner)):] for n in names for owner in owners
+                 if n.startswith(prefix(owner))}
+        taken = names - set(local)
+        twice = {short for short, k in Counter(local.values()).items() if k > 1}
+        return {n: short for n, short in local.items() if short not in taken and short not in twice}
 
     def _evaluate_registered(self, debate, target, mode, semantics, base, witness, favour):
         """``evaluate`` on a registered debate: from its given term, with the
@@ -1106,6 +1274,9 @@ class Service:
         s = self.session
         target = self._as_target(target)
         name = target.text
+        extension = self._extension(target)
+        if extension is not None:
+            return self._in_session(extension).issue_term(name, want_term=want_term)
         if target.kind == "document":
             raise InvalidRequest("'document' has no issue; name an argument, a debate or an issue.")
         if target.kind == "debate":
@@ -1277,6 +1448,10 @@ class Service:
         s = self.session
         target = self._as_target(target)
         name = target.text
+        extension = self._extension(target)
+        if extension is not None:
+            return self._in_session(extension).graph(name, whole=whole, labels=labels,
+                                                     semantics=semantics, mode=mode)
         issue = None                               # the statement a credulous overlay accepts
         if whole:
             if target.kind != "debate":
@@ -1422,6 +1597,10 @@ class Service:
         name = target.text
         if target.kind == "document":
             raise InvalidRequest("evaluate needs an argument or debate name; 'document' has no issue.")
+        extension = self._extension(target)
+        if extension is not None:
+            return self._in_session(extension).evaluate(name, mode=mode, semantics=semantics,
+                                                        base=base, witness=witness, favour=favour)
         registered = self._registered(target)
         if registered is not None:
             return self._evaluate_registered(registered, target, mode, semantics, base, witness, favour)
@@ -1502,6 +1681,9 @@ class Service:
         name = target.text
         if which is not None and which not in TERM_SELECTORS:
             raise InvalidRequest(f"unknown term '{which}' (one of {', '.join(TERM_SELECTORS)})")
+        extension = self._extension(target)
+        if extension is not None:
+            return self._in_session(extension).term(name, which)
         if target.kind == "debate":
             debate = s.debates[name]
             if which == "evaluated":
