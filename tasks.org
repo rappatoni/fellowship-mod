@@ -933,8 +933,8 @@ reproducible from those two inputs (an investigation, not a test).
    graph has no edge the recompiled one lacks; default markers equal.
    The duplicates are a naming bug of the strict phase, not one of the
    three differences, reproducible without the importer
-   ([[id:aida-strict-edge-argument-origin]]); with it fixed the graphs of
-   all 19 should agree.
+   ([[id:aida-strict-edge-argument-origin]]). With it fixed the graphs of
+   all 19 agree: no edge in only one, default markers equal.
 4. *Labels.* Every graph, given and recompiled, is acyclic and has
    exactly one labelling under each of the four semantics, so grounded,
    complete, preferred and stable cannot differ, and neither can the
@@ -9207,7 +9207,8 @@ no collision the prefixed names did not have. Evidence:
   numbers the sites =1=, =2=, ...") and the =unfold= trace lines.
 - Suite: 2484 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
-** BACKLOG Name a copy's strict edge after its argument, not its root binder
+** DONE Name a copy's strict edge after its argument, not its root binder
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-strict-edge-argument-origin
 :AREA:           phd
@@ -9246,6 +9247,26 @@ renaming binders at extraction: the copy should carry the argument it
 came from (the unfolder knows the edge; the document knows which
 argument the edge belongs to), and the strict test should ask about
 that.
+
+*Fixed 2026-10-30.* =Edge.argument= (not part of the
+edge's identity) holds the name a whole body was compiled under
+(=_Compiler.compile=); the unfolder's copy carries it beside =origin=
+(core/dc/unfold.py, =_same_origin= in core/dc/share.py);
+=strict_edge_candidate= refuses a copy if either name is held. =origin=
+itself is unchanged, so edge names and =k= stay as they were. Evidence:
+- tests/test_unfold.py,
+  =test_an_argument_named_apart_from_its_binder_gets_no_duplicate_edge=,
+  shared and unfolded routes; both fail with the check reverted.
+- The 19 debates of [[id:aida-round-trip-equivalence-study]]: no edge in
+  only one of the graphs, default markers equal, labellings under the
+  four semantics and the 16 normal forms equal as before.
+- Where the check changes the answer, logged over the whole suite (144
+  times): only arguments cut out of a registered debate's term, an
+  extension's argument with a binder of its own (=s3__nb_arg=, binder =x=)
+  and the new test's =x=. No recipe debate's or minicourse fixture's
+  strict edges change.
+- Suite: 2502 passed, 9 skipped, 2 xfailed, 1 xpassed. Perf tests: 16
+  passed. scasp-aida's tests against it: 83 passed.
 
 ** BACKLOG Print the proposition, not the statement key, of an open quantified statement
 :PROPERTIES:

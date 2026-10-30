@@ -437,12 +437,17 @@ def strict_edge_candidate(node, strict_names, has_decision) -> bool:
     strict as registered (not among ``strict_names``, which hold the
     strict arguments Fellowship holds), whether or not anything was
     decided in or around it (tasks.org, aida-strict-edge-collector-condition,
-    2026-10-16).  A subterm without an origin - a term built by hand, or
-    the wrapper a decision leaves - is a candidate only if it contains a
-    strict decision, the rule before."""
+    2026-10-16).  The origin is the edge's name, which for an argument
+    whose body is an eta chain is its root binder (``_host_name``), so the
+    argument the copy's edge was compiled under (``argument``) is asked
+    too: ``x := mu k.<p||k>`` is held as x, not as k
+    (aida-strict-edge-argument-origin).  A subterm without an origin - a
+    term built by hand, or the wrapper a decision leaves - is a candidate
+    only if it contains a strict decision, the rule before."""
     origin = getattr(node, "origin", None)
     if origin:
-        return origin not in set(strict_names or ())
+        held = set(strict_names or ())
+        return origin not in held and getattr(node, "argument", None) not in held
     return has_decision(node)
 
 

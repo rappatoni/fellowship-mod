@@ -18,7 +18,7 @@ This module is being built along propositional-fragment-plan.org:
 
 import logging
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 from itertools import count
 from typing import Optional
@@ -154,6 +154,10 @@ class Edge:
     #: The label of the body's root in a labelled term; not part of the
     #: edge's identity.
     target_label: object = field(default=None, compare=False, repr=False)
+    #: For the edge of a whole body: the name it was compiled under - the
+    #: argument, where ``name`` may be its root binder (``_host_name``).
+    #: Not part of the edge's identity (aida-strict-edge-argument-origin).
+    argument: object = field(default=None, compare=False, repr=False)
 
 
 @dataclass(frozen=True)
@@ -1095,7 +1099,8 @@ class _Compiler:
             )
 
     def compile(self, body: ProofTerm, name: str, role: str = "argument") -> None:
-        self.graph.add_edge(self.compile_body(deepcopy(body), _host_name(body, name), role, {}))
+        edge = self.compile_body(deepcopy(body), _host_name(body, name), role, {})
+        self.graph.add_edge(replace(edge, argument=name))
 
     # -- one subargument ----------------------------------------------------
 

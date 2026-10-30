@@ -626,6 +626,7 @@ def _same_origin(old, new):
     """A rebuilt binder keeps the argument its body came from."""
     if getattr(old, "origin", None):
         new.origin = old.origin
+        new.argument = getattr(old, "argument", None)
     return new
 
 

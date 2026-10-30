@@ -432,6 +432,37 @@ def test_a_strict_argument_gets_no_duplicate_edge(prover):
     assert issue_strict_edges(unfold(doc, (K("C"), "context")), "u", sn) == []
 
 
+@pytest.mark.parametrize("pipeline", ["shared", "unfolded"])
+def test_an_argument_named_apart_from_its_binder_gets_no_duplicate_edge(prover, pipeline):
+    """aida-strict-edge-argument-origin (2026-10-30): x's edge is named
+    after its root binder k (_host_name), but Fellowship holds x, so the
+    collector adds no k*; it did, a duplicate of k, until the copy carried
+    the argument it came from.  z, whose binder is its name, never got
+    one."""
+    from wrap.interpreter import Interpreter
+    from wrap.service import Service
+    text = """declare P : bool.
+declare p : (P).
+declare q : (P).
+register x : P := "μk:P.<p||k>".
+register z : P := "μz:P.<q||z>".
+debate pro closed dx : P.
+x.
+cedat tempus.
+debate pro closed dz : P.
+z.
+cedat tempus.
+"""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        assert all(o.status == "ok" for o in Interpreter(prover).run(text))
+    service = Service.of(prover)
+    service.set_pipeline(pipeline)
+    edges = {d: [(e.role, e.target_key, e.strict, e.sources) for e in service.graph(d).graph.edges]
+             for d in ("dx", "dz")}
+    assert edges["dx"] == edges["dz"] == [("supporter", K("P"), True, ())]
+
+
 def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
     # Since the asymmetric guard the cycle resolves two-valued: the undercut
     # of Q fails because its premise B rests on an R that cR refutes, so the

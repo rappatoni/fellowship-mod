@@ -597,8 +597,12 @@ class Unfolder:
         copy = walk(edge.term, env, {})
         if isinstance(copy, (Mu, Mutilde)):
             # the copy's root binder may be renamed (a1_0_2); it still
-            # records the argument a1_0 (aida-fold-occurrences-names)
+            # records the argument a1_0 (aida-fold-occurrences-names), and
+            # the edge of a whole body the name it was compiled under,
+            # which the strict phase asks about
+            # (aida-strict-edge-argument-origin)
             copy.origin = edge.name
+            copy.argument = edge.argument
         return copy
 
     def _exposed(self, node, sub, env, spine, names, primary, walk):
