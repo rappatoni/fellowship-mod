@@ -971,6 +971,31 @@ The 19 debates above are the baseline; they cover none of these
 in substance. To repeat it: scasp-aida's scripts/roundtrip_study.py, =make
 study= there (its README lists the programs: tests/fixtures/*.pl and this
 repository's eval/scasp/*.pl with the queries of eval/REPORT.org).
+
+*Third data (2026-10-30): with every answer.* =run_scasp_json= now passes
+=-n0= (until then a program read directly gave its first answer only, so
+the 19 above are first answers). Two programs have several: simple and
+workshop. =make study= again: refusals, graphs, labellings and the 16 normal
+forms as before, except:
+| case     | arguments | terms          | below | normal forms equal |
+|----------+-----------+----------------+-------+--------------------|
+| simple   | 5 -> 6    | root and below | 3 -> 6 | 16/16             |
+| workshop | 1 -> 2    | root and below | 0 -> 6 | 0/16              |
+*workshop is the first disagreement in normal forms*, in all 16
+combinations, between the given term and both the recompiled term and the
+shared route; class (value), graphs and labels agree. Its two answers are
+both strict, so the proof kept differs. In the importer's pairing the first
+answer is the original and the later one the supporter; among strict wings
+a supporter wins (=strict_resolve=), so the last answer is kept. The
+extraction keeps the answers in order as moves, and the unfolder puts the
+first move on top, so the first is kept. A hand-written closed debate with
+two strict arguments does the same as the unfolder. simple does not show
+it: only =a:-d= is strict. So literal round trips and normal forms now
+part on one program; which answer should be kept is undecided. Side effect
+of =-n0=: =bird(a). bird(b). ?- bird(X).= was imported from its first answer
+and is now refused, its answers concluding different things
+([[id:scasp-aida-refused-queries]]).
+
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
 :ID:             aida-dui-handover
@@ -1146,7 +1171,7 @@ sessions run end to end: tests/demo/test_demo.py, 10 passed.
 :ICK:            3
 :EFFORT:         8:00
 :DEFERRALS:      0
-:SYNC_WITH:      id:phd-aida-direga-demonstrator-integration
+:SYNC_WITH:      id:phd-aida-direga-demonstrator-integration id:explanations-demonstrator-integration
 :TARGET_DATE:    TBD: before the DIREGA steering committee meeting
 :OUTCOME:        AIDA is integrated into the DIREGA demonstrator before the steering committee meeting.
 :VERIFY:         Run the documented DIREGA demonstrator workflow end to end and record the tested integration revision.
