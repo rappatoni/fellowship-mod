@@ -265,7 +265,8 @@ Phase 5c of [[id:aida-dui-api]].
 - Binder names link the registered term back to the justification tree:
   they survive the text round trip, where AST attributes would not.
 
-** BACKLOG Register debates given by a term, reverse-compiled into debate-local arguments
+** DONE Register debates given by a term, reverse-compiled into debate-local arguments
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-registered-debates
 :AREA:           phd
@@ -280,6 +281,15 @@ Phase 5c of [[id:aida-dui-api]].
 :OUTCOME:        A debate can be registered from a term, or imported from a source language; AIDA reverse-compiles it into a closed debate of debate-local arguments in its own Fellowship session, warns when the round trip does not reproduce the term, and lets the debate be extended through the CLI and the service.
 :VERIFY:         Every child below is DONE or DROPPED with its evidence; the eight programs of scasp-aida's tests/fixtures import as registered debates and evaluate as s(CASP) answers them; the suite passes.
 :END:
+
+*Done 2026-10-30.* All children below are done; the eight programs of
+scasp-aida's tests/fixtures import as registered debates and evaluate as
+s(CASP) answers them (scasp-aida's tests/test_end_to_end.py, 8 passed);
+suite: 2502 passed, 9 skipped, 2 xfailed, 1 xpassed. The equivalence
+study was a child and goes on as a task of its own
+([[id:aida-round-trip-equivalence-study]]): the agreement so far is weak,
+since the importer drops negative premises and every graph has one
+labelling.
 
 *Found 2026-10-29.* Since [[id:aida-argument-lj-restriction]] (2ea2a7a),
 =register= refuses every s(CASP) import whose answer uses a rule with two
@@ -850,7 +860,7 @@ tests/test_registered_debate.py, tests/test_extends.py,
 tests/test_import_debate.py.
 Suite: 2500 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
-*** BACKLOG Find out which equivalence the round trip needs
+** BACKLOG Find out which equivalence the round trip needs
 :PROPERTIES:
 :ID:             aida-round-trip-equivalence-study
 :AREA:           phd
