@@ -988,13 +988,34 @@ both strict, so the proof kept differs. In the importer's pairing the first
 answer is the original and the later one the supporter; among strict wings
 a supporter wins (=strict_resolve=), so the last answer is kept. The
 extraction keeps the answers in order as moves, and the unfolder puts the
-first move on top, so the first is kept. A hand-written closed debate with
+opening on top, so the first is kept. A hand-written closed debate with
 two strict arguments does the same as the unfolder. simple does not show
 it: only =a:-d= is strict. So literal round trips and normal forms now
 part on one program; which answer should be kept is undecided. Side effect
 of =-n0=: =bird(a). bird(b). ?- bird(X).= was imported from its first answer
 and is now refused, its answers concluding different things
 ([[id:scasp-aida-refused-queries]]).
+
+*Fourth data (2026-10-30): it is any stack, at any depth, strict or not
+(the author's question).* Debates registered by their terms, normal forms
+compared in all 16 combinations; given term against the recompiled term and
+the shared route alike:
+| stack                            | normal forms equal |
+|----------------------------------+--------------------|
+| defeasible, at the root (2, 3)   | 0/16               |
+| defeasible, at a premise         | 0/16               |
+| strict rule proofs, at the root  | 0/16 (workshop)    |
+| strict facts, at a premise       | 0/16               |
+| strict facts, at the root (2, 3) | 16/16, by accident |
+| one strict, one defeasible       | 16/16              |
+Class and labels agree throughout; what changes is which proof is kept. The
+importer reaches the root, without any strict proof: =a :- b, c. a :- d, e.=
+with all four facts. It builds no support stack at a premise, but
+=register debate= by term does. Attacker stacks and stacks with an OUT
+supporter are not tested yet. Causes and design:
+[[id:aida-extraction-inverts-unfolding]]. Correction to the third data: the
+unfolder does not put the first move on top in general; only the opening goes
+on top, and the other moves stand with the last uttered outermost.
 
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
@@ -9315,6 +9336,93 @@ itself is unchanged, so edge names and =k= stay as they were. Evidence:
   strict edges change.
 - Suite: 2502 passed, 9 skipped, 2 xfailed, 1 xpassed. Perf tests: 16
   passed. scasp-aida's tests against it: 83 passed.
+
+** BACKLOG Make extraction the inverse of unfolding, for every stack
+:PROPERTIES:
+:ID:             aida-extraction-inverts-unfolding
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         8:00
+:DEFERRALS:      0
+:SYNC_WITH:      id:scasp-aida-first-answer-on-top
+:OUTCOME:        A registered debate's extracted arguments, unfolded again, keep the proof its given term keeps: at every stack, at any depth, on both sides, strict or defeasible, the normal form agrees under every mode, semantics and base.
+:VERIFY:         A test over the table in [[id:aida-round-trip-equivalence-study]] (fourth data), with attacker stacks and stacks with an OUT supporter added: 16/16 in every row; scasp-aida's =make study= shows workshop at 16/16; the perf tests; the suite passes.
+:END:
+
+Found 2026-10-30 by the author's question whether the disagreement on
+workshop (the study's third data) is special to several answers. It is not.
+Three causes:
+1. *The opening.* =unfold_debate= (core/dc/debate.py) puts the opening, the
+   first move, on top of the issue's stack; the others stand with the last
+   uttered outermost (=_stack=, the sort in =Unfolder.__init__=). =_stack_ranks=
+   (core/dc/extract.py) ranks a stack bottom first and takes the root's original
+   as the opening. So what is at the bottom of the given stack comes back on top.
+2. *A premise.* =cut= replaces a scaffold by its original, so a premise's first
+   supporter stays inside the parent argument and is no move. It comes back as
+   the parent's own derivation, and =_exposed= puts that on top "iff primacy",
+   which every moved argument's part has. No order of the moves reaches it.
+3. *Facts.* =Debate.order= is keyed by argument, and =_stack= sorts and
+   =argument_edge= looks up by edge name, which for a body that is an eta chain
+   is its root binder ([[id:aida-strict-edge-argument-origin]]). So fact
+   arguments are outside the order and keep registration order: no top, last
+   outermost, which is why they agree with the given term. By accident: reversing
+   moves breaks them, as a throwaway patch showed. =Edge.argument= now holds the
+   name needed.
+A throwaway patch reversing the moves within a statement fixes the root's
+defeasible rows and workshop, and leaves 2 unfixed and breaks 3. It is no fix.
+
+*Design proposed 2026-10-30, not implemented, for the author's decision.* The
+rule: extraction is the inverse of unfolding, so one uniform reading of a stack.
+- Every scaffold's original that is a derivation becomes an argument of its own,
+  like its scion, and an obligation site for the statement takes its place in
+  the parent. At a premise this removes cause 2.
+- The root the same: its derivation is an argument, and the opening is the bare
+  claim of the issue, which unfold_debate already takes (no edge, so no top).
+  This removes cause 1 without special-casing the top. The moves are then the
+  stack bottom first, which is what =_stack= reads.
+- =order= and the lookups read =Edge.argument=, removing cause 3. This also
+  changes ordinary debates whose arguments have a binder of their own, in the
+  direction of what their moves say.
+What to check first:
+- The site in the parent adds a default marker and turns a =subargument= source
+  into an =obligation=. Do labels hold? Graphs would part by these marks: a
+  systematic difference to record, or a reason against. The root's added
+  =?1= is already the entry-point difference.
+- An opening that is a bare claim: is that wanted when the term starts with a
+  proof? The moves are then one longer than the arguments that prove anything.
+- The alternative for cause 2: keep the original inline and exempt it from
+  primacy. Smaller, but it leaves two readings of a stack; not recommended.
+Also here, unexplained: with the importer's pairing changed
+([[id:scasp-aida-first-answer-on-top]]) workshop's recompiled graph gains a strict
+edge =workshop__a1.μ1*=, on a part of an argument Fellowship holds: the fix of
+[[id:aida-strict-edge-argument-origin]] asks about whole bodies only. And the rows
+with strict facts at the root and the mixed rows report different graphs, cause
+unknown; the study's 19 debates do not show this.
+
+** BACKLOG Keep a generated argument's name from clashing with a local declaration
+:PROPERTIES:
+:ID:             aida-debate-generated-name-clash
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A debate declaring a local name of the form =a<k>= still gets all its arguments: =extract_arguments= draws names that are free, or the registration refuses clearly.
+:VERIFY:         A test: =register debate d : A.= with =declare a1:(A).= and =term "μk:A.<a1||k>".= has its one argument and its inner debate.
+:END:
+
+Found 2026-10-30: that block answers "Registered debate 'd' (pro) about A: 0
+argument(s)." with status ok. =d__a1= is refused as already declared, and the debate has no
+moves and no inner debate in its session.
 
 ** BACKLOG Print the proposition, not the statement key, of an open quantified statement
 :PROPERTIES:
