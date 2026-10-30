@@ -175,6 +175,11 @@ it: `svc.register_debate(name, issue, term, declarations, legacy=False)`
 session of its own; `graph`, `label`, `evaluate` and `term` on its name
 answer from the term it was given, and `svc.display_names(name)` gives how
 it shows its own `NAME__x` names.
+`svc.import_debate(name, language, source)` (or `data=` for the importer's
+input already read) registers one an importer writes into the current
+document - unlike `import_document`, which starts a new document - and
+keeps its provenance on the debate: `debate.provenance["arguments"]` maps
+each extracted argument's binders to the importer's source nodes.
 
 ## JSON formats
 

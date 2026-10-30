@@ -290,6 +290,9 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
         interpreter = Interpreter(prover, live=verbose)
     prev_ui = interpreter.show_ui
     interpreter.show_ui = _print_ui if verbose else (lambda state: None)
+    # what the script names by a relative path (`register debate ... import`)
+    # is the script's
+    prev_base, interpreter.base_dir = interpreter.base_dir, os.path.dirname(os.path.abspath(script_path))
     try:
         with open(script_path, "r") as handle:
             text = handle.read()
@@ -344,6 +347,7 @@ def execute_script(prover: ProverWrapper, script_path: str, *, strict: bool = Fa
                            len(prover.debates[prover.recording_debate].moves))
     finally:
         interpreter.show_ui = prev_ui
+        interpreter.base_dir = prev_base
         if isolate:
             try:
                 prover.close()

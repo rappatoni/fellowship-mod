@@ -291,9 +291,21 @@ def _p_verb(verb):
 _REGISTER_DEBATE = re.compile(r"^debate\s+([^\s:]+)(\s+legacy)?\s*:\s*(.+)$", re.S)
 
 
+_IMPORT_DEBATE = re.compile(r'^debate\s+([^\s:]+)\s+import\s+(\S+)\s+(".*")$', re.S)
+
+
 def _p_register_debate(rest: str, text: str):
     """``register debate NAME [legacy] : ISSUE.`` opens a block: the
-    debate's own declarations, ``term "…".``, ``cedat tempus.``."""
+    debate's own declarations, ``term "…".``, ``cedat tempus.``.
+    ``register debate NAME import LANGUAGE "SOURCE".`` imports one."""
+    imported = _IMPORT_DEBATE.match(rest.strip())
+    if imported is not None:
+        name, language, source = imported.groups()
+        return Command("import_debate", text, args={"name": name, "language": language,
+                                                     "source": unquote(source)})
+    if re.match(r"^debate\s+\S+\s+import\b", rest.strip()):
+        raise SyntaxRefused('Use: register debate NAME import LANGUAGE "SOURCE".  '
+                            '(SOURCE double-quoted: a JSON file, or a program the importer reads)')
     match = _REGISTER_DEBATE.match(rest.strip())
     if match is None:
         raise SyntaxRefused('Use: register debate NAME [legacy] : ISSUE.  then its own '

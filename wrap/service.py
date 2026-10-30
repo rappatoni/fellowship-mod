@@ -159,6 +159,37 @@ def _command_conclusion(prop: str) -> str:
         return prop
 
 
+def _same_statement(a: str, b: str) -> bool:
+    try:
+        return canonical_prop(a) == canonical_prop(b)
+    except Exception:
+        return a.replace(" ", "") == b.replace(" ", "")
+
+
+def _binder_names(body) -> set:
+    """The names a term binds (mu, mu', lambda, lambda-bar)."""
+    from core.ac.ast import Mu, Mutilde, Lamda, Admal, ProofTerm
+    found = set()
+
+    def walk(node):
+        if isinstance(node, Mu):
+            found.add(node.id.name)
+        elif isinstance(node, Mutilde):
+            found.add(node.di.name)
+        elif isinstance(node, Lamda):
+            found.add(node.di.di.name)
+        elif isinstance(node, Admal):
+            found.add(node.id.id.name)
+        for slot in ("term", "context"):
+            child = getattr(node, slot, None)
+            if isinstance(child, ProofTerm):
+                walk(child)
+
+    if body is not None:
+        walk(body)
+    return found
+
+
 def _operation(method):
     """Run a service method under the session lock, collecting its
     diagnostics onto the result (a dataclass with ``diagnostics``) or onto
@@ -1030,6 +1061,148 @@ class Service:
         debate.moves = [Move(name) for name in moves]
         logger.info("Debate '%s': %d argument(s) cut from its term, %d move(s).",
                     debate.name, len(extracted), len(moves))
+
+    @_operation
+    def import_debate(self, name: str, language: str, source: Optional[str] = None, *,
+                      data: Any = None, base_dir: Optional[str] = None) -> Done:
+        """``register debate NAME import LANGUAGE "SOURCE".``: run the
+        importer for ``language`` on SOURCE - a JSON file, or a file of the
+        language itself if the importer reads one (wrap/importers.py,
+        ``load_source_reader``) - or on ``data`` already read, and register
+        what it writes into this document: the declarations the debate
+        shares (one the document already has, identically, is reused) and
+        one ``register debate NAME`` block.  The importer's provenance is
+        kept on the debate, with each extracted argument's binders mapped
+        to the source.  A relative SOURCE is read from ``base_dir`` (the
+        running script's directory) if given."""
+        import json
+        import os
+        from wrap.importers import (ImporterNotFound, SourceImportError, load_importer,
+                                    load_source_reader, missing_importer_message)
+        from wrap.interpreter import Interpreter
+        try:
+            translate = load_importer(language)
+        except ImporterNotFound:
+            raise NotFound(missing_importer_message(language), stage="import")
+        path = None
+        try:
+            if data is not None:
+                result = translate(data)
+            elif source is None:
+                raise InvalidRequest("import: give a source or the data.", stage="import")
+            else:
+                path = source if os.path.isabs(source) or not base_dir else os.path.join(base_dir, source)
+                if path.lower().endswith(".json"):
+                    with open(path, encoding="utf-8") as handle:
+                        result = translate(json.load(handle))
+                else:
+                    reader = load_source_reader(language)
+                    if reader is None:
+                        raise InvalidRequest(
+                            f"import: the {language} importer reads its JSON only, and '{source}' "
+                            f"is not a .json file; give the JSON.", stage="import")
+                    result = reader(path)
+        except OSError as e:
+            raise NotFound(f"import: cannot read '{source}': {e}", stage="import", cause=e)
+        except json.JSONDecodeError as e:
+            raise InvalidRequest(f"import: '{source}' is not JSON: {e}", stage="import", cause=e)
+        except SourceImportError as e:
+            raise ContentRefused(f"import: {e}", stage="import", cause=e)
+        if hasattr(result, "to_fspy_with_sources"):
+            text, sources = result.to_fspy_with_sources(name=name)
+        else:
+            text, sources = result.to_fspy(name=name), None
+        units = self._imported_units(text, name, language)
+        interpreter = Interpreter(self.session)
+        for unit in units:
+            outcome = interpreter.execute(unit)
+            if outcome.status in ("refused", "error", "fatal"):
+                raise ContentRefused(f"import: the {language} importer's `{outcome.text}` was "
+                                     f"refused: {outcome.message}", stage="import", cause=outcome.error)
+        debate = self._registered(name)
+        if debate is None:
+            raise ContentRefused(f"import: the {language} importer registered no debate '{name}'.",
+                                 stage="import")
+        debate.provenance = self._provenance(debate, language, source, text, sources)
+        logger.info("Imported debate '%s' from %s (%s).", name, source or "data", language)
+        return Done(f"Imported debate '{name}' from {source or 'data'} ({language}): "
+                    f"{len(debate.extracted)} argument(s).", debate)
+
+    def _imported_units(self, text: str, name: str, language: str) -> list:
+        """The importer's text as units to run: only shared declarations,
+        decorations and one `register debate NAME` block; a shared
+        declaration of what the document already declares identically is
+        dropped, a conflicting one refused."""
+        from wrap.prefix import parse_declaration
+        from wrap.syntax import Command, SyntaxRefused, Unit, parse, parse_units
+        units, opened, inside = [], 0, False
+        for unit in parse_units(text):
+            if isinstance(unit, SyntaxRefused):
+                raise ContentRefused(f"import: the {language} importer wrote `{unit.text}`, which "
+                                     f"does not parse: {unit}", stage="import")
+            if isinstance(unit, Unit) or inside:
+                units.append(unit)
+                inside = inside and not (isinstance(unit, Command) and unit.kind == "close_debate")
+                continue
+            if unit.kind == "register_debate":
+                if unit["name"] != name or opened:
+                    raise ContentRefused(f"import: the {language} importer must register exactly one "
+                                         f"debate, '{name}'; it wrote `{unit.text}`.", stage="import")
+                opened, inside = opened + 1, True
+                units.append(unit)
+            elif unit.kind == "decorate":
+                units.append(unit)
+            elif unit.kind == "opaque" and unit["word"] in ("declare", "deny"):
+                kept = self._shared_declaration(unit.text, language)
+                if kept is not None:
+                    units.append(parse(kept, unit.span))
+            else:
+                raise ContentRefused(f"import: the {language} importer may declare what the debate "
+                                     f"shares and register it; not `{unit.text}`.", stage="import")
+        if not opened:
+            raise ContentRefused(f"import: the {language} importer wrote no `register debate {name}` "
+                                 f"block.", stage="import")
+        return units
+
+    def _shared_declaration(self, text: str, language: str) -> Optional[str]:
+        """A shared declaration without the names the document already
+        declares as it does (None if that is all of them)."""
+        from wrap.prefix import parse_declaration
+        declarations = self.session.declarations
+        try:
+            verb, names, typ = parse_declaration(text + ".")
+        except ValueError:
+            return text
+        new = []
+        for n in names:
+            held = declarations.get(n)
+            if held is None:
+                new.append(n)
+                continue
+            wanted = typ.strip()
+            same = (str(held).strip() == wanted if getattr(held, "kind", "") == "sort"
+                    else _same_statement(str(held), wanted.strip("()")))
+            if not same:
+                raise ContentRefused(f"import: the {language} importer declares {n} : {wanted}, but "
+                                     f"the document declares {n} : {held}.", stage="import")
+        if not new:
+            return None
+        return f"{verb} {', '.join(new)} : {typ}"
+
+    def _provenance(self, debate, language, source, text, sources) -> dict:
+        """The importer's provenance, kept with the text it is about, and
+        each extracted argument's binders mapped to their source nodes."""
+        binders = dict((sources or {}).get("binders") or {})
+        child = debate.debate_session.session
+        per_argument = {}
+        for argument in debate.extracted.values():
+            body = getattr(child.arguments.get(argument), "body", None)
+            found = {n: binders[n] for n in _binder_names(body) if n in binders}
+            if found:
+                per_argument[argument] = found
+        return {"language": language, "source": source, "text": text,
+                "blocks": list((sources or {}).get("blocks") or []), "binders": binders,
+                "arguments": per_argument}
 
     def _registered(self, target) -> Optional[Any]:
         """The registered debate ``target`` names, or None."""

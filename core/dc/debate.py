@@ -147,6 +147,10 @@ class RegisteredDebate(Debate):
     #: starts with the parent's declarations, arguments and moves, and what
     #: it answers is compiled from them, with what it adds.
     parent: Optional[str] = None
+    #: an imported debate's provenance: the importer's language, source and
+    #: text, its blocks and binders mapped to the source, and each extracted
+    #: argument's binders so mapped (Service.import_debate)
+    provenance: Optional[dict] = field(default=None, repr=False, compare=False)
 
     @property
     def extension(self) -> bool:

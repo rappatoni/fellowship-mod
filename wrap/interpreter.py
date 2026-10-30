@@ -87,6 +87,9 @@ class Interpreter:
         #: The `register debate` block being read: its name, issue, whether
         #: legacy, its own declarations and its term.
         self.registering: Optional[dict] = None
+        #: The directory relative paths in commands are read from (the
+        #: running script's); None: the working directory.
+        self.base_dir: Optional[str] = None
         #: Every unit run, in order: its text as written back, why it
         #: failed (None if it did not), and whether the accepted transcript
         #: keeps it - not a line of a block that was refused or abandoned.
@@ -216,6 +219,9 @@ class Interpreter:
             return self._service(c, svc.start_debate, c["name"], c["issue"], c["onus"], c["scope"])
         if c.kind == "extend_debate":
             return self._service(c, svc.start_extension, c["name"], c["parent"])
+        if c.kind == "import_debate":
+            return self._service(c, svc.import_debate, c["name"], c["language"], c["source"],
+                                 base_dir=self.base_dir)
         if c.kind == "close_debate":
             return self._service(c, svc.close_debate)
         if c.kind == "move":
@@ -258,7 +264,8 @@ class Interpreter:
             return Outcome(None, c.text, c.kind, "refused", str(e), error=e,
                            diagnostics=list(e.diagnostics))
         made = getattr(result, "value", None)
-        if c.kind in ("register", "statement", "adopt") and made is not None and c.span is not None:
+        if (c.kind in ("register", "statement", "adopt", "import_debate") and made is not None
+                and c.span is not None):
             made.span = c.span                      # where it sits in the text
         return Outcome(None, c.text, c.kind, "ok", getattr(result, "message", ""), value=result,
                        diagnostics=list(getattr(result, "diagnostics", [])))

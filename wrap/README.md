@@ -60,7 +60,8 @@ Files
     "kind": ...}`), terms as text and as trees; the JSON Schema describes it.
 - importers.py
   - The importer contract and the `acdc.importers` entry point (s(CASP):
-    the scasp-aida package).
+    the scasp-aida package); `acdc.importer_sources` for an importer that
+    reads its language's own files (`register debate ... import`).
 - cli.py
   - The CLI: setup_prover(), execute_script(), interactive_mode(), and the
     printers over the service (graph, label, evaluate, explain, render, tree,

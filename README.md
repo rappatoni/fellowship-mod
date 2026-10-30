@@ -900,6 +900,16 @@ cedat tempus.
   usually not in the unfolder's shapes, so it warns once; the term its
   arguments unfold to comes back unchanged.
 
+An importer writes such a block itself:
+`register debate NAME import LANGUAGE "SOURCE".` runs the importer for
+LANGUAGE on SOURCE - its JSON, or a file of the language itself (an
+s(CASP) program) if the importer reads one - and registers what it writes
+into the document: the declarations the debate shares (a declaration the
+document already has, identically, is reused; a conflicting one refuses
+the import) and the `register debate NAME` block. A relative SOURCE is
+read from the script's directory. The importer's provenance stays with
+the debate, each argument's binders mapped to the source.
+
 A registered debate is extended, not edited:
 
 ```

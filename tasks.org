@@ -746,6 +746,24 @@ Evidence against VERIFY:
 :VERIFY:         The eight fixture programs import from their =.pl= with scasp installed (skipped otherwise); the provenance maps each extracted argument's binders to justification nodes; the suite passes.
 :END:
 
+*Implemented 2026-10-30, against a stub importer* (=Service.import_debate=;
+=register debate NAME import LANGUAGE "SOURCE".= in wrap/syntax.py; the
+=acdc.importer_sources= group and =load_source_reader= in
+wrap/importers.py; the interpreter's =base_dir=, set by =execute_script=;
+tests/test_import_debate.py, 14 tests). The importer's text may only
+declare what the debate shares, decorate, and register one debate of the
+given name; a shared declaration the document has identically is dropped,
+a conflicting one refuses the import (so two programs over the same atoms
+import side by side, each keeping its helper atoms). Provenance is kept on
+the debate with the text it is about, and each extracted argument's
+binders are mapped to their source nodes (simple: =s__a1= binds alpha9,
+A's node; =s__a5= alpha1, b's). =Service.import_document= is unchanged.
+Open in VERIFY: the eight fixture programs from their =.pl= need
+scasp-aida to write the registered-debate form and offer
+=import_scasp_file= as its source reader
+([[id:scasp-aida-register-debate-output]], phase 10).
+Suite: 2498 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
 *** BACKLOG Offer registered debates through the service and HTTP
 :PROPERTIES:
 :ID:             aida-debate-api-endpoints
