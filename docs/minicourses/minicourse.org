@@ -793,10 +793,10 @@ attacker whose source is an obligation, discarded by the labelling.
 From =tests/minicourse/lesson2_graph.fspy=, the term of the debate =d2=
 (=render d2.=), its B site formatted here for reading:
 
-: mu alt2:B.< ?u3:B || mu'b2:B.< mu _:B.<b2:B || alt2:B>
+: mu alt2:B.< ?3:B || mu'b2:B.< mu _:B.<b2:B || alt2:B>
 :                             || mu'_:B.< mu bArg:B.<axB:B||bArg:B> || alt2:B > > >
 
-That is T-SUP, the paper's shape, with the original =?u3:B= bound to
+That is T-SUP, the paper's shape, with the original =?3:B= bound to
 =b2=. (mu<) keeps the obligation; (>mu) keeps the axiom. (Until
 2026-10-08 the term-level =support= verb built the *legacy* shape here by
 theta-expansion and grafting, =mu alt:B.< mu _:B.< ?2:B || alt > || mu'_:B.<
@@ -806,7 +806,7 @@ unfolded.)
 ** Exercises
 
 1. In that term, which reduction - (mu<) or (>mu) - keeps =bArg=? Which
-   keeps =?u3:B=?
+   keeps =?3:B=?
 2. In T-ATT the left wing steals the original into the refutation and the
    right wing returns it. If the attacker wins, which wing survives, and
    what is left sitting where the value should have been?
@@ -1411,7 +1411,7 @@ Verified against the implementation; the values are pinned in
 
 ** Lesson 6
 
-1. (>mu) keeps =bArg= - the right wing survives; (mu<) keeps =?u3:B= - the
+1. (>mu) keeps =bArg= - the right wing survives; (mu<) keeps =?3:B= - the
    left wing survives.
 2. The *left* wing survives - (mu<) - leaving =mu alpha.< t || E >=
    where the value should be: the original t thrown to the refutation,

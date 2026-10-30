@@ -143,6 +143,32 @@ class TestSameResults:
             p.close()
 
 
+class TestRegisteredByTerm:
+    """The task's VERIFY: the debates over tests/debates.fspy, registered
+    again by their printed term, agree with today's route - graph, labels,
+    normal form - and their arguments unfold to that term again."""
+
+    @pytest.mark.parametrize("lines", [
+        ["debate pro open o : Flies.", "tweety.", "cedat tempus."],
+        ["debate pro closed o : Flies.", "tweety.", "rebut penguin tweety.", "cedat tempus."],
+        ["debate pro closed o : Flies.", "tweety.", "rebut penguin tweety.",
+         "undermine photo penguin.", "cedat tempus."],
+    ])
+    def test_the_same_debate(self, prover, lines):
+        from copy import deepcopy
+        from pres.gen import pres_str
+        run(prover, *lines)
+        term = pres_str(deepcopy(prover.debate_term(prover.debates["o"])))
+        run(prover, f'register debate r : Flies.\nterm "{term}".\ncedat tempus.')
+        registered = prover.debates["r"]
+        assert registered.refused == {} and registered.moves      # every argument taken
+        before, after = outcome(Service.of(prover), "o"), outcome(Service.of(prover), "r")
+        assert [e[1:] for e in before[0]] == [e[1:] for e in after[0]]   # edges, up to names
+        assert before[1] == after[1]
+        assert before[2] == after[2] and alpha_equal(before[3], after[3])
+        assert registered.roundtrip.literal
+
+
 class TestIsolation:
     def test_the_document_does_not_reach_the_session(self, prover):
         run(prover, "debate pro open o : Flies.", "tweety.", "cedat tempus.")

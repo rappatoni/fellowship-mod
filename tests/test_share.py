@@ -885,7 +885,7 @@ def test_the_tree_printer_shows_a_stub_by_its_name():
     from core.dc.instances import Stub
     from pres.gen import pres_str, pres_tree
     from pres.nl import pretty_natural, vanilla_rendering
-    stub = Stub(None, [DI("u1", "P1")], False, "anon_1", {})
+    stub = Stub(None, [DI("1", "P1")], False, "anon_1", {})
     term = Mu(ID("a", "P2"), "P2", stub, ID("a", "P2"))
     for text in (pres_tree(term), pretty_natural(term, vanilla_rendering), pres_str(term)):
         assert "anon_1" in text and "Unhandled" not in text

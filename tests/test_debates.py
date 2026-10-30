@@ -8,6 +8,7 @@ ordered selection of the document's arguments, recorded as
 compiled on demand, and never part of the document graph."""
 
 import os
+import re
 import tempfile
 import warnings
 
@@ -160,8 +161,9 @@ def test_the_opening_is_on_top_and_the_rest_in_utterance_order(prover):
 
 def test_the_opening_keeps_the_sites_it_wrote(prover):
     # tweety presumes Bird->Flies; unfolded for tweety the site stays its own
+    # kind, a presumption
     record(prover, "debate pro closed d : Flies.", "tweety.")
-    assert "!u" in pres_str(prover.debate_term(prover.debates["d"]))
+    assert re.search(r"!\d+:Bird->Flies", pres_str(prover.debate_term(prover.debates["d"])))
 
 
 # ---------------------------------------------------------------------------

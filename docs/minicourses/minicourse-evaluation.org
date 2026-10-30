@@ -97,7 +97,7 @@ canonical term of the issue B (lesson 8a).
 : import sys; sys.path.insert(0, "tests/minicourse")
 : from coursekit import debate_term, scaffold_at, fire, eta_step
 : prover, term = debate_term("tests/minicourse/lesson9_evaluation.fspy", "pro")
-: c = scaffold_at(term, "u3")        # the scaffold whose original is the site u3
+: c = scaffold_at(term, "3")        # the scaffold whose original is the site 3
 : fire(c, ">mu")                     # one step at c's command, in place
 : from pres.gen import pres_str; print(pres_str(c))
 
@@ -412,34 +412,34 @@ document graph has the edges =r3: D->~(A->B)[t] <- -= and
 =attackrule: A->B[c] <- D->~(A->B)[t:suba], D[t:pres]= (9 nodes, 9
 edges), and =explain pro.= begins
 
-: unfold         B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold         B[t] expanded, root 1 (Goal), 1 supporter(s), 'pro' on top
 : unfold           B[t] +support 'pro' (the argument unfolded, on top)
 : unfold         node 'r1' exposed as A->B[t] (its derivation on top)
-: unfold         A->B[t] expanded, root u2 (Goal), 1 supporter(s), 'r1' on top
+: unfold         A->B[t] expanded, root 2 (Goal), 1 supporter(s), 'r1' on top
 : unfold           A->B[t] +support 'r1' (the argument unfolded, on top)
 : unfold           A->B[t] attacked by the debate about A->B[c], 1 supporter(s) (alt alt3, b b3)
 : unfold         the bare A->B[c] captured as 'alt3'
 : unfold         A->B[c], the attacker wing, root 'alt3'
 : unfold           A->B[c] +support 'attackrule'
-: unfold         D[t] expanded, root u3 (Deleg), 0 supporter(s)
+: unfold         D[t] expanded, root 3 (Deleg), 0 supporter(s)
 
-and goes on as below with A's root u4 and C's u5. With every scaffold
+and goes on as below with A's root 4 and C's 5. With every scaffold
 written =SUP[alt,b](original, scion)= / =ATT[alt,b](original, wing)=
 (=pres_scaffolds=, pres/gen.py), the term is
 
-: SUP[alt1,b1](?u1:B, μpro:B.<μth:B.<
-:     ATT[alt3,b3](SUP[alt2,b2](?u2:A->B, r1),
-:                  SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!u3:D*μ'H1:~(A->B).<H1||th_2*_F_>>>))
-:   || ATT[alt5,b5](!u4:A, SUP~[alt6,b6](alt5, con's body as below)) * th> || pro>)
+: SUP[alt1,b1](?1:B, μpro:B.<μth:B.<
+:     ATT[alt3,b3](SUP[alt2,b2](?2:A->B, r1),
+:                  SUP~[alt4,b4](alt3, μ'attackrule:A->B.<attackrule||μ'th_2:A->B.<r3||!3:D*μ'H1:~(A->B).<H1||th_2*_F_>>>))
+:   || ATT[alt5,b5](!4:A, SUP~[alt6,b6](alt5, con's body as below)) * th> || pro>)
 
 Three things to see. The debate about A->B stands where r1 stood, and
-its root is the obligation ?u2 although r1 is an axiom: the root of an
+its root is the obligation ?2 although r1 is an axiom: the root of an
 exposed node's debate is always an obligation; r1 itself is the stack,
 on top since pro, the entrypoint, has primacy and that extends to its
 nodes. attackrule stands in the attacker wing, as con does in A's. And
 phase 1 (lesson 10) decides the whole of it: "A->B[t] supporter strict"
 (r1 has no site), then "A->B[c] original strict" (the attacked term is
-now r1, and attackrule rests on the site u3): both scaffolds go and r1
+now r1, and attackrule rests on the site 3): both scaffolds go and r1
 stands where it stood, so pro's verdict is unchanged,
 =μpro:B.<r1:A->B||!IN:A*pro:B>=, while =evaluate attackrule.= is the
 exception =μ'alt2:A->B.<r1:A->B||OUT:A->B?>=. The other axioms of the
@@ -452,7 +452,7 @@ Q from =pq: P->Q= and a lemma for P it proves from =rp: R->P= and a
 presumption of R; =killR= refutes R strictly. The lemma is the edge
 =argQ.μ1: P[t] <- R->P[t:suba], R[t:pres]=, a second derivation of P.
 The canonical term of P stacks argP and the lemma in registration order
-(=SUP[alt1,b1](?u1:P, SUP[alt2,b2](argP, lemma))=), and inside argP the
+(=SUP[alt1,b1](?1:P, SUP[alt2,b2](argP, lemma))=), and inside argP the
 demand for Q brings in argQ, whose lemma proves the statement the whole
 debate is about: P is bound by the root scaffold's =b1=, argQ has no
 primacy, so the lemma is =b1=, the root. Under =subarguments preserve.=
@@ -470,14 +470,14 @@ aida-entrypoint-capture-adequacy.)
 
 =explain pro.= prints the unfolder's steps:
 
-: unfold         B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold         B[t] expanded, root 1 (Goal), 1 supporter(s), 'pro' on top
 : unfold           B[t] +support 'pro' (the argument unfolded, on top)
-: unfold         A[t] expanded, root u2 (Deleg), 0 supporter(s)
+: unfold         A[t] expanded, root 2 (Deleg), 0 supporter(s)
 : unfold           A[t] attacked by the debate about A[c], 1 supporter(s) (alt alt2, b b2)
 : unfold         the bare A[c] captured as 'alt2'
 : unfold         A[c], the attacker wing, root 'alt2'
 : unfold           A[c] +support 'con'
-: unfold         C[t] expanded, root u3 (Deleg), 0 supporter(s)
+: unfold         C[t] expanded, root 3 (Deleg), 0 supporter(s)
 : unfold           C[t] attacked by the debate about C[c], 1 supporter(s) (alt alt4, b b4)
 : unfold         the bare C[c] captured as 'alt4'
 : unfold         C[c], the attacker wing, root 'alt4'
@@ -486,7 +486,7 @@ aida-entrypoint-capture-adequacy.)
 Step by step:
 
 1. *B[t]*, =env= and spine empty. Nobody presumes B, so the root is the
-   obligation ?u1. One argument derives B, pro, which is also the
+   obligation ?1. One argument derives B, pro, which is also the
    entrypoint; its stack is pro alone, under the support scaffold =alt1=,
    =b1=, so =env= = {B[c]: alt1, B[t]: b1} inside it. Nobody derives
    B[c], and B[c] has no marker: no attack scaffold.
@@ -494,7 +494,7 @@ Step by step:
    so they shadow =alt1=: =env= = {B[c]: th, B[t]: b1}. At the site
    =!1.2.1:A= the unfolder asks for *A[t]*: not in =env=, so expanded. pro
    presumes A, and pro is the entrypoint, so the root is its own kind,
-   the presumption !u2. Nobody derives A, so no support scaffold. con
+   the presumption !2. Nobody derives A, so no support scaffold. con
    derives A[c], so A[t] is attacked: =alt2= (binds A[c]), =b2= (binds
    A[t]).
 3. The attacker wing, the debate about *A[c]* without its attackers. Its
@@ -510,7 +510,7 @@ Step by step:
    document, so the log prints the raw key). =env= holds the binders of
    every enclosing argument and scaffold; the innermost wins (=x= over
    =alt3= for A[t]). C[t] is not in it, so it is expanded: the
-   presumption !u3, attacked by the debate about C[c] (=alt4=, =b4=) -
+   presumption !3, attacked by the debate about C[c] (=alt4=, =b4=) -
    its root captured as =alt4=, its stack killC (=alt5=, =b5=).
 5. killC's body has no site, so the recursion stops. Its binders are
    renamed where taken: =x= becomes =x_2=, and its =H1= is the first
@@ -518,7 +518,7 @@ Step by step:
 
 The result is the term lesson 9 starts from:
 
-: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+: μalt1:B.<?1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
 
 Here pro is B's only supporter, so its term is also the canonical term
 of B: =unfold issue :B.= prints the same.
@@ -528,8 +528,8 @@ arguments for B, =p1=, =p2= and =p3=, each from a presumption of its own,
 registered in that order. The canonical term of B and the term for p1
 differ only in the stack:
 
-: issue :B    SUP( ?u1:B, SUP( SUP(P1, P2), P3 ) )
-: p1          SUP( ?u1:B, SUP( SUP(P2, P3), P1 ) )
+: issue :B    SUP( ?1:B, SUP( SUP(P1, P2), P3 ) )
+: p1          SUP( ?1:B, SUP( SUP(P2, P3), P1 ) )
 
 All three are IN, so =evaluate issue :B.= returns p3's proof, the top of
 the canonical stack, and =evaluate p1.= returns p1's own (lesson 11).
@@ -538,19 +538,19 @@ the canonical stack, and =evaluate p1.= returns p1's own (lesson 11).
 from an obligation for A, and =back= derives A from an obligation for B.
 Unfolded for pro:
 
-: unfold: B[t] expanded, root u1 (Goal), 1 supporter(s), 'pro' on top
+: unfold: B[t] expanded, root 1 (Goal), 1 supporter(s), 'pro' on top
 : unfold:   B[t] +support 'pro' (the argument unfolded, on top)
-: unfold: A[t] expanded, root u2 (Goal), 1 supporter(s)
+: unfold: A[t] expanded, root 2 (Goal), 1 supporter(s)
 : unfold:   A[t] +support 'back'
 : unfold: B[t] captured as 'b1'
 :
-: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<?u2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<μback:A.<μth_2:A.<r3:B->A||b1:B*th_2:A>||back:A>||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+: μalt1:B.<?1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<?2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<μback:A.<μth_2:A.<r3:B->A||b1:B*th_2:A>||back:A>||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
 
 Inside back, the demand for B is the demand the whole debate is about:
 an obligation for a statement already being proved. The support
 scaffold of B binds B[t] to =b1=, so the demand becomes =b1=. After that
 scaffold's outer step =b1= is B's root, so back shares the obligation
-?u1 instead of opening a second one. Evaluated, back rests on that
+?1 instead of opening a second one. Evaluated, back rests on that
 root, an obligation nobody met in the term, so back stands OUT
 (lesson 11), and pro with it: B's root survives. Skeptically B is UNDEC
 and the result is open, =?UNDEC:B=; credulously the witness labels the
@@ -563,14 +563,14 @@ fails". The document holds two edges, =SelfAttack.λ1= (the lambda) and
 =SelfAttack=, and the default marker P[c]: presumption. Unfolded for
 SelfAttack:
 
-: unfold: P[t] expanded, root u1 (Goal), 1 supporter(s), 'SelfAttack' on top
+: unfold: P[t] expanded, root 1 (Goal), 1 supporter(s), 'SelfAttack' on top
 : unfold:   P[t] +support 'SelfAttack' (the argument unfolded, on top)
 : unfold: P[c] captured as 'rule' (presumption)
 : unfold:   P[t] attacked by the debate about P[c], 0 supporter(s) (alt alt2, b b2)
 : unfold: the bare P[c] captured as 'alt2'
 : unfold: P[c], the attacker wing, root 'alt2'
 :
-: μalt2:P.<μalt1:P.<?u1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μSelfAttack:P.<μrule:P.<pRule:(P->false)->P||λh:P.μalpha:false.<h:P||rule:P>*rule:P>||SelfAttack:P>||alt1:P>>>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<b2:P||alt2:P>>>
+: μalt2:P.<μalt1:P.<?1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μSelfAttack:P.<μrule:P.<pRule:(P->false)->P||λh:P.μalpha:false.<h:P||rule:P>*rule:P>||SelfAttack:P>||alt1:P>>>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<b2:P||alt2:P>>>
 
 Inside the body, at the site for P[c], =env= is {P[c]: rule, P[t]: h,
 false[c]: alpha}: =mu rule:P= is a continuation for P, so the
@@ -593,7 +593,7 @@ it meets the captured contrary (=captured_default=).
 
 1. In the running example the =alt= and the =b= numbers both grow from
    the root inwards (=alt1=, =b1= on B ... =alt5=, =b5= on C[c]), and the
-   sites are u1, u2, u3 with no gap, although the debates about A[c] and
+   sites are 1, 2, 3 with no gap, although the debates about A[c] and
    C[c] each have a root. Explain all three from when each name is
    drawn. What would the numbers be if killC were registered *before*
    con?
@@ -624,10 +624,10 @@ some leaves are open. What it can contain:
 
 | printed        | what it is                                                | who makes it     |
 |----------------+-----------------------------------------------------------+------------------|
-| =?u1:B=        | obligation site, term side (Goal)                         | unfold, =_site=  |
-| =u1:A?=        | obligation site, context side (Laog)                      | unfold           |
-| =!u2:A=        | presumption site, term side (Deleg)                       | unfold           |
-| =u1:P!=        | presumption site, context side (Geled)                    | unfold           |
+| =?1:B=        | obligation site, term side (Goal)                         | unfold, =_site=  |
+| =1:A?=        | obligation site, context side (Laog)                      | unfold           |
+| =!2:A=        | presumption site, term side (Deleg)                       | unfold           |
+| =1:P!=        | presumption site, context side (Geled)                    | unfold           |
 | =r1=, =nc=     | declared names: axioms, strict leaves                     | =declare=        |
 | =alt1=, =alt2= | a scaffold's outer binder (alpha, or x on the context side) | =_fresh_alt=   |
 | =b1=, =b2=     | a scaffold's wiring binder beta                           | unfold           |
@@ -649,7 +649,7 @@ aida-labelled-sites-delegation-rewrite):
 Sites, =alt= and =b= binders each have their own counter. Lesson 8a
 builds this term step by step.
 
-Unfolding numbers the sites =u1=, =u2=, ... in the order it reaches them.
+Unfolding numbers the sites =1=, =2=, ... in the order it reaches them.
 It keeps an argument's binder names, and suffixes one only if that name
 is already used elsewhere in the term, because Fellowship refuses a
 hypothesis introduced twice. (Since 2026-10-02 the unfolder's own names
@@ -701,7 +701,7 @@ of C. =killC= refutes C strictly, from the axiom =nc: ~C=. (The
 attackrule example of lesson 8a is a fixture of its own.) Unfolded for
 =pro=:
 
-: μalt1:B.<?u1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!u2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!u3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
+: μalt1:B.<?1:B||μ'b1:B.<μ_:B.<b1:B||alt1:B>||μ'_:B.<μpro:B.<μth:B.<r1:A->B||μalt2:A.<!2:A||μ'b2:A.<μ_:A.<b2:A||μ'alt3:A.<μb3:A.<μ_:A.<alt3:A||μ'con:A.<con:A||μ'x:A.<μth_2:~A.<r2:C->~A||μalt4:C.<!3:C||μ'b4:C.<μ_:C.<b4:C||μ'alt5:C.<μb5:C.<μ_:C.<alt5:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>||μ'_:C.<alt5:C||b5:C>>||alt4:C>>||μ'_:C.<b4:C||alt4:C>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A||x:A*_F_>>>>||μ'_:A.<alt3:A||b3:A>>||alt2:A>>||μ'_:A.<b2:A||alt2:A>>>*th:B>||pro:B>||alt1:B>>>
 
 The same term with each part named once, from the inside out:
 
@@ -709,24 +709,24 @@ The same term with each part named once, from the inside out:
 :                                           killC's refutation of C (no site)
 : CW   = mu'alt5:C.< mu b5:C.< mu _:C.<alt5 || K> || mu'_:C.<alt5 || b5> > || alt4 >
 :                                           C-SUP: the debate about C[c] - its root alt4, supported by K
-: CSC  = mu alt4:C.< !u3 || mu'b4:C.< mu _:C.<b4 || CW> || mu'_:C.<b4 || alt4> > >
-:                                           T-ATT on C: the presumption u3, attacked by CW
+: CSC  = mu alt4:C.< !3 || mu'b4:C.< mu _:C.<b4 || CW> || mu'_:C.<b4 || alt4> > >
+:                                           T-ATT on C: the presumption 3, attacked by CW
 : CON  = mu'con:A.< con || mu'x:A.< mu th_2:~A.< r2 || CSC * th_2 >
 :                                  || mu'H1_2:~A.< H1_2 || x * _F_ > > >
-:                                           con's refutation of A, resting on u3
+:                                           con's refutation of A, resting on 3
 : AW   = mu'alt3:A.< mu b3:A.< mu _:A.<alt3 || CON> || mu'_:A.<alt3 || b3> > || alt2 >
 :                                           C-SUP: the debate about A[c] - its root alt2, supported by CON
-: ASC  = mu alt2:A.< !u2 || mu'b2:A.< mu _:A.<b2 || AW> || mu'_:A.<b2 || alt2> > >
-:                                           T-ATT on A: the presumption u2, attacked by AW
+: ASC  = mu alt2:A.< !2 || mu'b2:A.< mu _:A.<b2 || AW> || mu'_:A.<b2 || alt2> > >
+:                                           T-ATT on A: the presumption 2, attacked by AW
 : PRO  = mu pro:B.< mu th:B.< r1 || ASC * th > || pro >
-:                                           pro's proof of B, resting on u2
-: root = mu alt1:B.< ?u1 || mu'b1:B.< mu _:B.<b1 || alt1> || mu'_:B.<PRO || alt1> > >
-:                                           T-SUP on B: the root u1, supported by PRO
+:                                           pro's proof of B, resting on 2
+: root = mu alt1:B.< ?1 || mu'b1:B.< mu _:B.<b1 || alt1> || mu'_:B.<PRO || alt1> > >
+:                                           T-SUP on B: the root 1, supported by PRO
 
 Every site of a body is replaced by the debate about its statement. The
-issue's own root u1 is an obligation, since nobody presumes B. pro's
-site for A is its presumption u2. A[t] has no supporter, so its debate
-is u2 under one attack scaffold, whose wing AW is the debate about "A
+issue's own root 1 is an obligation, since nobody presumes B. pro's
+site for A is its presumption 2. A[t] has no supporter, so its debate
+is 2 under one attack scaffold, whose wing AW is the debate about "A
 fails": its root and its one supporter, con. The root is A[c], which
 the attack's =alt2= binds, so it is =alt2=: if con fails, the proof of A
 is passed on as if unattacked. The same happens to con's site for C, and
@@ -740,7 +740,7 @@ The witness labelling (preferred; there is exactly one):
 Written into the term after phase 1 (=explain pro.= prints it as
 =evaluate: the labelled term=; phase 1 has decided C, lesson 10):
 
-: μalt1:B{IN}.<?u1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||μalt2:A{IN}.<!u2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A{OUT}.<r2:C->~A{IN}||μalt4:C{OUT}.<!u3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C{IN}||μ'H1:~C.<H1:~C{IN}||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A{OUT}||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
+: μalt1:B{IN}.<?1:B{IN}||μ'b1:B.<μ_:B{IN}.<b1:B{IN}||alt1:B>||μ'_:B.<μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||μalt2:A{IN}.<!2:A{IN}||μ'b2:{OUT}A.<μ_:A{IN}.<b2:A{IN}||μ'alt3:{OUT}A.<μb3:A{IN}.<μ_:A{IN}.<alt3:A{IN}||μ'con:{OUT}A.<con:A{IN}||μ'x:{OUT}A.<μth_2:~A{OUT}.<r2:C->~A{IN}||μalt4:C{OUT}.<!3:C{OUT}||μ'killC:{IN}C.<killC:C{OUT}||μ'x_2:{IN}C.<nc:~C{IN}||μ'H1:~C.<H1:~C{IN}||x_2:C{OUT}*_F_>>>>*th_2:~A>||μ'H1_2:~A.<H1_2:~A{OUT}||x:A{IN}*_F_>>>>||μ'_:{OUT}A.<alt3:A{IN}||b3:{OUT}A>>||alt2:{OUT}A>>||μ'_:{OUT}A.<b2:A{IN}||alt2:{OUT}A>>>*th:B>||pro:B>||alt1:B>>>
 
 Three things to read off it. The labels follow the sort, not the
 binder: =alt2= is a continuation for A, so it carries A[c]'s label,
@@ -753,11 +753,11 @@ the axioms - carry no label.
 
 1. Rename =pro='s =cut (A -> B) th.= to =cut (A -> B) t.= Which binder
    names in the unfolded term change, and why do *two* of them change?
-2. The scaffold =ASC= sits on the site u2:A. Its scion is the wing AW,
+2. The scaffold =ASC= sits on the site 2:A. Its scion is the wing AW,
    which holds two alternatives. Which, and which labels decide ASC?
    (Hint: what does the compiler record for the captured root =alt2=?)
 3. Why does killC's part of the debate sit *inside* con's body, rather
-   than next to con on u2?
+   than next to con on 2?
 
 * Lesson 10 - Phase 1: strictness
 
@@ -815,8 +815,8 @@ decides it. The order is
 necessary: deciding an inner scaffold can remove an open site, and that
 can make an outer wing strict. In the self-attack
 (=tests/rationality/self_attack_lk.fspy=) the root's support scaffold
-contains the obligation ?u1; only after its decision ("supporter
-strict") has dropped ?u1 is the whole term closed, and only then is it a
+contains the obligation ?1; only after its decision ("supporter
+strict") has dropped ?1 is the whole term closed, and only then is it a
 strict edge (=SelfAttack*=). (Before 2026-10-07 the attack around it was
 then decided too, "original strict"; its wing is now the captured
 contrary alone, which is no scaffold, lesson 8a.)
@@ -876,15 +876,15 @@ The debate about C is innermost, so it is decided first, in two steps.
 Its wing CW is the root =alt4= supported by K; K has no site, and =alt4=
 is the attack's =alt=, which stands for "C fails" and counts as open, so
 the supporter wins, and the wing becomes K. Now CSC has the presumption
-!u3 as its attacked term and K as its attacker; !u3 is a site and K
+!3 as its attacked term and K as its attacker; !3 is a site and K
 none, so the attacker wins, and the scaffold becomes the clash:
 
-: μalt4:C.<!u3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>
+: μalt4:C.<!3:C||μ'killC:C.<killC:C||μ'x_2:C.<nc:~C||μ'H1:~C.<H1:~C||x_2:C*_F_>>>>
 
-that is, =mu alt4:C.< !u3 || K >= with =alt4= unused. The defeat leaves
-!u3 in place, so CON still rests on a site, and neither the debate about
+that is, =mu alt4:C.< !3 || K >= with =alt4= unused. The defeat leaves
+!3 in place, so CON still rests on a site, and neither the debate about
 A[c] (its root =alt2=, open, and CON) nor the A scaffold can be decided
-by strictness. PRO contains ASC, which contains !u2, so neither can the
+by strictness. PRO contains ASC, which contains !2, so neither can the
 B scaffold. Had =alt2= counted as settled, as an argument's binder does,
 the wing AW would have been "original strict" and con dropped before
 sigma ever saw it.
@@ -905,15 +905,15 @@ context-side scaffold; =fire= at the binder =alt5=):
 :              -->  < alt5 || K >                             [decided: the supporter]
 : W3  eta    mu'alt5.< alt5 || K >  -->  K
 
-then the attack (=scaffold_at(term, "u3")=):
+then the attack (=scaffold_at(term, "3")=):
 
-: C1  (>mu)  < !u3 || mu'b4.< mu _.<b4||K> || mu'_.<b4||alt4> > >
-:              -->  < mu _.<!u3||K> || mu'_.<!u3||alt4> >
-: C2  (mu<)  < mu _.<!u3||K> || mu'_.<!u3||alt4> >
-:              -->  < !u3 || K >                              [decided: defeat]
+: C1  (>mu)  < !3 || mu'b4.< mu _.<b4||K> || mu'_.<b4||alt4> > >
+:              -->  < mu _.<!3||K> || mu'_.<!3||alt4> >
+: C2  (mu<)  < mu _.<!3||K> || mu'_.<!3||alt4> >
+:              -->  < !3 || K >                              [decided: defeat]
 
 W1 and C1 are not choices: the outer command has a leaf on one side
-(the root =alt4=, the presumption u3), so only one rule applies. W2 and C2
+(the root =alt4=, the presumption 3), so only one rule applies. W2 and C2
 are the decisions. On the context side the rules are mirrored: at W2
 (mu<) keeps the supporter, where at a term-side support it would keep
 the supported term. At C2 (mu<) keeps the attacked term *facing the
@@ -1019,7 +1019,7 @@ labels of B[t] and A[c]. The B scaffold's scion is PRO, which rests on
 the debate about A. That debate's attacker wing AW holds its root
 =alt2=, the captured root of A[c], an obligation nobody met, so OUT,
 and con, which rests on the presumption of C that killC defeated in
-phase 1, so OUT: AW stands OUT, the attack keeps the presumption =!u2=
+phase 1, so OUT: AW stands OUT, the attack keeps the presumption =!2=
 (A is IN), and PRO stands IN. The A scaffold's scion is AW, OUT as just
 computed. Walking top-down, phase 2
 decides B, keeps PRO, walks into it, and decides A. It never reaches
@@ -1027,20 +1027,20 @@ anything inside AW: the support scaffold there (the "1 scaffold inside
 it") and the debate about C go with it, and phase 1's decisions on C
 were work for nothing. The result, still labelled:
 
-: μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||!u2:A{IN}*th:B>||pro:B>
+: μpro:B{IN}.<μth:B{IN}.<r1:A->B{IN}||!2:A{IN}*th:B>||pro:B>
 
 *The same two decisions as reduction steps:*
 
-: B1  (>mu)  < ?u1 || mu'b1.< mu _.<b1||alt1> || mu'_.<PRO||alt1> > >
-:              -->  < mu _.<?u1||alt1> || mu'_.<PRO||alt1> >
-: B2  (>mu)  < mu _.<?u1||alt1> || mu'_.<PRO||alt1> >
+: B1  (>mu)  < ?1 || mu'b1.< mu _.<b1||alt1> || mu'_.<PRO||alt1> > >
+:              -->  < mu _.<?1||alt1> || mu'_.<PRO||alt1> >
+: B2  (>mu)  < mu _.<?1||alt1> || mu'_.<PRO||alt1> >
 :              -->  < PRO || alt1 >                           [decided: supporter IN]
 : B3  eta    mu alt1.< PRO || alt1 >  -->  PRO
-: A1  (>mu)  < !u2 || mu'b2.< mu _.<b2||AW> || mu'_.<b2||alt2> > >
-:              -->  < mu _.<!u2||AW> || mu'_.<!u2||alt2> >
-: A2  (>mu)  < mu _.<!u2||AW> || mu'_.<!u2||alt2> >
-:              -->  < !u2 || alt2 >                           [decided: attacker OUT]
-: A3  eta    mu alt2.< !u2 || alt2 >  -->  !u2
+: A1  (>mu)  < !2 || mu'b2.< mu _.<b2||AW> || mu'_.<b2||alt2> > >
+:              -->  < mu _.<!2||AW> || mu'_.<!2||alt2> >
+: A2  (>mu)  < mu _.<!2||AW> || mu'_.<!2||alt2> >
+:              -->  < !2 || alt2 >                           [decided: attacker OUT]
+: A3  eta    mu alt2.< !2 || alt2 >  -->  !2
 
 Both decisions are (>mu), which here means opposite things: keep the
 supporter at a support, keep the attacked term at an attack. That is
@@ -1048,24 +1048,24 @@ the polarity of lesson 6 at work.
 
 B3 could also be done by a reduction: (mu<) at =< mu pro.c || alt1 >=
 gives =c[pro := alt1]=, the same term with =pro= renamed to =alt1=. A3
-cannot. =< !u2 || alt2 >= is a leaf facing a variable, and no rule
+cannot. =< !2 || alt2 >= is a leaf facing a variable, and no rule
 applies to it. Only eta removes =alt2=. If A3 is left out, the steps
 lead to a different normal form (lesson 12).
 
 *A stack, read top-down.* In =tests/entrypoints.fspy= B has three
-supporters, all IN. The canonical term =SUP( ?u1, SUP( SUP(P1, P2), P3 ) )=
+supporters, all IN. The canonical term =SUP( ?1, SUP( SUP(P1, P2), P3 ) )=
 is decided as: the root scaffold's scion is the whole stack, IN because
 some element is, so the stack is kept; then P3 is IN, so P3 is kept and
 the rest dropped. =evaluate issue :B.= returns p3's proof. In p1's term
-=SUP( ?u1, SUP( SUP(P2, P3), P1 ) )= the same walk keeps P1 first. Had
+=SUP( ?1, SUP( SUP(P2, P3), P1 ) )= the same walk keeps P1 first. Had
 P1's derivation been OUT, the walk would go on to P3, then P2, and only
 then to the root.
 
 *Where sigma differs from the base strategy.* Plain =normalize_strong=
 on the unfolded term, with no sigma at all:
 
-: cbn:  μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>
-: cbv:  μalt1:B.<?u1:B||alt1:B>
+: cbn:  μalt1:B.<r1:A->B||μb1:A.<!2:A||b1:A>*alt1:B>
+: cbv:  μalt1:B.<?1:B||alt1:B>
 
 cbn takes (>mu) at every pair, including both of the pairs sigma
 decides. It therefore reaches sigma's answer up to eta and renaming.
@@ -1128,7 +1128,7 @@ change the normal form, but only through those cuts.
     aida-classify-exception-before-open): an exception is an exception
     whether the defeated site is an obligation or a presumption, and
     whatever obligations remain elsewhere. Lesson 9 with con's
-    =by default.= removed gives =μalt1:C.<nc:~C||?u1:C*_F_>= for
+    =by default.= removed gives =μalt1:C.<nc:~C||?1:C*_F_>= for
     =issue :C=: the obligation for C is strictly refuted, an exception.
     Until then an obligation anywhere hid the clash, and this was open;
   - =open= if an obligation (Goal/Laog) remains;
@@ -1139,7 +1139,7 @@ After discharge, the last two read: a value iff every remaining site is
 IN. Issue =P:= of tests/demo/05_even_loop.fspy - the opponent's onus to
 refute P, delegated by a presumption - is UNDEC skeptically, so the
 delegation is the obligation =UNDEC:P?= and the debate is open
-(=μ'alt1:P.<alt1:P||UNDEC:P?>=; a value, =μ'alt1:P.<alt1:P||u1:P!>=,
+(=μ'alt1:P.<alt1:P||UNDEC:P?>=; a value, =μ'alt1:P.<alt1:P||1:P!>=,
 before 2026-10-07). Credulously the witness has P[c] IN: =IN:P!=, a
 value.
 
@@ -1148,7 +1148,7 @@ value.
 : normalise  normal form after 1 step(s) under cbn
 : N1  (mu<)  < mu th.< r1 || !IN * th > || pro >  -->  < r1 || !IN * pro >
 
-Discharge turns =!u2:A{IN}= into =!IN:A=. The root command has a mu on
+Discharge turns =!2:A{IN}= into =!IN:A=. The root command has a mu on
 the term side and the variable =pro= on the context side, so only (mu<)
 applies. Afterwards =< r1 || !IN * pro >= is normal: (->) would need a
 lambda, and =r1= is a declared name. The result, in both modes and under
@@ -1163,7 +1163,7 @@ nobody defeated A, so A stays presumed, and its label is IN.
 
 1. Leave out A3 (the eta step) and normalise. What comes out, and is it
    still a value?
-2. The plain cbv run of lesson 11 returned =μalt1:B.<?u1:B||alt1:B>=.
+2. The plain cbv run of lesson 11 returned =μalt1:B.<?1:B||alt1:B>=.
    Classify it. Which of cbv's choices produced it?
 
 * Lesson 13 - Names, capture and substitution
@@ -1208,9 +1208,9 @@ binds nothing and so can capture nothing (since 2026-10-06; before, =_=
 was renamed too). Here is the real C1 step, taken on the unfolded term,
 with the wing CW still undecided:
 
-: μalt4:C.<μ_:C.<!u3:C||μ'b1:C.<μb2:C.<μ_:C.<b1:C||μ'b3:C.<b3:C||μ'b6:C.<nc:~C||μ'b7:~C.<b7:~C||b6:C*_F_>>>>||μ'_:C.<b1:C||b2:C>>||alt4:C>>||μ'_:C.<!u3:C||alt4:C>>
+: μalt4:C.<μ_:C.<!3:C||μ'b1:C.<μb2:C.<μ_:C.<b1:C||μ'b3:C.<b3:C||μ'b6:C.<nc:~C||μ'b7:~C.<b7:~C||b6:C*_F_>>>>||μ'_:C.<b1:C||b2:C>>||alt4:C>>||μ'_:C.<!3:C||alt4:C>>
 
-The lesson 10 account prints =mu _.<!u3||CW>=, and so does the real
+The lesson 10 account prints =mu _.<!3||CW>=, and so does the real
 term now. Inside the wing =alt5= and =b5= became =b1= and =b2=, and
 =killC=, =x_2= and =H1= inside K became =b3=, =b6= and =b7= (=b4= and =b5=
 are taken: the fresh names avoid every name of the term); the =_=
@@ -1224,7 +1224,7 @@ binders stayed. Three things follow:
     example the one normalisation step went through no binder, so its
     normal form keeps its names.
   - The renaming goes further than capture avoidance needs. At C1 the
-    replacement =!u3= has no names at all, so nothing could be captured,
+    replacement =!3= has no names at all, so nothing could be captured,
     yet every binder is renamed. It is correct, only more than necessary.
     The scaffold rewrites (point 4) use the minimal form,
     =substitute(..., minimal=True)=, which renames only the binders that
@@ -1250,7 +1250,7 @@ free (the compiler refused such terms: "free term variable 'b7'").
 step for real, =scion[b := t]= (=_outer_step=, minimal substitution),
 before they keep the wing. =keep_orig= keeps t itself, in which beta
 cannot occur (t is outside beta's scope). In the capture-by-b example of
-lesson 8a, keeping back puts B's root ?u1 where back had =b1=.
+lesson 8a, keeping back puts B's root ?1 where back had =b1=.
 
 *eta and a captured alpha.* A rewrite removes alpha by eta only when the
 kept wing does not use it (=_eta=). A wing in which alpha occurs free
@@ -1273,7 +1273,7 @@ Replaying lesson 11's steps with the real rules, and taking (mu<) instead
 of eta at B3:
 
 : after B1, B2, B3=(mu<), A1, A2, then normalize_strong cbn:
-: μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>
+: μalt1:B.<r1:A->B||μb1:A.<!2:A||b1:A>*alt1:B>
 : the pipeline:
 : μpro:B.<r1:A->B||!IN:A*pro:B>
 
@@ -1558,7 +1558,7 @@ between the implementation and doing them as normalisation steps:
    inside its wing (=alt5=, =b5=). Each series has its own counter, so
    the two run in step. Sites have a third counter; the roots of the two
    attacker wings are captured by =alt2= and =alt4= and draw no site, so
-   the sites are u1, u2, u3 without a gap. Registering killC before con
+   the sites are 1, 2, 3 without a gap. Registering killC before con
    changes nothing: the numbers follow the walk, and the walk goes B,
    pro, A, A[c], con, C, C[c], killC whatever the order. Registration
    order only matters between arguments for the *same* statement, in
@@ -1568,15 +1568,15 @@ between the implementation and doing them as normalisation steps:
    would need a lambda hypothesis or a =mu'= binder of type B. The
    support scaffold of B has one: its =b1= binds B[t] over the whole
    stack, back included. So =b1= captures the demand, and after the
-   outer step back shares B's root ?u1.
-3. (a) The obligation ?u2. pro is the entrypoint and its own site
+   outer step back shares B's root ?1.
+3. (a) The obligation ?2. pro is the entrypoint and its own site
    demands A, and nobody else presumes A, so there is nothing to put
-   under it. (b) Still ?u2: pro's own site keeps the kind pro wrote.
+   under it. (b) Still ?2: pro's own site keeps the kind pro wrote.
    pa's presumption becomes the bottom of A's stack there (the trace
-   says =A[t] expanded, root u2 (Goal), 0 supporter(s), its presumption
+   says =A[t] expanded, root 2 (Goal), 0 supporter(s), its presumption
    at the bottom=). The debate about A occurs twice: inside pro, as just
    described, and inside pa, which is canonical - A is presumed in the
-   document, so its root is the presumption =!u5=. pa sits below pro in
+   document, so its root is the presumption =!5=. pa sits below pro in
    B's stack, since pro is the entrypoint.
 4. Each expansion puts its statement on the spine, and below its debate
    the statement is bound in =env= (by the scaffolds' =alt= and =b=), so
@@ -1603,27 +1603,27 @@ between the implementation and doing them as normalisation steps:
    and con's becomes =H1_2=.
 2. AW's root =alt2=, which the compiler records as an obligation source
    at A[c] - the identity edge A[c] <- A[c] - and con,
-   A[c] <- C[t]:pres@u3. The status is IN if either is IN, so the labels
+   A[c] <- C[t]:pres@3. The status is IN if either is IN, so the labels
    of A[c] and C[t] decide ASC. The label of A[t] plays no part.
 3. Unfolding replaces every site of a body by the debate about its
-   statement, in scope. con's body has the site u3:C, so the debate
-   about C - u3 attacked by killC - sits inside con. u2 is a site of
+   statement, in scope. con's body has the site 3:C, so the debate
+   about C - 3 attacked by killC - sits inside con. 2 is a site of
    pro, so the debate about A, with con in it, sits inside pro.
 
 ** Lesson 10
 
 1. None. Without killC nobody refutes C, so C[t] is not attacked at all
-   and con rests on the presumption !u3. Every remaining wing rests on a
-   site or on the captured root =alt2=, which counts as open: ?u1, !u2,
-   =alt2= or !u3. sigma has C[t] IN, A[c] IN, A[t] OUT and
-   B[t] OUT, so pro's derivation is OUT and the root keeps ?u1. B[t] is
+   and con rests on the presumption !3. Every remaining wing rests on a
+   site or on the captured root =alt2=, which counts as open: ?1, !2,
+   =alt2= or !3. sigma has C[t] IN, A[c] IN, A[t] OUT and
+   B[t] OUT, so pro's derivation is OUT and the root keeps ?1. B[t] is
    OUT, so after discharge the evaluation returns =?OUT:B=, OPEN.
 2. Two strict wings that contradict each other are an inconsistency. A
    strict phase that picked one of them would be choosing between two
    proofs. The labelling decides that case (CONTR in call-by-onus.org),
    and the paper allows that proofs can be strictly defeated there.
-3. Condition 2, closedness, fails for pro and con: PRO rests on !u2 and
-   CON on !u3, even after the defeat. Condition 1 fails for killC: it is
+3. Condition 2, closedness, fails for pro and con: PRO rests on !2 and
+   CON on !3, even after the defeat. Condition 1 fails for killC: it is
    strict as registered, and the graph has its strict edge already. In
    the self-attack's legacy term for P[c], SelfAttack is the attacker
    itself: the only decision is made at the attack scaffold, outside
@@ -1631,19 +1631,19 @@ between the implementation and doing them as normalisation steps:
    although SelfAttack is closed wherever it stands. The new condition
    asks only that it is defeasible as registered.
 4. s2 for the issue and s1 for s1. In the issue term
-   =SUP(?u1, SUP(S1, S2))= the inner scaffold has two strict wings; the
+   =SUP(?1, SUP(S1, S2))= the inner scaffold has two strict wings; the
    supporter, s2, is checked first and kept, so the higher of the two
-   wins, as sigma would have it. In s1's term =SUP(?u1, SUP(S2, S1))= the
+   wins, as sigma would have it. In s1's term =SUP(?1, SUP(S2, S1))= the
    same rule keeps s1. The old rule checked t first, kept the lower one
    in both, and so ignored the stack's order: s1 for the issue, s2 for
    s1's own term.
 
 ** Lesson 11
 
-1. cbv fires (mu<) at both pairs. At B2 that keeps the root ?u1, and
-   the evaluation is OPEN, like the plain cbv run (with eta, =?u1:B=).
+1. cbv fires (mu<) at both pairs. At B2 that keeps the root ?1, and
+   the evaluation is OPEN, like the plain cbv run (with eta, =?1:B=).
    At A2 (mu<) is defeat, which would leave the clash
-   =mu alt2.< !u2 || AW >= inside PRO.
+   =mu alt2.< !2 || AW >= inside PRO.
 2. Because the wings are arranged the other way round. In T-SUP the
    context wing =mu'_.<t2||alpha>= returns the supporter. In T-ATT the
    context wing =mu'_.<beta||alpha>= returns the attacked term. (>mu)
@@ -1656,15 +1656,15 @@ between the implementation and doing them as normalisation steps:
 
 ** Lesson 12
 
-1. =μalt1:B.<r1:A->B||μb1:A.<!u2:A||b1:A>*alt1:B>=, still a value. The
-   residue =μb1:A.<!u2||b1>= is eta-equivalent to =!u2=, and =b1=
+1. =μalt1:B.<r1:A->B||μb1:A.<!2:A||b1:A>*alt1:B>=, still a value. The
+   residue =μb1:A.<!2||b1>= is eta-equivalent to =!2=, and =b1=
    occurs in it, so it is not an affine binder and not a clash.
-2. OPEN, because the obligation ?u1 remains. cbv fired (mu<) at the root
+2. OPEN, because the obligation ?1 remains. cbv fired (mu<) at the root
    scaffold's inner pair, keeping the original instead of the supporter.
 
 ** Lesson 13
 
-1. No. The replacement =?u1= has no names, so no binder could capture
+1. No. The replacement =?1= has no names, so no binder could capture
    anything. =freshen_binders= renames every binder of the target
    regardless.
 2. No variable is ever called =_=, so a =_= binder can capture nothing,

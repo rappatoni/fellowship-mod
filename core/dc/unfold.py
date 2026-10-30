@@ -168,7 +168,7 @@ class Unfolder:
     def _site(self, statement, presumed=None):
         key, side = statement
         prop = self._prop(key)
-        number = f"u{next(self._sites)}"
+        number = str(next(self._sites))   # a nominal: the number is enough
         if presumed is None:
             presumed = self._presumed(statement)
         if side == "term":

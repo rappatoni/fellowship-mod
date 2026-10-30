@@ -93,6 +93,17 @@ class TestCut:
             assert free_variables(body) <= {("t", "pRule")}
             assert isinstance(body.context.context, site)
 
+    def test_the_refutation_of_false_stays(self):
+        # Fellowship's negation elimination ends in the built-in _F_; it is
+        # no capture, and the discipline sees through the wrapper only with it
+        refutation = Mutilde(DI("x", "Flies"), "Flies", DI("nf", "Penguin->~Flies"),
+                             Cons(Deleg("1", "Penguin"),
+                                  Mutilde(DI("H", "~Flies"), "~Flies", DI("H", "~Flies"),
+                                          Cons(DI("x", "Flies"), ID("_F_", "false")))))
+        body = cut(refutation, {"nf"})
+        assert body.context.context.context.context.name == "_F_"
+        assert not violations(body, True)
+
     def test_sites_are_numbered_afresh(self):
         body = cut(eta("d", "P", Mu(ID("r", "P"), "P", DI("pRule", "Q->P"),
                                     Cons(Goal("7.2", "Q"), ID("r", "P")))), STRICT)

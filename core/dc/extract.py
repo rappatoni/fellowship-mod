@@ -42,7 +42,7 @@ from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Goal, Laog, Deleg, Geled, ID, DI,
 )
 from core.dc.debate_graph import (
-    DebateGraph, _Compiler, _host_name, _match_scaffold, scoped_stack_elements,
+    BUILTIN_LEAVES, DebateGraph, _Compiler, _host_name, _match_scaffold, scoped_stack_elements,
 )
 from core.dc.discipline import free_variables
 
@@ -131,9 +131,11 @@ def cut(term: ProofTerm, strict_names=()) -> ProofTerm:
 
 
 def _open_captures(term, strict_names):
-    """Every variable bound outside ``term`` (not a declared name) becomes
-    a site of the kind the compiler records for the capture."""
-    free = {name for _kind, name in free_variables(term)} - set(strict_names)
+    """Every variable bound outside ``term`` (not a declared name, nor a
+    built-in leaf such as ``_F_``, the refutation of false that ends a
+    negation's elimination) becomes a site of the kind the compiler
+    records for the capture."""
+    free = {name for _kind, name in free_variables(term)} - set(strict_names) - set(BUILTIN_LEAVES)
     if not free:
         return term
 

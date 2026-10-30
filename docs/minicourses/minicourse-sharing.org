@@ -177,11 +177,11 @@ argument =a0=), and =a2_0= and =a2_1= both derive P2 from P1.
 =share a2_0.=:
 
 : Debate about 'a2_0' (P2[t]), 2 sub-debate(s) cited by name:
-:   μalt1:P2.<?u1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<μalt8:P1->P2.<?u2:P1->P2||μ'b8:P1->P2.<μ_:P1->P2.<b8:P1->P2||alt8:P1->P2>||μ'_:P1->P2.<μalt9:P1->P2.<r2_0:P1->P2||μ'b9:P1->P2.<μ_:P1->P2.<b9:P1->P2||alt9:P1->P2>||μ'_:P1->P2.<r2_1:P1->P2||alt9:P1->P2>>>||alt8:P1->P2>>>||anon_1:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<μalt4:P1->P2.<?u3:P1->P2||μ'b4:P1->P2.<μ_:P1->P2.<b4:P1->P2||alt4:P1->P2>||μ'_:P1->P2.<μalt5:P1->P2.<r2_1:P1->P2||μ'b5:P1->P2.<μ_:P1->P2.<b5:P1->P2||alt5:P1->P2>||μ'_:P1->P2.<r2_0:P1->P2||alt5:P1->P2>>>||alt4:P1->P2>>>||anon_1:P1*th:P2>||a2_0:P2>||alt2:P2>>>||alt1:P2>>>
-:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?u4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||!u5:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_2:P0->P1||!u6:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>||alt6:P1>>>
-:   anon_2[?:P0->P1] := μalt10:P0->P1.<?u7:P0->P1||μ'b10:P0->P1.<μ_:P0->P1.<b10:P0->P1||alt10:P0->P1>||μ'_:P0->P1.<μalt11:P0->P1.<r1_0:P0->P1||μ'b11:P0->P1.<μ_:P0->P1.<b11:P0->P1||alt11:P0->P1>||μ'_:P0->P1.<r1_1:P0->P1||alt11:P0->P1>>>||alt10:P0->P1>>>
+:   μalt1:P2.<?1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<μalt8:P1->P2.<?2:P1->P2||μ'b8:P1->P2.<μ_:P1->P2.<b8:P1->P2||alt8:P1->P2>||μ'_:P1->P2.<μalt9:P1->P2.<r2_0:P1->P2||μ'b9:P1->P2.<μ_:P1->P2.<b9:P1->P2||alt9:P1->P2>||μ'_:P1->P2.<r2_1:P1->P2||alt9:P1->P2>>>||alt8:P1->P2>>>||anon_1:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P2>||μ'_:P2.<μa2_0:P2.<μth:P2.<μalt4:P1->P2.<?3:P1->P2||μ'b4:P1->P2.<μ_:P1->P2.<b4:P1->P2||alt4:P1->P2>||μ'_:P1->P2.<μalt5:P1->P2.<r2_1:P1->P2||μ'b5:P1->P2.<μ_:P1->P2.<b5:P1->P2||alt5:P1->P2>||μ'_:P1->P2.<r2_0:P1->P2||alt5:P1->P2>>>||alt4:P1->P2>>>||anon_1:P1*th:P2>||a2_0:P2>||alt2:P2>>>||alt1:P2>>>
+:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||!5:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_2:P0->P1||!6:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>||alt6:P1>>>
+:   anon_2[?:P0->P1] := μalt10:P0->P1.<?7:P0->P1||μ'b10:P0->P1.<μ_:P0->P1.<b10:P0->P1||alt10:P0->P1>||μ'_:P0->P1.<μalt11:P0->P1.<r1_0:P0->P1||μ'b11:P0->P1.<μ_:P0->P1.<b11:P0->P1||alt11:P0->P1>||μ'_:P0->P1.<r1_1:P0->P1||alt11:P0->P1>>>||alt10:P0->P1>>>
 
-The first line is the root: the obligation ?u1 for P2 under one support
+The first line is the root: the obligation ?1 for P2 under one support
 scaffold whose scion is the stack of a2_1 and a2_0, a2_0 on top - the
 term is a2_0's. Each supporter applies its rule to a site for P1, and at
 both sites stands =anon_1:P1=, a citation. Where the rule stood stands
@@ -191,7 +191,7 @@ written out twice, and differently. Under a2_1 it is the canonical one,
 its stack r2_0 then r2_1, the last registered on top. Under a2_0 it is a
 variant: a2_0 has primacy, which reaches its own axiom, so r2_0 is on
 top. Each is needed once, so neither is named. The second line is P1's
-debate, written once: the obligation ?u4 under the stack of a1_0 and
+debate, written once: the obligation ?4 under the stack of a1_0 and
 a1_1, each resting on the debate about =P0 -> P1= (=anon_2=, the third
 line) and a presumption of P0.
 
@@ -202,7 +202,7 @@ Three things to notice.
     its own supporter edge, not the contest it is part of.
   - P0 is not named, although it too is needed twice. Its definition is
     the bare site =!u:P0= - a0 presumes it and nobody contests it - and a
-    bare site is written in place: =!u5:P0= and =!u6:P0=.
+    bare site is written in place: =!5:P0= and =!6:P0=.
   - The header =anon_1[?:P1, ?:P0->P1, !:P0]= lists what the sub-debate
     rests on: its own obligation ?:P1 (the root), the obligation of the
     implication's debate it cites, and the presumption !:P0 its
@@ -292,8 +292,8 @@ even loop of tests/rationality/even_loop_lk.fspy, with P argued twice.
 =share p1.=:
 
 : Debate about 'p1' (P[t]), 1 sub-debate(s) cited by name:
-:   μalt5:P.<μalt1:P.<?u1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μalt2:P.<μp2:P.<μrule_2:P.<μalt12:(Q->false)->P.<?u2:(Q->false)->P||μ'b12:(Q->false)->P.<μ_:(Q->false)->P.<b12:(Q->false)->P||alt12:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13:(Q->false)->P.<μ_:(Q->false)->P.<b13:(Q->false)->P||alt13:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13:(Q->false)->P>>>||alt12:(Q->false)->P>>>||μalt14:Q->false.<?u3:Q->false||μ'b14:Q->false.<μ_:Q->false.<b14:Q->false||alt14:Q->false>||μ'_:Q->false.<μalt15:Q->false.<λh_5:Q.μalpha_5:false.<h_5:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b14 -> ?:Q->false, h_5 -> ?:Q]:Q>||μ'b15:Q->false.<μ_:Q->false.<b15:Q->false||alt15:Q->false>||μ'_:Q->false.<λh_6:Q.μalpha_6:false.<h_6:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b15 -> ?:Q->false, h_6 -> ?:Q]:Q>||alt15:Q->false>>>||alt14:Q->false>>>*rule_2:P>||p2:P>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<μp1:P.<μrule:P.<μalt6:(Q->false)->P.<?u4:(Q->false)->P||μ'b6:(Q->false)->P.<μ_:(Q->false)->P.<b6:(Q->false)->P||alt6:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7:(Q->false)->P.<μ_:(Q->false)->P.<b7:(Q->false)->P||alt7:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7:(Q->false)->P>>>||alt6:(Q->false)->P>>>||μalt10:Q->false.<?u5:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt10:Q->false>||μ'_:Q->false.<μalt11:Q->false.<λh_4:Q.μalpha_4:false.<h_4:Q||anon_1[rule -> P:!, b2 -> ?:P, b10 -> ?:Q->false, h_4 -> ?:Q]:Q>||μ'b11:Q->false.<μ_:Q->false.<b11:Q->false||alt11:Q->false>||μ'_:Q->false.<λh_3:Q.μalpha_3:false.<h_3:Q||anon_1[rule -> P:!, b2 -> ?:P, b11 -> ?:Q->false, h_3 -> ?:Q]:Q>||alt11:Q->false>>>||alt10:Q->false>>>*rule:P>||p1:P>||alt2:P>>>||alt1:P>>>||μ'b5:P.<μ_:P.<b5:P||alt5:P>||μ'_:P.<b5:P||alt5:P>>>
-:   anon_1[?:(Q->false)->P, ?:Q->false, P:!, Q:!] := μ'alt8:Q.<μb8:Q.<μ_:Q.<alt8:Q||b8:Q>||μ'_:Q.<μalt9:Q.<alt8:Q||μ'b9:Q.<μ_:Q.<b9:Q||alt9:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<qRule:(P->false)->Q||λh_2:P.μalpha_2:false.<h_2:P||μ'alt16:P.<μb16:P.<μ_:P.<alt16:P||b16:P>||μ'_:P.<μalt17:P.<alt16:P||μ'b17:P.<μ_:P.<b17:P||alt17:P>||μ'_:P.<μalt18:P.<μp1_2:P.<μrule_4:P.<μalt6_2:(Q->false)->P.<?u6:(Q->false)->P||μ'b6_2:(Q->false)->P.<μ_:(Q->false)->P.<b6_2:(Q->false)->P||alt6_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7_2:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7_2:(Q->false)->P.<μ_:(Q->false)->P.<b7_2:(Q->false)->P||alt7_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7_2:(Q->false)->P>>>||alt6_2:(Q->false)->P>>>||μalt10_2:Q->false.<?u7:Q->false||μ'b10_2:Q->false.<μ_:Q->false.<b10_2:Q->false||alt10_2:Q->false>||μ'_:Q->false.<μalt11_2:Q->false.<λh_4_2:Q.μalpha_4_2:false.<h_4_2:Q||rule_3:Q>||μ'b11_2:Q->false.<μ_:Q->false.<b11_2:Q->false||alt11_2:Q->false>||μ'_:Q->false.<λh_3_2:Q.μalpha_3_2:false.<h_3_2:Q||rule_3:Q>||alt11_2:Q->false>>>||alt10_2:Q->false>>>*rule_4:P>||p1_2:P>||μ'b18:P.<μ_:P.<b18:P||alt18:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<μalt12_2:(Q->false)->P.<?u8:(Q->false)->P||μ'b12_2:(Q->false)->P.<μ_:(Q->false)->P.<b12_2:(Q->false)->P||alt12_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13_2:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13_2:(Q->false)->P.<μ_:(Q->false)->P.<b13_2:(Q->false)->P||alt13_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13_2:(Q->false)->P>>>||alt12_2:(Q->false)->P>>>||μalt14_2:Q->false.<?u9:Q->false||μ'b14_2:Q->false.<μ_:Q->false.<b14_2:Q->false||alt14_2:Q->false>||μ'_:Q->false.<μalt15_2:Q->false.<λh_5_2:Q.μalpha_5_2:false.<h_5_2:Q||rule_3:Q>||μ'b15_2:Q->false.<μ_:Q->false.<b15_2:Q->false||alt15_2:Q->false>||μ'_:Q->false.<λh_6_2:Q.μalpha_6_2:false.<h_6_2:Q||rule_3:Q>||alt15_2:Q->false>>>||alt14_2:Q->false>>>*rule_5:P>||p2_2:P>||alt18:P>>>||alt17:P>>>||b16:P>>||u10:P!>>*rule_3:Q>||q:Q>||alt9:Q>>>||b8:Q>>||u11:Q!>
+:   μalt5:P.<μalt1:P.<?1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μalt2:P.<μp2:P.<μrule_2:P.<μalt12:(Q->false)->P.<?2:(Q->false)->P||μ'b12:(Q->false)->P.<μ_:(Q->false)->P.<b12:(Q->false)->P||alt12:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13:(Q->false)->P.<μ_:(Q->false)->P.<b13:(Q->false)->P||alt13:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13:(Q->false)->P>>>||alt12:(Q->false)->P>>>||μalt14:Q->false.<?3:Q->false||μ'b14:Q->false.<μ_:Q->false.<b14:Q->false||alt14:Q->false>||μ'_:Q->false.<μalt15:Q->false.<λh_5:Q.μalpha_5:false.<h_5:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b14 -> ?:Q->false, h_5 -> ?:Q]:Q>||μ'b15:Q->false.<μ_:Q->false.<b15:Q->false||alt15:Q->false>||μ'_:Q->false.<λh_6:Q.μalpha_6:false.<h_6:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b15 -> ?:Q->false, h_6 -> ?:Q]:Q>||alt15:Q->false>>>||alt14:Q->false>>>*rule_2:P>||p2:P>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_:P.<μp1:P.<μrule:P.<μalt6:(Q->false)->P.<?4:(Q->false)->P||μ'b6:(Q->false)->P.<μ_:(Q->false)->P.<b6:(Q->false)->P||alt6:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7:(Q->false)->P.<μ_:(Q->false)->P.<b7:(Q->false)->P||alt7:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7:(Q->false)->P>>>||alt6:(Q->false)->P>>>||μalt10:Q->false.<?5:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt10:Q->false>||μ'_:Q->false.<μalt11:Q->false.<λh_4:Q.μalpha_4:false.<h_4:Q||anon_1[rule -> P:!, b2 -> ?:P, b10 -> ?:Q->false, h_4 -> ?:Q]:Q>||μ'b11:Q->false.<μ_:Q->false.<b11:Q->false||alt11:Q->false>||μ'_:Q->false.<λh_3:Q.μalpha_3:false.<h_3:Q||anon_1[rule -> P:!, b2 -> ?:P, b11 -> ?:Q->false, h_3 -> ?:Q]:Q>||alt11:Q->false>>>||alt10:Q->false>>>*rule:P>||p1:P>||alt2:P>>>||alt1:P>>>||μ'b5:P.<μ_:P.<b5:P||alt5:P>||μ'_:P.<b5:P||alt5:P>>>
+:   anon_1[?:(Q->false)->P, ?:Q->false, P:!, Q:!] := μ'alt8:Q.<μb8:Q.<μ_:Q.<alt8:Q||b8:Q>||μ'_:Q.<μalt9:Q.<alt8:Q||μ'b9:Q.<μ_:Q.<b9:Q||alt9:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<qRule:(P->false)->Q||λh_2:P.μalpha_2:false.<h_2:P||μ'alt16:P.<μb16:P.<μ_:P.<alt16:P||b16:P>||μ'_:P.<μalt17:P.<alt16:P||μ'b17:P.<μ_:P.<b17:P||alt17:P>||μ'_:P.<μalt18:P.<μp1_2:P.<μrule_4:P.<μalt6_2:(Q->false)->P.<?6:(Q->false)->P||μ'b6_2:(Q->false)->P.<μ_:(Q->false)->P.<b6_2:(Q->false)->P||alt6_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7_2:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7_2:(Q->false)->P.<μ_:(Q->false)->P.<b7_2:(Q->false)->P||alt7_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7_2:(Q->false)->P>>>||alt6_2:(Q->false)->P>>>||μalt10_2:Q->false.<?7:Q->false||μ'b10_2:Q->false.<μ_:Q->false.<b10_2:Q->false||alt10_2:Q->false>||μ'_:Q->false.<μalt11_2:Q->false.<λh_4_2:Q.μalpha_4_2:false.<h_4_2:Q||rule_3:Q>||μ'b11_2:Q->false.<μ_:Q->false.<b11_2:Q->false||alt11_2:Q->false>||μ'_:Q->false.<λh_3_2:Q.μalpha_3_2:false.<h_3_2:Q||rule_3:Q>||alt11_2:Q->false>>>||alt10_2:Q->false>>>*rule_4:P>||p1_2:P>||μ'b18:P.<μ_:P.<b18:P||alt18:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<μalt12_2:(Q->false)->P.<?8:(Q->false)->P||μ'b12_2:(Q->false)->P.<μ_:(Q->false)->P.<b12_2:(Q->false)->P||alt12_2:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13_2:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13_2:(Q->false)->P.<μ_:(Q->false)->P.<b13_2:(Q->false)->P||alt13_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13_2:(Q->false)->P>>>||alt12_2:(Q->false)->P>>>||μalt14_2:Q->false.<?9:Q->false||μ'b14_2:Q->false.<μ_:Q->false.<b14_2:Q->false||alt14_2:Q->false>||μ'_:Q->false.<μalt15_2:Q->false.<λh_5_2:Q.μalpha_5_2:false.<h_5_2:Q||rule_3:Q>||μ'b15_2:Q->false.<μ_:Q->false.<b15_2:Q->false||alt15_2:Q->false>||μ'_:Q->false.<λh_6_2:Q.μalpha_6_2:false.<h_6_2:Q||rule_3:Q>||alt15_2:Q->false>>>||alt14_2:Q->false>>>*rule_5:P>||p2_2:P>||alt18:P>>>||alt17:P>>>||b16:P>>||10:P!>>*rule_3:Q>||q:Q>||alt9:Q>>>||b8:Q>>||11:Q!>
 
 One sub-debate is named: =anon_1=, the debate about "Q fails" - the
 statement Q[c] - needed inside each of the four lambdas =λh:Q. ...= at
@@ -407,8 +407,8 @@ aida-negation-spelling-in-unfolding; the fallback keeps it as it was.
 
 The term sent for P2 is the first line of =share a2_0.= with its
 citations - and the two debates about =P1 -> P2= written in place there -
-replaced by obligations: =?u2:P1->P2||?u3:P1= under a2_1 and
-=?u4:P1->P2||?u5:P1= under a2_0. The two replays for =P1 -> P2= are its
+replaced by obligations: =?2:P1->P2||?3:P1= under a2_1 and
+=?4:P1->P2||?5:P1= under a2_0. The two replays for =P1 -> P2= are its
 variant and its canonical debate. P0's definition is bare and is not
 replayed. Five replays of 29, 17, 31, 17 and 17 instructions, where the
 unfolded term needs 185 (=typecheck expanded.=).
@@ -504,9 +504,9 @@ bare - k contests it - and it is needed twice, so it is named; and since
 
 : Debate about 'a2_0' (P2[t]), 3 sub-debate(s) cited by name:
 :   ...                    (the root: lesson 14's first line)
-:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?u4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||a0:P0*th_3:P1>||...
-:   ...                    (anon_2: lesson 14's third line, its site u5)
-:   a0[!:P0] := μalt12:P0.<!u6:P0||μ'b12:P0.<μ_:P0.<b12:P0||μ'alt13:P0.<μb13:P0.<μ_:P0.<alt13:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<alt13:P0||b13:P0>>||alt12:P0>>||μ'_:P0.<b12:P0||alt12:P0>>>
+:   anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||a0:P0*th_3:P1>||...
+:   ...                    (anon_2: lesson 14's third line, its site 5)
+:   a0[!:P0] := μalt12:P0.<!6:P0||μ'b12:P0.<μ_:P0.<b12:P0||μ'alt13:P0.<μb13:P0.<μ_:P0.<alt13:P0||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<alt13:P0||b13:P0>>||alt12:P0>>||μ'_:P0.<b12:P0||alt12:P0>>>
 
 The instance compiler's DEBUG log (=IssueResolver(...).compile("a2_0")=),
 then the strict stage of =explain a2_0.=, without the terms. The axioms
@@ -549,10 +549,10 @@ axioms, strict, against an obligation root, so each stack keeps its top
 and the root its stack - two decisions per debate. In P0's instance the
 attacker wing is k's: strict, so the wing is decided first (k is a
 supporter of P0[c] there), and then the attack, against the presumption
-=!u6:P0=, which is not strict: defeat, the clash of lesson 10, decided
+=!6:P0=, which is not strict: defeat, the clash of lesson 10, decided
 *once*. In P1's term the citations of P0 are the stub =a0= - printed by
 its name, since the instance is named - which carries an open site,
-because the defeat left =!u6= in place. So neither scaffold of P1 is
+because the defeat left =!6= in place. So neither scaffold of P1 is
 strict, and both are delayed; in P2's term the stubs for P1 carry P1's
 open obligation, and the same follows. The unfolded term holds P0's
 attack four times, under each of the four supporters, and
@@ -774,7 +774,7 @@ route, which should go once the shared route has seen real documents.
    is strict there - first decision - and q defeats the bare presumption
    =u:Q!= - the second. The labelling still sees the loop, because the
    compiler records the capture as a presumption source.
-3. Closedness. The defeated site keeps =!u6:P0=, so the subterm that
+3. Closedness. The defeated site keeps =!6:P0=, so the subterm that
    holds the decision rests on a site and is not closed.
 
 ** Lesson 18
@@ -792,6 +792,6 @@ route, which should go once the shared route has seen real documents.
    site's name is its label: two copies of a site carry the same name,
    which is what the readers of the normal form need; no numbering has
    to keep them apart.
-3. No. P2's root scaffold keeps its original, the obligation ?u1, and
+3. No. P2's root scaffold keeps its original, the obligation ?1, and
    the stubs for P1 sit in the dropped stack. The whole debate below P2
    was built as six instances and never written out.

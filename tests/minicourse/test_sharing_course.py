@@ -34,23 +34,23 @@ K = canonical_prop
 # Lesson 14: the root is a2_0's, and the debate about P1 -> P2 is written in
 # place twice - canonical under a2_1, a variant with r2_0 on top under a2_0.
 ROOT14 = (
-    "μalt1:P2.<?u1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<μal"
-    "t8:P1->P2.<?u2:P1->P2||μ'b8:P1->P2.<μ_:P1->P2.<b8:P1->P2||alt8:P1->P2>||μ'_:P1->P2.<μalt9:P1"
+    "μalt1:P2.<?1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<μal"
+    "t8:P1->P2.<?2:P1->P2||μ'b8:P1->P2.<μ_:P1->P2.<b8:P1->P2||alt8:P1->P2>||μ'_:P1->P2.<μalt9:P1"
     "->P2.<r2_0:P1->P2||μ'b9:P1->P2.<μ_:P1->P2.<b9:P1->P2||alt9:P1->P2>||μ'_:P1->P2.<r2_1:P1->P2|"
     "|alt9:P1->P2>>>||alt8:P1->P2>>>||anon_1:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P"
-    "2>||μ'_:P2.<μa2_0:P2.<μth:P2.<μalt4:P1->P2.<?u3:P1->P2||μ'b4:P1->P2.<μ_:P1->P2.<b4:P1->P2||a"
+    "2>||μ'_:P2.<μa2_0:P2.<μth:P2.<μalt4:P1->P2.<?3:P1->P2||μ'b4:P1->P2.<μ_:P1->P2.<b4:P1->P2||a"
     "lt4:P1->P2>||μ'_:P1->P2.<μalt5:P1->P2.<r2_1:P1->P2||μ'b5:P1->P2.<μ_:P1->P2.<b5:P1->P2||alt5:"
     "P1->P2>||μ'_:P1->P2.<r2_0:P1->P2||alt5:P1->P2>>>||alt4:P1->P2>>>||anon_1:P1*th:P2>||a2_0:P2>"
     "||alt2:P2>>>||alt1:P2>>>"
 )
 DEF14 = (
-    "anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?u4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μ"
-    "alt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||!u5:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1"
-    "||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_2:P0->P1||!u6:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>"
+    "anon_1[?:P1, ?:P0->P1, !:P0] := μalt6:P1.<?4:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μ"
+    "alt7:P1.<μa1_0:P1.<μth_3:P1.<anon_2:P0->P1||!5:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1"
+    "||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4:P1.<anon_2:P0->P1||!6:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>"
     "||alt6:P1>>>"
 )
 DEF14_RULE1 = (
-    "anon_2[?:P0->P1] := μalt10:P0->P1.<?u7:P0->P1||μ'b10:P0->P1.<μ_:P0->P1.<b10:P0->P1||alt10:P0"
+    "anon_2[?:P0->P1] := μalt10:P0->P1.<?7:P0->P1||μ'b10:P0->P1.<μ_:P0->P1.<b10:P0->P1||alt10:P0"
     "->P1>||μ'_:P0->P1.<μalt11:P0->P1.<r1_0:P0->P1||μ'b11:P0->P1.<μ_:P0->P1.<b11:P0->P1||alt11:P0"
     "->P1>||μ'_:P0->P1.<r1_1:P0->P1||alt11:P0->P1>>>||alt10:P0->P1>>>"
 )
@@ -59,34 +59,34 @@ DEF14_RULE1 = (
 NF14 = "μa2_0:P2.<r2_0:P1->P2||μb1:P1.<r1_1:P0->P1||!IN:P0*b1:P1>*a2_0:P2>"
 NF14_UNFOLDED = NF14
 SKELETON14_P2 = (
-    "μalt1:P2.<?u1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<?u2"
-    ":P1->P2||?u3:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P2>||μ'_:P2.<μa2_0:P2.<μth:P"
-    "2.<?u4:P1->P2||?u5:P1*th:P2>||a2_0:P2>||alt2:P2>>>||alt1:P2>>>"
+    "μalt1:P2.<?1:P2||μ'b1:P2.<μ_:P2.<b1:P2||alt1:P2>||μ'_:P2.<μalt2:P2.<μa2_1:P2.<μth_2:P2.<?2"
+    ":P1->P2||?3:P1*th_2:P2>||a2_1:P2>||μ'b2:P2.<μ_:P2.<b2:P2||alt2:P2>||μ'_:P2.<μa2_0:P2.<μth:P"
+    "2.<?4:P1->P2||?5:P1*th:P2>||a2_0:P2>||alt2:P2>>>||alt1:P2>>>"
 )
 SKELETON14_P1 = (
-    "μalt6:P1.<?u1:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<?u2"
-    ":P0->P1||!u3:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4"
-    ":P1.<?u4:P0->P1||!u5:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>||alt6:P1>>>"
+    "μalt6:P1.<?1:P1||μ'b6:P1.<μ_:P1.<b6:P1||alt6:P1>||μ'_:P1.<μalt7:P1.<μa1_0:P1.<μth_3:P1.<?2"
+    ":P0->P1||!3:P0*th_3:P1>||a1_0:P1>||μ'b7:P1.<μ_:P1.<b7:P1||alt7:P1>||μ'_:P1.<μa1_1:P1.<μth_4"
+    ":P1.<?4:P0->P1||!5:P0*th_4:P1>||a1_1:P1>||alt7:P1>>>||alt6:P1>>>"
 )
 
 # Lesson 15: only the debate about "Q fails" (Q[c]) is named; the rule's
 # and the lambda's debates are written in place, variants under p1.
 ROOT15 = (
-    "μalt5:P.<μalt1:P.<?u1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μalt2:P.<μp2:P.<μrule_2:P.<μalt"
-    "12:(Q->false)->P.<?u2:(Q->false)->P||μ'b12:(Q->false)->P.<μ_:(Q->false)->P.<b12:(Q->false)->"
+    "μalt5:P.<μalt1:P.<?1:P||μ'b1:P.<μ_:P.<b1:P||alt1:P>||μ'_:P.<μalt2:P.<μp2:P.<μrule_2:P.<μalt"
+    "12:(Q->false)->P.<?2:(Q->false)->P||μ'b12:(Q->false)->P.<μ_:(Q->false)->P.<b12:(Q->false)->"
     "P||alt12:(Q->false)->P>||μ'_:(Q->false)->P.<μalt13:(Q->false)->P.<pRule1:(Q->false)->P||μ'b1"
     "3:(Q->false)->P.<μ_:(Q->false)->P.<b13:(Q->false)->P||alt13:(Q->false)->P>||μ'_:(Q->false)->"
-    "P.<pRule2:(Q->false)->P||alt13:(Q->false)->P>>>||alt12:(Q->false)->P>>>||μalt14:Q->false.<?u"
+    "P.<pRule2:(Q->false)->P||alt13:(Q->false)->P>>>||alt12:(Q->false)->P>>>||μalt14:Q->false.<?"
     "3:Q->false||μ'b14:Q->false.<μ_:Q->false.<b14:Q->false||alt14:Q->false>||μ'_:Q->false.<μalt15"
     ":Q->false.<λh_5:Q.μalpha_5:false.<h_5:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b14 -> ?:Q->false,"
     " h_5 -> ?:Q]:Q>||μ'b15:Q->false.<μ_:Q->false.<b15:Q->false||alt15:Q->false>||μ'_:Q->false.<λ"
     "h_6:Q.μalpha_6:false.<h_6:Q||anon_1[rule_2 -> P:!, b1 -> ?:P, b15 -> ?:Q->false, h_6 -> ?:Q]"
     ":Q>||alt15:Q->false>>>||alt14:Q->false>>>*rule_2:P>||p2:P>||μ'b2:P.<μ_:P.<b2:P||alt2:P>||μ'_"
-    ":P.<μp1:P.<μrule:P.<μalt6:(Q->false)->P.<?u4:(Q->false)->P||μ'b6:(Q->false)->P.<μ_:(Q->false"
+    ":P.<μp1:P.<μrule:P.<μalt6:(Q->false)->P.<?4:(Q->false)->P||μ'b6:(Q->false)->P.<μ_:(Q->false"
     ")->P.<b6:(Q->false)->P||alt6:(Q->false)->P>||μ'_:(Q->false)->P.<μalt7:(Q->false)->P.<pRule2:"
     "(Q->false)->P||μ'b7:(Q->false)->P.<μ_:(Q->false)->P.<b7:(Q->false)->P||alt7:(Q->false)->P>||"
     "μ'_:(Q->false)->P.<pRule1:(Q->false)->P||alt7:(Q->false)->P>>>||alt6:(Q->false)->P>>>||μalt1"
-    "0:Q->false.<?u5:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt10:Q->false>||μ'_:Q-"
+    "0:Q->false.<?5:Q->false||μ'b10:Q->false.<μ_:Q->false.<b10:Q->false||alt10:Q->false>||μ'_:Q-"
     ">false.<μalt11:Q->false.<λh_4:Q.μalpha_4:false.<h_4:Q||anon_1[rule -> P:!, b2 -> ?:P, b10 ->"
     " ?:Q->false, h_4 -> ?:Q]:Q>||μ'b11:Q->false.<μ_:Q->false.<b11:Q->false||alt11:Q->false>||μ'_"
     ":Q->false.<λh_3:Q.μalpha_3:false.<h_3:Q||anon_1[rule -> P:!, b2 -> ?:P, b11 -> ?:Q->false, h"
@@ -98,29 +98,29 @@ DEF15 = (
     ".<μalt9:Q.<alt8:Q||μ'b9:Q.<μ_:Q.<b9:Q||alt9:Q>||μ'_:Q.<μq:Q.<μrule_3:Q.<qRule:(P->false)->Q|"
     "|λh_2:P.μalpha_2:false.<h_2:P||μ'alt16:P.<μb16:P.<μ_:P.<alt16:P||b16:P>||μ'_:P.<μalt17:P.<al"
     "t16:P||μ'b17:P.<μ_:P.<b17:P||alt17:P>||μ'_:P.<μalt18:P.<μp1_2:P.<μrule_4:P.<μalt6_2:(Q->fals"
-    "e)->P.<?u6:(Q->false)->P||μ'b6_2:(Q->false)->P.<μ_:(Q->false)->P.<b6_2:(Q->false)->P||alt6_2"
+    "e)->P.<?6:(Q->false)->P||μ'b6_2:(Q->false)->P.<μ_:(Q->false)->P.<b6_2:(Q->false)->P||alt6_2"
     ":(Q->false)->P>||μ'_:(Q->false)->P.<μalt7_2:(Q->false)->P.<pRule2:(Q->false)->P||μ'b7_2:(Q->"
     "false)->P.<μ_:(Q->false)->P.<b7_2:(Q->false)->P||alt7_2:(Q->false)->P>||μ'_:(Q->false)->P.<p"
-    "Rule1:(Q->false)->P||alt7_2:(Q->false)->P>>>||alt6_2:(Q->false)->P>>>||μalt10_2:Q->false.<?u"
+    "Rule1:(Q->false)->P||alt7_2:(Q->false)->P>>>||alt6_2:(Q->false)->P>>>||μalt10_2:Q->false.<?"
     "7:Q->false||μ'b10_2:Q->false.<μ_:Q->false.<b10_2:Q->false||alt10_2:Q->false>||μ'_:Q->false.<"
     "μalt11_2:Q->false.<λh_4_2:Q.μalpha_4_2:false.<h_4_2:Q||rule_3:Q>||μ'b11_2:Q->false.<μ_:Q->fa"
     "lse.<b11_2:Q->false||alt11_2:Q->false>||μ'_:Q->false.<λh_3_2:Q.μalpha_3_2:false.<h_3_2:Q||ru"
     "le_3:Q>||alt11_2:Q->false>>>||alt10_2:Q->false>>>*rule_4:P>||p1_2:P>||μ'b18:P.<μ_:P.<b18:P||"
-    "alt18:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<μalt12_2:(Q->false)->P.<?u8:(Q->false)->P||μ'b12_2:(Q->"
+    "alt18:P>||μ'_:P.<μp2_2:P.<μrule_5:P.<μalt12_2:(Q->false)->P.<?8:(Q->false)->P||μ'b12_2:(Q->"
     "false)->P.<μ_:(Q->false)->P.<b12_2:(Q->false)->P||alt12_2:(Q->false)->P>||μ'_:(Q->false)->P."
     "<μalt13_2:(Q->false)->P.<pRule1:(Q->false)->P||μ'b13_2:(Q->false)->P.<μ_:(Q->false)->P.<b13_"
     "2:(Q->false)->P||alt13_2:(Q->false)->P>||μ'_:(Q->false)->P.<pRule2:(Q->false)->P||alt13_2:(Q"
-    "->false)->P>>>||alt12_2:(Q->false)->P>>>||μalt14_2:Q->false.<?u9:Q->false||μ'b14_2:Q->false."
+    "->false)->P>>>||alt12_2:(Q->false)->P>>>||μalt14_2:Q->false.<?9:Q->false||μ'b14_2:Q->false."
     "<μ_:Q->false.<b14_2:Q->false||alt14_2:Q->false>||μ'_:Q->false.<μalt15_2:Q->false.<λh_5_2:Q.μ"
     "alpha_5_2:false.<h_5_2:Q||rule_3:Q>||μ'b15_2:Q->false.<μ_:Q->false.<b15_2:Q->false||alt15_2:"
     "Q->false>||μ'_:Q->false.<λh_6_2:Q.μalpha_6_2:false.<h_6_2:Q||rule_3:Q>||alt15_2:Q->false>>>|"
-    "|alt14_2:Q->false>>>*rule_5:P>||p2_2:P>||alt18:P>>>||alt17:P>>>||b16:P>>||u10:P!>>*rule_3:Q>"
-    "||q:Q>||alt9:Q>>>||b8:Q>>||u11:Q!>"
+    "|alt14_2:Q->false>>>*rule_5:P>||p2_2:P>||alt18:P>>>||alt17:P>>>||b16:P>>||10:P!>>*rule_3:Q>"
+    "||q:Q>||alt9:Q>>>||b8:Q>>||11:Q!>"
 )
 DEF15_HEAD = DEF15[:DEF15.index("μq:Q.")]
 
 DEF17_A0 = (
-    "a0[!:P0] := μalt12:P0.<!u6:P0||μ'b12:P0.<μ_:P0.<b12:P0||μ'alt13:P0.<μb13:P0.<μ_:P0.<alt13:P0"
+    "a0[!:P0] := μalt12:P0.<!6:P0||μ'b12:P0.<μ_:P0.<b12:P0||μ'alt13:P0.<μb13:P0.<μ_:P0.<alt13:P0"
     "||μ'k:P0.<k:P0||μ'x:P0.<np0:~P0||μ'H1:~P0.<H1:~P0||x:P0*_F_>>>>||μ'_:P0.<alt13:P0||b13:P0>>|"
     "|alt12:P0>>||μ'_:P0.<b12:P0||alt12:P0>>>"
 )
@@ -326,7 +326,7 @@ class TestLesson16TypeCheck:
     def test_the_skeleton_and_the_replay_count(self, fresh):
         doc, issue, names, kinds, shared = load(fresh, "lesson14_sharing.fspy", "P2", "a2_0")
         assert pres_str(shared.skeleton(shared.issue)) == SKELETON14_P2
-        # a skeleton numbers its sites from u1 again
+        # a skeleton numbers its sites from 1 again
         assert pres_str(shared.skeleton((K("P1"), "term"))) == SKELETON14_P1
         checked = {}
         # P2's root, P1, P0 -> P1, and P1 -> P2 twice (its variant and its own)
@@ -357,9 +357,9 @@ class TestLesson17Instances:
         doc, issue, names, kinds, shared = load(fresh, "lesson17_instances.fspy", "P2", "a2_0")
         lines = shared.to_text().splitlines()
         assert lines[0] == ROOT14
-        assert lines[1] == DEF14.replace("!u5:P0*th_3:P1", "a0:P0*th_3:P1").replace(
-            "!u6:P0*th_4:P1", "a0:P0*th_4:P1")
-        assert lines[2] == DEF14_RULE1.replace("u7", "u5")
+        assert lines[1] == DEF14.replace("!5:P0*th_3:P1", "a0:P0*th_3:P1").replace(
+            "!6:P0*th_4:P1", "a0:P0*th_4:P1")
+        assert lines[2] == DEF14_RULE1.replace("7", "5")
         assert lines[3] == DEF17_A0
         assert shared.named() == {(K("P1"), "term"): "anon_1", (K("P0->P1"), "term"): "anon_2",
                                   (K("P0"), "term"): "a0"}

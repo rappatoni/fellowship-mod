@@ -10,7 +10,6 @@ import pytest
 
 from core.ac.ast import Mu, Mutilde, Cons, Goal, Laog, Deleg, ID, DI
 from core.comp.oracle_terms import alpha_equal, canonical_form
-from core.dc.extract import _renumber_sites
 from core.dc.roundtrip import compare
 from pres.gen import ProofTermGenerationVisitor
 from wrap.cli import setup_prover
@@ -62,10 +61,9 @@ def prover():
 
 def unfolded_again(prover, debate):
     """A `register debate` block for the term ``debate``'s arguments unfold
-    to: its own declarations, sites numbered (unfolded sites are named
-    ?u1, which the parser does not read yet: aida-site-names-round-trip)."""
+    to, as it is printed, with its own declarations."""
     child = prover.debates[debate].debate_session.session
-    term = _renumber_sites(deepcopy(child.debate_term(child.debates[debate])))
+    term = child.debate_term(child.debates[debate])
     own = [declaration_command(n, d) for n, d in child.declarations.items()
            if n.startswith(f"{debate}__") and n not in child.arguments]
     from core.ac.prop_render import prop_to_command

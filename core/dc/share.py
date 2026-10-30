@@ -323,7 +323,7 @@ class SharedDebate:
             return candidate
 
         def site(node):
-            return type(node)(f"u{next(sites)}", node.prop)
+            return type(node)(str(next(sites)), node.prop)
 
         def cite(node, names):
             target, statement = node.debate, node.statement
@@ -341,7 +341,7 @@ class SharedDebate:
                     var.captured_presumption = True
                 return var
             if statement in spine2 or is_bare(node):
-                return self._site(statement, f"u{next(sites)}")
+                return self._site(statement, str(next(sites)))
             if target in stop:
                 relevant = self.reach(statement)
                 return _cite(statement, node.prop, node.presumed,

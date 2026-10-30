@@ -676,7 +676,8 @@ of the last `evaluate`).
 
 - `render TARGET [STYLE] [TERM]`
   - print the term in a natural-language style (see *Render styles*)
-- `tree ARG [nl [STYLE] | pt] [TERM]`
+- `tree ARG [nl [STYLE] | pt] [TERM]` - **deprecated**: the tree renderer
+  needs a complete overhaul (tasks.org, aida-tree-renderer-overhaul)
   - render an acceptance tree coloured by the grounded labels (see
     Debate-graph commands); drawn uncoloured if the graph is refused
 - `unfold argument NAME`, `unfold issue :X`, `unfold issue X:`,
@@ -1154,6 +1155,11 @@ render myarg dialectical evaluated.
 ```
 
 ## Acceptance trees
+
+**Deprecated.** The acceptance-tree renderer (`pres/tree.py`, the `tree`
+command) needs a complete overhaul and is kept only until it is replaced
+(tasks.org, aida-tree-renderer-overhaul); `graph`, `label` and `render`
+are the supported views.
 
 ```text
 tree ARG.

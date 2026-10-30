@@ -9,6 +9,7 @@ Files
   - Renderers for the named term shapes (core/ac/alt_structure.py) that nl.py uses.
 - decorations.py
   - The `decorate NAME : "template".` command and rendering propositions through decorations.
-- tree.py
+- tree.py - **deprecated**, to be overhauled completely (tasks.org,
+  aida-tree-renderer-overhaul)
   - AcceptanceTreeRenderer: acceptance trees with proof/NL labels, coloured
     by the grounded ADF labels passed in (core/comp/adf_label.py).

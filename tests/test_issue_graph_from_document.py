@@ -9,7 +9,7 @@ with the document graph up to these classes of difference:
 
 - ``markers``: the term has an obligation marker the document lacks -
   the unfolder's own roots (an issue nobody presumes is the obligation
-  ?u1).  An obligation marker contributes nothing to an acceptance
+  ?1).  An obligation marker contributes nothing to an acceptance
   condition (core/comp/adf_label.py), so no label changes;
 - ``kinds``: the same edge with a source of another kind - the term shows
   a site with the kind of its statement's root (a presumption if anybody

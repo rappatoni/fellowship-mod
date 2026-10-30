@@ -384,7 +384,8 @@ Wired 2026-10-29: =register debate NAME legacy : ISSUE.= runs the rewrite,
 and only then (tests/test_registered_debate.py,
 =test_without_legacy_the_old_shapes_stay=).
 
-*** BACKLOG Give each registered debate its own Fellowship session
+*** DONE Give each registered debate its own Fellowship session
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-debate-sessions
 :AREA:           phd
@@ -431,6 +432,19 @@ VERIFY:
 - The spec holds only what the scope mentions, closed over sorts, in
   document order (tweety and penguin: 5 of the fixture's 8 declarations).
 - Suite: 2392 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+*Re-registration by term, 2026-10-30* (possible once printed terms parse,
+[[id:aida-site-names-round-trip]]): the debates over tests/debates.fspy -
+open with tweety; closed with penguin rebutting it; closed with photo
+undermining penguin as well - printed, registered by their term
+(=register debate=, a session of its own) and compared with today's
+route: the same edges, identical grounded labels, the same normal-form
+class and normal form (alpha); every argument is taken into the session
+and the round trip is literal. Default markers differ - the term route's
+against the document route's, as recorded under
+[[id:aida-round-trip-equivalence-study]].
+(tests/test_debate_session.py, =TestRegisteredByTerm=.)
+Suite: 2484 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
 *** DONE Register a debate by its term
 CLOSED: [2026-10-29 Thu]
@@ -591,6 +605,16 @@ target and sources) are cut once. Evidence against VERIFY:
   nested scaffolds; a copy cut once; a refused argument reported while
   the others stay moves.
 - Suite: 2443 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+*Fixed 2026-10-30.* Cutting an argument turned the built-in =_F_= - the
+refutation of false that ends Fellowship's negation-elimination wrapper -
+into a site, as if it were a capture; the discipline then no longer saw
+the wrapper and refused the argument (penguin's, re-registering the
+debates of tests/debates.fspy: "the hypothesis 'rule' is used under a
+second hypothesis binder"). The built-in leaves (=BUILTIN_LEAVES=) are
+kept now (tests/test_extract.py, =test_the_refutation_of_false_stays=).
+The s(CASP) imports have no negation, which is why the first tests did
+not meet it.
 
 *** BACKLOG Warn when the recompiled term differs from the given one
 :PROPERTIES:
@@ -8095,6 +8119,28 @@ tests/test_unfold_entrypoints.py::test_argument_names_ending_in_digits_stay_apar
 =s3=, no suffixed name); full suite 1486 passed, the two failures being
 the author's working copy of even_loop_lk.fspy.
 
+** BACKLOG Overhaul the acceptance-tree renderer (deprecated)
+:PROPERTIES:
+:ID:             aida-tree-renderer-overhaul
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            2
+:EFFORT:         8:00
+:DEFERRALS:      0
+:OUTCOME:        The acceptance-tree renderer (pres/tree.py, the `tree` command) is replaced by a redesigned one, or removed with the code only it uses; until then it is marked deprecated in the README, pres/README.md and its module docstring.
+:VERIFY:         The replacement's design is recorded here and reviewed by the author, its tests replace tests/test_tree_labels.py and the tree cases of tests/test_service.py, tests/test_serialize.py and tests/test_decorations.py (or the command and those tests are gone), and the README no longer marks `tree` deprecated; the suite passes.
+:END:
+
+Declared deprecated by the author 2026-10-30: "the tree renderer is
+deprecated, it needs a complete overhaul". Marked in the README (the
+command list and *Acceptance trees*), pres/README.md and the module
+docstring of pres/tree.py; the command still works. Related:
+[[id:aida-interactive-graph-views]] (interactive views of acceptance trees).
+
 ** BACKLOG Remove the deprecated term-level commands and the code only they use
 :PROPERTIES:
 :ID:             aida-retire-deprecated-term-commands
@@ -8953,7 +8999,8 @@ your hypothesis nor in your conclusion"); spelled =~A= throughout
 is the smallest case across arguments (an obligation on =A -> false= met
 by an argument for =~A=: "This is not trivial. Work some more.").
 
-** BACKLOG Name output sites by number so unfolded terms parse back
+** DONE Name output sites by number so unfolded terms parse back
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-site-names-round-trip
 :AREA:           phd
@@ -8996,6 +9043,65 @@ a design change to the term representation (it interacts with sharing,
 [[id:aida-shared-subarguments]], and with capture in the unfolder) and
 should be discussed before it is implemented; the numeric names are the
 stopgap that makes output round-trippable now.
+
+*Decision (the author, 2026-10-30).* "Before labelling, there is no
+reason to give sites names, the numbers are fine. These are nominals:
+really there is only one obligation/delegation per statement. Labelled
+terms should however be parseable, so extending the grammar by the
+labels only makes sense."
+
+*Implemented 2026-10-30.* The unfolder, the shared route and the
+instances number their sites 1, 2, ... (core/dc/unfold.py, share.py,
+instances.py). The grammar's site is a number or, in a labelled term, a
+label: =site: number | label=, the label a NAME the transformer accepts
+only as IN, OUT or UNDEC (core/ac/syntax.py, =SITE_LABELS=), so the three
+words stay free as identifiers elsewhere and any other name is refused
+with a =SyntaxErrorInSource= saying so. Checked before the change: no
+code reads the =u= prefix (citation grafting, enrichment and the old
+grafting work on an argument's own body, by Fellowship's goal numbers;
+enrichment looks a number up only for a site without a proposition, and
+unfolded sites always have one); every site of an unfolded or shared term
+is drawn from the generators' own counters, so dropping the prefix makes
+no collision the prefixed names did not have. Evidence:
+- Over every fixture: each argument's unfolded term, each debate's term
+  and each evaluated normal form, printed and parsed back (resolved),
+  is alpha-equal to the original - 308 of 310; the two others print a
+  statement key where a proposition belongs, unrelated to sites
+  ([[id:aida-open-statement-key-printed]]). Before the change the parser
+  refused every one of them at its first =?u1=.
+- tests/test_site_names.py: numbers and the three labels parse on both
+  sides, =IN= stays a usable binder name, =?u1= is refused; six fixtures
+  round-trip. tests/test_roundtrip.py registers an unfolded term exactly
+  as printed (the renumbering it needed is gone).
+- 316 pinned =u= names renamed in 12 test files and in
+  docs/minicourses/minicourse-evaluation.org, minicourse-sharing.org and
+  minicourse.org, including the prose that explained them ("Unfolding
+  numbers the sites =1=, =2=, ...") and the =unfold= trace lines.
+- Suite: 2484 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+** BACKLOG Print the proposition, not the statement key, of an open quantified statement
+:PROPERTIES:
+:ID:             aida-open-statement-key-printed
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        A term unfolded for a statement whose graph node has no display text prints the statement's proposition, not its canonical key (=Q(forall,1,Animal,B(A(S:Bird,#0),->,...))=), so the printed term parses back.
+:VERIFY:         tests/first_order/birds_fly_open.fspy's =birds_fly= unfolds to a term that prints and parses back (resolved) to an alpha-equal term; tests/test_site_names.py covers it; the suite passes.
+:END:
+
+Found 2026-10-30 by the round-trip probe of
+[[id:aida-site-names-round-trip]]: two of 310 printed terms carry a
+binder or site whose proposition is the statement key - the unfolder's
+=_prop(key)= falls back to the key when =graph.nodes= has no text for it.
+Seen on tests/first_order/birds_fly_open.fspy (=birds_fly=) and on the
+author's uncommitted tests/ttdl.fspy (=interpretation=), both on a
+quantifier over an open formula.
 
 ** BACKLOG Support debates in minimal logic
 :PROPERTIES:

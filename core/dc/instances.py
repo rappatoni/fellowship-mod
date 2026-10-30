@@ -302,7 +302,7 @@ class IssueResolver:
         return leaf
 
     def _site(self, statement):
-        return self.shared._site(statement, f"u{next(self._stubs)}")
+        return self.shared._site(statement, str(next(self._stubs)))
 
     def _kind(self, statement) -> str:
         return ("presumption" if "presumption" in self.shared.graph.defaults.get(statement, ())
