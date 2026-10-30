@@ -248,13 +248,24 @@ def _fo_children(n):
     return [v for k, v in vars(n).items() if isinstance(v, ProofTerm)]
 
 
-def canonical_form(node) -> tuple:
+def canonical_form(node, *, sites: str = "number", prop=None) -> tuple:
     """A nested-tuple canonical form: binders numbered by traversal order,
     free variables kept by name.  Two trees are alpha-equivalent iff their
     canonical forms are equal.  Props are compared verbatim (canonical
-    proposition identity is milestone M2's business, not this function's).
+    proposition identity is milestone M2's business, not this function's)
+    unless ``prop`` maps them first.  ``sites="order"`` counts site numbers
+    as names: renumbered by first occurrence, so two terms that differ only
+    in how their sites are numbered compare equal (the round trip of a
+    registered debate, core/dc/roundtrip.py).
     """
     counter = count(0)
+    renumbered = {}
+    prop = prop or (lambda text: text)
+
+    def site(n):
+        if sites == "order":
+            return renumbered.setdefault(str(n.number), len(renumbered))
+        return n.number
 
     def walk(n, term_env, ctx_env):
         if n is None:
@@ -266,21 +277,21 @@ def canonical_form(node) -> tuple:
         if isinstance(n, Mu):
             i = next(counter)
             inner = dict(ctx_env); inner[n.id.name] = i
-            return ("mu", n.prop,
+            return ("mu", prop(n.prop),
                     walk(n.term, term_env, inner), walk(n.context, term_env, inner))
         if isinstance(n, Mutilde):
             i = next(counter)
             inner = dict(term_env); inner[n.di.name] = i
-            return ("mutilde", n.prop,
+            return ("mutilde", prop(n.prop),
                     walk(n.term, inner, ctx_env), walk(n.context, inner, ctx_env))
         if isinstance(n, Lamda):
             i = next(counter)
             inner = dict(term_env); inner[n.di.di.name] = i
-            return ("lamda", n.di.prop, walk(n.term, inner, ctx_env))
+            return ("lamda", prop(n.di.prop), walk(n.term, inner, ctx_env))
         if isinstance(n, Admal):
             i = next(counter)
             inner = dict(ctx_env); inner[n.id.id.name] = i
-            return ("admal", n.id.prop, walk(n.context, term_env, inner))
+            return ("admal", prop(n.id.prop), walk(n.context, term_env, inner))
         if isinstance(n, Cons):
             return ("cons", walk(n.term, term_env, ctx_env), walk(n.context, term_env, ctx_env))
         if isinstance(n, Sonc):
@@ -294,20 +305,20 @@ def canonical_form(node) -> tuple:
         if isinstance(n, DestructTermsPairFO):
             return ("destructfo", n.var, str(n.sort), walk(n.context, term_env, ctx_env))
         if isinstance(n, Goal):
-            return ("goal", n.number, n.prop)
+            return ("goal", site(n), prop(n.prop))
         if isinstance(n, Laog):
-            return ("laog", n.number, n.prop)
+            return ("laog", site(n), prop(n.prop))
         if isinstance(n, Deleg):
-            return ("deleg", n.number, n.prop)
+            return ("deleg", site(n), prop(n.prop))
         if isinstance(n, Geled):
-            return ("geled", n.number, n.prop)
+            return ("geled", site(n), prop(n.prop))
         raise ValueError(f"canonical_form: unhandled node {type(n).__name__}")
 
     return walk(node, {}, {})
 
 
-def alpha_equal(a, b) -> bool:
-    return canonical_form(a) == canonical_form(b)
+def alpha_equal(a, b, **options) -> bool:
+    return canonical_form(a, **options) == canonical_form(b, **options)
 
 
 # ---------------------------------------------------------------------------

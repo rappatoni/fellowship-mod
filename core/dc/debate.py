@@ -139,6 +139,9 @@ class RegisteredDebate(Debate):
     extracted: dict = field(default_factory=dict, repr=False, compare=False)
     #: {argument: why the debate's session refused it}
     refused: dict = field(default_factory=dict, repr=False, compare=False)
+    #: the given term against what its arguments unfold to
+    #: (core/dc/roundtrip.py, RoundTrip), or None if they were not unfolded
+    roundtrip: Any = field(default=None, repr=False, compare=False)
 
     def header(self) -> str:
         return f"register debate {self.name}{' legacy' if self.legacy else ''} : {self.issue_prop}."

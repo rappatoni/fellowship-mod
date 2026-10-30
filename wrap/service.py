@@ -957,8 +957,34 @@ class Service:
         logger.info("Registered debate '%s' (%s) about %s: %d edge(s) over %d statement(s).",
                     name, onus, issue, len(graph.edges), len(graph.nodes))
         self._extract(debate)
+        self._round_trip(debate)
         return Done(f"Registered debate '{name}' ({onus}) about {issue}: "
                     f"{len(debate.extracted)} argument(s).", debate)
+
+    def _round_trip(self, debate) -> None:
+        """Compare the term a registered debate was given with the term its
+        extracted arguments unfold to in its session (core/dc/roundtrip.py);
+        a difference is a warning, and the debate stays usable."""
+        from core.comp.adf_label import grounded_labels
+        from core.dc.roundtrip import compare
+        from core.dc.unfold import UnfoldError
+        child = debate.debate_session.session
+        inner = child.debates.get(debate.name)
+        if inner is None:
+            return                              # no moves: nothing to unfold
+        try:
+            recompiled = child.debate_term(inner)
+            graph = Service.of(child).graph(debate.name).graph
+            labels = grounded_labels(graph)
+        except (AidaError, UnfoldError, AdfBddNotFound) as e:
+            logger.warning("Debate '%s': its arguments could not be unfolded again: %s",
+                           debate.name, e)
+            return
+        debate.roundtrip = compare(debate.given_term, recompiled,
+                                   given_graph=debate.record_graph, recompiled_graph=graph,
+                                   given_labels=debate.record_labels, recompiled_labels=labels)
+        if not debate.roundtrip.literal:
+            logger.warning("Debate '%s': %s.", debate.name, debate.roundtrip.describe())
 
     def _extract(self, debate) -> None:
         """Cut a registered debate's arguments out of its term

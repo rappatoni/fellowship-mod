@@ -892,6 +892,12 @@ cedat tempus.
   discipline; they are the debate's moves. `graph simple all` shows them.
   Compiled again they give the graph the term was compiled to. An argument
   the session refuses is reported, and the others stay.
+- The arguments are unfolded again in the debate's session and compared
+  with the given term (`core/dc/roundtrip.py`), literally up to renaming,
+  sites counted as names. A difference is a warning naming the first
+  place the two terms part; the debate stays usable. An importer's term is
+  usually not in the unfolder's shapes, so it warns once; the term its
+  arguments unfold to comes back unchanged.
 
 ## Script files (`.fspy`)
 

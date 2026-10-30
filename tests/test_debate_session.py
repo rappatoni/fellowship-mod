@@ -81,7 +81,7 @@ class TestSpec:
         spec = scope_spec(prover, ["tweety", "penguin"])
         assert spec.declarations == [
             "declare Bird : bool.", "declare Flies : bool.", "declare Penguin : bool.",
-            "declare bird : (Bird).", "declare penguins_dont_fly : (Penguin->~Flies).",
+            "declare bird : (Bird).", "declare penguins_dont_fly : (Penguin -> ~Flies).",
         ]
         assert [a.name for a in spec.arguments] == ["tweety", "penguin"]
 
@@ -96,7 +96,13 @@ class TestSpec:
         }
         assert declarations_needed(declarations, {"b", "nb"}) == [
             "declare iota : type.", "declare Bird : iota -> bool.", "declare Tweety : iota.",
-            "declare b : (Bird Tweety).", "deny nb : (Bird Tweety).",
+            "declare b : (Bird[Tweety]).", "deny nb : (Bird[Tweety]).",
+        ]
+
+    def test_a_first_order_proposition_is_sent_as_fellowship_reads_it(self):
+        assert declarations_needed({"b": Declaration("Bird Tweety", "prop"),
+                                    "nb": Declaration("Bird Tweety", "moxia")}, {"b", "nb"}) == [
+            "declare b : (Bird[Tweety]).", "deny nb : (Bird[Tweety]).",
         ]
 
     def test_a_statement_is_refused(self, prover):

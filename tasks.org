@@ -608,6 +608,51 @@ target and sources) are cut once. Evidence against VERIFY:
 :VERIFY:         A matching import and a perturbed one, one test each; the outcome on each of the eight fixture programs is recorded here.
 :END:
 
+*Implemented 2026-10-29* (core/dc/roundtrip.py; =canonical_form= gains
+=sites="order"= and =prop=, core/comp/oracle_terms.py; =Service._round_trip=,
+run by =register_debate=, the result on =RegisteredDebate.roundtrip=;
+tests/test_roundtrip.py, 10 tests). The warning names the first pair of
+subterms, in order, whose own constructor, proposition or binding
+differs. Evidence against VERIFY:
+- A perturbed import: scasp-aida's term as given. simple, simple_pred and
+  orphans each warn, parting at the root's term: the given term starts
+  with the opening's step (=f_H_A_A=), the recompiled one with the
+  issue's obligation site (=?u1:A=). The debate stays usable.
+- A matching import: the term the arguments unfold to, registered in turn
+  (sites renumbered, since =?u1= does not parse yet,
+  [[id:aida-site-names-round-trip]]), unfolds to itself - literally equal
+  for all three. So the round trip is a fixed point once a term is in the
+  unfolder's shapes, and the importer's difference is a one-time
+  normalisation.
+- Outcomes recorded here for the three imports in tests/import/; the
+  eight fixture programs follow with the import command
+  ([[id:aida-registered-debate-import]]).
+
+*The importer's term against the unfolder's (2026-10-29, simple)* - the
+systematic differences, for [[id:aida-round-trip-equivalence-study]]:
+1. Entry point: the unfolder puts the opening on the issue's stack, under
+   a support scaffold whose root is an obligation site for the issue; the
+   importer's term is the opening itself.
+2. Attack wings: the unfolder builds the contrary's debate with the
+   variable the attack scaffold binds at the bottom of the stack; the
+   importer stacks the alternatives directly (H_A's refutations through C
+   and B).
+3. The proof attacking a presumed refutation (=b= against =B[c]=) is
+   wrapped once more by the unfolder: SUP(captured variable, proof), the
+   exposed node of an already bound statement.
+Graphs: equal edges up to names except two strict-phase edges
+(=alpha1*=, =alpha2*=) that the unfolded term contributes - duplicates of
+the strict proofs of B and C, label-neutral. On the fixed point the edges
+agree as multisets and only default markers differ: the term route marks
+the attack wings' root sites (=H_A[c]=, =C[t]=, =B[t]=) as obligations,
+the document route has no such markers (the known difference of
+[[id:aida-discuss-issue-graph-from-document]]). Grounded labels agree on
+every shared statement throughout.
+Found on the way: =declaration_command= sent a stored proposition in the
+printed form (=Bird Tweety=), which Fellowship does not read; it now
+sends the command form (=Bird[Tweety]=), so first-order declarations
+replay into a debate session (tests/test_debate_session.py).
+
 Compared in-process, as syntax trees: printed unfolded terms do not parse
 back yet ([[id:aida-site-names-round-trip]]).
 
@@ -682,6 +727,42 @@ The adapter offers check, import, inventory and query today, no move.
 The author, 2026-10-29: it is not clear a priori which degree of
 equivalence is sufficient; evaluation probably needs the translation
 back to s(CASP), running the extended program and comparing the result.
+
+*First data: the systematic differences (found 2026-10-29 on scasp-aida's
+simple, simple_pred and orphans; recorded 2026-10-30; details under
+[[id:aida-debate-round-trip-warning]]).* The importer's term and the term
+its extracted arguments unfold to part in three ways, all from the
+unfolder's shapes:
+1. Entry point. The unfolder puts the opening on the issue's stack, under
+   a support scaffold rooted in an obligation site for the issue
+   (=mu alt1:A.< ?u1:A || ... SUP(opening) ... >=); the importer's term is
+   the opening itself.
+2. Attack wings. The unfolder builds the contrary's debate with the
+   variable the attack scaffold binds at the bottom of the stack and the
+   alternatives above it; the importer stacks the alternatives directly
+   (H_A's refutations through C and B: one C-SUP layer, against two).
+3. A proof attacking a presumed refutation (=b= against =B[c]=) is
+   wrapped once more by the unfolder - SUP(captured variable, proof), the
+   exposed node of a statement already bound.
+At the four levels, so far:
+| level         | importer's term vs unfolded           | unfolded vs unfolded again |
+|---------------+---------------------------------------+----------------------------|
+| literal term  | differ (at the root: 1)               | equal (a fixed point)      |
+| graph, edges  | equal up to names, but two            | equal as multisets         |
+|               | strict-phase duplicates (=alpha1*=,    |                            |
+|               | =alpha2*=: from 3)                    |                            |
+| graph, marks  | equal                                 | differ: the term route     |
+|               |                                       | marks the wings' roots     |
+|               |                                       | (=H_A[c]=, =C[t]=, =B[t]=) |
+|               |                                       | as obligations (from 2)    |
+| shared labels | equal (grounded)                      | equal (grounded)           |
+| normal forms  | not compared yet                      | not compared yet           |
+Reading so far: the differences are a one-time normalisation into the
+unfolder's shapes, and none changes a grounded label; the duplicates and
+the markers are the term route's against the document route's
+([[id:aida-discuss-issue-graph-from-document]]). Still to do: normal
+forms under every semantics and mode, the five other fixture programs,
+extended debates, and the answers of the exported program.
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
 :ID:             aida-dui-handover

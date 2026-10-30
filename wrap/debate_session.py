@@ -196,9 +196,16 @@ def declaration_command(name: str, declaration) -> str:
     kind = getattr(declaration, "kind", "prop")
     if kind == "sort":
         return f"declare {name} : {declaration}."
+    # stored as Fellowship prints it (``Bird Tweety``); sent as it reads it
+    # (``Bird[Tweety]``)
+    from core.ac.prop_render import prop_to_command
+    try:
+        prop = prop_to_command(str(declaration))
+    except Exception:
+        prop = str(declaration)
     if kind == "moxia":
-        return f"deny {name} : ({declaration})."
-    return f"declare {name} : ({declaration})."
+        return f"deny {name} : ({prop})."
+    return f"declare {name} : ({prop})."
 
 
 def mentions(body) -> set:
