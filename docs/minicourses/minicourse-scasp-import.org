@@ -1,0 +1,1 @@
+../../../scasp-aida/docs/minicourse-scasp-import.org

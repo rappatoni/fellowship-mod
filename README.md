@@ -65,12 +65,14 @@ tracked in `tasks.org`:
 
 Smaller design questions are open as well.
 
-`docs/minicourses/` holds five minicourses, each lesson by lesson with
+`docs/minicourses/` holds six minicourses, each lesson by lesson with
 exercises: `minicourse.org` (arguments, graphs and labels),
 `minicourse-evaluation.org` (the evaluation pipeline),
 `minicourse-sharing.org` (sub-debates shared by name),
-`minicourse-superdeduction.org` and `minicourse-api.org` (AIDA from a
-program), and `glossary.org` explains their terminology. They are drafted by an AI agent, pinned by the tests under
+`minicourse-superdeduction.org`, `minicourse-api.org` (AIDA from a
+program) and `minicourse-scasp-import.org` (the s(CASP) importer; a symlink
+to the file in a scasp-aida checkout beside this one, pinned by the tests
+there), and `glossary.org` explains their terminology. They are drafted by an AI agent, pinned by the tests under
 `tests/minicourse/`, and still await the author's review.
 
 ## Requirements
