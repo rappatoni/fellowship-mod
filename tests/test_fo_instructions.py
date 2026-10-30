@@ -52,7 +52,7 @@ def instructions(term, declarations, axiom_props=None):
         warnings.simplefilter("ignore")
         node = resolve(parse_proof_term(Argument._normalize_pt_to_unicode(term)), declarations)
         node = PropEnrichmentVisitor(axiom_props=axiom_props or {}).visit(node)
-        return list(InstructionsGenerationVisitor(root_name="thesis").return_instructions(node))
+        return list(InstructionsGenerationVisitor().return_instructions(node))
 
 
 # ---------------------------------------------------------------------------

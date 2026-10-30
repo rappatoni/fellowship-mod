@@ -1060,8 +1060,6 @@ class ThetaExpander(ProofTermVisitor):
             and getattr(node, "prop", None) == self.target_prop
         ):
             return False
-        if isinstance(node, Mu) and "thesis" in getattr(getattr(node, "id", None), "name", ""):
-            return False
         return self._allow_target(node)
 
     def _is_target_context(self, node) -> bool:
@@ -1070,8 +1068,6 @@ class ThetaExpander(ProofTermVisitor):
             and isinstance(node, Context)
             and getattr(node, "prop", None) == self.target_prop
         ):
-            return False
-        if isinstance(node, Mutilde) and "thesis" in getattr(getattr(node, "di", None), "name", ""):
             return False
         return self._allow_target(node)
 

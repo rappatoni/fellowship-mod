@@ -20,7 +20,8 @@ def test_instruction_generation_renders_predicate_cut_commands_with_brackets():
         ID("alpha", "Orphan Bob"),
     )
     body.contr = "Child Bob -> Orphan Bob"
+    root = Mu(ID("root", "Orphan Bob"), "Orphan Bob", body, ID("root", "Orphan Bob"))
 
-    instructions = list(InstructionsGenerationVisitor().return_instructions(body))
+    instructions = list(InstructionsGenerationVisitor().return_instructions(root))
 
     assert any(instr == "cut (Child[Bob] -> Orphan[Bob]) alpha" for instr in instructions)

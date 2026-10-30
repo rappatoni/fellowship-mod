@@ -41,8 +41,9 @@ def test_the_negation_shape_is_one_elim():
     assert _quiet_instructions(NEGATION) == ["elim n"]
 
 
-def test_an_arrow_into_falsum_is_a_cut():
-    assert _quiet_instructions(ARROW)[0] == "cut (Q -> false) n"
+def test_an_arrow_into_falsum_at_the_root_is_the_lambda():
+    # The root binder is a wrapper here: only the lambda is a step.
+    assert _quiet_instructions(ARROW)[0] == "elim h"
 
 
 def test_a_scaffold_on_the_lambda_is_a_cut():

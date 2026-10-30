@@ -342,13 +342,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         self.body = EtaReducer(verbose=False).reduce(self.body)
         self._refresh_from_body()
 
-    def _synthetic_root_name(self) -> str | None:
-        if isinstance(self.body, Mu):
-            return getattr(getattr(self.body, "id", None), "name", None)
-        if isinstance(self.body, Mutilde):
-            return getattr(getattr(self.body, "di", None), "name", None)
-        return None
-
     def execute(self, *, declare: bool = False, preserve_input_body: bool = False,
                 accept=None) -> None:
         """Sends the sequence of instructions corresponding to an argument (possibly generated from its body) to the Fellowship prover and populates the argument's proof term, body, assumptions, and renderings from the prover output. Can be used for type-checking (TODO).
@@ -377,7 +370,7 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
                 raise Exception("Argument instructions and body missing.")
             else:
                 self.enrich_props()
-                generator = InstructionsGenerationVisitor(root_name=self._synthetic_root_name())
+                generator = InstructionsGenerationVisitor()
                 self.instructions = generator.return_instructions(self.body)
                 logger.debug("Generated instructions for argument '%s': %s", self.name, self.instructions)
 

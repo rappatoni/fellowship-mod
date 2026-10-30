@@ -67,7 +67,6 @@ def test_truth_closing_a_chain_always_gets_an_elim():
     )
 
     assert instructions == [
-        "cut (A) tester",
         # `-` is left associative for the command parser, so the redundant
         # parentheses are no longer emitted; the prover reads `true-A-B` and
         # `(true-A)-B` as the same proposition.
@@ -79,7 +78,6 @@ def test_truth_closing_a_chain_always_gets_an_elim():
         "moxia elur",
         "elim",
         "moxia elur1",
-        "moxia tester",
     ]
 
 

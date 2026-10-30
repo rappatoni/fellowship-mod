@@ -8277,6 +8277,116 @@ Questions the design has to answer:
 
 * Correctness and maintenance
 
+** DONE Replay a nested binder named thesis instead of dropping its cut
+CLOSED: [2026-10-30 Fri]
+:PROPERTIES:
+:ID:             aida-typecheck-nested-thesis-binder
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        An argument whose term has a mu or mu-tilde binder named =thesis= type-checks when it stands inside an unfolded debate, as it does under any other binder name; the type oracle no longer refuses a debate because of the name.
+:VERIFY:         The two scripts below give the same verdict and normal form with =typecheck on=, =expanded= and =off=; a registered debate whose term is =μthesis:A.<μf:A.<r||b*f>||thesis>= can be extended without a move; a regression test pins both.
+:END:
+
+Found 2026-10-30 from explanations-ui, at =0362054=; AI-written report. The type
+oracle refuses a correct debate because a binder of one of its arguments is named
+=thesis=. Renaming the binder is the only change needed to make it pass.
+
+#+begin_src text
+lk.
+declare A, B : bool.
+declare b : (B).
+declare beleg : (B).
+declare r : (B -> A).
+argument main : (A).
+cut (B -> A) f.
+axiom r.
+elim.
+axiom b.
+axiom f.
+dixi.
+register st : B := "μthesis:B.<beleg:B||thesis:B>".
+debate pro closed d : A.
+main.
+st.
+cedat tempus.
+evaluate d.
+#+end_src
+
+=acdc --script= on this prints "Type check failed for debate 'd': Fellowship
+reconstructed a different term for 'd' than the one unfolded; the instructions do not
+encode the term. The shapes first differ at mu/3/mutilde/3/mutilde/2/...". With
+=μt:B.<beleg:B||t:B>= in its place it prints =VALUE=, normal form
+=μmain:A.<r:B->A||b:B*main:A>=. =typecheck expanded= refuses it too; =typecheck off=
+gives the same =VALUE= and normal form as the renamed term.
+
+*Why it matters.* =thesis= is not an unusual name to meet: it is what AIDA prints.
+=term ARG registered= of an argument recorded by tactics prints
+=μthesis:B.<beleg||thesis>=, and that text registered again in an extension and moved
+there is refused the same way. The same goes for mu-tilde: =μ'thesis:Q.<thesis||...>=,
+as printed for a counterargument. A registered debate given
+=μthesis:A.<μf:A.<r||b*f>||thesis>= evaluates, but even an extension of it without a
+move is refused, since the extension is compiled and so replayed while the debate
+answers from its given term. Imported debates are not affected as they stand, because
+the importer's binders have other names (=alpha9=, =alt8=, ...).
+
+*Cause.* =InstructionsGenerationVisitor._is_synthetic_root_name= (=core/ac/instructions.py=)
+is =name == "thesis"=, the name of Fellowship's root (=wrap/fellowship/core.ml=), at any
+depth. So a nested =Mu= or =Mutilde= of that name emits no =cut=, and its occurrences
+(=visit_ID=, =visit_DI=) no =moxia= or =axiom=. Fellowship then rebuilds the term without
+that binder, and =typecheck= finds the shapes differ. The term is right, the instructions
+are wrong, as in [[id:aida-typecheck-dialectical-classical]]. The visitor takes a =root_name=
+and stores it but never reads it; =Argument.execute= passes it and =typecheck= does not.
+
+*Evidence for a fix.* Patching =core.dc.typecheck.typecheck= in a scratch script, not in
+this repository, to rename every =thesis= binder below the root before the replay made
+the document debate pass under =on= and =expanded=, and the extension without a move
+under =on=; the document debate's normal form equals the one from =typecheck off=. So the
+oracle's comparison is sound here and only the instructions are off. That patch is
+evidence, not the proposed change: either position should decide what the root is, using
+=root_name=, or a nested =thesis= should be renamed where the instructions are generated.
+The check on the name also serves callers other than the oracle, and the suite was not
+run with any change, so which one is right is open. Whether Fellowship accepts a nested
+=cut (B) thesis.= at all was not tried.
+
+*Not affected, on the same tests:* the same argument under any other binder name, in a
+document debate, as a registered debate and in an extension.
+
+Decision 2026-10-30 (the author): =thesis= stops being a special name in AIDA, and
+Fellowship keeps its wrapper. The wrapper =μthesis.<t||thesis>= built by =theorem= is
+logically idle: a proof cannot name it (=axiom thesis.= is refused), and a nested =cut (B)
+thesis.= is accepted. A scratch Fellowship without it builds and gives the bare term =r=
+for an argument, but AIDA reads the argument's conclusion and name off a root binder
+(=Argument._rename_outer_binder=), and registered and imported terms would still carry
+=μthesis=, so removing it would not end the name problem. The suite was not completed
+against that build.
+
+Done 2026-10-30. =InstructionsGenerationVisitor= knows the wrapper by place and shape: the
+root =μx.<t||x>= (dually =μ'x.<x||e>=) with x not free in t, whatever x is called; a root
+whose binder is used inside is a cut, and every nested binder is replayed. The negation
+shortcut runs first, since Fellowship does not keep the name in =elim NAME= on =~A=
+(see "Name the hypothesis of =elim NAME= on a goal written =~A="). =root_name=, =_is_synthetic_root_name=, =Argument._synthetic_root_name= and
+the two substring checks on ="thesis"= in =ThetaExpander= are gone. Behaviour change: a
+wrapper-shaped root under another name no longer replays with a redundant =cut=; the type
+oracle peels wrappers before comparing, and tests asserting that cut were updated
+(tests/test_neg_elim_shortcut.py, test_trailing_next.py, test_unit_closing_elim.py,
+test_predicate_commands.py, test_default_eta_long.py).
+
+Evidence: tests/test_root_wrapper.py, four tests. =thesis= and =t= give the same verdict
+and normal form under =typecheck on=, =expanded=, =off=; a registered debate with
+=μthesis:A.<μf:A.<r||b*f>||thesis>= extends without a move. With the source change reverted
+the =on=, =expanded= and extension tests fail and =off= passes, as the report says. By
+hand, a =μthesis= root on =~Q= and a =μ'thesis= root give the same results as under the
+name =t=, up to that name. Full suite 2506 passed, 9 skipped, 2 xfailed, 1 xpassed, 1
+failed; the failure was the stale expectation in test_predicate_commands.py, since
+corrected (a test-only change, and that file was rerun on its own).
+
 ** DONE Keep argument names that end in _<digits> apart in the issue graph
 CLOSED: [2026-10-06 Tue]
 :PROPERTIES:

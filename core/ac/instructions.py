@@ -1,6 +1,7 @@
 from copy import deepcopy
 import collections
 from core.comp.visitor import ProofTermVisitor
+from core.comp.reduce import _var_occurs
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc, Goal, Laog, Deleg, Geled, ID, DI,
     LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
@@ -51,13 +52,23 @@ def is_primitive_negation_prop(p: str) -> bool:
     return ps.startswith("¬") or ps.startswith("~")
 
 class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely functional later
-    def __init__(self, *, root_name: str | None = None):
+    def __init__(self):
         self.instructions = collections.deque('')
         self._autoclosed_falsum = set()  # id()s of ⊥ leaves already discharged by ¬-elim
-        self.root_name = root_name
+        self._wrapper = None             # the root, when `theorem` itself builds it
 
-    def _is_synthetic_root_name(self, name: str | None) -> bool:
-        return bool(name) and name == "thesis"
+    @staticmethod
+    def _is_root_wrapper(node) -> bool:
+        """``μx.<t||x>`` (dually ``μ'x.<x||e>``) with x not free in t: what
+        `theorem` builds, no step of a proof.  A proof cannot name that
+        binder (`axiom thesis.` is refused), so the shape decides, at the
+        root only; a binder's name means nothing.  A root whose binder is
+        used inside is a real cut."""
+        if isinstance(node, Mu) and isinstance(node.context, ID) and node.context.name == node.id.name:
+            return not _var_occurs(node.id.name, node.term)
+        if isinstance(node, Mutilde) and isinstance(node.term, DI) and node.term.name == node.di.name:
+            return not _var_occurs(node.di.name, node.context)
+        return False
 
     def _collect_autoclosed_falsum(self, node: ProofTerm):
         # A ⊥ leaf closing an application chain normally needs its own elim to
@@ -87,6 +98,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Pre-scan to find ⊥ leaves that ¬-elim already discharged
         self._autoclosed_falsum.clear()
         self._collect_autoclosed_falsum(proofterm)
+        self._wrapper = proofterm if self._is_root_wrapper(proofterm) else None
         self.visit(proofterm)
         # Ensure ASCII-only syntax and no trailing dot (execute() appends '.')
         sanitized = []
@@ -116,7 +128,7 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # there, which the shortcut would drop (tasks.org,
         # aida-replay-neg-elim-shortcut).
         context = getattr(node, "context", None)
-        if (not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda)
+        if (isinstance(getattr(node, "term", None), Lamda)
                 and is_primitive_negation_prop(getattr(node, "prop", None))
                 and isinstance(context, ID) and context.name == node.id.name):
             lam = node.term
@@ -132,10 +144,11 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
                         self.visit(x)
                     self.instructions.appendleft(f"elim {node.id.name}")
                     return node
+        if node is self._wrapper:
+            self.visit(node.term)
+            return node
         # Default traversal and instruction
         node = super().visit_Mu(node)
-        if self._is_synthetic_root_name(node.id.name):
-            return node
         if node.contr:
             self.instructions.appendleft(f"cut ({prop_to_command(fn(node.contr))}) {node.id.name}.")
             return node
@@ -145,8 +158,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         # Fellowship encodes context-side negation elimination as
         #   μ′ H:¬A . < H || chain*_F_ >
         # The wrapper is representation rather than a cut anyone performed.
-        if self._is_synthetic_root_name(node.di.name):
-            return False
         left = getattr(node, "term", None)
         right = getattr(node, "context", None)
         if not isinstance(left, (ID, DI)) or getattr(left, "name", None) != node.di.name:
@@ -161,14 +172,15 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
         return isinstance(tail, (ID, DI)) and getattr(tail, "name", None) == "_F_"
 
     def visit_Mutilde(self, node: Mutilde):
+        if node is self._wrapper:
+            self.visit(node.context)
+            return node
         if self._is_negation_elim_wrapper(node):
             # The chain already supplies the elim; emit nothing for the
             # wrapper and skip its self-reference.
             self.visit(node.context)
             return node
         node = super().visit_Mutilde(node)
-        if self._is_synthetic_root_name(node.di.name):
-            return node
         if node.contr:
             self.instructions.appendleft(f"cut ({prop_to_command(fn(node.contr))}) {node.di.name}.")
             return node
@@ -278,8 +290,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_ID(self, node: ID):
         node = super().visit_ID(node)
         if node.name:
-            if self._is_synthetic_root_name(node.name):
-                return node
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
                 return node
@@ -295,8 +305,6 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_DI(self, node: DI):
         node = super().visit_DI(node)
         if node.name:
-            if self._is_synthetic_root_name(node.name):
-                return node
             if node.flag in ("Falsum", "Truth"):
                 self._emit_unit_elim(node)
                 return node

@@ -1,3 +1,5 @@
+import pytest
+
 from core.ac.ast import Goal, Laog, ID, DI, Mu, Mutilde
 from core.comp.reduce import ThetaExpander
 
@@ -91,17 +93,26 @@ def test_default_eta_does_not_reexpand_exposed_context_target():
     assert out.context.di.name == "_"
 
 
-def test_instruction_generator_skips_literal_thesis_root():
+@pytest.mark.parametrize("name", ["thesis", "demo"])
+def test_instruction_generator_skips_the_root_wrapper_whatever_its_name(name):
     from core.ac.instructions import InstructionsGenerationVisitor
 
-    root = Mu(ID("thesis", "P"), "P", Goal("1", "P"), Laog("2", "P"))
+    root = Mu(ID(name, "P"), "P", Goal("1", "P"), ID(name, "P"))
     root.contr = "P"
 
-    instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
+    assert list(InstructionsGenerationVisitor().return_instructions(root)) == []
 
-    # One `next` per open site, minus the trailing one that could never
-    # succeed (aida-trailing-next-warning, 2026-09-16).
-    assert instructions == ["next"]
+
+def test_instruction_generator_replays_a_nested_binder_named_thesis():
+    from core.ac.instructions import InstructionsGenerationVisitor
+
+    inner = Mu(ID("thesis", "P"), "P", DI("b", "P"), ID("thesis", "P"))
+    inner.contr = "P"
+    root = Mu(ID("demo", "P"), "P", inner, ID("demo", "P"))
+    root.contr = "P"
+
+    assert list(InstructionsGenerationVisitor().return_instructions(root)) == [
+        "cut (P) thesis", "axiom b", "moxia thesis"]
 
 
 def test_instruction_generator_still_emits_cut_for_non_thesis_root_name():
@@ -110,7 +121,7 @@ def test_instruction_generator_still_emits_cut_for_non_thesis_root_name():
     root = Mu(ID("demo", "P"), "P", Goal("1", "P"), Laog("2", "P"))
     root.contr = "P"
 
-    instructions = list(InstructionsGenerationVisitor(root_name="demo").return_instructions(root))
+    instructions = list(InstructionsGenerationVisitor().return_instructions(root))
 
     assert instructions == ["cut (P) demo", "next"]
 
@@ -127,18 +138,6 @@ def test_argument_rename_outer_binder_rewrites_bound_occurrences():
 
     assert body.id.name == "demo"
     assert body.context.name == "demo"
-
-
-def test_argument_synthetic_root_name_reads_outer_binder_name():
-    from core.dc.argument import Argument
-
-    class _DummyProver:
-        declarations = {}
-
-    arg = Argument(_DummyProver(), "demo", "P")
-    arg.body = Mutilde(DI("rootish", "P"), "P", DI("rootish", "P"), Laog("1", "P"))
-
-    assert arg._synthetic_root_name() == "rootish"
 
 
 def test_argument_eta_reduce_body_refreshes_enriched_proof_term():

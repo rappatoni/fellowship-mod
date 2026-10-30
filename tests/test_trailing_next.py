@@ -7,7 +7,7 @@ from core.ac.instructions import InstructionsGenerationVisitor
 
 
 def gen(node, root="thesis"):
-    return list(InstructionsGenerationVisitor(root_name=root).return_instructions(node))
+    return list(InstructionsGenerationVisitor().return_instructions(node))
 
 
 def test_open_site_as_last_goal_emits_no_trailing_next():
@@ -21,7 +21,7 @@ def test_open_site_as_last_goal_emits_no_trailing_next():
 def test_next_between_two_open_sites_is_kept_and_the_final_one_dropped():
     root = Mu(ID("thesis", "P"), "P", Goal("1", "P"), Laog("2", "P"))
     root.contr = "P"
-    assert gen(root) == ["next"]
+    assert gen(root) == ["cut (P) thesis", "next"]
 
 
 def test_cut_root_keeps_its_inner_next_only():
@@ -32,5 +32,6 @@ def test_cut_root_keeps_its_inner_next_only():
 
 def test_laog_site_last_is_also_stripped():
     body = Mutilde(DI("thesis", "A"), "A", DI("x", "A"), Laog("1", "A"))
+    body.contr = "A"
     instructions = gen(body)
     assert not instructions or instructions[-1] != "next"
