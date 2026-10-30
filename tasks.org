@@ -616,7 +616,8 @@ kept now (tests/test_extract.py, =test_the_refutation_of_false_stays=).
 The s(CASP) imports have no negation, which is why the first tests did
 not meet it.
 
-*** BACKLOG Warn when the recompiled term differs from the given one
+*** DONE Warn when the recompiled term differs from the given one
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-debate-round-trip-warning
 :AREA:           phd
@@ -680,6 +681,27 @@ replay into a debate session (tests/test_debate_session.py).
 Compared in-process, as syntax trees: printed unfolded terms do not parse
 back yet ([[id:aida-site-names-round-trip]]).
 
+*The eight fixture programs (2026-10-30, imported from their =.pl= with
+=register debate NAME import scasp=, scasp-aida's tests/test_end_to_end.py).*
+| program                         | arguments | literal | graph   | grounded labels |
+|---------------------------------+-----------+---------+---------+-----------------|
+| car_return_prop                 |         1 | differ  | differ  | equal           |
+| ergebniszulaessigkeit_annotiert |         1 | differ  | equal   | equal           |
+| neg                             |         1 | differ  | equal   | equal           |
+| orphans                         |        13 | differ  | differ  | equal           |
+| simple                          |         5 | differ  | differ  | equal           |
+| simple_pred                     |         5 | differ  | differ  | equal           |
+| tweety                          |         1 | differ  | equal   | equal           |
+| workshop                        |         1 | differ  | equal   | equal           |
+Every term parts at the root (difference 1, the entry point: given the
+opening's first step, recompiled the issue's obligation site). The four
+graphs that differ: simple, simple_pred and orphans as recorded above
+(the strict-phase duplicates); car_return_prop, a single fact, has its
+one edge twice in the recompiled graph - the same duplicate of a strict
+proof. All these duplicates are one naming bug of the strict phase
+([[id:aida-strict-edge-argument-origin]]). Every debate evaluates to a value with its query IN, as s(CASP)
+answered; no extracted argument is refused.
+
 *** DONE Extend a registered debate
 CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
@@ -729,7 +751,8 @@ Evidence against VERIFY:
   =register= on the first run (7 failures); the lookup now tolerates it.
 - Suite: 2466 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
-*** BACKLOG Import a debate from a source language
+*** DONE Import a debate from a source language
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-registered-debate-import
 :AREA:           phd
@@ -763,6 +786,18 @@ scasp-aida to write the registered-debate form and offer
 =import_scasp_file= as its source reader
 ([[id:scasp-aida-register-debate-output]], phase 10).
 Suite: 2498 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+*With scasp-aida, 2026-10-30* (phase 10; scasp-aida writes the block
+form and offers =import_scasp_file= as its =acdc.importer_sources=
+reader). All eight fixture programs import from their =.pl=: no refusal,
+no extracted argument refused, each evaluates to a value with its query
+IN, and each extracted argument's binders map to justification nodes
+(simple: 5 of 5, orphans: 13 of 13). Evidence: scasp-aida's
+tests/test_end_to_end.py, 8 passed (skipped without scasp);
+outcomes per program under [[id:aida-debate-round-trip-warning]]. File
+mode, =acdc --import scasp simple.json file simple.fspy=, writes the
+block form, and =acdc --script= replays it. AIDA's code is unchanged in
+phase 10; its suite last passed at phase 9 (2500 passed).
 
 *** DONE Offer registered debates through the service and HTTP
 CLOSED: [2026-10-30 Fri]
@@ -858,7 +893,7 @@ At the four levels, so far:
 | literal term  | differ (at the root: 1)               | equal (a fixed point)      |
 | graph, edges  | equal up to names, but two            | equal as multisets         |
 |               | strict-phase duplicates (=alpha1*=,    |                            |
-|               | =alpha2*=: from 3)                    |                            |
+|               | =alpha2*=; not from 3 - see below)    |                            |
 | graph, marks  | equal                                 | differ: the term route     |
 |               |                                       | marks the wings' roots     |
 |               |                                       | (=H_A[c]=, =C[t]=, =B[t]=) |
@@ -871,6 +906,48 @@ the markers are the term route's against the document route's
 ([[id:aida-discuss-issue-graph-from-document]]). Still to do: normal
 forms under every semantics and mode, the five other fixture programs,
 extended debates, and the answers of the exported program.
+
+*Second data (2026-10-30): all eight fixture programs and eval/scasp/.*
+The seven programs of eval/scasp/ with the queries of eval/REPORT.org
+(13 cases; =flies(sam)= and =flies(opus)= are refused by the importer:
+an empty answer needs a query that is a plain atom, =_query_prop=), and
+scasp-aida's eight fixtures, each imported from its =.pl= with
+=register debate NAME import scasp=. 19 debates; the scripts are
+reproducible from those two inputs (an investigation, not a test).
+1. *Terms.* In 16 of 19 the root wrapper (difference 1) is the only
+   difference: the recompiled term is T-SUP(=?1:Q=, given), and its scion
+   is alpha-equal to the given term. The three queries without an answer
+   (odd p, odd r, positive a) are a bare claim and literally equal.
+   simple, simple_pred and orphans differ below the root only inside the
+   helper atom's refutation wing: differences 2 and 3, nothing else.
+   Compared after the shim.
+2. *Normal forms.* Equal - class and normal form up to alpha - in all 16
+   combinations of mode (skeptical, credulous), semantics (grounded,
+   complete, preferred, stable) and base (cbn, cbv), for all 19, between
+   the given term and the recompiled term, and between the given term and
+   the shared route over the debate's arguments in its session. Weak
+   evidence: see 4.
+3. *Graphs.* Every edge only the recompiled graph has is a source-less
+   strict edge on a fact (car_return_prop 1, simple 2, simple_pred 2,
+   orphans 5; even p, even q, founded a, constraint q 1 each); the given
+   graph has no edge the recompiled one lacks; default markers equal.
+   The duplicates are a naming bug of the strict phase, not one of the
+   three differences, reproducible without the importer
+   ([[id:aida-strict-edge-argument-origin]]); with it fixed the graphs of
+   all 19 should agree.
+4. *Labels.* Every graph, given and recompiled, is acyclic and has
+   exactly one labelling under each of the four semantics, so grounded,
+   complete, preferred and stable cannot differ, and neither can the
+   modes. This is why grounded agrees with s(CASP)'s stable models here:
+   the importer translates one justification tree - the query's proof in
+   one stable model - and drops =not= premises (with a warning), so
+   =p :- not q= becomes the fact p and the even loop, tweety's
+   =not abnormal= and every other negative premise disappear. The only
+   defeasible edges are the conjunction wings (simple, simple_pred,
+   orphans), settled by strict proofs. The comparison so far does not
+   test the stable semantics at all; that needs negation in the
+   translation (the blocked translation tasks in scasp-aida) and
+   conflict - extended debates, several answers.
 ** REVIEW Hand the API over to the document UI
 :PROPERTIES:
 :ID:             aida-dui-handover
@@ -9129,6 +9206,46 @@ no collision the prefixed names did not have. Evidence:
   minicourse.org, including the prose that explained them ("Unfolding
   numbers the sites =1=, =2=, ...") and the =unfold= trace lines.
 - Suite: 2484 passed, 9 skipped, 2 xfailed, 1 xpassed.
+
+** BACKLOG Name a copy's strict edge after its argument, not its root binder
+:PROPERTIES:
+:ID:             aida-strict-edge-argument-origin
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The strict phase adds no strict edge for a copy of an argument Fellowship already holds as strict, whatever the argument's root binder is called, so a debate over =register x : P := "μk:P.<p||k>"= has one edge for x and no =k*=.
+:VERIFY:         A test: closed debates over that x and over =μz:P.<q||z>= (binder = name) have the same edges up to names, and neither has a strict-role edge; the round-trip graphs of the 19 debates of [[id:aida-round-trip-equivalence-study]] agree; the perf tests (the unfolder changes); the suite passes.
+:END:
+
+Found 2026-10-30 by [[id:aida-round-trip-equivalence-study]]. The
+chain: =_host_name= (core/dc/debate_graph.py) names an argument's host
+edge after the innermost binder of the eta chain at its root
+([[id:aida-host-edge-naming]]), so x's edge is =k=; the unfolder marks
+every copy with =origin= = the edge's name (core/dc/unfold.py); and
+=strict_edge_candidate= (core/dc/strict.py) asks whether the origin is
+among =strict_names=, the declarations and the arguments Fellowship
+holds - =k= is not, x is - so the collector adds =k*=, "a closed
+derivation the framework missed", for one the framework has as a strict
+edge already. Only a body that is an eta chain is hit (a fact's proof,
+=μα.<fact||α>=); a rule step's root is no eta chain and keeps the
+argument's name. Fellowship names the root binder after the argument,
+so documents built in the prover do not show it; imported terms keep the
+importer's binders (=alpha1=). Label-neutral (a second source-less
+strict edge on the same statement), and no normal form changed on the
+19 debates, but the graph claims a missed derivation, and the round
+trip reports graphs as different that are not. Reproduced in a plain lk
+document: closed debates =dx= (move x) has =k= and =k*=, =dz= (move
+=register z : P := "μz:P.<q||z>"=) has =z= alone. Fix in AIDA, not by
+renaming binders at extraction: the copy should carry the argument it
+came from (the unfolder knows the edge; the document knows which
+argument the edge belongs to), and the strict test should ask about
+that.
 
 ** BACKLOG Print the proposition, not the statement key, of an open quantified statement
 :PROPERTIES:
