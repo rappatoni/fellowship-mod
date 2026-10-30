@@ -393,6 +393,38 @@ class DebateInfo:
     scope: str
     moves: List[str]
     finished: bool
+    #: "recipe" (debate ... cedat tempus), "registered" (by its term, or
+    #: imported), "extension" (debate NAME extends PARENT)
+    kind: str = "recipe"
+    parent: Optional[str] = None
+    #: a registered debate's arguments in its session, and those refused
+    arguments: List[str] = field(default_factory=list)
+    refused: Dict[str, str] = field(default_factory=dict)
+    #: its round trip (core/dc/roundtrip.py), and where it was imported from
+    roundtrip: Optional[Dict[str, Any]] = None
+    source: Optional[Dict[str, Any]] = None
+
+
+def debate_info(d) -> DebateInfo:
+    """What a debate is, for the inventory and a debate result."""
+    from core.dc.debate import RegisteredDebate
+    info = DebateInfo(d.name, d.issue_prop, d.onus, d.scope, [str(m) for m in d.moves], d.finished)
+    if not isinstance(d, RegisteredDebate):
+        return info
+    info.kind = "extension" if d.extension else "registered"
+    info.parent = d.parent
+    session = d.debate_session.session if d.debate_session.alive else None
+    info.arguments = (sorted(n for n in session.arguments) if session is not None
+                      else [a.name for a in d.debate_session.spec.arguments])
+    info.refused = dict(d.refused)
+    if d.roundtrip is not None:
+        r = d.roundtrip
+        info.roundtrip = {"literal": r.literal, "path": r.path, "given": r.given,
+                          "recompiled": r.recompiled, "graphs_equal": r.graphs_equal,
+                          "labels_equal": r.labels_equal}
+    if d.provenance is not None:
+        info.source = {"language": d.provenance["language"], "source": d.provenance["source"]}
+    return info
 
 
 @dataclass
@@ -659,9 +691,7 @@ class Service:
                                   bool(getattr(arg, "citable", False)),
                                   s.issue_of(arg) in statements)
                      for name, arg in s.arguments.items()]
-        debates = [DebateInfo(d.name, d.issue_prop, d.onus, d.scope, [str(m) for m in d.moves],
-                              d.finished)
-                   for d in s.debates.values()]
+        debates = [debate_info(d) for d in s.debates.values()]
         return Inventory(s.doc.logic_name, s.revision, declarations, arguments, debates, dict(s.names))
 
     # -- content -------------------------------------------------------------

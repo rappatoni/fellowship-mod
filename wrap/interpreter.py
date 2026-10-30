@@ -449,7 +449,7 @@ class Interpreter:
         opened = current.get("_opened_at")
         if opened is not None and c.span is not None:
             debate.span = Span(opened.line, opened.col, c.span.end_line, c.span.end_col)
-        return Outcome(None, c.text, "register_debate", "ok", done.message, value=debate,
+        return Outcome(None, c.text, "register_debate", "ok", done.message, value=done,
                        diagnostics=list(done.diagnostics))
 
     def _close(self, c: Command, *, demand_strict: bool) -> Outcome:

@@ -126,4 +126,27 @@ def test_a_graph_names_its_labelling(svc):
     assert plain["labelling"] is None
     out = valid(to_json(svc.graph("tweety", labels=True, semantics="preferred", mode="credulous"),
                         svc.session))
-    assert out["aida"] == "1.1" and out["labelling"].startswith("preferred, credulous")
+    assert out["aida"] == "1.2" and out["labelling"].startswith("preferred, credulous")
+
+
+def test_registered_debates_and_their_extensions(tmp_path):
+    """The `debate` result (1.2) and the inventory's debates with their
+    kind, parent, arguments and round trip."""
+    import sys
+    sys.path.insert(0, "tests")
+    from test_registered_debate import block, run
+    from wrap.cli import setup_prover
+    p = setup_prover()
+    try:
+        outcomes = run(p, block("tests/import/simple.fspy", "simple"))
+        out = valid(to_json(outcomes[-1].value, p))
+        assert out["kind"] == "debate" and out["debate"]["kind"] == "registered"
+        assert out["debate"]["arguments"][0] == "simple__a1" and out["debate"]["roundtrip"]["literal"] is False
+        outcomes = run(p, "debate s3 extends simple.\ncedat tempus.")
+        out = valid(to_json(outcomes[-1].value, p))
+        assert (out["kind"], out["debate"]["kind"], out["debate"]["parent"]) == ("debate", "extension", "simple")
+        inventory = valid(to_json(Service.of(p).inventory(), p))
+        assert [(d["name"], d["kind"]) for d in inventory["debates"]] == [("simple", "registered"),
+                                                                           ("s3", "extension")]
+    finally:
+        p.close()

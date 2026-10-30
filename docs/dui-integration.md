@@ -81,7 +81,7 @@ report = svc.check(text)
 `to_json(report, session)` (`wrap/serialize.py`) gives:
 
 ```json
-{"aida": "1.1", "kind": "report", "ok": false, "seconds": 0.09,
+{"aida": "1.2", "kind": "report", "ok": false, "seconds": 0.09,
  "entries": [
    {"span": {"line": 44, "col": 1, "end_line": 44, "end_col": 24},
     "text": "rebut photo penguin", "command": "move", "status": "refused",
@@ -183,11 +183,17 @@ each extracted argument's binders to the importer's source nodes.
 
 ## JSON formats
 
-Every object is a versioned envelope `{"aida": "1.1", "kind": ...}`,
+Every object is a versioned envelope `{"aida": "1.2", "kind": ...}`,
 described by `wrap/schemas/aida.schema.json` (JSON Schema 2020-12). The
 version follows semver: additions raise the minor version, changes the
 major one.
 
+- 1.2 (2026-10-30): registered debates (aida-registered-debates). A
+  `debate` result - for `register_debate`, `import_debate`,
+  `start_extension` and the close of an extension - carries the debate
+  (`$defs/debate`); the inventory's debates are described by the same
+  definition and gain `kind` (`recipe`, `registered`, `extension`),
+  `parent`, `arguments`, `refused`, `roundtrip` and `source`.
 - 1.1 (2026-10-20): a `graph` result names the labelling its labels are,
   `labelling` (a string, or null without labels): `"grounded
   labelling"`, or the semantics and mode asked for and how the labelling

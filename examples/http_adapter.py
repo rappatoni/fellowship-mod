@@ -14,6 +14,16 @@ wrap/serialize.py, described by wrap/schemas/aida.schema.json):
     DELETE /sessions/ID                   -> {"closed": ID}
     POST   /sessions/ID/check   {"text"}  -> a "report": one entry per command
     POST   /sessions/ID/import  {"language", "data", "name"?}  -> an "import"
+    POST   /sessions/ID/debates {"name", "issue", "term", "declarations"?, "legacy"?}
+                                          -> a "debate", registered by its term
+    POST   /sessions/ID/debates {"name", "language", "source" | "data"}
+                                          -> a "debate", imported into the document
+    POST   /sessions/ID/debates/NAME/extend {"name"}   -> a "debate" extending NAME,
+                                          being recorded until .../close
+    POST   /sessions/ID/debates/NAME/moves {"argument", "verb"?, "target"?}
+    POST   /sessions/ID/debates/NAME/arguments {"name", "conclusion", "term"}
+    POST   /sessions/ID/debates/NAME/declarations {"text"}
+    POST   /sessions/ID/debates/NAME/close    -> "done": the debate being recorded
     GET    /sessions/ID/inventory         -> an "inventory"
     POST   /sessions/ID/query   {"op": "graph"|"label"|"evaluate"|"term"|"render"|"tree",
                                  "target": "NAME" | "issue :X", ...options}
@@ -36,7 +46,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from wrap.cli import setup_prover            # noqa: E402
-from wrap.service import AidaError, NotFound, Service  # noqa: E402
+from wrap.service import AidaError, InvalidRequest, NotFound, Service  # noqa: E402
 from wrap.serialize import envelope, to_json  # noqa: E402
 
 SESSIONS: dict = {}
@@ -106,6 +116,8 @@ class Handler(BaseHTTPRequestHandler):
                                                  name=body.get("name", "imported"))
             elif rest == ["inventory"] and method == "GET":
                 result = service.inventory()
+            elif rest[:1] == ["debates"] and method == "POST":
+                result = self._debates(session, service, rest[1:], self._body())
             elif rest == ["query"] and method == "POST":
                 body = self._body()
                 op = _QUERIES.get(body.get("op"))
@@ -126,6 +138,31 @@ class Handler(BaseHTTPRequestHandler):
         except (KeyError, ValueError) as e:
             return self._send(400, envelope("error", code="invalid", stage=None, message=str(e),
                                             span=None, cause=None, diagnostics=[]))
+
+    @staticmethod
+    def _debates(session, service, rest, body):
+        """The debate routes: register or import one, extend one, and add
+        to the one being recorded."""
+        if not rest:
+            if "language" in body:
+                return service.import_debate(body["name"], body["language"], body.get("source"),
+                                             data=body.get("data"))
+            return service.register_debate(body["name"], body["issue"], body["term"],
+                                           body.get("declarations", []), legacy=body.get("legacy", False))
+        name, action = rest[0], rest[1:]
+        if action == ["extend"]:
+            return service.start_extension(body["name"], name)
+        if session.recording_debate != name:
+            raise InvalidRequest(f"debate '{name}' is not being recorded.", stage="debate")
+        if action == ["moves"]:
+            return service.move(body["argument"], body.get("verb"), body.get("target"))
+        if action == ["arguments"]:
+            return service.register(body["name"], body["conclusion"], body["term"])
+        if action == ["declarations"]:
+            return service.command(body["text"])
+        if action == ["close"]:
+            return service.close_debate()
+        raise NotFound(f"no debate route {'/'.join(action)}")
 
     def do_POST(self):
         self._dispatch("POST")

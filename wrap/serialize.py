@@ -28,7 +28,7 @@ from typing import Any, Dict, Optional
 
 from core.ac import ast as A
 
-VERSION = "1.1"
+VERSION = "1.2"
 
 
 def envelope(kind: str, **data) -> Dict[str, Any]:
@@ -279,8 +279,7 @@ def to_json(result, session=None) -> Dict[str, Any]:
                                     "kind": a.kind, "strict": a.strict, "in_document": a.in_document,
                                     "span": span(spans.get(a.name))}
                                    for a in result.arguments],
-                        debates=[{"name": d.name, "issue": d.issue, "onus": d.onus, "scope": d.scope,
-                                  "moves": d.moves, "finished": d.finished} for d in result.debates],
+                        debates=[debate(d) for d in result.debates],
                         names=[{"name": n, "kind": k} for n, k in result.names.items()],
                         diagnostics=_diags(result))
     if isinstance(result, S.ImportReport):
@@ -293,10 +292,22 @@ def to_json(result, session=None) -> Dict[str, Any]:
                         entries=[outcome(o, session) for o in result.entries],
                         diagnostics=_diags(result))
     if isinstance(result, S.Done):
+        from core.dc.debate import RegisteredDebate
+        if isinstance(result.value, RegisteredDebate):
+            # registered, imported or extended: the debate it made
+            return envelope("debate", message=result.message, debate=debate(S.debate_info(result.value)),
+                            diagnostics=_diags(result))
         return envelope("done", message=result.message, diagnostics=_diags(result))
     if hasattr(result, "status") and hasattr(result, "kind") and hasattr(result, "span"):
         return outcome(result, session)
     raise TypeError(f"no JSON for {type(result).__name__}")
+
+
+def debate(d) -> Dict[str, Any]:
+    """A debate as the inventory and a debate result give it (DebateInfo)."""
+    return {"name": d.name, "issue": d.issue, "onus": d.onus, "scope": d.scope, "moves": d.moves,
+            "finished": d.finished, "kind": d.kind, "parent": d.parent, "arguments": d.arguments,
+            "refused": d.refused, "roundtrip": d.roundtrip, "source": d.source}
 
 
 def outcome(o, session=None) -> Dict[str, Any]:

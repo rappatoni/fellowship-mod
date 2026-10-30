@@ -764,7 +764,8 @@ scasp-aida to write the registered-debate form and offer
 ([[id:scasp-aida-register-debate-output]], phase 10).
 Suite: 2498 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
-*** BACKLOG Offer registered debates through the service and HTTP
+*** DONE Offer registered debates through the service and HTTP
+CLOSED: [2026-10-30 Fri]
 :PROPERTIES:
 :ID:             aida-debate-api-endpoints
 :AREA:           phd
@@ -781,6 +782,38 @@ Suite: 2498 passed, 9 skipped, 2 xfailed, 1 xpassed.
 :END:
 
 The adapter offers check, import, inventory and query today, no move.
+
+*Implemented 2026-10-30.* The service already offered the operations
+(=register_debate=, =import_debate=, =start_extension=, and =move=,
+=register=, =command=, =close_debate= routed into the extension being
+recorded); what was missing was their results and routes:
+- JSON format 1.2 (wrap/serialize.py, wrap/schemas/aida.schema.json;
+  semver, an addition): a =debate= result for a registered, imported or
+  extended debate and the close of an extension, carrying
+  =$defs/debate=; the inventory's debates are described by it and gain
+  =kind= (recipe, registered, extension), =parent=, =arguments=,
+  =refused=, =roundtrip= and =source= (=Service.debate_info=). A
+  document check's entry for a =register debate= block now carries the
+  =debate= result (the interpreter returns the service's result, as for
+  every other command). The 1.1 pins moved to 1.2 (docs/dui-integration.md,
+  with its changelog, minicourse-api.org, two tests).
+- examples/http_adapter.py: =POST /sessions/ID/debates= (by term, or
+  imported), =.../debates/NAME/extend=, and =moves=, =arguments=,
+  =declarations=, =close= on the debate being recorded (refused, 422,
+  for any other).
+- Not done: =Service.import_document= adding to the current document -
+  =import_debate= does that already, so it stays the whole-document import.
+Evidence: tests/test_serialize.py (a registered debate's and an
+extension's =debate= results and the inventory valid against the schema,
+kinds and parent as recorded); tests/test_http_adapter.py (simple
+registered by its term over HTTP, extended with a declaration, an
+argument and an attack, closed; the extension's verdict changes, the
+parent's does not; a move on a debate not being recorded is refused;
+every response valid). The service operations themselves are covered
+by their own test files rather than tests/test_service.py:
+tests/test_registered_debate.py, tests/test_extends.py,
+tests/test_import_debate.py.
+Suite: 2500 passed, 9 skipped, 2 xfailed, 1 xpassed.
 
 *** BACKLOG Find out which equivalence the round trip needs
 :PROPERTIES:

@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "https://aida.example/schemas/aida-1.1.json",
- "title": "AIDA service results, version 1.1",
+ "$id": "https://aida.example/schemas/aida-1.2.json",
+ "title": "AIDA service results, version 1.2",
  "oneOf": [
   {
    "type": "object",
@@ -13,7 +13,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "error"
@@ -30,7 +30,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "graph"
@@ -61,7 +61,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "labellings"
@@ -93,7 +93,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "evaluation"
@@ -128,7 +128,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "evaluations"
@@ -152,7 +152,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "term"
@@ -175,7 +175,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "rendering"
@@ -199,7 +199,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "shared"
@@ -222,7 +222,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "tree"
@@ -248,13 +248,19 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "inventory"
     },
     "diagnostics": {
      "$ref": "#/$defs/diagnostics"
+    },
+    "debates": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/debate"
+     }
     }
    }
   },
@@ -267,7 +273,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "done"
@@ -287,7 +293,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "report"
@@ -316,7 +322,7 @@
    ],
    "properties": {
     "aida": {
-     "const": "1.1"
+     "const": "1.2"
     },
     "kind": {
      "const": "import"
@@ -371,6 +377,29 @@
      "items": {
       "$ref": "#/$defs/entry"
      }
+    },
+    "diagnostics": {
+     "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  {
+   "type": "object",
+   "required": [
+    "aida",
+    "kind",
+    "message",
+    "debate"
+   ],
+   "properties": {
+    "aida": {
+     "const": "1.2"
+    },
+    "kind": {
+     "const": "debate"
+    },
+    "debate": {
+     "$ref": "#/$defs/debate"
     },
     "diagnostics": {
      "$ref": "#/$defs/diagnostics"
@@ -832,6 +861,109 @@
     },
     "diagnostics": {
      "$ref": "#/$defs/diagnostics"
+    }
+   }
+  },
+  "debate": {
+   "description": "A debate: a recipe (debate ... cedat tempus), one registered by its term or imported, or an extension of one.",
+   "type": "object",
+   "required": [
+    "name",
+    "issue",
+    "onus",
+    "scope",
+    "moves",
+    "finished",
+    "kind"
+   ],
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "issue": {
+     "type": "string"
+    },
+    "onus": {
+     "enum": [
+      "pro",
+      "con"
+     ]
+    },
+    "scope": {
+     "enum": [
+      "open",
+      "closed"
+     ]
+    },
+    "moves": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "finished": {
+     "type": "boolean"
+    },
+    "kind": {
+     "enum": [
+      "recipe",
+      "registered",
+      "extension"
+     ]
+    },
+    "parent": {
+     "type": ["string", "null"],
+     "description": "What an extension extends."
+    },
+    "arguments": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "description": "A registered debate's arguments in its session."
+    },
+    "refused": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     },
+     "description": "Arguments cut from its term that its session refused, and why."
+    },
+    "roundtrip": {
+     "type": ["object", "null"],
+     "description": "The given term against what its arguments unfold to.",
+     "properties": {
+      "literal": {
+       "type": "boolean"
+      },
+      "path": {
+       "type": ["string", "null"]
+      },
+      "given": {
+       "type": ["string", "null"]
+      },
+      "recompiled": {
+       "type": ["string", "null"]
+      },
+      "graphs_equal": {
+       "type": ["boolean", "null"]
+      },
+      "labels_equal": {
+       "type": ["boolean", "null"]
+      }
+     }
+    },
+    "source": {
+     "type": ["object", "null"],
+     "description": "An imported debate's importer and source.",
+     "properties": {
+      "language": {
+       "type": "string"
+      },
+      "source": {
+       "type": ["string", "null"]
+      }
+     }
     }
    }
   }

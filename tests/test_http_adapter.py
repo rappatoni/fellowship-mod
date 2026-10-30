@@ -78,3 +78,45 @@ def test_errors_are_envelopes(base):
     jsonschema.validate(out, SCHEMA)
     status, out = call(f"{base}/sessions/{s['session']}", "DELETE")
     assert status == 200
+
+
+def test_registered_debates_over_http(base):
+    """Register a debate by its term, extend it, add to the extension and
+    close it - every response a valid envelope."""
+    import sys
+    sys.path.insert(0, "tests")
+    from test_registered_debate import block
+    from wrap.syntax import Command, parse_units
+    units = [u for u in parse_units(block("tests/import/simple.fspy", "simple")) if isinstance(u, Command)]
+    opened = next(i for i, u in enumerate(units) if u.kind == "register_debate")
+    shared = " ".join(u.text + "." for u in units[:opened])
+    own = [u.text + "." for u in units[opened + 1:] if u.kind == "opaque"]
+    term = next(u["proof_term"] for u in units if u.kind == "debate_term")
+
+    _, created = call(f"{base}/sessions", "POST", {})
+    sid = created["session"]
+    url = f"{base}/sessions/{sid}"
+
+    def post(path, body):
+        status, out = call(url + path, "POST", body)
+        jsonschema.validate(out, SCHEMA)
+        return status, out
+
+    assert post("/check", {"text": shared})[0] == 200
+    status, out = post("/debates", {"name": "simple", "issue": "A", "term": term,
+                                    "declarations": own, "legacy": True})
+    assert status == 200 and out["kind"] == "debate" and len(out["debate"]["arguments"]) == 5
+    status, out = post("/debates/simple/extend", {"name": "s3"})
+    assert status == 200 and out["debate"]["kind"] == "extension" and not out["debate"]["finished"]
+    assert post("/debates/s3/declarations", {"text": "deny nb : (B)."})[0] == 200
+    assert post("/debates/s3/arguments", {"name": "nb_arg", "conclusion": "B",
+                                          "term": "μ'x:B.<x||nb>"})[0] == 200
+    assert post("/debates/s3/moves", {"argument": "nb_arg", "verb": "attack",
+                                      "target": "simple__a5"})[0] == 200
+    status, out = post("/debates/s3/close", {})
+    assert status == 200 and out["debate"]["finished"] and out["debate"]["parent"] == "simple"
+    _, verdict = post("/query", {"op": "evaluate", "target": "s3"})
+    _, parent = post("/query", {"op": "evaluate", "target": "simple"})
+    assert verdict["verdict"] != "value" and parent["verdict"] == "value"
+    status, out = post("/debates/simple/moves", {"argument": "x"})
+    assert status == 422 and "not being recorded" in out["message"]
