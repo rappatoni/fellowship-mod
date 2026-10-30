@@ -57,7 +57,11 @@ tracked in `tasks.org`:
   graph (see *First-order logic*).
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
-  constraints are not translated yet.
+  constraints are not translated yet, some query shapes are refused, and
+  a conjunctive query is narrowed to its first atom (scasp-aida's README,
+  "What is not covered yet"). So an imported debate has one labelling under
+  every semantics, and its agreement with s(CASP) does not yet test stable
+  models (`aida-round-trip-equivalence-study` in `tasks.org`).
 
 Smaller design questions are open as well.
 
@@ -254,6 +258,13 @@ separate packages that register under the `acdc.importers` entry point (see
 .venv/bin/acdc --import scasp path/to/proof.json file imported.fspy
 .venv/bin/acdc --import scasp path/to/proof.json interactive
 ```
+
+The script scasp-aida writes is a registered debate: the declarations it
+shares with the document, then one `register debate` block. Inside a document,
+`register debate NAME import LANGUAGE "SOURCE".` does the same without the
+intermediate file, and reads the language's own files (an s(CASP) program) if
+the importer offers them under `acdc.importer_sources` (see *Registered
+debates*).
 
 ## Logging and environment variables
 
