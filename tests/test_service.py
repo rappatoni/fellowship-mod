@@ -323,6 +323,24 @@ def test_long_commands_reach_fellowship(svc):
     s.send_command("discard theorem.")
 
 
+def test_a_command_reaches_fellowship_in_one_write(monkeypatch):
+    """Fellowship prompts for each newline it reads, so a newline written
+    apart from its command can put that prompt into the reply."""
+    s = setup_prover()
+    written, send = [], s.prover.send
+    monkeypatch.setattr(s.prover, "send", lambda text: (written.append(text), send(text))[1])
+    s.send_command("lk.")
+    s.close()
+    assert written == ["lk.\n", "quit.\n"]
+
+
+def test_closing_a_prover_whose_fellowship_has_gone():
+    s = setup_prover()
+    s.prover.proc.kill()
+    s.prover.proc.wait()
+    s.close()
+
+
 # -- importing (aida-scasp-importer-provenance) -----------------------------------
 
 class _StubImport:

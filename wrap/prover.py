@@ -309,7 +309,10 @@ TODO: Mechanism to declare a scenario of default assumptions.
         stripped = command.strip()
         logger.log(5, ">> %s", stripped)
         try:
-            self.prover.sendline(command)
+            # One write: Fellowship prints a prompt for each newline it reads,
+            # and a newline arriving apart from its command can put that prompt
+            # at the head of the reply.
+            self.prover.send(command + "\n")
             self.prover.expect(REPLY_END)
         except PexpectTIMEOUT as e:
             if allow_incomplete:
@@ -1038,7 +1041,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
         """Close the prover, and the debate sessions its document holds."""
         self._close_debate_sessions(self.doc)
         try:
-            self.prover.sendline('quit.')
+            self.prover.send('quit.\n')
+        except OSError:                            # Fellowship has already gone
+            pass
         finally:
             close = getattr(self.prover, "close", None)
             if close is not None:
