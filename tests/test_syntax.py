@@ -1,0 +1,416 @@
+"""The command syntax (wrap/syntax.py) and the interpreter
+(wrap/interpreter.py; tasks.org, aida-command-syntax)."""
+
+import pytest
+
+from wrap.interpreter import Interpreter
+from wrap.syntax import Span, SyntaxRefused, Unit, parse, parse_units, split
+
+
+def kinds(text):
+    return [(u.kind if not isinstance(u, SyntaxRefused) else "refused") for u in parse_units(text)]
+
+
+# -- splitting ---------------------------------------------------------------
+
+def test_every_dot_outside_double_quotes_ends_a_command():
+    units = split('minimal. lk.\nregister t : B := "μ\'x:B.<x||?1.2:B?>".\n')
+    assert [u.text for u in units] == ["minimal", "lk", 'register t : B := "μ\'x:B.<x||?1.2:B?>"']
+
+
+def test_a_single_quote_is_an_ordinary_character():
+    assert [u.text for u in split("declare A' : bool. lk.")] == ["declare A' : bool", "lk"]
+
+
+def test_spans():
+    units = split("lk.\n# a note\ndeclare A,\n  B : bool.\n")
+    assert units[0].span == Span(1, 1, 1, 3)
+    assert units[1].kind == "narration" and units[1].text == "a note"
+    assert units[2].text.startswith("declare A") and units[2].span == Span(3, 1, 4, 11)
+
+
+def test_comments_stop_and_incomplete():
+    assert kinds("% silent\n%stop\nlk") == ["silent", "stop", "incomplete"]
+
+
+# -- parsing -----------------------------------------------------------------
+
+@pytest.mark.parametrize("text, kind, args", [
+    ("argument a : (A -> B)", "argument", {"name": "a", "conclusion": "A -> B", "anti": False}),
+    ("counterargument c : (A)", "argument", {"name": "c", "conclusion": "A", "anti": True}),
+    ("dixi", "dixi", {}), ("cr", "dixi", {}), ("case rested", "dixi", {}),
+    ("cedat tempus", "close_debate", {}), ("ct", "close_debate", {}),
+    ("new document minimal lj", "new_document", {"logic": "lj", "minimal": True}),
+    ("Lemma foo : (A)", "statement", {"keyword": "lemma", "name": "foo", "conclusion": "A", "anti": False}),
+    ("prove foo", "refine", {"verb": "prove", "name": "foo"}),
+    ("rebut b a", "move", {"verb": "rebut", "argument": "b", "target": "a"}),
+    ('graph d all "out.dot" show', "graph", {"target": "d", "whole": True, "show": True, "dot_path": "out.dot",
+                                              "semantics": "grounded", "mode": "skeptical"}),
+    ("graph issue :P preferred credulous", "graph",
+     {"target": "issue :P", "whole": False, "show": False, "dot_path": None,
+      "semantics": "preferred", "mode": "credulous"}),
+    ("evaluate issue :B credulous all", "evaluate",
+     {"target": "issue :B", "mode": "credulous", "semantics": "preferred", "base": "cbn",
+      "witness": "all", "favour": False}),
+    ('load "tests/demo/01.fspy"', "load", {"path": "tests/demo/01.fspy", "silent": False}),
+    ('load silent "tests/demo/01.fspy"', "load", {"path": "tests/demo/01.fspy", "silent": True}),
+    ('decorate p : "a. b"', "decorate", {"name": "p", "template": "a. b"}),
+    ("declare A : bool", "opaque", {"word": "declare"}),
+])
+def test_commands(text, kind, args):
+    c = parse(text)
+    assert c.kind == kind and c.args == args
+
+
+@pytest.mark.parametrize("text, hint", [
+    ("start argument a A", "argument NAME : (PROPOSITION)."),
+    ("end argument", "dixi."),
+    ("hora est", "cedat tempus."),
+    ("undercut u1 arg2 arg1", "cedat tempus."),
+    ("register t : B := μx:B", "double-quote the proof term"),
+    ("evaluate a sceptical", "unknown option"),
+    ("evaluate a 2", "requires credulous"),
+    ("graph a preferd", "a file name is double-quoted"),
+    ("graph a preferred stable", "one semantics"),
+    ("tactic pop", "`tactic` is gone"),
+])
+def test_old_and_wrong_forms_name_their_fix(text, hint):
+    with pytest.raises(SyntaxRefused, match=None) as e:
+        parse(text)
+    assert hint in str(e.value)
+
+
+# -- the interpreter -----------------------------------------------------------
+
+def test_a_script_through_the_interpreter(prover):
+    text = """lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument a : (B).
+cut (A -> B) th.
+axiom r.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+evaluate a.
+dixi.
+"""
+    out = list(Interpreter(prover).run(text))
+    statuses = [(o.kind, o.status) for o in out]
+    assert ("dixi", "ok") in statuses and ("evaluate", "ok") in statuses
+    assert statuses[-1] == ("dixi", "refused")           # nothing is being recorded
+    assert prover.arguments["a"].span == Span(4, 1, 11, 5)
+    evaluation = next(o for o in out if o.kind == "evaluate").value
+    assert evaluation.nf_class == "value"
+
+
+def test_discard_theorem_in_a_block_abandons_the_recording(prover):
+    text = """lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument a : (A -> B).
+elim x.
+discard theorem.
+argument a : (A -> B).
+axiom r.
+dixi.
+"""
+    out = list(Interpreter(prover).run(text))
+    assert [o.status for o in out] == ["ok"] * len(out)
+    assert out[5].message == "Discarded the recording of 'a'; nothing registered."
+    assert not prover.arguments["a"].open_sites()
+
+
+def test_a_replay_that_ends_the_theorem_is_refused(prover):
+    from core.dc.argument import Argument
+    from wrap.prover import ProverError
+    prover.send_command("lk.")
+    prover.send_command("declare A, B : bool.")
+    arg = Argument(prover, name="a", conclusion="A -> B")
+    arg.instructions = ["elim x", "discard theorem"]
+    with pytest.raises(ProverError, match="no theorem open"):
+        arg.execute(declare="auto")
+    assert prover.send_command("theorem t : (A -> A).")["mode"] == "subgoals"
+    prover.send_command("discard theorem.")
+
+
+def test_a_refused_declaration_gives_its_names_back(prover):
+    from wrap.prover import ProverError
+    prover.send_command("lk.")
+    prover.send_top_level("declare A, B : bool.")
+    for refused in ["declare r : A -> B.",            # read as a sort: refused with a note only
+                    "declare r : (A -> C).",          # C undefined: a note only
+                    "declare r : A -> .",             # a parse error
+                    "declare s, A : bool."]:          # A clashes: s is not taken either
+        with pytest.raises(ProverError):
+            prover.send_top_level(refused)
+    assert "r" not in prover.names and "s" not in prover.names
+    prover.send_top_level("declare r : (A -> B).")
+    prover.send_top_level("declare s : bool.")
+    assert prover.names["r"] == prover.names["s"] == "declaration"
+
+
+def test_interpreter_declaration_refused_by_a_note(prover):
+    out = list(Interpreter(prover).run("lk.\ndeclare A : bool.\ndeclare r : A -> A.\ndeclare r : (A -> A).\n"))
+    assert [o.status for o in out] == ["ok", "ok", "error", "ok"]
+    assert "not a sort" in out[2].message
+
+
+# -- save --------------------------------------------------------------------
+
+def test_save_syntax():
+    assert parse('save "s.fspy"').args == {"path": "s.fspy", "all": False}
+    assert parse('save all "s.fspy"').args == {"path": "s.fspy", "all": True}
+    assert parse('save "all.fspy"').args == {"path": "all.fspy", "all": False}
+    with pytest.raises(SyntaxRefused):
+        parse("save all")
+
+
+SESSION = """declare A, B : bool.
+# a narration line
+declare r : A -> B.
+declare r : (A -> B).
+argument a1 : (A -> B).
+elim x.
+discard theorem.
+argument a2 : (A -> B).
+axiom r.
+dixi.
+argument a3 : (B).
+elim x.
+dixi.
+start argument z.
+"""
+
+
+def test_save_writes_the_accepted_commands_or_every_command(prover, tmp_path):
+    interpreter = Interpreter(prover, live=True)
+    for item in parse_units(SESSION):
+        interpreter.execute(item)
+    outcomes = [o.status for o in (interpreter.execute(i) for i in parse_units('save "x".'))]
+    assert outcomes == ["cli"]                         # the CLI writes the file
+    accepted, every = tmp_path / "accepted.fspy", tmp_path / "every.fspy"
+    interpreter.write_transcript(str(accepted))
+    interpreter.write_transcript(str(every), every=True)
+    assert accepted.read_text().splitlines() == [
+        "declare A, B : bool.", "# a narration line", "declare r : (A -> B).",
+        "argument a2 : (A -> B).", "axiom r.", "dixi.",
+        "argument a3 : (B).", "dixi."]                       # its refused step is left out
+    lines = every.read_text().splitlines()
+    assert [l for l in lines if not l.startswith("%")] == [
+        l.strip() for l in SESSION.splitlines()]           # `save` itself is not written
+    i = lines.index("declare r : A -> B.")
+    assert lines[i - 3:i] == ["% error:", "% 'r' not declared: B is a proposition, not a sort.",
+                              "% > B is a proposition, not a sort."]
+    refusal = lines[:lines.index("elim x.", lines.index("argument a3 : (B)."))]
+    refusal = refusal[max(i for i, l in enumerate(refusal) if l == "% refused:"):]
+    assert all(l == "%" or l.startswith("% ") for l in refusal[1:])
+    assert "Nothing to elim." in "\n".join(refusal)            # Fellowship's own reply
+    assert lines[-2].startswith("% refused: `start argument` is gone")
+
+
+def test_a_saved_session_replays(prover, tmp_path):
+    interpreter = Interpreter(prover, live=True)
+    for item in parse_units(SESSION + "argument a4 : (A -> B).\nelim x.\n"):
+        interpreter.execute(item)
+    saved = tmp_path / "s.fspy"
+    interpreter.write_transcript(str(saved))
+    assert saved.read_text().splitlines()[-1].startswith("% 'a4' was still being recorded")
+    prover.new_document()
+    out = list(Interpreter(prover).run(saved.read_text()))
+    assert all(o.status in ("ok", "comment") for o in out)
+    assert set(prover.arguments) == {"a2", "a3"}
+
+
+def test_a_refused_live_step_carries_fellowships_reply(prover):
+    interpreter = Interpreter(prover, live=True)
+    out = list(interpreter.run("lk.\ndeclare A, B : bool.\nargument a : (A -> B).\naxiom nonsense.\n"))
+    step = out[-1]
+    assert step.status == "refused"
+    assert "nonsense is neither in your hypothesis nor in your conclusion." in step.message
+    assert "1 goal yet to prove!" in step.message              # the goals, as Fellowship shows them
+    assert ";;BEGIN_ML_DATA;;" not in step.message
+    script = list(Interpreter(prover).run("lk.\nfrobnicate.\n"))
+    assert script[-1].status == "error" and "\n" not in script[-1].message   # scripts: one line
+
+
+# -- a script with the REPL's output (--verbose, --prompt-on-error) ------------
+
+VERBOSE_SCRIPT = """# a session
+lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument a : (A -> B).
+axiom nonsense.
+axiom r.
+dixi.
+elim x.
+"""
+
+
+def _type_at_the_prompt(monkeypatch, lines):
+    """The REPL's line reader fed ``lines``, each echoed after its prompt as
+    a terminal shows it."""
+    from wrap import cli
+    typed = iter(lines)
+
+    def keyboard(prompt):
+        line = next(typed, None)
+        if line is None:
+            raise EOFError
+        print(prompt + line)
+        return line.strip()
+    monkeypatch.setattr(cli, "_read_line", keyboard)
+    monkeypatch.setattr(cli, "_setup_readline", lambda: None)
+
+
+def test_a_verbose_script_prints_what_the_repl_prints(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    verbose = capsys.readouterr().out
+    _type_at_the_prompt(monkeypatch, VERBOSE_SCRIPT.splitlines())
+    cli.interactive_mode(cli.setup_prover())
+    by_hand = capsys.readouterr().out
+    stop = f"Stopped at {script}:9.\n"          # `elim x.` outside an argument: a script stops
+    assert verbose.endswith(stop)
+    assert (verbose[:-len(stop)] + "\nEOFError: No input detected. Exiting interactive mode.\n"
+            == by_hand)
+    assert "nonsense is neither in your hypothesis" in verbose        # Fellowship's reply
+    assert "1 goal yet to prove!" in verbose                           # the goals
+
+
+def test_a_verbose_script_still_stops_on_a_prover_error(capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text("lk.\nfrobnicate.\ndeclare A : bool.\n")
+    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    out = capsys.readouterr().out
+    assert out.rstrip().endswith(f"Stopped at {script}:2.")
+    assert "acdc> declare A" not in out
+
+
+def test_load_with_prompt_on_error_opens_the_prompt_where_it_stopped(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script, fixed = tmp_path / "s.fspy", tmp_path / "fixed.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    _type_at_the_prompt(monkeypatch, ["axiom r.", "dixi.", f'save "{fixed}".'])
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script),
+                                     "--prompt-on-error"])
+    cli.main()
+    out = capsys.readouterr().out
+    assert "acdc (recording)> axiom nonsense." in out             # --load is verbose
+    assert f"Stopped at {script}:6; the prompt is open there." in out
+    assert "acdc (recording)> axiom r." in out                     # still inside 'a'
+    assert fixed.read_text().splitlines() == [
+        "# a session", "lk.", "declare A, B : bool.", "declare r : (A -> B).",
+        "argument a : (A -> B).", "axiom r.", "dixi."]
+
+
+def test_load_without_prompt_on_error_exits(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text(VERBOSE_SCRIPT)
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script)])
+    with pytest.raises(SystemExit, match=r"load: stopped at .*s\.fspy:6\.$"):
+        cli.main()
+    assert "nonsense is neither in your hypothesis" in capsys.readouterr().out
+    monkeypatch.setattr("sys.argv", ["acdc", "--interactive", "--load", str(script), "--silent"])
+    with pytest.raises(SystemExit, match="load: stopped: .*nonsense"):
+        cli.main()
+    out = capsys.readouterr().out
+    assert "acdc>" not in out and "nonsense is neither" not in out
+
+
+def test_load_at_the_prompt_is_verbose_unless_silent(monkeypatch, capsys, tmp_path):
+    from wrap import cli
+    script = tmp_path / "s.fspy"
+    script.write_text("lk.\ndeclare A : bool.\n")
+    _type_at_the_prompt(monkeypatch, [f'load "{script}".', f'load silent "{script}".'])
+    cli.interactive_mode(cli.setup_prover())
+    out = capsys.readouterr().out
+    assert out.count("acdc> declare A : bool.") == 1               # only the first load
+
+
+# -- proof steps outside an argument -------------------------------------------
+
+def test_a_step_outside_an_argument_is_refused(prover, tmp_path):
+    from wrap.prover import StepOutsideArgument
+    interpreter = Interpreter(prover, live=True)
+    out = list(interpreter.run("lk.\ndeclare A : bool.\nelim x.\nnext.\ndiscard theorem.\n"))
+    assert [o.status for o in out] == ["ok", "ok", "error", "error", "error"]
+    assert all(isinstance(o.error, StepOutsideArgument) for o in out[2:])
+    assert "Where is the goal ?" in out[2].message           # Fellowship's reply, in the REPL
+    saved = tmp_path / "s.fspy"
+    interpreter.write_transcript(str(saved))
+    assert saved.read_text().splitlines() == ["lk.", "declare A : bool."]
+
+
+def test_the_api_refuses_a_step_outside_an_argument(prover):
+    from wrap.service import ContentRefused, Service
+    svc = Service.of(prover)
+    svc.command("declare A : bool.")
+    with pytest.raises(ContentRefused, match="is a proof step"):
+        svc.command("elim x.")
+    with pytest.raises(ContentRefused, match="is a proof step"):
+        svc.command("qed.")
+
+
+def test_the_check_points_steps_after_a_stated_claim_to_prove(prover):
+    from wrap.service import Service
+    text = "lk.\ndeclare A : bool.\ntheorem t : (A -> A).\n{}elim x.\naxiom x.\nqed.\n"
+    report = Service.of(prover).check(text.format(""))
+    assert not report.ok
+    assert [o.status for o in report.entries[3:]] == ["error", "error", "refused"]
+    assert all("`prove t.` opens its proof" in o.message for o in report.entries[3:])
+    report = Service.of(prover).check(text.format("prove t.\n"))
+    assert report.ok and report.entries[-1].message == "'t' proved: A->A."
+
+
+def test_prove_reopens_a_first_order_argument_in_the_repl(prover):
+    # The stored conclusion is printed (`P x`); Fellowship reads only `P[x]`.
+    text = """lk.
+declare i : type.
+declare P, Q : i -> bool.
+declare upd : i -> bool -> bool.
+declare c : i.
+declare B : bool.
+argument a : (forall x:i, P[x] -> Q[x]).
+elim y.
+dixi.
+prove a.
+elim z.
+dixi.
+argument u : (upd[c][B]).
+dixi.
+prove u.
+dixi.
+argument w : (forall x:i, P x -> P x).
+dixi.
+"""
+    out = list(Interpreter(prover, live=True).run(text))
+    assert [(o.text, o.status) for o in out if o.status != "ok"] == []
+    assert prover.arguments["a"].conclusion == "forall x:i,P x->Q x"
+
+
+@pytest.mark.parametrize("text, target, rest", [
+    # a quantified proposition has spaces: in parentheses it runs to the
+    # closing one, and the options after it stay options
+    ("graph issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) all",
+     "issue :(exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y]))", {"whole": True}),
+    ("evaluate issue (exists x:Pub, Dr [x]): credulous 2",
+     "issue (exists x:Pub, Dr [x]):", {"mode": "credulous", "witness": 2}),
+    ("label issue :A preferred", "issue :A", {"semantics": "preferred"}),
+])
+def test_an_issue_target_in_parentheses_may_contain_spaces(text, target, rest):
+    c = parse(text)
+    assert c["target"] == target
+    assert all(c[k] == v for k, v in rest.items())
+
+
+def test_an_issue_target_with_open_parentheses_is_refused():
+    with pytest.raises(SyntaxRefused, match="parentheses do not close"):
+        parse("graph issue :(A -> B")

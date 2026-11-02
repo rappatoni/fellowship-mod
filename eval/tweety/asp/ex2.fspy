@@ -1,0 +1,69 @@
+# Tweety lp-asp ex2.asp:
+# obj(a).
+# obj(b).
+# 
+# p(D) :- obj(D), not q(D).
+# q(D) :- r(D), not p(D).
+# r(a).
+lk.
+declare Obj_a, Obj_b, P_a, P_b, Q_a, Q_b, R_a : bool.
+declare r0_rule : (Obj_a).
+declare r1_rule : (Obj_b).
+declare r2_rule : (Obj_a -> (Q_a -> false) -> P_a).
+declare r3_rule : (Obj_b -> (Q_b -> false) -> P_b).
+declare r4_rule : (R_a -> (P_a -> false) -> Q_a).
+declare r6_rule : (R_a).
+# r0 (strict): Obj_a
+argument r0 : (Obj_a).
+axiom r0_rule.
+dixi.
+# r1 (strict): Obj_b
+argument r1 : (Obj_b).
+axiom r1_rule.
+dixi.
+# r2 (strict): Obj_a -> (Q_a -> false) -> P_a
+argument r2 : (P_a).
+cut (Obj_a -> (Q_a -> false) -> P_a) th.
+axiom r2_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Q_a) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r3 (strict): Obj_b -> (Q_b -> false) -> P_b
+argument r3 : (P_b).
+cut (Obj_b -> (Q_b -> false) -> P_b) th.
+axiom r3_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Q_b) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r4 (strict): R_a -> (P_a -> false) -> Q_a
+argument r4 : (Q_a).
+cut (R_a -> (P_a -> false) -> Q_a) th.
+axiom r4_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (P_a) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r6 (strict): R_a
+argument r6 : (R_a).
+axiom r6_rule.
+dixi.

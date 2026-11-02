@@ -1,0 +1,23 @@
+# Predicate circumscription proper: minimise Ab over the domain,
+#   forall x, Bird x & ~Ab x -> Flies x,  Bird tweety,
+# and conclude a universal statement about the extension of Ab (here:
+# nothing is abnormal, forall x, ~Ab x). First order throughout.
+lk.
+declare D : type.
+declare tweety : D.
+declare Bird, Ab, Flies : D -> bool.
+declare birds_fly : (forall x:D, Bird [x] -> (Ab [x] -> false) -> Flies [x]).
+declare bird_tweety : (Bird [tweety]).
+argument none_abnormal : (forall x:D, Ab [x] -> false).
+by default.
+dixi.
+argument flies : (Flies [tweety]).
+cut (forall x:D, Bird [x] -> (Ab [x] -> false) -> Flies [x]) r.
+axiom birds_fly.
+elim [tweety].
+elim.
+axiom bird_tweety.
+elim.
+next.
+axiom r.
+dixi.

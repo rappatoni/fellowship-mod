@@ -1,0 +1,22 @@
+== literature/bug_falsum_cell.fspy: check ok=True (0.1s)
+-- x1: issue B[t]; 5 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+-- x2: issue B[t]; 5 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+== done in 0.6s

@@ -32,6 +32,10 @@ from core.ac.prop import (
     SArr, SProp, SSet, SSym, TApp, TSym,
 )
 
+#: The names a site has in a labelled term (core/comp/labelled.py,
+#: ``site_for_label``).
+SITE_LABELS = ("IN", "OUT", "UNDEC")
+
 GRAMMAR = r"""
 // ===================== propositions =====================================
 // Precedence mirrors core.ml's pretty_prop and parser.mly, which agree:
@@ -113,12 +117,19 @@ pairfo:     "(" foterm "," term ")"
 // what core.ml:499 emits.
 destruct:   "(" NAME ":" sort ")" "." context
 
-goal:       "?" number annot?
-deleg:      "!" number annot?
-laog:       number annot? "?"
-geled:      number annot? "!"
+goal:       "?" site annot?
+deleg:      "!" site annot?
+laog:       site annot? "?"
+geled:      site annot? "!"
 ?annot:     ":" prop
+// A site is named by a number - before labelling a site is a nominal, the
+// one obligation or delegation of its statement - or, in a labelled term
+// (an evaluated normal form), by its label: IN, OUT or UNDEC.  The label is
+// read as a NAME and checked in the transformer, so the three words stay
+// free as identifiers everywhere else (tasks.org, aida-site-names-round-trip).
+?site:      number | label
 number:     NUMBER ("." NUMBER)*
+label:      NAME
 
 // ===================== lexis ============================================
 // The ASCII spellings are what machine mode emits; the unicode ones are what
@@ -151,7 +162,7 @@ NUMBER:     /[0-9]+/
 from functools import lru_cache
 
 from lark import Lark, Transformer, v_args
-from lark.exceptions import LarkError
+from lark.exceptions import LarkError, VisitError
 
 
 class SyntaxErrorInSource(PropError):
@@ -195,7 +206,13 @@ def parse(text: str, start: str):
         raise SyntaxErrorInSource(
             f"cannot parse {text!r} as a {start}: {error}"
         ) from error
-    return _Build().transform(tree)
+    try:
+        return _Build().transform(tree)
+    except VisitError as error:
+        if isinstance(error.orig_exc, SyntaxErrorInSource):
+            raise SyntaxErrorInSource(f"cannot parse {text!r} as a {start}: "
+                                      f"{error.orig_exc}") from error.orig_exc
+        raise
 
 
 @v_args(inline=True)
@@ -321,6 +338,13 @@ class _Build(Transformer):
 
     def number(self, *parts):
         return ".".join(str(part) for part in parts)
+
+    def label(self, name):
+        if str(name) not in SITE_LABELS:
+            raise SyntaxErrorInSource(
+                f"a site is named by a number, or in a labelled term by its label "
+                f"({', '.join(SITE_LABELS)}); not '{name}'")
+        return str(name)
 
 
 def _text(prop):

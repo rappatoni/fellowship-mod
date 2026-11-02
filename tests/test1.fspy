@@ -9,6 +9,7 @@ declare a2: (StrikeMetro).
 declare ax : (~EfficientMetro).
 
 theorem arg1: (UseMetro).
+prove arg1.
 cut (EfficientMetro -> UseMetro) th.
 axiom r1.
 elim.
@@ -17,6 +18,7 @@ axiom.
 qed.
 
 theorem arg2: (~EfficientMetro).
+prove arg2.
 cut (StrikeMetro -> ~EfficientMetro) th.
 axiom r2.
 elim.
@@ -25,6 +27,7 @@ axiom.
 qed.
 
 theorem inconsistency: (false).
+prove inconsistency.
 cut (EfficientMetro) th.
 axiom a1.
 cut (~EfficientMetro) th2.

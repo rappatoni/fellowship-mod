@@ -1,0 +1,41 @@
+# fo_rio.fspy with compliance: the informing eventuality e2 really exists,
+# and an argument introduces the existential with e2 as its witness.
+lk.
+declare Ev, Ag : type.
+declare e1, e2 : Ev.
+declare ctrl, subj : Ag.
+declare Process, RInform : Ev -> Ag -> Ag -> bool.
+declare Obliged, Violated : Ag -> Ag -> bool.
+declare process : (Process [e1] [ctrl] [subj]).
+declare informed : (RInform [e2] [ctrl] [subj]).
+declare norm : (forall e:Ev, forall x:Ag, forall y:Ag, Process [e] [x] [y] -> Obliged [x] [y]).
+declare violation_rule : (forall x:Ag, forall y:Ag, Obliged [x] [y] -> ((exists e:Ev, RInform [e] [x] [y]) -> false) -> Violated [x] [y]).
+argument obliged : (Obliged [ctrl] [subj]).
+cut (forall e:Ev, forall x:Ag, forall y:Ag, Process [e] [x] [y] -> Obliged [x] [y]) r.
+axiom norm.
+elim [e1].
+elim [ctrl].
+elim [subj].
+elim.
+axiom process.
+axiom r.
+dixi.
+argument violated : (Violated [ctrl] [subj]).
+cut (forall x:Ag, forall y:Ag, Obliged [x] [y] -> ((exists e:Ev, RInform [e] [x] [y]) -> false) -> Violated [x] [y]) r.
+axiom violation_rule.
+elim [ctrl].
+elim [subj].
+elim.
+next.
+elim.
+elim h.
+cut (exists e:Ev, RInform [e] [ctrl] [subj]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument complied : (exists e:Ev, RInform [e] [ctrl] [subj]).
+elim [e2].
+axiom informed.
+dixi.

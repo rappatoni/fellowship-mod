@@ -1,0 +1,20 @@
+# Subtraction (co-implication): A - B reads "A and not B". Refuting A - A,
+# i.e. ~(A /\ ~A), is a theorem; refuting A - B is not, unless B follows
+# from A, which a dialectical move may supply.
+lk.
+declare A, B : bool.
+counterargument c1 : (A - A).
+elim h.
+axiom h.
+dixi.
+# The skeptic's challenge: refute A - B; it leaves a refutation of A owed
+# under the continuation h for B.
+counterargument c2 : (A - B).
+elim h.
+dixi.
+# Non-contradiction for an arbitrary statement, claimed and then argued.
+counterargument c3 : (B - B).
+dixi.
+counterargument c3s : (B - B).
+elim k.
+dixi.

@@ -1,0 +1,11 @@
+n= 1 paths=2^1 label   0.040s  evaluate   0.007s  verdict value
+n= 2 paths=2^2 label   0.104s  evaluate   0.009s  verdict value
+n= 3 paths=2^3 label   0.173s  evaluate   0.020s  verdict value
+n= 4 paths=2^4 label   0.245s  evaluate   0.032s  verdict value
+n= 5 paths=2^5 label   0.348s  evaluate   0.082s  verdict value
+n= 6 paths=2^6 label   0.395s  evaluate   0.165s  verdict value
+n= 7 paths=2^7 label   0.511s  evaluate   0.361s  verdict value
+n= 8 paths=2^8 label   0.729s  evaluate   0.828s  verdict value
+n= 9 paths=2^9 label   1.045s  evaluate   1.725s  verdict value
+n=10 paths=2^10 label   1.739s  evaluate   4.176s  verdict value
+n=11 paths=2^11 label   3.715s  evaluate   8.378s  verdict value

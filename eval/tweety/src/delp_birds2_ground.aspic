@@ -1,0 +1,7 @@
+-> Bird_opus
+-> Penguin_tweety
+-> Wings_tweety
+Penguin_tweety -> Bird_tweety
+Bird_opus => Fly_opus
+Bird_tweety => Fly_tweety
+Penguin_tweety => !Fly_tweety

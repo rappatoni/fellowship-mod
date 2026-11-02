@@ -1,0 +1,140 @@
+== literature/debates_tweety.fspy: check ok=False (0.1s)
+   line 55: refused: debate 'd_bad': support: 'penguinsdont' concludes Flies:, but 'birdsfly' has no node on Flies: to support.
+   line 65: refused: debate 'd_bad2': undermine: 'penguinsdont' concludes Flies:, but 'birdsfly' has no presumption on :Flies to attack.
+-- birdsfly: issue Flies[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   preferred issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   stable    issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+-- penguinsdont: issue Flies[c]; 8 edges
+   grounded  issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   preferred issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   stable    issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+-- exception: issue Bird->Flies[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   preferred issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   stable    issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+-- d_rebut: issue Flies[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=UNDEC Flies[t]=UNDEC Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> open      ?UNDEC:Flies
+   preferred issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- d_full: issue Flies[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   preferred issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   stable    issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Penguin->~(Bird->Flies)[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+-- d_bad: issue Flies[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   preferred issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- d_rebut2: issue Flies[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=UNDEC Flies[t]=UNDEC Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> open      ?UNDEC:Flies
+   preferred issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['OUT', 'IN']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      ?UNDEC:Flies
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- d_bad2: issue Flies[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   preferred issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+-- d_con: issue Flies[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=UNDEC Flies[t]=UNDEC Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> open      UNDEC:Flies?
+   preferred issue: ['IN', 'OUT']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=IN Flies[t]=OUT Penguin[t]=IN
+      [2] Bird->Flies[t]=IN Penguin->~Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[c]=OUT Flies[t]=IN Penguin[t]=IN
+      skeptical -> open      UNDEC:Flies?
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+-- d_alone: issue Flies[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   preferred issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+   stable    issue: ['IN']
+      [1] Bird->Flies[t]=IN Penguin->Bird[t]=IN Bird[t]=IN Flies[t]=IN Penguin[t]=IN
+      skeptical -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+      credulous -> value     μbirdsfly:Flies.<!IN:Bird->Flies||μb1:Bird.<penguins_are_birds:Penguin->Bird||penguin:Penguin*b1:Bird>*birdsfly:Flies>
+== done in 7.3s

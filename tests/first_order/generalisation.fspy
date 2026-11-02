@@ -1,0 +1,26 @@
+# Inductive generalisation with real quantifier steps (cf.
+# opaque.fspy, which used a declared schema instance): gen presumes the
+# rule, pc instantiates it at c, refuted refutes it by the counter-instance d.
+lk.
+declare D : type.
+declare c, d : D.
+declare Pr : D -> bool.
+declare not_pd : (Pr [d] -> false).
+argument gen : (forall x:D, Pr [x]).
+by default.
+dixi.
+argument pc : (Pr [c]).
+cut (forall x:D, Pr [x]) r.
+by default.
+next.
+elim [c].
+axiom r.
+dixi.
+counterargument refuted : (forall x:D, Pr [x]).
+elim [d].
+cut (Pr [d] -> false) g.
+axiom not_pd.
+elim g.
+axiom.
+elim.
+dixi.

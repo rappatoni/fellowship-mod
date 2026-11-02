@@ -1,0 +1,42 @@
+# aida-fo-open-source-horn: a cuts the closed claim under forall y while
+# holding n : Dr y -> false; the cut stays part of a (exposed, it would
+# mention y outside its binder, and Fellowship refused its replay).
+lk.
+declare Pub : type.
+declare c : Pub.
+declare Dr : Pub -> bool.
+argument peirce : (forall z:Pub, ((Dr [z] -> false) -> Dr [z]) -> Dr [z]).
+dixi.
+# b: a non-drinker is a witness (ex falso).
+argument b : (forall z:Pub, (Dr [z] -> false) -> (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y]))).
+elim z.
+elim n.
+elim [z].
+elim d.
+cut (Dr [z] -> false) g.
+axiom n.
+elim.
+axiom d.
+elim.
+dixi.
+# a: witness c; for an arbitrary y, Dr y by Peirce: assuming not Dr y,
+# offer the claim again by b at y.
+argument a : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+elim [c].
+elim h.
+elim y.
+cut (forall z:Pub, ((Dr [z] -> false) -> Dr [z]) -> Dr [z]) p.
+next.
+elim [y].
+elim.
+elim n.
+cut (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) k.
+cut (forall z:Pub, (Dr [z] -> false) -> (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y]))) l.
+next.
+elim [y].
+elim.
+axiom n.
+axiom l.
+next.
+axiom p.
+dixi.

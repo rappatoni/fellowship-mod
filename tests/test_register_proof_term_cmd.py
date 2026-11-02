@@ -1,3 +1,5 @@
+import threading
+
 from core.ac.grammar import Grammar, ProofTermTransformer
 from core.ac.ast import Deleg, Geled, Mu
 from wrap.cli import _parse_register_command, register_argument_cmd
@@ -9,6 +11,10 @@ class _FakeProver:
         self.declarations = {}
         self.arguments = {}
         self.echo_notes = False
+        self.lock = threading.RLock()       # a session serialises its calls
+
+    def claim_name(self, *args, **kwargs):
+        pass
 
     def send_command(self, cmd, *args, **kwargs):
         self.commands.append(cmd)

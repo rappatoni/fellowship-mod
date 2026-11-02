@@ -1,0 +1,9 @@
+== literature2/ec_fo.fspy: check ok=True (0.0s)
+-- holds: issue HoldsAt alive t1[t]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μholds:HoldsAt alive t1.<ec1:forall e:E,forall f:F,forall s:T,forall t:T,Happens e s->Initiates e f s->HoldsAt f t||birth*alive*t0*t1*happens:Happens birth t0*initiates:Initiates birth alive t0*holds:HoldsAt alive t1>
+      credulous -> value     μholds:HoldsAt alive t1.<ec1:forall e:E,forall f:F,forall s:T,forall t:T,Happens e s->Initiates e f s->HoldsAt f t||birth*alive*t0*t1*happens:Happens birth t0*initiates:Initiates birth alive t0*holds:HoldsAt alive t1>
+   preferred issue: ['IN']
+      skeptical -> value     μholds:HoldsAt alive t1.<ec1:forall e:E,forall f:F,forall s:T,forall t:T,Happens e s->Initiates e f s->HoldsAt f t||birth*alive*t0*t1*happens:Happens birth t0*initiates:Initiates birth alive t0*holds:HoldsAt alive t1>
+      credulous -> value     μholds:HoldsAt alive t1.<ec1:forall e:E,forall f:F,forall s:T,forall t:T,Happens e s->Initiates e f s->HoldsAt f t||birth*alive*t0*t1*happens:Happens birth t0*initiates:Initiates birth alive t0*holds:HoldsAt alive t1>
+== done in 0.1s

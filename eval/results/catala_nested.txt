@@ -1,0 +1,41 @@
+== literature/catala_nested.fspy: check ok=True (0.1s)
+-- base: issue Eligible[c]; 6 edges
+   grounded  issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+   preferred issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+   stable    issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+-- kids: issue Eligible[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+   preferred issue: ['OUT']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+   stable    issue: ['OUT']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN Children[t]=IN Eligible[c]=IN Eligible[t]=OUT HighIncome[t]=IN
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+-- income: issue Children->Eligible[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN HighIncome[t]=IN
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+   preferred issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN HighIncome[t]=IN
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+   stable    issue: ['IN']
+      [1] ~(Children->Eligible)[t]=IN Children->Eligible[c]=IN Children->Eligible[t]=OUT HighIncome->~(Children->Eligible)[t]=IN HighIncome[t]=IN
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+== done in 0.5s

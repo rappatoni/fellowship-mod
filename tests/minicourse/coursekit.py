@@ -133,7 +133,7 @@ def debate_term(script, name):
 
 
 def scaffold_at(term, site):
-    """The scaffold whose original is the bare site ``site`` ("u2"): the
+    """The scaffold whose original is the bare site ``site`` ("2"): the
     binder whose command has that site on its own side."""
     from core.ac.ast import Deleg, Geled, Goal, Laog, Mu, Mutilde, ProofTerm
 

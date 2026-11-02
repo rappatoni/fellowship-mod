@@ -1,0 +1,52 @@
+# Tweety lp-asp ex1.asp:
+# p :- not r.
+# r :- -q, not b.
+# -q :- b.
+# b.
+lk.
+declare B, P, Q, R : bool.
+declare r0_rule : ((R -> false) -> P).
+declare r1_rule : (~Q -> (B -> false) -> R).
+declare r2_rule : (B -> ~Q).
+declare r3_rule : (B).
+# r0 (strict): (R -> false) -> P
+argument r0 : (P).
+cut ((R -> false) -> P) th.
+axiom r0_rule.
+elim.
+elim h0.
+cut (R) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+# r1 (strict): ~Q -> (B -> false) -> R
+argument r1 : (R).
+cut (~Q -> (B -> false) -> R) th.
+axiom r1_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (B) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r2 (strict): B -> ~Q
+counterargument r2 : (Q).
+cut (~Q) x.
+cut (B -> ~Q) th.
+axiom r2_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# r3 (strict): B
+argument r3 : (B).
+axiom r3_rule.
+dixi.

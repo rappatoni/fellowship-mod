@@ -1,0 +1,67 @@
+# NecessityBipolarArgumentation (Polberg & Oren 2014, modified):
+# attacks e -> a, b -> a, c -> d; necessity supports a => c (c needs a) and
+# b => b. c is argued only from a (an owed premise) by a presumed link.
+# Tweety: preferred {b,d,e}.
+lk.
+declare A, B, C, D, E : bool.
+declare att_e_a_rule : (E -> ~A).
+declare att_b_a_rule : (B -> ~A).
+declare att_c_d_rule : (C -> ~D).
+# arg_a (defeasible): A
+argument arg_a : (A).
+by default.
+dixi.
+# arg_b (defeasible): B
+argument arg_b : (B).
+by default.
+dixi.
+# arg_d (defeasible): D
+argument arg_d : (D).
+by default.
+dixi.
+# arg_e (defeasible): E
+argument arg_e : (E).
+by default.
+dixi.
+# need_a_c (defeasible): A -> C
+argument need_a_c : (C).
+cut (A -> C) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+dixi.
+# att_e_a (strict): E -> ~A
+counterargument att_e_a : (A).
+cut (~A) x.
+cut (E -> ~A) th.
+axiom att_e_a_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_b_a (strict): B -> ~A
+counterargument att_b_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom att_b_a_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_c_d (strict): C -> ~D
+counterargument att_c_d : (D).
+cut (~D) x.
+cut (C -> ~D) th.
+axiom att_c_d_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

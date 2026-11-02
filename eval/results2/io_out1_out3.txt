@@ -1,0 +1,28 @@
+== literature2/io_out1_out3.fspy: check ok=True (0.0s)
+-- ob: issue Ob[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] A->Ob[t]=IN A[t]=IN Ob[t]=IN
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+   preferred issue: ['IN']
+      [1] A->Ob[t]=IN A[t]=IN Ob[t]=IN
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+   stable    issue: ['IN']
+      [1] A->Ob[t]=IN A[t]=IN Ob[t]=IN
+      skeptical -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+      credulous -> value     μob:Ob.<n_ab:A->Ob||a:A*ob:Ob>
+-- oc: issue Oc[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] B->Oc[t]=IN B[t]=OUT Oc[t]=OUT
+      skeptical -> open      ?OUT:Oc
+      credulous -> open      ?OUT:Oc
+   preferred issue: ['OUT']
+      [1] B->Oc[t]=IN B[t]=OUT Oc[t]=OUT
+      skeptical -> open      ?OUT:Oc
+      credulous -> open      ?OUT:Oc
+   stable    issue: ['OUT']
+      [1] B->Oc[t]=IN B[t]=OUT Oc[t]=OUT
+      skeptical -> open      ?OUT:Oc
+      credulous -> open      ?OUT:Oc
+== done in 0.2s

@@ -1,0 +1,70 @@
+# EafReasonerExample.java (af): arguments a, b, c, d; attacks a->b, b->a, c->b, c->d, d->c
+lk.
+declare A, B, C, D : bool.
+declare att_a_b : (A -> ~B).
+declare att_b_a : (B -> ~A).
+declare att_c_b : (C -> ~B).
+declare att_c_d : (C -> ~D).
+declare att_d_c : (D -> ~C).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom att_b_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_b : (B).
+cut (~B) x.
+cut (C -> ~B) th.
+axiom att_c_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_d : (D).
+cut (~D) x.
+cut (C -> ~D) th.
+axiom att_c_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_c : (C).
+cut (~C) x.
+cut (D -> ~C) th.
+axiom att_d_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

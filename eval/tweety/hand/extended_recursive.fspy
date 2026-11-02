@@ -1,0 +1,125 @@
+# RecursiveExtendedTheoryExample: as extended, and f attacks the
+# attack (e,(c,d)). Tweety: complete [{e,f}, {b,d,e,f}, {a,c,e,f}] (with the
+# accepted attacks).
+lk.
+declare A, B, C, D, E, F : bool.
+# arg_a (defeasible): A
+argument arg_a : (A).
+by default.
+dixi.
+# arg_b (defeasible): B
+argument arg_b : (B).
+by default.
+dixi.
+# arg_c (defeasible): C
+argument arg_c : (C).
+by default.
+dixi.
+# arg_d (defeasible): D
+argument arg_d : (D).
+by default.
+dixi.
+# arg_e (defeasible): E
+argument arg_e : (E).
+by default.
+dixi.
+# arg_f (defeasible): F
+argument arg_f : (F).
+by default.
+dixi.
+# att_a_b (defeasible): A -> ~B
+counterargument att_a_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_b_a (defeasible): B -> ~A
+counterargument att_b_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_c_d (defeasible): C -> ~D
+counterargument att_c_d : (D).
+cut (~D) x.
+cut (C -> ~D) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_d_c (defeasible): D -> ~C
+counterargument att_d_c : (C).
+cut (~C) x.
+cut (D -> ~C) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# u_c_ba (defeasible): C -> ~(B -> ~A)
+counterargument u_c_ba : ((B -> ~A)).
+cut (~(B -> ~A)) x.
+cut (C -> ~(B -> ~A)) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# u_d_ab (defeasible): D -> ~(A -> ~B)
+counterargument u_d_ab : ((A -> ~B)).
+cut (~(A -> ~B)) x.
+cut (D -> ~(A -> ~B)) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# u_e_cd (defeasible): E -> ~(C -> ~D)
+counterargument u_e_cd : ((C -> ~D)).
+cut (~(C -> ~D)) x.
+cut (E -> ~(C -> ~D)) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# u_f_ecd (defeasible): F -> ~(E -> ~(C -> ~D))
+counterargument u_f_ecd : ((E -> ~(C -> ~D))).
+cut (~(E -> ~(C -> ~D))) x.
+cut (F -> ~(E -> ~(C -> ~D))) th.
+by default.
+next.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

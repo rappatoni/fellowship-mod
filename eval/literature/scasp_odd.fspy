@@ -1,0 +1,20 @@
+# s(CASP): p :- not p.  r.   The odd loop has no stable model, so the
+# program has none: ?- p and ?- r both have no models (the NMR check).
+lk.
+declare P, R : bool.
+declare rule_p : ((P -> false) -> P).
+declare r_fact : (R).
+argument arg_p : (P).
+cut ((P -> false) -> P) th.
+axiom rule_p.
+elim.
+elim h.
+cut (P) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument arg_r : (R).
+axiom r_fact.
+dixi.

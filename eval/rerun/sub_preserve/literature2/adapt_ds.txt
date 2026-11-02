@@ -1,0 +1,52 @@
+== literature2/adapt_ds.fspy: check ok=True (0.1s)
+-- p: issue P[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+   preferred issue: ['IN']
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+   stable    issue: ['IN']
+      skeptical -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+      credulous -> value     μp:P.<src_p:Sp->P||!IN:Sp*p:P>
+-- r: issue R[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:R
+      credulous -> open      ?UNDEC:R
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:R
+      credulous -> value     μr:R.<src_r:Sr->R||!IN:Sr*r:R>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:R
+      credulous -> value     μr:R.<src_r:Sr->R||!IN:Sr*r:R>
+-- nr: issue R[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:R?
+      credulous -> open      UNDEC:R?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:R?
+      credulous -> value     μ'nr:R.<src_nr:Snr->~R||!IN:Snr*nr:R*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:R?
+      credulous -> value     μ'nr:R.<src_nr:Snr->~R||!IN:Snr*nr:R*_F_>
+-- q: issue Q[t]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+   preferred issue: ['IN']
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+   stable    issue: ['IN']
+      skeptical -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+      credulous -> value     μq:Q.<ds_q:P->Q||μb1:P.<src_p:Sp->P||!IN:Sp*b1:P>*q:Q>
+-- s: issue S[t]; 7 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:S
+      credulous -> open      ?UNDEC:S
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:S
+      credulous -> value     μs:S.<ds_s:R->S||μb1:R.<src_r:Sr->R||!IN:Sr*b1:R>*s:S>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:S
+      credulous -> value     μs:S.<ds_s:R->S||μb1:R.<src_r:Sr->R||!IN:Sr*b1:R>*s:S>
+== done in 0.8s

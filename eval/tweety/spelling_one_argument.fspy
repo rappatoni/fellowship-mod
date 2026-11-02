@@ -1,0 +1,31 @@
+# aida-negation-spelling-in-unfolding inside ONE argument (found 2026-10-21
+# on Tweety's PlExample): the declared rule spells the negation A -> false,
+# the inline proof of it spells ~A (cut (~A) x, c3 : B -> ~A). `check`
+# accepts it, `graph c` (and label/evaluate) is refused: "Fellowship
+# rejected the unfolded term for 'c': a is neither in your hypothesis nor
+# in your conclusion". Spelled ~A throughout (as in tweety/logic, not_a)
+# the same proof labels IN and evaluates to a value.
+lk.
+declare A, B, C : bool.
+declare c1 : ((A -> false) -> C).
+declare c2 : (A -> B).
+declare c3 : (B -> ~A).
+argument c : (C).
+cut ((A -> false) -> C) th.
+axiom c1.
+elim.
+elim a.
+cut (~A) x.
+cut (B -> ~A) t1.
+axiom c3.
+elim.
+cut (A -> B) t2.
+axiom c2.
+elim.
+axiom a.
+axiom t2.
+axiom t1.
+elim.
+axiom.
+axiom th.
+dixi.

@@ -1,0 +1,28 @@
+# s(CASP): p :- not q.  q :- not p.  ?- p succeeds {p, not q}; ?- q
+# succeeds {q, not p} (two stable models).
+lk.
+declare P, Q : bool.
+declare rule_p : ((Q -> false) -> P).
+declare rule_q : ((P -> false) -> Q).
+argument arg_p : (P).
+cut ((Q -> false) -> P) th.
+axiom rule_p.
+elim.
+elim h.
+cut (Q) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument arg_q : (Q).
+cut ((P -> false) -> Q) th.
+axiom rule_q.
+elim.
+elim h.
+cut (P) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.

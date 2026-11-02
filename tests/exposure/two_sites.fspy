@@ -1,0 +1,33 @@
+% Two sites for the same statement in one body: the debate about A is
+% copied per site, and the axiom r the argument applies, which nobody
+% engages, stays as written (empty parts are left out).
+%
+%   two  : B from r : A->A->B and two presumptions of A
+%   aArg : A from rc : C->A and a presumption of C
+lk.
+declare A,B,C:bool.
+declare r:(A -> A -> B).
+declare rc:(C -> A).
+
+argument two : (B).
+cut (A -> A -> B) th.
+axiom r.
+elim.
+by default.
+next.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+argument aArg : (A).
+cut (C -> A) th.
+axiom rc.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+evaluate two.

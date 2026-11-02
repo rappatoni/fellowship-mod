@@ -15,27 +15,27 @@ declare r1: (A -> B).
 declare r3: (B -> A).
 declare rd: (D -> A).
 
-start argument pro B
+argument pro : (B).
 cut (A -> B) th.
 axiom r1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument other A
+argument other : (A).
 cut (D -> A) th.
 axiom rd.
 elim.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-start argument back A
+argument back : (A).
 cut (B -> A) th.
 axiom r3.
 elim.
 next.
 axiom.
-end argument
+dixi.

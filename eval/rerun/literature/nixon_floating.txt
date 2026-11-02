@@ -1,0 +1,62 @@
+== literature/nixon_floating.fspy: check ok=True (0.1s)
+-- dove: issue Dove[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=UNDEC Dove[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> open      ?UNDEC:Dove
+   preferred issue: ['OUT', 'IN']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> value     μdove:Dove.<!IN:Quaker->Dove||quaker:Quaker*dove:Dove>
+   stable    issue: ['OUT', 'IN']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Dove
+      credulous -> value     μdove:Dove.<!IN:Quaker->Dove||quaker:Quaker*dove:Dove>
+-- hawk: issue Dove[c]; 4 edges
+   grounded  issue: ['UNDEC']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=UNDEC Dove[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Dove?
+      credulous -> open      UNDEC:Dove?
+   preferred issue: ['IN', 'OUT']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Dove?
+      credulous -> value     μ'hawk:Dove.<!IN:Republican->~Dove||republican:Republican*μ'b1:~Dove.<b1:~Dove||hawk:Dove*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Quaker[t]=IN Republican[t]=IN
+      [2] Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      UNDEC:Dove?
+      credulous -> value     μ'hawk:Dove.<!IN:Republican->~Dove||republican:Republican*μ'b1:~Dove.<b1:~Dove||hawk:Dove*_F_>>
+-- pol1: issue Political[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=UNDEC Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=UNDEC Dove[t]=UNDEC Political[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Political
+      credulous -> open      ?UNDEC:Political
+   preferred issue: ['IN', 'IN']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=IN Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=OUT Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+   stable    issue: ['IN', 'IN']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=IN Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=OUT Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+-- pol2: issue Political[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=UNDEC Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=UNDEC Dove[t]=UNDEC Political[t]=UNDEC Quaker[t]=IN Republican[t]=IN
+      skeptical -> open      ?UNDEC:Political
+      credulous -> open      ?UNDEC:Political
+   preferred issue: ['IN', 'IN']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=IN Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=OUT Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+   stable    issue: ['IN', 'IN']
+      [1] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=IN Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=IN Dove[t]=OUT Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      [2] (Dove->false)->Political[t]=IN Dove->Political[t]=IN Dove->false[t]=OUT Quaker->Dove[t]=IN Republican->~Dove[t]=IN Dove[c]=OUT Dove[t]=IN Political[t]=IN Quaker[t]=IN Republican[t]=IN
+      skeptical -> value     !IN:Political
+      credulous -> value     μpol2:Political.<hawks_political:(Dove->false)->Political||λb1:Dove.μb2:false.<!IN:Republican->~Dove||republican:Republican*μ'b3:~Dove.<b3:~Dove||b1:Dove*_F_>>*pol2:Political>
+== done in 0.9s

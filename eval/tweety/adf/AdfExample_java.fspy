@@ -1,0 +1,49 @@
+# Tweety ADF (AdfExample_java): a := ~b; b := ~a; c := true; d := ~b and ~c
+lk.
+declare A, B, C, D : bool.
+declare rule_a_1 : ((B -> false) -> A).
+argument a_a_1 : (A).
+cut ((B -> false) -> A) th.
+axiom rule_a_1.
+elim.
+elim h0.
+cut (B) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+declare rule_b_2 : ((A -> false) -> B).
+argument a_b_2 : (B).
+cut ((A -> false) -> B) th.
+axiom rule_b_2.
+elim.
+elim h0.
+cut (A) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+declare fact_c_3 : (C).
+argument a_c_3 : (C).
+axiom fact_c_3.
+dixi.
+declare rule_d_4 : ((B -> false) -> (C -> false) -> D).
+argument a_d_4 : (D).
+cut ((B -> false) -> (C -> false) -> D) th.
+axiom rule_d_4.
+elim.
+elim h0.
+cut (B) k0.
+axiom h0.
+by default.
+next.
+elim.
+elim h1.
+cut (C) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.

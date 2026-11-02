@@ -1,0 +1,19 @@
+# Adaptive logic of inductive generalisation (Batens' IL): from P(a), P(b)
+# infer forall x P(x) unless a counter-instance is derivable. The
+# generalisation is a universally quantified conclusion: first order.
+lk.
+declare D : type.
+declare a, b, c : D.
+declare Pr : D -> bool.
+declare pa : (Pr [a]).
+declare pb : (Pr [b]).
+argument gen : (forall x:D, Pr [x]).
+by default.
+dixi.
+# A use of the generalisation at c.
+argument pc : (Pr [c]).
+cut (forall x:D, Pr [x]) g.
+next.
+elim [c].
+axiom g.
+dixi.

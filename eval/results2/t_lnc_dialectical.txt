@@ -1,0 +1,6 @@
+== literature/t_lnc_dialectical.fspy: check ok=True (0.1s)
+-- p1: issue ~(P-P)[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+== done in 0.4s

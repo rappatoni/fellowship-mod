@@ -1,0 +1,51 @@
+# Default justification logic (Pischke 2017, 2018): reasons are
+# justification terms, t : F, and an undercutter attacks a particular
+# reason, not the conclusion. Two witnesses support Robbery, w1 : R and
+# w2 : R. An undercutter of w1 alone ("w1 was not there") leaves R
+# justified by w2.
+# AIDA: a reason is an argument, but attacks reach statements, not
+# arguments. With one shared presumption (WitnessesReliable) the
+# undercutter hits both witnesses; with one presumption per witness
+# (Reliable1, Reliable2) it hits only w1, as in justification logic.
+lk.
+declare Robbery, Said1, Said2, Reliable, Reliable1, Reliable2, Absent1 : bool.
+declare said1 : (Said1).
+declare said2 : (Said2).
+declare absent1 : (Absent1).
+declare shared1 : (Reliable -> Said1 -> Robbery).
+declare shared2 : (Reliable -> Said2 -> Robbery).
+declare own1 : (Reliable1 -> Said1 -> Robbery).
+declare own2 : (Reliable2 -> Said2 -> Robbery).
+declare absent_undercuts_shared : (Absent1 -> ~Reliable).
+declare absent_undercuts_own : (Absent1 -> ~Reliable1).
+# Shared presumption.
+argument w1_shared : (Robbery).
+cut (Reliable -> Said1 -> Robbery) t.
+axiom shared1.
+elim.
+by default.
+next.
+elim.
+axiom said1.
+axiom t.
+dixi.
+argument w2_shared : (Robbery).
+cut (Reliable -> Said2 -> Robbery) t.
+axiom shared2.
+elim.
+by default.
+next.
+elim.
+axiom said2.
+axiom t.
+dixi.
+counterargument undercut_shared : (Reliable).
+cut (~Reliable) x.
+cut (Absent1 -> ~Reliable) th.
+axiom absent_undercuts_shared.
+elim.
+axiom absent1.
+axiom.
+elim.
+axiom.
+dixi.

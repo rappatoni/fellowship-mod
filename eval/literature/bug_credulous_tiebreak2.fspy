@@ -1,0 +1,54 @@
+# The credulous-tiebreak reproduction without an onus conflict: B is
+# refuted from a presumption of R, and R and S attack each other (an even
+# loop), so B is UNDEC under grounded. A is presumed, and sa supports A from
+# a presumption of B.
+lk.
+declare A, B, R, S : bool.
+declare b_a : (B -> A).
+declare r_nb : (R -> ~B).
+declare s_nr : (S -> ~R).
+declare r_ns : (R -> ~S).
+argument pa : (A).
+by default.
+dixi.
+argument sa : (A).
+cut (B -> A) t.
+axiom b_a.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument nb : (B).
+cut (~B) x.
+cut (R -> ~B) th.
+axiom r_nb.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument nr : (R).
+cut (~R) x.
+cut (S -> ~R) th.
+axiom s_nr.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument ns : (S).
+cut (~S) x.
+cut (R -> ~S) th.
+axiom r_ns.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.

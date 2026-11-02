@@ -1,0 +1,35 @@
+# Prakken (2016, "Rethinking the rationality postulates"), a counterexample
+# to closure and indirect consistency under preferred semantics when strict
+# rules may be rebutted: strict rules b -> ~m and m -> ~b, ordinary
+# (fallible) premises b and m. With unrestricted rebut {b, m} is admissible.
+# Here b and m are bare presumptions.
+lk.
+declare B, M : bool.
+declare bm : (B -> ~M).
+declare mb : (M -> ~B).
+argument b : (B).
+by default.
+dixi.
+argument m : (M).
+by default.
+dixi.
+counterargument not_m : (M).
+cut (~M) x.
+cut (B -> ~M) th.
+axiom bm.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument not_b : (B).
+cut (~B) x.
+cut (M -> ~B) th.
+axiom mb.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

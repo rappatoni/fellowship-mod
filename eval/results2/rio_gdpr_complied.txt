@@ -1,0 +1,41 @@
+== literature2/rio_gdpr_complied.fspy: check ok=True (0.1s)
+-- obliged: issue OInform_e1[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistProcess_e1[t]=IN
+      skeptical -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+      credulous -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+   preferred issue: ['IN']
+      [1] RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistProcess_e1[t]=IN
+      skeptical -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+      credulous -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+   stable    issue: ['IN']
+      [1] RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistProcess_e1[t]=IN
+      skeptical -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+      credulous -> value     μobliged:OInform_e1.<norm:RexistProcess_e1->OInform_e1||process_e1:RexistProcess_e1*obliged:OInform_e1>
+-- violation: issue Violation_e1[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] OInform_e1->(RexistInform_e2->false)->Violation_e1[t]=IN RexistInform_e2->false[t]=OUT RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistInform_e2[c]=OUT RexistInform_e2[t]=IN RexistProcess_e1[t]=IN Violation_e1[t]=OUT
+      skeptical -> open      ?OUT:Violation_e1
+      credulous -> open      ?OUT:Violation_e1
+   preferred issue: ['OUT']
+      [1] OInform_e1->(RexistInform_e2->false)->Violation_e1[t]=IN RexistInform_e2->false[t]=OUT RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistInform_e2[c]=OUT RexistInform_e2[t]=IN RexistProcess_e1[t]=IN Violation_e1[t]=OUT
+      skeptical -> open      ?OUT:Violation_e1
+      credulous -> open      ?OUT:Violation_e1
+   stable    issue: ['OUT']
+      [1] OInform_e1->(RexistInform_e2->false)->Violation_e1[t]=IN RexistInform_e2->false[t]=OUT RexistProcess_e1->OInform_e1[t]=IN OInform_e1[t]=IN RexistInform_e2[c]=OUT RexistInform_e2[t]=IN RexistProcess_e1[t]=IN Violation_e1[t]=OUT
+      skeptical -> open      ?OUT:Violation_e1
+      credulous -> open      ?OUT:Violation_e1
+-- inform: issue RexistInform_e2[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] RexistInform_e2[c]=OUT RexistInform_e2[t]=IN
+      skeptical -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+      credulous -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+   preferred issue: ['IN']
+      [1] RexistInform_e2[c]=OUT RexistInform_e2[t]=IN
+      skeptical -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+      credulous -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+   stable    issue: ['IN']
+      [1] RexistInform_e2[c]=OUT RexistInform_e2[t]=IN
+      skeptical -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+      credulous -> value     μalt2:RexistInform_e2.<informed:RexistInform_e2||alt2:RexistInform_e2>
+== done in 0.3s

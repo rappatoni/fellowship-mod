@@ -1,0 +1,72 @@
+== literature2/seq_mcs_closed.fspy: check ok=True (0.1s)
+-- p: issue P[t]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:P
+      credulous -> open      ?UNDEC:P
+   preferred issue: ['IN', 'OUT', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:P
+      credulous -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+   stable    issue: ['IN', 'OUT', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:P
+      credulous -> value     μp:P.<src_p:S1->P||!IN:S1*p:P>
+-- q: issue Q[t]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> open      ?UNDEC:Q
+   preferred issue: ['IN', 'IN', 'IN', 'OUT']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+   stable    issue: ['IN', 'IN', 'IN', 'OUT']
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μq:Q.<src_q:S2->Q||!IN:S2*q:Q>
+-- r: issue P->Q->false[t]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:P->Q->false
+      credulous -> open      ?UNDEC:P->Q->false
+   preferred issue: ['OUT', 'IN', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:P->Q->false
+      credulous -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+   stable    issue: ['OUT', 'IN', 'IN', 'IN']
+      skeptical -> open      ?UNDEC:P->Q->false
+      credulous -> value     μr:P->Q->false.<src_r:S3->P->Q->false||!IN:S3*r:P->Q->false>
+-- att_q: issue Q[c]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Q?
+      credulous -> open      UNDEC:Q?
+   preferred issue: ['OUT', 'OUT', 'OUT', 'IN']
+      skeptical -> open      UNDEC:Q?
+      credulous -> value     μ'att_q:Q.<src_r:S3->P->Q->false||!IN:S3*μb1:P.<src_p:S1->P||!IN:S1*b1:P>*att_q:Q*μ'b3:false.<b3:false||_F_>>
+   stable    issue: ['OUT', 'OUT', 'OUT', 'IN']
+      skeptical -> open      UNDEC:Q?
+      credulous -> value     μ'att_q:Q.<src_r:S3->P->Q->false||!IN:S3*μb1:P.<src_p:S1->P||!IN:S1*b1:P>*att_q:Q*μ'b3:false.<b3:false||_F_>>
+-- att_p: issue P[c]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:P?
+      credulous -> open      UNDEC:P?
+   preferred issue: ['OUT', 'IN', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:P?
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   stable    issue: ['OUT', 'IN', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:P?
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+-- att_r: issue P->Q->false[c]; 12 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:P->Q->false?
+      credulous -> open      UNDEC:P->Q->false?
+   preferred issue: ['IN', 'OUT', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:P->Q->false?
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+   stable    issue: ['IN', 'OUT', 'OUT', 'OUT']
+      skeptical -> open      UNDEC:P->Q->false?
+      credulous -> ERROR     EvaluationFailed: No label for scaffold issue ('B(S:Q,->,false)', 'context') in the term; the labelling and the term disagree about the debate's shape.
+-- nofalse: issue false[c]; 1 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+== done in 3.2s

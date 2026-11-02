@@ -16,8 +16,8 @@ declare B : Int.
 
 declare div_ax : (neq A zero) -> (eq B (add (mul (div B A) A) (mod B A))).
 
-start argument eq B
-end argument
+argument eq : (B).
+dixi.
 
 
 

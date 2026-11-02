@@ -1,0 +1,101 @@
+# Tweety lp-asp ex3.asp:
+# obj(r).
+# obj(l).
+# 
+# usable(X) :- obj(X), not broken(X).
+# -usable(X) :- broken(X).
+# broken(r) | broken(l).
+# Translation notes:
+#  - disjunction `broken(r) | broken(l)` shifted
+lk.
+declare Broken_l, Broken_r, Obj_l, Obj_r, Usable_l, Usable_r : bool.
+declare r0_rule : (Obj_r).
+declare r1_rule : (Obj_l).
+declare r2_rule : (Obj_l -> (Broken_l -> false) -> Usable_l).
+declare r3_rule : (Obj_r -> (Broken_r -> false) -> Usable_r).
+declare r4_rule : (Broken_l -> ~Usable_l).
+declare r5_rule : (Broken_r -> ~Usable_r).
+declare r6_rule : ((Broken_l -> false) -> Broken_r).
+declare r7_rule : ((Broken_r -> false) -> Broken_l).
+# r0 (strict): Obj_r
+argument r0 : (Obj_r).
+axiom r0_rule.
+dixi.
+# r1 (strict): Obj_l
+argument r1 : (Obj_l).
+axiom r1_rule.
+dixi.
+# r2 (strict): Obj_l -> (Broken_l -> false) -> Usable_l
+argument r2 : (Usable_l).
+cut (Obj_l -> (Broken_l -> false) -> Usable_l) th.
+axiom r2_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Broken_l) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r3 (strict): Obj_r -> (Broken_r -> false) -> Usable_r
+argument r3 : (Usable_r).
+cut (Obj_r -> (Broken_r -> false) -> Usable_r) th.
+axiom r3_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Broken_r) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r4 (strict): Broken_l -> ~Usable_l
+counterargument r4 : (Usable_l).
+cut (~Usable_l) x.
+cut (Broken_l -> ~Usable_l) th.
+axiom r4_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# r5 (strict): Broken_r -> ~Usable_r
+counterargument r5 : (Usable_r).
+cut (~Usable_r) x.
+cut (Broken_r -> ~Usable_r) th.
+axiom r5_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# r6 (strict): (Broken_l -> false) -> Broken_r
+argument r6 : (Broken_r).
+cut ((Broken_l -> false) -> Broken_r) th.
+axiom r6_rule.
+elim.
+elim h0.
+cut (Broken_l) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+# r7 (strict): (Broken_r -> false) -> Broken_l
+argument r7 : (Broken_l).
+cut ((Broken_r -> false) -> Broken_l) th.
+axiom r7_rule.
+elim.
+elim h0.
+cut (Broken_r) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.

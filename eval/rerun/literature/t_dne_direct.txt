@@ -1,0 +1,9 @@
+== literature/t_dne_direct.fspy: check ok=True (0.1s)
+-- p1: issue ~~A->A[t]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+      credulous -> value     μs1:~~A->A.<λf:~~A.μalt6:A.<f:~~A||μb2:~A.<λb1:A.μb4:false.<b1:A||alt6:A>||b2:~A>*_F_>||s1:~~A->A>
+== done in 1.1s

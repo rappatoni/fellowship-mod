@@ -1,0 +1,10 @@
+# Minimal reproduction: an argument for ~A that starts by introducing the
+# hypothesis gets its edge named after the prover's internal binder H1,
+# not after the argument; the JSON graph gives argument "H1" and span null.
+lk.
+declare A : bool.
+argument negA : (~A).
+elim h.
+next.
+dixi.
+graph document.

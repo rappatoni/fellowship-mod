@@ -1,0 +1,41 @@
+== literature4/drowning.fspy: check ok=True (0.1s)
+-- wings: issue Wings opus[t]; 5 edges
+   grounded  issue: ['IN']
+      [1] Bird opus[t]=IN Penguin opus[t]=IN Wings opus[t]=IN forall x:Thing,Bird x->Wings x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+      credulous -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+   preferred issue: ['IN']
+      [1] Bird opus[t]=IN Penguin opus[t]=IN Wings opus[t]=IN forall x:Thing,Bird x->Wings x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+      credulous -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+   stable    issue: ['IN']
+      [1] Bird opus[t]=IN Penguin opus[t]=IN Wings opus[t]=IN forall x:Thing,Bird x->Wings x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+      credulous -> value     μwings:Wings opus.<!IN:forall x:Thing,Bird x->Wings x||opus*μb1:Bird opus.<penguins_birds:forall x:Thing,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*wings:Wings opus>
+-- fly: issue Fly opus[t]; 9 edges
+   grounded  issue: ['OUT']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Bird opus[t]=IN Fly opus[t]=OUT Penguin opus[t]=IN Ab1 opus->false[t]=OUT forall x:Thing,Bird x->(Ab1 x->false)->Fly x[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Fly opus
+      credulous -> open      ?OUT:Fly opus
+   preferred issue: ['OUT']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Bird opus[t]=IN Fly opus[t]=OUT Penguin opus[t]=IN Ab1 opus->false[t]=OUT forall x:Thing,Bird x->(Ab1 x->false)->Fly x[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Fly opus
+      credulous -> open      ?OUT:Fly opus
+   stable    issue: ['OUT']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Bird opus[t]=IN Fly opus[t]=OUT Penguin opus[t]=IN Ab1 opus->false[t]=OUT forall x:Thing,Bird x->(Ab1 x->false)->Fly x[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN forall x:Thing,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Fly opus
+      credulous -> open      ?OUT:Fly opus
+-- ab1: issue Ab1 opus[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Penguin opus[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+      credulous -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+   preferred issue: ['IN']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Penguin opus[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+      credulous -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+   stable    issue: ['IN']
+      [1] Ab1 opus[c]=OUT Ab1 opus[t]=IN Penguin opus[t]=IN forall x:Thing,Penguin x->Ab1 x[t]=IN
+      skeptical -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+      credulous -> value     μalt3:Ab1 opus.<penguins_ab1:forall x:Thing,Penguin x->Ab1 x||opus*penguin_opus:Penguin opus*alt3:Ab1 opus>
+== done in 0.5s

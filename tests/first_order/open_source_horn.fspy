@@ -1,0 +1,17 @@
+# aida-fo-open-source-horn: the elimination cell (x, p) * _F_ is closed
+# (exists x, P x) but uses the bound x and the hypothesis p : P x; it
+# stays part of the argument, which is strict and IN, as its value says.
+lk.
+declare D : type.
+declare P : D -> bool.
+argument a : (((exists x:D, P [x]) -> false) -> (forall x:D, P [x] -> false)).
+elim f.
+elim x.
+elim p.
+cut ((exists x:D, P [x]) -> false) g.
+axiom f.
+elim.
+elim [x].
+axiom p.
+elim.
+dixi.

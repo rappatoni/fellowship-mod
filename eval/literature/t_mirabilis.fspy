@@ -1,0 +1,24 @@
+# Consequentia mirabilis, ((A->false)->A) -> A, proved dialectically.
+lk.
+declare A : bool.
+argument p1 : (((A->false)->A) -> A).
+dixi.
+# S: assume (~A -> A) (f); give me A.
+argument s1 : (((A->false)->A) -> A).
+elim f.
+dixi.
+# P: A, by applying ~A->A (owed) to ~A (owed); the result goes to A's own continuation.
+argument p2 : (A).
+cut ((A->false)->A) g.
+next.
+elim.
+next.
+axiom g.
+dixi.
+# P: ~A: assume A (h) and throw it to A's continuation (owed).
+argument p3 : (A->false).
+elim h.
+cut (A) k.
+axiom h.
+next.
+dixi.

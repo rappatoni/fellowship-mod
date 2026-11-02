@@ -10,17 +10,17 @@ declare r4: (D -> ~A).
 #
 # Attacked argument:
 #
-start argument arg1 B
+argument arg1 : (B).
 cut (A -> B) th.
 axiom r1.
 elim.
 next.
 axiom.
-end argument
+dixi.
 #
 #Undercutter 1
 #
-start counterargument counter1 A
+counterargument counter1 : (A).
 cut (~A) x.
 cut (B -> ~A) th.
 axiom r2.
@@ -29,11 +29,11 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 #Undercutter 2
 #
-start counterargument counter2 A
+counterargument counter2 : (A).
 cut (~A) x.
 cut (C -> ~A) th.
 axiom r3.
@@ -42,11 +42,11 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 #Undercutter 3
 #
-start counterargument counter3 A
+counterargument counter3 : (A).
 cut (~A) x.
 cut (D -> ~A) th.
 axiom r4.
@@ -55,21 +55,33 @@ next.
 axiom.
 elim.
 axiom.
-end argument
+dixi.
 #
 #Constructing undercuts, reducing coloring, building trees.
-undercut first counter1 arg1
-reduce first
-label first
-tree first
-undercut second counter2 first
-reduce second
-label second
-tree second
-undercut third counter3 second
+debate pro open first : B.
+arg1.
+rebut counter1 arg1.
+cedat tempus.
+evaluate first.
+label first.
+tree first.
+debate pro open second : B.
+arg1.
+rebut counter1 arg1.
+rebut counter2 arg1.
+cedat tempus.
+evaluate second.
+label second.
+tree second.
+debate pro open third : B.
+arg1.
+rebut counter1 arg1.
+rebut counter2 arg1.
+rebut counter3 arg1.
+cedat tempus.
 #
 #Reduce, color and construct tree
 #
-reduce third
-label third
-tree third nl
+evaluate third.
+label third.
+tree third nl.

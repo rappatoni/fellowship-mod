@@ -1,0 +1,29 @@
+# Catala: nested exceptions. Base: not eligible (default false). Exception:
+# eligible if there are children. Exception to the exception: not if the
+# household income is high. All conditions hold. Catala: eligible = false.
+lk.
+declare Eligible, Children, HighIncome : bool.
+declare children : (Children).
+declare high_income : (HighIncome).
+declare income_overrides : (HighIncome -> ~(Children -> Eligible)).
+counterargument base : (Eligible).
+by default.
+dixi.
+argument kids : (Eligible).
+cut (Children -> Eligible) r.
+by default.
+next.
+elim.
+axiom children.
+axiom r.
+dixi.
+counterargument income : (Children -> Eligible).
+cut (~(Children -> Eligible)) x.
+cut (HighIncome -> ~(Children -> Eligible)) th.
+axiom income_overrides.
+elim.
+axiom high_income.
+axiom.
+elim.
+axiom.
+dixi.

@@ -1,0 +1,16 @@
+== literature/grounded_predicate.fspy: check ok=True (0.0s)
+-- flies_tweety: issue Flies tweety[t]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+   preferred issue: ['IN']
+      skeptical -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+-- ab_sam: issue Ab sam[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+      credulous -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+   preferred issue: ['IN']
+      skeptical -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+      credulous -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+== done in 0.1s

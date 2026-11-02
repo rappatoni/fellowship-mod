@@ -1,0 +1,52 @@
+# The Yale shooting problem (Hanks & McDermott 1987), grounded on the time
+# points 0..3: alive at 0, load at 0, wait at 1, shoot at 2. Persistence
+# written naively as presumed rules (Alive_t -> Alive_t+1, by default).
+# Default logic has an anomalous extension in which the gun unloads; the
+# event calculus (Kowalski & Sergot 1986; Shanahan 1997) gives ~Alive3.
+lk.
+declare Alive0, Alive1, Alive2, Alive3, Loaded1, Loaded2 : bool.
+declare alive0 : (Alive0).
+declare load_effect : (Loaded1).
+declare shoot_effect : (Loaded2 -> ~Alive3).
+argument alive1 : (Alive1).
+cut (Alive0 -> Alive1) r.
+by default.
+next.
+elim.
+axiom alive0.
+axiom r.
+dixi.
+argument alive2 : (Alive2).
+cut (Alive1 -> Alive2) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+argument alive3 : (Alive3).
+cut (Alive2 -> Alive3) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+argument loaded2 : (Loaded2).
+cut (Loaded1 -> Loaded2) r.
+by default.
+next.
+elim.
+axiom load_effect.
+axiom r.
+dixi.
+counterargument dead3 : (Alive3).
+cut (~Alive3) x.
+cut (Loaded2 -> ~Alive3) th.
+axiom shoot_effect.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

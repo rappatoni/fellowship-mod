@@ -242,7 +242,8 @@ def keep_attack_wing(node, match):
 
 # -- the strict phase ------------------------------------------------------
 
-def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
+def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True, *,
+                   scope=None, on_pending=None):
     """Decide every scaffold strictness decides, bottom-up, and return
     (term', strict_edges): the rewritten term and the strict edges the
     closed subterms containing a decision contribute.  ``trace``, if a
@@ -250,6 +251,12 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     ``edges=False`` only the decisions are made and no edge is collected:
     the caller resolves one instance of a shared debate and collects
     across instances itself (core/dc/instances.py).
+
+    For that caller: ``scope`` holds the variables free in the instance
+    that stand, in the enclosing term, for something not strict (entries
+    as ``strict_in_scope`` reads them), and ``on_pending(node, scope)``
+    replaces a cited instance not yet chosen (a node marked ``pending``)
+    where the walk meets it, under the scaffold variables in scope there.
 
     Works on a copy; the input is not modified.
     """
@@ -274,6 +281,8 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         rewritten first, then it is decided.  ``ids``/``dis`` are the
         enclosing mu/mu' binders, the catchers in scope; ``scope`` the
         paper scaffolds' own variables in scope (``strict_in_scope``)."""
+        if on_pending is not None and getattr(node, "pending", False):
+            return on_pending(node, scope or {})
         if not isinstance(node, ProofTerm):
             return node
         scope = scope or {}
@@ -364,7 +373,7 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         kept._strict_decision = True
         return kept
 
-    term = walk(deepcopy(term))
+    term = walk(deepcopy(term), scope=dict(scope or {}))
 
     def has_decision(node):
         if not isinstance(node, ProofTerm):
@@ -374,16 +383,16 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
         return any(has_decision(getattr(node, slot, None)) for slot in ("term", "context"))
 
     def collect(node):
-        """The OUTERMOST closed eta-wrapped subterms that owe their
-        closedness to a decision -> one strict edge each.  A subterm
-        holding an uncatchable clash contributes none: it derives its
-        statement only from an inconsistency, which the classifier
+        """The OUTERMOST closed eta-wrapped arguments whose own edge in the
+        graph is defeasible -> one strict edge each (``strict_edge_candidate``).
+        A subterm holding an uncatchable clash contributes none: it derives
+        its statement only from an inconsistency, which the classifier
         reports as an exception instead."""
         if not isinstance(node, ProofTerm):
             return
         statement = _eta_statement(node)
-        if statement is not None and has_decision(node):
-            # It owes its closedness to a decision.  Three conditions gate the
+        if statement is not None and strict_edge_candidate(node, strict_names, has_decision):
+            # A defeasible argument, as registered.  Two conditions gate the
             # edge, and which one vetoed it is the interesting part.
             name = binder_origin(node)
             if not is_closed(node, strict_names):
@@ -421,6 +430,27 @@ def strict_resolve(term: ProofTerm, strict_names=(), trace=None, edges=True):
     return term, edges
 
 
+def strict_edge_candidate(node, strict_names, has_decision) -> bool:
+    """Whether the eta-wrapped subterm ``node`` may contribute a strict
+    edge once it is closed: it is a copy of an argument (the unfolder
+    marks the root of every copy with its ``origin``) that is not already
+    strict as registered (not among ``strict_names``, which hold the
+    strict arguments Fellowship holds), whether or not anything was
+    decided in or around it (tasks.org, aida-strict-edge-collector-condition,
+    2026-10-16).  The origin is the edge's name, which for an argument
+    whose body is an eta chain is its root binder (``_host_name``), so the
+    argument the copy's edge was compiled under (``argument``) is asked
+    too: ``x := mu k.<p||k>`` is held as x, not as k
+    (aida-strict-edge-argument-origin).  A subterm without an origin - a
+    term built by hand, or the wrapper a decision leaves - is a candidate
+    only if it contains a strict decision, the rule before."""
+    origin = getattr(node, "origin", None)
+    if origin:
+        held = set(strict_names or ())
+        return origin not in held and getattr(node, "argument", None) not in held
+    return has_decision(node)
+
+
 def _eta_statement(node):
     """(canonical prop, side) of an eta-wrapped argument mu n.<t || n> /
     mu' n.<n || e>, else None."""
@@ -436,14 +466,63 @@ def compile_issue(term: ProofTerm, name: str, *, strict_names=None, strict_kinds
     (compile_debate, cycles through captured obligations included) plus
     the strict edges strictness on the term contributes."""
     graph = compile_debate(term, name, strict_names=strict_names, strict_kinds=strict_kinds)
+    for edge in issue_strict_edges(term, name, strict_names):
+        graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
+        graph.add_edge(edge)
+    fold_occurrences(graph)
+    return graph
+
+
+def issue_strict_edges(term: ProofTerm, name: str, strict_names=None) -> list:
+    """The strict edges strictness on an issue's term contributes."""
     trace = []
     _, edges = strict_resolve(term, strict_names or (), trace=trace)
     logger.debug("strict: %d decision(s), %d strict edge(s) for '%s'",
                  len(trace), len(edges), name)
-    for edge in edges:
-        graph.nodes.setdefault(edge.target_key, graph.nodes.get(edge.target_key, edge.target_key))
+    return edges
+
+
+def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str = "issue") -> DebateGraph:
+    """The issue graph taken from the document instead of the term: the
+    part of ``source`` reachable from ``issue`` (``DebateGraph.reachable``,
+    the rational closure), with its default markers, plus the strict
+    edges strictness on the issue's term contributes (``strict_resolve``,
+    or ``IssueResolver.strict_edges`` on the shared route).
+
+    ``source`` is the document graph for an issue or an argument, and a
+    debate's graph (``ProverWrapper.debate_graph``) for a debate, which
+    holds only its scope.  Built beside ``compile_issue`` and checked
+    against it (tasks.org, aida-discuss-issue-graph-from-document)."""
+    keep = source.reachable(issue)
+    kept = [e for e in source.edges if (e.target_key, e.target_side) in keep]
+    # The document calls an atomic argument's edge an "argument"; in the
+    # issue graph it is a supporter of a statement the debate uses (the
+    # issue, or a source of one of its edges) or an attacker (it concludes
+    # the contrary of one), as the term route names them.
+    used = {issue} | {(s.key, s.side) for e in kept for s in e.sources}
+    graph = DebateGraph()
+    graph.quiet = True                     # copied edges were logged when compiled
+    for edge in kept:
+        if edge.role == "argument":
+            role = "supporter" if (edge.target_key, edge.target_side) in used else "attacker"
+            edge = replace(edge, role=role)
+        graph.edges.append(edge)
+    for (key, side), kinds in source.defaults.items():
+        if (key, side) in keep:
+            graph.defaults.setdefault((key, side), set()).update(kinds)
+    for key, side in graph.statements():
+        graph.nodes.setdefault(key, source.nodes.get(key, key))
+    graph.quiet = False
+    for edge in strict_edges:
+        graph.nodes.setdefault(edge.target_key, source.nodes.get(edge.target_key, edge.target_key))
         graph.add_edge(edge)
     fold_occurrences(graph)
+    logger.debug("issue graph from the document: %d of %d statement(s) reachable, %d edge(s), "
+                 "%d strict edge(s) from the term", len(keep), len(source.statements()),
+                 len(graph.edges), len(strict_edges))
+    if logger.isEnabledFor(logging.DEBUG):
+        artifact(logger, "compile: the argumentation framework of '%s', from the document" % name,
+                 graph.to_text())
     return graph
 
 

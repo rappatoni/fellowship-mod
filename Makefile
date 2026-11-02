@@ -6,7 +6,7 @@ PIP := $(VENV)/bin/pip
 ADF_BDD_VERSION := 0.3.0
 ADF_BDD := $(VENV)/bin/adf-bdd
 
-.PHONY: venv install reset-venv cli test lint format typecheck binlink clean adf-bdd
+.PHONY: venv install reset-venv cli test test-perf lint format typecheck binlink clean adf-bdd
 
 # Create the venv only if none exists: re-running `python3 -m venv` over a
 # venv made by a different interpreter (e.g. uv's 3.12 vs Homebrew's 3.14)
@@ -38,14 +38,18 @@ cli: install
 test: install
 	$(VENV)/bin/pytest -q tests
 
+# The performance tests (pytest marker `perf`): run sparingly.
+test-perf: install
+	$(VENV)/bin/pytest -q -m perf tests
+
 lint: install
-	$(VENV)/bin/ruff check core pres wrap mod tests
+	$(VENV)/bin/ruff check core pres wrap tests
 
 format: install
-	$(VENV)/bin/black core pres wrap mod tests
+	$(VENV)/bin/black core pres wrap tests
 
 typecheck: install
-	$(VENV)/bin/mypy core pres wrap mod
+	$(VENV)/bin/mypy core pres wrap
 
 # Optional: short local command
 binlink:

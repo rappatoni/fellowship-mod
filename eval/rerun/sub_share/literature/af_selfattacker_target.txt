@@ -1,0 +1,42 @@
+== literature/af_selfattacker_target.fspy: check ok=True (0.1s)
+-- a: issue A[t]; 4 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+   preferred issue: ['OUT']
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+   stable    issue: ['OUT']
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+-- b: issue B[t]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+   preferred issue: ['IN']
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+   stable    issue: ['IN']
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+-- a_on_a: issue A[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+-- a_on_b: issue B[c]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+   preferred issue: ['OUT']
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+   stable    issue: ['OUT']
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+== done in 0.7s

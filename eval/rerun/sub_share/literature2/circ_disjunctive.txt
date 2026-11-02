@@ -1,0 +1,42 @@
+== literature2/circ_disjunctive.fspy: check ok=True (0.2s)
+-- flies1: issue Flies1[t]; 11 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Flies1
+      credulous -> open      ?UNDEC:Flies1
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:Flies1
+      credulous -> value     μflies1:Flies1.<f1:Bird1->(Ab1->false)->Flies1||bird1:Bird1*λb1:Ab1.μb2:false.<b1:Ab1||IN:Ab1!>*flies1:Flies1>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      ?UNDEC:Flies1
+      credulous -> value     μflies1:Flies1.<f1:Bird1->(Ab1->false)->Flies1||bird1:Bird1*λb1:Ab1.μb2:false.<b1:Ab1||IN:Ab1!>*flies1:Flies1>
+-- flies2: issue Flies2[t]; 11 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Flies2
+      credulous -> open      ?UNDEC:Flies2
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Flies2
+      credulous -> value     μflies2:Flies2.<f2:Bird2->(Ab2->false)->Flies2||bird2:Bird2*λb1:Ab2.μb2:false.<b1:Ab2||IN:Ab2!>*flies2:Flies2>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Flies2
+      credulous -> value     μflies2:Flies2.<f2:Bird2->(Ab2->false)->Flies2||bird2:Bird2*λb1:Ab2.μb2:false.<b1:Ab2||IN:Ab2!>*flies2:Flies2>
+-- ab2: issue Ab2[t]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μalt13:Ab2.<?UNDEC:Ab2||alt13:Ab2>
+      credulous -> open      μalt13:Ab2.<?UNDEC:Ab2||alt13:Ab2>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μalt13:Ab2.<?UNDEC:Ab2||alt13:Ab2>
+      credulous -> value     μalt13:Ab2.<!IN:Ab2||alt13:Ab2>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μalt13:Ab2.<?UNDEC:Ab2||alt13:Ab2>
+      credulous -> value     μalt13:Ab2.<!IN:Ab2||alt13:Ab2>
+-- ab1: issue Ab1[t]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μalt13:Ab1.<?UNDEC:Ab1||alt13:Ab1>
+      credulous -> open      μalt13:Ab1.<?UNDEC:Ab1||alt13:Ab1>
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      μalt13:Ab1.<?UNDEC:Ab1||alt13:Ab1>
+      credulous -> value     μalt13:Ab1.<!IN:Ab1||alt13:Ab1>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      μalt13:Ab1.<?UNDEC:Ab1||alt13:Ab1>
+      credulous -> value     μalt13:Ab1.<!IN:Ab1||alt13:Ab1>
+== done in 2.6s

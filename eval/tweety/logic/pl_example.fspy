@@ -1,0 +1,85 @@
+# Tweety logics-pl PlExample: the belief base
+#   { a || b || c, !a || b, !b || c, !c || (!a && !b && !c && !d) }
+# with SimplePlReasoner's queries !a (true) and falsum (true: the base is
+# inconsistent). AIDA has no disjunction or conjunction in an argument, so
+# each clause is a declared implication and the conjunction is split;
+# negation is spelled ~A throughout (see ../spelling_one_argument.fspy).
+# The query !a as a dialectical theorem: a -> b -> c -> !a.
+lk.
+declare A, B, C, D : bool.
+declare c1 : (~A -> ~B -> C).
+declare c2 : (A -> B).
+declare c3 : (B -> C).
+declare c4a : (C -> ~A).
+declare c4b : (C -> ~B).
+declare c4c : (C -> ~C).
+declare c4d : (C -> ~D).
+argument not_a : (~A).
+elim a.
+cut (~A) x.
+cut (C -> ~A) t1.
+axiom c4a.
+elim.
+cut (B -> C) t2.
+axiom c3.
+elim.
+cut (A -> B) t3.
+axiom c2.
+elim.
+axiom x.
+axiom t3.
+axiom t2.
+axiom t1.
+elim.
+axiom.
+dixi.
+# The base is inconsistent (Tweety: falsum is entailed). AIDA shows it as a
+# strict argument for c (from !a and !b by the first clause) and a strict
+# counterargument c -> !c.
+argument c : (C).
+cut (~A -> ~B -> C) th.
+axiom c1.
+elim.
+elim a.
+cut (~A) x.
+cut (C -> ~A) t1.
+axiom c4a.
+elim.
+cut (B -> C) t2.
+axiom c3.
+elim.
+cut (A -> B) t3.
+axiom c2.
+elim.
+axiom x.
+axiom t3.
+axiom t2.
+axiom t1.
+elim.
+axiom.
+elim.
+elim b.
+cut (~B) y.
+cut (C -> ~B) s1.
+axiom c4b.
+elim.
+cut (B -> C) s2.
+axiom c3.
+elim.
+axiom y.
+axiom s2.
+axiom s1.
+elim.
+axiom.
+axiom th.
+dixi.
+counterargument not_c : (C).
+cut (~C) x.
+cut (C -> ~C) th.
+axiom c4c.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

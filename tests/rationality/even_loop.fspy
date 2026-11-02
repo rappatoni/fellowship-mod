@@ -12,7 +12,7 @@ declare pRule : ((Q->false)->P).
 declare qRule : ((P->false)->Q).
 
 # argument Pdefault derives P from geled Q
-start argument Pdefault P
+argument Pdefault : (P).
 cut ((Q->false)->P) rule.
 axiom pRule.
 elim.
@@ -22,10 +22,10 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
 # argument Qdefault derives Q from geled P
-start argument Qdefault Q
+argument Qdefault : (Q).
 cut ((P->false)->Q) rule.
 axiom qRule.
 elim.
@@ -35,5 +35,5 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 

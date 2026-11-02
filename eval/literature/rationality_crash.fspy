@@ -1,0 +1,23 @@
+# Crash resistance / non-interference (Caminada, Carnielli & Dunne 2012):
+# a strictly inconsistent but unrelated pair (Z and ~Z, both strict) must
+# not change the status of an unrelated issue. Tweety flies by a presumed
+# rule; Z is asserted and denied outright.
+lk.
+declare Bird, Flies, Z : bool.
+declare bird : (Bird).
+declare z : (Z).
+deny not_z : (Z).
+argument tweety : (Flies).
+cut (Bird -> Flies) r.
+by default.
+next.
+elim.
+axiom bird.
+axiom r.
+dixi.
+argument zpro : (Z).
+axiom z.
+dixi.
+counterargument zcon : (Z).
+moxia not_z.
+dixi.

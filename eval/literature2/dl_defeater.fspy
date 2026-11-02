@@ -1,0 +1,27 @@
+# Defeasible logic, a defeater (Nute): r1: bird => flies; d: heavy ~> ~flies
+# (a defeater can block a conclusion but never supports its own). Facts
+# bird, heavy. DL: -d flies and -d ~flies: neither is derived. Encoding: the
+# defeater refutes the presumed rule r1 (it says nothing about ~flies).
+lk.
+declare Bird, Heavy, Flies : bool.
+declare bird : (Bird).
+declare heavy : (Heavy).
+declare heavy_defeats : (Heavy -> ~(Bird -> Flies)).
+argument r1 : (Flies).
+cut (Bird -> Flies) r.
+by default.
+next.
+elim.
+axiom bird.
+axiom r.
+dixi.
+counterargument defeater : (Bird -> Flies).
+cut (~(Bird -> Flies)) x.
+cut (Heavy -> ~(Bird -> Flies)) th.
+axiom heavy_defeats.
+elim.
+axiom heavy.
+axiom.
+elim.
+axiom.
+dixi.

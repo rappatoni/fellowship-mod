@@ -1,0 +1,41 @@
+== literature2/io_ctd.fspy: check ok=True (0.1s)
+-- dont_kill: issue Kill[c]; 2 edges
+   grounded  issue: ['OUT']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+      credulous -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+   preferred issue: ['OUT']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+      credulous -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+   stable    issue: ['OUT']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+      credulous -> exception μ'alt1:Kill.<kill:Kill||OUT:Kill?>
+-- gently: issue Gently[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Kill->Gently[t]=IN Gently[t]=IN Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+      credulous -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+   preferred issue: ['IN']
+      [1] Kill->Gently[t]=IN Gently[t]=IN Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+      credulous -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+   stable    issue: ['IN']
+      [1] Kill->Gently[t]=IN Gently[t]=IN Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+      credulous -> value     μgently:Gently.<n_gently:Kill->Gently||μb1:Kill.<kill:Kill||b1:Kill>*gently:Gently>
+-- kill_fact: issue Kill[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+      credulous -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+   preferred issue: ['IN']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+      credulous -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+   stable    issue: ['IN']
+      [1] Kill[c]=OUT Kill[t]=IN
+      skeptical -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+      credulous -> value     μalt3:Kill.<kill:Kill||alt3:Kill>
+== done in 0.5s

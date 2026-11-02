@@ -1,0 +1,69 @@
+# Tweety logics-pl PlExample, the inconsistent base
+#   { a || b || c, !a || b, !b || c, !c || (!a && !b && !c && !d) }
+# written modularly: !a and !b are arguments of their own, the argument
+# for c owes them (obligations, captured), and c -> !c is a strict
+# counterargument. Tweety: the base entails falsum. Negation is spelled
+# ~A throughout: mixing ~A and A -> false trips
+# aida-negation-spelling-in-unfolding (../spelling_*.fspy).
+lk.
+declare A, B, C, D : bool.
+declare c1 : (~A -> ~B -> C).
+declare c2 : (A -> B).
+declare c3 : (B -> C).
+declare c4a : (C -> ~A).
+declare c4b : (C -> ~B).
+declare c4c : (C -> ~C).
+declare c4d : (C -> ~D).
+argument not_a : (~A).
+elim a.
+cut (~A) x.
+cut (C -> ~A) t1.
+axiom c4a.
+elim.
+cut (B -> C) t2.
+axiom c3.
+elim.
+cut (A -> B) t3.
+axiom c2.
+elim.
+axiom x.
+axiom t3.
+axiom t2.
+axiom t1.
+elim.
+axiom.
+dixi.
+argument not_b : (~B).
+elim b.
+cut (~B) y.
+cut (C -> ~B) s1.
+axiom c4b.
+elim.
+cut (B -> C) s2.
+axiom c3.
+elim.
+axiom y.
+axiom s2.
+axiom s1.
+elim.
+axiom.
+dixi.
+argument c : (C).
+cut (~A -> ~B -> C) th.
+axiom c1.
+elim.
+next.
+elim.
+next.
+axiom th.
+dixi.
+counterargument not_c : (C).
+cut (~C) x.
+cut (C -> ~C) th.
+axiom c4c.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

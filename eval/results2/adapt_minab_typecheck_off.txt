@@ -1,0 +1,74 @@
+== literature2/adapt_minab.fspy: check ok=True (0.1s)
+-- np: issue P[c]; 14 edges
+   grounded  issue: ['UNDEC']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC Snp[t]=IN Snq[t]=IN
+      skeptical -> open      UNDEC:P?
+      credulous -> open      UNDEC:P?
+   preferred issue: ['IN', 'IN', 'OUT', 'OUT']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> open      UNDEC:P?
+      credulous -> value     μ'np:P.<src_np:Snp->~P||!IN:Snp*np:P*_F_>
+-- nq: issue Q[c]; 14 edges
+   grounded  issue: ['UNDEC']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC Snp[t]=IN Snq[t]=IN
+      skeptical -> open      UNDEC:Q?
+      credulous -> open      UNDEC:Q?
+   preferred issue: ['IN', 'OUT', 'IN', 'OUT']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> open      UNDEC:Q?
+      credulous -> value     μ'nq:Q.<src_nq:Snq->~Q||!IN:Snq*nq:Q*_F_>
+-- q: issue Q[t]; 14 edges
+   grounded  issue: ['UNDEC']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC Snp[t]=IN Snq[t]=IN
+      skeptical -> open      ?UNDEC:Q
+      credulous -> open      ?UNDEC:Q
+   preferred issue: ['OUT', 'IN', 'OUT', 'IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μq:Q.<pq:(P->false)->Q||μb1:~P.<src_np:Snp->~P||!IN:Snp*b1:~P>*q:Q>
+-- p: issue P[t]; 14 edges
+   grounded  issue: ['UNDEC']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC Snp[t]=IN Snq[t]=IN
+      skeptical -> open      ?UNDEC:P
+      credulous -> open      ?UNDEC:P
+   preferred issue: ['OUT', 'OUT', 'IN', 'IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> open      ?UNDEC:P
+      credulous -> value     μp:P.<qp:(Q->false)->P||μb1:~Q.<src_nq:Snq->~Q||!IN:Snq*b1:~Q>*p:P>
+-- r: issue R[t]; 16 edges
+   grounded  issue: ['IN']
+      [1] (P->false)->Q[t]=IN (P->false)->R[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC R[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> value     μr:R.<pr:(P->false)->R||μb1:~P.<src_np:Snp->~P||!IN:Snp*b1:~P>*r:R>
+      credulous -> value     μr:R.<pr:(P->false)->R||λb1:P.μb2:false.<src_np:Snp->~P||!IN:Snp*b1:P*_F_>*r:R>
+   preferred issue: ['IN', 'IN', 'IN', 'IN']
+      [1] (P->false)->Q[t]=IN (P->false)->R[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT R[t]=IN Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (P->false)->R[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN R[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (P->false)->R[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT R[t]=IN Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (P->false)->R[t]=IN (Q->false)->P[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN R[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> value     μr:R.<pr:(P->false)->R||μb1:~P.<src_np:Snp->~P||!IN:Snp*b1:~P>*r:R>
+      credulous -> value     μr:R.<pr:(P->false)->R||λb1:P.μb2:false.<src_np:Snp->~P||!IN:Snp*b1:P*_F_>*r:R>
+-- s: issue S[t]; 16 edges
+   grounded  issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN (Q->false)->S[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=UNDEC P[t]=UNDEC Q[c]=UNDEC Q[t]=UNDEC S[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> value     μs:S.<qs:(Q->false)->S||μb1:~Q.<src_nq:Snq->~Q||!IN:Snq*b1:~Q>*s:S>
+      credulous -> value     μs:S.<qs:(Q->false)->S||λb1:Q.μb2:false.<src_nq:Snq->~Q||!IN:Snq*b1:Q*_F_>*s:S>
+   preferred issue: ['IN', 'IN', 'IN', 'IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN (Q->false)->S[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=IN Q[t]=OUT S[t]=IN Snp[t]=IN Snq[t]=IN
+      [2] (P->false)->Q[t]=IN (Q->false)->P[t]=IN (Q->false)->S[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN S[t]=IN Snp[t]=IN Snq[t]=IN
+      [3] (P->false)->Q[t]=IN (Q->false)->P[t]=IN (Q->false)->S[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=IN Q[t]=OUT S[t]=IN Snp[t]=IN Snq[t]=IN
+      [4] (P->false)->Q[t]=IN (Q->false)->P[t]=IN (Q->false)->S[t]=IN ~P[t]=IN ~Q[t]=IN Snp->~P[t]=IN Snq->~Q[t]=IN P[c]=OUT P[t]=IN Q[c]=OUT Q[t]=IN S[t]=IN Snp[t]=IN Snq[t]=IN
+      skeptical -> value     μs:S.<qs:(Q->false)->S||μb1:~Q.<src_nq:Snq->~Q||!IN:Snq*b1:~Q>*s:S>
+      credulous -> value     μs:S.<qs:(Q->false)->S||λb1:Q.μb2:false.<src_nq:Snq->~Q||!IN:Snq*b1:Q*_F_>*s:S>
+== done in 1.7s

@@ -1,0 +1,41 @@
+== literature2/ec_yale.fspy: check ok=True (0.1s)
+-- alive3: issue Alive3[t]; 11 edges
+   grounded  issue: ['OUT']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+      credulous -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+   preferred issue: ['OUT']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+      credulous -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+   stable    issue: ['OUT']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+      credulous -> exception μalt4:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*?OUT:Alive3*_F_>
+-- clipped: issue ClippedAlive2[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Shoot2->Loaded2->ClippedAlive2[t]=IN ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+      credulous -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+   preferred issue: ['IN']
+      [1] Shoot2->Loaded2->ClippedAlive2[t]=IN ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+      credulous -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+   stable    issue: ['IN']
+      [1] Shoot2->Loaded2->ClippedAlive2[t]=IN ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+      credulous -> value     μalt2:ClippedAlive2.<clip:Shoot2->Loaded2->ClippedAlive2||shoot2:Shoot2*loaded2:Loaded2*alt2:ClippedAlive2>
+-- dead3: issue Alive3[c]; 11 edges
+   grounded  issue: ['IN']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+      credulous -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+   preferred issue: ['IN']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+      credulous -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+   stable    issue: ['IN']
+      [1] Alive2->(ClippedAlive2->false)->Alive3[t]=IN ~Alive3[t]=IN ClippedAlive2->false[t]=OUT Shoot2->Loaded2->~Alive3[t]=IN Shoot2->Loaded2->ClippedAlive2[t]=IN Alive2[t]=IN Alive3[c]=IN Alive3[t]=OUT ClippedAlive2[c]=OUT ClippedAlive2[t]=IN Loaded2[t]=IN Shoot2[t]=IN
+      skeptical -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+      credulous -> value     μ'dead3:Alive3.<shoot_effect:Shoot2->Loaded2->~Alive3||shoot2:Shoot2*loaded2:Loaded2*dead3:Alive3*_F_>
+== done in 0.7s

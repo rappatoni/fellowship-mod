@@ -1,0 +1,2 @@
+== literature/first_order.fspy: check ok=True (0.0s)
+== done in 0.1s

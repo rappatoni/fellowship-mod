@@ -1,0 +1,6 @@
+== literature/t_cases.fspy: check ok=True (0.1s)
+-- p1: graph refused: TypeCheckRefused: in the debate about B[t], which 'p1' reaches: Fellowship rejected the unfolded term for 'p1_2': h is neither in your hypothesis nor in your conclusion.
+-- s1: graph refused: TypeCheckRefused: in the debate about B[t], which 's1' reaches: Fellowship rejected the unfolded term for 's1_1': h is neither in your hypothesis nor in your conclusion.
+-- p2: graph refused: TypeCheckRefused: in the debate about B[t], which 'p2' reaches: Fellowship rejected the unfolded term for 'p2_1': h is neither in your hypothesis nor in your conclusion.
+-- p3: graph refused: TypeCheckRefused: in the debate about B[t], which 'p3' reaches: Fellowship rejected the unfolded term for 'p3_2': h is neither in your hypothesis nor in your conclusion.
+== done in 0.2s

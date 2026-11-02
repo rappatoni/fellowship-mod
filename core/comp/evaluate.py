@@ -63,23 +63,35 @@ policy):
                 skeptically.
 
 Wing choice at a scaffold (site of proposition A) is decided by the
-scion's DERIVATION STATUS under sigma (``derivation_status``): IN iff the
-scion's target statement and all of its sources are IN, OUT iff any of
-them is OUT, UNDEC otherwise.  Consulting the target statement alone was
-unsound: Q[t] IN says some derivation of Q is live, not that this
-supporter's is (aida-supporter-derivation-status, 2026-09-16).  The
-labels are read off the term, not looked up in sigma: sigma is first
-written into the term (core/comp/labelled.py), every statement occurrence
-carrying its label, and the scion's records carry the labels of its root
-and of its sites, captured variables and lambda subarguments - the
-attacker's conclusion included, the captured alt at its wing's root.  The
-UNDEC rows are the tiebreak, reached only when sigma leaves the status
-undecided:
+scion's STATUS: IN iff the scion's target statement is IN and everything
+it rests on stands IN in the term, OUT iff something is OUT, UNDEC
+otherwise.  Consulting the target statement alone was unsound: Q[t] IN
+says some derivation of Q is live, not that this supporter's is
+(aida-supporter-derivation-status, 2026-09-16).  What the scion rests on
+is judged by what it stands for in the term, not by its statement's
+label (core/comp/standing.py; tasks.org, aida-judge-by-what-it-stands-for,
+2026-10-16): a nested debate by how it comes out there, a scaffold's b by
+the original it binds - a root obligation of the debate being decided
+is unmet - and labels only for presumptions and for variables captured
+by an argument's own binder.  sigma is still written into the term first
+(core/comp/labelled.py): the labels give the target, the presumptions
+and the discharge.  ``derivation_status`` reads a graph's records against
+a labelling (the witness's favour check).  The UNDEC rows are the
+tiebreak, reached only when the status is undecided:
 
     supporter IN            -> keep scion        attacker IN   -> keep attack wing
     supporter OUT           -> keep ORIG         attacker OUT  -> keep ORIG
-    supporter UNDEC         -> credulous: scion  attacker UNDEC-> credulous: ORIG
-                               skeptical: ORIG                    skeptical: attack wing
+    supporter UNDEC         -> ORIG              attacker UNDEC-> attack wing
+
+What a credulous witness leaves UNDEC it does not accept, so it is
+resolved as in skeptical mode: the witness alone makes the credulous
+choices, and under grounded semantics credulous evaluation is skeptical
+evaluation (the author, 2026-10-16; tasks.org,
+aida-credulous-tiebreak-grounded).  The old credulous tiebreak - an UNDEC
+supporter kept, an UNDEC attack dropped - is the option
+``undecided="credulous"`` (``UNDECIDED``; `undecided credulous` in the
+CLI); it can return a value whose term keeps a derivation the witness
+does not accept, or OPEN where skeptical evaluation gives a value.
 
 Before normalisation the labels are discharged: every site is named by
 its label and is a delegation iff it is IN (an obligation labelled IN:
@@ -100,9 +112,10 @@ nested under an axiom head is not propagated by the standard rules
 import logging
 
 from core.ac.ast import (
-    ProofTerm, Mu, Mutilde, ID, DI,
+    ProofTerm, Mu, Mutilde, Lamda, Admal, ID, DI,
     first_order_node, FirstOrderNotSupported,
 )
+from core.comp.standing import Standing, OWN, ROOT, _binder as _binder_name
 from core.comp.adf_label import (
     grounded_labels, labellings, intersection_labelling, SEMANTICS,
 )
@@ -118,7 +131,7 @@ from core.dc.cite import binder_names
 from core.dc.instances import IssueResolver, Stub, issue_graph
 from core.logging_util import TRACE, artifact
 from core.dc.strict import (
-    strict_resolve, compile_issue,
+    strict_resolve, compile_issue, document_issue_graph, issue_strict_edges,
     keep_orig as _keep_orig, keep_scion_support as _keep_scion_support,
     keep_attack_wing as _keep_attack_wing,
 )
@@ -139,6 +152,24 @@ class EvaluationRefused(DebateCompileError):
 
 
 _MODES = ("skeptical", "credulous")
+
+#: What sigma does with a scaffold whose status a credulous witness leaves
+#: UNDEC (tasks.org, aida-credulous-tiebreak-grounded; the author,
+#: 2026-10-16).  "witness" (default): the witness does not accept it, so
+#: it is resolved as in skeptical mode - the witness alone makes the
+#: credulous choices.  "credulous": the old tiebreak (keep an UNDEC
+#: supporter, drop an UNDEC attack), which can manufacture acceptance the
+#: witness does not give.  Evaluation has more degrees of freedom than the
+#: labelling; this option names one of them.
+UNDECIDED = ("witness", "credulous")
+
+
+def _tiebreak(tiebreak: str, undecided: str) -> str:
+    """The tiebreak sigma uses: a credulous witness's UNDEC residue is
+    resolved skeptically unless ``undecided`` is "credulous"."""
+    if undecided not in UNDECIDED:
+        raise ValueError(f"undecided must be one of {UNDECIDED}, got {undecided!r}")
+    return "credulous" if tiebreak == "credulous" and undecided == "credulous" else "skeptical"
 
 #: Compare every label sigma reads off the term with the labelling it was
 #: written from.  Off: sigma consults only the term.  The comparison ran on
@@ -244,11 +275,16 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
     if check_labels is None:
         check_labels = CHECK_LABELS
     used = binder_names(body) if stubs is not None else None
+    # What each expression stands for in the term (core/comp/standing.py;
+    # tasks.org, aida-judge-by-what-it-stands-for): a scaffold is decided by
+    # the standing of its scion, not by the labels of the statements it
+    # rests on.  ``senv`` maps the variables in scope to what they stand for.
+    standing = Standing(mode, strict_names, stubs, labels)
 
-    def walk(node, env):
+    def walk(node, env, senv):
         if stubs is not None and isinstance(node, Stub):
             # the labelling pass reaches a sub-debate when it is written out
-            return walk(label_in_place(stubs.open(node, used), labels), env)
+            return walk(label_in_place(stubs.open(node, used), labels), env, senv)
         if not isinstance(node, ProofTerm):
             return node
         match = _match_scaffold(node, strict_names)
@@ -272,10 +308,9 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                 if wrong:
                     raise EvaluationRefused(
                         f"The labelled term disagrees with the labelling at {wrong[:3]}.")
-            status = derivation_status(records)
+            status, _s_orig, choice, _whole = standing.scaffold(match, senv)
             if trace is not None:
                 trace.append((statement, status))
-            choice = _wing_choice(role, status, mode)
             if logger.isEnabledFor(logging.DEBUG):
                 kept = ("original" if choice == "orig"
                         else ("supporter" if role == "supporter" else "attacker (the clash)"))
@@ -296,20 +331,28 @@ def resolve_scaffolds(body: ProofTerm, labels, mode: str, strict_names=(),
                              ", dropping the %s%s" % (
                                  dropped[0],
                                  " and the %d scaffold(s) inside it" % inside if inside else ""))
-            # a rewrite builds new wrappers: label them like the rest
+            # a rewrite builds new wrappers: label them like the rest.  The
+            # scaffold's alt, where the kept wing still uses it, stands for
+            # the captured root of the contrary.
+            kept = {**senv, alt: ROOT}
             if choice == "orig":
-                return walk(label_in_place(_keep_orig(node, orig, alt), labels), env)
+                return walk(label_in_place(_keep_orig(node, orig, alt), labels), env, kept)
             if role == "supporter":
-                return walk(label_in_place(_keep_scion_support(node, scion_raw, alt), labels), env)
-            return walk(label_in_place(_keep_attack_wing(node, match), labels), env)
+                return walk(label_in_place(_keep_scion_support(node, scion_raw, alt), labels), env, kept)
+            return walk(label_in_place(_keep_attack_wing(node, match), labels), env, kept)
         inner = {**env, **binder_statements(node)}
+        sinner = senv
+        if isinstance(node, (Mu, Mutilde, Lamda, Admal)):
+            name = _binder_name(node)
+            if senv.get(name) is not ROOT:
+                sinner = {**senv, name: OWN}
         for slot in ("term", "context"):
             child = getattr(node, slot, None)
             if isinstance(child, ProofTerm):
-                setattr(node, slot, walk(child, inner))
+                setattr(node, slot, walk(child, inner, sinner))
         return node
 
-    return walk(label_term(body, labels), {})
+    return walk(label_term(body, labels), {}, {})
 
 
 def record_label_mismatches(records, labels) -> list:
@@ -441,6 +484,8 @@ def evaluate_debate(
     semantics: str = "preferred",
     witness=None,
     favour=None,
+    source=None,
+    undecided: str = "witness",
 ):
     """Compile, label, choose the witness sigma, resolve, normalize,
     classify.
@@ -450,14 +495,16 @@ def evaluate_debate(
     labelling semantics the modes range over; ``witness`` the number of
     the credulous witness to use (default: the first accepting one);
     ``favour`` the argument whose derivation a credulous witness should
-    accept if it can (``witness_labelling``).
+    accept if it can (``witness_labelling``); ``source`` the graph the issue
+    graph is taken from (``_compile_for_evaluation``).
     """
-    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds, source)
     issue = issue_of(body)
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
     sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness, favour)
-    normal_form = _evaluate_under(body, name, sigma, tiebreak, strict_names, base)
+    normal_form = _evaluate_under(body, name, sigma, _tiebreak(tiebreak, undecided),
+                                  strict_names, base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
                  _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
@@ -472,6 +519,8 @@ def evaluate_witnesses(
     strict_kinds=None,
     base: str = "cbn",
     semantics: str = "preferred",
+    source=None,
+    undecided: str = "witness",
 ):
     """Credulous evaluation under every accepting witness.
 
@@ -481,20 +530,25 @@ def evaluate_witnesses(
     rejected.  The verdict is the same for all (a value); the normal
     forms differ in which supporters and presumptions survive.
     """
-    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds)
+    graph = _compile_for_evaluation(body, name, strict_names, strict_kinds, source)
     results = []
     for number, sigma in accepting_witnesses(graph, issue_of(body), semantics):
-        nf = _evaluate_under(body, name, sigma, "credulous", strict_names, base)
+        nf = _evaluate_under(body, name, sigma, _tiebreak("credulous", undecided),
+                             strict_names, base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
 
 
-def _compile_for_evaluation(body, name, strict_names, strict_kinds):
-    """The issue graph: the framework plus the strict edges the term
-    contributes (core/dc/strict.py)."""
-    found = first_order_node(body)
-    if found is not None:
-        raise FirstOrderNotSupported("Debate evaluation", found)
+def _compile_for_evaluation(body, name, strict_names, strict_kinds, source=None):
+    """The issue graph: with a ``source`` graph (the document's, or a
+    debate's scope), the part of it reachable from the issue plus the
+    strict edges the term contributes (``document_issue_graph``); without
+    one, the framework compiled from the term plus those strict edges
+    (``compile_issue``, the reference until the generalisation lands;
+    tasks.org, aida-discuss-issue-graph-from-document)."""
+    if source is not None:
+        return document_issue_graph(source, issue_of(body),
+                                    issue_strict_edges(body, name, strict_names), name)
     return compile_issue(body, name, strict_names=strict_names, strict_kinds=strict_kinds)
 
 
@@ -513,8 +567,8 @@ def _evaluate_under(body, name, sigma, tiebreak, strict_names, base):
     strict_trace = []
     strict_body, _ = strict_resolve(body, strict_names or (), trace=strict_trace)
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
+        from pres.gen import pres_tree
+        artifact(logger, "evaluate: the labelled term", pres_tree(label_term(strict_body, sigma)))
     # Phase 2: sigma decides what strictness delayed, reading the labelled term.
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
@@ -548,6 +602,9 @@ def evaluate_shared(
     base: str = "cbn",
     semantics: str = "preferred",
     witness=None,
+    favour=None,
+    source=None,
+    undecided: str = "witness",
 ):
     """``evaluate_debate`` for a ``SharedDebate`` (core/dc/share.py): what
     ``evaluate_debate(shared.expand(), ...)`` returns, up to the names of
@@ -559,15 +616,16 @@ def evaluate_shared(
     sub-debate is written out only inside a wing that is kept.  What is
     normalised is therefore the resolved term, whose size is that of the
     answer, not of the debate.  ``evaluate_debate`` on the unfolded term is
-    the reference this is tested against.
+    the reference this is tested against.  ``source``: as for
+    ``evaluate_debate``.
     """
     resolver = IssueResolver(shared, strict_names, strict_kinds)
-    graph = issue_graph(resolver, name)
-    issue = shared.issue
+    graph = _shared_issue_graph(resolver, name, source)
+    issue = shared.statement
     logger.debug("evaluate: '%s' on %s (%s, %s, base %s)",
                  name, _show(issue, graph.nodes.get(issue[0])), mode, semantics, base)
-    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness)
-    normal_form = _evaluate_shared_under(resolver, name, sigma, tiebreak, base)
+    sigma, tiebreak = witness_labelling(graph, issue, mode, semantics, witness, favour)
+    normal_form = _evaluate_shared_under(resolver, name, sigma, _tiebreak(tiebreak, undecided), base)
     nf_class = classify_nf(normal_form)
     logger.debug("evaluate: '%s' is %s; the issue %s is %s", name, nf_class.upper(),
                  _show(issue, graph.nodes.get(issue[0])), sigma.get(issue))
@@ -582,17 +640,30 @@ def evaluate_witnesses_shared(
     strict_kinds=None,
     base: str = "cbn",
     semantics: str = "preferred",
+    source=None,
+    undecided: str = "witness",
 ):
     """``evaluate_witnesses`` for a ``SharedDebate``: credulous evaluation
     under every accepting witness.  The instances are resolved by
     strictness once and shared by all witnesses."""
     resolver = IssueResolver(shared, strict_names, strict_kinds)
-    graph = issue_graph(resolver, name)
+    graph = _shared_issue_graph(resolver, name, source)
     results = []
-    for number, sigma in accepting_witnesses(graph, shared.issue, semantics):
-        nf = _evaluate_shared_under(resolver, name, sigma, "credulous", base)
+    for number, sigma in accepting_witnesses(graph, shared.statement, semantics):
+        nf = _evaluate_shared_under(resolver, name, sigma, _tiebreak("credulous", undecided), base)
         results.append((number, nf, classify_nf(nf), sigma))
     return results, graph
+
+
+def _shared_issue_graph(resolver, name, source):
+    """``_compile_for_evaluation`` on the shared route: the strict edges
+    come from the resolved instances."""
+    if source is not None:
+        edges = resolver.strict_edges()
+        logger.debug("strict: %d decision(s), %d strict edge(s) for '%s' over %d instance(s)",
+                     len(resolver.decisions()), len(edges), name, len(resolver.instances))
+        return document_issue_graph(source, resolver.shared.statement, edges, name)
+    return issue_graph(resolver, name)
 
 
 def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
@@ -611,14 +682,14 @@ def _evaluate_shared_under(resolver, name, sigma, tiebreak, base):
     if not isinstance(strict_body, (Mu, Mutilde)) and hasattr(strict_body, "number"):
         # A bare site: the eta wrapper every argument has, as unfolding
         # gives the issue (core/dc/unfold.py), so the issue reads off the root.
-        key, side = shared.issue
+        key, side = shared.statement
         prop = shared.graph.nodes.get(key, key)
         strict_body = (Mu(ID("x1", prop), prop, strict_body, ID("x1", prop)) if side == "term"
                        else Mutilde(DI("x1", prop), prop, DI("x1", prop), strict_body))
     # Phase 2: sigma decides what strictness delayed.
     if verbose:
-        from pres.gen import pres_str
-        artifact(logger, "evaluate: the labelled term", pres_str(label_term(strict_body, sigma)))
+        from pres.gen import pres_tree
+        artifact(logger, "evaluate: the labelled term", pres_tree(label_term(strict_body, sigma)))
     sigma_trace = []
     resolved = resolve_scaffolds(strict_body, sigma, tiebreak, strict_names=strict_names,
                                  trace=sigma_trace, stubs=resolver)

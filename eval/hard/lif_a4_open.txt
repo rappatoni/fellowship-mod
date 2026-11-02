@@ -1,0 +1,54 @@
+== literature4/lif_a4_open.fspy: check ok=True (0.1s)
+-- normal: issue forall x:Block,Ab x->false[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+      credulous -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+   preferred issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+      credulous -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+   stable    issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+      credulous -> exception μalt1:forall x:Block,Ab x->false.<?OUT:forall x:Block,Ab x->false||a*μ'b1:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b1:Ab a->false*not_on_a:OnTable a>>
+-- all_on: issue forall x:Block,Heavy x->OnTable x[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->OnTable x[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+      credulous -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+   preferred issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->OnTable x[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+      credulous -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+   stable    issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->OnTable x[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+      credulous -> open      ?OUT:forall x:Block,Heavy x->OnTable x
+-- a_abnormal: issue Ab a->false[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+      credulous -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+   preferred issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+      credulous -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+   stable    issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+      credulous -> value     μ'a_abnormal:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*a_abnormal:Ab a->false*not_on_a:OnTable a>
+-- not_all_normal: issue forall x:Block,Ab x->false[c]; 6 edges
+   grounded  issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+      credulous -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+   preferred issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+      credulous -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+   stable    issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN Ab a->false[c]=IN forall x:Block,Ab x->false[c]=IN forall x:Block,Ab x->false[t]=OUT forall x:Block,Heavy x->(Ab x->false)->OnTable x[t]=IN
+      skeptical -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+      credulous -> value     μ'alt2:forall x:Block,Ab x->false.<alt2:forall x:Block,Ab x->false||a*μ'b2:Ab a->false.<rule:forall x:Block,Heavy x->(Ab x->false)->OnTable x||a*heavy_a:Heavy a*b2:Ab a->false*not_on_a:OnTable a>>
+== done in 0.7s

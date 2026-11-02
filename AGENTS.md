@@ -46,12 +46,25 @@ Use critique outside the manuscript or an explicitly marked AI note instead.
 The detailed authorship policy in the supervision repository controls when it
 is available.
 
+## Design stance
+
+AIDA makes its own design decisions; it is not an implementation of
+ASPIC+ or of any other structured-argumentation framework, and it
+deliberately departs from them (for instance, every implication
+contraposes, defeasible ones included). Do not use ASPIC+, or what
+another framework does, as a reason, a default, or a yardstick in design
+proposals, task notes, or teaching material. Argue from AIDA's own
+calculus, specification and recorded decisions in `tasks.org`.
+
 ## Working rules
 
 - Preserve unrelated user changes and inspect the dirty worktree before edits.
 - Prefer focused changes that keep Python and Fellowship concerns separated.
 - Run the focused tests for every change and the documented test suite when
   feasible.
+- The performance tests (pytest marker `perf`, `make test-perf`) are not part
+  of the default run. Run them sparingly: after changing sharing, unfolding
+  or the instance resolver, and before a performance claim.
 - Rebuild Fellowship and run its relevant tests when OCaml sources change.
 - Support performance claims with a reproducible fixture, configuration, and
   repeated timings. Record semantic equivalence checks as well as elapsed time.

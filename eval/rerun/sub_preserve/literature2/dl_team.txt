@@ -1,0 +1,62 @@
+== literature2/dl_team.fspy: check ok=True (0.2s)
+-- r1: issue Mammal[t]; 14 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+      credulous -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+   preferred issue: ['IN']
+      skeptical -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+      credulous -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+   stable    issue: ['IN']
+      skeptical -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+      credulous -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+-- r2: issue Mammal[t]; 14 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+      credulous -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+   preferred issue: ['IN']
+      skeptical -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+      credulous -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+   stable    issue: ['IN']
+      skeptical -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+      credulous -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+-- r3: issue Mammal[c]; 14 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+   preferred issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+   stable    issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+-- r4: issue Mammal[c]; 14 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+   preferred issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+   stable    issue: ['OUT']
+      skeptical -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+      credulous -> exception μ'alt7:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*OUT:Mammal?>
+-- sup13: issue LaysEggs->~Mammal[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+      credulous -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+      credulous -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+      credulous -> value     μ'alt2:LaysEggs->~Mammal.<r1_over_r3:Monotreme->~(LaysEggs->~Mammal)||monotreme:Monotreme*μb1:LaysEggs->~Mammal.<alt2:LaysEggs->~Mammal||b1:LaysEggs->~Mammal>*_F_>
+-- sup24: issue HasBill->~Mammal[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+      credulous -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+      credulous -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+      credulous -> value     μ'alt2:HasBill->~Mammal.<r2_over_r4:HasFur->~(HasBill->~Mammal)||hasfur:HasFur*μb1:HasBill->~Mammal.<alt2:HasBill->~Mammal||b1:HasBill->~Mammal>*_F_>
+== done in 1.4s

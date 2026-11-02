@@ -1,0 +1,42 @@
+== literature/t_subtraction.fspy: check ok=True (0.1s)
+-- c1: issue A-A[c]; 1 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+      credulous -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+   preferred issue: ['IN']
+      skeptical -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+      credulous -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+   stable    issue: ['IN']
+      skeptical -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+      credulous -> value     μ'c1:A-A.<c1:A-A||λh:A.h:A>
+-- c2: issue A-B[c]; 1 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      OUT:A-B?
+      credulous -> open      OUT:A-B?
+   preferred issue: ['OUT']
+      skeptical -> open      OUT:A-B?
+      credulous -> open      OUT:A-B?
+   stable    issue: ['OUT']
+      skeptical -> open      OUT:A-B?
+      credulous -> open      OUT:A-B?
+-- c3: issue B-B[c]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+   preferred issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+   stable    issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+-- c3s: issue B-B[c]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+   preferred issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+   stable    issue: ['IN']
+      skeptical -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+      credulous -> value     μ'c3s:B-B.<c3s:B-B||λk:B.k:B>
+== done in 0.4s

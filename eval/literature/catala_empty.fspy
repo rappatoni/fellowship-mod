@@ -1,0 +1,12 @@
+# Catala: no base definition, and the only exception's condition does not
+# hold (children is not established). Catala: NoValueProvided at run time.
+lk.
+declare Rate15, Children : bool.
+declare exc_rule : (Children -> Rate15).
+argument exc : (Rate15).
+cut (Children -> Rate15) th.
+axiom exc_rule.
+elim.
+next.
+axiom th.
+dixi.

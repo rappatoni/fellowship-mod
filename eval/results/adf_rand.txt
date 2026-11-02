@@ -1,0 +1,180 @@
+ok support_chain: a: T; b: a; c: b
+ok attack_chain: a: T; b: ~a; c: ~b
+ok joint_attack: a: T; b: T; c: ~a | ~b
+ok joint_support: a: T; b: ~d; c: a&b; d: F
+ok mixed: a: T; b: ~c; c: a&~b
+ok xor: a: T; b: ~e; c: a&~b | ~a&b; e: F
+ok self_support: a: a
+ok support_cycle: a: b; b: a
+ok support_cycle_with_base: a: b | ~c; b: a; c: F
+ok odd_negative: a: ~a
+ok even_negative: a: ~b; b: ~a
+ok rand0: a: ~b | T; b: ~b&c | T; c: F; d: F
+ok rand1: a: ~a&~b | T; b: F; c: T; d: F
+ok rand2: a: ~b; b: ~d&a; c: ~a; d: ~c
+ok rand3: a: F
+ok rand4: a: T | a
+ok rand5: a: T
+MISMATCH rand6: a: ~a | a
+    grounded: reference [('IN',)] AIDA [('UNDEC',)]
+    complete: reference [('IN',)] AIDA [('IN',), ('UNDEC',)]
+    stable: reference [('IN',)] AIDA []
+ok rand7: a: T; b: b; c: F
+ok rand8: a: a&b; b: ~a&~b
+ok rand9: a: T | b; b: F; c: a&d; d: F
+ok rand10: a: T
+ok rand11: a: T; b: a; c: F; d: ~a&~c
+ok rand12: a: F; b: ~b; c: T; d: ~d
+ok rand13: a: F
+ok rand14: a: F
+ok rand15: a: ~b&c; b: ~c | T; c: T
+ok rand16: a: F; b: T; c: b&c; d: F
+ok rand17: a: a
+ok rand18: a: T
+ok rand19: a: ~a&~b; b: ~a | T; c: F; d: T | ~a&b
+ok rand20: a: ~c&b; b: T; c: T | ~a; d: a&d | ~c&a
+ok rand21: a: ~d; b: ~a; c: T | T; d: F
+ok rand22: a: ~c | b; b: ~d; c: T | c; d: ~d&b
+ok rand23: a: T; b: T
+ok rand24: a: T; b: F; c: T; d: F
+ok rand25: a: ~d | ~d; b: ~d&a; c: F; d: F
+ok rand26: a: b | T; b: T
+ok rand27: a: T | ~a
+MISMATCH rand28: a: a | ~a; b: T
+    grounded: reference [('IN', 'IN')] AIDA [('UNDEC', 'IN')]
+    complete: reference [('IN', 'IN')] AIDA [('IN', 'IN'), ('UNDEC', 'IN')]
+    stable: reference [('IN', 'IN')] AIDA []
+ok rand29: a: ~a&~c; b: ~a&c | b; c: ~a&c
+ok rand30: a: ~a | T; b: F; c: T
+ok rand31: a: F; b: ~c&a; c: d; d: ~b
+ok rand32: a: T | T
+ok rand33: a: c; b: ~c | T; c: ~b
+ok rand34: a: ~a; b: T
+ok rand35: a: T | ~c; b: F; c: T | ~c
+ok rand36: a: T | a
+ok rand37: a: b; b: ~a | T; c: a&b | T
+ok rand38: a: T; b: F
+ok rand39: a: b&c; b: F; c: ~a&c
+MISMATCH rand40: a: ~b | b&c; b: ~b; c: T; d: F
+    grounded: reference [('IN', 'UNDEC', 'IN', 'OUT')] AIDA [('UNDEC', 'UNDEC', 'IN', 'OUT')]
+    complete: reference [('IN', 'UNDEC', 'IN', 'OUT')] AIDA [('UNDEC', 'UNDEC', 'IN', 'OUT')]
+    preferred: reference [('IN', 'UNDEC', 'IN', 'OUT')] AIDA [('UNDEC', 'UNDEC', 'IN', 'OUT')]
+ok rand41: a: T; b: F
+ok rand42: a: T | ~b; b: T; c: ~a&c | b&c
+ok rand43: a: T; b: T | T; c: F
+ok rand44: a: T; b: T; c: T; d: ~a
+ok rand45: a: a
+ok rand46: a: c; b: F; c: F; d: T
+ok rand47: a: ~d | T; b: T; c: F; d: T
+ok rand48: a: ~c; b: T; c: c; d: ~d
+ok rand49: a: T; b: a
+ok rand50: a: F; b: ~c; c: b
+ok rand51: a: F; b: ~a&~b | ~b&a
+ok rand52: a: ~a&b | T; b: c; c: ~a | ~a&b; d: ~d | ~a&d
+ok rand53: a: c; b: T; c: F; d: b&d
+ok rand54: a: a
+ok rand55: a: ~b | T; b: F; c: T | T; d: F
+MISMATCH rand56: a: a | ~a
+    grounded: reference [('IN',)] AIDA [('UNDEC',)]
+    complete: reference [('IN',)] AIDA [('IN',), ('UNDEC',)]
+    stable: reference [('IN',)] AIDA []
+ok rand57: a: T | c; b: ~c | T; c: b
+ok rand58: a: ~c; b: a; c: a&b
+ok rand59: a: F; b: F; c: F; d: ~b&a
+ok rand60: a: a; b: a
+ok rand61: a: F
+ok rand62: a: c; b: T | c; c: ~b&c; d: F
+ok rand63: a: T; b: F; c: ~d&a | T; d: T
+ok rand64: a: ~a
+ok rand65: a: T; b: ~b; c: ~b&~c | ~b&a
+ok rand66: a: T; b: d; c: T | ~b&~d; d: T
+ok rand67: a: T; b: ~a&b; c: T | ~a&c; d: F
+ok rand68: a: F; b: F; c: T
+ok rand69: a: ~d&c; b: ~c; c: a; d: F
+ok rand70: a: T; b: T | ~a; c: a&d; d: T
+ok rand71: a: a&b | ~a; b: ~b | ~b&a
+ok rand72: a: T | a
+ok rand73: a: c; b: b; c: T | ~c
+ok rand74: a: ~c; b: F; c: T | b; d: ~a&~c | ~a&~c
+ok rand75: a: b&c; b: ~b; c: ~b; d: F
+ok rand76: a: T; b: F
+ok rand77: a: ~a&~c; b: T | ~c&a; c: T | b&c
+ok rand78: a: T | d; b: F; c: ~a; d: T
+ok rand79: a: F; b: ~b
+ok rand80: a: F; b: ~b
+ok rand81: a: ~c&b; b: ~a&~b | T; c: ~a&c
+ok rand82: a: b; b: F
+ok rand83: a: T
+ok rand84: a: F; b: ~b | ~a
+ok rand85: a: ~a&b; b: ~a | b
+ok rand86: a: T | b&c; b: F; c: ~b
+ok rand87: a: ~a; b: ~a
+ok rand88: a: b | a; b: ~b&a | T
+ok rand89: a: T; b: F; c: ~a&~b
+ok rand90: a: ~a&b; b: ~a&b
+ok rand91: a: a; b: T
+ok rand92: a: T; b: F
+MISMATCH rand93: a: ~b | b; b: ~b
+    grounded: reference [('IN', 'UNDEC')] AIDA [('UNDEC', 'UNDEC')]
+    complete: reference [('IN', 'UNDEC')] AIDA [('UNDEC', 'UNDEC')]
+    preferred: reference [('IN', 'UNDEC')] AIDA [('UNDEC', 'UNDEC')]
+ok rand94: a: T | ~d&c; b: T | ~c; c: ~b&d; d: F
+ok rand95: a: ~b&a; b: ~a&~b | a
+ok rand96: a: T | a
+ok rand97: a: T
+ok rand98: a: ~a | T
+ok rand99: a: T; b: T; c: b | T
+ok rand100: a: T; b: ~b&c; c: T | T; d: ~a&~b
+ok rand101: a: ~a
+ok rand102: a: a | c; b: a; c: c
+ok rand103: a: ~a
+ok rand104: a: T; b: F
+ok rand105: a: F; b: a&c | a&b; c: T; d: ~b
+ok rand106: a: a
+ok rand107: a: ~a
+ok rand108: a: T
+ok rand109: a: ~b&c | T; b: ~a; c: T
+ok rand110: a: ~a | T
+ok rand111: a: F
+ok rand112: a: b; b: a
+ok rand113: a: a; b: F
+ok rand114: a: ~a | T; b: ~a
+ok rand115: a: F
+ok rand116: a: a | a; b: F
+MISMATCH rand117: a: ~a | ~a; b: ~a | a
+    grounded: reference [('UNDEC', 'IN')] AIDA [('UNDEC', 'UNDEC')]
+    complete: reference [('UNDEC', 'IN')] AIDA [('UNDEC', 'UNDEC')]
+    preferred: reference [('UNDEC', 'IN')] AIDA [('UNDEC', 'UNDEC')]
+ok rand118: a: T | b; b: a
+ok rand119: a: a&c; b: ~b; c: b&c; d: F
+ok rand120: a: T; b: ~a&b
+ok rand121: a: T | a; b: ~d; c: F; d: T
+ok rand122: a: F; b: b
+ok rand123: a: ~b; b: T
+ok rand124: a: c | b; b: ~a; c: F
+ok rand125: a: T
+ok rand126: a: F; b: T; c: T
+ok rand127: a: F; b: d | c; c: T; d: T | ~c
+ok rand128: a: F; b: ~b
+ok rand129: a: ~b&a; b: b | b&c; c: F
+ok rand130: a: F
+ok rand131: a: ~b; b: b&c; c: F
+ok rand132: a: F; b: F
+ok rand133: a: T | d; b: ~d | T; c: ~c&d; d: F
+ok rand134: a: a; b: b
+ok rand135: a: a
+ok rand136: a: F; b: ~b; c: b
+ok rand137: a: ~b&c; b: F; c: F; d: F
+ok rand138: a: F; b: ~b&c | ~a; c: c
+ok rand139: a: ~c; b: ~b; c: ~b&~c; d: T
+ok rand140: a: ~a | ~a; b: F
+ok rand141: a: T; b: ~a&c; c: F; d: ~d | T
+ok rand142: a: F; b: ~c; c: T
+ok rand143: a: T; b: T | T; c: b; d: T
+ok rand144: a: ~b; b: T; c: F
+ok rand145: a: ~a; b: T; c: F; d: b
+ok rand146: a: b | a&b; b: T
+ok rand147: a: ~c; b: F; c: T
+ok rand148: a: F; b: F
+ok rand149: a: T; b: T; c: T | T
+155/161 ADFs agree on all four semantics

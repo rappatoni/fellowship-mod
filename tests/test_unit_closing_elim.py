@@ -51,8 +51,8 @@ def test_primitive_negation_falsum_needs_no_closing_elim():
 
 
 def test_primitive_negation_is_distinguished_from_arrow_into_falsum():
-    # is_negation_prop accepts both shapes, which is why it cannot decide
-    # whether a falsum still needs discharging.
+    # A test accepting both shapes could not decide whether a falsum still
+    # needs discharging.
     assert is_primitive_negation_prop("~A")
     assert is_primitive_negation_prop("¬A")
     assert not is_primitive_negation_prop("A->false")

@@ -1,0 +1,9 @@
+== literature3/bug_fo_open_source.fspy: check ok=True (0.0s)
+-- a: issue ((exists x:D,P x)->false)->(forall x:D,P x->false)[t]; 2 edges
+   grounded  issue: ['OUT']
+      skeptical -> value     μa:((exists x:D,P x)->false)->(forall x:D,P x->false).<λf:(exists x:D,P x)->false.λx:D.λp:P x.μg:false.<f:(exists x:D,P x)->false||(x,p:P x)*_F_>||a:((exists x:D,P x)->false)->(forall x:D,P x->false)>   <-- ADEQUACY MISMATCH
+      credulous -> value     μa:((exists x:D,P x)->false)->(forall x:D,P x->false).<λf:(exists x:D,P x)->false.λx:D.λp:P x.μg:false.<f:(exists x:D,P x)->false||(x,p:P x)*_F_>||a:((exists x:D,P x)->false)->(forall x:D,P x->false)>   <-- ADEQUACY MISMATCH
+   preferred issue: ['OUT']
+      skeptical -> value     μa:((exists x:D,P x)->false)->(forall x:D,P x->false).<λf:(exists x:D,P x)->false.λx:D.λp:P x.μg:false.<f:(exists x:D,P x)->false||(x,p:P x)*_F_>||a:((exists x:D,P x)->false)->(forall x:D,P x->false)>   <-- ADEQUACY MISMATCH
+      credulous -> value     μa:((exists x:D,P x)->false)->(forall x:D,P x->false).<λf:(exists x:D,P x)->false.λx:D.λp:P x.μg:false.<f:(exists x:D,P x)->false||(x,p:P x)*_F_>||a:((exists x:D,P x)->false)->(forall x:D,P x->false)>   <-- ADEQUACY MISMATCH
+== done in 0.1s

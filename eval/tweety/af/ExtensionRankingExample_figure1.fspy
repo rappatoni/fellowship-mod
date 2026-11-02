@@ -1,0 +1,134 @@
+# ExtensionRankingExample.java (figure1): arguments 1, 2, 3, 4, 5, 6, 7; attacks 1->2, 2->3, 3->4, 3->5, 3->6, 4->3, 4->6, 5->5, 6->7, 7->6
+lk.
+declare A_1, A_2, A_3, A_4, A_5, A_6, A_7 : bool.
+declare att_a_1_a_2 : (A_1 -> ~A_2).
+declare att_a_2_a_3 : (A_2 -> ~A_3).
+declare att_a_3_a_4 : (A_3 -> ~A_4).
+declare att_a_3_a_5 : (A_3 -> ~A_5).
+declare att_a_3_a_6 : (A_3 -> ~A_6).
+declare att_a_4_a_3 : (A_4 -> ~A_3).
+declare att_a_4_a_6 : (A_4 -> ~A_6).
+declare att_a_5_a_5 : (A_5 -> ~A_5).
+declare att_a_6_a_7 : (A_6 -> ~A_7).
+declare att_a_7_a_6 : (A_7 -> ~A_6).
+argument a_1 : (A_1).
+by default.
+dixi.
+argument a_2 : (A_2).
+by default.
+dixi.
+argument a_3 : (A_3).
+by default.
+dixi.
+argument a_4 : (A_4).
+by default.
+dixi.
+argument a_5 : (A_5).
+by default.
+dixi.
+argument a_6 : (A_6).
+by default.
+dixi.
+argument a_7 : (A_7).
+by default.
+dixi.
+counterargument a_1_on_a_2 : (A_2).
+cut (~A_2) x.
+cut (A_1 -> ~A_2) th.
+axiom att_a_1_a_2.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_2_on_a_3 : (A_3).
+cut (~A_3) x.
+cut (A_2 -> ~A_3) th.
+axiom att_a_2_a_3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_3_on_a_4 : (A_4).
+cut (~A_4) x.
+cut (A_3 -> ~A_4) th.
+axiom att_a_3_a_4.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_3_on_a_5 : (A_5).
+cut (~A_5) x.
+cut (A_3 -> ~A_5) th.
+axiom att_a_3_a_5.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_3_on_a_6 : (A_6).
+cut (~A_6) x.
+cut (A_3 -> ~A_6) th.
+axiom att_a_3_a_6.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_4_on_a_3 : (A_3).
+cut (~A_3) x.
+cut (A_4 -> ~A_3) th.
+axiom att_a_4_a_3.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_4_on_a_6 : (A_6).
+cut (~A_6) x.
+cut (A_4 -> ~A_6) th.
+axiom att_a_4_a_6.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_5_on_a_5 : (A_5).
+cut (~A_5) x.
+cut (A_5 -> ~A_5) th.
+axiom att_a_5_a_5.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_6_on_a_7 : (A_7).
+cut (~A_7) x.
+cut (A_6 -> ~A_7) th.
+axiom att_a_6_a_7.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_7_on_a_6 : (A_6).
+cut (~A_6) x.
+cut (A_7 -> ~A_6) th.
+axiom att_a_7_a_6.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

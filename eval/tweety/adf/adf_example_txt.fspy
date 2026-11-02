@@ -1,0 +1,51 @@
+# Tweety ADF (adf_example_txt): a := ~b; b := ~a; c := ~a or ~b
+lk.
+declare A, B, C : bool.
+declare rule_a_1 : ((B -> false) -> A).
+argument a_a_1 : (A).
+cut ((B -> false) -> A) th.
+axiom rule_a_1.
+elim.
+elim h0.
+cut (B) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+declare rule_b_2 : ((A -> false) -> B).
+argument a_b_2 : (B).
+cut ((A -> false) -> B) th.
+axiom rule_b_2.
+elim.
+elim h0.
+cut (A) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+declare rule_c_3 : ((A -> false) -> C).
+argument a_c_3 : (C).
+cut ((A -> false) -> C) th.
+axiom rule_c_3.
+elim.
+elim h0.
+cut (A) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.
+declare rule_c_4 : ((B -> false) -> C).
+argument a_c_4 : (C).
+cut ((B -> false) -> C) th.
+axiom rule_c_4.
+elim.
+elim h0.
+cut (B) k0.
+axiom h0.
+by default.
+next.
+axiom th.
+dixi.

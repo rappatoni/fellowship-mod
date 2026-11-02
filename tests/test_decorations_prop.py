@@ -117,11 +117,9 @@ def test_compound_first_order_argument_renders():
 # ---------------------------------------------------------------------------
 
 
-def test_single_quoted_template():
-    assert parse_decorate_command("decorate Bird : '@arg1 is a bird'.") == (
-        "Bird",
-        "@arg1 is a bird",
-    )
+def test_single_quoted_template_is_refused_with_its_replacement():
+    with pytest.raises(DecorationError, match='double-quote it, decorate Bird : "@arg1 is a bird".'):
+        parse_decorate_command("decorate Bird : '@arg1 is a bird'.")
 
 
 def test_double_quoted_template_is_json_decoded():

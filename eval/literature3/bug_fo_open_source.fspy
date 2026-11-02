@@ -1,0 +1,20 @@
+# Minimal reproduction: a strict, closed proof of the intuitionistic
+# theorem ~(exists x, P x) -> forall x, ~P x is labelled OUT. The
+# elimination cell (x, p) * _F_ - the pair introduces exists x, P x from
+# the bound x and the lambda-bound hypothesis p - is exposed as a
+# subargument whose source P x is an open statement (it mentions x) and is
+# counted as an obligation; p is the argument's own hypothesis.
+lk.
+declare D : type.
+declare P : D -> bool.
+argument a : (((exists x:D, P [x]) -> false) -> (forall x:D, P [x] -> false)).
+elim f.
+elim x.
+elim p.
+cut ((exists x:D, P [x]) -> false) g.
+axiom f.
+elim.
+elim [x].
+axiom p.
+elim.
+dixi.

@@ -1,0 +1,28 @@
+== literature3/fo_tweety_opus_counterinstance.fspy: check ok=True (0.0s)
+-- flies_tweety: issue Flies tweety[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] Bird opus[t]=IN Bird tweety[t]=IN Flies opus[c]=IN Flies tweety[t]=OUT Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+   preferred issue: ['OUT']
+      [1] Bird opus[t]=IN Bird tweety[t]=IN Flies opus[c]=IN Flies tweety[t]=OUT Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+   stable    issue: ['OUT']
+      [1] Bird opus[t]=IN Bird tweety[t]=IN Flies opus[c]=IN Flies tweety[t]=OUT Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> open      ?OUT:Flies tweety
+      credulous -> open      ?OUT:Flies tweety
+-- rule_fails: issue forall x:Animal,Bird x->Flies x[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+      credulous -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+   preferred issue: ['IN']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+      credulous -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+   stable    issue: ['IN']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus->false[t]=IN forall x:Animal,Bird x->Flies x[c]=IN forall x:Animal,Bird x->Flies x[t]=OUT
+      skeptical -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+      credulous -> value     μ'alt6:forall x:Animal,Bird x->Flies x.<alt6:forall x:Animal,Bird x->Flies x||opus*bird_opus:Bird opus*μ'b2:Flies opus.<opus_grounded:Flies opus->false||b2:Flies opus*_F_>>
+== done in 0.2s

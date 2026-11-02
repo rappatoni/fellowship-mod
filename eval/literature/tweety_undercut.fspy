@@ -1,0 +1,40 @@
+# Tweety again, with the exception written as an undercutter (Pollock):
+# being a penguin is a reason against applying "birds fly" to Tweety. The
+# undercutter refutes the presumed rule Bird->Flies, strictly.
+lk.
+declare Bird, Penguin, Flies : bool.
+declare penguin : (Penguin).
+declare penguins_are_birds : (Penguin -> Bird).
+declare penguin_exception : (Penguin -> ~(Bird -> Flies)).
+argument birdsfly : (Flies).
+cut (Bird -> Flies) r.
+by default.
+next.
+elim.
+cut (Penguin -> Bird) s.
+axiom penguins_are_birds.
+elim.
+axiom penguin.
+axiom s.
+axiom r.
+dixi.
+counterargument penguinsdont : (Flies).
+cut (Penguin -> ~Flies) r.
+by default.
+next.
+elim.
+axiom penguin.
+elim.
+axiom.
+dixi.
+# exception: the rule "birds fly" does not apply to a penguin.
+counterargument exception : (Bird -> Flies).
+cut (~(Bird -> Flies)) x.
+cut (Penguin -> ~(Bird -> Flies)) th.
+axiom penguin_exception.
+elim.
+axiom penguin.
+axiom.
+elim.
+axiom.
+dixi.

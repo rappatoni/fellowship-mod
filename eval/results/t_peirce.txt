@@ -1,0 +1,80 @@
+== literature/t_peirce.fspy: check ok=True (0.1s)
+-- p1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+   preferred issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+   stable    issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+-- s1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+   preferred issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+   stable    issue: ['IN']
+      [1] ((P->Q)->P)->P[t]=IN (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+      credulous -> value     μs1:((P->Q)->P)->P.<λf:(P->Q)->P.μalt16:P.<f:(P->Q)->P||λb1:P.μb2:Q.<b1:P||alt16:P>*alt16:P>||s1:((P->Q)->P)->P>
+-- p2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+   preferred issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+   stable    issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+-- s2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+   preferred issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+   stable    issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      μalt18:P.<?OUT:P||alt18:P>
+      credulous -> open      μalt18:P.<?OUT:P||alt18:P>
+-- p3: issue Q[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      ?OUT:Q
+      credulous -> open      ?OUT:Q
+   preferred issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      ?OUT:Q
+      credulous -> open      ?OUT:Q
+   stable    issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      ?OUT:Q
+      credulous -> open      ?OUT:Q
+-- s3: issue P->Q[c]; 6 edges
+   grounded  issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      OUT:P->Q?
+      credulous -> open      OUT:P->Q?
+   preferred issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      OUT:P->Q?
+      credulous -> open      OUT:P->Q?
+   stable    issue: ['OUT']
+      [1] (P->Q)->P[t]=OUT P->Q[c]=OUT P->Q[t]=OUT P[c]=OUT P[t]=OUT Q[t]=OUT
+      skeptical -> open      OUT:P->Q?
+      credulous -> open      OUT:P->Q?
+== done in 2.0s

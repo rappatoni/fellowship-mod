@@ -1,0 +1,29 @@
+# The drinker paradox (Smullyan): exists x, (D x -> forall y, D y),
+# classically valid, intuitionistically not. Dialectically: the proponent
+# claims it, offers the witness c (owing D c -> forall y, D y), and for that
+# implication, given D c and an arbitrary y, offers y as a second witness
+# to the original claim (owed: its refutation, the claim's continuation),
+# throwing D y back. Every owed statement is closed, but the throw of D y
+# to its own continuation happens under a second continuation binder (the
+# goal forall y, D y): not linear, refused at the pure level; and it cannot
+# be split off, since D y mentions the bound y.
+lk.
+declare Pub : type.
+declare c : Pub.
+declare Dr : Pub -> bool.
+argument p1 : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+dixi.
+argument p2 : (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])).
+elim [c].
+dixi.
+argument p3 : (Dr [c] -> (forall y:Pub, Dr [y])).
+elim h.
+elim y.
+cut (exists x:Pub, Dr [x] -> (forall y:Pub, Dr [y])) k.
+elim [y].
+elim d.
+cut (Dr [y]) m.
+axiom d.
+axiom k.
+next.
+dixi.

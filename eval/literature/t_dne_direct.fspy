@@ -1,0 +1,20 @@
+# Double negation elimination, ~~A -> A, written as first intended (with ~
+# and falsum closed by elim), now that an elimination cell ending in the
+# falsum context compiles (tasks.org, aida-negation-cell-horn).
+lk.
+declare A : bool.
+argument p1 : (~~A -> A).
+dixi.
+argument s1 : (~~A -> A).
+elim f.
+dixi.
+argument p2 : (A).
+cut (~~A) g.
+next.
+elim.
+next.
+dixi.
+argument p3 : (~A).
+elim h.
+next.
+dixi.

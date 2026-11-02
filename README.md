@@ -2,14 +2,16 @@
 
 `AIDA` is an implementation of `AC/DC` (`Argument Calculus/Debate Calculus`), a calculus for the construction, compilation and evaluation of arguments and debates. Its present manifestation is a Python wrapper and experimentation environment around the
 [Fellowship prover](https://github.com/theoremprover-museum/fellowship).
-It provides a workflow for constructing, composing, normalizing, and rendering
+It provides a workflow for constructing, composing, evaluating, and rendering
 arguments and debates as proof terms over a classical control-operator calculus.
 
 The repository combines:
 - the native Fellowship prover under `wrap/fellowship/`
-- a Python wrapper (`wrap/prover.py`) that talks to Fellowship in machine mode
-- an argument/debate layer (`core/dc/argument.py`)
-- multiple presentation layers (`pres/`) for natural language and
+- a Python wrapper (`wrap/`): the session that talks to Fellowship in
+  machine mode, the document it holds, the command syntax and its
+  interpreter, the CLI, and a service layer with JSON output for programs
+- the argument calculus and the debate compiler (`core/`)
+- presentation layers (`pres/`) for proof terms, natural language and
   acceptance trees
 
 An earlier motivation/theory overview is available
@@ -18,26 +20,23 @@ An earlier motivation/theory overview is available
 ## What is currently implemented
 
 The current codebase supports:
-- theorem and counterargument / antitheorem workflows
-- raw Fellowship commands and wrapper-level recording commands
-- argument composition by grafting / chaining
-- debate operations:
-  - `attack`
-  - `undercut` / `undermine`
-  - `rebut`
-  - `support`
-  - `undergird`
-  - `reinforce`
-- normalization of argument terms in multiple evaluation disciplines
-- natural-language rendering styles:
-  - `argumentation`
-  - `dialectical`
-  - `intuitionistic`
-  - `vanilla`
-- debate graphs, ADF labelling (via adf-bdd) and label-guided evaluation
+- arguments and counterarguments recorded as blocks, statements proved or
+  refined later, and Fellowship's own commands and tactics
+- citation of registered arguments by name (`cite NAME`)
+- the document graph: every registered argument contributes its edges, and
+  conflicts arise by proposition identity
+- debates: named, ordered selections of a document's arguments, open or
+  closed, with checked moves (`attack`, `rebut`, `undermine`/`undercut`,
+  `support`, `buttress`/`reinforce`, `undergird`)
+- debate graphs, ADF labelling (via adf-bdd) and label-guided evaluation,
+  skeptical or credulous, call-by-name or call-by-value
+- natural-language rendering styles: `argumentation`, `dialectical`,
+  `intuitionistic`, `vanilla`, `pruefschema`
 - acceptance-tree export through Graphviz (with DOT fallback), coloured by
   the grounded labels
-- machine-mode integration with Fellowship, including prover state extraction
+- sessions and documents, a service layer for programs, whole-document
+  checks with source positions, and versioned JSON
+  (see *Sessions and documents* and *The service layer*)
 - first-order propositions and proof terms: `forall` / `exists`, sorts, and
   first-order terms, through parsing, type synthesis, replay and rendering
   (see *First-order logic* below for what is and is not supported)
@@ -47,35 +46,34 @@ The current codebase supports:
 The debate compiler - unfolding a document into a debate term, compiling
 and labelling it, and evaluating it under a witness labelling - is the
 main line of development. It covers the quantifier-free fragment,
-derivation cycles included, and is still incomplete. Known gaps, each
+derivation cycles included, and first-order debates whose sites are
+closed statements (see *First-order logic*); it is still incomplete. Known gaps, each
 tracked in `tasks.org`:
 
-- **Only sites can be attacked or supported.** The specification
-  (`debate-graph-spec.org`, rational closure) lets attacks and supports
-  reach subarguments and intermediate conclusions too.
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
-- **No first-order debates.** Normalisation and the debate operations
-  refuse first-order terms (see *First-order logic*).
-- **The shared route lags behind.** `pipeline shared` still builds the
-  earlier scaffold shape and has not been ported to the stacked shape and
-  the argument entrypoints, so the default route is `unfolded`.
+- **First-order debates need closed sites.** An argument that presumes or
+  owes an open formula under a quantifier is left out of the document
+  graph (see *First-order logic*).
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
-  constraints are not translated yet.
-- **The old debate verbs are deprecated.** `attack`, `support`,
-  `undercut`/`undermine`, `rebut`, `undergird`, `reinforce` and `chain`
-  build a debate by grafting scaffolds into a term, and `reduce`,
-  `normalize` and `render-nf` normalise with the legacy term-level
-  reducer. Neither goes through the compiler pipeline, and they are
-  probably not safe to use until they are wired to it (see *Debate
-  commands*). Register arguments and use `graph`, `label`, `evaluate` and
-  `explain` instead.
+  constraints are not translated yet, some query shapes are refused, and
+  a conjunctive query is narrowed to its first atom (scasp-aida's README,
+  "What is not covered yet"). So an imported debate has one labelling under
+  every semantics, and its agreement with s(CASP) does not yet test stable
+  models (`aida-round-trip-equivalence-study` in `tasks.org`).
 
-Smaller design questions are open as well. `minicourse-evaluation.org` and
-`minicourse-sharing.org` explain the pipeline lesson by lesson; they are
-drafted by an AI agent and pinned by tests, and still await the author's
-review.
+Smaller design questions are open as well.
+
+`docs/minicourses/` holds six minicourses, each lesson by lesson with
+exercises: `minicourse.org` (arguments, graphs and labels),
+`minicourse-evaluation.org` (the evaluation pipeline),
+`minicourse-sharing.org` (sub-debates shared by name),
+`minicourse-superdeduction.org`, `minicourse-api.org` (AIDA from a
+program) and `minicourse-scasp-import.org` (the s(CASP) importer; a symlink
+to the file in a scasp-aida checkout beside this one, pinned by the tests
+there), and `glossary.org` explains their terminology. They are drafted by an AI agent, pinned by the tests under
+`tests/minicourse/`, and still await the author's review.
 
 ## Requirements
 
@@ -184,22 +182,46 @@ xattr -d com.apple.quarantine "$ACDC_FSP"
 The prompt has readline line editing (emacs bindings) and a history file
 (`~/.acdc_history`, or `ACDC_HISTORY`). A pasted block runs one line at a
 time; lines starting with `#` are echoed as narration and lines starting
-with `%` are ignored, as in scripts. `load FILE` runs a script inside the
-session. A script loaded with `--load` or `load` stops at a `%stop` line,
+with `%` are ignored, as in scripts. `load "FILE".` runs a script inside the
+session, in a new document: whatever the session held before is gone.
+It prints what typing the file at the prompt would (see `--verbose`
+under Script mode); `load silent "FILE".` runs it with a script's output.
+A script loaded with `--load` or `load` stops at a `%stop` line,
 so a demo file can hold its setup above the marker and the commands to
 paste below it; `--script` runs the whole file. See `tests/demo/README.md`.
+
+`save "FILE".` writes the session so far back as a script that `load`
+runs again: the accepted commands, comments included. A command that was
+refused or failed is left out, and so is every line of an argument block
+refused at `dixi.`/`qed.` or abandoned with `discard theorem.`. `save all
+"FILE".` writes every command, each failed one after a silent `%` line
+saying why (`% refused:` and Fellowship's reply, one `%` line per line),
+so loading it meets the same failures. A
+`load "FILE".` line is written as itself, not as the file's commands. The
+file name must be quoted when it contains a dot. `save` is not itself
+written.
 
 ### Script mode
 
 ```bash
-.venv/bin/acdc --script tests/normalize_render.fspy
+.venv/bin/acdc --script tests/debates.fspy
+.venv/bin/acdc --script tests/debates.fspy --verbose
 ```
+
+By default a script narrates through the logger and keeps Fellowship's
+replies to itself. `--verbose` prints what interactive mode prints for the
+same commands: each command after its prompt, as a terminal shows what
+you type, Fellowship's notes and replies, the goals after every step of
+an argument, and refusals in full. The steps of an argument go to
+Fellowship as they come, as at the prompt, instead of being replayed at
+`dixi.`. The run stops as a script does, at the first Fellowship error,
+with `Stopped at FILE:LINE.`; the prompt would carry on.
 
 ### Via the Makefile
 
 ```bash
 make cli ARGS="--help"
-make cli ARGS="--script tests/normalize_render.fspy"
+make cli ARGS="--script tests/debates.fspy"
 ```
 
 ### Preloading a script into interactive mode
@@ -208,8 +230,19 @@ make cli ARGS="--script tests/normalize_render.fspy"
 before dropping into the REPL. It can only be combined with `--interactive`:
 
 ```bash
-.venv/bin/acdc --interactive --load tests/normalize_render.fspy
+.venv/bin/acdc --interactive --load tests/debates.fspy
+.venv/bin/acdc --interactive --load tests/debates.fspy --prompt-on-error
+.venv/bin/acdc --interactive --load tests/debates.fspy --silent
 ```
+
+The load prints what typing the file at the prompt would, as `--script
+--verbose` does; `--silent` gives it a script's output instead. On an
+error or a refusal the load exits with `load: stopped at FILE:LINE.`
+(with `--silent`, `load: stopped: FILE:LINE: ...`). With `--prompt-on-error` it opens the prompt where the script
+stopped instead, inside the argument if it stopped in one, so you can try
+the step again; the rest of the file is not run. The session goes on
+from the load, so `save "FILE".` writes the loaded commands that were
+accepted and what you typed after.
 
 ### Importing from other formalisms
 
@@ -228,6 +261,13 @@ separate packages that register under the `acdc.importers` entry point (see
 .venv/bin/acdc --import scasp path/to/proof.json interactive
 ```
 
+The script scasp-aida writes is a registered debate: the declarations it
+shares with the document, then one `register debate` block. Inside a document,
+`register debate NAME import LANGUAGE "SOURCE".` does the same without the
+intermediate file, and reads the language's own files (an s(CASP) program) if
+the importer offers them under `acdc.importer_sources` (see *Registered
+debates*).
+
 ## Logging and environment variables
 
 ### CLI logging
@@ -235,7 +275,7 @@ separate packages that register under the `acdc.importers` entry point (see
 The CLI supports:
 
 ```bash
-acdc --log-level DEBUG --log-file acdc.log --script tests/normalize_render.fspy
+acdc --log-level DEBUG --log-file acdc.log --script tests/debates.fspy
 ```
 
 You can also set the default log level with:
@@ -250,13 +290,13 @@ export FSP_LOGLEVEL=DEBUG
 `DEBUG` each prints the artifact it produced.
 
 The phases are described below as they act on the *unfolded* debate term,
-which is what defines them and what the default route builds. `pipeline
-shared` (or `FSP_PIPELINE=shared`) keeps the debate as named sub-debates
+which is what defines them. The default route, `pipeline shared` (or
+`FSP_PIPELINE=shared`), keeps the same debate as named sub-debates
 instead, and each phase works on those (see the note after phase 5 and
-`debate ARG`); `pipeline unfolded` switches back. The shared route has not
-yet been ported to the stacked shape the unfolded route builds (see
-*Status*). The unfolded route's cost grows with the number of paths
-through the document graph.
+`share ARG`); `pipeline unfolded` builds the term itself. The two give the
+same graph, labels and normal form, up to the names of binders and the
+numbers of sites; the unfolded route's cost grows with the number of
+paths through the document graph.
 
 1. **issue** — read the argument's own registered proof term and its issue, a
    (proposition, side) pair.
@@ -266,7 +306,17 @@ through the document graph.
    edge's body expanded the same way. A demand for a statement that a binder
    in scope already stands for - an argument's own or a scaffold's - is
    captured by that binder instead of being expanded again, which is what
-   makes this terminate. Out: one proof term standing for the whole debate.
+   makes this terminate. Every *exposed node* of a body - a declared axiom
+   it applies, a lemma, a lambda: the horns of phase 4 - is expanded like a
+   site: where it stands, the debate about its statement, with an
+   obligation root, the statement's derivations stacked and the node's own
+   on top if its argument has *primacy* (the entrypoint and a debate's
+   moved arguments, their exposed nodes included); a node nobody engages
+   stays as written; a node whose statement is bound in scope is the
+   captured variable, with its own derivation kept on top of it under
+   primacy (`subarguments default`), never (`share`) or always
+   (`preserve`; `FSP_SUBARGUMENTS`). The labels never depend on that
+   setting. Out: one proof term standing for the whole debate.
 3. **typecheck** — replay that term through Fellowship as a throwaway theorem
    and compare what Fellowship rebuilds with what was sent, up to
    alpha-equivalence, site numbering and proposition spelling. This is the
@@ -279,31 +329,44 @@ through the document graph.
    type - unless the debate spells a statement in two ways (`~A` and
    `A -> false` are one statement but two propositions for Fellowship); then
    the whole term is replayed. `typecheck expanded` always replays the whole
-   term, whose size grows with the number of paths through the graph.
-4. **compile** — turn the term into a `DebateGraph`: nodes are canonical
-   propositions, hyperedges carry a name, a target statement and sources with
-   their kinds, and statements get default markers. It is a separate data
-   structure, not a marked-up term. The compiler finds the sub-arguments by
-   matching *scaffold shapes*: specific term shapes that the debate operations
-   produce. "Paper" shapes are the four of the COMMA 2026 paper; "legacy"
-   ones are what the older debate operators emitted, still recognised. A match
-   says "here is a scion and here is the original", so the scion becomes an
-   edge of its own and the walk continues into the original. Out: the
-   argumentation framework, printed as an indented tree.
+   term, whose size grows with the number of paths through the graph. An
+   exposed node whose statement is engaged is a sub-debate like a site's,
+   so its debate is replayed once too.
+4. **compile** — take the issue's argumentation framework from the document
+   graph: the part reachable from the issue (the sources of every edge
+   deriving a reached statement, and the contrary of a reached statement),
+   for a debate the part of its own graph, which holds only its scope.
+   Nodes are canonical propositions, hyperedges carry a name, a target
+   statement and sources with their kinds, and statements get default
+   markers. An argument's edge is compiled by the *horn rule*: its sources
+   are the maximal subterms of its proof that do not carry its own
+   continuation - its open sites, the declared axioms it applies (each a
+   strict, source-less edge named after the axiom) and the lemmas it
+   proves on the way (each an edge of its own, `NAME.μ1`, like a lambda's
+   `NAME.λ1`); the spine, which carries the continuation, gets no edge. Out: the argumentation framework, printed as an indented tree.
+   Until 2026-10-15 the framework was compiled from the unfolded term,
+   finding the sub-arguments by matching *scaffold shapes*, the four
+   support and attack shapes of the COMMA 2026 paper; that compiler
+   (`compile_issue`) remains for an argument the document refused, and
+   tests/test_issue_graph_from_document.py checks every unfolded fixture
+   term against the document graph with it. The `issue-graph term`
+   setting that selected it is retired (2026-10-16).
 5. **strict** — read strictness off the term. A subterm is strict in the
    debate if it rests on nothing, that is, it has no open site. Where one wing
    of a scaffold is strict and the other is not, the scaffold is decided here
    and the losing wing is dropped; everything else is delayed. In: the
    unfolded term. Out: a rewritten, usually smaller term, plus a strict,
    source-less edge for every closed derivation the framework did not have.
-   The issue graph is the framework of phase 4 plus those edges.
+   The issue graph is the framework of phase 4 plus those edges; they still
+   come from the issue's own term, so they can differ between issues.
 
    `graph ARG` and `label ARG` need only the issue graph, and get it without
    building the unfolded term. The debate is kept as one definition per
-   statement (see `debate ARG`), and phases 4 and 5 run on one *instance* of
-   a sub-debate at a time: a statement together with the statements captured
-   and cut in it, which is all that the copy of that sub-debate at a site
-   depends on. Each instance is compiled and strictness-resolved once; a
+   debate about a statement - a statement can have variants, such as the
+   argument evaluated on top of its stack (see `share ARG`) - and phase 5
+   runs on one *instance* of a sub-debate at a time: a statement together
+   with the statements captured and cut in it, which is all that the copy
+   of that sub-debate at a site depends on. Each instance is strictness-resolved (and compiled) once; a
    cited instance shows the scaffolds around it only whether a site is still
    open in it, which captured variables are still free in it, and whether a
    decision was made inside. The result is the graph the unfolded term gives
@@ -328,11 +391,17 @@ through the document graph.
    it would mix incompatible positions.
 8. **sigma, normalise, classify** — write σ into the term (every occurrence of
    a statement carries its label, printed `A{IN}` or `{OUT}A`), resolve every
-   scaffold σ decides by reading those labels, keeping one wing each, then
-   name every site by its label - a site is a delegation if IN, an obligation
-   otherwise - and reduce the result to a normal form, classified as an
-   exception if it holds an uncaught clash, open if an obligation remains,
-   and a value otherwise.
+   scaffold σ decides, keeping one wing each, then name every site by its
+   label - a site is a delegation if IN, an obligation otherwise - and reduce
+   the result to a normal form, classified as an exception if it holds an
+   uncaught clash, open if an obligation remains, and a value otherwise. A
+   scaffold is decided by what its scion *stands for* in the term, its
+   standing (`core/comp/standing.py`): a nested debate by how it comes out
+   there, a captured root obligation of the debate being decided as unmet,
+   the stack below the top as its own derivations; statement labels decide
+   only presumptions. So a supporter never rests on its own statement's
+   label, and an unfounded loop accepted credulously evaluates to the bare
+   delegation of its statement (tasks.org, aida-judge-by-what-it-stands-for).
 
 Two things the log makes visible that are worth knowing. The strict phase runs
 **twice** per evaluation: once inside the issue-graph compilation to collect
@@ -390,11 +459,12 @@ environment variable for the whole session so a run leaves no files behind.
 
 ### Other environment variables
 
-- `FSP_REDUCE_TERM_WIDTH` (default `72`) — column width for the term column
-  when `reduce` prints its step-by-step trace.
-
 - `FSP_ECHO_NOTES` (default `1`, i.e. on) — set to `0`/`false`/`no` to
   suppress echoing Fellowship's informational notes.
+- `ACDC_TIMEOUT` (default `5`) — seconds one Fellowship command may take.
+- `ACDC_TRANSPORT` (default `pipe`) — how AIDA talks to Fellowship: pipes,
+  where commands of any length work; `pty` restores the old terminal, whose
+  lines are limited to 1024 bytes on macOS.
 - `FSP_BATCH_REPLAY` (default `1`, i.e. on) — set to `0`/`false`/`no` to send
   each instruction of a recorded argument to Fellowship one at a time instead
   of batching them into fewer round-trips. Mainly useful for debugging replay
@@ -407,39 +477,116 @@ environment variable for the whole session so a run leaves no files behind.
 
 A typical wrapper workflow is:
 1. declare prover resources
-2. record an argument or counterargument
-3. register it under a name
-4. compose or attack/support named arguments
-5. normalize the result
-6. render it in one or more views
+2. record arguments and counterargument; each joins the document graph
+3. record debates over them, if a limited or ordered selection is wanted
+4. graph, label and evaluate an argument, an issue or a debate
+5. render it in one or more views
 
-The wrapper stores named arguments internally through `ProverWrapper`, so later
-commands such as `reduce`, `render`, `support`, or `attack` can refer to them by
-name.
+### Sessions and documents
+
+A *session* is one running Fellowship with its settings (`typecheck`,
+`pipeline`, file output); the CLI holds one, and a server can hold several,
+each with a process of its own (`wrap/prover.py`, `ProverWrapper`). A
+session holds one *document* at a time (`wrap/document.py`): the
+declarations, names, arguments, document graph, debates and caches.
+
+- `new document [minimal] [lk|lj].` starts a new document: Fellowship is
+  reset (`discard all.`) and the logic chosen - classical (`lk`, the
+  default), intuitionistic (`lj`), or either without ex falso (`minimal`).
+  Session settings survive.
+- `lk.`, `lj.`, `minimal.` and `full.` choose the logic at the *head* of a
+  document, before its first instruction (a script's first line, say).
+  Later a change is refused - Fellowship fixes the logic at the first
+  instruction - and asking for the logic in force does nothing.
+- A session starts with a classical document, and `load FILE` replaces the
+  document with the file's.
+- Debates are classical: in an `lj` or a `minimal` document the debate
+  commands are refused. Arguments are not: whatever the document's logic,
+  `dixi` holds a recorded argument to the pure level (see *Recording
+  commands*).
+
+### The service layer
+
+For a program serving AIDA - the document UI, say - read
+`docs/dui-integration.md`: sessions and concurrency, checking a whole
+document (`Service.check`: one entry per command, with its span, status and
+result), the queries, the JSON formats (`wrap/serialize.py`, described by
+`wrap/schemas/aida.schema.json`), errors, and importing from s(CASP) with
+provenance. `examples/http_adapter.py` is a runnable reference server.
+
+`wrap/service.py` is what a program (a server for the document UI, a
+notebook, a test) calls instead of the CLI. `Service.of(session)`
+offers the documents (`new_document`, `load`, `inventory`), the settings,
+the content (`command`, `register`, `record_argument`, `state`, `prove`,
+`adopt`, `decorate`, `start_debate` / `move` / `close_debate`) and the
+queries (`graph`, `label`, `evaluate`, `term`, `render`, `unfold`, `share`,
+`tree`, which gives DOT text and writes no file). Each call holds the
+session's lock, returns a result object - the graph, the labellings, the
+normal form with its class and witness labelling - and carries the
+warnings it logged as `diagnostics`; a refusal raises an `AidaError` with a
+stable `code` and the stage that refused. The CLI prints these results.
+`explain` and `expand` stay CLI-only, and proofs are recorded as whole
+blocks. `Service.check(text)` replays a whole document and reports on every
+command; `docs/minicourses/minicourse-api.org` walks through all of it.
+
+## Command syntax
+
+Scripts and the REPL share one syntax (`wrap/syntax.py`), run by one
+interpreter (`wrap/interpreter.py`):
+
+- **Every command ends with a `.`**, wrapper commands included
+  (`evaluate tweety.`). A command may span several lines, and several may
+  share one (`minimal. lk.`). The command lists below leave the final `.`
+  out.
+- **Every `.` outside double quotes ends a command**, so what contains dots
+  is double-quoted: proof terms (`register t : B := "μx:B.<ax||x>".`),
+  decoration templates and file names (`load "tests/demo/01_arguments.fspy".`,
+  `graph d "out.dot" show.`). A single quote is an ordinary character
+  (`A'`, the binder `μ'`).
+- **Blocks:** `argument NAME : (PROP).` or `counterargument NAME : (PROP).`,
+  then Fellowship tactics (and `cite NAME.`), closed by `dixi.` (or `cr.`,
+  `case rested.`); a statement's proof, `prove NAME.` ... `qed.` (strict) or
+  `dixi.` (registered either way); a debate, `debate ... : ISSUE.`, its
+  moves, `cedat tempus.` (or `ct.`).
+- **Fellowship's own commands and tactics** (`declare`, `deny`, `cut`,
+  `axiom`, `elim`, `by default`, ...) pass through unchanged: Fellowship's
+  parser stays their only grammar.
+- Lines starting with `#` are narration (shown), with `%` silent; `%stop`
+  ends a script.
+- Forms of the earlier syntax are refused with their replacement;
+  `tools/migrate_syntax.py` rewrites old files.
 
 ## Interactive commands
 
-Interactive mode accepts:
-- ordinary Fellowship commands
-- wrapper commands for recording, normalization, rendering, and debate building
-
-Many Fellowship commands are dot-terminated. If a command is incomplete,
-`acdc` prompts for continuation with `...`.
+Interactive mode accepts the commands of scripts. A command without its
+final `.` asks for more with `...`; `exit` or `quit` leaves.
 
 Syntax/prover errors are non-fatal in the interactive wrapper unless the wrapper
-detects a machine-mode desynchronization.
+detects a machine-mode desynchronization. When Fellowship refuses a command or
+a proof step, the REPL shows Fellowship's own reply - its message, then the
+proof term and goals as they stand - without the machine block; a script logs
+only the message.
 
 ### Recording commands
 
-- `start argument NAME CONCLUSION`
-  - begin recording a theorem-backed argument
-- `start counterargument NAME CONCLUSION`
-- `start antitheorem NAME CONCLUSION`
-  - begin recording a counterargument / antitheorem-backed argument
-- `end argument`
+- `argument NAME : (CONCLUSION)`
+  - begin recording an argument
+- `counterargument NAME : (CONCLUSION)`
+  - begin recording a counterargument (an argument against CONCLUSION)
+- `dixi`, also `cr` and `case rested`
   - finish recording, execute the proof against Fellowship, and register it;
     if its body is closed, Fellowship also keeps it as a theorem, so
-    `axiom NAME` cites it
+    `axiom NAME` cites it. The term must be an argument of the *pure level*
+    (`core/dc/discipline.py`): an argument is linear (each continuation,
+    bound by `mu` or a lambda-bar, used at most once, with no second such
+    binder between), a counterargument dual-linear (the same for
+    hypotheses, bound by `mu'` or a lambda), and neither holds a debate
+    scaffold (a pure command `<mu v.c || mu' w.c'>`, `v` and `w` unused,
+    whose halves share a variable). Otherwise `dixi` is refused with the
+    variable named and nothing is registered. Peirce's law is refused as an
+    argument; a refutation through a proved negation (`cut (~A) x. ...
+    elim. axiom.`) passes; debates stay classical (`adopt` brings a
+    classical strict edge in as a theorem)
 - `theorem NAME : (PROP).`, also `lemma`, `proposition`, `claim`, and
   `antitheorem`, `antilemma`, `antiproposition`, `anticlaim`
   - record a claim, and nothing more (see below)
@@ -453,11 +600,16 @@ detects a machine-mode desynchronization.
   - end the recording and demand a strict witness; refused, leaving the
     argument as it was, while an obligation, a presumption or a defeasible
     citation remains open
+- `discard theorem.` (inside a recording)
+  - abandon the recording: nothing is registered and the name is free
+    again (a refinement leaves the argument as it was before `prove`). A
+    replay in which some step ends Fellowship's theorem is refused, never
+    registered
 - `adopt EDGE* as NAME`
   - make a strict edge found by unfolding, such as Peirce's thesis, a theorem
 - `expand ARG`
   - print ARG's full term, with every cited argument's term grafted in
-- `debate ARG`
+- `share ARG`
   - print the debate about ARG's issue as named sub-debates: the issue's
     term, then one `NAME[open sites] := term` line per sub-debate it cites
 
@@ -470,10 +622,16 @@ everywhere, so it never holds a defeasible argument.
 - **A statement only states.** `lemma foo : (A).` registers the claim as the
   maximally enthymemic argument `μfoo:A.⟨?1:A‖foo⟩`, which puts an obligation
   marker on A: A is claimed and owes a proof. It opens nothing, so claims can
-  be collected first and proved later.
+  be collected first and proved later. Unlike in Fellowship, proof steps
+  cannot follow it directly: write `prove foo.` first.
+- **Proof steps belong in an argument.** Outside an argument block
+  Fellowship has no theorem open, so a tactic, `next.`, `qed.` or `discard
+  theorem.` there is refused - in the REPL, by the document check and by
+  the service's `command` - and `save` leaves it out. After a statement the
+  refusal points to `prove NAME.`.
 - **Refinement.** `prove foo` reopens foo, replaying what it has so far, so the
   proof continues from its open goals, presumptions included. It ends with
-  `qed.`, which demands a strict witness, or `end argument`, which registers
+  `qed.`, which demands a strict witness, or `dixi.`, which registers
   the result either way. Proving a claim is refining its enthymeme; any
   defeasible argument can be refined the same way. The result replaces the
   argument in place, keeping its position in registration order, and the
@@ -494,7 +652,8 @@ everywhere, so it never holds a defeasible argument.
   citation like any obligation. Refine the cited argument and every citer
   follows. `expand ARG` computes the full term on demand.
 - **Sub-debates are shared by name.** The debate about an issue brings in the
-  debate of every statement it reaches. `debate ARG` writes a sub-debate that
+  debate of every statement it reaches. `share ARG` prints the debate biased
+  towards ARG, as `evaluate ARG` evaluates it; it writes a sub-debate that
   is needed in two or more places once and cites it by name - the author's
   name where one argument or debate is about that statement, `anon_1`,
   `anon_2`, ... otherwise (a reserved prefix) - and leaves one needed once in
@@ -511,40 +670,41 @@ everywhere, so it never holds a defeasible argument.
   registers it as the theorem `peirce`.
 - **Names are unique per document.** Sorts, declared axioms, statements and
   arguments share one namespace, checked before anything reaches the prover;
-  `lk.` or `lj.` starts a new one. Names starting with `typecheck_`,
+  `new document` starts a new one. Names starting with `typecheck_`,
   `theta_expand_` or `anon_` are reserved for the names the wrapper generates.
-- **Sessions start in LK.** Debates are classical, and the prover is switched
-  to LK when it starts, so the type check of a debate never runs in LJ by
+  A declaration holds its names only if Fellowship defines them: one it
+  refuses - with an error, or with a note only such as `Symbol C undefined`
+  or `B is a proposition, not a sort` (an axiom needs its parentheses:
+  `declare r : (A -> B).`) - is reported as an error and takes no name.
+- **Sessions start in LK.** Debates are classical, and a session starts with
+  a classical document, so the type check of a debate never runs in LJ by
   accident.
 
-### Stored-argument commands
+### Rendering commands
 
-- `reduce ARG`
-  - normalize and print the normal form (**deprecated**: the legacy
-    term-level reducer, not label-guided evaluation; use `evaluate`)
-- `normalize ARG`
-  - normalize silently and cache the result (**deprecated**, as `reduce`)
-- `render ARG [STYLE]`
-- `render-nf ARG [STYLE]`
-  - render the original or normalized term (`render-nf` shows the legacy
-    reducer's normal form and is **deprecated** with it)
-- `tree ARG [nl [argumentation|dialectical|intuitionistic] | pt]`
+A target is an argument or debate name, `issue :X` (X proved) or
+`issue X:` (X refuted). `TERM` picks which term: `registered` (default),
+`enriched`, `unfolded` (the debate term) or `evaluated` (the normal form
+of the last `evaluate`).
+
+- `render TARGET [STYLE] [TERM]`
+  - print the term in a natural-language style (see *Render styles*)
+- `tree ARG [nl [STYLE] | pt] [TERM]` - **deprecated**: the tree renderer
+  needs a complete overhaul (tasks.org, aida-tree-renderer-overhaul)
   - render an acceptance tree coloured by the grounded labels (see
     Debate-graph commands); drawn uncoloured if the graph is refused
-- `chain ARG1 ARG2`
-  - graft / chain one argument into another (**deprecated**, see *Debate
-    commands*)
+- `unfold argument NAME`, `unfold issue :X`, `unfold issue X:`,
+  `unfold debate NAME`
+  - print the debate term the pipeline builds
 
 ### Debate-graph commands
 
-Every atomic argument you register (`start argument ... end argument`,
+Every atomic argument you register (`argument ... dixi.`,
 `register`) adds its hyperedges to one **document graph** for the whole
 file; proposition identity is global to it, so a counterargument to Q
-registered anywhere contests every use of Q. The debate verbs
-(`attack`, `support`, `chain`) name a debate whose issue is the host's
-conclusion and check that the attacker concludes the contrary of (the
-supporter concludes) a statement reachable from that issue; they add no
-edge. `graph`, `label` and `evaluate` take a name, read its issue,
+registered anywhere contests every use of Q. A debate (see *Debates*)
+selects and orders arguments without adding an edge. `graph`, `label`
+and `evaluate` take a name, read its issue,
 **unfold** the document graph from that issue into a debate term
 (cycles broken by capture: a demand for P inside a proof of P->Q is the
 hypothesis, a demand for a refutation of P inside a proof of P is the
@@ -561,14 +721,21 @@ sub-debate at a time. Debates are classical: their
 scaffolds throw to a second conclusion, which LJ forbids, so the debate
 commands are refused while the file is in `lj`. Derivation cycles are
 admitted; `graph` reports which fragment (acyclic or cyclic) a debate
-is in. They cover
-the quantifier-free fragment and refuse first-order terms with a
-one-line message.
+is in. First-order arguments take part as described under *First-order
+logic*.
 
-- `graph ARG|document [FILE.dot] [show]`
-  - print the nodes, hyperedges and default markers of ARG's issue graph
-    (unfolded from the document) or of the document graph; write
-    Graphviz DOT when a filename is given
+- `graph TARGET|document [all] [grounded|complete|preferred|stable] [skeptical|credulous] ["FILE.dot"] [show]`
+  - print the nodes, hyperedges and default markers of the target's issue
+    graph (unfolded from the document) or of the document graph; write
+    Graphviz DOT when a filename is given (double-quoted; any other word
+    is refused); `all` shows a debate's whole scope
+  - the labels drawn are the grounded labelling unless a semantics is
+    named; the mode picks one labelling of a semantics with several, as
+    `evaluate` picks its witness - skeptical (the default) the
+    statement-wise intersection of its labellings, credulous the first
+    that accepts the issue (else the grounded labelling; `document` has no
+    issue, so credulous is refused there); the summary line `labels:`
+    and the legend of the drawing name the labelling shown
   - every lambda is a subargument edge of its own; a subargument that
     captured a binder of an enclosing one records the capture as a source
     at that binder's statement, so the framework shows a sprung trap as a
@@ -583,7 +750,11 @@ one-line message.
     `EXCEPTION` instead
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
-- `label ARG|document [grounded|complete|preferred|stable]`
+  - the drawing (DOT file or picture) carries a legend of the symbols it
+    uses: a sample of each edge style (role colour, strict, refutation
+    source, proof or refutation derived) and the node markings
+    (`[t:p]` and the like, the labels and their fill colours)
+- `label TARGET|document [grounded|complete|preferred|stable]`
   - print the labelling(s) of the chosen semantics (default grounded):
     one `IN` / `OUT` / `UNDEC` per proposition and side; several
     labellings are numbered
@@ -594,13 +765,16 @@ one-line message.
     and a presumption's own default stays guarded
   - presuming *both* sides of one proposition means neither side holds
     the onus; that is reported as a warning and will become an error
-- `explain ARG [same options as evaluate]`
+- `explain TARGET [same options as evaluate]`
   - run one evaluation and print the pipeline's own stage-by-stage account of
     it, then the verdict; needs no change to the log level
-- `evaluate ARG [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv]`
+- `evaluate TARGET [skeptical|credulous] [grounded|complete|preferred|stable] [cbn|cbv] [N|all] [favour]`
   - label-guided evaluation; options in any order, defaults skeptical,
     preferred, cbn; prints the normal-form class (`VALUE`, `EXCEPTION`,
-    `OPEN`) and the normal form, cached as `.labelled_nf`
+    `OPEN`) and the normal form, cached for `render TARGET evaluated`
+  - in credulous mode `N` evaluates under labelling N of `label`, `all`
+    under every labelling that accepts the issue, and `favour` prefers a
+    witness in which the argument's own derivation is IN
   - credulous evaluates against one labelling of the chosen semantics in
     which the argument's issue is IN (if none exists, against the
     grounded labelling, resolved skeptically); skeptical against the
@@ -615,46 +789,12 @@ one-line message.
     delegation (the opponent must refute A), `?OUT:A` and `?UNDEC:A` are
     obligations (A was not established under the mode)
 
-### Projection / extraction commands
-
-> **Deprecated** with the debate commands below: they take apart the
-> term-level debate structures those verbs build, outside the compiler
-> pipeline.
-
-These pull a sub-term back out of an already-recorded argument and register
-it under a new name, projecting the wrapper-side metadata (assumptions,
-delegations, decorations) along with it. Each accepts its `ARG`/`NAME`
-arguments in either order (`out INDEX ARG NAME` or `out NAME ARG INDEX`); the
-wrapper disambiguates by checking which name is already a registered
-argument.
-
-- `out INDEX ARG NAME`
-  - extract element `INDEX` (0-based) from a top-level alternative structure
-    (nested `mu`-bound choices between terms)
-- `tou INDEX ARG NAME`
-  - extract element `INDEX` from a top-level alternative-counterexample
-    structure (the dual, context-side form of `out`)
-- `sub ARG NAME`
-  - extract the argument of a top-level application structure
-- `bus ARG NAME`
-  - extract the condition of a top-level dual-application structure
-- `attacker ARG NAME`
-  - extract the exception branch of a top-level defeasible-warrant structure
-- `regatta ARG NAME`
-  - extract the support branch of a top-level dual-defeasible-warrant
-    structure
-
-Each command raises an error if `ARG`'s top level does not have the expected
-shape (e.g. `out` on an argument that is not an alternative structure), or if
-`INDEX` is out of range. See `tests/test_projection_debate_ops.py` for
-worked examples of every shape.
-
 ### Registering proof terms directly
 
-- `register NAME [strict] : TYPE := PROOF_TERM`
+- `register NAME [strict] : TYPE := "PROOF_TERM"`
   - replay a hand-written proof term against Fellowship and register the
-    result as a named argument, without going through `start argument` /
-    `end argument`. `TYPE` is the conclusion proposition; `PROOF_TERM` is
+    result as a named argument, without going through `argument` /
+    `dixi.`. The term is double-quoted: it contains dots. `TYPE` is the conclusion proposition; `PROOF_TERM` is
     parsed with the same proof-term grammar used elsewhere in AIDA (see
     *First-order logic* and `pres/` for term syntax). Without `strict`, the
     replayed theorem is discarded after the wrapper extracts the argument
@@ -662,47 +802,149 @@ worked examples of every shape.
     actually declares the theorem/antitheorem.
 
   ```text
-  register tester2 : A := μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>
+  register tester2 : A := "μtester:A.<μelur:A.<1.1.1:B!*elur:A*_T_||elur1:(true-A)-B>||tester:A>".
   ```
 
   (from `tests/olon.fspy`, which also shows the `μ'`-headed dual form)
 
-### Custom tactics
+### Debates
 
-- `tactic NAME ARGS...`
-  - invoke a custom tactic registered on the wrapper via
-    `ProverWrapper.register_custom_tactic`. `setup_prover()` currently
-    registers only `pop`, which is marked deprecated in the source and is not
-    expected to work; the mechanism otherwise has no bundled tactics.
+A *debate* is a named, ordered selection of the document's arguments
+(`core/dc/debate.py`): who said what, in which order, in reply to whom.
+It is compiled on demand and never joins the document graph, so it adds
+no edge and duplicates nothing.
 
-### Debate commands
+```
+debate pro|con open|closed NAME : ISSUE.
+ARG.
+[VERB] ARG TARGET.
+...
+cedat tempus.
+```
 
-> **Deprecated.** These verbs build a debate term by grafting scaffolds
-> into the target's term, and their results are normalised by the legacy
-> reducer (`reduce`, `normalize`, `render-nf`). They predate the debate
-> compiler and are not wired to it: the term shapes they build are the
-> older ones, the compiler recognises them only as legacy shapes, and
-> neither the labelling nor label-guided evaluation is applied to what
-> they produce. They are probably not safe to use until they are wired to
-> the new pipeline. Register the arguments instead (they join the
-> document graph, where every argument for a statement's contrary
-> attacks it) and use `graph`, `label`, `evaluate` and `explain`.
+- The **name** may not contain `__`, which separates a registered debate's
+  name from the names of its own declarations and arguments
+  (`DEBATE__name`, `wrap/prefix.py`).
+- The **onus** says who opens: `pro`, an argument for ISSUE; `con`, a
+  counterargument. The opening move must match it.
+- The **scope** says what the debate hears. A `closed` debate is compiled
+  from its moves' arguments only, together with every argument they cite
+  (`cite NAME`): a limited debate, for an agent's limited knowledge, a
+  counterfactual, a checklist or a transcript. An `open` debate hears
+  the whole document. The strict store (declarations and theorems) is
+  always in scope. Inside the scope conflicts arise by proposition
+  identity, as in the document, so a move attacks or supports wherever
+  its conclusion fits, not only at its target.
+- A move **adds** ARG to the scope and **orders** the term, which is
+  biased towards the debate's own arguments: it is unfolded for the
+  opening argument (on top of the issue's stack, its sites as it wrote
+  them), and at every statement the moved arguments stand above the
+  others, the last uttered outermost, so judged first.
+- A **verb** only checks the move. The target must be an earlier move with
+  a node the mover's conclusion can reach, of the verb's kind:
 
-- `undermine NEW ATTACKER TARGET`
-- `undercut NEW ATTACKER TARGET`
-  - backward-compatible aliases for default-target attack
-- `support NEW SUPPORTER TARGET [on PROP]`
-- `undergird NEW SUPPORTER TARGET [on PROP]`
-  - support restricted to default targets
-- `reinforce NEW SUPPORTER TARGET [on PROP]`
-  - support restricted to non-default targets
-- `attack NEW ATTACKER TARGET [strict] [on PROP]`
-  - generic attack operation. With `strict` (also accepted as `--strict`,
-    `allow-strict`, or `--allow-strict`), strict proof leaves/axioms on the
-    target may also be opened and attacked; this is opt-in because it is
-    otherwise treated as invalid.
-- `rebut NEW ATTACKER TARGET [on PROP]`
-  - attack restricted to non-default targets
+  | verb | the target needs |
+  |---|---|
+  | `attack` | a node of the contrary of the mover's conclusion |
+  | `rebut` | ... that is an obligation |
+  | `undermine` (= `undercut`) | ... that is a presumption |
+  | `support` | a node of the mover's conclusion |
+  | `buttress` (= `reinforce`) | ... that is an obligation |
+  | `undergird` | ... that is a presumption |
+
+  A node is a site of the target's body (its subarguments included), its
+  conclusion, which counts as an obligation unless the scope presumes
+  it, or one of its exposed nodes - a declared axiom it applies, a lemma,
+  a lambda - which `attack` and `support` reach (kind `derivation`), the
+  verbs that name a site kind not. An intermediate conclusion on the
+  spine of a curried application is no node, by decision. Without a verb
+  a move is not checked: a non sequitur is allowed and simply joins the
+  scope.
+
+Every command that takes an argument also takes a debate: `evaluate`,
+`explain`, `label`, `render` (the debate's term, or `evaluated`), `tree`,
+`unfold debate NAME`. `graph NAME` shows what the debate's conclusion
+reaches; `graph NAME all` shows its whole scope, non sequiturs included.
+While a debate is being recorded these commands compile it as it stands.
+The term is cached until the document or the debate changes.
+
+#### Registered debates
+
+A debate can also be registered by its term, as a source-language
+importer produces it (`aida-registered-debates` in `tasks.org`):
+
+```
+declare A, B, C : bool.              % what it shares with the document
+register debate simple [legacy] : A.
+declare H_A : bool.                  % its own: simple__H_A
+declare b : (B).
+deny h_H_A_B : (H_A-B).
+term "μalpha9:A.<…>".
+cedat tempus.
+```
+
+- Everything declared inside the block is the debate's own, sorts
+  included, and is renamed `simple__x` wherever it occurs (`wrap/prefix.py`);
+  the document then refuses any name starting with `simple__`. What the
+  debate shares with the document is declared before the block.
+- The debate lives in a Fellowship session of its own
+  (`wrap/debate_session.py`), which holds its declarations and the
+  document's declarations it mentions; the document's later changes do not
+  reach it. The term is type-checked there and must prove ISSUE (onus
+  `pro`) or refute it (`con`); it is not held to the argument discipline -
+  it is a debate.
+- `legacy` first rewrites the deprecated scaffold shapes older importers
+  emit into the current ones (`core/dc/shapes.py`).
+- The term is the debate's record: `graph`, `label`, `evaluate`, `render`
+  and `tree` answer from it, its graph compiled once and its evaluations
+  kept. They show the debate's own names without the prefix, unless the
+  short name is taken in the document too. A strict edge of a registered
+  debate cannot be adopted.
+- Its arguments are cut out of the term (`core/dc/extract.py`) and
+  registered in its session as `simple__a1`, `simple__a2`, ... - the
+  opening first, then each stack from the bottom - under the argument
+  discipline; they are the debate's moves. `graph simple all` shows them.
+  Compiled again they give the graph the term was compiled to. An argument
+  the session refuses is reported, and the others stay.
+- The arguments are unfolded again in the debate's session and compared
+  with the given term (`core/dc/roundtrip.py`), literally up to renaming,
+  sites counted as names. A difference is a warning naming the first
+  place the two terms part; the debate stays usable. An importer's term is
+  usually not in the unfolder's shapes, so it warns once; the term its
+  arguments unfold to comes back unchanged.
+
+An importer writes such a block itself:
+`register debate NAME import LANGUAGE "SOURCE".` runs the importer for
+LANGUAGE on SOURCE - its JSON, or a file of the language itself (an
+s(CASP) program) if the importer reads one - and registers what it writes
+into the document: the declarations the debate shares (a declaration the
+document already has, identically, is reused; a conflicting one refuses
+the import) and the `register debate NAME` block. A relative SOURCE is
+read from the script's directory. The importer's provenance stays with
+the debate, each argument's binders mapped to the source.
+
+A registered debate is extended, not edited:
+
+```
+debate s3 extends simple.
+deny nb : (B).                       % its own: s3__nb
+register nb_arg : B := "μ'x:B.<x||nb>".
+attack nb_arg simple__a5.
+cedat tempus.
+```
+
+- The extension starts where its parent is - the parent's declarations,
+  arguments and moves, in a session of its own - and the parent is not
+  changed. An extension can be extended in turn.
+- What it adds while it is recorded is its own, `s3__x`: declarations,
+  `register`, and `argument ... dixi` blocks. Its terms and tactics name
+  the debate's other names in full (`simple__b`); its own declarations may
+  be named as written.
+- A move names an argument of the debate (the parent's included), one the
+  extension added (`nb_arg`), or a document argument, which is brought
+  into the extension's session with the declarations it needs.
+- `graph`, `label`, `evaluate`, `render` and `tree` on an extension answer
+  from its session, compiled in full from everything it holds.
 
 ## Script files (`.fspy`)
 
@@ -711,10 +953,10 @@ Representative examples live in `tests/*.fspy`.
 
 Typical script commands include:
 - Fellowship commands such as `lk.`, `declare ...`, `deny ...`, `qed.`
-- wrapper recording commands such as `start argument ...` / `end argument`
-- normalization / rendering commands
-- debate operations such as `support`, `undercut`, `attack`, `rebut`
-- wrapper-only decoration commands such as `decorate NAME : 'template'`
+- wrapper recording commands such as `argument NAME : (P).` ... `dixi.`
+- queries and rendering commands
+- debates: `debate pro|con open|closed NAME : ISSUE.`, moves, `cedat tempus.`
+- wrapper-only decoration commands such as `decorate NAME : "template".`
 
 Lines starting with:
 - `#` are echoed as user-facing comments
@@ -727,60 +969,33 @@ by renderers. They are consumed by AIDA's Python wrapper and are **not** sent to
 Fellowship.
 
 ```text
-decorate Bird : '@arg1 is a bird'
-decorate Bird_list : "@arg1 ist eine \\sn{Liste}"
+decorate Bird : "@arg1 is a bird".
+decorate Bird_list : "@arg1 ist eine \\sn{Liste}".
 ```
 
-Decoration templates may contain positional placeholders:
-- `@arg1`, `@arg2`, ... refer to the arguments of a rendered proposition.
-- For example, with `decorate Bird : '@arg1 is a bird'`, the proposition
-  `Bird Tweety` may render as `Tweety is a bird`.
+Templates are double-quoted, like everything else that may contain a dot,
+and may contain positional placeholders: `@arg1`, `@arg2`, ... refer to the
+arguments of a rendered proposition, so with the first line above the
+proposition `Bird Tweety` renders as `Tweety is a bird`. A single-quoted
+template is refused with its double-quoted replacement.
 
-Both single-quoted and double-quoted strings are supported intentionally:
+A template uses JSON string syntax, which is also what the importers write
+(with `json.dumps`). These characters must be escaped:
 
-- **Single-quoted templates** are convenient for hand-written `.fspy` scripts.
-  Their contents are treated literally by the wrapper parser. This means a
-  single backslash can be written directly:
+| Intended runtime character | `.fspy` spelling |
+| --- | --- |
+| backslash `\` | `\\` |
+| double quote `"` | `\"` |
+| newline | `\n` |
+| tab | `\t` |
+| carriage return | `\r` |
 
-  ```text
-  decorate Bird_list : '@arg1 ist eine \sn{Liste}'
-  ```
-
-  The main caveat is that the current parser does not define an escaping rule
-  for a literal single quote inside a single-quoted template.
-
-- **Double-quoted templates** use JSON string syntax. They are mainly used by
-  generated `.fspy` files because the importer writes them with `json.dumps`,
-  which safely escapes quotes, backslashes, and other special characters.
-
-  In double-quoted templates, these characters must be escaped as in JSON:
-
-  | Intended runtime character | Double-quoted `.fspy` spelling |
-  | --- | --- |
-  | backslash `\` | `\\` |
-  | double quote `"` | `\"` |
-  | newline | `\n` |
-  | tab | `\t` |
-  | carriage return | `\r` |
-
-  Thus the runtime template `@arg1 ist eine \sn{Liste}` is written in a
-  double-quoted `.fspy` line as:
-
-  ```text
-  decorate Bird_list : "@arg1 ist eine \\sn{Liste}"
-  ```
-
-  When the wrapper reads this line, it JSON-decodes the double-quoted string and
-  stores a template containing one actual backslash: `@arg1 ist eine \sn{Liste}`.
-
-The duplication exists to support two use cases: single quotes are easier for
-humans writing scripts by hand, while double quotes provide a robust,
-standardized escaping format for importer-generated scripts.
+Thus the second line above stores the template `@arg1 ist eine \sn{Liste}`,
+with one backslash.
 
 ## Important prover-side commands and concepts
 
-The repository now relies on several Fellowship features that the old README did
-not document.
+AIDA relies on several Fellowship features beyond plain sequent proofs.
 
 ### `theorem` and `antitheorem`
 
@@ -795,9 +1010,9 @@ The wrapper intercepts these: `theorem NAME : (P).` only states a claim, and
 `prove NAME` opens its proof, which the wrapper replays and checks at `qed.`
 (see "Statements, refinement and citation"). Scripts written in Fellowship's
 own idiom, `theorem X : (A).` followed directly by tactics and `qed.`, need a
-`prove X` line after the statement. The recording commands
-`start argument ...`, `start counterargument ...` and `start antitheorem ...`
-open the same kind of recording without stating a claim.
+`prove X.` line after the statement. The blocks `argument NAME : (P).` and
+`counterargument NAME : (P).` open the same kind of recording without stating
+a claim.
 
 ### `deny`
 
@@ -822,6 +1037,7 @@ Minimal example:
 declare A : bool.
 deny mA : (A).
 antitheorem notA : (A).
+refute notA.
 moxia mA.
 qed.
 ```
@@ -910,22 +1126,43 @@ Worked examples: `tests/fo_forall.fspy`, and `tests/fo_exists_forall.fspy`,
 which proves `(exists y, forall x. P x y) -> (forall x, exists y. P x y)` and
 exercises every first-order proof-term constructor.
 
-### What is not supported yet
+### First-order debates
 
-Normalization and the debate operations — `reduce`, `chain`, `support`,
-`attack` and the debate graph — do not handle first-order terms. The
-reduction rules for first-order AC/DC are not settled, so rather than guess,
-those operations raise `FirstOrderNotSupported` naming the construct they
-stopped at.
+First-order arguments take part in debates on both routes, the shared (the
+default) and the unfolded (decided with the author 2026-10-16; tasks.org,
+`aida-first-order-reduction`; examples in `tests/first_order/`):
+
+- A statement is a proposition up to renaming of bound variables:
+  `forall x:Animal, Bird [x] -> Flies [x]`, its instance
+  `Bird [tweety] -> Flies [tweety]` and `Flies [tweety]` are three
+  statements, linked only by an argument that instantiates the first.
+- A binder meets a site only for the identical statement: a presumed
+  `forall x, Ab [x] -> false` does not meet an owed `Ab [tweety] -> false`.
+  Owe the universal and instantiate it instead.
+- A general rule stands or falls as one statement. Instantiating it
+  (`elim [tweety]`) is a step of the argument, not a point of attack: an
+  exception for one individual has to refute the rule itself.
+- Only a statement can be presumed or owed, not an open formula. An
+  argument that owes `Wings [x]` under `forall x` is left out of the
+  document graph, with the reason on its `dixi`; presume or owe a closed
+  statement - `forall x, Wings [x]`, `forall x, Bird [x] -> Wings [x]`, or
+  whatever proves it - and instantiate it. Likewise, a lemma whose
+  statement mentions such a variable is part of its argument, not a node
+  of its own.
+- Evaluation has two more rules, both strict: a universal introduction
+  meeting an instantiation substitutes the instance
+  (`<λx.t || u * e> → <t[u/x] || e>`), an existential's witness meeting its
+  elimination likewise (`<(u, v) || (y).e> → <v || e[u/y]>`).
 
 ## Render styles
 
-`render ARG STYLE` and `render-nf ARG STYLE` currently support:
+`render TARGET STYLE` supports:
 
-- `argumentation`
+- `argumentation` (the default)
 - `dialectical`
 - `intuitionistic`
 - `vanilla`
+- `pruefschema`
 
 Examples:
 
@@ -936,60 +1173,74 @@ Examples:
 Then inside the REPL:
 
 ```text
-render myarg vanilla
-render-nf myarg dialectical
+render myarg vanilla.
+render myarg dialectical evaluated.
 ```
 
 ## Acceptance trees
 
+**Deprecated.** The acceptance-tree renderer (`pres/tree.py`, the `tree`
+command) needs a complete overhaul and is kept only until it is replaced
+(tasks.org, aida-tree-renderer-overhaul); `graph`, `label` and `render`
+are the supported views.
+
 ```text
-tree ARG
-tree ARG pt
-tree ARG nl
-tree ARG nl dialectical
+tree ARG.
+tree ARG pt.
+tree ARG nl.
+tree ARG nl dialectical.
 ```
 
 Tree rendering uses Graphviz when available and otherwise writes a `.dot`
 file. Each box on the spine is filled by the grounded ADF label of the
 statement its binder establishes (green IN, red OUT, yellow UNDEC), taken
-from the argument's debate graph; the former `color` / `color-nf`
-commands and their shape-based classification were removed on 2026-09-16
-(they read a supported argument as defeated). Use `label` for the labels
-as text.
+from the argument's debate graph. Use `label` for the labels as text.
 
 ## Examples
 
-### Minimal argument / normalize / render example
+### Arguments, a debate and an evaluation
 
-File: `tests/normalize_render.fspy`
+File: `tests/debates.fspy`: Tweety flies, being a bird (`tweety`, a
+presumed rule); it does not, being a penguin (`penguin`, presumed); a photo
+shows it is no penguin (`photo`, presumed). Below, the start of the file
+and, after it, a debate over its arguments:
 
 ```text
 lk.
-declare A,B:bool.
-declare axA: (A).
-declare axAB: (A->B).
-
-start argument argA B
-cut (A->B) h.
-axiom axAB.
+declare Bird, Penguin, Flies, Photo, Sings : bool.
+declare bird : (Bird).
+declare penguins_dont_fly : (Penguin -> ~Flies).
+declare photos_show : (Photo -> ~Penguin).
+argument tweety : (Flies).
+cut (Bird -> Flies) birds_fly.
+by default.
+next.
 elim.
-axiom axA.
-axiom.
-end argument
-
-render argA
-reduce argA
-render-nf argA
+axiom bird.
+axiom birds_fly.
+dixi.
+...
+debate pro closed d : Flies.
+tweety.
+rebut penguin tweety.
+undermine photo penguin.
+ct.
+evaluate d.
 ```
+
+`evaluate tweety.` on the document gives a value: penguin attacks the
+presumption that birds fly, and photo defeats penguin.
+`docs/minicourses/minicourse-api.org`, lesson 4, checks this document with
+the debate.
 
 ### Counterargument and undercut example
 
 File: `tests/counterarguments_and_undercut.fspy`
 
 This script demonstrates:
-- `start counterargument ...`
-- `undercut`
-- `reduce`
+- `counterargument ... dixi.`
+- debates (`debate ... cedat tempus.`) with `undercut` moves
+- `evaluate`
 - `label`
 - `tree ... nl`
 - `deny` / `moxia`
@@ -1005,8 +1256,7 @@ Run it with:
 File: `tests/basic_support.fspy`
 
 Demonstrates:
-- `support`
-- `undercut`
+- debates with `support` and `undercut` moves
 - `render ... vanilla`
 - `label`
 
@@ -1035,12 +1285,24 @@ source .venv/bin/activate
 pytest -q tests
 ```
 
+The performance tests - size and growth of the debate on generated
+documents (doubled chains of up to sixteen levels, the size table of
+docs/minicourses/minicourse-sharing.org) - carry the pytest marker `perf`
+and are left out of the default run (`pyproject.toml`). Run them
+sparingly: after a change to sharing, unfolding or the instance resolver,
+and before stating a performance claim.
+
+```bash
+make test-perf          # or: pytest -q -m perf tests
+```
+
 ## Development commands
 
 ```bash
 make reset-venv
 make cli ARGS="--help"
 make test
+make test-perf
 make lint
 make format
 make typecheck
@@ -1112,10 +1374,16 @@ arguments, compile them, and view the resulting debate as a colored graph
 
 ## Repository layout
 
-- `core/` — core ASTs, transformations, reduction, grafting, argument logic
+- `core/` — the argument calculus (`ac/`), transformations, labelling and
+  evaluation (`comp/`), arguments, debates and the debate compiler (`dc/`)
 - `pres/` — presentation layers (proof terms, NL, trees)
-- `wrap/` — Python wrapper code and the native Fellowship subtree
+- `wrap/` — the session, document, syntax, interpreter, service, JSON
+  and CLI, and the native Fellowship subtree
 - `wrap/fellowship/` — native prover sources and `fsp` binary build target
+- `docs/` — the integration guide for the document UI and the minicourses
+- `examples/` — a reference HTTP server over the service layer
+- `tools/` — migration scripts for the command syntax
+- `bench/` — scaling benchmarks
 - `tests/` — pytest tests and `.fspy` / `.fsp` examples
 - `pyproject.toml` — package metadata and console-script entry point
 - `Makefile` — development and testing shortcuts

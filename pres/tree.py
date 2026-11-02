@@ -1,3 +1,10 @@
+"""The acceptance-tree renderer (the `tree` command).
+
+DEPRECATED: it needs a complete overhaul (the author, 2026-10-30; tasks.org,
+aida-tree-renderer-overhaul) and is kept only until it is replaced.  Do not
+build on it; `graph`, `label` and `render` are the supported views.
+"""
+
 from copy import deepcopy
 from typing import Mapping, Optional
 from pres.decorations import render_prop

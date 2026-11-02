@@ -1,0 +1,46 @@
+# Flat ABA with mutually attacking assumptions (Bondarenko, Dung, Kowalski,
+# Toni 1997, the logic-programming instance p <- not q, q <- not p):
+# rules p <- a ; q <- b ; contraries a~ = q, b~ = p. ABA: grounded accepts
+# nothing; two preferred = stable extensions {a,p} and {b,q}.
+lk.
+declare P, Q, A, B : bool.
+declare rule_p : (A -> P).
+declare rule_q : (B -> Q).
+declare contrary_a : (Q -> ~A).
+declare contrary_b : (P -> ~B).
+argument arg_p : (P).
+cut (A -> P) th.
+axiom rule_p.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+argument arg_q : (Q).
+cut (B -> Q) th.
+axiom rule_q.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+counterargument att_a : (A).
+cut (~A) x.
+cut (Q -> ~A) th.
+axiom contrary_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument att_b : (B).
+cut (~B) x.
+cut (P -> ~B) th.
+axiom contrary_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

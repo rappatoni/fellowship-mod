@@ -1,0 +1,22 @@
+== literature/scasp_even.fspy: check ok=True (0.1s)
+-- arg_p: issue P[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μalt4:P.<?UNDEC:P||alt4:P>
+      credulous -> open      μalt4:P.<?UNDEC:P||alt4:P>
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      μalt4:P.<?UNDEC:P||alt4:P>
+      credulous -> value     μalt4:P.<rule_p:(Q->false)->P||λb1:Q.μb2:false.<rule_q:(P->false)->Q||λb2:P.μb5:false.<b2:P||alt4:P>*IN:Q!>*alt4:P>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      μalt4:P.<?UNDEC:P||alt4:P>
+      credulous -> value     μalt4:P.<rule_p:(Q->false)->P||λb1:Q.μb2:false.<rule_q:(P->false)->Q||λb2:P.μb5:false.<b2:P||alt4:P>*IN:Q!>*alt4:P>
+-- arg_q: issue Q[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μalt4:Q.<?UNDEC:Q||alt4:Q>
+      credulous -> open      μalt4:Q.<?UNDEC:Q||alt4:Q>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μalt4:Q.<?UNDEC:Q||alt4:Q>
+      credulous -> value     μalt4:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<rule_p:(Q->false)->P||λb2:Q.μb5:false.<b2:Q||alt4:Q>*IN:P!>*alt4:Q>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μalt4:Q.<?UNDEC:Q||alt4:Q>
+      credulous -> value     μalt4:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<rule_p:(Q->false)->P||λb2:Q.μb5:false.<b2:Q||alt4:Q>*IN:P!>*alt4:Q>
+== done in 0.5s

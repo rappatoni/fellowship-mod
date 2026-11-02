@@ -1,0 +1,43 @@
+# Quantifiers and negation. (a) ~(exists x, P x) -> forall x, ~P x holds
+# intuitionistically and is proved in one argument. (b) Its converse
+# direction, ~(forall x, P x) -> exists x, ~P x, is classical. Its proof
+# throws P y to the continuation of P y from under the falsum binder: not
+# linear, so refused at the pure level; and the throw cannot be moved into
+# a separate move, because P y mentions the bound y and only closed
+# statements can be owed.
+lk.
+declare D : type.
+declare P : D -> bool.
+argument a : (((exists x:D, P [x]) -> false) -> (forall x:D, P [x] -> false)).
+elim f.
+elim x.
+elim p.
+cut ((exists x:D, P [x]) -> false) g.
+axiom f.
+elim.
+elim [x].
+axiom p.
+elim.
+dixi.
+argument b_claim : (((forall x:D, P [x]) -> false) -> (exists x:D, P [x] -> false)).
+dixi.
+argument b_s1 : (((forall x:D, P [x]) -> false) -> (exists x:D, P [x] -> false)).
+elim f.
+dixi.
+# The proponent's reply: refute forall x, P x by the owed ~forall (the
+# skeptic's f); for an arbitrary y, offer y as the witness of the claim
+# (owed: its refutation) with ~P y, which throws P y back to y's goal.
+# The throw happens under the falsum binder: not linear, refused.
+argument b_p2 : (exists x:D, P [x] -> false).
+cut ((forall x:D, P [x]) -> false) g.
+next.
+elim.
+elim y.
+cut (exists x:D, P [x] -> false) k.
+elim [y].
+elim p.
+cut (P [y]) m.
+axiom p.
+axiom k.
+next.
+dixi.

@@ -1,0 +1,15 @@
+# A non-theorem: (forall x, exists y, R x y) -> exists y, forall x, R x y.
+# The proponent can name a witness c but then owes forall x, R x c, which
+# nobody supplies.
+lk.
+declare D : type.
+declare c : D.
+declare R : D -> D -> bool.
+argument p1 : ((forall x:D, exists y:D, R [x] [y]) -> (exists y:D, forall x:D, R [x] [y])).
+dixi.
+argument s1 : ((forall x:D, exists y:D, R [x] [y]) -> (exists y:D, forall x:D, R [x] [y])).
+elim h.
+dixi.
+argument p2 : (exists y:D, forall x:D, R [x] [y]).
+elim [c].
+dixi.

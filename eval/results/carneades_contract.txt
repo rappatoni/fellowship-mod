@@ -1,0 +1,45 @@
+== literature/carneades_contract.fspy: check ok=True (0.1s)
+-- a1: issue Contract[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=UNDEC Contract[t]=UNDEC Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> open      ?UNDEC:Contract
+   preferred issue: ['OUT', 'IN']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=IN Contract[t]=OUT Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      [2] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=OUT Contract[t]=IN Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*!IN:Consideration*λb3:Minor.μb4:false.<b3:Minor||IN:Minor!>*a1:Contract>
+   stable    issue: ['OUT', 'IN']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=IN Contract[t]=OUT Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      [2] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=OUT Contract[t]=IN Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*!IN:Consideration*λb3:Minor.μb4:false.<b3:Minor||IN:Minor!>*a1:Contract>
+-- a2: issue Agreement[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   preferred issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   stable    issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+-- a4: issue Contract[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=UNDEC Contract[t]=UNDEC Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      UNDEC:Contract?
+      credulous -> open      UNDEC:Contract?
+   preferred issue: ['IN', 'OUT']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=IN Contract[t]=OUT Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      [2] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=OUT Contract[t]=IN Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      UNDEC:Contract?
+      credulous -> value     μ'a4:Contract.<!IN:NotWritten->~Contract||not_written:NotWritten*μ'b1:~Contract.<b1:~Contract||a4:Contract*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=IN Contract[t]=OUT Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      [2] Agreement->Consideration->(Minor->false)->Contract[t]=IN Minor->false[t]=IN NotWritten->~Contract[t]=IN Witness->Agreement[t]=IN Agreement[t]=IN Consideration[t]=IN Contract[c]=OUT Contract[t]=IN Minor[c]=IN NotWritten[t]=IN Witness[t]=IN
+      skeptical -> open      UNDEC:Contract?
+      credulous -> value     μ'a4:Contract.<!IN:NotWritten->~Contract||not_written:NotWritten*μ'b1:~Contract.<b1:~Contract||a4:Contract*_F_>>
+== done in 0.6s

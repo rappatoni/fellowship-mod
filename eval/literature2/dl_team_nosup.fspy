@@ -1,0 +1,42 @@
+# The same platypus theory without the superiority relation: DL derives
+# neither mammal nor ~mammal.
+lk.
+declare Monotreme, HasFur, LaysEggs, HasBill, Mammal : bool.
+declare monotreme : (Monotreme).
+declare hasfur : (HasFur).
+declare layseggs : (LaysEggs).
+declare hasbill : (HasBill).
+argument r1 : (Mammal).
+cut (Monotreme -> Mammal) r.
+by default.
+next.
+elim.
+axiom monotreme.
+axiom r.
+dixi.
+argument r2 : (Mammal).
+cut (HasFur -> Mammal) r.
+by default.
+next.
+elim.
+axiom hasfur.
+axiom r.
+dixi.
+counterargument r3 : (Mammal).
+cut (LaysEggs -> ~Mammal) r.
+by default.
+next.
+elim.
+axiom layseggs.
+elim.
+axiom.
+dixi.
+counterargument r4 : (Mammal).
+cut (HasBill -> ~Mammal) r.
+by default.
+next.
+elim.
+axiom hasbill.
+elim.
+axiom.
+dixi.

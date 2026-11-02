@@ -1,0 +1,45 @@
+== literature/aspic_snores.fspy: check ok=True (0.2s)
+-- misbehaves: issue Misbehaves[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Snores->Misbehaves[t]=IN Misbehaves[t]=IN Snores[t]=IN
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+   preferred issue: ['IN']
+      [1] Snores->Misbehaves[t]=IN Misbehaves[t]=IN Snores[t]=IN
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+   stable    issue: ['IN']
+      [1] Snores->Misbehaves[t]=IN Misbehaves[t]=IN Snores[t]=IN
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+-- denied: issue Denied[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=UNDEC Denied[t]=UNDEC Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> open      ?UNDEC:Denied
+   preferred issue: ['OUT', 'IN']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      [2] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=OUT Denied[t]=IN Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> value     μdenied:Denied.<!IN:Misbehaves->Denied||μb1:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*b1:Misbehaves>*denied:Denied>
+   stable    issue: ['OUT', 'IN']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      [2] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=OUT Denied[t]=IN Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> value     μdenied:Denied.<!IN:Misbehaves->Denied||μb1:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*b1:Misbehaves>*denied:Denied>
+-- allowed: issue Denied[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=UNDEC Denied[t]=UNDEC Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      UNDEC:Denied?
+      credulous -> open      UNDEC:Denied?
+   preferred issue: ['IN', 'OUT']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      [2] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=OUT Denied[t]=IN Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      UNDEC:Denied?
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+   stable    issue: ['IN', 'OUT']
+      [1] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=IN Denied[t]=OUT Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      [2] Misbehaves->Denied[t]=IN Professor->~Denied[t]=IN Snores->Misbehaves[t]=IN Denied[c]=OUT Denied[t]=IN Misbehaves[t]=IN Professor[t]=IN Snores[t]=IN
+      skeptical -> open      UNDEC:Denied?
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+== done in 1.6s

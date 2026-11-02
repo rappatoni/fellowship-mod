@@ -1,0 +1,46 @@
+# The Yale shooting problem in the event calculus style: a fluent persists
+# unless clipped, and "not clipped" is presumed (the event calculus's
+# negation as failure on Clipped). Shooting with a loaded gun clips Alive
+# between 2 and 3. Event calculus: HoldsAt(Alive, 3) is false.
+lk.
+declare Alive2, Alive3, Loaded2, ClippedAlive2, Shoot2 : bool.
+declare alive2 : (Alive2).
+declare loaded2 : (Loaded2).
+declare shoot2 : (Shoot2).
+declare inertia : (Alive2 -> (ClippedAlive2 -> false) -> Alive3).
+declare clip : (Shoot2 -> Loaded2 -> ClippedAlive2).
+declare shoot_effect : (Shoot2 -> Loaded2 -> ~Alive3).
+argument alive3 : (Alive3).
+cut (Alive2 -> (ClippedAlive2 -> false) -> Alive3) th.
+axiom inertia.
+elim.
+axiom alive2.
+elim.
+elim h.
+cut (ClippedAlive2) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument clipped : (ClippedAlive2).
+cut (Shoot2 -> Loaded2 -> ClippedAlive2) th.
+axiom clip.
+elim.
+axiom shoot2.
+elim.
+axiom loaded2.
+axiom th.
+dixi.
+counterargument dead3 : (Alive3).
+cut (~Alive3) x.
+cut (Shoot2 -> Loaded2 -> ~Alive3) th.
+axiom shoot_effect.
+elim.
+axiom shoot2.
+elim.
+axiom loaded2.
+axiom.
+elim.
+axiom.
+dixi.

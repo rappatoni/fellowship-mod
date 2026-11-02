@@ -169,166 +169,6 @@ def simple_test():
         prover.close
         return
 
-def chain_test():
-    print("CHAIN TEST")
-    try:
-        prover = classical_test_prover()
-        # Two rules for chaining:
-        prover.send_command('declare r1: (A->B).')
-        prover.send_command('declare r2: (B->C).')
-
-    #Arguments
-        arg_a = Argument(
-            prover,
-            name='argA',
-            conclusion='B',
-            instructions=[
-                'cut (A-> B) x1',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-
-        arg_b = Argument(
-            prover,
-            name='argB',
-            conclusion='C',
-            instructions=[
-                'cut (B-> C) x2',
-                'axiom r2.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-        # Chain A2 and A1
-        arg_combined = arg_a.chain(arg_b)
-        if arg_combined:
-            print(f"Chained argument '{arg_combined.name}' created with conclusion '{arg_combined.conclusion}'.")
-            print(f"Assumptions of '{arg_combined.name}': {arg_combined.get_assumptions()}")
-        print("CHAIN TEST PASSED")
-        prover.close()
-        
-    except Exception as e:
-        print("CHAIN TEST FAILED WITH EXCEPTION:")
-        print(str(e))
-        prover.close()
-        return
-
-def simple_undercut_test():
-    print("SIMPLE UNDERCUT TEST")
-    try:
-        prover=classical_test_prover()
-        prover.send_command('declare r1: (A->B).')
-        prover.send_command('declare r2: (C->~A).')
-         # Argument A: Proves ~A using C
-        arg_a = Argument(
-            prover,
-            name='argA',
-            conclusion='~A',
-            instructions=[
-                'cut (C-> ~A) Fresh2',
-                'axiom r2.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-        # Argument B: Proves B assuming A
-        arg_b = Argument(
-            prover,
-            name='argB',
-            conclusion='B',
-            instructions=[
-                'cut (A-> B) Fresh',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-
-        final_arg = arg_a.undercut(arg_b)
-
-        print(final_arg.name)
-        print(final_arg.assumptions)
-        print(final_arg.conclusion)
-        print(final_arg.proof_term)
-        print(final_arg.representation)
-        print("SIMPLE UNDERCUT TEST PASSED")
-        prover.close()
-        return
-    except Exception as e:
-        print("SIMPLE UNDERCUT TEST FAILED WITH EXCEPTION:")
-        print(e)
-        prover.close()
-        return
-
-def focussed_undercut_test(reduce:bool=False):
-    reduce = str(reduce).lower() in ("true", "1", "yes")
-    print("FOCUSSED UNDERCUT TEST")
-    try:
-        prover=classical_test_prover()
-        prover.send_command('declare r1: (A->B).')
-        prover.send_command('declare r2: (C->~A).')
-        print("Declarations", prover.declarations)
-         # Argument A: Proves ~A using C
-        arg_a = Argument(
-            prover,
-            name='argA',
-            conclusion='~A',
-            instructions=[
-                'elim.',
-                'cut (~A) H4.',
-                'cut (C-> ~A) Fresh2.',
-                'axiom r2.',
-                'elim.',
-                'next.',
-                'axiom.',
-                'elim.',
-                'axiom H4.'
-            ]
-        )
-        
-        # Argument B: Proves B assuming A
-        arg_b = Argument(
-            prover,
-            name='argB',
-            conclusion='B',
-            instructions=[
-                'cut (A-> B) Fresh',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-
-        final_arg = arg_a.focussed_undercut(arg_b)
-
-        print(final_arg.name)
-        print(final_arg.assumptions)
-        print(final_arg.conclusion)
-        print(final_arg.proof_term)
-        print(final_arg.representation)
-        print("FOCUSSED UNDERCUT TEST PASSED")
-        print(reduce)
-        print(type(reduce))
-        if reduce == True:
-            print("Reducing argument")
-            final_arg.reduce()
-            print("Normalized Proof Term", final_arg.normal_form)
-        prover.close()
-        return final_arg
-    except Exception as e:
-        print("FOCUSSED UNDERCUT TEST FAILED WITH EXCEPTION:")
-        print(type(e).__name__,e)
-        print(traceback.format_exc())
-        prover.close()
-        return
-
 def reinstatement_test():
     pass
     
@@ -355,81 +195,6 @@ def arg_pop_test(): #TODO
                                      'elim.', 'next.', 'axiom.'  ] )
     
     
-def undercut_test():
-    print("UNDERCUT AND SUPPORT TEST")
-    try:
-        prover=classical_test_prover()
-        prover.send_command('declare r1: (A->B).')
-        prover.send_command('declare r2: (C->~A).')
-        prover.send_command('declare r3: (D->C).')
-        # Argument A: Proves ~A using C
-        arg_a = Argument(
-            prover,
-            name='argA',
-            conclusion='~A',
-            instructions=[
-                'elim.',
-                'cut (~A) H4.',
-                'cut (C-> ~A) Fresh2.',
-                'axiom r2.',
-                'elim.',
-                'next.',
-                'axiom.',
-                'elim.',
-                'axiom H4.'
-            ]
-        )
-
-        # Argument B: Proves B assuming A
-        arg_b = Argument(
-            prover,
-            name='argB',
-            conclusion='B',
-            instructions=[
-                'cut (A-> B) Fresh',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-
-        arg_c = Argument(
-            prover,
-            name='argC',
-            conclusion='C',
-            instructions=[
-                'cut (D-> C) Fresh5',
-                'axiom r3.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]
-        )
-        arg_b.execute()
-        print("ARGB")
-        print(arg_b.assumptions)
-        undercut_arg = arg_a.focussed_undercut(arg_b)
-        final_arg = arg_c.support(undercut_arg)
-        print(final_arg.name)
-        print(final_arg.assumptions)
-        print(final_arg.conclusion)
-        print(final_arg.proof_term)
-        print(final_arg.representation)
-        print("UNDERCUT AND SUPPORT TEST PASSED")
-        print("Reducing argument")
-        final_arg.reduce()
-        print("Normalized Proof Term", final_arg.normal_form)
-        prover.close()
-        return final_arg
-    except Exception as e:
-        print("UNDERCUT AND SUPPORT TEST FAILED WITH EXCEPTION:")
-        print("Test failed", e)
-        prover.close()
-        return
-
-
-
 def subargument_test(): #TODO
     print("SUBARGUMENT TEST")
     try:
@@ -493,50 +258,6 @@ def subargument_test(): #TODO
         return
 
 
-def pop_subargument_test():
-    print("POP SUBARGUMENT TEST")
-    try:
-        prover=classical_test_prover()
-        prover.send_command('declare r1: (A->B).')
-        prover.send_command('declare r2: (B->C).')
-        superargument = Argument(
-            prover,
-            name='SuperArg',
-            conclusion='C',
-            instructions=[
-                'cut (B->C) x.',
-                'axiom r2.',
-                'elim.',
-                'cut (A->B) y.',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.',
-                'axiom.'
-            ]
-        )
-
-
-        subargument = Argument(
-            prover,
-            name='SubArg',
-            conclusion='B',
-            instructions=[
-                'cut (A->B) z.',
-                'axiom r1.',
-                'elim.',
-                'next.',
-                'axiom.'
-            ]     
-        )
-        print(superargument.pop_arg(subargument))
-        print("POP SUBARGUMENT TEST PASSED.")
-        return
-    except Exception as e:
-        print("POP SUBARGUMENT TEST FAILED WITH EXCEPTION:")
-        print(e)
-        prover.close()
-        return
 def label_assumptions_test(test_argument=None, test_assumption_mapping = {'1':{'prop' : 'C' , 'index' : None, 'label' : None}, '2' :{'prop' : 'B_bar' , 'index' : None, 'label' : None}}):
     print("LABEL ASSUMPTIONS TEST")
     try:
@@ -836,13 +557,8 @@ if __name__ == '__main__':
         'declaration_test': declaration_test,
         'prop_enrichment_test': prop_enrichment_test,
         'simple_test': simple_test,
-        'chain_test': chain_test,
-        'simple_undercut_test': simple_undercut_test,
-        'focussed_undercut_test': focussed_undercut_test,
-        'undercut_test': undercut_test,
         'subargument_test': subargument_test,
         'generate_instructions_test': generate_instructions_test,
-        'pop_subargument_test': pop_subargument_test,
         'label_assumptions_test': label_assumptions_test,
         'self_attack_test': self_attack_test,
         'self_labelling_test': self_labelling_test,
@@ -879,4 +595,3 @@ if __name__ == '__main__':
         logger.error("Error: Test '%s' not found. Available tests are:", args.test)
         for test_name in tests.keys():
             logger.info("  - %s", test_name)
-   

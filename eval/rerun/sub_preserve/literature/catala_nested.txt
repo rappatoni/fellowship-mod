@@ -1,0 +1,32 @@
+== literature/catala_nested.fspy: check ok=True (0.1s)
+-- base: issue Eligible[c]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+   preferred issue: ['IN']
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+   stable    issue: ['IN']
+      skeptical -> value     IN:Eligible!
+      credulous -> value     IN:Eligible!
+-- kids: issue Eligible[t]; 6 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+   preferred issue: ['OUT']
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+   stable    issue: ['OUT']
+      skeptical -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+      credulous -> open      μalt4:Eligible.<?OUT:Eligible||alt4:Eligible>
+-- income: issue Children->Eligible[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+      credulous -> value     μ'alt2:Children->Eligible.<income_overrides:HighIncome->~(Children->Eligible)||high_income:HighIncome*μb1:Children->Eligible.<alt2:Children->Eligible||b1:Children->Eligible>*_F_>
+== done in 0.6s

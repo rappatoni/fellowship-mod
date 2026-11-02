@@ -1,0 +1,42 @@
+== literature/t_lnc_dialectical.fspy: check ok=True (0.1s)
+-- p1: issue ~(P-P)[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+-- s1: issue ~(P-P)[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+      credulous -> value     μs1:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb2:P.b2:P>||s1:~(P-P)>
+-- p2: issue false[t]; 2 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:false
+      credulous -> open      ?OUT:false
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:false
+      credulous -> open      ?OUT:false
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:false
+      credulous -> open      ?OUT:false
+-- c1: issue P-P[c]; 1 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+      credulous -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+      credulous -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+      credulous -> value     μ'alt2:P-P.<alt2:P-P||λb2:P.b2:P>
+== done in 1.9s

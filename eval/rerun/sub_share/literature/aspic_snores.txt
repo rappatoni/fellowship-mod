@@ -1,0 +1,32 @@
+== literature/aspic_snores.fspy: check ok=True (0.1s)
+-- misbehaves: issue Misbehaves[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+   preferred issue: ['IN']
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+   stable    issue: ['IN']
+      skeptical -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+      credulous -> value     μmisbehaves:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*misbehaves:Misbehaves>
+-- denied: issue Denied[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> open      ?UNDEC:Denied
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> value     μdenied:Denied.<!IN:Misbehaves->Denied||μb1:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*b1:Misbehaves>*denied:Denied>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Denied
+      credulous -> value     μdenied:Denied.<!IN:Misbehaves->Denied||μb1:Misbehaves.<!IN:Snores->Misbehaves||snores:Snores*b1:Misbehaves>*denied:Denied>
+-- allowed: issue Denied[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Denied?
+      credulous -> open      UNDEC:Denied?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Denied?
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Denied?
+      credulous -> value     μ'allowed:Denied.<!IN:Professor->~Denied||professor:Professor*μ'b1:~Denied.<b1:~Denied||allowed:Denied*_F_>>
+== done in 0.5s

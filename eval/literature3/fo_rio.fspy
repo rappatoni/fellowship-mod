@@ -1,0 +1,42 @@
+# Reified input/output logic (Robaldo & Sun 2017), first order: a norm over
+# eventualities, with an existential obligation. For every processing
+# eventuality e of data of subject y by controller x that really exists,
+# x ought to inform y: some informing eventuality must really exist.
+#   norm:      forall e x y, Process e x y -> Obliged x y
+#   violation: forall x y, Obliged x y -> ~(exists e, RInform e x y) -> Violated x y
+# (RInform e x y abbreviates inform'(e,x,y) & Rexist(e): AIDA has no
+# conjunction.) Compliance is witnessed by an existing eventuality.
+lk.
+declare Ev, Ag : type.
+declare e1, e2 : Ev.
+declare ctrl, subj : Ag.
+declare Process, RInform : Ev -> Ag -> Ag -> bool.
+declare Obliged, Violated : Ag -> Ag -> bool.
+declare process : (Process [e1] [ctrl] [subj]).
+declare norm : (forall e:Ev, forall x:Ag, forall y:Ag, Process [e] [x] [y] -> Obliged [x] [y]).
+declare violation_rule : (forall x:Ag, forall y:Ag, Obliged [x] [y] -> ((exists e:Ev, RInform [e] [x] [y]) -> false) -> Violated [x] [y]).
+argument obliged : (Obliged [ctrl] [subj]).
+cut (forall e:Ev, forall x:Ag, forall y:Ag, Process [e] [x] [y] -> Obliged [x] [y]) r.
+axiom norm.
+elim [e1].
+elim [ctrl].
+elim [subj].
+elim.
+axiom process.
+axiom r.
+dixi.
+argument violated : (Violated [ctrl] [subj]).
+cut (forall x:Ag, forall y:Ag, Obliged [x] [y] -> ((exists e:Ev, RInform [e] [x] [y]) -> false) -> Violated [x] [y]) r.
+axiom violation_rule.
+elim [ctrl].
+elim [subj].
+elim.
+next.
+elim.
+elim h.
+cut (exists e:Ev, RInform [e] [ctrl] [subj]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.

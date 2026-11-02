@@ -1,0 +1,77 @@
+# Reliability vs minimal abnormality (Batens 2007): Gamma = {~p, ~q,
+# p v q, p v r, q v s}. The Dab-formula (p & ~p) v (q & ~q) is derivable.
+# Reliability: neither r nor s nor r v s is finally derived. Minimal
+# abnormality: r v s is (every minimal abnormal set contains one of the two
+# abnormalities), but neither r nor s.
+# Encoding: ~p, ~q refutations from presumed sources; x v y as
+# (x -> false) -> y (and its mirror for p v q).
+lk.
+declare P, Q, R, S, Snp, Snq : bool.
+declare src_np : (Snp -> ~P).
+declare src_nq : (Snq -> ~Q).
+declare pq : ((P -> false) -> Q).
+declare qp : ((Q -> false) -> P).
+declare pr : ((P -> false) -> R).
+declare qs : ((Q -> false) -> S).
+counterargument np : (P).
+cut (~P) x.
+cut (Snp -> ~P) th.
+axiom src_np.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument nq : (Q).
+cut (~Q) x.
+cut (Snq -> ~Q) th.
+axiom src_nq.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+argument q : (Q).
+cut ((P -> false) -> Q) th.
+axiom pq.
+elim.
+elim h.
+cut (P) k.
+axiom h.
+next.
+axiom th.
+dixi.
+argument p : (P).
+cut ((Q -> false) -> P) th.
+axiom qp.
+elim.
+elim h.
+cut (Q) k.
+axiom h.
+next.
+axiom th.
+dixi.
+argument r : (R).
+cut ((P -> false) -> R) th.
+axiom pr.
+elim.
+elim h.
+cut (P) k.
+axiom h.
+next.
+axiom th.
+dixi.
+argument s : (S).
+cut ((Q -> false) -> S) th.
+axiom qs.
+elim.
+elim h.
+cut (Q) k.
+axiom h.
+next.
+axiom th.
+dixi.

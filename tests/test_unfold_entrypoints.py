@@ -7,19 +7,18 @@ itself on top of its supporter stack:
     STACK          SUP( SUP(P1, P2), P3 )        last registered outermost
     argument P1    SUP( ROOT, SUP( SUP(P2, P3), P1 ) )
 
-The shape is presentation: the issue graph and its labellings are those of
-the legacy term, whichever entrypoint the term is unfolded from.
+The shape is presentation: the issue graph and its labellings are the
+document graph's, whichever entrypoint the term is unfolded from
+(tests/test_issue_graph_from_document.py).
 """
 
 import warnings
 
 import pytest
 
-from core.comp.adf_label import labellings
 from core.dc.debate_graph import declaration_kinds
 from core.dc.strict import compile_issue
-from core.dc.unfold import argument_edge, unfold, unfold_argument, unfold_legacy
-from mod import store
+from core.dc.unfold import argument_edge, unfold, unfold_argument
 from wrap.cli import execute_script, setup_prover
 
 FIXTURES = [
@@ -45,8 +44,6 @@ FIXTURES = [
 
 @pytest.fixture
 def fresh():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     yield prover
     prover.close()
@@ -59,70 +56,10 @@ def run(prover, script):
                        render_files=False, stop_marker=False)
 
 
-def edge_key(edge):
-    """An edge up to its name (copies are named apart) and the kinds of its
-    sources (an argument entrypoint's own sites keep the kind it wrote;
-    acceptance conditions do not read source kinds)."""
-    return (edge.target_key, edge.target_side, edge.strict,
-            tuple(sorted((s.key, s.side) for s in edge.sources)))
-
-
 def issue_graph(term, names, kinds):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
-
-
-def presumed(graph):
-    return {s for s, kinds in graph.defaults.items() if "presumption" in kinds}
-
-
-def framework(graph):
-    return {edge_key(e) for e in graph.edges if not e.name.endswith("*")}
-
-
-def strict_edges(graph):
-    return {edge_key(e) for e in graph.edges if e.name.endswith("*")}
-
-
-#: Where the stacked term finds strict edges the legacy term missed, seen
-#: from the contrary's side: the attacker wing is now the contrary's whole
-#: debate, so a strict decision inside it is made from either side.  The
-#: legacy term made it only from the statement's own side (self-attack:
-#: SelfAttack* for P[t] but not for P[c]).  {script: {(prop, side)}}.
-MORE_STRICT_EDGES = {}
-
-
-def compare(script, statement, reference, graph, doc):
-    assert framework(graph) == framework(reference)
-    assert presumed(graph) == presumed(reference)
-    assert set(graph.nodes) == set(reference.nodes)
-    assert strict_edges(graph) >= strict_edges(reference)
-    if strict_edges(graph) != strict_edges(reference):
-        MORE_STRICT_EDGES.setdefault(script, set()).add((doc.nodes[statement[0]], statement[1]))
-        return
-    for semantics in ("grounded", "preferred"):
-        assert labellings(graph, semantics) == labellings(reference, semantics), semantics
-
-
-@pytest.mark.parametrize("script", FIXTURES)
-def test_the_shape_does_not_change_the_framework(fresh, script, capsys):
-    """For every statement: the canonical term, and the term of every
-    argument for it, compile to the legacy term's framework (edges up to
-    names and source kinds, presumption markers, nodes).  The strict edges
-    can only grow (MORE_STRICT_EDGES); where they are equal, so are the
-    labellings.  Obligation markers may differ: the labeller reads only
-    presumptions."""
-    run(fresh, script)
-    doc = fresh.document
-    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
-    for statement in doc.statements():
-        reference = issue_graph(unfold_legacy(doc, statement), names, kinds)
-        compare(script, statement, reference, issue_graph(unfold(doc, statement), names, kinds), doc)
-        for edge in doc.edges:
-            if (edge.target_key, edge.target_side) == statement and edge.role != "subargument":
-                compare(script, statement, reference,
-                        issue_graph(unfold_argument(doc, edge), names, kinds), doc)
 
 
 # ---------------------------------------------------------------------------
@@ -144,8 +81,6 @@ ENTRYPOINTS = "tests/entrypoints.fspy"
 
 @pytest.fixture
 def doc():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     run(prover, ENTRYPOINTS)
     yield prover
@@ -175,7 +110,7 @@ def stack_names(term, prover):
 
 class TestShapes:
     def test_the_issue_term_has_the_root_on_top_and_the_stack_below(self, doc):
-        term = unfold(doc.document, (K("B"), "term"))
+        term = unfold(doc.graph, (K("B"), "term"))
         match = _match_scaffold(term, set(doc.declarations))
         assert isinstance(match[3], Goal)                    # ROOT: nobody presumes B
         assert stack_names(term, doc) == ["p1", "p2", "p3"]  # last registered outermost
@@ -183,15 +118,15 @@ class TestShapes:
     def test_an_argument_goes_on_top_of_its_stack(self, doc):
         for name, expected in (("p1", ["p2", "p3", "p1"]), ("p2", ["p1", "p3", "p2"]),
                                ("p3", ["p1", "p2", "p3"])):
-            term = unfold_argument(doc.document, argument_edge(doc.document, name))
+            term = unfold_argument(doc.graph, argument_edge(doc.graph, name))
             assert stack_names(term, doc) == expected, name
 
     def test_the_argument_keeps_its_own_binder_names(self, doc):
-        term = unfold_argument(doc.document, argument_edge(doc.document, "p1"))
-        assert "μp1:B.<μth:B.<r1:A->B||!u2:A*th:B>||p1:B>" in pres_str(term)
+        term = unfold_argument(doc.graph, argument_edge(doc.graph, "p1"))
+        assert "μp1:B.<μth:B.<r1:A->B||!2:A*th:B>||p1:B>" in pres_str(term)
 
     def test_a_counterargument_is_a_supporter_of_its_context_side_statement(self, doc):
-        term = unfold_argument(doc.document, argument_edge(doc.document, "c1"))
+        term = unfold_argument(doc.graph, argument_edge(doc.graph, "c1"))
         assert isinstance(term, Mutilde)
         match = _match_scaffold(term, set(doc.declarations))
         assert match[0] == "supporter" and isinstance(match[3], Laog)
@@ -200,10 +135,10 @@ class TestShapes:
     def test_an_own_obligation_keeps_its_kind_with_the_presumption_at_the_bottom(self, doc):
         # q demands A; p1 presumes it.  In q's term the root of A's debate is
         # q's own obligation, and the presumption is A's only supporter.
-        term = unfold_argument(doc.document, argument_edge(doc.document, "q"))
-        assert "μalt2:A.<?u2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<!u3:A||alt2:A>>>" in pres_str(term)
+        term = unfold_argument(doc.graph, argument_edge(doc.graph, "q"))
+        assert "μalt2:A.<?2:A||μ'b2:A.<μ_:A.<b2:A||alt2:A>||μ'_:A.<!3:A||alt2:A>>>" in pres_str(term)
         # canonically A is presumed: the issue term of G has the presumption as A's root
-        assert "!u2:A*th:G" in pres_str(unfold(doc.document, (K("G"), "term")))
+        assert "!2:A*th:G" in pres_str(unfold(doc.graph, (K("G"), "term")))
 
 
 class TestEvaluation:
@@ -212,31 +147,31 @@ class TestEvaluation:
 
     @pytest.mark.parametrize("mode", ["credulous", "skeptical"])
     def test_issue_and_argument_entrypoints(self, doc, mode):
-        assert proof(doc, unfold(doc.document, (K("B"), "term")), mode) == ("value", "p3")
+        assert proof(doc, unfold(doc.graph, (K("B"), "term")), mode) == ("value", "p3")
         for name in ("p1", "p2", "p3"):
-            term = unfold_argument(doc.document, argument_edge(doc.document, name))
+            term = unfold_argument(doc.graph, argument_edge(doc.graph, name))
             assert proof(doc, term, mode) == ("value", name)
 
     def test_strictness_keeps_the_stack_order(self, doc):
         # two strict supporters: the last registered wins from the issue,
         # the argument itself from its own entrypoint
-        assert proof(doc, unfold(doc.document, (K("E"), "term"))) == ("value", "s2")
+        assert proof(doc, unfold(doc.graph, (K("E"), "term"))) == ("value", "s2")
         for name in ("s1", "s2"):
-            term = unfold_argument(doc.document, argument_edge(doc.document, name))
+            term = unfold_argument(doc.graph, argument_edge(doc.graph, name))
             assert proof(doc, term) == ("value", name)
 
     def test_counterargument_entrypoints(self, doc):
-        assert proof(doc, unfold(doc.document, (K("F"), "context"))) == ("value", "c2")
+        assert proof(doc, unfold(doc.graph, (K("F"), "context"))) == ("value", "c2")
         for name in ("c1", "c2"):
-            term = unfold_argument(doc.document, argument_edge(doc.document, name))
+            term = unfold_argument(doc.graph, argument_edge(doc.graph, name))
             assert proof(doc, term) == ("value", name)
 
     def test_every_argument_term_replays_through_fellowship(self, doc):
-        for edge in doc.document.edges:
+        for edge in doc.graph.edges:
             if edge.role == "subargument":
                 continue
-            term = unfold_argument(doc.document, edge)
-            typecheck(doc, term, f"entry_{edge.name}", doc.document.nodes[edge.target_key],
+            term = unfold_argument(doc.graph, edge)
+            typecheck(doc, term, f"entry_{edge.name}", doc.graph.nodes[edge.target_key],
                       edge.target_side == "context")
 
 
@@ -245,7 +180,7 @@ def test_favour_prefers_a_witness_accepting_the_argument(fresh):
     # source S only in the second.  Without favour the first is taken and
     # the presumption of Q is what survives; with it, yQ's proof.
     run(fresh, "tests/rationality/two_witnesses.fspy")
-    doc = fresh.document
+    doc = fresh.graph
     edge = argument_edge(doc, "yQ")
     term = unfold_argument(doc, edge)
     nf, cls, *_ = evaluate_debate(copy.deepcopy(term), "x", mode="credulous", **options(fresh))
@@ -269,8 +204,8 @@ def test_an_unfolded_term_is_cached_until_the_document_changes(fresh, tmp_path):
     run(fresh, script)
     after_declaration = fresh.unfolded_term(p1)
     assert after_declaration is not first                        # a declaration makes it stale
-    script.write_text("start argument p4 B\ncut (A -> B) th.\naxiom r1.\nelim.\nby default.\n"
-                      "next.\naxiom.\nend argument\n")
+    script.write_text("argument p4 : (B).\ncut (A -> B) th.\naxiom r1.\nelim.\nby default.\n"
+                      "next.\naxiom.\ndixi.\n")
     run(fresh, script)
     term = fresh.unfolded_term(p1)
     assert term is not after_declaration and "p4" in pres_str(term)   # so does an argument
@@ -279,22 +214,22 @@ def test_an_unfolded_term_is_cached_until_the_document_changes(fresh, tmp_path):
 def test_the_cli(fresh, tmp_path, caplog):
     script = tmp_path / "cli.fspy"
     script.write_text(open(ENTRYPOINTS).read() + "\n".join([
-        "unfold argument p1",
-        "unfold issue :B",
-        "unfold debate whatever",
-        "evaluate p1 credulous",
-        "evaluate issue :B credulous",
-        "evaluate issue F: skeptical",
-        "evaluate p1 credulous favour",
-        "render p1 evaluated",
-        "label issue :B",
+        "unfold argument p1.",
+        "unfold issue :B.",
+        "unfold debate whatever.",
+        "evaluate p1 credulous.",
+        "evaluate issue :B credulous.",
+        "evaluate issue F: skeptical.",
+        "evaluate p1 credulous favour.",
+        "render p1 evaluated.",
+        "label issue :B.",
     ]) + "\n")
     with caplog.at_level(logging.INFO):
         run(fresh, script)
     text = "\n".join(r.getMessage() for r in caplog.records)
     assert "Unfolded the debate term unfolded for 'p1'" in text
     assert "Unfolded the canonical debate term of issue :B" in text
-    assert "unfold debate: not implemented yet" in text
+    assert "unfold debate: no debate 'whatever'." in text
     assert "Evaluated 'p1' (credulous, preferred, base cbn): VALUE" in text
     assert "normal form: μp1:B.<r1:A->B||!IN:A*p1:B>" in text
     assert "Evaluated 'issue :B' (credulous, preferred, base cbn): VALUE" in text
@@ -309,14 +244,15 @@ def test_argument_names_ending_in_digits_stay_apart(fresh):
     # aida-fold-occurrences-names: a1_0 and a1_1 are two arguments, not
     # copies of an "a1"; copies are named after the argument they came from.
     run(fresh, "tests/minicourse/lesson14_sharing.fspy")
-    doc = fresh.document
+    doc = fresh.graph
     graph = issue_graph(unfold(doc, (K("P2"), "term")), *options(fresh).values())
-    assert sorted(e.name for e in graph.edges) == ["a1_0", "a1_1", "a2_0", "a2_1"]
+    # the axioms' own edges (r1_0, ...; the horn rule) have no sources
+    assert sorted(e.name for e in graph.edges if e.sources) == ["a1_0", "a1_1", "a2_0", "a2_1"]
 
 
 def test_unfolding_copies_still_fold_under_their_argument(fresh):
     run(fresh, "tests/peirces_law.fspy")
-    doc = fresh.document
+    doc = fresh.graph
     graph = issue_graph(unfold(doc, fresh.issue_of(fresh.get_argument("p1"))),
                         *options(fresh).values())
     names = [e.name for e in graph.edges]

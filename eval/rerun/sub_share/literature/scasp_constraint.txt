@@ -1,0 +1,32 @@
+== literature/scasp_constraint.fspy: check ok=True (0.1s)
+-- arg_p: issue P[t]; 7 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+   preferred issue: ['OUT']
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+   stable    issue: ['OUT']
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+-- arg_q: issue Q[t]; 8 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+   preferred issue: ['IN']
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+   stable    issue: ['IN']
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+-- kill_p: issue P[c]; 7 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+   preferred issue: ['IN']
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+   stable    issue: ['IN']
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+== done in 0.6s

@@ -1,0 +1,6 @@
+== literature2/io_cases.fspy: check ok=True (0.1s)
+-- claim: graph refused: TypeCheckRefused: in the debate about Ox[t], which 'claim' reaches: Fellowship rejected the unfolded term for 'claim_1': h is neither in your hypothesis nor in your conclusion.
+-- from_b: graph refused: TypeCheckRefused: in the debate about Ox[t], which 'from_b' reaches: Fellowship rejected the unfolded term for 'from_b_1': h is neither in your hypothesis nor in your conclusion.
+-- b_from_input: graph refused: TypeCheckRefused: in the debate about Ox[t], which 'b_from_input' reaches: Fellowship rejected the unfolded term for 'b_from_input_3': h is neither in your hypothesis nor in your conclusion.
+-- not_a: graph refused: TypeCheckRefused: in the debate about Ox[t], which 'not_a' reaches: Fellowship rejected the unfolded term for 'not_a_1': h is neither in your hypothesis nor in your conclusion.
+== done in 0.1s

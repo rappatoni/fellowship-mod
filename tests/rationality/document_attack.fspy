@@ -14,26 +14,26 @@ lk.
 declare P,Q:bool.
 declare pRule : (Q->P).
 
-start argument pArg P
+argument pArg : (P).
 cut (Q->P) rule.
 axiom pRule.
 elim.
 by default.
 next.
 axiom rule.
-end argument
+dixi.
 
-label pArg
+label pArg.
 
 % An unrelated-looking counterargument, registered later, no verb.
-start counterargument qAtt Q
+counterargument qAtt : (Q).
 by default.
-end counterargument
+dixi.
 
-graph document
-label pArg
-evaluate pArg skeptical
-evaluate pArg credulous
+graph document.
+label pArg.
+evaluate pArg skeptical.
+evaluate pArg credulous.
 
 % The verbs assert (tests/test_document.py): a supporter must conclude a
 % statement reachable from the host's issue, an attacker the contrary of

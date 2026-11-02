@@ -1,0 +1,41 @@
+== literature4/lif_a1.fspy: check ok=True (0.1s)
+-- on_a: issue OnTable a[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+   preferred issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+   stable    issue: ['OUT']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+      credulous -> exception μalt3:OnTable a.<?OUT:OnTable a||not_on_a:OnTable a>
+-- on_b: issue OnTable b[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+   preferred issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+   stable    issue: ['IN']
+      [1] Heavy b[t]=IN OnTable b[t]=IN forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+      credulous -> value     μon_b:OnTable b.<!IN:forall x:Block,Heavy x->OnTable x||b*heavy_b:Heavy b*on_b:OnTable b>
+-- a_off: issue OnTable a[c]; 3 edges
+   grounded  issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+   preferred issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+   stable    issue: ['IN']
+      [1] Heavy a[t]=IN OnTable a[c]=IN OnTable a[t]=OUT forall x:Block,Heavy x->OnTable x[t]=IN
+      skeptical -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+      credulous -> value     μ'a_off:OnTable a.<a_off:OnTable a||not_on_a:OnTable a>
+== done in 0.3s

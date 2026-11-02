@@ -1,0 +1,32 @@
+== literature2/djl_reasons_own.fspy: check ok=True (0.1s)
+-- w1: issue Robbery[t]; 10 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+   preferred issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+   stable    issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+-- w2: issue Robbery[t]; 10 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+   preferred issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+   stable    issue: ['IN']
+      skeptical -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+      credulous -> value     μw2:Robbery.<own2:Reliable2->Said2->Robbery||!IN:Reliable2*said2:Said2*w2:Robbery>
+-- undercut1: issue Reliable1[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+      credulous -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+      credulous -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+      credulous -> value     μ'alt2:Reliable1.<absent_undercuts_own:Absent1->~Reliable1||absent1:Absent1*μb1:Reliable1.<alt2:Reliable1||b1:Reliable1>*_F_>
+== done in 0.5s

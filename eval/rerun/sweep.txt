@@ -1,0 +1,1199 @@
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/alternative_arguments.fspy: check ok=False (1.8s)
+   line 95: refused: 'admaltest' is not a argument of the pure level: not linear: the continuation 'th' is used under a second continuation binder. An argument is linear: each continuation used once, with no second continuation binder between. Debates, not arguments, may be classical.
+-- arg1: issue B[t]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- sup1: issue A[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- c1: issue B[c]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- csup1: issue A[c]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- first: issue B[t]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- second: issue B[c]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- third: issue B[t]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 22.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/argument_counter_render_normalize.fspy: check ok=True (0.0s)
+-- notA: issue A[c]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/basic_support.fspy: check ok=True (0.5s)
+-- arg1: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- sup1: issue A[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- counter: issue C[c]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- first: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- second: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 3.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/circular_supporter.fspy: check ok=True (0.1s)
+-- pro: issue B[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- other: issue A[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- back: issue A[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/connectives_refused.fspy: check ok=False (0.0s)
+   line 11: refused: 'conj' uses a conjunction (/\): it can be declared, but AIDA cannot argue about it yet; the argument is not registered.
+   line 16: refused: 'conj_intro' uses a conjunction (/\): it can be declared, but AIDA cannot argue about it yet; the argument is not registered.
+   line 20: refused: 'disj' uses a disjunction (\/): it can be declared, but AIDA cannot argue about it yet; the argument is not registered.
+== done in 0.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/contrapositive.fspy: check ok=True (0.1s)
+-- contra: graph refused: LogicRefused: debates are classical (their scaffolds throw to a second conclusion, which LJ forbids); start the document with `new document.` (lk).
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/counterarguments_and_undercut.fspy: check ok=True (1.5s)
+-- arg1: issue UseMetro[t]; 15 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- arg2: issue EfficientMetro[c]; 13 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- arg3: issue StrikeMetro[c]; 10 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- arg4: issue DealMetro[c]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- arg5: issue LowballOffer[c]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- arg6: issue BadNegotiations[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- u1: issue UseMetro[t]; 15 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- u2: issue UseMetro[t]; 15 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- u3: issue UseMetro[t]; 15 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- u4: issue LowballOffer[c]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 12.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/debates.fspy: check ok=True (0.1s)
+-- tweety: issue Flies[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- penguin: issue Flies[c]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- photo: issue Penguin[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- sings: issue Sings[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.6s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/default_test.fspy: check ok=False (0.1s)
+   line 63: refused: 'delegation_test_4' is not strict, so it cannot be a theorem: presumption !1.2.1:A. Discharge them, or end with `dixi.` to keep it as a defeasible argument.
+-- delegation_test: issue B[t]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test:B>   <-- ADEQUACY MISMATCH
+-- delegation_test2: issue A[c]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+-- delegation_test3: issue B[t]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+-- delegation_counter_test: issue A[c]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt4:A.<mox:C*ax:A||elur:A-C>   <-- ADEQUACY MISMATCH
+-- delegation_test_4: issue B[t]; 9 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+      credulous -> exception μdelegation_test3:B.<rule:A->B||μb1:A.<mox:C*ax:A||elur:A-C>*delegation_test3:B>   <-- ADEQUACY MISMATCH
+== done in 0.9s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__01_arguments.fspy: check ok=True (0.2s)
+-- tweety: issue Flies_Tweety[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- opus: issue Flies_Opus[c]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__02_support_attack.fspy: check ok=False (0.2s)
+   line 58: refused: debate 'bad': support: 'sings' concludes :Sings, but 'tweety' has no node on :Sings to support.
+-- tweety: issue Flies[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- wings: issue Flies[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- penguin: issue Flies[c]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- sings: issue Sings[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- dsup: issue Flies[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- datt: issue Flies[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- bad: issue Flies[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+== done in 3.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__03_contested.fspy: check ok=True (0.2s)
+-- nixonQ: issue Pacifist[t]; 4 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- nixonR: issue Pacifist[c]; 4 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__04_document.fspy: check ok=True (0.2s)
+-- tweety: issue Flies[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- grounded_penguin: issue Flies[c]; 5 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__05_even_loop.fspy: check ok=True (0.3s)
+-- Pdefault: issue P[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- Qdefault: issue Q[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/demo__06_peirce.fspy: check ok=True (0.6s)
+-- p1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p3: issue Q[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s3: issue P->Q[c]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 3.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/entrypoints.fspy: check ok=True (0.1s)
+-- p1: issue B[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p2: issue B[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p3: issue B[t]; 6 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s1: issue E[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s2: issue E[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- c1: issue F[c]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- c2: issue F[c]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- q: issue G[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 1.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/error_warning_test.fspy: check ok=True (0.0s)
+-- test: issue A[t]; 0 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__curried_cell.fspy: check ok=True (0.1s)
+-- cArg: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- aArg: issue A[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- test: issue B->C[c]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__lemma_captured.fspy: check ok=True (0.2s)
+-- argP: issue P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- argQ: issue Q[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- killR: issue R[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.6s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__lemma_scope_cases.fspy: check ok=True (0.1s)
+-- p1: issue (A->B)->((A->false)->B)->B[t]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s1: issue (A->B)->((A->false)->B)->B[t]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p2: issue B[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p3: issue A->false[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__lemma_scope_io.fspy: check ok=True (0.1s)
+-- claim: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- from_b: issue Ox[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- b_from_input: issue B[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- not_a: issue A->false[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__negation_cell.fspy: check ok=True (0.1s)
+-- x1: issue B[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- x2: issue B[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__site_obligation.fspy: check ok=True (0.2s)
+-- argP: issue P[t]; 8 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['OUT']
+-- argQ: issue Q[t]; 8 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['OUT']
+-- argP2: issue P[t]; 8 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['OUT']
+-- killR: issue R[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.7s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__site_variant.fspy: check ok=True (0.2s)
+-- argP: issue P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- argQ: issue Q[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- argP2: issue P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- killR: issue R[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.7s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__two_sites.fspy: check ok=True (0.1s)
+-- two: issue B[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- aArg: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/exposure__underscore_binder.fspy: check ok=True (0.0s)
+-- a: issue P[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- b: issue P[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/falsum.fspy: check ok=True (0.1s)
+-- contradiction: issue false[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- contradiction2: issue false[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/first_order__opaque.fspy: check ok=True (0.1s)
+-- gen: issue forall x:D,Pr x[t]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- pc: issue Pr c[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- refuted: issue forall x:D,Pr x[c]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/first_order__opaque_existential.fspy: check ok=True (0.0s)
+-- obliged: issue exists e:Ev,Inform e ctrl subj[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/fo_dropped.fspy: check ok=True (0.0s)
+== done in 0.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/fo_exists_forall.fspy: check ok=True (0.1s)
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/fo_forall.fspy: check ok=True (0.0s)
+== done in 0.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/graft_conclusion_formatting.fspy: check ok=True (0.1s)
+-- root: issue A->B->C[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- scion: issue A->B->C[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/label_evaluate.fspy: check ok=True (0.2s)
+-- pArg: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- qStrict: issue Q[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- dsup: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.9s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/marius_example.fspy: check ok=False (0.3s)
+   line 51: refused: 'arg0' is not a argument of the pure level: not linear: the continuation 'alt' is used 2 times; not linear: the continuation 'att' is used under a second continuation binder; holds a debate scaffold: the pure command under 'alt' shares 'alt' between its two alternatives; holds a debate scaffold: the pure command under 'alt_h' shares 'alt_h' between its two alternatives. An argument is linear: each continuation used once, with no second continuation binder between. Debates, not arguments, may be classical.
+-- arg1: issue A[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- sup1: issue A[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- counter1: issue A_h[c]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- counter2: issue A_h[c]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- first: issue A[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- second: issue A_h[c]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- third: issue A[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 3.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson14_sharing.fspy: check ok=True (0.2s)
+-- a0: issue P0[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- a1_0: issue P1[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- a1_1: issue P1[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- a2_0: issue P2[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- a2_1: issue P2[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.6s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson15_capture.fspy: check ok=True (0.3s)
+-- p1: issue P[t]; 9 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- p2: issue P[t]; 9 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- q: issue Q[t]; 9 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson16_spelling.fspy: check ok=True (0.1s)
+-- s: issue S[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- nq: issue Q->false[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p: graph refused: TypeCheckRefused: Fellowship rejected the unfolded term for 'p': This is not trivial. Work some more.
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson17_instances.fspy: check ok=True (0.1s)
+-- a0: issue P0[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- k: issue P0[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- a1_0: issue P1[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- a1_1: issue P1[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- a2_0: issue P2[t]; 10 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- a2_1: issue P2[t]; 10 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 1.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson2_graph.fspy: check ok=True (0.1s)
+-- cArg: issue C[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- bArg: issue B[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d2: issue C[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson5_labels.fspy: check ok=True (0.1s)
+-- cArg: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- aArg: issue A[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d5: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson7_evaluate.fspy: check ok=True (0.2s)
+-- pOpen: issue P[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- pPres: issue P[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson8a_attackrule.fspy: check ok=True (0.3s)
+-- pro: issue B[t]; 9 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- con: issue A[c]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- killC: issue C[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- attackrule: issue A->B[c]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.9s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson8a_cycle.fspy: check ok=True (0.1s)
+-- pro: issue B[t]; 4 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['OUT']
+-- back: issue A[t]; 4 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['OUT']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/minicourse__lesson9_evaluation.fspy: check ok=True (0.2s)
+-- pro: issue B[t]; 7 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- con: issue A[c]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- killC: issue C[c]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/moxia_antitheorem.fspy: check ok=True (0.0s)
+-- notA: issue A[c]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/moxia_smart.fspy: check ok=True (0.0s)
+-- notA2: issue A[c]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/multiple_supports_stack_vs_queue.fspy: check ok=True (0.1s)
+-- base: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s1: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s2: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- base_s1: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- base_s1_s2: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 1.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/multiple_undercuts.fspy: check ok=True (3.6s)
+-- arg1: issue B[t]; 11 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- counter1: issue A[c]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- counter2: issue A[c]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- counter3: issue A[c]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- first: issue B[t]; 11 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- second: issue B[t]; 11 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- third: issue B[t]; 11 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 13.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/naf_olon.fspy: check ok=True (0.1s)
+-- Pfirst: issue P[t]; 12 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['UNDEC']
+   stable    issue: []
+      skeptical -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+      credulous -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+-- Qfirst: issue Q[t]; 12 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['UNDEC']
+   stable    issue: []
+      skeptical -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+      credulous -> ERROR     EvaluationFailed: No labelling exists under stable semantics for this debate; choose another semantics.
+-- Rfirst: issue R[t]; 13 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 16.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/negation_edge_name.fspy: check ok=True (0.1s)
+-- negA: issue ~A[t]; 1 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/normalize_render.fspy: check ok=True (0.0s)
+-- argA: issue B[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/olon.fspy: check ok=True (0.1s)
+-- first: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- second: issue B[c]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- third: issue C[t]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- olonMaker: issue C[c]; 12 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT', 'OUT']
+   stable    issue: ['OUT', 'OUT']
+-- olonMaker2: issue C[c]; 12 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT', 'OUT']
+   stable    issue: ['OUT', 'OUT']
+-- neg_tester: issue ~A[c]; 12 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- tester: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- tester2: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- intermediate: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- final: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+-- olon: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN', 'IN']
+   stable    issue: ['IN', 'IN', 'IN']
+== done in 13.6s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/peirces_law.fspy: check ok=True (2.3s)
+-- p1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s2: issue P[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p3: issue Q[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s3: issue P->Q[c]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- d1: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d2: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d3: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d4: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d5: issue ((P->Q)->P)->P[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 20.7s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__contested.fspy: check ok=True (0.2s)
+-- pArg: issue P[t]; 2 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- qAtt: issue Q[c]; 0 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- datt: issue P[t]; 2 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__curried_attack.fspy: check ok=True (0.2s)
+-- cArg: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- aArg: issue A[t]; 1 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- test: issue B->C[c]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d5: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d6: issue C[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 1.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__cyclic_undercut.fspy: check ok=True (0.7s)
+-- argA: issue A[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- argB: issue B[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- cQ: issue Q[c]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- cR: issue R[c]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- aB: issue B[t]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- cQs: issue Q[c]; 8 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- d: issue A[t]; 8 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 4.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__document_attack.fspy: check ok=True (0.1s)
+-- pArg: issue P[t]; 2 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- qAtt: issue Q[c]; 0 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__even_loop.fspy: check ok=True (0.1s)
+-- Pdefault: graph refused: LogicRefused: debates are classical (their scaffolds throw to a second conclusion, which LJ forbids); start the document with `new document.` (lk).
+-- Qdefault: graph refused: LogicRefused: debates are classical (their scaffolds throw to a second conclusion, which LJ forbids); start the document with `new document.` (lk).
+== done in 0.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__even_loop_lk.fspy: check ok=True (0.2s)
+-- Pdefault: issue P[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- Qdefault: issue Q[t]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__modus_tollens.fspy: check ok=True (0.1s)
+-- tp: issue P[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- t: issue P[c]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- d: issue P[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.8s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__self_attack.fspy: check ok=True (0.0s)
+-- SelfAttack: graph refused: LogicRefused: debates are classical (their scaffolds throw to a second conclusion, which LJ forbids); start the document with `new document.` (lk).
+== done in 0.0s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__self_attack_lk.fspy: check ok=True (0.1s)
+-- SelfAttack: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.2s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/rationality__two_witnesses.fspy: check ok=True (0.3s)
+-- pArg: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- yQ: issue Q[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- sChal: issue S[c]; 0 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- yAtt: issue Q[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- d: issue P[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+== done in 1.5s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/simple_tautology.fspy: check ok=True (0.1s)
+-- p1: issue A->B->A[t]; 9 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- s1: issue A->B->A[t]; 9 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- p2: issue B->A[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s2: issue B->A[t]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p3: issue A[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s2alt: issue B->A[c]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p3alt: issue B->A[c]; 7 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s4alt: issue B[t]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- p4alt: issue B[t]; 4 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- s5alt: issue A[t]; 2 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- d1: issue A->B->A[t]; 9 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 4.1s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/statements_and_citations.fspy: check ok=False (0.1s)
+   line 42: refused: 'clash' is not strict, so it cannot be a theorem: presumption !1.2.1:EfficientMetro. Discharge them, or end with `dixi.` to keep it as a defeasible argument.
+-- metro_down: issue ~EfficientMetro[t]; 3 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- efficient: issue EfficientMetro[t]; 0 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- use: issue UseMetro[t]; 2 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- clash: issue false[t]; 0 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/tactics.fspy: check ok=True (0.1s)
+-- implication_elimination: issue B[t]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- mixed_impl: issue B[c]; 3 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 0.3s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/test1.fspy: check ok=True (0.1s)
+-- arg1: issue UseMetro[t]; 8 edges
+   grounded  issue: ['IN']
+      skeptical -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+      credulous -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      skeptical -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+      credulous -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      skeptical -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+      credulous -> exception μarg1:UseMetro.<r1:EfficientMetro->UseMetro||μb1:EfficientMetro.<arg2:~EfficientMetro||a1:EfficientMetro*_F_>*arg1:UseMetro>   <-- ADEQUACY MISMATCH
+-- arg2: issue ~EfficientMetro[t]; 4 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+-- inconsistency: issue false[t]; 7 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN']
+   stable    issue: ['IN']
+== done in 0.4s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/thetaexpander_bureaucratic_cases.fspy: check ok=True (0.1s)
+-- atomic_term: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- atomic_context: issue P[c]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- affine_parent: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- support_shell: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- supporter: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- term_under_mutilde: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- context_under_mu: issue P[c]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- eta_long_parent: issue P[t]; 5 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+-- lambda_parent: issue ((P->Q)->P)->P[t]; 6 edges
+   grounded  issue: ['OUT']
+   preferred issue: ['OUT']
+   stable    issue: ['OUT']
+== done in 1.9s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/undecided__undec_contested.fspy: check ok=True (0.1s)
+-- pa: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- sa: issue A[t]; 7 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- pb: issue B[t]; 5 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+-- nb: issue B[c]; 5 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+== done in 0.6s
+== /private/tmp/claude-501/-Users-maxrapp-Work-Uni-fellowship-mod/9a3bce24-7af2-4f8d-b435-6e503f4af24a/scratchpad/fixtures2/undecided__undec_presumption.fspy: check ok=True (0.1s)
+-- pa: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- sa: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+   preferred issue: ['IN', 'IN']
+   stable    issue: ['IN', 'IN']
+-- nb: issue B[c]; 9 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- nr: issue R[c]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['IN', 'OUT']
+   stable    issue: ['IN', 'OUT']
+-- ns: issue S[c]; 6 edges
+   grounded  issue: ['UNDEC']
+   preferred issue: ['OUT', 'IN']
+   stable    issue: ['OUT', 'IN']
+== done in 1.0s

@@ -1,0 +1,143 @@
+# RankingSemanticsExample.java (example5): arguments a, b, c, d, e, f, g, h, i, j; attacks a->b, b->c, b->f, d->f, d->g, e->d, e->h, e->i, h->g, j->i
+lk.
+declare A, B, C, D, E, F, G, H, I, J : bool.
+declare att_a_b : (A -> ~B).
+declare att_b_c : (B -> ~C).
+declare att_b_f : (B -> ~F).
+declare att_d_f : (D -> ~F).
+declare att_d_g : (D -> ~G).
+declare att_e_d : (E -> ~D).
+declare att_e_h : (E -> ~H).
+declare att_e_i : (E -> ~I).
+declare att_h_g : (H -> ~G).
+declare att_j_i : (J -> ~I).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+argument f : (F).
+by default.
+dixi.
+argument g : (G).
+by default.
+dixi.
+argument h : (H).
+by default.
+dixi.
+argument i : (I).
+by default.
+dixi.
+argument j : (J).
+by default.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_c : (C).
+cut (~C) x.
+cut (B -> ~C) th.
+axiom att_b_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_f : (F).
+cut (~F) x.
+cut (B -> ~F) th.
+axiom att_b_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_f : (F).
+cut (~F) x.
+cut (D -> ~F) th.
+axiom att_d_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_g : (G).
+cut (~G) x.
+cut (D -> ~G) th.
+axiom att_d_g.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_d : (D).
+cut (~D) x.
+cut (E -> ~D) th.
+axiom att_e_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_h : (H).
+cut (~H) x.
+cut (E -> ~H) th.
+axiom att_e_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_i : (I).
+cut (~I) x.
+cut (E -> ~I) th.
+axiom att_e_i.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument h_on_g : (G).
+cut (~G) x.
+cut (H -> ~G) th.
+axiom att_h_g.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument j_on_i : (I).
+cut (~I) x.
+cut (J -> ~I) th.
+axiom att_j_i.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

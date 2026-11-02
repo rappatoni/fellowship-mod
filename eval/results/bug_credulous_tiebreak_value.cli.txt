@@ -1,0 +1,74 @@
+Running script literature/bug_credulous_tiebreak_value.fspy (strict=False, stop_on_error=True, echo_notes=False)
+The credulous tiebreak's other symptom: A is presumed and IN; sa supports
+A from B, and B is contested (pb vs nb, both derived from presumptions:
+UNDEC under grounded). Credulous grounded evaluation returns a value whose
+term keeps pb's derivation of B and drops nb's attack on it, although
+grounded does not accept B.
+'A' : 'bool'  declared.
+'B' : 'bool'  declared.
+'Q' : 'bool'  declared.
+'R' : 'bool'  declared.
+'b_a' : 'B->A'  declared.
+'q_b' : 'Q->B'  declared.
+'r_nb' : 'R->~B'  declared.
+Started recording argument 'pa' with conclusion 'A'.
+Executing argument 'pa'.
+Starting theorem 'pa' for issue 'A'
+Argument 'pa' executed.
+
+Argument term: 'μthesis:A.<!1||thesis>'.
+
+Enriching argument 'pa'.
+Argument 'pa' enriched.
+Starting proof term generation for enriched argument 'pa'
+Finished proof term generation for enriched argument 'pa'
+
+Enriched proof term: 'μpa:A.<!1:A||pa:A>'.
+
+Argument 'pa' executed and registered with conclusion 'A'.
+Started recording argument 'sa' with conclusion 'A'.
+Executing argument 'sa'.
+Starting theorem 'sa' for issue 'A'
+Argument 'sa' executed.
+
+Argument term: 'μthesis:A.<μt:A.<b_a||?1.2.1*t>||thesis>'.
+
+Enriching argument 'sa'.
+Argument 'sa' enriched.
+Starting proof term generation for enriched argument 'sa'
+Finished proof term generation for enriched argument 'sa'
+
+Enriched proof term: 'μsa:A.<μt:A.<b_a:B->A||?1.2.1:B*t:A>||sa:A>'.
+
+Argument 'sa' executed and registered with conclusion 'A'.
+Started recording argument 'pb' with conclusion 'B'.
+Executing argument 'pb'.
+Starting theorem 'pb' for issue 'B'
+Argument 'pb' executed.
+
+Argument term: 'μthesis:B.<μt:B.<q_b||!1.2.1*t>||thesis>'.
+
+Enriching argument 'pb'.
+Argument 'pb' enriched.
+Starting proof term generation for enriched argument 'pb'
+Finished proof term generation for enriched argument 'pb'
+
+Enriched proof term: 'μpb:B.<μt:B.<q_b:Q->B||!1.2.1:Q*t:B>||pb:B>'.
+
+Argument 'pb' executed and registered with conclusion 'B'.
+Started recording counterargument 'nb' with conclusion 'B'.
+Executing argument 'nb'.
+Starting antitheorem 'nb' for issue 'B'
+Argument 'nb' executed.
+
+Argument term: 'μ'thesis:B.<thesis||μ'x:B.<μth:~B.<r_nb||!1.1.2.1*th>||μ'H1:~B.<H1||x*_F_>>>'.
+
+Enriching argument 'nb'.
+Argument 'nb' enriched.
+Starting proof term generation for enriched argument 'nb'
+Finished proof term generation for enriched argument 'nb'
+
+Enriched proof term: 'μ'nb:B.<nb:B||μ'x:B.<μth:~B.<r_nb:R->~B||!1.1.2.1:R*th:~B>||μ'H1:~B.<H1:~B||x:B*_F_>>>'.
+
+Argument 'nb' executed and registered with conclusion 'B'.
+Finished script literature/bug_credulous_tiebreak_value.fspy

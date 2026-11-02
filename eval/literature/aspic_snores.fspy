@@ -1,0 +1,35 @@
+# The snoring professor (Modgil & Prakken, ASPIC+ tutorial 2014). Facts:
+# Snores, Professor. Defeasible: snores => misbehaves, misbehaves => access
+# denied, professor => not access denied. ASPIC+ resolves the rebuttal by a
+# preference (weakest/last link); AIDA has none, so the contest is open.
+# A second, undercutting argument then attacks the first rule.
+lk.
+declare Snores, Professor, Misbehaves, Denied, Asleep : bool.
+declare snores : (Snores).
+declare professor : (Professor).
+declare asleep_undercuts : (Asleep -> ~(Snores -> Misbehaves)).
+argument misbehaves : (Misbehaves).
+cut (Snores -> Misbehaves) r.
+by default.
+next.
+elim.
+axiom snores.
+axiom r.
+dixi.
+argument denied : (Denied).
+cut (Misbehaves -> Denied) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+counterargument allowed : (Denied).
+cut (Professor -> ~Denied) r.
+by default.
+next.
+elim.
+axiom professor.
+elim.
+axiom.
+dixi.

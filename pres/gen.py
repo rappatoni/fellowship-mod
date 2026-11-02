@@ -30,6 +30,17 @@ def pres_str(node) -> str:
         return repr(node)
 
 
+def labelled_prop(prop, node, context_sorted):
+    """A proposition with the label of a labelled term
+    (core/comp/labelled.py): ``A{L}`` for a term-sorted node, ``{L}A``
+    for a context-sorted one; unchanged without a label.  Every renderer
+    of proof terms prints labels through this."""
+    label = getattr(node, "label", None)
+    if not label or not prop:
+        return prop
+    return f'{{{label}}}{prop}' if context_sorted else f'{prop}{{{label}}}'
+
+
 def pres_tree(node) -> str:
     """Render a proof term as an indented tree, for a multi-line log
     artifact (``core.logging_util.artifact``), never raising.
@@ -77,15 +88,7 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
         """
         return f'({node.pres})' if isinstance(node, (Cons, ConsFO, Sonc)) else node.pres
 
-    @staticmethod
-    def _labelled(prop, node, context_sorted):
-        """A proposition with the label of a labelled term
-        (core/comp/labelled.py): ``A{L}`` for a term-sorted node, ``{L}A``
-        for a context-sorted one; unchanged without a label."""
-        label = getattr(node, "label", None)
-        if not label or not prop:
-            return prop
-        return f'{{{label}}}{prop}' if context_sorted else f'{prop}{{{label}}}'
+    _labelled = staticmethod(labelled_prop)
 
     def _typed_leaf(self, name, prop, node=None):
         if self.verbosity < 0:
@@ -208,3 +211,43 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_unhandled(self, node):
         return node
+
+
+def pres_scaffolds(node) -> str:
+    """A compact rendering of a debate term: every support or attack
+    scaffold as ``SUP[alt,b](original, scion)`` / ``ATT[alt,b](original,
+    wing)`` (``SUP~``, ``ATT~`` on the context side), everything else in
+    the proof-term syntax.  For tests and lessons about unfolding."""
+    from core.ac.ast import Mu, Mutilde, Cons, Sonc, Lamda, Admal, Goal, Deleg, Laog, Geled, ID, DI
+    from core.dc.debate_graph import _match_paper_scaffold
+
+    def c(n):
+        m = _match_paper_scaffold(n) if isinstance(n, (Mu, Mutilde)) else None
+        if m is not None:
+            role, side, _prop, orig, scion, alt, _kind = m
+            name = ("SUP" if role == "supporter" else "ATT") + ("" if side == "term" else "~")
+            return f"{name}[{alt},{m.beta}]({c(orig)}, {c(scion)})"
+        if isinstance(n, Mu):
+            return f"μ{n.id.name}:{n.prop}.<{c(n.term)}||{c(n.context)}>"
+        if isinstance(n, Mutilde):
+            return f"μ'{n.di.name}:{n.prop}.<{c(n.term)}||{c(n.context)}>"
+        if isinstance(n, Cons):
+            return f"{c(n.term)}*{c(n.context)}"
+        if isinstance(n, Sonc):
+            return f"{c(n.context)}*{c(n.term)}"
+        if isinstance(n, Lamda):
+            return f"λ{n.di.di.name}:{n.di.prop}.{c(n.term)}"
+        if isinstance(n, Admal):
+            return f"λ̄{n.id.id.name}:{n.id.prop}.{c(n.context)}"
+        if isinstance(n, Goal):
+            return f"?{n.number}:{n.prop}"
+        if isinstance(n, Deleg):
+            return f"!{n.number}:{n.prop}"
+        if isinstance(n, Laog):
+            return f"{n.prop}:?{n.number}"
+        if isinstance(n, Geled):
+            return f"{n.prop}:!{n.number}"
+        if isinstance(n, (ID, DI)):
+            return n.name
+        return pres_str(n)
+    return c(node)

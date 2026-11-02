@@ -1,0 +1,32 @@
+# Tweety logics-fol FolExample, second belief base (examplebeliefbase2):
+#   teaches(alice,cryptography), hasID(alice,id001), !hasID(alice,id002),
+#   forall X,Y: teaches(X,Y) => exists Z: hasID(X,Z), and two uniqueness
+#   axioms that need equality (left out: AIDA has no equality).
+# Tweety's queries: exists X: teaches(alice,X) - true; exists X,Y:
+# hasID(alice,X) && hasID(alice,Y) && X /== Y - false (needs equality and
+# conjunction; not expressible). Added: exists Z: hasID(alice,Z) through the
+# universal rule.
+lk.
+declare Person, Course, Id : type.
+declare alice : Person.
+declare crypto : Course.
+declare id001, id002 : Id.
+declare teaches : Person -> Course -> bool.
+declare hasID : Person -> Id -> bool.
+declare t1 : (teaches [alice] [crypto]).
+declare h1 : (hasID [alice] [id001]).
+declare h2 : (hasID [alice] [id002] -> false).
+declare rule : (forall x:Person, forall y:Course, teaches [x] [y] -> exists z:Id, hasID [x] [z]).
+argument q1 : (exists x:Course, teaches [alice] [x]).
+elim [crypto].
+axiom t1.
+dixi.
+argument q3 : (exists z:Id, hasID [alice] [z]).
+cut (forall x:Person, forall y:Course, teaches [x] [y] -> exists z:Id, hasID [x] [z]) r.
+axiom rule.
+elim [alice].
+elim [crypto].
+elim.
+axiom t1.
+axiom r.
+dixi.

@@ -1,0 +1,4 @@
+== literature/bug_underscore_binder.fspy: check ok=True (0.1s)
+-- a: graph refused: TypeCheckRefused: in the debate about P[t], which 'a' reaches: Fellowship rejected the unfolded term for 'a_1': _ is neither in your hypothesis nor in your conclusion.
+-- b: graph refused: TypeCheckRefused: in the debate about P[t], which 'b' reaches: Fellowship rejected the unfolded term for 'b_1': _ is neither in your hypothesis nor in your conclusion.
+== done in 0.1s

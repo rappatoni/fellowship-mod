@@ -1,0 +1,54 @@
+== literature4/touretzky_royal.fspy: check ok=True (0.1s)
+-- grey_direct: issue Grey clyde[t]; 12 edges
+   grounded  issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+   preferred issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+   stable    issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt6:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+-- grey_path: issue Grey clyde[t]; 12 edges
+   grounded  issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+   preferred issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+   stable    issue: ['OUT']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+      credulous -> exception μalt7:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*?OUT:Grey clyde*_F_>
+-- not_grey: issue Grey clyde[c]; 12 edges
+   grounded  issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+      credulous -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+   preferred issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+      credulous -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+   stable    issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Elephant clyde[t]=IN Grey clyde[c]=IN Grey clyde[t]=OUT Royal clyde[t]=IN AbE clyde->false[t]=OUT forall x:Thing,Elephant x->(AbE x->false)->Grey x[t]=IN forall x:Thing,Royal x->AbE x[t]=IN forall x:Thing,Royal x->Elephant x[t]=IN forall x:Thing,Royal x->Grey x->false[t]=IN
+      skeptical -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+      credulous -> value     μ'not_grey:Grey clyde.<!IN:forall x:Thing,Royal x->Grey x->false||clyde*royal_clyde:Royal clyde*not_grey:Grey clyde*_F_>
+-- abnormal: issue AbE clyde[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Royal clyde[t]=IN forall x:Thing,Royal x->AbE x[t]=IN
+      skeptical -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+      credulous -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+   preferred issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Royal clyde[t]=IN forall x:Thing,Royal x->AbE x[t]=IN
+      skeptical -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+      credulous -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+   stable    issue: ['IN']
+      [1] AbE clyde[c]=OUT AbE clyde[t]=IN Royal clyde[t]=IN forall x:Thing,Royal x->AbE x[t]=IN
+      skeptical -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+      credulous -> value     μalt3:AbE clyde.<royals_abnormal:forall x:Thing,Royal x->AbE x||clyde*royal_clyde:Royal clyde*alt3:AbE clyde>
+== done in 0.9s

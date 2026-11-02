@@ -1,0 +1,34 @@
+# Workaround probe for first-order reasoning: a quantified statement is
+# used as an opaque statement, and instantiation and refutation by a
+# counter-instance are supplied as declared rules (hand-instantiated
+# schemata) instead of the quantifier tactics, which the pipeline refuses.
+# Inductive generalisation (adaptive logic IL): forall x P x presumed;
+# instance at c by the declared schema instance; counter-instance d
+# (not P d) refutes the generalisation.
+lk.
+declare D : type.
+declare c, d : D.
+declare Pr : D -> bool.
+declare inst_c : ((forall x:D, Pr [x]) -> Pr [c]).
+declare counter_d : ((Pr [d] -> false) -> ~(forall x:D, Pr [x])).
+declare not_pd : (Pr [d] -> false).
+argument gen : (forall x:D, Pr [x]).
+by default.
+dixi.
+argument pc : (Pr [c]).
+cut ((forall x:D, Pr [x]) -> Pr [c]) t.
+axiom inst_c.
+elim.
+next.
+axiom t.
+dixi.
+counterargument refuted : (forall x:D, Pr [x]).
+cut (~(forall x:D, Pr [x])) x.
+cut ((Pr [d] -> false) -> ~(forall x:D, Pr [x])) th.
+axiom counter_d.
+elim.
+axiom not_pd.
+axiom.
+elim.
+axiom.
+dixi.

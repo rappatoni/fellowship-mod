@@ -1,0 +1,28 @@
+== literature/t_refute_invalid.fspy: check ok=True (0.0s)
+-- claim: issue A->B[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+      credulous -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+   preferred issue: ['OUT']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+      credulous -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+   stable    issue: ['OUT']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+      credulous -> exception μalt1:A->B.<?OUT:A->B||!IN:A*IN:B!>
+-- countermodel: issue A->B[c]; 1 edges
+   grounded  issue: ['IN']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+      credulous -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+   preferred issue: ['IN']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+      credulous -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+   stable    issue: ['IN']
+      [1] A->B[c]=IN A->B[t]=OUT A[t]=IN B[c]=IN
+      skeptical -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+      credulous -> value     μ'alt2:A->B.<alt2:A->B||!IN:A*IN:B!>
+== done in 0.2s

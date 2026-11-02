@@ -1,0 +1,62 @@
+== literature/aba_mutual.fspy: check ok=True (0.2s)
+-- arg_p: issue P[t]; 10 edges
+   grounded  issue: ['UNDEC']
+      [1] A->P[t]=IN ~A[t]=UNDEC B->Q[t]=IN ~B[t]=UNDEC P->~B[t]=IN Q->~A[t]=IN A[c]=UNDEC A[t]=UNDEC B[c]=UNDEC B[t]=UNDEC P[t]=UNDEC Q[t]=UNDEC
+      skeptical -> open      ?UNDEC:P
+      credulous -> open      ?UNDEC:P
+   preferred issue: ['OUT', 'IN']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      ?UNDEC:P
+      credulous -> value     μarg_p:P.<rule_p:A->P||!IN:A*arg_p:P>
+   stable    issue: ['OUT', 'IN']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      ?UNDEC:P
+      credulous -> value     μarg_p:P.<rule_p:A->P||!IN:A*arg_p:P>
+-- arg_q: issue Q[t]; 10 edges
+   grounded  issue: ['UNDEC']
+      [1] A->P[t]=IN ~A[t]=UNDEC B->Q[t]=IN ~B[t]=UNDEC P->~B[t]=IN Q->~A[t]=IN A[c]=UNDEC A[t]=UNDEC B[c]=UNDEC B[t]=UNDEC P[t]=UNDEC Q[t]=UNDEC
+      skeptical -> open      ?UNDEC:Q
+      credulous -> open      ?UNDEC:Q
+   preferred issue: ['IN', 'OUT']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μarg_q:Q.<rule_q:B->Q||!IN:B*arg_q:Q>
+   stable    issue: ['IN', 'OUT']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      ?UNDEC:Q
+      credulous -> value     μarg_q:Q.<rule_q:B->Q||!IN:B*arg_q:Q>
+-- att_a: issue A[c]; 10 edges
+   grounded  issue: ['UNDEC']
+      [1] A->P[t]=IN ~A[t]=UNDEC B->Q[t]=IN ~B[t]=UNDEC P->~B[t]=IN Q->~A[t]=IN A[c]=UNDEC A[t]=UNDEC B[c]=UNDEC B[t]=UNDEC P[t]=UNDEC Q[t]=UNDEC
+      skeptical -> open      μ'alt6:A.<alt6:A||UNDEC:A?>
+      credulous -> open      μ'alt6:A.<alt6:A||UNDEC:A?>
+   preferred issue: ['IN', 'OUT']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      μ'alt6:A.<alt6:A||UNDEC:A?>
+      credulous -> value     μ'alt6:A.<alt6:A||IN:A!>
+   stable    issue: ['IN', 'OUT']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      μ'alt6:A.<alt6:A||UNDEC:A?>
+      credulous -> value     μ'alt6:A.<alt6:A||IN:A!>
+-- att_b: issue B[c]; 10 edges
+   grounded  issue: ['UNDEC']
+      [1] A->P[t]=IN ~A[t]=UNDEC B->Q[t]=IN ~B[t]=UNDEC P->~B[t]=IN Q->~A[t]=IN A[c]=UNDEC A[t]=UNDEC B[c]=UNDEC B[t]=UNDEC P[t]=UNDEC Q[t]=UNDEC
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+   preferred issue: ['OUT', 'IN']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> value     μ'alt6:B.<alt6:B||IN:B!>
+   stable    issue: ['OUT', 'IN']
+      [1] A->P[t]=IN ~A[t]=IN B->Q[t]=IN ~B[t]=OUT P->~B[t]=IN Q->~A[t]=IN A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN P[t]=OUT Q[t]=IN
+      [2] A->P[t]=IN ~A[t]=OUT B->Q[t]=IN ~B[t]=IN P->~B[t]=IN Q->~A[t]=IN A[c]=OUT A[t]=IN B[c]=IN B[t]=OUT P[t]=IN Q[t]=OUT
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> value     μ'alt6:B.<alt6:B||IN:B!>
+== done in 1.5s

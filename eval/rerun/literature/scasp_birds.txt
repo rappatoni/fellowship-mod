@@ -1,0 +1,80 @@
+== literature/scasp_birds.fspy: check ok=True (0.2s)
+-- flies_tweety: issue Flies_tweety[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Ab_tweety->false[t]=IN Bird_tweety->(Ab_tweety->false)->Flies_tweety[t]=IN Ab_tweety[c]=IN Bird_tweety[t]=IN Flies_tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+      credulous -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+   preferred issue: ['IN']
+      [1] Ab_tweety->false[t]=IN Bird_tweety->(Ab_tweety->false)->Flies_tweety[t]=IN Ab_tweety[c]=IN Bird_tweety[t]=IN Flies_tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+      credulous -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+   stable    issue: ['IN']
+      [1] Ab_tweety->false[t]=IN Bird_tweety->(Ab_tweety->false)->Flies_tweety[t]=IN Ab_tweety[c]=IN Bird_tweety[t]=IN Flies_tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+      credulous -> value     μflies_tweety:Flies_tweety.<flies_rule_tweety:Bird_tweety->(Ab_tweety->false)->Flies_tweety||μb1:Bird_tweety.<bird_tweety:Bird_tweety||b1:Bird_tweety>*λb2:Ab_tweety.μb3:false.<b2:Ab_tweety||IN:Ab_tweety!>*flies_tweety:Fl...
+-- flies_sam: issue Flies_sam[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] Ab_sam->false[t]=OUT Bird_sam->(Ab_sam->false)->Flies_sam[t]=IN Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Bird_sam[t]=IN Flies_sam[t]=OUT Penguin_sam[t]=IN
+      skeptical -> open      ?OUT:Flies_sam
+      credulous -> open      ?OUT:Flies_sam
+   preferred issue: ['OUT']
+      [1] Ab_sam->false[t]=OUT Bird_sam->(Ab_sam->false)->Flies_sam[t]=IN Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Bird_sam[t]=IN Flies_sam[t]=OUT Penguin_sam[t]=IN
+      skeptical -> open      ?OUT:Flies_sam
+      credulous -> open      ?OUT:Flies_sam
+   stable    issue: ['OUT']
+      [1] Ab_sam->false[t]=OUT Bird_sam->(Ab_sam->false)->Flies_sam[t]=IN Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Bird_sam[t]=IN Flies_sam[t]=OUT Penguin_sam[t]=IN
+      skeptical -> open      ?OUT:Flies_sam
+      credulous -> open      ?OUT:Flies_sam
+-- bird_t: issue Bird_tweety[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] Bird_tweety[t]=IN
+      skeptical -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+      credulous -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+   preferred issue: ['IN']
+      [1] Bird_tweety[t]=IN
+      skeptical -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+      credulous -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+   stable    issue: ['IN']
+      [1] Bird_tweety[t]=IN
+      skeptical -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+      credulous -> value     μbird_t:Bird_tweety.<bird_tweety:Bird_tweety||bird_t:Bird_tweety>
+-- bird_s: issue Bird_sam[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] Bird_sam[t]=IN
+      skeptical -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+      credulous -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+   preferred issue: ['IN']
+      [1] Bird_sam[t]=IN
+      skeptical -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+      credulous -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+   stable    issue: ['IN']
+      [1] Bird_sam[t]=IN
+      skeptical -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+      credulous -> value     μbird_s:Bird_sam.<bird_sam:Bird_sam||bird_s:Bird_sam>
+-- ab_sam: issue Ab_sam[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Penguin_sam[t]=IN
+      skeptical -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+      credulous -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+   preferred issue: ['IN']
+      [1] Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Penguin_sam[t]=IN
+      skeptical -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+      credulous -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+   stable    issue: ['IN']
+      [1] Penguin_sam->Ab_sam[t]=IN Ab_sam[c]=OUT Ab_sam[t]=IN Penguin_sam[t]=IN
+      skeptical -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+      credulous -> value     μalt3:Ab_sam.<ab_rule_sam:Penguin_sam->Ab_sam||μb1:Penguin_sam.<penguin_sam:Penguin_sam||b1:Penguin_sam>*alt3:Ab_sam>
+-- penguin_s: issue Penguin_sam[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] Penguin_sam[t]=IN
+      skeptical -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+      credulous -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+   preferred issue: ['IN']
+      [1] Penguin_sam[t]=IN
+      skeptical -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+      credulous -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+   stable    issue: ['IN']
+      [1] Penguin_sam[t]=IN
+      skeptical -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+      credulous -> value     μpenguin_s:Penguin_sam.<penguin_sam:Penguin_sam||penguin_s:Penguin_sam>
+== done in 1.1s

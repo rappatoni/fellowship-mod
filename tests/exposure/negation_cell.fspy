@@ -1,0 +1,19 @@
+# Minimal reproduction: applying a negation (here the declared ~A) to an
+# open site leaves the elimination cell `?:A * _F_`; the compiler finds no
+# proposition on it, and the argument is silently left out of the document
+# graph ("root proposition missing; run enrichment first").
+lk.
+declare A, B : bool.
+declare na : (~A).
+argument x1 : (B).
+cut (~A) g.
+next.
+elim.
+next.
+dixi.
+argument x2 : (B).
+cut (~A) g.
+axiom na.
+elim.
+next.
+dixi.

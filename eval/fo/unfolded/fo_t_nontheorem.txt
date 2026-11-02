@@ -1,0 +1,41 @@
+== literature3/fo_t_nontheorem.fspy: check ok=True (0.0s)
+-- p1: issue (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+   preferred issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+   stable    issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+-- s1: issue (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+   preferred issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+   stable    issue: ['OUT']
+      [1] (forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)[t]=OUT exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+      credulous -> open      ?OUT:(forall x:D,exists y:D,R x y)->(exists y:D,forall x:D,R x y)
+-- p2: issue exists y:D,forall x:D,R x y[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:exists y:D,forall x:D,R x y
+      credulous -> open      ?OUT:exists y:D,forall x:D,R x y
+   preferred issue: ['OUT']
+      [1] exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:exists y:D,forall x:D,R x y
+      credulous -> open      ?OUT:exists y:D,forall x:D,R x y
+   stable    issue: ['OUT']
+      [1] exists y:D,forall x:D,R x y[t]=OUT forall x:D,R x c[t]=OUT
+      skeptical -> open      ?OUT:exists y:D,forall x:D,R x y
+      credulous -> open      ?OUT:exists y:D,forall x:D,R x y
+== done in 0.3s

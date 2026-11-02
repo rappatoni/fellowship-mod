@@ -1,0 +1,7 @@
+== literature4/railroad_strong_alone.fspy: check ok=True (0.0s)
+-- cross_strong: issue CrossStrong[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] (Train->false)->CrossStrong[t]=IN Train->false[t]=OUT CrossStrong[t]=OUT Train[c]=OUT
+      skeptical -> open      ?OUT:CrossStrong
+      credulous -> open      ?OUT:CrossStrong
+== done in 0.1s

@@ -7,7 +7,7 @@ declare A,B:bool.
 # subtrahend in the conclusions and leaves a context goal for the minuend, so
 # A-B asks for B from A, which the deleg A->B supplies.  (B-A would ask for A
 # from B instead, which A->B does not give -- see the note at the end.)
-start counterargument contra A-B
+counterargument contra : (A-B).
 elim h.
 cut (A->B) rule.
 by default.
@@ -15,7 +15,7 @@ next.
 elim.
 axiom rule.
 moxia h.
-end counterargument
+dixi.
 
 # The remaining open goal is the deleg A->B itself, so the counterargument
 # rests on that single default.

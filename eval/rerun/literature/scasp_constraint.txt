@@ -1,0 +1,41 @@
+== literature/scasp_constraint.fspy: check ok=True (0.2s)
+-- arg_p: issue P[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+   preferred issue: ['OUT']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+   stable    issue: ['OUT']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> exception μalt4:P.<?OUT:P||constraint_p:P>
+      credulous -> exception μalt4:P.<?OUT:P||constraint_p:P>
+-- arg_q: issue Q[t]; 8 edges
+   grounded  issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+   preferred issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+   stable    issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+      credulous -> value     μalt5:Q.<rule_q:(P->false)->Q||λb1:P.μb2:false.<b1:P||constraint_p:P>*alt5:Q>
+-- kill_p: issue P[c]; 7 edges
+   grounded  issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+   preferred issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+   stable    issue: ['IN']
+      [1] (P->false)->Q[t]=IN (Q->false)->P[t]=IN P->false[t]=IN Q->false[t]=OUT P[c]=IN P[t]=OUT Q[c]=OUT Q[t]=IN
+      skeptical -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+      credulous -> value     μ'kill_p:P.<kill_p:P||constraint_p:P>
+== done in 1.0s

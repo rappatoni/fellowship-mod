@@ -1,0 +1,52 @@
+== literature2/ec_yale_naive.fspy: check ok=True (0.1s)
+-- alive1: issue Alive1[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+      credulous -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+   preferred issue: ['IN']
+      skeptical -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+      credulous -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+   stable    issue: ['IN']
+      skeptical -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+      credulous -> value     μalive1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*alive1:Alive1>
+-- alive2: issue Alive2[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+      credulous -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+   preferred issue: ['IN']
+      skeptical -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+      credulous -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+   stable    issue: ['IN']
+      skeptical -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+      credulous -> value     μalive2:Alive2.<!IN:Alive1->Alive2||μb1:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b1:Alive1>*alive2:Alive2>
+-- alive3: issue Alive3[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Alive3
+      credulous -> open      ?UNDEC:Alive3
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Alive3
+      credulous -> value     μalive3:Alive3.<!IN:Alive2->Alive3||μb1:Alive2.<!IN:Alive1->Alive2||μb5:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b5:Alive1>*b1:Alive2>*alive3:Alive3>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Alive3
+      credulous -> value     μalive3:Alive3.<!IN:Alive2->Alive3||μb1:Alive2.<!IN:Alive1->Alive2||μb5:Alive1.<!IN:Alive0->Alive1||alive0:Alive0*b5:Alive1>*b1:Alive2>*alive3:Alive3>
+-- loaded2: issue Loaded2[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+      credulous -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+   preferred issue: ['IN']
+      skeptical -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+      credulous -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+   stable    issue: ['IN']
+      skeptical -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+      credulous -> value     μloaded2:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*loaded2:Loaded2>
+-- dead3: issue Alive3[c]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Alive3?
+      credulous -> open      UNDEC:Alive3?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Alive3?
+      credulous -> value     μ'dead3:Alive3.<shoot_effect:Loaded2->~Alive3||μb4:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*b4:Loaded2>*dead3:Alive3*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Alive3?
+      credulous -> value     μ'dead3:Alive3.<shoot_effect:Loaded2->~Alive3||μb4:Loaded2.<!IN:Loaded1->Loaded2||load_effect:Loaded1*b4:Loaded2>*dead3:Alive3*_F_>
+== done in 0.7s

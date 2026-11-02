@@ -1,0 +1,31 @@
+# Defeasible deontic logic (Governatori & Rotolo 2006): the gentle
+# murderer (Forrester 1984) as a reparation chain
+#   r: => O ~kill (x) O killGently,   fact kill.
+# DDL: O ~kill is in force and violated; O killGently is triggered.
+# Standard deontic logic instead derives O kill from O killGently and
+# conflicts with O ~kill (the paradox). AIDA has no deontic operators:
+# O x is an atom Ox, a violation an atom, the chain written as rules.
+lk.
+declare Kill, ONotKill, OGently, Violated : bool.
+declare kill : (Kill).
+declare violation_rule : (ONotKill -> Kill -> Violated).
+declare reparation : (Violated -> OGently).
+argument prohibition : (ONotKill).
+by default.
+dixi.
+argument violated : (Violated).
+cut (ONotKill -> Kill -> Violated) t.
+axiom violation_rule.
+elim.
+next.
+elim.
+axiom kill.
+axiom t.
+dixi.
+argument gently : (OGently).
+cut (Violated -> OGently) t.
+axiom reparation.
+elim.
+next.
+axiom t.
+dixi.

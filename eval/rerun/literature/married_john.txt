@@ -1,0 +1,58 @@
+== literature/married_john.fspy: check ok=True (0.1s)
+-- married: issue Married[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Ring->Married[t]=IN Married[t]=IN Ring[t]=IN
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+   preferred issue: ['IN']
+      [1] Ring->Married[t]=IN Married[t]=IN Ring[t]=IN
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+   stable    issue: ['IN']
+      [1] Ring->Married[t]=IN Married[t]=IN Ring[t]=IN
+      skeptical -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+      credulous -> value     μmarried:Married.<!IN:Ring->Married||ring:Ring*married:Married>
+-- bachelor: issue Bachelor[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Party->Bachelor[t]=IN Bachelor[t]=IN Party[t]=IN
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+   preferred issue: ['IN']
+      [1] Party->Bachelor[t]=IN Bachelor[t]=IN Party[t]=IN
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+   stable    issue: ['IN']
+      [1] Party->Bachelor[t]=IN Bachelor[t]=IN Party[t]=IN
+      skeptical -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+      credulous -> value     μbachelor:Bachelor.<!IN:Party->Bachelor||party:Party*bachelor:Bachelor>
+-- haswife: issue HasWife[t]; 9 edges
+   grounded  issue: ['UNDEC']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=UNDEC HasWife[t]=UNDEC Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> open      ?UNDEC:HasWife
+   preferred issue: ['OUT', 'IN']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=IN HasWife[t]=OUT Married[t]=IN Party[t]=IN Ring[t]=IN
+      [2] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=OUT HasWife[t]=IN Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> value     μhaswife:HasWife.<married_wife:Married->HasWife||μb1:Married.<!IN:Ring->Married||ring:Ring*b1:Married>*haswife:HasWife>
+   stable    issue: ['OUT', 'IN']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=IN HasWife[t]=OUT Married[t]=IN Party[t]=IN Ring[t]=IN
+      [2] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=OUT HasWife[t]=IN Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      ?UNDEC:HasWife
+      credulous -> value     μhaswife:HasWife.<married_wife:Married->HasWife||μb1:Married.<!IN:Ring->Married||ring:Ring*b1:Married>*haswife:HasWife>
+-- nowife: issue HasWife[c]; 9 edges
+   grounded  issue: ['UNDEC']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=UNDEC HasWife[t]=UNDEC Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> open      UNDEC:HasWife?
+   preferred issue: ['IN', 'OUT']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=IN HasWife[t]=OUT Married[t]=IN Party[t]=IN Ring[t]=IN
+      [2] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=OUT HasWife[t]=IN Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> value     μ'nowife:HasWife.<bachelor_nowife:Bachelor->~HasWife||μb4:Bachelor.<!IN:Party->Bachelor||party:Party*b4:Bachelor>*nowife:HasWife*_F_>
+   stable    issue: ['IN', 'OUT']
+      [1] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=IN HasWife[t]=OUT Married[t]=IN Party[t]=IN Ring[t]=IN
+      [2] Bachelor->~HasWife[t]=IN ~HasWife[t]=IN Married->HasWife[t]=IN Party->Bachelor[t]=IN Ring->Married[t]=IN Bachelor[t]=IN HasWife[c]=OUT HasWife[t]=IN Married[t]=IN Party[t]=IN Ring[t]=IN
+      skeptical -> open      UNDEC:HasWife?
+      credulous -> value     μ'nowife:HasWife.<bachelor_nowife:Bachelor->~HasWife||μb4:Bachelor.<!IN:Party->Bachelor||party:Party*b4:Bachelor>*nowife:HasWife*_F_>
+== done in 0.7s

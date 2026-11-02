@@ -1,0 +1,54 @@
+# Carneades (Gordon, Prakken & Walton 2007): premises are ordinary
+# (the proponent must prove them), assumptions (hold until questioned) or
+# exceptions (the argument holds unless the exception is proved). Mapped:
+# ordinary premise = obligation, assumption = presumption, exception =
+# presumed refutation of the exception.
+# Contract law: an agreement (ordinary) with consideration (assumption)
+# makes a contract unless a party is a minor (exception). A witness
+# testifies to the agreement. Against the contract: it is not in writing,
+# and the statute of frauds requires writing (presumed rule).
+# Carneades verdicts by proof standard, both arguments applicable:
+#   scintilla of evidence: Contract acceptable;
+#   dialectical validity: not acceptable (an applicable con argument);
+#   preponderance of evidence: depends on weights (not expressible here).
+lk.
+declare Agreement, Consideration, Minor, Contract, Witness, NotWritten : bool.
+declare witness_rule : (Witness -> Agreement).
+declare not_written : (NotWritten).
+# a1: Contract, by the scheme (presumed): Agreement, Consideration, not Minor.
+argument a1 : (Contract).
+cut (Agreement -> Consideration -> (Minor -> false) -> Contract) r.
+by default.
+next.
+elim.
+next.
+elim.
+by default.
+next.
+elim.
+elim h.
+cut (Minor) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# a2: Agreement, by a witness (testimony presumed reliable).
+argument a2 : (Agreement).
+cut (Witness -> Agreement) th.
+axiom witness_rule.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+# a4: no Contract - it is not in writing, and the statute of frauds (presumed).
+counterargument a4 : (Contract).
+cut (NotWritten -> ~Contract) r.
+by default.
+next.
+elim.
+axiom not_written.
+elim.
+axiom.
+dixi.

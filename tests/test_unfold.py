@@ -31,7 +31,7 @@ from core.dc.debate_graph import (
     compile_debate, compile_document, declaration_kinds, canonical_prop,
     DebateGraph, Edge, Source, _match_scaffold,
 )
-from core.dc.unfold import unfold, unfold_legacy, Unfolder, contrary
+from core.dc.unfold import unfold, contrary
 from pres.gen import pres_str
 from core.dc.strict import compile_issue, strict_resolve
 from core.dc.typecheck import typecheck, TypeCheckFailed
@@ -66,8 +66,9 @@ class TestShapes:
         assert isinstance(match[3], Goal) and match[3].prop == "P"
         assert isinstance(match[4], Mu) and match[4].id.name == "pArg"
         g = compile_debate(term, "u", strict_names=STRICT)
-        assert [(e.name, e.role, [(g.nodes[s.key], s.side, s.kind) for s in e.sources]) for e in g.edges] == [
-            ("pArg", "supporter", [("Q", "term", "obligation")])]
+        assert [(e.name, e.role, [(g.nodes[s.key], s.side, s.kind) for s in e.sources])
+                for e in g.edges if e.name not in STRICT] == [
+            ("pArg", "supporter", [("Q->P", "term", "subargument"), ("Q", "term", "obligation")])]
         assert g.defaults[(K("P"), "term")] == {"obligation"}
         # and it evaluates to pArg once pArg's derivation is judged
         nf, cls, sigma, _ = evaluate_debate(term, "u", strict_names=STRICT, mode="credulous")
@@ -82,7 +83,7 @@ class TestShapes:
         match = _match_scaffold(site, STRICT)
         assert match is not None and match[0] == "supporter" and match[2] == "Q"
         g = compile_debate(term, "u", strict_names=STRICT)
-        assert {e.name for e in g.edges} == {"pArg", "qArg"}
+        assert {e.name for e in g.edges if e.name not in STRICT} == {"pArg", "qArg"}
 
     def test_presumed_contrary_becomes_an_attack_scaffold(self):
         doc = document(("pArg", parg(Deleg("1", "Q"))),
@@ -127,9 +128,10 @@ class TestShapes:
         # a positive cycle with no foundation: grounded undecided; complete
         # admits both-IN and both-OUT (two preferred), but only both-OUT
         # is stable - self-support is unfounded.  The ADF's verdict.
-        assert set(grounded_labels(g).values()) == {"UNDEC"}
+        loop = lambda L: {v for k, v in L.items() if k[0] in (K("P"), K("Q"))}   # the axiom pRule is IN
+        assert loop(grounded_labels(g)) == {"UNDEC"}
         assert len(labellings(g, "preferred")) == 2
-        assert [set(l.values()) for l in labellings(g, "stable")] == [{"OUT"}]
+        assert [loop(l) for l in labellings(g, "stable")] == [{"OUT"}]
 
     def test_hypothesis_is_captured(self):
         # Q from P (obligation) supporting the Q site inside lambda h:P.
@@ -201,37 +203,26 @@ class TestShapes:
         # and so gives P[c] a presumption marker, and qArg's demand gives
         # P[t] an obligation marker.  Each bare contrary meets a binder.
         doc, strict = bare_contrary_document()
-        # legacy shape: the captured contrary in an eta wrapper
-        term = unfold_legacy(doc, (K("Q"), "term"))
-        # P[t] inside qArg: attacked by "P fails", which is s
-        assert _contains(term, lambda n: isinstance(n, Mutilde) and isinstance(n.term, DI)
-                         and n.term.name == n.di.name and isinstance(n.context, ID)
-                         and n.context.name == "s" and n.context.captured_presumption)
-        assert not _contains(term, lambda n: isinstance(n, Geled))
-        term = unfold_legacy(doc, (K("R"), "term"))
-        # P[c] inside rArg's lambda: attacked by the demand for P, which is h
-        assert _contains(term, lambda n: isinstance(n, Mu) and isinstance(n.context, ID)
-                         and n.context.name == n.id.name and isinstance(n.term, DI)
-                         and n.term.name == "h" and not getattr(n.term, "captured_presumption", False))
-        assert not _contains(term, lambda n: isinstance(n, Goal) and n.prop == "P")
-        # the captured scion has no site left: the strict phase decides it
-        trace = []
-        strict_resolve(term, strict, trace=trace)
-        assert [(s, what) for (_, s), what in trace] == [("term", "attacker strict: defeat")]
-        # stacked shape: the contrary's root is the attack scion itself, and
-        # the attack's own alt, the innermost binder of the contrary,
-        # captures it (aida-unfold-scaffold-binders-capture).  The attack is
+        # The contrary's root is the attack scion itself, and the attack's
+        # own alt, the innermost binder of the contrary, captures it before
+        # s or h can (aida-unfold-scaffold-binders-capture; the legacy shape,
+        # which let s and h capture it, is gone with
+        # aida-shared-route-stack-shape).  The attack is
         # then nothing but its fallback; strictness leaves it to
-        # normalisation, and the verdicts are those of the legacy shape.
-        for issue, wing, verdict in (((K("Q"), "term"), "μ_:P.<b2:P||alt2:P>", "open"),
-                                     ((K("R"), "term"), "μ_:P.<alt2:P||b2:P>", "value")):
+        # normalisation.  Since the horn rule (2026-10-15) qArg's lemma
+        # "P from P via pp" is a derivation of P (qArg.μ1, circular, so
+        # UNDEC grounded and admissible credulously), which contests rArg's
+        # presumption "P fails": both issues are open skeptically and
+        # values credulously (before: Q open, R a value, in both modes).
+        for issue, wing in (((K("Q"), "term"), "μ_:P.<b2:P||alt2:P>"),
+                            ((K("R"), "term"), "μ_:P.<alt2:P||b2:P>")):
             term = unfold(doc, issue)
             assert wing in pres_str(term)
             trace = []
             strict_resolve(term, strict, trace=trace)
             assert trace == []
-            for mode in ("skeptical", "credulous"):
-                assert evaluate_debate(term, "u", strict_names=strict, mode=mode)[1] == verdict
+            for mode, verdict in (("skeptical", "open"), ("credulous", "value")):
+                assert evaluate_debate(term, "u", strict_names=strict, mode=mode, source=doc)[1] == verdict
 
 
 def bare_contrary_document():
@@ -395,7 +386,7 @@ def test_even_loop_is_symmetric(prover):
                                                  mode="credulous", semantics="grounded")
         assert cred_grounded != "value"
         g = compile_debate(term, "u", strict_names=sn, strict_kinds=sk)
-        assert set(grounded_labels(g).values()) == {"UNDEC"}
+        assert {v for k, v in grounded_labels(g).items() if "->" not in g.nodes[k[0]]} == {"UNDEC"}
         _, skeptical, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="skeptical")
         _, credulous, _, _ = evaluate_debate(term, "u", strict_names=sn, strict_kinds=sk, mode="credulous")
         assert skeptical != "value" and credulous == "value"
@@ -414,6 +405,62 @@ def test_self_attack_derives_its_conclusion(prover):
     g = compile_issue(term, "u", strict_names=sn, strict_kinds=sk)
     assert [e.name for e in g.edges if e.strict and e.name.endswith("*")] == ["SelfAttack*"]
     assert grounded_labels(g)[issue] == "IN"
+
+
+def test_a_strict_edge_does_not_depend_on_where_the_argument_stands(prover):
+    """aida-strict-edge-collector-condition (2026-10-16): the collector
+    records a closed copy of an argument defeasible as registered, whether
+    or not a scaffold in or around it was decided by strictness.  The
+    self-attack is closed wherever it stands, so it gets SelfAttack* from
+    P[t] and from P[c]."""
+    from core.dc.strict import issue_strict_edges
+    doc, _issue, sn, _sk = load(prover, "tests/rationality/self_attack_lk.fspy")
+    for statement in ((K("P"), "term"), (K("P"), "context")):
+        edges = issue_strict_edges(unfold(doc, statement), "u", sn)
+        assert [e.name for e in edges] == ["SelfAttack*"], statement
+
+
+def test_a_strict_argument_gets_no_duplicate_edge(prover):
+    """killC is strict as registered: the graph has its strict edge, so the
+    collector adds no killC* (until 2026-10-16 it did, a duplicate)."""
+    from core.dc.strict import issue_strict_edges
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        execute_script(prover, "tests/minicourse/lesson9_evaluation.fspy", strict=True, isolate=False)
+    doc, sn = prover.graph, list(prover.declarations.keys())
+    assert next(e for e in doc.edges if e.name == "killC").strict
+    assert issue_strict_edges(unfold(doc, (K("C"), "context")), "u", sn) == []
+
+
+@pytest.mark.parametrize("pipeline", ["shared", "unfolded"])
+def test_an_argument_named_apart_from_its_binder_gets_no_duplicate_edge(prover, pipeline):
+    """aida-strict-edge-argument-origin (2026-10-30): x's edge is named
+    after its root binder k (_host_name), but Fellowship holds x, so the
+    collector adds no k*; it did, a duplicate of k, until the copy carried
+    the argument it came from.  z, whose binder is its name, never got
+    one."""
+    from wrap.interpreter import Interpreter
+    from wrap.service import Service
+    text = """declare P : bool.
+declare p : (P).
+declare q : (P).
+register x : P := "μk:P.<p||k>".
+register z : P := "μz:P.<q||z>".
+debate pro closed dx : P.
+x.
+cedat tempus.
+debate pro closed dz : P.
+z.
+cedat tempus.
+"""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        assert all(o.status == "ok" for o in Interpreter(prover).run(text))
+    service = Service.of(prover)
+    service.set_pipeline(pipeline)
+    edges = {d: [(e.role, e.target_key, e.strict, e.sources) for e in service.graph(d).graph.edges]
+             for d in ("dx", "dz")}
+    assert edges["dx"] == edges["dz"] == [("supporter", K("P"), True, ())]
 
 
 def test_cyclic_undercut_resolves_to_the_argument_for_a(prover):
@@ -475,12 +522,12 @@ class TestWiringNamesDoNotClash:
         script = tmp_path / "wiring.fspy"
         script.write_text("\n".join([
             "lk.", "declare P, Q : bool.", "declare r : (Q -> P).",
-            "start argument p P", "cut (Q -> P) alt1.", "axiom r.", "elim.", "next.", "axiom.",
-            "end argument", ""]))
+            "argument p : (P).", "cut (Q -> P) alt1.", "axiom r.", "elim.", "next.", "axiom.",
+            "dixi.", ""]))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             execute_script(prover, str(script), strict=True, stop_on_error=True, isolate=False)
-        doc = prover.document
+        doc = prover.graph
         issue = (K("P"), "term")
         term = unfold(doc, issue)
         assert "alt1" in binder_list(prover.get_argument("p").body)

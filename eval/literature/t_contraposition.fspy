@@ -1,0 +1,32 @@
+# Contraposition, (A->B) -> ((B->false) -> (A->false)), intuitionistically valid,
+# proved dialectically: each step owes what the skeptic's hypotheses supply.
+lk.
+declare A, B : bool.
+argument p1 : ((A->B) -> ((B->false) -> (A->false))).
+dixi.
+# S: assume A->B (f), ~B (g), A (a); derive false.
+argument s1 : ((A->B) -> ((B->false) -> (A->false))).
+elim f.
+elim g.
+elim a.
+dixi.
+# P: false, by applying ~B (owed) to B (owed); the falsum context is owed too.
+argument p2 : (false).
+cut (B->false) x.
+next.
+elim.
+next.
+next.
+dixi.
+# P: B, by applying A->B (owed) to A (owed).
+argument p3 : (B).
+cut (A->B) y.
+next.
+elim.
+next.
+axiom y.
+dixi.
+# Falsum is refuted outright.
+counterargument nofalse : (false).
+elim.
+dixi.

@@ -1,0 +1,38 @@
+# ClaimBasedReasonersTest: arguments a, c with claim c1 and b, d with
+# claim c2; attacks a <-> b and c <-> d. Here an attack goes to the claim,
+# as AIDA's attacks do (a statement is the unit). Tweety: inherited complete
+# [{}, {c1}, {c2}, {c1,c2}], cl-preferred [{c1,c2}, {c1}, {c2}].
+lk.
+declare C1, C2 : bool.
+declare att_c1_c2_rule : (C1 -> ~C2).
+declare att_c2_c1_rule : (C2 -> ~C1).
+# arg_c1 (defeasible): C1
+argument arg_c1 : (C1).
+by default.
+dixi.
+# arg_c2 (defeasible): C2
+argument arg_c2 : (C2).
+by default.
+dixi.
+# att_c1_c2 (strict): C1 -> ~C2
+counterargument att_c1_c2 : (C2).
+cut (~C2) x.
+cut (C1 -> ~C2) th.
+axiom att_c1_c2_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_c2_c1 (strict): C2 -> ~C1
+counterargument att_c2_c1 : (C1).
+cut (~C1) x.
+cut (C2 -> ~C1) th.
+axiom att_c2_c1_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

@@ -1,0 +1,47 @@
+# Defeasible logic (Antoniou, Billington, Governatori, Maher 2001):
+# ambiguity blocking vs propagation. Facts quaker, republican, chicago;
+# r1: quaker => pacifist, r2: republican => ~pacifist,
+# r3: pacifist => ~hasGun, r4: chicago => hasGun; no superiority.
+# Ambiguity blocking (the standard DL): +d hasGun (r3 is not applicable,
+# pacifist is not defeasibly provable). Ambiguity propagating DL (and the
+# grounded semantics of its argumentation framework): neither hasGun nor
+# ~hasGun.
+lk.
+declare Quaker, Republican, Chicago, Pacifist, HasGun : bool.
+declare quaker : (Quaker).
+declare republican : (Republican).
+declare chicago : (Chicago).
+argument r1 : (Pacifist).
+cut (Quaker -> Pacifist) r.
+by default.
+next.
+elim.
+axiom quaker.
+axiom r.
+dixi.
+counterargument r2 : (Pacifist).
+cut (Republican -> ~Pacifist) r.
+by default.
+next.
+elim.
+axiom republican.
+elim.
+axiom.
+dixi.
+counterargument r3 : (HasGun).
+cut (Pacifist -> ~HasGun) r.
+by default.
+next.
+elim.
+next.
+elim.
+axiom.
+dixi.
+argument r4 : (HasGun).
+cut (Chicago -> HasGun) r.
+by default.
+next.
+elim.
+axiom chicago.
+axiom r.
+dixi.

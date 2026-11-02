@@ -1,0 +1,32 @@
+# Grounded predicate logic: the Tweety/Sam program of scasp_birds with
+# first-order syntax. A sort, constants and predicates; the rules
+# instantiated at ground terms (no quantifiers anywhere).
+lk.
+declare Animal : type.
+declare tweety, sam : Animal.
+declare Bird, Penguin, Ab, Flies : Animal -> bool.
+declare bird_tweety : (Bird [tweety]).
+declare penguin_sam : (Penguin [sam]).
+declare bird_sam : (Bird [sam]).
+declare ab_sam_rule : (Penguin [sam] -> Ab [sam]).
+declare flies_tweety_rule : (Bird [tweety] -> (Ab [tweety] -> false) -> Flies [tweety]).
+argument flies_tweety : (Flies [tweety]).
+cut (Bird [tweety] -> (Ab [tweety] -> false) -> Flies [tweety]) th.
+axiom flies_tweety_rule.
+elim.
+axiom bird_tweety.
+elim.
+elim h.
+cut (Ab [tweety]) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument ab_sam : (Ab [sam]).
+cut (Penguin [sam] -> Ab [sam]) th.
+axiom ab_sam_rule.
+elim.
+axiom penguin_sam.
+axiom th.
+dixi.

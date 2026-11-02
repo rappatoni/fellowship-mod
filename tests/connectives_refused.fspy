@@ -1,0 +1,20 @@
+# Conjunction and disjunction: Fellowship has them, AIDA's term language
+# does not. A conjunction can be declared; an argument that introduces it
+# is the probe.
+lk.
+declare A, B : bool.
+declare a : (A).
+declare b : (B).
+declare ab : (A /\ B).
+argument conj : (A /\ B).
+axiom ab.
+dixi.
+argument conj_intro : (A /\ B).
+elim.
+axiom a.
+axiom b.
+dixi.
+argument disj : (A \/ B).
+left.
+axiom a.
+dixi.

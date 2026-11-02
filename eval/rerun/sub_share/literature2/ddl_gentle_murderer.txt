@@ -1,0 +1,32 @@
+== literature2/ddl_gentle_murderer.fspy: check ok=True (0.1s)
+-- prohibition: issue ONotKill[t]; 0 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+      credulous -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+   preferred issue: ['IN']
+      skeptical -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+      credulous -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+   stable    issue: ['IN']
+      skeptical -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+      credulous -> value     μx2:ONotKill.<!IN:ONotKill||x2:ONotKill>
+-- violated: issue Violated[t]; 3 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+      credulous -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+   preferred issue: ['IN']
+      skeptical -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+      credulous -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+   stable    issue: ['IN']
+      skeptical -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+      credulous -> value     μviolated:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*violated:Violated>
+-- gently: issue OGently[t]; 5 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+      credulous -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+   preferred issue: ['IN']
+      skeptical -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+      credulous -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+   stable    issue: ['IN']
+      skeptical -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+      credulous -> value     μgently:OGently.<reparation:Violated->OGently||μb1:Violated.<violation_rule:ONotKill->Kill->Violated||!IN:ONotKill*kill:Kill*b1:Violated>*gently:OGently>
+== done in 0.3s

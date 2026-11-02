@@ -1,0 +1,29 @@
+== literature3/fo_t_drinker.fspy: check ok=False (0.0s)
+   line 29: refused: 'p3' is not a argument of the pure level: not linear: the continuation 'k' is used under a second continuation binder. An argument is linear: each continuation used once, with no second continuation binder between. Debates, not arguments, may be classical.
+-- p1: issue exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+   preferred issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+   stable    issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+-- p2: issue exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+   preferred issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+   stable    issue: ['OUT']
+      [1] Dr c->(forall y:Pub,Dr y)[t]=OUT exists x:Pub,Dr x->(forall y:Pub,Dr y)[t]=OUT
+      skeptical -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+      credulous -> open      ?OUT:exists x:Pub,Dr x->(forall y:Pub,Dr y)
+== done in 0.2s

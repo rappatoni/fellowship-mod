@@ -1,0 +1,37 @@
+# railroad.fspy when a train is seen (presumed): both rules now refuse to
+# cross.
+lk.
+declare Train, CrossNaf, CrossStrong : bool.
+argument cross_naf : (CrossNaf).
+cut ((Train -> false) -> CrossNaf) r.
+by default.
+next.
+elim.
+elim h.
+cut (Train) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument cross_strong : (CrossStrong).
+cut ((Train -> false) -> CrossStrong) r.
+by default.
+next.
+elim.
+elim h.
+cut (Train) k.
+axiom h.
+next.
+axiom r.
+dixi.
+declare seen : bool.
+declare seen_train : (seen -> Train).
+declare see : (seen).
+argument train : (Train).
+cut (seen -> Train) r.
+axiom seen_train.
+elim.
+axiom see.
+axiom r.
+dixi.

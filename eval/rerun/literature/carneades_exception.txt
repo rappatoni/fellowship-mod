@@ -1,0 +1,41 @@
+== literature/carneades_exception.fspy: check ok=True (0.2s)
+-- a1: issue Contract[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN BirthCert->Minor[t]=IN Minor->false[t]=OUT Witness->Agreement[t]=IN Agreement[t]=IN BirthCert[t]=IN Consideration[t]=IN Contract[t]=OUT Minor[c]=OUT Minor[t]=IN Witness[t]=IN
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+   preferred issue: ['OUT']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN BirthCert->Minor[t]=IN Minor->false[t]=OUT Witness->Agreement[t]=IN Agreement[t]=IN BirthCert[t]=IN Consideration[t]=IN Contract[t]=OUT Minor[c]=OUT Minor[t]=IN Witness[t]=IN
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+   stable    issue: ['OUT']
+      [1] Agreement->Consideration->(Minor->false)->Contract[t]=IN BirthCert->Minor[t]=IN Minor->false[t]=OUT Witness->Agreement[t]=IN Agreement[t]=IN BirthCert[t]=IN Consideration[t]=IN Contract[t]=OUT Minor[c]=OUT Minor[t]=IN Witness[t]=IN
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+-- a2: issue Agreement[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   preferred issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   stable    issue: ['IN']
+      [1] Witness->Agreement[t]=IN Agreement[t]=IN Witness[t]=IN
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+-- a3: issue Minor[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] BirthCert->Minor[t]=IN BirthCert[t]=IN Minor[c]=OUT Minor[t]=IN
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+   preferred issue: ['IN']
+      [1] BirthCert->Minor[t]=IN BirthCert[t]=IN Minor[c]=OUT Minor[t]=IN
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+   stable    issue: ['IN']
+      [1] BirthCert->Minor[t]=IN BirthCert[t]=IN Minor[c]=OUT Minor[t]=IN
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+== done in 0.8s

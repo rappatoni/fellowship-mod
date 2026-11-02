@@ -1,0 +1,11 @@
+# Minimal reproduction: an argument named after a Fellowship keyword
+# (minimal, all, next, proof, ...) is refused only with Fellowship's own
+# "Parse error: syntactical analysis", which does not name the cause.
+lk.
+declare A : bool.
+argument minimal : (A).
+by default.
+dixi.
+argument all : (A).
+by default.
+dixi.

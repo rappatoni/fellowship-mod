@@ -1,0 +1,15 @@
+== literature/t_lnc.fspy: check ok=True (0.1s)
+-- lnc: issue ~(P-P)[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] ~(P-P)[t]=IN P-P[c]=IN
+      skeptical -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+      credulous -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+   preferred issue: ['IN']
+      [1] ~(P-P)[t]=IN P-P[c]=IN
+      skeptical -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+      credulous -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+   stable    issue: ['IN']
+      [1] ~(P-P)[t]=IN P-P[c]=IN
+      skeptical -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+      credulous -> value     μlnc:~(P-P).<λb1:P-P.μb2:false.<b1:P-P||λb3:P.μ'b4:P.<b4:P||b3:P>>||lnc:~(P-P)>
+== done in 0.7s

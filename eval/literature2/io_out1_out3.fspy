@@ -1,0 +1,25 @@
+# Input/output logic (Makinson & van der Torre 2000): G = {(a,b), (b,c)},
+# input A = {a}. Simple-minded output out1(G,A) = Cn({b}): c is not output
+# (outputs are not fed back as inputs); reusable output out3 adds c.
+# AIDA has no closure operator and no output operation: a norm (a,x) is a
+# rule from the input a to the output atom Ox. Which outputs exist is
+# fixed by which rules are written: here the out1 reading.
+lk.
+declare A, B, Ob, Oc : bool.
+declare a : (A).
+declare n_ab : (A -> Ob).
+declare n_bc : (B -> Oc).
+argument ob : (Ob).
+cut (A -> Ob) t.
+axiom n_ab.
+elim.
+axiom a.
+axiom t.
+dixi.
+argument oc : (Oc).
+cut (B -> Oc) t.
+axiom n_bc.
+elim.
+next.
+axiom t.
+dixi.

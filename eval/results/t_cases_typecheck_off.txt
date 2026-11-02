@@ -1,0 +1,54 @@
+== literature/t_cases.fspy: check ok=True (0.1s)
+-- p1: issue (A->B)->((A->false)->B)->B[t]; 4 edges
+   grounded  issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+   preferred issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+   stable    issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+-- s1: issue (A->B)->((A->false)->B)->B[t]; 4 edges
+   grounded  issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+   preferred issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+   stable    issue: ['OUT']
+      [1] (A->B)->((A->false)->B)->B[t]=OUT (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+      credulous -> value     μs1:(A->B)->((A->false)->B)->B.<λf:A->B.λg:(A->false)->B.μalt5:B.<f:A->B||h:A*alt5:B>||s1:(A->B)->((A->false)->B)->B>   <-- ADEQUACY MISMATCH
+-- p2: issue B[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+      credulous -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+      credulous -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+   stable    issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+      credulous -> ERROR     EvaluationFailed: Edge 'scion': free term variable 'h' is neither bound nor a declared axiom; express assumptions as open sites.
+-- p3: issue A->false[t]; 3 edges
+   grounded  issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+   preferred issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+   stable    issue: ['OUT']
+      [1] (A->false)->B[t]=OUT A->B[t]=OUT A->false[t]=OUT A[t]=OUT B[c]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A->false
+      credulous -> open      ?OUT:A->false
+== done in 0.4s

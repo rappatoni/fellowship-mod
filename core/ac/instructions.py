@@ -37,24 +37,13 @@ def is_falsum_prop(p: str) -> bool:
         return False
     return p.strip() in _FALSUM_SPELLINGS
 
-def is_negation_prop(p: str) -> bool:
-    if not isinstance(p, str):
-        return False
-    ps = p.replace(" ", "")
-    if ps.startswith("¬") or ps.startswith("~"):
-        return True
-    if "->" in ps:
-        rhs = ps.split("->", 1)[1]
-        return rhs in _FALSUM_SPELLINGS
-    return False
-
 def is_primitive_negation_prop(p: str) -> bool:
     """Whether p is a primitive negation, as opposed to an arrow into falsum.
 
     Fellowship treats the two differently: eliminating ¬A consumes the falsum
     in the same step, while eliminating A->false leaves the falsum as an open
-    goal.  is_negation_prop conflates them, so it must not be used to decide
-    whether a falsum still needs discharging.
+    goal.  A test that accepts both shapes cannot decide whether a falsum
+    still needs discharging.
     """
     if not isinstance(p, str):
         return False
@@ -121,7 +110,15 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
     def visit_Mu(self, node: Mu):
         # Exact neg-elim scaffold on the right:
         # μ H1:¬A . < λ H2:A . μ H3:⊥ . < H2 || X > || H1 >
-        if not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda):
+        # This is what `elim H1` builds for a primitive negation only (for
+        # A->false it builds λH2:A.?:⊥), and only with H1 itself on the
+        # right: a scaffold whose original is such a lambda has its wiring
+        # there, which the shortcut would drop (tasks.org,
+        # aida-replay-neg-elim-shortcut).
+        context = getattr(node, "context", None)
+        if (not self._is_synthetic_root_name(node.id.name) and isinstance(getattr(node, "term", None), Lamda)
+                and is_primitive_negation_prop(getattr(node, "prop", None))
+                and isinstance(context, ID) and context.name == node.id.name):
             lam = node.term
             h2_name = getattr(getattr(lam, "di", None), "di", None)
             h2_name = getattr(h2_name, "name", None)
@@ -314,4 +311,3 @@ class InstructionsGenerationVisitor(ProofTermVisitor):  # TODO: make purely func
 
     def visit_unhandled(self, node):
         raise Exception(f"Unhandled node type: {type(node).__name__} {self._node_pres(node)}")
-        return node

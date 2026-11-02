@@ -1,0 +1,13 @@
+# Law of non-contradiction as ~(P - P) (P - P reads "P and not P").
+# One spelling throughout: a debate that writes ~X and X->false both is
+# refused by the replay (tasks.org, the two-spellings task).
+lk.
+declare P : bool.
+# Outright, as a strict argument.
+argument lnc : (~(P - P)).
+elim h.
+elim h.
+cut (P) k.
+axiom.
+axiom.
+dixi.

@@ -1,0 +1,87 @@
+# CAFReasonerExample.java (af): arguments a, b, c, d, e, f; attacks a->b, a->c, b->d, c->e, e->f, f->e
+lk.
+declare A, B, C, D, E, F : bool.
+declare att_a_b : (A -> ~B).
+declare att_a_c : (A -> ~C).
+declare att_b_d : (B -> ~D).
+declare att_c_e : (C -> ~E).
+declare att_e_f : (E -> ~F).
+declare att_f_e : (F -> ~E).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+argument f : (F).
+by default.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument a_on_c : (C).
+cut (~C) x.
+cut (A -> ~C) th.
+axiom att_a_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_d : (D).
+cut (~D) x.
+cut (B -> ~D) th.
+axiom att_b_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_e : (E).
+cut (~E) x.
+cut (C -> ~E) th.
+axiom att_c_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_f : (F).
+cut (~F) x.
+cut (E -> ~F) th.
+axiom att_e_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument f_on_e : (E).
+cut (~E) x.
+cut (F -> ~E) th.
+axiom att_f_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

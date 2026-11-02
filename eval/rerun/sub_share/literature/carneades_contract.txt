@@ -1,0 +1,32 @@
+== literature/carneades_contract.fspy: check ok=True (0.1s)
+-- a1: issue Contract[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> open      ?UNDEC:Contract
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*!IN:Consideration*λb3:Minor.μb4:false.<b3:Minor||IN:Minor!>*a1:Contract>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*!IN:Consideration*λb3:Minor.μb4:false.<b3:Minor||IN:Minor!>*a1:Contract>
+-- a2: issue Agreement[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   preferred issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   stable    issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+-- a4: issue Contract[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Contract?
+      credulous -> open      UNDEC:Contract?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Contract?
+      credulous -> value     μ'a4:Contract.<!IN:NotWritten->~Contract||not_written:NotWritten*μ'b1:~Contract.<b1:~Contract||a4:Contract*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Contract?
+      credulous -> value     μ'a4:Contract.<!IN:NotWritten->~Contract||not_written:NotWritten*μ'b1:~Contract.<b1:~Contract||a4:Contract*_F_>>
+== done in 0.5s

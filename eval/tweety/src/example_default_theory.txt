@@ -1,0 +1,37 @@
+Animal = {tweety, penguin, bat, bear, whale, shark, octopus}
+Person = {mary, peter, tom, anne}
+
+type(Flies(Animal))
+type(Swims(Animal))
+type(Bird(Animal))
+type(Fish(Animal))
+type(Mammal(Animal))
+
+type(Mother(Person, Person))
+type(Father(Person, Person))
+type(Married(Person, Person))
+type(Male(Person))
+type(Female(Person))
+type(a())
+type(b())
+type(c())
+type(d())
+
+Bird(tweety)
+Bird(penguin)
+!Flies(penguin)
+Flies(bat)
+exists X:(Flies(X))
+
+Male(peter)
+Female(mary)
+Married(peter,mary)
+Married(tom,anne)
+
+
+
+
+Bird(X) :: Flies(X) / Flies(X)
+:: Flies(bat) / Flies(bat)
+Married(X,Y) && Father(X,Z)::Mother(Y,Z)/Mother(Y,Z)
+

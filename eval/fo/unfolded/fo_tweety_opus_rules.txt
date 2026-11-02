@@ -1,0 +1,45 @@
+== literature3/fo_tweety_opus_rules.fspy: check ok=True (0.1s)
+-- flies_tweety: issue Flies tweety[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Bird tweety[t]=IN Flies tweety[t]=IN forall x:Animal,Bird x->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+   preferred issue: ['IN']
+      [1] Bird tweety[t]=IN Flies tweety[t]=IN forall x:Animal,Bird x->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+   stable    issue: ['IN']
+      [1] Bird tweety[t]=IN Flies tweety[t]=IN forall x:Animal,Bird x->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<!IN:forall x:Animal,Bird x->Flies x||tweety*bird_tweety:Bird tweety*flies_tweety:Flies tweety>
+-- flies_opus: issue Flies opus[t]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird opus[t]=IN Flies opus[c]=UNDEC Flies opus[t]=UNDEC Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      ?UNDEC:Flies opus
+      credulous -> open      ?UNDEC:Flies opus
+   preferred issue: ['OUT', 'IN']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus[t]=OUT Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      [2] Bird opus[t]=IN Flies opus[c]=OUT Flies opus[t]=IN Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      ?UNDEC:Flies opus
+      credulous -> value     μflies_opus:Flies opus.<!IN:forall x:Animal,Bird x->Flies x||opus*μb1:Bird opus.<penguins_birds:forall x:Animal,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*flies_opus:Flies opus>
+   stable    issue: ['OUT', 'IN']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus[t]=OUT Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      [2] Bird opus[t]=IN Flies opus[c]=OUT Flies opus[t]=IN Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      ?UNDEC:Flies opus
+      credulous -> value     μflies_opus:Flies opus.<!IN:forall x:Animal,Bird x->Flies x||opus*μb1:Bird opus.<penguins_birds:forall x:Animal,Penguin x->Bird x||opus*penguin_opus:Penguin opus*b1:Bird opus>*flies_opus:Flies opus>
+-- opus_grounded: issue Flies opus[c]; 5 edges
+   grounded  issue: ['UNDEC']
+      [1] Bird opus[t]=IN Flies opus[c]=UNDEC Flies opus[t]=UNDEC Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      UNDEC:Flies opus?
+      credulous -> open      UNDEC:Flies opus?
+   preferred issue: ['IN', 'OUT']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus[t]=OUT Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      [2] Bird opus[t]=IN Flies opus[c]=OUT Flies opus[t]=IN Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      UNDEC:Flies opus?
+      credulous -> value     μ'opus_grounded:Flies opus.<!IN:forall x:Animal,Penguin x->Flies x->false||opus*penguin_opus:Penguin opus*opus_grounded:Flies opus*_F_>
+   stable    issue: ['IN', 'OUT']
+      [1] Bird opus[t]=IN Flies opus[c]=IN Flies opus[t]=OUT Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      [2] Bird opus[t]=IN Flies opus[c]=OUT Flies opus[t]=IN Penguin opus[t]=IN forall x:Animal,Bird x->Flies x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN forall x:Animal,Penguin x->Flies x->false[t]=IN
+      skeptical -> open      UNDEC:Flies opus?
+      credulous -> value     μ'opus_grounded:Flies opus.<!IN:forall x:Animal,Penguin x->Flies x->false||opus*penguin_opus:Penguin opus*opus_grounded:Flies opus*_F_>
+== done in 0.3s

@@ -1,0 +1,15 @@
+== literature2/adapt_induction_fo.fspy: check ok=True (0.0s)
+-- gen: issue forall x:D,Pr x[t]; 0 edges
+   grounded  issue: ['IN']
+      [1] forall x:D,Pr x[t]=IN
+      skeptical -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+      credulous -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+   preferred issue: ['IN']
+      [1] forall x:D,Pr x[t]=IN
+      skeptical -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+      credulous -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+   stable    issue: ['IN']
+      [1] forall x:D,Pr x[t]=IN
+      skeptical -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+      credulous -> value     μx2:forall x:D,Pr x.<!IN:forall x:D,Pr x||x2:forall x:D,Pr x>
+== done in 0.1s

@@ -1,0 +1,57 @@
+# s(CASP): bird(tweety). bird(sam). penguin(sam). ab(X) :- penguin(X).
+# flies(X) :- bird(X), not ab(X).  Grounded by hand to propositional atoms.
+# s(CASP) 0.25: ?- flies(tweety) succeeds {flies(tweety), not ab(tweety)};
+# ?- flies(sam) has no models; ?- not flies(sam) succeeds.
+# Encoding (tasks.org aida-scasp-stable-correspondence): a rule is a declared
+# implication, an atom premise an obligation, `not b` the presumed
+# refutation of b, a fact a declared axiom.
+lk.
+declare Bird_tweety, Bird_sam, Penguin_sam, Ab_tweety, Ab_sam, Flies_tweety, Flies_sam : bool.
+declare bird_tweety : (Bird_tweety).
+declare bird_sam : (Bird_sam).
+declare penguin_sam : (Penguin_sam).
+declare ab_rule_sam : (Penguin_sam -> Ab_sam).
+declare flies_rule_tweety : (Bird_tweety -> (Ab_tweety -> false) -> Flies_tweety).
+declare flies_rule_sam : (Bird_sam -> (Ab_sam -> false) -> Flies_sam).
+argument flies_tweety : (Flies_tweety).
+cut (Bird_tweety -> (Ab_tweety -> false) -> Flies_tweety) th.
+axiom flies_rule_tweety.
+elim.
+next.
+elim.
+elim h.
+cut (Ab_tweety) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument flies_sam : (Flies_sam).
+cut (Bird_sam -> (Ab_sam -> false) -> Flies_sam) th.
+axiom flies_rule_sam.
+elim.
+next.
+elim.
+elim h.
+cut (Ab_sam) k.
+axiom h.
+by default.
+next.
+axiom th.
+dixi.
+argument bird_t : (Bird_tweety).
+axiom bird_tweety.
+dixi.
+argument bird_s : (Bird_sam).
+axiom bird_sam.
+dixi.
+argument ab_sam : (Ab_sam).
+cut (Penguin_sam -> Ab_sam) th.
+axiom ab_rule_sam.
+elim.
+next.
+axiom th.
+dixi.
+argument penguin_s : (Penguin_sam).
+axiom penguin_sam.
+dixi.

@@ -1,0 +1,42 @@
+== literature2/dl_team_nosup.fspy: check ok=True (0.1s)
+-- r1: issue Mammal[t]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> open      ?UNDEC:Mammal
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> value     μr1:Mammal.<!IN:Monotreme->Mammal||monotreme:Monotreme*r1:Mammal>
+-- r2: issue Mammal[t]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> open      ?UNDEC:Mammal
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Mammal
+      credulous -> value     μr2:Mammal.<!IN:HasFur->Mammal||hasfur:HasFur*r2:Mammal>
+-- r3: issue Mammal[c]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> open      UNDEC:Mammal?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> value     μ'r3:Mammal.<!IN:LaysEggs->~Mammal||layseggs:LaysEggs*μ'b1:~Mammal.<b1:~Mammal||r3:Mammal*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> value     μ'r3:Mammal.<!IN:LaysEggs->~Mammal||layseggs:LaysEggs*μ'b1:~Mammal.<b1:~Mammal||r3:Mammal*_F_>>
+-- r4: issue Mammal[c]; 8 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> open      UNDEC:Mammal?
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> value     μ'r4:Mammal.<!IN:HasBill->~Mammal||hasbill:HasBill*μ'b1:~Mammal.<b1:~Mammal||r4:Mammal*_F_>>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      UNDEC:Mammal?
+      credulous -> value     μ'r4:Mammal.<!IN:HasBill->~Mammal||hasbill:HasBill*μ'b1:~Mammal.<b1:~Mammal||r4:Mammal*_F_>>
+== done in 0.7s

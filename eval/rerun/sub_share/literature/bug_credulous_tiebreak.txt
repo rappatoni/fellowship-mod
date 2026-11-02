@@ -1,0 +1,36 @@
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on B: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on B: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+== literature/bug_credulous_tiebreak.fspy: check ok=True (0.1s)
+-- pa: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- sa: issue A[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- nb: issue B[c]; 0 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt1:B.<alt1:B||UNDEC:B?>
+      credulous -> open      μ'alt1:B.<alt1:B||UNDEC:B?>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:B.<alt1:B||UNDEC:B?>
+      credulous -> value     μ'alt1:B.<alt1:B||IN:B!>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:B.<alt1:B||UNDEC:B?>
+      credulous -> value     μ'alt1:B.<alt1:B||IN:B!>
+== done in 0.4s

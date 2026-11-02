@@ -1,0 +1,49 @@
+% The obligation variant of site_variant.fspy: argP *demands* Q instead of
+% presuming it.  Once killR refutes R (and with it argP2), P and Q support
+% only each other: an unfounded loop.  Grounded: P, Q UNDEC; preferred:
+% {P, Q IN} and {P, Q OUT}.  Credulously the witness accepts P through the
+% loop alone; judged by what each expression stands for (tasks.org,
+% aida-judge-by-what-it-stands-for) no derivation in argP's term holds,
+% and the result is the bare delegation of P, =!IN:P=.
+lk.
+declare P,Q,R:bool.
+declare rp:(R->P).
+declare pq:(P->Q).
+declare qp:(Q->P).
+declare nR:(~R).
+
+argument argP : (P).
+cut (Q->P) th.
+axiom qp.
+elim.
+next.
+axiom.
+dixi.
+
+argument argQ : (Q).
+cut (P->Q) th.
+axiom pq.
+elim.
+next.
+axiom.
+dixi.
+
+argument argP2 : (P).
+cut (R->P) th2.
+axiom rp.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+counterargument killR : (R).
+cut (~R) x.
+axiom nR.
+elim.
+axiom.
+dixi.
+
+evaluate issue :P.
+evaluate argQ.
+evaluate argP.

@@ -1,0 +1,35 @@
+# Double negation elimination, ((A->false)->false) -> A, proved dialectically.
+# Each move is one inference; unfolding composes them by capture.
+lk.
+declare A : bool.
+# P: I claim the thesis.
+argument p1 : (((A->false)->false) -> A).
+dixi.
+# S: assume ~~A (f); now give me A.
+argument s1 : (((A->false)->false) -> A).
+elim f.
+dixi.
+# P: A, by using ~~A (owed: the skeptic's f) on ~A (owed).
+argument p2 : (A).
+cut ((A->false)->false) g.
+next.
+elim.
+next.
+next.
+dixi.
+# Falsum is refuted outright (the empty context _F_).
+counterargument nofalse : (false).
+elim.
+dixi.
+# S: you owe ~A: assume A (h), refute ... P: A against A's own continuation.
+argument p3 : (A->false).
+elim h.
+cut (A) k.
+axiom h.
+next.
+dixi.
+graph document.
+graph p1.
+label p1.
+evaluate p1.
+evaluate p1 credulous.

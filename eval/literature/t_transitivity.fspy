@@ -1,0 +1,27 @@
+# Transitivity of implication, (A->B) -> (B->C) -> A -> C, proved
+# dialectically (intuitionistically valid).
+lk.
+declare A, B, C : bool.
+argument p1 : ((A->B) -> (B->C) -> A -> C).
+dixi.
+argument s1 : ((A->B) -> (B->C) -> A -> C).
+elim f.
+elim g.
+elim a.
+dixi.
+# P: C from B->C (owed) and B (owed).
+argument p2 : (C).
+cut (B->C) y.
+next.
+elim.
+next.
+axiom y.
+dixi.
+# P: B from A->B (owed) and A (owed).
+argument p3 : (B).
+cut (A->B) z.
+next.
+elim.
+next.
+axiom z.
+dixi.

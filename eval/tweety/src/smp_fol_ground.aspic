@@ -1,0 +1,16 @@
+=> Pair_a_c
+=> Pair_a_d
+=> Pair_b_c
+=> Pair_b_d
+MPrefers_a_d_c, Pair_a_d -> ContraryPair_a_c
+MPrefers_b_c_d, Pair_b_c -> ContraryPair_b_d
+WPrefers_d_b_a, Pair_b_d -> ContraryPair_a_d
+WPrefers_c_a_b, Pair_a_c -> ContraryPair_b_c
+-> MPrefers_a_d_c
+-> MPrefers_b_c_d
+-> WPrefers_c_a_b
+-> WPrefers_d_b_a
+ContraryPair_a_c -> !Pair_a_c
+ContraryPair_a_d -> !Pair_a_d
+ContraryPair_b_c -> !Pair_b_c
+ContraryPair_b_d -> !Pair_b_d

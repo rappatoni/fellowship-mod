@@ -1,4 +1,4 @@
-"""Pins every value quoted in minicourse.org.
+"""Pins every value quoted in docs/minicourses/minicourse.org.
 
 The course quotes real transcripts.  If the implementation changes, these
 assertions fail and the lesson text must be updated -- the material
@@ -66,14 +66,15 @@ def t_att(prop, orig, scion_ctx):
 class TestLesson1Statements:
     def test_obligation_graph_statements(self):
         g = compile_debate(parg(Goal("1", "Q")), "pArg", strict_names={"pRule"})
-        assert [(g.nodes[k], s) for k, s in g.statements()] == [("P", "term"), ("Q", "term")]
+        # the axiom pRule applied is a horn: its statement Q->P is in the graph (2026-10-15)
+        assert [(g.nodes[k], s) for k, s in g.statements()] == [("Q->P", "term"), ("P", "term"), ("Q", "term")]
 
     def test_contested_graph_adds_the_context_side(self):
         challenge = Mutilde(DI("x", "Q"), "Q", DI("x", "Q"), Geled("d", "Q"))
         g = compile_debate(parg(t_att("Q", Deleg("1", "Q"), challenge)),
                            "datt", strict_names={"pRule"})
         assert [(g.nodes[k], s) for k, s in g.statements()] == [
-            ("P", "term"), ("Q", "term"), ("Q", "context")]
+            ("Q->P", "term"), ("P", "term"), ("Q", "term"), ("Q", "context")]
 
     def test_negation_spellings_share_a_key(self):
         assert K("~A") == K("A->false")
@@ -122,22 +123,24 @@ class TestLesson4Conditions:
 
     def test_obligation_site(self):
         g = compile_debate(parg(Goal("1", "Q")), "pArg", strict_names={"pRule"})
-        assert self.conditions(g) == {"P[t]": "Q[t]", "Q[t]": "false"}
+        assert self.conditions(g) == {"Q->P[t]": "(true | false)", "P[t]": "(Q->P[t] & Q[t])", "Q[t]": "false"}
 
     def test_presumption_site(self):
         g = compile_debate(parg(Deleg("1", "Q")), "pArg", strict_names={"pRule"})
-        assert self.conditions(g) == {"P[t]": "Q[t]", "Q[t]": "true"}
+        assert self.conditions(g) == {"Q->P[t]": "(true | false)", "P[t]": "(Q->P[t] & Q[t])", "Q[t]": "true"}
 
     def test_contested_is_a_negation_two_cycle(self):
         challenge = Mutilde(DI("x", "Q"), "Q", DI("x", "Q"), Geled("d", "Q"))
         g = compile_debate(parg(t_att("Q", Deleg("1", "Q"), challenge)),
                            "datt", strict_names={"pRule"})
         assert self.conditions(g) == {
-            "P[t]": "Q[t]",
+            "Q->P[t]": "(true | false)",
+            "P[t]": "(Q->P[t] & Q[t])",
             "Q[t]": "(true & not Q[c])",
             "Q[c]": "(true & not Q[t])",
         }
         assert {(g.nodes[k], s): v for (k, s), v in grounded_labels(g).items()} == {
+            ("Q->P", "term"): "IN",
             ("P", "term"): "UNDEC", ("Q", "term"): "UNDEC", ("Q", "context"): "UNDEC"}
 
     def test_lesson4_exercise_d2_conditions(self):
@@ -165,6 +168,7 @@ class TestLesson5Labels:
         g = compile_debate(carg(Goal("1", "A"), Deleg("2", "B")),
                            "cArg", strict_names={"abc"})
         assert self.labels(g) == {
+            ("A->B->C", "term"): "IN",        # the axiom, strict
             ("C", "term"): "OUT", ("A", "term"): "OUT", ("B", "term"): "IN"}
 
     def test_exercise_both_kinds(self):
@@ -173,7 +177,8 @@ class TestLesson5Labels:
         assert set(self.labels(both_pres).values()) == {"IN"}
         both_obli = compile_debate(carg(Goal("1", "A"), Goal("2", "B")),
                                    "cArg", strict_names={"abc"})
-        assert set(self.labels(both_obli).values()) == {"OUT"}
+        sites = {k: v for k, v in self.labels(both_obli).items() if k[0] != "A->B->C"}
+        assert set(sites.values()) == {"OUT"} and self.labels(both_obli)[("A->B->C", "term")] == "IN"
 
     def test_production_agrees_with_oracle(self):
         g = compile_debate(carg(Goal("1", "A"), Deleg("2", "B")),
@@ -213,6 +218,7 @@ class TestLesson7Evaluation:
         body = parg(t_att("Q", Deleg("1", "Q"), challenge))
         g = compile_debate(body, "datt", strict_names={"pRule"})
         assert {(g.nodes[k], s): v for (k, s), v in grounded_labels(g).items()} == {
+            ("Q->P", "term"): "IN",
             ("P", "term"): "IN", ("Q", "term"): "IN", ("Q", "context"): "OUT"}
         for mode in ("skeptical", "credulous"):
             _, cls, _, _ = evaluate_debate(body, "datt", strict_names={"pRule"},
@@ -224,7 +230,7 @@ class TestLesson7Evaluation:
 
 @pytest.mark.parametrize("script", [
     "lesson2_graph.fspy", "lesson5_labels.fspy", "lesson7_evaluate.fspy",
-    "lesson9_evaluation.fspy",
+    "lesson9_evaluation.fspy", "lesson8a_attackrule.fspy",
 ])
 def test_lesson_fixture_replays(script, tmp_path, monkeypatch):
     """The course's .fspy fixtures run end to end.
@@ -238,6 +244,37 @@ def test_lesson_fixture_replays(script, tmp_path, monkeypatch):
     prover = setup_prover()
     try:
         execute_script(prover, str(source), strict=True)
+    finally:
+        prover.close()
+
+
+def test_lesson2_debate_transcript(tmp_path, monkeypatch, caplog):
+    """Pins lesson 2's =graph d2= transcript and lesson 6's B site of the
+    debate term (aida-debate-objects)."""
+    import logging
+    from pathlib import Path
+    from pres.gen import pres_str
+    source = Path(__file__).parent / "lesson2_graph.fspy"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("ACDC_NO_RENDER", "1")
+    prover = setup_prover()
+    try:
+        with caplog.at_level(logging.INFO):
+            execute_script(prover, str(source), strict=True, isolate=False)
+        text = "\n".join(r.getMessage() for r in caplog.records)
+        for line in (
+            "Debate graph for debate 'd2' (issue C[t], open scope, 2 move(s)): 4 nodes, 3 edges",
+            "  abc (subargument, strict): A->B->C[t] <- -",
+            "  cArg (supporter, defeasible): C[t] <- A->B->C[t:suba], A[t:obli], B[t:obli]",
+            "  bArg (supporter, strict): B[t] <- -",
+        ):
+            assert line in text
+        # bArg is strict as registered: no duplicate bArg* (since 2026-10-16,
+        # aida-strict-edge-collector-condition)
+        assert "bArg*" not in text
+        term = pres_str(prover.debate_term(prover.debates["d2"]))
+        assert ("μalt2:B.<?3:B||μ'b2:B.<μ_:B.<b2:B||alt2:B>||μ'_:B.<μbArg:B."
+                "<axB:B||bArg:B>||alt2:B>>>") in term
     finally:
         prover.close()
 

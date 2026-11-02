@@ -1,0 +1,41 @@
+== literature4/murder_mystery.fspy: check ok=True (0.1s)
+-- alive2: issue Alive2[t]; 7 edges
+   grounded  issue: ['OUT']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+      credulous -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+   preferred issue: ['OUT']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+      credulous -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+   stable    issue: ['OUT']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+      credulous -> exception μalt9:Alive2.<?OUT:Alive2||dead2:Alive2>
+-- dead: issue Alive2[c]; 7 edges
+   grounded  issue: ['IN']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+      credulous -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+   preferred issue: ['IN']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+      credulous -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+   stable    issue: ['IN']
+      [1] Alive0->Alive1[t]=IN Alive1->(Clipped1->false)->Alive2[t]=IN Clipped1->false[t]=IN Alive0[t]=IN Alive1[t]=IN Alive2[c]=IN Alive2[t]=OUT Clipped1[c]=IN
+      skeptical -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+      credulous -> value     μ'dead:Alive2.<dead:Alive2||dead2:Alive2>
+-- loaded: issue Loaded1[t]; 0 edges
+   grounded  issue: ['OUT']
+      [1] Loaded1[t]=OUT
+      skeptical -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+      credulous -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+   preferred issue: ['OUT']
+      [1] Loaded1[t]=OUT
+      skeptical -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+      credulous -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+   stable    issue: ['OUT']
+      [1] Loaded1[t]=OUT
+      skeptical -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+      credulous -> open      μx1:Loaded1.<?OUT:Loaded1||x1:Loaded1>
+== done in 0.4s

@@ -30,17 +30,18 @@ class DecorationError(ValueError):
 
 
 def parse_decorate_command(command: str) -> tuple[str, str]:
-    """Parse ``decorate NAME : 'template'.`` wrapper commands.
+    """Parse ``decorate NAME : "template".`` wrapper commands.
 
     The command is intentionally wrapper-only; callers should store the result
-    rather than forwarding it to Fellowship.  Templates may be quoted with
-    single or double quotes and may contain positional placeholders @arg1,
-    @arg2, ... .  Double-quoted templates use JSON string escaping because
-    importer-generated ``.fspy`` files render them with ``json.dumps``.
+    rather than forwarding it to Fellowship.  Templates are double-quoted (a
+    single quote is an ordinary character, README, *Command syntax*), use
+    JSON string escaping - importer-generated ``.fspy`` files write them
+    with ``json.dumps`` - and may contain positional placeholders @arg1,
+    @arg2, ... .
     """
     match = _DECORATE_RE.match(command.strip())
     if match is None:
-        raise DecorationError("Invalid decorate command. Use: decorate NAME : 'template'.")
+        raise DecorationError('Invalid decorate command. Use: decorate NAME : "template".')
     name = match.group("name").strip()
     text = match.group("text").strip()
     if len(text) >= 2 and text[0] == text[-1] == '"':
@@ -49,9 +50,10 @@ def parse_decorate_command(command: str) -> tuple[str, str]:
         except json.JSONDecodeError as e:
             raise DecorationError(f"Invalid JSON-quoted decoration template: {e}") from e
     elif len(text) >= 2 and text[0] == text[-1] == "'":
-        text = text[1:-1]
+        raise DecorationError("Single-quoted templates are gone: double-quote it, "
+                              f'decorate {name} : "{text[1:-1]}".')
     if not name or not text:
-        raise DecorationError("Invalid decorate command. Use: decorate NAME : 'template'.")
+        raise DecorationError('Invalid decorate command. Use: decorate NAME : "template".')
     return name, text
 
 

@@ -1,0 +1,62 @@
+# Catala: two exceptions to one base definition apply at once
+#   exception ... under condition children consequence equals 15%
+#   exception ... under condition disabled consequence equals 10%
+# Catala raises a ConflictError at run time: the program is wrong, not the
+# value uncertain.
+lk.
+declare Rate20, Rate15, Rate10, Children, Disabled : bool.
+declare children : (Children).
+declare disabled : (Disabled).
+declare exc1_rule : (Children -> Rate15).
+declare exc2_rule : (Disabled -> Rate10).
+declare excl_15_20 : (Rate15 -> ~Rate20).
+declare excl_10_20 : (Rate10 -> ~Rate20).
+declare excl_10_15 : (Rate10 -> ~Rate15).
+declare excl_15_10 : (Rate15 -> ~Rate10).
+argument base : (Rate20).
+by default.
+dixi.
+argument exc1 : (Rate15).
+cut (Children -> Rate15) th.
+axiom exc1_rule.
+elim.
+axiom children.
+axiom th.
+dixi.
+argument exc2 : (Rate10).
+cut (Disabled -> Rate10) th.
+axiom exc2_rule.
+elim.
+axiom disabled.
+axiom th.
+dixi.
+counterargument not15 : (Rate15).
+cut (~Rate15) x.
+cut (Rate10 -> ~Rate15) th.
+axiom excl_10_15.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument not10 : (Rate10).
+cut (~Rate10) x.
+cut (Rate15 -> ~Rate10) th.
+axiom excl_15_10.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument not20 : (Rate20).
+cut (~Rate20) x.
+cut (Rate15 -> ~Rate20) th.
+axiom excl_15_20.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

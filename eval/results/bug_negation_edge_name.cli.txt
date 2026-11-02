@@ -1,0 +1,26 @@
+Running script literature/bug_negation_edge_name.fspy (strict=False, stop_on_error=True, echo_notes=False)
+Minimal reproduction: an argument for ~A that starts by introducing the
+hypothesis gets its edge named after the prover's internal binder H1,
+not after the argument; the JSON graph gives argument "H1" and span null.
+'A' : 'bool'  declared.
+Started recording argument 'negA' with conclusion '~A'.
+Executing argument 'negA'.
+Starting theorem 'negA' for issue '~A'
+Ignoring ProverError on final 'next': There is only one goal, impossible to switch.
+Argument 'negA' executed.
+
+Argument term: 'μthesis:~A.<μH1:~A.<λH2:A.μH3:false.<H2||1.1?>||H1>||thesis>'.
+
+Enriching argument 'negA'.
+Argument 'negA' enriched.
+Starting proof term generation for enriched argument 'negA'
+Finished proof term generation for enriched argument 'negA'
+
+Enriched proof term: 'μnegA:~A.<μH1:~A.<λH2:A.μH3:false.<H2:A||1.1:A?>||H1:~A>||negA:~A>'.
+
+Argument 'negA' executed and registered with conclusion '~A'.
+Document graph: 2 nodes, 1 edges (every registered atomic argument)
+  H1 (argument, defeasible): ~A[t] <- A[c:obli]
+  default A[c]: obligation
+  fragment: acyclic
+Finished script literature/bug_negation_edge_name.fspy

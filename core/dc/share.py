@@ -4,9 +4,10 @@ aida-shared-subarguments; decisions of 2026-10-01).
 Unfolding (core/dc/unfold.py) copies the debate of a statement into every
 place the statement is needed, so the term is as large as the number of
 paths through the document graph.  Here every statement reachable from the
-issue gets ONE definition - its site wrapped by its supporters and
-attackers, exactly as ``Unfolder._wrap`` builds it - and a place that needs
-the statement holds a *citation* of that definition instead of a copy.
+issue gets ONE definition - its debate, the root under its supporter
+stack and the contrary's attacker wing, exactly as ``Unfolder._debate``
+builds it - and a place that needs the statement holds a *citation* of
+that definition instead of a copy.
 
 Names are transparent: a citation means its expansion.  ``expand`` writes
 the definitions back in and yields the term ``unfold`` yields, up to
@@ -41,6 +42,7 @@ from itertools import count
 from core.ac.ast import (
     ProofTerm, Mu, Mutilde, Lamda, Admal, Cons, Sonc,
     Goal, Laog, Deleg, Geled, ID, DI, Hyp, Pyh,
+    LamdaFO, ConsFO, TermsPairFO, DestructTermsPairFO,
 )
 from core.ac.prop import Prop
 from core.dc.debate_graph import DebateGraph, canonical_prop
@@ -61,15 +63,43 @@ def is_cite(node) -> bool:
     return isinstance(node, (ID, DI)) and getattr(node, "debate", None) is not None
 
 
-def _cite(statement, prop, presumed, captures, cuts, bare=False):
+def debate_statement(key) -> tuple:
+    """The statement a definition's key is about.  The key of a
+    statement's canonical debate is the statement itself, (proposition,
+    side); that of a variant is (statement, own_kind, top) - the root kind
+    and the argument on top that ``Unfolder._debate`` is given (an exposed
+    node's debate, an argument entrypoint)."""
+    return key if len(key) == 2 else key[0]
+
+
+def _first_order_copy(node, walk):
+    """A copy of a first-order node with its child walked, or None for any
+    other node.  The first-order variable keeps its name."""
+    if isinstance(node, LamdaFO):
+        out = LamdaFO(node.var, node.sort, walk(node.term))
+    elif isinstance(node, ConsFO):
+        out = ConsFO(node.fo_term, walk(node.context))
+    elif isinstance(node, TermsPairFO):
+        out = TermsPairFO(node.witness, walk(node.term))
+    elif isinstance(node, DestructTermsPairFO):
+        out = DestructTermsPairFO(node.var, node.sort, walk(node.context))
+    else:
+        return None
+    out.prop = node.prop
+    return out
+
+
+def _cite(statement, prop, presumed, captures, cuts, bare=False, debate=None):
     """The citation leaf for ``statement``: a term-side or context-side
     name leaf carrying the site's captures (statement -> binder name) and
-    cuts (statements on the path).  A *bare* citation stands for the bare
-    contrary of an attack scaffold (``Unfolder._bare``): where it is
-    written out it is the capturing variable or a bare site, never the
-    statement's debate."""
+    cuts (statements on the path).  ``debate`` is the key of the definition
+    cited, the statement's canonical one by default.  A *bare* citation
+    stands for the bare contrary of an attack scaffold (``Unfolder._bare``):
+    where it is written out it is the capturing variable or a bare site,
+    never the statement's debate."""
     leaf = DI("§", prop) if statement[1] == "term" else ID("§", prop)
-    leaf.debate = statement
+    leaf.debate = statement if debate is None else debate
+    leaf.statement = statement
     leaf.presumed = presumed
     leaf.captures = dict(captures)
     leaf.cuts = frozenset(cuts)
@@ -83,12 +113,15 @@ def is_bare(node) -> bool:
 
 @dataclass
 class Definition:
-    """The debate of one statement: ``body`` is its site wrapped by its
-    supporters and attackers, with every site of another statement that no
-    binder of the body captures left as a citation."""
+    """The debate of one statement: ``body`` is its root under its
+    supporter stack and the contrary's attacker wing, with every site of
+    another statement that no binder of the body captures left as a
+    citation.  ``key``: the statement, or (statement, own_kind, top) for a
+    variant (``debate_statement``)."""
 
     statement: tuple
     body: ProofTerm
+    key: tuple = None
     #: Display name; None while the definition is printed inline.
     name: str = None
     #: Citations of this definition among the reachable definitions.
@@ -106,20 +139,82 @@ class _Builder(Unfolder):
     the only difference is that a statement no binder in scope captures is
     not unfolded in place but cited."""
 
-    #: The shared route keeps the legacy shape until
-    #: aida-shared-route-stack-shape (core/dc/unfold.py, ``stacked``).
-    stacked = False
-
-    def __init__(self, graph: DebateGraph):
-        super().__init__(graph)
+    def __init__(self, graph: DebateGraph, subarguments="default", primacy=()):
+        super().__init__(graph, subarguments=subarguments, primacy=primacy)
         self.defs = {}
         self._todo = []
 
-    def statement(self, statement, env, spine, presumed=False):
+    def _key(self, statement, own_kind=None, top=None):
+        """The key of the debate ``Unfolder._debate`` builds for these
+        parameters: the statement itself where that is its canonical
+        debate."""
+        if own_kind == self._presumed(statement):
+            own_kind = None                      # the canonical root anyway
+        if own_kind is None and top is None:
+            return statement
+        return (statement, own_kind, top)
+
+    def statement(self, statement, env, spine, presumed=False, own_kind=None):
         if statement in env:
             return super().statement(statement, env, spine, presumed)
-        self._todo.append(statement)
-        return _cite(statement, self._prop(statement[0]), presumed, env, spine)
+        key = self._key(statement, own_kind)
+        self._todo.append(key)
+        return _cite(statement, self._prop(statement[0]), presumed, env, spine, debate=key)
+
+    def _exposed(self, node, sub, env, spine, names, primary, walk):
+        """An exposed node (core/dc/unfold.py, ``Unfolder._exposed``):
+        engaged by nobody, as written; otherwise a citation of the debate
+        the unfolder builds there - an obligation root, a presumption of the
+        statement at the bottom of the stack, the node's own edge on top
+        iff its argument has primacy - which is the canonical debate unless
+        one of those differs.  A definition is built without the scope of
+        its citing sites, so whether the statement is captured is decided
+        where the citation is written out, as for a site; a captured node
+        is the captured variable alone."""
+        statement = (sub.target_key, sub.target_side)
+        if statement in env:
+            return super()._exposed(node, sub, env, spine, names, primary, walk)
+        kept = self._kept(node, sub, statement, env, spine, names, primary, walk)
+        if not self._engaged(statement, sub):
+            out = super()._exposed(node, sub, env, spine, names, primary, walk)
+            # As written - unless a binder of an enclosing definition binds
+            # the statement, which only expansion can see.
+            out.exposed_as = statement
+            out.kept = kept
+            return out
+        logger.debug("share: node '%s' exposed as a citation of %s", sub.name, self._show(statement))
+        key = self._key(statement, False, sub.name if primary else None)
+        self._todo.append(key)
+        leaf = _cite(statement, self._prop(statement[0]), False, env, spine, debate=key)
+        leaf.kept = kept
+        return leaf
+
+    def _kept(self, node, sub, statement, env, spine, names, primary, walk):
+        """What the node becomes where a binder outside the definition
+        captures its statement and the setting keeps its own derivation
+        (``Unfolder._exposed``): (SUP(captured, own), the same attacked by
+        a copy of the contrary's debate - for a capture by a scaffold's
+        variable under "preserve" - or None).  Built here, in the citing
+        definition's scope; the captured variable is a bare citation of the
+        statement, which is that variable wherever a form is used.  None
+        where the setting keeps nothing."""
+        keep = (self.subarguments == "preserve"
+                or (self.subarguments == "default" and primary))
+        if not keep:
+            return None
+        contra = contrary(statement)
+        captured = _cite(statement, self._prop(statement[0]), False, env, spine, bare=True)
+        alt, beta = self._fresh_alt(), self._fresh_beta()
+        own = walk(node, self._scaffold_scope(statement, alt, beta, env), names, False)
+        term = self._support(statement, captured, own, alt, beta)
+        attacked = None
+        if self.subarguments == "preserve" and (self._by_target.get(contra)
+                                                or self.graph.defaults.get(contra)):
+            alt2, beta2 = self._fresh_alt(), self._fresh_beta()
+            wing = self._wing(contra, self._scaffold_scope(statement, alt2, beta2, env),
+                              spine | {contra})
+            attacked = self._attack(statement, term, wing, alt2, beta2)
+        return term, attacked
 
     def _bare(self, statement, env):
         # A definition is built without the scope of its citing sites, so
@@ -133,12 +228,15 @@ class _Builder(Unfolder):
     def build(self, issue):
         self._todo = [issue]
         while self._todo:
-            statement = self._todo.pop(0)
-            if statement in self.defs:
+            key = self._todo.pop(0)
+            if key in self.defs:
                 continue
-            body = self._wrap(statement, self._site(statement),
-                              self._by_target.get(statement, []), {}, frozenset({statement}))
-            self.defs[statement] = Definition(statement, body)
+            statement = debate_statement(key)
+            own_kind, top = (None, None) if key == statement else key[1:]
+            edge = (next(e for e in self._by_target.get(statement, []) if e.name == top)
+                    if top is not None else None)
+            body = self._debate(statement, {}, frozenset({statement}), own_kind=own_kind, top=edge)
+            self.defs[key] = Definition(statement, body, key)
         return self.defs
 
 
@@ -149,9 +247,20 @@ class SharedDebate:
     graph: DebateGraph
     issue: tuple
     defs: dict
+    #: The names the builder gave the scaffolds' alt and b: a capture by one
+    #: of them is what "preserve" answers with a copy of the attackers.
+    scaffold_vars: frozenset = frozenset()
+    #: The ``subarguments`` setting the definitions were built under.
+    subarguments: str = "default"
     _reach: dict = field(default_factory=dict, repr=False)
 
     # -- structure ----------------------------------------------------------
+
+    @property
+    def statement(self) -> tuple:
+        """The issue's statement (``issue`` is the key of the root
+        definition, a variant for an argument entrypoint)."""
+        return debate_statement(self.issue)
 
     def reach(self, statement) -> frozenset:
         """Statements unfolding ``statement`` can meet (a superset: the
@@ -181,15 +290,27 @@ class SharedDebate:
 
     # -- interpretation -------------------------------------------------------
 
-    def _instantiate(self, statement, env, spine, stop, used, sites):
-        """The body of ``statement``'s definition under the captures ``env``
-        and the path ``spine`` (which already holds ``statement``).
-        Citations of statements in ``stop`` stay citations, annotated with
+    def _instantiate(self, key, env, spine, stop, used, sites, marks=None):
+        """The body of the definition ``key`` under the captures ``env``
+        and the path ``spine`` (which already holds its statement).
+        Citations of definitions in ``stop`` stay citations, annotated with
         what is in force at their site; all others are written back in.
-        Binders are renamed on reuse (``used``), sites renumbered."""
-        definition = self.defs.get(statement)
+        Binders are renamed on reuse (``used``), sites renumbered;
+        ``marks`` collects the new names of the scaffolds' variables."""
+        definition = self.defs.get(key)
         if definition is None:
-            raise UnfoldError(f"No definition for {statement}; it is not reachable from the issue.")
+            raise UnfoldError(f"No definition for {key}; it is not reachable from the issue.")
+        marks = set() if marks is None else marks
+
+        def kept(node, name, names):
+            """A node whose own derivation the setting keeps on top of the
+            variable ``name`` capturing its statement (``_Builder._kept``),
+            or None."""
+            forms = getattr(node, "kept", None)
+            if forms is None:
+                return None
+            plain, attacked = forms
+            return walk(attacked if attacked is not None and name in marks else plain, names)
 
         def fresh(name):
             if name == "_":
@@ -202,34 +323,45 @@ class SharedDebate:
             return candidate
 
         def site(node):
-            return type(node)(f"u{next(sites)}", node.prop)
+            return type(node)(str(next(sites)), node.prop)
 
         def cite(node, names):
-            target = node.debate
+            target, statement = node.debate, node.statement
             env2 = dict(env)
             for captured, var in node.captures.items():
                 env2[captured] = names.get((captured[1], var), var)
             spine2 = spine | node.cuts
-            if target in env2:
-                key, side = target
-                var = (DI if side == "term" else ID)(env2[target], self._prop(key))
+            if statement in env2:
+                found = kept(node, env2[statement], names)
+                if found is not None:
+                    return found
+                prop_key, side = statement
+                var = (DI if side == "term" else ID)(env2[statement], self._prop(prop_key))
                 if node.presumed:
                     var.captured_presumption = True
                 return var
-            if target in spine2 or is_bare(node):
-                return self._site(target, f"u{next(sites)}")
+            if statement in spine2 or is_bare(node):
+                return self._site(statement, str(next(sites)))
             if target in stop:
-                relevant = self.reach(target)
-                return _cite(target, node.prop, node.presumed,
+                relevant = self.reach(statement)
+                return _cite(statement, node.prop, node.presumed,
                              {s: v for s, v in env2.items() if s in relevant},
-                             {s for s in spine2 if s in relevant})
-            return self._instantiate(target, env2, spine2 | {target}, stop, used, sites)
+                             {s for s in spine2 if s in relevant}, debate=target)
+            return self._instantiate(target, env2, spine2 | {statement}, stop, used, sites, marks)
 
         def walk(node, names):
             if isinstance(node, _SITES):
                 return site(node)
             if is_cite(node):
                 return cite(node, names)
+            bound = getattr(node, "exposed_as", None)
+            if bound is not None and bound in env:
+                # an unengaged exposed node an enclosing binder captures
+                found = kept(node, env[bound], names)
+                if found is not None:
+                    return found
+                prop_key, side = bound
+                return (DI if side == "term" else ID)(env[bound], self._prop(prop_key))
             if isinstance(node, ID):
                 out = ID(names.get(("context", node.name), node.name), node.prop)
             elif isinstance(node, DI):
@@ -254,11 +386,15 @@ class SharedDebate:
                 return out
             if isinstance(node, Mu):
                 new = fresh(node.id.name)
+                if node.id.name in self.scaffold_vars:
+                    marks.add(new)
                 names2 = {**names, ("context", node.id.name): new}
                 return _same_origin(node, Mu(ID(new, node.id.prop), node.prop,
                                              walk(node.term, names2), walk(node.context, names2)))
             if isinstance(node, Mutilde):
                 new = fresh(node.di.name)
+                if node.di.name in self.scaffold_vars:
+                    marks.add(new)
                 names2 = {**names, ("term", node.di.name): new}
                 return _same_origin(node, Mutilde(DI(new, node.di.prop), node.prop,
                                                   walk(node.term, names2), walk(node.context, names2)))
@@ -270,18 +406,24 @@ class SharedDebate:
                 out = Sonc(walk(node.context, names), walk(node.term, names))
                 out.prop = node.prop
                 return out
-            raise UnfoldError(f"Cannot share node {type(node).__name__}.")
+            # first order: copied as written, the variable keeps its name
+            # (core/dc/unfold.py; tasks.org, aida-first-order-reduction)
+            out = _first_order_copy(node, lambda child: walk(child, names))
+            if out is None:
+                raise UnfoldError(f"Cannot share node {type(node).__name__}.")
+            return out
 
         return walk(definition.body, {})
 
-    def skeleton(self, statement) -> ProofTerm:
-        """The definition of ``statement`` on its own: its body with every
+    def skeleton(self, key) -> ProofTerm:
+        """The definition ``key`` on its own: its body with every
         citation left as the open site of the cited statement.  This is the
         unit the type check replays (core/dc/typecheck.py): a citation's
         expansion, and a variable that captures it, have the type of that
         site, so well-typed skeletons make every expansion well-typed -
         provided each statement has one spelling (``spelling_clashes``)."""
-        return self._instantiate(statement, {}, frozenset(self.defs), frozenset(), set(), count(1))
+        every = frozenset(d.statement for d in self.defs.values())
+        return self._instantiate(key, {}, every, frozenset(), set(), count(1))
 
     def spelling_clashes(self) -> dict:
         """{display proposition: spellings} for the statements of this
@@ -295,8 +437,9 @@ class SharedDebate:
         as strong as the expanded one when no statement is spelled two
         ways.  The caller falls back to the expanded check otherwise.
         """
-        keys = {key for key, _side in self.defs}
-        targets = set(self.defs) | {contrary(s) for s in self.defs}
+        statements = {d.statement for d in self.defs.values()}
+        keys = {key for key, _side in statements}
+        targets = statements | {contrary(s) for s in statements}
         spelled = {key: {_strict_spelling(self._prop(key))} for key in keys}
         for edge in self.graph.edges:
             if edge.term is None or (edge.target_key, edge.target_side) not in targets:
@@ -315,10 +458,11 @@ class SharedDebate:
         ``unfold(graph, issue)`` returns, up to alpha-equivalence and site
         numbering."""
         sites = count(1)
-        term = self._instantiate(self.issue, {}, frozenset({self.issue}), frozenset(), set(), sites)
+        issue = debate_statement(self.issue)
+        term = self._instantiate(self.issue, {}, frozenset({issue}), frozenset(), set(), sites)
         if isinstance(term, _SITES):
             # A bare site: the eta wrapper every argument has (as unfold).
-            key, side = self.issue
+            key, side = issue
             prop = self._prop(key)
             name = f"x{next(sites)}"
             term = (Mu(ID(name, prop), prop, term, ID(name, prop)) if side == "term"
@@ -356,14 +500,19 @@ class SharedDebate:
             definition.cited = 0
             definition.name = None
         self._count_occurrences()
-        for statement, definition in self.defs.items():
-            if statement == self.issue:
+        for key, definition in self.defs.items():
+            if key == self.issue:
                 continue
             # A name the author wrote stays, even for a bare site; without
-            # one, a bare site reads better than a name for it.
+            # one, a bare site reads better than a name for it.  The
+            # author's ``cite NAME`` names the debate its citation stands
+            # for, which may be a variant (cited like an obligation site);
+            # the one argument about a statement names its canonical debate.
+            statement = definition.statement
             if statement in explicit or (definition.cited >= 2 and not definition.trivial):
-                definition.name = (explicit.get(statement) or user_names.get(statement)
-                                   or anon(statement))
+                definition.name = (explicit.get(statement)
+                                   or (user_names.get(statement) if key == statement else None)
+                                   or anon(key))
 
     def _count_occurrences(self) -> None:
         """How often each definition is written out when the issue is
@@ -374,21 +523,21 @@ class SharedDebate:
         Each body is walked in the first context that reaches it, which
         keeps this linear in the definitions."""
         entered = {self.issue}
-        todo = [(self.issue, {}, frozenset({self.issue}))]
+        todo = [(self.issue, {}, frozenset({debate_statement(self.issue)}))]
         while todo:
-            statement, env, spine = todo.pop()
-            for leaf in _leaves(self.defs[statement].body):
+            key, env, spine = todo.pop()
+            for leaf in _leaves(self.defs[key].body):
                 if not is_cite(leaf) or is_bare(leaf):
                     continue
-                target = leaf.debate
+                target, statement = leaf.debate, leaf.statement
                 env2 = {**env, **leaf.captures}
                 spine2 = spine | leaf.cuts
-                if target in env2 or target in spine2 or target not in self.defs:
+                if statement in env2 or statement in spine2 or target not in self.defs:
                     continue
                 self.defs[target].cited += 1
                 if target not in entered:
                     entered.add(target)
-                    todo.append((target, env2, spine2 | {target}))
+                    todo.append((target, env2, spine2 | {statement}))
 
     # -- presentation -----------------------------------------------------------
 
@@ -410,19 +559,20 @@ class SharedDebate:
         named definition, sub-debates used once written in place."""
         stop = frozenset(self.named())
         used, sites = set(), count(1)
-        root = self._instantiate(self.issue, {}, frozenset({self.issue}), stop, used, sites)
+        root = self._instantiate(self.issue, {}, frozenset({debate_statement(self.issue)}),
+                                 stop, used, sites)
         self._annotate(root)
         rows = []
-        for statement in self.defs:
-            if statement not in stop:
+        for key, definition in self.defs.items():
+            if key not in stop:
                 continue
-            body = self._instantiate(statement, {}, frozenset({statement}), stop, used, sites)
+            body = self._instantiate(key, {}, frozenset({definition.statement}), stop, used, sites)
             self._annotate(body)
-            rows.append((self.defs[statement].name, self.open_sites(statement), body))
+            rows.append((definition.name, self.open_sites(key), body))
         return root, rows
 
-    def open_sites(self, statement) -> list:
-        """The sites the debate of ``statement`` rests on when nothing
+    def open_sites(self, key) -> list:
+        """The sites the debate ``key`` rests on when nothing
         outside captures them, as markers - a reading aid for the header
         of a definition, not consulted by the pipeline.  It follows
         citations, dropping what the citing site captures."""
@@ -442,13 +592,13 @@ class SharedDebate:
                     if found not in captured and found not in out:
                         out.append(found)
                 elif is_cite(leaf):
-                    if is_bare(leaf) or leaf.debate in leaf.cuts:
-                        if leaf.debate not in captured and leaf.debate not in out:
-                            out.append(leaf.debate)
+                    if is_bare(leaf) or leaf.statement in leaf.cuts:
+                        if leaf.statement not in captured and leaf.statement not in out:
+                            out.append(leaf.statement)
                     else:
                         visit(leaf.debate, captured | set(leaf.captures))
 
-        visit(statement, frozenset())
+        visit(key, frozenset())
         return [self.marker(s) for s in out]
 
     def to_text(self, tree: bool = False) -> str:
@@ -476,6 +626,7 @@ def _same_origin(old, new):
     """A rebuilt binder keeps the argument its body came from."""
     if getattr(old, "origin", None):
         new.origin = old.origin
+        new.argument = getattr(old, "argument", None)
     return new
 
 
@@ -538,13 +689,27 @@ def _author_citations(graph: DebateGraph) -> dict:
     return {s: n for s, n in found.items() if s not in clash}
 
 
-def share(graph: DebateGraph, issue, user_names=None, anon=None) -> SharedDebate:
-    """The debate of ``issue`` = (canonical key, side) as named sub-debates."""
-    shared = SharedDebate(graph, issue, _Builder(graph).build(issue))
+def share(graph: DebateGraph, issue, user_names=None, anon=None, subarguments="default",
+          top=None) -> SharedDebate:
+    """The debate of ``issue`` = (canonical key, side) as named sub-debates.
+    With ``top``, an argument edge of the issue, the debate biased towards
+    that argument, as ``unfold_argument`` unfolds it (aida-unfold-entrypoints):
+    the argument on top of the stack, the sites of its own body of the kind
+    it wrote, primacy its and its subarguments'."""
+    builder = _Builder(graph, subarguments, primacy={top.name} if top is not None else ())
+    root = issue
+    if top is not None:
+        if not any(e is top for e in builder._by_target.get(issue, [])):
+            raise UnfoldError(f"'{top.name}' is not an argument edge of the document.")
+        root = (issue, None, top.name)
+    defs = builder.build(root)
+    shared = SharedDebate(graph, root, defs, frozenset(builder._scaffold_vars), subarguments)
     shared.assign_names(user_names, anon)
-    logger.debug("share: issue %s has %d definition(s), %d shown by name",
-                 issue, len(shared.defs), len(shared.named()))
+    logger.debug("share: issue %s%s has %d definition(s), %d shown by name", issue,
+                 f" (biased towards '{top.name}')" if top is not None else "",
+                 len(shared.defs), len(shared.named()))
     return shared
 
 
-__all__ = ["ANON_PREFIX", "Definition", "SharedDebate", "share", "is_cite", "is_bare", "contrary"]
+__all__ = ["ANON_PREFIX", "Definition", "SharedDebate", "share", "is_cite", "is_bare", "contrary",
+           "debate_statement"]

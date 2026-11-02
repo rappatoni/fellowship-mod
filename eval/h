@@ -1,0 +1,2 @@
+#!/bin/sh
+cd "$(dirname "$0")" && exec /Users/maxrapp/Work/Uni/fellowship-mod/.venv/bin/python harness.py "$@"

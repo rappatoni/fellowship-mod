@@ -22,10 +22,7 @@ from core.ac.ast import Mu, Mutilde, Lamda, Hyp, Cons, Goal, Deleg, Geled, ID, D
 from core.dc.debate_graph import compile_document, canonical_prop
 from core.dc.share import share, is_cite, ANON_PREFIX, _leaves
 from core.dc.typecheck import shape
-# The shared route keeps the legacy shape until aida-shared-route-stack-shape,
-# so its reference is the legacy unfolding.
-from core.dc.unfold import unfold_legacy as unfold
-from mod import store
+from core.dc.unfold import unfold
 from wrap.cli import setup_prover, execute_script
 from wrap.prover import NameClash
 
@@ -66,6 +63,21 @@ def doubled_chain(levels):
             site = Deleg("1", "P0") if i == 1 else Goal("1", f"P{i-1}")
             named.append((f"a{i}_{a}", from_site(f"a{i}_{a}", f"P{i}", axiom, f"P{i-1}", site)))
     return compile_document(named, strict_names=strict), (K(f"P{levels}"), "term")
+
+
+def presumed_horn_document():
+    """a1 applies the declared axiom ax0 : P0 as a horn; b0 derives P0 too,
+    so the horn is engaged, and a0 presumes P0.  The unfolder builds the
+    horn's debate with an obligation root and the presumption of P0 at the
+    bottom of the stack, which is not P0's canonical debate (its root the
+    presumption): the shared route cites a variant of it."""
+    strict = {"r0", "r1", "ax0"}
+    doc = compile_document(
+        [("a0", eta("a0", "P0", Deleg("1", "P0"))),
+         ("b0", from_site("b0", "P0", "r0", "Q", Goal("1", "Q"))),
+         ("a1", from_site("a1", "P1", "r1", "P0", DI("ax0", "P0")))],
+        strict_names=strict)
+    return doc, strict
 
 
 def random_document(seed, props=4, arguments=6):
@@ -126,6 +138,14 @@ class TestExpansionIsUnfolding:
         for statement in doc.statements():
             assert same_term(doc, statement), statement
 
+    def test_a_presumed_horn_cites_a_variant(self):
+        doc, _ = presumed_horn_document()
+        issue = (K("P1"), "term")
+        variants = [key for key in share(doc, issue).defs if len(key) == 3]
+        assert variants == [((K("P0"), "term"), False, None)]
+        for statement in doc.statements():
+            assert same_term(doc, statement), statement
+
     def test_a_bare_issue_gets_the_eta_wrapper(self):
         doc, _ = doubled_chain(1)
         bare = (K("P0"), "term")
@@ -135,6 +155,7 @@ class TestExpansionIsUnfolding:
 
 
 class TestSharing:
+    @pytest.mark.perf
     def test_the_shared_form_is_linear_where_the_term_is_exponential(self):
         sizes = {}
         for levels in (4, 8):
@@ -147,16 +168,20 @@ class TestSharing:
         assert term8 > 12 * term4               # the term doubles per level
 
     def test_a_sub_debate_needed_twice_is_named_once(self):
+        # Since the exposure of horns (2026-10-16) each level's two axioms
+        # engage each other, so the implications are sub-debates too.
         doc, issue = doubled_chain(2)
         shared = share(doc, issue)
-        assert shared.named() == {(K("P1"), "term"): f"{ANON_PREFIX}1"}
+        a1, a2, a3 = (f"{ANON_PREFIX}{n}" for n in (1, 2, 3))
+        assert shared.named() == {(K("P1->P2"), "term"): a1, (K("P1"), "term"): a2,
+                                  (K("P0->P1"), "term"): a3}
         root, rows = shared.presented()
         cites = [leaf for leaf in _leaves(root) if is_cite(leaf)]
-        assert [c.name for c in cites] == [f"{ANON_PREFIX}1", f"{ANON_PREFIX}1"]
-        assert [name for name, _sites, _body in rows] == [f"{ANON_PREFIX}1"]
+        assert [c.name for c in cites] == [a1, a2, a1, a2]
+        assert [name for name, _sites, _body in rows] == [a1, a2, a3]
         text = shared.to_text()
-        assert text.count(f"{ANON_PREFIX}1:P1") == 2
-        assert f"{ANON_PREFIX}1[?:P1, !:P0] := " in text
+        assert text.count(f"{a2}:P1") == 2
+        assert f"{a2}[?:P1, ?:P0->P1, !:P0] := " in text
 
     def test_a_sub_debate_needed_once_stays_inline(self):
         doc = compile_document(
@@ -181,7 +206,11 @@ class TestSharing:
     def test_a_citation_says_what_its_site_captures(self):
         # Two derivations of P from "Q fails": the debate about "Q fails" is
         # needed twice, each time under a hypothesis for Q and P's
-        # continuation, and Q in turn rests on "P fails".
+        # continuation, and Q in turn rests on "P fails".  Since the
+        # exposure of horns (2026-10-16) p1's and p2's lambdas both derive
+        # Q->false and their axioms both (Q->false)->P, so those are
+        # sub-debates too: the lambdas' citation carries P's continuation,
+        # the citations of "Q fails" inside them the hypothesis.
         doc = compile_document(
             [("p1", from_failure("p1", "P", "ax1", "Q")),
              ("p2", from_failure("p2", "P", "ax2", "Q")),
@@ -189,15 +218,22 @@ class TestSharing:
             strict_names={"ax1", "ax2", "ax3"})
         issue = (K("P"), "term")
         shared = share(doc, issue)
-        assert shared.named() == {(K("Q"), "context"): f"{ANON_PREFIX}1"}
-        root, _rows = shared.presented()
-        cites = [leaf for leaf in _leaves(root) if is_cite(leaf)]
-        assert len(cites) == 2
-        for leaf in cites:
-            # the continuation of P captures "P fails", the hypothesis captures Q
+        lam, q_fails = (K("Q->false"), "term"), (K("Q"), "context")
+        assert shared.named() == {(K("(Q->false)->P"), "term"): f"{ANON_PREFIX}1",
+                                  lam: f"{ANON_PREFIX}2", q_fails: f"{ANON_PREFIX}3"}
+        root, rows = shared.presented()
+        lambdas = [leaf for leaf in _leaves(root) if is_cite(leaf) and leaf.debate == lam]
+        assert len(lambdas) == 2
+        for leaf in lambdas:
+            # the continuation of P captures "P fails"
             assert leaf.captures[(K("P"), "context")].startswith("rule")
-            assert leaf.captures[(K("Q"), "term")].startswith("h")
             assert "rule" in leaf.bracket and " -> P:!" in leaf.bracket
+        body = dict((name, body) for name, _sites, body in rows)[f"{ANON_PREFIX}2"]
+        inner = [leaf for leaf in _leaves(body) if is_cite(leaf) and leaf.debate == q_fails]
+        assert len(inner) == 2
+        for leaf in inner:
+            # the hypothesis captures Q
+            assert leaf.captures[(K("Q"), "term")].startswith("h")
             assert " -> ?:Q" in leaf.bracket
         assert same_term(doc, issue)
 
@@ -210,9 +246,13 @@ class TestSharing:
             return table.setdefault(statement, f"{ANON_PREFIX}{len(table) + 1}")
 
         shared = share(doc, issue, user_names={p2: "middle"}, anon=anon)
-        assert shared.named() == {p2: "middle", p1: f"{ANON_PREFIX}1"}
+        named = shared.named()
+        assert named[p2] == "middle" and named[p1].startswith(ANON_PREFIX)
+        # the implications are sub-debates too (the exposure of horns)
+        assert set(named) == {p1, p2, (K("P0->P1"), "term"), (K("P1->P2"), "term"),
+                              (K("P2->P3"), "term")}
         # the same table gives the same number on the next command
-        assert share(doc, issue, anon=anon).named()[p1] == f"{ANON_PREFIX}1"
+        assert share(doc, issue, anon=anon).named()[p1] == named[p1]
 
 
 # -- real documents -----------------------------------------------------------
@@ -233,13 +273,23 @@ SCRIPTS = [
     "tests/demo/04_document.fspy",
     "tests/demo/05_even_loop.fspy",
     "tests/demo/06_peirce.fspy",
+    "tests/entrypoints.fspy",
+    "tests/exposure/curried_cell.fspy",
+    "tests/exposure/lemma_captured.fspy",
+    "tests/exposure/site_obligation.fspy",
+    "tests/exposure/site_variant.fspy",
+    "tests/exposure/two_sites.fspy",
+    "tests/minicourse/lesson8a_attackrule.fspy",
+    "tests/minicourse/lesson8a_cycle.fspy",
+    "tests/minicourse/lesson9_evaluation.fspy",
+    "tests/minicourse/lesson14_sharing.fspy",
+    "tests/minicourse/lesson15_capture.fspy",
+    "tests/minicourse/lesson17_instances.fspy",
 ]
 
 
 @pytest.fixture
 def fresh():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     yield prover
     prover.close()
@@ -255,7 +305,7 @@ def run(prover, script, **options):
 @pytest.mark.parametrize("script", SCRIPTS)
 def test_expansion_is_unfolding_on_fixtures(fresh, script, capsys):
     run(fresh, script, stop_marker=False)
-    doc = fresh.document
+    doc = fresh.graph
     assert doc.statements(), "the fixture registered no argument"
     for statement in doc.statements():
         shared = share(doc, statement, fresh.debate_names(), fresh.anon_name)
@@ -268,27 +318,29 @@ def chain_script(levels):
     for i in range(1, levels + 1):
         for a in range(2):
             lines.append(f"declare r{i}_{a} : (P{i-1} -> P{i}).")
-    lines += ["start argument a0 P0", "by default.", "end argument"]
+    lines += ["argument a0 : (P0).", "by default.", "dixi."]
     for i in range(1, levels + 1):
         for a in range(2):
-            lines += [f"start argument a{i}_{a} P{i}", f"cut (P{i-1} -> P{i}) th.",
-                      f"axiom r{i}_{a}.", "elim.", "next.", "axiom.", "end argument"]
+            lines += [f"argument a{i}_{a} : (P{i}).", f"cut (P{i-1} -> P{i}) th.",
+                      f"axiom r{i}_{a}.", "elim.", "next.", "axiom.", "dixi."]
     return "\n".join(lines) + "\n"
 
 
-class TestDebateCommand:
-    def test_debate_prints_the_named_sub_debate(self, fresh, tmp_path, capsys):
+class TestShareCommand:
+    def test_share_prints_the_named_sub_debate(self, fresh, tmp_path, capsys):
         script = tmp_path / "double.fspy"
-        script.write_text(chain_script(2) + "debate a2_0\n")
+        script.write_text(chain_script(2) + "share a2_0.\n")
         run(fresh, script)
         out = capsys.readouterr().out
-        assert "Debate about 'a2_0' (P2[t]), 1 sub-debate(s) cited by name:" in out
+        # biased towards a2_0: the debate about P1->P2 has a2_0's axiom on
+        # top under a2_0 and is canonical under a2_1, each used once
+        assert "Debate about 'a2_0' (P2[t]), 2 sub-debate(s) cited by name:" in out
         assert out.count(f"{ANON_PREFIX}1:P1") == 2
-        assert f"{ANON_PREFIX}1[?:P1, !:P0] := " in out
+        assert f"{ANON_PREFIX}1[?:P1, ?:P0->P1, !:P0] := " in out
 
     def test_an_authors_citation_keeps_its_name(self, fresh, tmp_path, capsys):
         script = tmp_path / "cited.fspy"
-        script.write_text(open("tests/statements_and_citations.fspy").read() + "\ndebate use\n")
+        script.write_text(open("tests/statements_and_citations.fspy").read() + "\nshare use.\n")
         run(fresh, script)
         out = capsys.readouterr().out
         assert "efficient:EfficientMetro*th:UseMetro" in out
@@ -300,10 +352,11 @@ class TestDebateCommand:
         run(fresh, script)
         p1, p2 = (K("P1"), "term"), (K("P2"), "term")
         first = fresh.shared_debate((K("P2"), "term")).named()
-        assert first == {p1: f"{ANON_PREFIX}1"}
-        # a larger debate later: P1 keeps its number, P2 gets the next one
-        assert fresh.shared_debate((K("P3"), "term")).named() == {
-            p1: f"{ANON_PREFIX}1", p2: f"{ANON_PREFIX}2"}
+        assert first[p1] == f"{ANON_PREFIX}2"
+        # a larger debate later: P1 keeps its number, P2 gets a new one
+        later = fresh.shared_debate((K("P3"), "term")).named()
+        assert later[p1] == f"{ANON_PREFIX}2"
+        assert later[p2] not in first.values()
 
     def test_the_anonymous_prefix_is_reserved(self, fresh):
         with pytest.raises(NameClash):
@@ -311,13 +364,14 @@ class TestDebateCommand:
 
     def test_label_is_unchanged_by_sharing(self, fresh, tmp_path, capsys, caplog):
         script = tmp_path / "double.fspy"
-        script.write_text(chain_script(2) + "label a2_0\ndebate a2_0\nlabel a2_0\n")
+        script.write_text(chain_script(2) + "label a2_0.\ndebate a2_0.\nlabel a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records
                   if r.getMessage().strip().endswith((" IN", " OUT", " UNDEC"))]
-        # three statements, labelled before and after the debate command
-        assert len(labels) == 6 and labels[:3] == labels[3:]
+        # three statements and the two axioms', labelled before and after
+        # the debate command
+        assert len(labels) == 10 and labels[:5] == labels[5:]
 
 
 # -- stage 2: the type check, one definition at a time ----------------------------
@@ -328,23 +382,23 @@ SPELLINGS = """lk.
 declare P, Q, S : bool.
 declare r : (~Q -> P).
 declare n : (S -> (Q -> false)).
-start argument s S
+argument s : (S).
 by default.
-end argument
-start argument nq (Q -> false)
+dixi.
+argument nq : (Q -> false).
 cut (S -> (Q -> false)) th.
 axiom n.
 elim.
 next.
 axiom.
-end argument
-start argument p P
+dixi.
+argument p : (P).
 cut (~Q -> P) th.
 axiom r.
 elim.
 next.
 axiom.
-end argument
+dixi.
 """
 
 
@@ -378,7 +432,7 @@ class TestTypeCheckPerDefinition:
             fresh.send_command("discard theorem.")     # a fixture may end inside a proof
         except Exception:
             pass
-        doc = fresh.document
+        doc = fresh.graph
         for statement in doc.statements():
             expanded, per_definition = both_checks(fresh, doc, statement)
             assert expanded == per_definition, statement
@@ -389,8 +443,9 @@ class TestTypeCheckPerDefinition:
         run(fresh, script)
         shared = fresh.shared_debate((K("P3"), "term"))
         checked = {}
-        # P3, P2 and P1 have debates; P0 is a bare presumption
-        assert typecheck_shared(fresh, shared, "a3_0", checked) == 3
+        # P3, P2, P1 and the three implications have debates; P0 is a
+        # bare presumption
+        assert typecheck_shared(fresh, shared, "a3_0", checked) == 6
         assert typecheck_shared(fresh, shared, "a3_0", checked) == 0
         # a smaller debate of the same document is already covered
         assert typecheck_shared(fresh, fresh.shared_debate((K("P2"), "term")), "a2_0", checked) == 0
@@ -399,7 +454,7 @@ class TestTypeCheckPerDefinition:
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))
         run(fresh, script)
-        doc = fresh.document
+        doc = fresh.graph
         edge = next(e for e in doc.edges if e.name == "a1_0")
         rule = next(leaf for leaf in _leaves(edge.term) if getattr(leaf, "name", "") == "r1_0")
         rule.name = "r2_0"                       # P1->P2 where P0->P1 is needed
@@ -407,7 +462,9 @@ class TestTypeCheckPerDefinition:
         assert both_checks(fresh, doc, issue) == (False, False)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            with pytest.raises(TypeCheckFailed, match=r"in the debate about P1\[t\]"):
+            # the axiom is an exposed node (tasks.org, aida-rational-closure):
+            # it stands in the debate about its own statement
+            with pytest.raises(TypeCheckFailed, match=r"in the debate about P0->P1\[t\]"):
                 typecheck_shared(fresh, share(doc, issue), "a2_0")
 
     def test_two_spellings_of_a_statement_fall_back_to_the_expanded_check(self, fresh, tmp_path, capsys):
@@ -416,10 +473,10 @@ class TestTypeCheckPerDefinition:
         # per-definition check alone would accept what the replay of the
         # expanded term refuses; spelling_clashes makes the CLI replay that.
         script = tmp_path / "spellings.fspy"
-        script.write_text(SPELLINGS + "label p\n")
+        script.write_text(SPELLINGS + "label p.\n")
         run(fresh, script)
         out = capsys.readouterr().out
-        doc = fresh.document
+        doc = fresh.graph
         issue = (K("P"), "term")
         shared = share(doc, issue)
         assert list(shared.spelling_clashes()) == ["Q->false"]
@@ -431,19 +488,19 @@ class TestTypeCheckPerDefinition:
 
     def test_the_naf_fixture_spells_each_statement_once(self, fresh, capsys):
         run(fresh, "tests/naf_olon.fspy", stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         for statement in doc.statements():
             assert share(doc, statement).spelling_clashes() == {}
 
     def test_the_typecheck_command_selects_the_mode(self, fresh, tmp_path, capsys):
         script = tmp_path / "modes.fspy"
-        script.write_text("lk.\ntypecheck expanded\n")
+        script.write_text("lk.\ntypecheck expanded.\n")
         run(fresh, script)
         assert fresh.typecheck_enabled and fresh.typecheck_expanded
-        script.write_text("typecheck on\n")
+        script.write_text("typecheck on.\n")
         run(fresh, script)
         assert fresh.typecheck_enabled and not fresh.typecheck_expanded
-        script.write_text("typecheck off\nlk.\n")
+        script.write_text("typecheck off.\nlk.\n")
         run(fresh, script)
         assert not fresh.typecheck_enabled        # the switch survives a new document
 
@@ -509,6 +566,11 @@ class TestIssueGraphFromInstances:
         for statement in doc.statements():
             same_graph(doc, statement, strict, semantics=ALL)
 
+    def test_a_presumed_horn(self):
+        doc, strict = presumed_horn_document()
+        for statement in doc.statements():
+            same_graph(doc, statement, strict, semantics=ALL)
+
     @pytest.mark.parametrize("seed", range(60))
     def test_random_documents(self, seed):
         doc = random_document(seed)
@@ -519,14 +581,14 @@ class TestIssueGraphFromInstances:
     @pytest.mark.parametrize("script", SCRIPTS)
     def test_fixtures(self, fresh, script, capsys):
         run(fresh, script, stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
         for statement in doc.statements():
             same_graph(doc, statement, names, kinds, semantics=("grounded", "complete", "stable"))
 
     def test_peirce_gets_the_same_strict_edges_with_closed_terms(self, fresh, capsys):
         run(fresh, "tests/peirces_law.fspy", stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names = list(fresh.declarations.keys())
         found = 0
         for statement in doc.statements():
@@ -540,14 +602,16 @@ class TestIssueGraphFromInstances:
             found += len(strict(shared))
         assert found, "Peirce's law has a strict edge the framework misses"
 
+    @pytest.mark.perf
     def test_one_instance_per_statement_where_nothing_is_captured(self):
         doc, issue = doubled_chain(12)
         strict = {f"r{i}_{a}" for i in range(1, 13) for a in range(2)}
         resolver = IssueResolver(share(doc, issue), strict)
         resolver.compile("x")
         resolver.strict_edges()
-        # P12 .. P1 have debates; P0 is cited as an instance too (a bare site)
-        assert len(resolver.instances) == 13
+        # P12 .. P1 and the twelve implications have debates; P0 is cited as
+        # an instance too (a bare site)
+        assert len(resolver.instances) == 25
         assert all(not i.captured for i in resolver.instances.values())
 
     def test_a_capture_makes_its_own_instance(self):
@@ -565,13 +629,19 @@ class TestIssueGraphFromInstances:
         resolver.compile("x")
         q_fails = [i for i in resolver.instances.values() if i.statement == (K("Q"), "context")]
         assert len(q_fails) == 1
-        assert q_fails[0].captured == {(K("P"), "context"), (K("Q"), "term")}
+        # In the stacked shape a scaffold's b binds its statement over the
+        # stack, so P (the issue's) and Q->false (the lambdas') are captured
+        # there too.
+        assert q_fails[0].captured == {(K("P"), "context"), (K("Q"), "term"),
+                                       (K("P"), "term"), (K("Q->false"), "term")}
         same_graph(doc, issue, strict, semantics=ALL)
 
 
 class TestLabelDoesNotUnfold:
+    @pytest.mark.perf
     def test_label_and_graph_never_call_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
 
         def refuse(*_args, **_kwargs):
             raise AssertionError("label and graph must not unfold the debate")
@@ -580,15 +650,18 @@ class TestLabelDoesNotUnfold:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("pipeline shared\nlabel a12_0\ngraph a12_0\n")
+        script.write_text("pipeline shared.\nlabel a12_0.\ngraph a12_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         labels = [r.getMessage() for r in caplog.records if r.getMessage().strip().endswith(" IN")]
-        assert len(labels) == 13                     # P0 .. P12, all accepted
+        assert len([l for l in labels if "->" not in l]) == 13     # P0 .. P12, all accepted
+        assert len(labels) == 25                     # and the twelve axioms
 
-    def test_a_failure_of_the_instance_compiler_falls_back_to_the_unfolded_term(
+    def test_a_failure_of_the_instances_strict_edges_falls_back_to_the_unfolded_term(
             self, fresh, tmp_path, capsys, caplog, monkeypatch):
-        import core.dc.instances
+        """On the document route the instances give only the strict edges;
+        should that fail, the unfolded term gives them."""
+        import core.comp.evaluate
 
         def broken(*_args, **_kwargs):
             raise RuntimeError("no instances today")
@@ -596,13 +669,13 @@ class TestLabelDoesNotUnfold:
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))
         run(fresh, script)
-        monkeypatch.setattr(core.dc.instances, "compile_issue_shared", broken)
-        script.write_text("pipeline shared\nlabel a2_0\n")
+        monkeypatch.setattr(core.comp.evaluate, "_shared_issue_graph", broken)
+        script.write_text("pipeline shared.\nlabel a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
         assert any("compiling the unfolded term instead" in m for m in said)
-        assert len([m for m in said if m.strip().endswith(" IN")]) == 3
+        assert len([m for m in said if m.strip().endswith(" IN") and "->" not in m]) == 3
 
 
 # -- stage 4: evaluation, opening a sub-debate only where it is kept ----------------
@@ -659,6 +732,11 @@ class TestEvaluateFromTheSharedDebate:
         for statement in doc.statements():
             same_evaluation(doc, statement, strict, semantics=("grounded", "preferred", "stable"))
 
+    def test_a_presumed_horn(self):
+        doc, strict = presumed_horn_document()
+        for statement in doc.statements():
+            same_evaluation(doc, statement, strict)
+
     @pytest.mark.parametrize("seed", range(30))
     def test_random_documents(self, seed):
         doc = random_document(seed)
@@ -669,7 +747,7 @@ class TestEvaluateFromTheSharedDebate:
     @pytest.mark.parametrize("script", SCRIPTS)
     def test_fixtures(self, fresh, script, capsys):
         run(fresh, script, stop_marker=False)
-        doc = fresh.document
+        doc = fresh.graph
         names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
         for statement in doc.statements():
             small = len(referenced_statements(
@@ -692,6 +770,7 @@ class TestEvaluateFromTheSharedDebate:
         assert [(n, c, shape(nf), s) for n, nf, c, s in shared] == \
                [(n, c, shape(nf), s) for n, nf, c, s in reference]
 
+    @pytest.mark.perf
     def test_only_the_kept_wings_are_written_out(self):
         # 16 levels: the unfolded term has 2^16 copies of the bottom debate.
         # Evaluation keeps one supporter per level, so the answer is a
@@ -726,8 +805,10 @@ class TestEvaluateFromTheSharedDebate:
 
 
 class TestEvaluateCommand:
+    @pytest.mark.perf
     def test_evaluate_never_calls_unfold(self, fresh, tmp_path, capsys, caplog, monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
 
         def refuse(*_args, **_kwargs):
             raise AssertionError("evaluate must not unfold the debate")
@@ -736,7 +817,7 @@ class TestEvaluateCommand:
         script.write_text(chain_script(12))
         run(fresh, script)
         monkeypatch.setattr(core.dc.unfold, "unfold", refuse)
-        script.write_text("pipeline shared\nevaluate a12_0 skeptical grounded\n")
+        script.write_text("pipeline shared.\nevaluate a12_0 skeptical grounded.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
@@ -745,12 +826,13 @@ class TestEvaluateCommand:
     def test_the_pipeline_switch_selects_the_unfolded_term(self, fresh, tmp_path, capsys, caplog,
                                                            monkeypatch):
         import core.dc.unfold
+        fresh.typecheck_expanded = False      # the expanded type check unfolds, by design
         calls = []
         real = core.dc.unfold.unfold_argument
 
-        def counting(graph, edge):
+        def counting(graph, edge, subarguments="default"):
             calls.append(edge.name)
-            return real(graph, edge)
+            return real(graph, edge, subarguments)
 
         script = tmp_path / "double.fspy"
         script.write_text(chain_script(2))
@@ -765,15 +847,15 @@ class TestEvaluateCommand:
             return [r.getMessage() for r in caplog.records
                     if "Evaluated 'a2_0'" in r.getMessage() or r.getMessage().strip().endswith(" IN")]
 
-        shared = evaluated("pipeline shared\nevaluate a2_0\nlabel a2_0\n")
+        shared = evaluated("pipeline shared.\nevaluate a2_0.\nlabel a2_0.\n")
         assert calls == []
-        unfolded = evaluated("pipeline unfolded\nevaluate a2_0\nlabel a2_0\n")
+        unfolded = evaluated("pipeline unfolded.\nevaluate a2_0.\nlabel a2_0.\n")
         # the argument's term is unfolded once and kept: label reuses it
         # (aida-unfold-entrypoints)
         assert calls == ["a2_0"]
         assert fresh.pipeline_unfolded
-        assert shared == unfolded and len(shared) == 4      # the verdict and three labels
-        evaluated("pipeline shared\nevaluate a2_0\n")
+        assert shared == unfolded and len(shared) == 6      # the verdict, three labels, two axioms
+        evaluated("pipeline shared.\nevaluate a2_0.\n")
         assert calls == ["a2_0"] and not fresh.pipeline_unfolded
 
     def test_a_failure_of_the_shared_evaluator_falls_back_to_the_unfolded_term(
@@ -787,9 +869,140 @@ class TestEvaluateCommand:
         script.write_text(chain_script(2))
         run(fresh, script)
         monkeypatch.setattr(core.comp.evaluate, "evaluate_shared", broken)
-        script.write_text("pipeline shared\nevaluate a2_0\n")
+        script.write_text("pipeline shared.\nevaluate a2_0.\n")
         with caplog.at_level(logging.INFO):
             run(fresh, script)
         said = [r.getMessage() for r in caplog.records]
         assert any("evaluating the unfolded term instead" in m for m in said)
         assert any("Evaluated 'a2_0'" in m and m.endswith("VALUE") for m in said)
+
+
+def test_the_tree_printer_shows_a_stub_by_its_name():
+    """`explain` on the shared route prints the terms of the strict phase
+    as trees; a stub (a resolved sub-debate) shows its display name, as in
+    pres_str, not "Unhandled term type"."""
+    from core.ac.ast import Mu, ID, DI
+    from core.dc.instances import Stub
+    from pres.gen import pres_str, pres_tree
+    from pres.nl import pretty_natural, vanilla_rendering
+    stub = Stub(None, [DI("1", "P1")], False, "anon_1", {})
+    term = Mu(ID("a", "P2"), "P2", stub, ID("a", "P2"))
+    for text in (pres_tree(term), pretty_natural(term, vanilla_rendering), pres_str(term)):
+        assert "anon_1" in text and "Unhandled" not in text
+
+
+# -- the subarguments settings (tasks.org, aida-circular-support-design) --------
+
+#: Fixtures where "preserve" keeps a captured node's own derivation, and
+#: where a scaffold's variable captures it (the attackers' copy).
+SETTING_SCRIPTS = [
+    "tests/rationality/self_attack_lk.fspy",
+    "tests/rationality/even_loop_lk.fspy",
+    "tests/peirces_law.fspy",
+    "tests/naf_olon.fspy",
+    "tests/multiple_undercuts.fspy",
+    "tests/exposure/lemma_captured.fspy",
+]
+
+
+@pytest.mark.parametrize("setting", ["preserve", "share"])
+@pytest.mark.parametrize("script", SETTING_SCRIPTS)
+def test_the_settings_agree_with_the_unfolded_term(fresh, script, setting, capsys):
+    """Expansion, issue graph and evaluation under the setting, against the
+    unfolded term under the same setting (the default is every other test)."""
+    run(fresh, script, stop_marker=False)
+    doc = fresh.graph
+    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    for statement in doc.statements():
+        term = unfold(doc, statement, setting)
+        assert shape(share(doc, statement, subarguments=setting).expand()) == shape(term), statement
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reference = compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
+            shared = compile_issue_shared(share(doc, statement, subarguments=setting), "x",
+                                          strict_names=names, strict_kinds=kinds)
+        assert {edge_key(e) for e in shared.edges} == {edge_key(e) for e in reference.edges}
+        assert shared.defaults == reference.defaults
+        for mode in ("skeptical", "credulous"):
+            options = dict(strict_names=names, strict_kinds=kinds, mode=mode, semantics="grounded")
+            assert (verdict(evaluate_shared, share(doc, statement, subarguments=setting), **options)
+                    == verdict(evaluate_debate, term, **options)), (statement, mode)
+
+
+# -- argument entrypoints (aida-unfold-entrypoints) --------------------------------
+
+from core.dc.unfold import UnfoldError, argument_edge, unfold_argument         # noqa: E402
+
+
+def argument_edges(prover):
+    """The document edge of every registered argument that has one."""
+    found = (argument_edge(prover.graph, name) for name in prover.arguments)
+    return [edge for edge in found if edge is not None]
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_an_argument_term_is_its_unfolding(fresh, script, capsys):
+    """``share(..., top=edge)`` against ``unfold_argument``: expansion, issue
+    graph and evaluation, credulous with and without ``favour``."""
+    run(fresh, script, stop_marker=False)
+    doc = fresh.graph
+    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    edges = argument_edges(fresh)
+    assert edges, "the fixture registered no argument with an edge"
+    for edge in edges:
+        issue = (edge.target_key, edge.target_side)
+        term = unfold_argument(doc, edge)
+
+        def shared():
+            return share(doc, issue, top=edge)
+
+        assert shape(shared().expand()) == shape(term), edge.name
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            reference = compile_issue(term, "x", strict_names=names, strict_kinds=kinds)
+            graph = compile_issue_shared(shared(), "x", strict_names=names, strict_kinds=kinds)
+        assert {edge_key(e) for e in graph.edges} == {edge_key(e) for e in reference.edges}
+        assert graph.defaults == reference.defaults
+        for mode, extra in (("skeptical", {}), ("credulous", {}), ("credulous", {"favour": edge})):
+            options = dict(strict_names=names, strict_kinds=kinds, mode=mode, semantics="grounded",
+                           **extra)
+            assert (verdict(evaluate_shared, shared(), **options)
+                    == verdict(evaluate_debate, term, **options)), (edge.name, mode, extra)
+
+
+def test_an_argument_term_puts_the_argument_on_top():
+    """The root of an argument's shared debate is a variant keyed by the
+    argument, and the issue's canonical debate is another definition."""
+    doc, issue = doubled_chain(2)
+    edge = argument_edge(doc, "a2_0")
+    shared = share(doc, issue, top=edge)
+    assert shared.issue == (issue, None, "a2_0") and shared.statement == issue
+    assert issue not in shared.defs                       # nothing cites the canonical one
+    assert shape(shared.expand()) == shape(unfold_argument(doc, edge))
+
+
+def test_an_edge_of_another_statement_is_refused():
+    doc, issue = doubled_chain(2)
+    with pytest.raises(UnfoldError):
+        share(doc, issue, top=argument_edge(doc, "a1_0"))
+
+
+@pytest.mark.parametrize("script", SCRIPTS)
+def test_both_type_checks_agree_on_argument_terms(fresh, script, capsys):
+    """The per-definition check of an argument's shared debate accepts
+    exactly what the replay of its unfolded term accepts."""
+    run(fresh, script, stop_marker=False)
+    try:
+        fresh.send_command("discard theorem.")         # a fixture may end inside a proof
+    except Exception:
+        pass
+    doc = fresh.graph
+    for edge in argument_edges(fresh):
+        issue = (edge.target_key, edge.target_side)
+        shared = share(doc, issue, top=edge)
+        if shared.spelling_clashes():
+            continue                                    # the CLI replays the term then
+        prop, anti = doc.nodes[edge.target_key], edge.target_side == "context"
+        expanded = outcome(lambda: typecheck(fresh, unfold_argument(doc, edge), "x", prop, anti))
+        per_definition = outcome(lambda: typecheck_shared(fresh, shared, "y"))
+        assert expanded == per_definition, edge.name

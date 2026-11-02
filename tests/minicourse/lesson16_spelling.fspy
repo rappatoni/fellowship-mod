@@ -1,4 +1,4 @@
-% Lesson 16 (minicourse-sharing.org) - one statement, two spellings.
+% Lesson 16 (docs/minicourses/minicourse-sharing.org) - one statement, two spellings.
 %
 % p needs ~Q; nq derives Q -> false.  The graph gives both spellings one
 % node, so the debate about that node is the debate p's open site needs.
@@ -12,24 +12,24 @@ declare P, Q, S : bool.
 declare r : (~Q -> P).
 declare n : (S -> (Q -> false)).
 
-start argument s S
+argument s : (S).
 by default.
-end argument
+dixi.
 
-start argument nq (Q -> false)
+argument nq : (Q -> false).
 cut (S -> (Q -> false)) th.
 axiom n.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-start argument p P
+argument p : (P).
 cut (~Q -> P) th.
 axiom r.
 elim.
 next.
 axiom.
-end argument
+dixi.
 
-label p
+label p.

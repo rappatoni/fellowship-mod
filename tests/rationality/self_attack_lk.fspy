@@ -18,7 +18,7 @@ lk.
 declare P:bool.
 declare pRule : ((P->false)->P).
 
-start argument SelfAttack P
+argument SelfAttack : (P).
 cut ((P->false)->P) rule.
 axiom pRule.
 elim.
@@ -28,8 +28,8 @@ axiom h.
 by default.
 next.
 axiom.
-end argument
+dixi.
 
-graph SelfAttack
-label SelfAttack preferred
-evaluate SelfAttack credulous
+graph SelfAttack.
+label SelfAttack preferred.
+evaluate SelfAttack credulous.

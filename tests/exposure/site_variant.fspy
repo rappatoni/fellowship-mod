@@ -1,0 +1,54 @@
+% The site variant of lemma_captured.fspy: argQ demands P as an
+% obligation site instead of proving a lemma, and argP2 is a second,
+% refuted derivation of P (from a presumption of R, which killR refutes).
+%
+% The same document graph up to the name of P's second derivation, the
+% same labels (P, Q IN; R[t] OUT), and the same terms up to that name:
+% what the exposure of a lemma does, a site did already.  In particular
+% `evaluate argP.` is an exception on both: argP on top of P's stack,
+% its supporter argQ captures P as the stack below argP - argP2 alone,
+% which is OUT - while the labels have argQ IN through argP (tasks.org,
+% aida-entrypoint-capture-adequacy).
+lk.
+declare P,Q,R:bool.
+declare rp:(R->P).
+declare pq:(P->Q).
+declare qp:(Q->P).
+declare nR:(~R).
+
+argument argP : (P).
+cut (Q->P) th.
+axiom qp.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+argument argQ : (Q).
+cut (P->Q) th.
+axiom pq.
+elim.
+next.
+axiom.
+dixi.
+
+argument argP2 : (P).
+cut (R->P) th2.
+axiom rp.
+elim.
+by default.
+next.
+axiom.
+dixi.
+
+counterargument killR : (R).
+cut (~R) x.
+axiom nR.
+elim.
+axiom.
+dixi.
+
+evaluate issue :P.
+evaluate argQ.
+evaluate argP.

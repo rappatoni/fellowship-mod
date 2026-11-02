@@ -7,7 +7,7 @@ deny mox: (C).
 
 # Should succeed:
 theorem delegation_test : (B).
-prove delegation_test
+prove delegation_test.
 cut (A->B) alpha.
 axiom rule.
 elim.
@@ -17,8 +17,8 @@ axiom alpha.
 qed.
 
 #Should succeed:
-antitheorem delegation_test : (A).
-refute delegation_test
+antitheorem delegation_test2 : (A).
+refute delegation_test2.
 cut (A-C) x.
 elim.
 by default.
@@ -28,31 +28,32 @@ moxia elur.
 qed.
 
 # Should succeed:
-start argument delegation_test B
+argument delegation_test3 : (B).
 cut (A->B) alpha.
 axiom rule.
 elim.
 by default.
 next.
 axiom alpha.
-end argument
-render delegation_test vanilla
-render delegation_test argumentation
+dixi.
+render delegation_test3 vanilla.
+render delegation_test3 argumentation.
 
 #Should succeed:
-start counterargument delegation_counter_test : (A).
+counterargument delegation_counter_test : (A).
 cut (A-C) x.
 elim.
 by default.
+next.
 axiom x.
 moxia elur.
-end counterargument
-render delegation_counter_test vanilla
+dixi.
+render delegation_counter_test vanilla.
 
 
 # Should fail:
-theorem delegation_test_2 : (B).
-prove delegation_test_2
+theorem delegation_test_4 : (B).
+prove delegation_test_4.
 cut (A->B) alpha.
 axiom rule.
 elim.

@@ -1,0 +1,7 @@
+Good_price_acme => Buy_stock_acme
+Good_price_acme, Risky_company_acme => !Buy_stock_acme
+In_fusion_acme_steel => Risky_company_acme
+In_fusion_acme_steel, Strong_steel => !Risky_company_acme
+-> Good_price_acme
+-> In_fusion_acme_steel
+-> Strong_steel

@@ -1,0 +1,32 @@
+== literature/carneades_exception.fspy: check ok=True (0.1s)
+-- a1: issue Contract[t]; 6 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:Contract
+      credulous -> open      ?OUT:Contract
+-- a2: issue Agreement[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   preferred issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   stable    issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+-- a3: issue Minor[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+   preferred issue: ['IN']
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+   stable    issue: ['IN']
+      skeptical -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+      credulous -> value     μalt2:Minor.<certificate_rule:BirthCert->Minor||!IN:BirthCert*alt2:Minor>
+== done in 0.5s

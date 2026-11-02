@@ -1,0 +1,13 @@
+# Reified I/O logic as written: the norm quantifies over eventualities and
+# individuals, and the obligation is existential,
+#   (forall e1 x y, process'(e1,x,y) & Rexist(e1)) => exists e2, inform'(e2,x,y) & Rexist(e2).
+lk.
+declare Ev, Ag : type.
+declare e1 : Ev.
+declare ctrl, subj : Ag.
+declare Process : Ev -> Ag -> Ag -> bool.
+declare Inform : Ev -> Ag -> Ag -> bool.
+declare process : (Process [e1] [ctrl] [subj]).
+argument obliged : (exists e:Ev, Inform [e] [ctrl] [subj]).
+by default.
+dixi.

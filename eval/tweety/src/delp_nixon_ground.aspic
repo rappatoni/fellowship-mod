@@ -1,0 +1,7 @@
+Lives_in_chicago_nixon => Has_a_gun_nixon
+Lives_in_chicago_nixon, Pacifist_nixon => !Has_a_gun_nixon
+Quaker_nixon => Pacifist_nixon
+Republican_nixon => !Pacifist_nixon
+-> Lives_in_chicago_nixon
+-> Quaker_nixon
+-> Republican_nixon

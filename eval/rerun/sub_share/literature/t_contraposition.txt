@@ -1,0 +1,52 @@
+== literature/t_contraposition.fspy: check ok=True (0.1s)
+-- p1: issue (A->B)->(B->false)->A->false[t]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+-- s1: issue (A->B)->(B->false)->A->false[t]; 6 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+   preferred issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+   stable    issue: ['IN']
+      skeptical -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+      credulous -> value     μs1:(A->B)->(B->false)->A->false.<λf:A->B.λg:B->false.λa:A.μalt6:false.<g:B->false||μb3:B.<f:A->B||a:A*b3:B>*_F_>||s1:(A->B)->(B->false)->A->false>
+-- p2: issue false[t]; 4 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      μalt8:false.<?OUT:false||_F_>
+      credulous -> open      μalt8:false.<?OUT:false||_F_>
+   preferred issue: ['OUT']
+      skeptical -> open      μalt8:false.<?OUT:false||_F_>
+      credulous -> open      μalt8:false.<?OUT:false||_F_>
+   stable    issue: ['OUT']
+      skeptical -> open      μalt8:false.<?OUT:false||_F_>
+      credulous -> open      μalt8:false.<?OUT:false||_F_>
+-- p3: issue B[t]; 1 edges
+   grounded  issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   preferred issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+   stable    issue: ['OUT']
+      skeptical -> open      ?OUT:B
+      credulous -> open      ?OUT:B
+-- nofalse: issue false[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'nofalse:false.<nofalse:false||_F_>
+      credulous -> value     μ'nofalse:false.<nofalse:false||_F_>
+== done in 0.9s

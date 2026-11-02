@@ -1,0 +1,56 @@
+# seq_mcs_closed.fspy as first written, with the rule spelled P -> ~Q and
+# falsum closed by elim: the modus tollens attacks used to be dropped from
+# the graph (tasks.org, aida-negation-cell-horn).
+lk.
+declare P, Q, S1, S2, S3 : bool.
+declare src_p : (S1 -> P).
+declare src_q : (S2 -> Q).
+declare src_r : (S3 -> (P -> ~Q)).
+argument p : (P).
+cut (S1 -> P) t.
+axiom src_p.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument q : (Q).
+cut (S2 -> Q) t.
+axiom src_q.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+argument r : (P -> ~Q).
+cut (S3 -> (P -> ~Q)) t.
+axiom src_r.
+elim.
+by default.
+next.
+axiom t.
+dixi.
+counterargument att_q : (Q).
+cut (~Q) x.
+cut (P -> ~Q) th.
+next.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument att_p : (P).
+cut (P -> ~Q) th.
+next.
+elim.
+axiom th.
+elim.
+next.
+dixi.
+counterargument att_r : (P -> ~Q).
+elim.
+next.
+elim.
+next.
+dixi.

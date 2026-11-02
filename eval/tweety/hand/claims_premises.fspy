@@ -1,0 +1,105 @@
+# ClaimBasedReasonersTest with each argument a presumed premise
+# (pa, pb, pc, pd) that strictly yields its claim, and the attacks between
+# the premises.
+lk.
+declare C1, C2, Pa, Pb, Pc, Pd : bool.
+declare claim_a_rule : (Pa -> C1).
+declare claim_c_rule : (Pc -> C1).
+declare claim_b_rule : (Pb -> C2).
+declare claim_d_rule : (Pd -> C2).
+declare att_pa_pb_rule : (Pa -> ~Pb).
+declare att_pb_pa_rule : (Pb -> ~Pa).
+declare att_pc_pd_rule : (Pc -> ~Pd).
+declare att_pd_pc_rule : (Pd -> ~Pc).
+# arg_pa (defeasible): Pa
+argument arg_pa : (Pa).
+by default.
+dixi.
+# arg_pb (defeasible): Pb
+argument arg_pb : (Pb).
+by default.
+dixi.
+# arg_pc (defeasible): Pc
+argument arg_pc : (Pc).
+by default.
+dixi.
+# arg_pd (defeasible): Pd
+argument arg_pd : (Pd).
+by default.
+dixi.
+# claim_a (strict): Pa -> C1
+argument claim_a : (C1).
+cut (Pa -> C1) th.
+axiom claim_a_rule.
+elim.
+next.
+axiom th.
+dixi.
+# claim_c (strict): Pc -> C1
+argument claim_c : (C1).
+cut (Pc -> C1) th.
+axiom claim_c_rule.
+elim.
+next.
+axiom th.
+dixi.
+# claim_b (strict): Pb -> C2
+argument claim_b : (C2).
+cut (Pb -> C2) th.
+axiom claim_b_rule.
+elim.
+next.
+axiom th.
+dixi.
+# claim_d (strict): Pd -> C2
+argument claim_d : (C2).
+cut (Pd -> C2) th.
+axiom claim_d_rule.
+elim.
+next.
+axiom th.
+dixi.
+# att_pa_pb (strict): Pa -> ~Pb
+counterargument att_pa_pb : (Pb).
+cut (~Pb) x.
+cut (Pa -> ~Pb) th.
+axiom att_pa_pb_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_pb_pa (strict): Pb -> ~Pa
+counterargument att_pb_pa : (Pa).
+cut (~Pa) x.
+cut (Pb -> ~Pa) th.
+axiom att_pb_pa_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_pc_pd (strict): Pc -> ~Pd
+counterargument att_pc_pd : (Pd).
+cut (~Pd) x.
+cut (Pc -> ~Pd) th.
+axiom att_pc_pd_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# att_pd_pc (strict): Pd -> ~Pc
+counterargument att_pd_pc : (Pc).
+cut (~Pc) x.
+cut (Pd -> ~Pc) th.
+axiom att_pd_pc_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.

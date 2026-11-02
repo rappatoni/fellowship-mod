@@ -1,0 +1,20 @@
+# s(CASP): a :- b.  b :- a.   ?- a has no models (a positive loop is
+# unfounded; the call meeting its ancestor fails).
+lk.
+declare A, B : bool.
+declare rule_a : (B -> A).
+declare rule_b : (A -> B).
+argument arg_a : (A).
+cut (B -> A) th.
+axiom rule_a.
+elim.
+next.
+axiom th.
+dixi.
+argument arg_b : (B).
+cut (A -> B) th.
+axiom rule_b.
+elim.
+next.
+axiom th.
+dixi.

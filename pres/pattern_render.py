@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Mapping, Protocol
+from typing import Callable, Mapping
 
 from core.ac.alt_structure import (
     match_alt_structure,
@@ -28,13 +28,6 @@ class PatternRenderContext:
 
     def indent_str(self, delta: int = 0) -> str:
         return self.indentation * (self.indent + delta)
-
-
-class PatternRenderer(Protocol):
-    name: str
-
-    def try_render(self, node: ProofTerm, context: PatternRenderContext) -> PatternRenderResult | None:
-        ...
 
 
 class PatternRenderingRegistry:

@@ -13,22 +13,22 @@ declare axAB: (A->B).
 
 #1. define a simple argument argA (prove B from A→B and A)
 
-start argument argA B
+argument argA : (B).
 cut (A->B) h.
 axiom axAB.
 elim.
 axiom axA.
 axiom.
-end argument
+dixi.
 
 #2. show original natural language rendering
 
-render argA
+render argA.
 
 #3. compute normal form and show its proof term (reduce is alias)
 
-reduce argA
+reduce argA.
 
 #4. show natural language rendering of the normal form
 
-render-nf argA
+render-nf argA.

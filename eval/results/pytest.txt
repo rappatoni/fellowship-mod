@@ -1,0 +1,240 @@
+........................................................................ [  3%]
+........................................................................ [  6%]
+.................x.x.......................ss.................s..s..s... [ 10%]
+........................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 37%]
+........................................................................ [ 40%]
+........................................................................ [ 43%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 54%]
+........................................................................ [ 57%]
+........................................................................ [ 60%]
+........................................................................ [ 64%]
+.................................Xs..................................... [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+.....................................................................s.. [ 91%]
+........................................................................ [ 94%]
+........................................................................ [ 98%]
+.........................................                                [100%]
+=============================== warnings summary ===============================
+tests/affine_test.py::test_affine_mu_rule
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node t not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/graft_test.py::test_graft_operator
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node x not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/minicourse/test_minicourse.py::TestLesson4Conditions::test_contested_is_a_negation_two_cycle
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/tests/minicourse/test_minicourse.py:121: OpposingPresumptions: opposing presumptions on Q: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    for s, c in compile_conditions(graph).items()
+
+tests/minicourse/test_minicourse.py: 5 warnings
+tests/script_test.py: 6 warnings
+tests/test_adf_label.py: 4 warnings
+tests/test_document.py: 1 warning
+tests/test_evaluate.py: 1 warning
+tests/test_pipeline_logging.py: 17 warnings
+tests/test_unfold.py: 2 warnings
+tests/test_unfold_entrypoints.py: 4 warnings
+tests/test_witness.py: 15 warnings
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on Q: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    conditions = compile_conditions(graph)
+
+tests/minicourse/test_minicourse.py::TestLesson4GuardSideConditions::test_a_presumption_keeps_its_guard_next_to_a_dropped_one
+tests/minicourse/test_minicourse.py::TestLesson5EdgeAcyclicButUndecided::test_zero_edges_still_grounds_undecided
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/tests/minicourse/coursekit.py:66: OpposingPresumptions: opposing presumptions on Q: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    for statement, condition in compile_conditions(graph).items():
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c512870> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c302ed0> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c391a30> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c390830> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c303c20> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mu_reduction_test.py::test_mu_general_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c301a90> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/mutilde_reduction_test.py::test_mutilde_affine_defence
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c52aed0> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/non_affine_test.py::test_affine_mu_rule_nonaffine
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c439a30> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/non_affine_test.py::test_affine_mu_rule_nonaffine
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c439580> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/non_affine_test.py::test_affine_mu_rule_nonaffine
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c43a0f0> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node y not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c505c40> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c3644d0> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c366150> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/reduction_test.py::test_lambda_rule
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:248: UserWarning: Enrichment of node <core.ac.ast.ID object at 0x10c505ee0> not possible.
+    warnings.warn(f'Enrichment of node {node} not possible.')
+
+tests/script_test.py: 5 warnings
+tests/test_evaluate.py: 1 warning
+tests/test_unfold.py: 1 warning
+tests/test_unfold_entrypoints.py: 7 warnings
+tests/test_witness.py: 10 warnings
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on S: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    conditions = compile_conditions(graph)
+
+tests/test_adf_label.py::TestProductionAgainstOracle::test_kleene_cross_check_equals_oracle_grounded[Q0]
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:425: OpposingPresumptions: opposing presumptions on Q: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    conditions = compile_conditions(graph)
+
+tests/test_adf_label.py::TestProductionAgainstOracle::test_unipolarity_of_compiled_conditions
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/tests/test_adf_label.py:153: OpposingPresumptions: opposing presumptions on Q: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+    for stmt, condition in compile_conditions(graph).items():
+
+tests/test_default_eta_long.py::test_argument_eta_reduce_body_refreshes_enriched_proof_term
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node demo not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_discipline.py::test_register_takes_the_same_discipline
+tests/test_fo_guardrails.py::test_reduction_still_accepts_a_propositional_term
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node b not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_discipline.py::test_register_takes_the_same_discipline
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node alt not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_enrich_prop.py::test_a_binder_does_not_outlive_its_subtree
+tests/test_enrich_prop.py::test_a_shadowing_binder_restores_the_outer_one
+tests/test_enrich_prop.py::test_a_first_order_binder_is_scoped_too
+tests/test_enrich_prop.py::test_the_first_order_namespace_is_unwound
+tests/test_fo_guardrails.py::test_reduction_still_accepts_a_propositional_term
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node a not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_enrich_prop.py::test_a_first_order_binder_does_not_give_a_proof_leaf_a_sort
+tests/test_enrich_prop.py::test_a_shadowed_proof_variable_is_not_given_the_outer_proposition
+tests/test_enrich_prop.py::test_a_shadowed_axiom_is_not_reached_through_either
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:257: UserWarning: 'x' is bound as a first-order variable here, so it has no proposition in scope
+    warnings.warn(
+
+tests/test_parser_moxia_utils.py::test_fspy_counterargument_recording_and_rendering
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node notA not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_register_proof_term_cmd.py::test_register_argument_cmd_strict_replays_and_qeds
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node ax not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestStatements::test_a_theorem_is_refined_into_a_strict_witness
+tests/test_statements_and_citations.py::TestStatements::test_qed_on_an_open_witness_is_refused_and_the_claim_stays
+tests/test_statements_and_citations.py::TestCitation::test_a_citation_shows_the_name
+tests/test_statements_and_citations.py::TestCitation::test_expand_grafts_on_demand
+tests/test_statements_and_citations.py::TestCitation::test_the_citing_edge_has_an_obligation_the_cited_edge_meets
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node efficient not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestCitation::test_citing_the_sole_goal
+tests/test_statements_and_citations.py::TestRefinement::test_strictness_propagates_to_citers
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node guess not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node b16 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node theta_3 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node f not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node s3_3 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node h_3 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node alt13 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node b10 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node theta_2 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node s3_2 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestAdopt::test_adopt_makes_the_thesis_citable
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node h_2 not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_statements_and_citations.py::TestLogicDefault::test_a_debate_type_checks_without_lk
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node test not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_unit_closing_elim.py::test_arrow_into_falsum_gets_a_closing_elim
+tests/test_unit_closing_elim.py::test_primitive_negation_falsum_needs_no_closing_elim
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node rule not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+tests/test_unit_closing_elim.py::test_free_standing_negation_proof_keeps_its_own_commands
+  /Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/enrich.py:280: UserWarning: Enrichment of node h not possible.
+    warnings.warn(f'Enrichment of node {node.name} not possible.')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2119 passed, 7 skipped, 2 xfailed, 1 xpassed, 137 warnings in 351.17s (0:05:51)

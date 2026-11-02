@@ -1,0 +1,49 @@
+# Flat ABA, the running example of Toni's tutorial (Argument & Computation
+# 2014): rules p <- q,a ; q <- ; r <- b,c ; assumptions a, b, c with
+# contraries a~ = r, b~ = s, c~ = t. ABA: the grounded extension accepts
+# {b, c} and the claims q, r; the argument {a} |- p is defeated by
+# {b,c} |- r. Encoding: a rule is a declared (strict) implication, an
+# assumption a presumption, the contrary x~ of an assumption a strict
+# axiom x~ -> ~x.
+lk.
+declare P, Q, R, S, T, A, B, C : bool.
+declare q_fact : (Q).
+declare rule_p : (Q -> A -> P).
+declare rule_r : (B -> C -> R).
+declare contrary_a : (R -> ~A).
+declare contrary_b : (S -> ~B).
+declare contrary_c : (T -> ~C).
+# {a} |- p
+argument arg_p : (P).
+cut (Q -> A -> P) th.
+axiom rule_p.
+elim.
+axiom q_fact.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+# {b,c} |- r
+argument arg_r : (R).
+cut (B -> C -> R) th.
+axiom rule_r.
+elim.
+by default.
+next.
+elim.
+by default.
+next.
+axiom th.
+dixi.
+# the attack of r on the assumption a: a refutation of A from R (owed).
+counterargument att_a : (A).
+cut (~A) x.
+cut (R -> ~A) th.
+axiom contrary_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

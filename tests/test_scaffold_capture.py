@@ -32,7 +32,6 @@ from core.dc.strict import (
     compile_issue, keep_attack_wing, keep_scion_support, strict_in_scope, strict_resolve,
 )
 from core.dc.unfold import argument_edge, unfold, unfold_argument
-from mod import store
 from pres.gen import pres_str
 from wrap.cli import execute_script, setup_prover
 
@@ -46,8 +45,6 @@ SELF_ATTACK = "tests/rationality/self_attack_lk.fspy"
 
 @pytest.fixture
 def fresh():
-    store.arguments.clear()
-    store.document.clear()
     prover = setup_prover()
     yield prover
     prover.close()
@@ -72,7 +69,7 @@ def evaluate(prover, term, mode="skeptical"):
 
 
 def terms_of(prover):
-    doc = prover.document
+    doc = prover.graph
     for statement in doc.statements():
         yield f"issue {statement}", unfold(doc, statement)
     for edge in doc.edges:
@@ -88,19 +85,21 @@ def test_a_circular_supporter_rests_on_b(fresh):
     # back needs B inside B's own debate: its demand is the b of B's
     # support scaffold, and after the outer step B's root obligation,
     # shared - no second obligation for B.  Skeptically B is UNDEC and the
-    # site an obligation; the credulous witness labels the loop IN, so it
-    # is the delegation !IN:B, a value (the coinductive reading, tasks.org
-    # aida-unfounded-credulous-witness).
+    # site an obligation.  Credulously the witness labels the loop IN; back
+    # rests on B's root, an obligation nobody met, so it stands OUT, and
+    # so does pro: B's root survives and is discharged by its label, the
+    # bare delegation !IN:B (tasks.org, aida-judge-by-what-it-stands-for;
+    # until 2026-10-16 the loop's proof through !IN:B).
     run(fresh, CYCLE)
-    term = unfold(fresh.document, (K("B"), "term"))
+    term = unfold(fresh.graph, (K("B"), "term"))
     match = _match_scaffold(term, set(fresh.declarations))
     beta = term.context.di.name
     assert match[0] == "supporter" and "r3:B->A||%s:B*" % beta in pres_str(term)
-    assert len(re.findall(r"\?u\d+:B", pres_str(term))) == 1
+    assert len(re.findall(r"\?\d+:B", pres_str(term))) == 1
     nf, cls, *_ = evaluate(fresh, term, "skeptical")
     assert cls == "open" and pres_str(nf) == "?UNDEC:B"
     nf, cls, *_ = evaluate(fresh, term, "credulous")
-    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
+    assert (cls, pres_str(nf)) == ("value", "!IN:B")
 
 
 @pytest.mark.parametrize("script", FIXTURES + [CIRCULAR, "tests/entrypoints.fspy"])
@@ -131,7 +130,7 @@ def test_the_attacker_wing_root_is_the_attacks_alt(fresh):
     # attack's alt, and con is left to sigma
     run(fresh, LESSON9)
     names = set(fresh.declarations)
-    term = unfold(fresh.document, (K("B"), "term"))
+    term = unfold(fresh.graph, (K("B"), "term"))
     pro = _match_scaffold(term, names)[4]
     attack = pro.term.context.term                       # the debate about A
     match = _match_scaffold(attack, names)
@@ -152,8 +151,8 @@ def test_the_attacker_wing_root_is_the_attacks_alt(fresh):
 def reordered(tmp_path):
     """tests/circular_supporter.fspy with other registered last."""
     text = open(CIRCULAR).read()
-    other = re.search(r"start argument other A.*?end argument\n", text, re.S).group(0)
-    back = re.search(r"start argument back A.*?end argument\n", text, re.S).group(0)
+    other = re.search(r"argument other : \(A\)\..*?dixi\.\n", text, re.S).group(0)
+    back = re.search(r"argument back : \(A\)\..*?dixi\.\n", text, re.S).group(0)
     path = tmp_path / "other_last.fspy"
     path.write_text(text.replace(other, "@@").replace(back, other).replace("@@", back))
     return path
@@ -165,25 +164,24 @@ def test_a_circular_supporter_no_longer_wins_by_strictness(fresh, order, tmp_pat
     # holds an open site: back is not strict and does not beat other.  A
     # is VALUE in both orders (before: OPEN with back last).
     run(fresh, CIRCULAR if order == "back last" else reordered(tmp_path))
-    term = unfold(fresh.document, (K("A"), "term"))
+    term = unfold(fresh.graph, (K("A"), "term"))
     for mode in ("skeptical", "credulous"):
         assert evaluate(fresh, term, mode)[1] == "value"
 
 
 def test_b_with_back_on_top_is_a_value_through_the_delegation(fresh, tmp_path):
-    # aida-circular-supporter-judged-in: inside B's debate sigma keeps back
-    # (its source B is IN), whose B can only be B's root obligation.  B is
-    # IN (through other), so that obligation is the delegation !IN:B and B
-    # is a value - but other's proof is not in the normal form
-    # (aida-labelled-sites-delegation-rewrite; OPEN before).  With other on
-    # top, B is a value through other.
+    # aida-circular-supporter-judged-in: inside B's debate back rests on
+    # B's root obligation, which nobody met in the term, so back stands
+    # OUT (tasks.org, aida-judge-by-what-it-stands-for) and A's debate keeps
+    # other, from the presumed D: B is a value through other's proof.
+    # Until 2026-10-16 sigma kept back by B's label, and the value went
+    # through the delegation !IN:B with other's proof missing.
     run(fresh, CIRCULAR)
-    nf, cls, *_ = evaluate(fresh, unfold(fresh.document, (K("B"), "term")))
-    assert cls == "value" and "r3:B->A||!IN:B*" in pres_str(nf)
-    store.arguments.clear()
-    store.document.clear()
+    nf, cls, *_ = evaluate(fresh, unfold(fresh.graph, (K("B"), "term")))
+    assert (cls, pres_str(nf)) == ("value", "μpro:B.<r1:A->B||μb1:A.<rd:D->A||!IN:D*b1:A>*pro:B>")
+    fresh.new_document()
     run(fresh, reordered(tmp_path))
-    assert evaluate(fresh, unfold(fresh.document, (K("B"), "term")))[1] == "value"
+    assert evaluate(fresh, unfold(fresh.graph, (K("B"), "term")))[1] == "value"
 
 
 def test_an_attack_with_nothing_but_its_fallback_normalises_away(fresh):
@@ -192,7 +190,7 @@ def test_an_attack_with_nothing_but_its_fallback_normalises_away(fresh):
     # P[c] keeps its presumption marker.
     run(fresh, SELF_ATTACK)
     names = set(fresh.declarations)
-    term = unfold(fresh.document, (K("P"), "term"))
+    term = unfold(fresh.graph, (K("P"), "term"))
     assert _match_scaffold(term, names) is None
     alt, wiring = term.id.name, term.context
     assert pres_str(wiring.context) == f"μ'_:P.<{wiring.di.name}:P||{alt}:P>"

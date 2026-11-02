@@ -1,0 +1,36 @@
+# The Stanford murder mystery (Baker 1989): Fred is alive at 0; the gun is
+# fired at 1 (shooting with a loaded gun kills); Fred is dead at 2.
+# Expected: the gun was loaded at 1 - postdiction, from an observed effect
+# back to an unobserved condition. Event-calculus style: alive persists
+# unless clipped; shooting a loaded gun clips it.
+lk.
+declare Alive0, Alive1, Alive2, Loaded1, Shoot1, Clipped1 : bool.
+declare alive0 : (Alive0).
+declare shoot1 : (Shoot1).
+deny dead2 : (Alive2).
+declare persist01 : (Alive0 -> Alive1).
+declare persist12 : (Alive1 -> (Clipped1 -> false) -> Alive2).
+declare clip : (Shoot1 -> Loaded1 -> Clipped1).
+argument alive2 : (Alive2).
+cut (Alive1 -> (Clipped1 -> false) -> Alive2) r.
+axiom persist12.
+elim.
+cut (Alive0 -> Alive1) s.
+axiom persist01.
+elim.
+axiom alive0.
+axiom s.
+elim.
+elim h.
+cut (Clipped1) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+counterargument dead : (Alive2).
+moxia dead2.
+dixi.
+# Somebody claims the gun was loaded (owed: nobody shows it).
+argument loaded : (Loaded1).
+dixi.

@@ -1,0 +1,12 @@
+Chicken_tina -> Bird_tina
+Penguin_tweety -> Bird_tweety
+Penguin_tweety -> !Flies_tweety
+-> Chicken_tina
+-> Penguin_tweety
+-> Scared_tina
+Bird_tina => Flies_tina
+Bird_tweety => Flies_tweety
+Chicken_tina => !Flies_tina
+Chicken_tina, Scared_tina => Flies_tina
+Flies_tina => Nests_in_trees_tina
+Flies_tweety => Nests_in_trees_tweety

@@ -1,0 +1,41 @@
+== literature/aba_toni.fspy: check ok=True (0.2s)
+-- arg_p: issue P[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] ~A[t]=IN B->C->R[t]=IN Q->A->P[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN P[t]=OUT Q[t]=IN R[t]=IN
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+   preferred issue: ['OUT']
+      [1] ~A[t]=IN B->C->R[t]=IN Q->A->P[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN P[t]=OUT Q[t]=IN R[t]=IN
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+   stable    issue: ['OUT']
+      [1] ~A[t]=IN B->C->R[t]=IN Q->A->P[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN P[t]=OUT Q[t]=IN R[t]=IN
+      skeptical -> open      ?OUT:P
+      credulous -> open      ?OUT:P
+-- arg_r: issue R[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] B->C->R[t]=IN B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+   preferred issue: ['IN']
+      [1] B->C->R[t]=IN B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+   stable    issue: ['IN']
+      [1] B->C->R[t]=IN B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+      credulous -> value     μarg_r:R.<rule_r:B->C->R||!IN:B*!IN:C*arg_r:R>
+-- att_a: issue A[c]; 5 edges
+   grounded  issue: ['IN']
+      [1] ~A[t]=IN B->C->R[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+   preferred issue: ['IN']
+      [1] ~A[t]=IN B->C->R[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+   stable    issue: ['IN']
+      [1] ~A[t]=IN B->C->R[t]=IN R->~A[t]=IN A[c]=IN A[t]=OUT B[t]=IN C[t]=IN R[t]=IN
+      skeptical -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+      credulous -> value     μ'alt3:A.<contrary_a:R->~A||μb2:R.<rule_r:B->C->R||!IN:B*!IN:C*b2:R>*μb1:A.<alt3:A||b1:A>*_F_>
+== done in 0.8s

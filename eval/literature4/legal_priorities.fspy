@@ -1,0 +1,64 @@
+# Reasoning about priorities (Prakken & Sartor 1996, 1997): two conflicting
+# legal rules and the principles that rank them. r1 (special, older):
+# a listed building may not be altered; r2 (general, newer): an owner may
+# alter his building. Lex specialis prefers r1, lex posterior prefers r2;
+# a meta-principle ranks lex specialis above lex posterior. Expected: the
+# alteration is forbidden.
+# AIDA has no priority relation; each principle is a presumed rule whose
+# conclusion undercuts (refutes) the losing object rule, and the
+# meta-principle undercuts the lex posterior principle.
+lk.
+declare Listed, Owner, Forbidden, Special12, Newer21, SpecOverPost : bool.
+declare listed : (Listed).
+declare owner : (Owner).
+declare special12 : (Special12).
+declare newer21 : (Newer21).
+declare meta : (SpecOverPost).
+argument r1 : (Forbidden).
+cut (Listed -> Forbidden) r.
+by default.
+next.
+elim.
+axiom listed.
+axiom r.
+dixi.
+counterargument r2 : (Forbidden).
+cut (Owner -> ~Forbidden) r.
+by default.
+next.
+elim.
+axiom owner.
+elim.
+axiom.
+dixi.
+# lex specialis: r1 special w.r.t. r2, so r2 does not apply.
+counterargument lex_specialis : (Owner -> ~Forbidden).
+cut (Special12 -> ~(Owner -> ~Forbidden)) p.
+by default.
+next.
+elim.
+axiom special12.
+elim.
+axiom.
+dixi.
+# lex posterior: r2 newer than r1, so r1 does not apply.
+counterargument lex_posterior : (Listed -> Forbidden).
+cut (Newer21 -> ~(Listed -> Forbidden)) p.
+by default.
+next.
+elim.
+axiom newer21.
+elim.
+axiom.
+dixi.
+# meta: lex specialis prevails over lex posterior, so lex posterior does
+# not apply here.
+counterargument meta_rule : (Newer21 -> ~(Listed -> Forbidden)).
+cut (SpecOverPost -> ~(Newer21 -> ~(Listed -> Forbidden))) p.
+by default.
+next.
+elim.
+axiom meta.
+elim.
+axiom.
+dixi.

@@ -1,53 +1,43 @@
 lk.
 declare P,Q:bool.
 
-start argument atomic_term P
-end argument
+argument atomic_term : (P).
+dixi.
 
-start counterargument atomic_context P
-end argument
+counterargument atomic_context : (P).
+dixi.
 
-start argument affine_parent P
+argument affine_parent : (P).
 cut (P) _.
-end argument
+dixi.
 
-start argument support_shell P
-end argument
+argument support_shell : (P).
+dixi.
 
-start argument supporter P
-end argument
+argument supporter : (P).
+dixi.
 
-support support_case supporter support_shell
 
-start argument term_under_mutilde P
+argument term_under_mutilde : (P).
 cut (P) beta.
-end argument
+dixi.
 
-start counterargument context_under_mu P
+counterargument context_under_mu : (P).
 cut (P) alpha.
-end argument
+dixi.
 
-attack term_under_mutilde_case support_shell term_under_mutilde
-support context_under_mu_case supporter context_under_mu
 
-start argument eta_long_parent P
+argument eta_long_parent : (P).
 cut ((P->Q)->P) alpha.
 elim g.
-end argument
+dixi.
 
-start argument lambda_parent ((P->Q)->P)->P
+argument lambda_parent : (((P->Q)->P)->P).
 elim f.
-end argument
+dixi.
 
-support lambda_whole_case eta_long_parent lambda_parent
-support lambda_leaf_case atomic_term lambda_whole_case
 
-render atomic_term vanilla
-render atomic_context vanilla
-render affine_parent vanilla
-render support_case vanilla
-render term_under_mutilde_case vanilla
-render context_under_mu_case vanilla
-render eta_long_parent vanilla
-render lambda_whole_case vanilla
-render lambda_leaf_case vanilla
+render atomic_term vanilla.
+render atomic_context vanilla.
+render affine_parent vanilla.
+render eta_long_parent vanilla.

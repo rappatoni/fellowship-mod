@@ -1,0 +1,41 @@
+== literature/rationality_crash.fspy: check ok=True (0.1s)
+-- tweety: issue Flies[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Bird->Flies[t]=IN Bird[t]=IN Flies[t]=IN
+      skeptical -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+      credulous -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+   preferred issue: ['IN']
+      [1] Bird->Flies[t]=IN Bird[t]=IN Flies[t]=IN
+      skeptical -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+      credulous -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+   stable    issue: ['IN']
+      [1] Bird->Flies[t]=IN Bird[t]=IN Flies[t]=IN
+      skeptical -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+      credulous -> value     μtweety:Flies.<!IN:Bird->Flies||bird:Bird*tweety:Flies>
+-- zpro: issue Z[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μalt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+-- zcon: issue Z[c]; 2 edges
+   grounded  issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+   preferred issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+   stable    issue: ['IN']
+      [1] Z[c]=IN Z[t]=IN
+      skeptical -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+      credulous -> exception μ'alt2:Z.<z:Z||not_z:Z>   <-- ADEQUACY MISMATCH
+== done in 0.5s

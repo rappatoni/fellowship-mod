@@ -1,0 +1,51 @@
+# Lifschitz A4, default reasoning in an open domain (as commonly restated):
+# A and B are heavy blocks, heavy blocks are normally on the table, A is not
+# on the table. Expected: every heavy block other than A is on the table -
+# a universal conclusion with an exception, which needs equality (x = A) or
+# a per-individual abnormality. AIDA has no equality; the closest is a
+# universal "not abnormal" presumption, which A's exception refutes
+# outright (Q4).
+lk.
+declare Block : type.
+declare a, b : Block.
+declare Heavy, OnTable, Ab : Block -> bool.
+declare heavy_a : (Heavy [a]).
+declare rule : (forall x:Block, Heavy [x] -> (Ab [x] -> false) -> OnTable [x]).
+deny not_on_a : (OnTable [a]).
+argument normal : (forall x:Block, Ab [x] -> false).
+by default.
+dixi.
+# The universal conclusion: every heavy block is on the table, given
+# that nothing is abnormal (owed).
+argument all_on : (forall x:Block, Heavy [x] -> OnTable [x]).
+elim x.
+elim h.
+cut (forall x:Block, Heavy [x] -> (Ab [x] -> false) -> OnTable [x]) r.
+axiom rule.
+elim [x].
+elim.
+axiom h.
+elim.
+cut (forall x:Block, Ab [x] -> false) m.
+next.
+elim [x].
+axiom m.
+axiom r.
+dixi.
+# A is abnormal: the instance ~Ab a is refuted - assuming it, the rule
+# puts A on the table, against the denial.
+counterargument a_abnormal : (Ab [a] -> false).
+cut (forall x:Block, Heavy [x] -> (Ab [x] -> false) -> OnTable [x]) r.
+axiom rule.
+elim [a].
+elim.
+axiom heavy_a.
+elim.
+axiom.
+moxia not_on_a.
+dixi.
+# ... and with it the universal presumption, by a counter-instance (owed).
+counterargument not_all_normal : (forall x:Block, Ab [x] -> false).
+elim [a].
+next.
+dixi.

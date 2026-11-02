@@ -1,3 +1,4 @@
+import threading
 """Machine-payload plumbing that first-order support depends on.
 
 Two pieces of the payload used to be dropped on the floor:
@@ -13,6 +14,7 @@ wait on the prover; ``test_fo_fixtures.py`` covers the real end-to-end replay.
 
 from core.ac.signature import Declaration
 from core.dc.argument import Argument
+from wrap.document import Document
 from wrap.prover import ProverWrapper
 from wrap.sexp_parser import SexpParser
 
@@ -24,7 +26,8 @@ def _decls_state(entries):
 def _blank_wrapper():
     """A ProverWrapper with no subprocess -- only the decl merge is exercised."""
     pw = ProverWrapper.__new__(ProverWrapper)
-    pw.declarations = {}
+    pw.doc = Document()
+    pw.lock = threading.RLock()
     return pw
 
 

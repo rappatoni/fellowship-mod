@@ -30,7 +30,7 @@ declare P : termf -> form.
 declare c : termf.
 
 theorem all_ex : (truef [forallf P] -> truef [existsf P]).
-prove all_ex
+prove all_ex.
 elim H.
 cut (forall f:termf -> form, forall x:termf, truef[f(x)] -> truef[existsf(f)]) th.
 axiom existsfi.
@@ -48,7 +48,7 @@ axiom th.
 qed.
 
 theorem all_all : (truef [forallf P] -> truef [forallf P]).
-prove all_all
+prove all_all.
 elim H.
 cut (forall f:termf -> form, (forall x:termf, truef[f(x)]) -> truef[forallf(f)]) th.
 axiom forallfi.
@@ -66,7 +66,7 @@ axiom th.
 qed.
 
 theorem ex_elim : (truef [existsf P] -> (forall x:termf, truef [P x] -> truef [botf]) -> truef [botf]).
-prove ex_elim
+prove ex_elim.
 elim H.
 elim K.
 cut (forall f:termf -> form, forall c:form, truef[existsf(f)] -> (forall x:termf, truef[f(x)] -> truef[c]) -> truef[c]) th.

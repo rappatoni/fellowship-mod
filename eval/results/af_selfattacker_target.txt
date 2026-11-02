@@ -1,0 +1,54 @@
+== literature/af_selfattacker_target.fspy: check ok=True (0.1s)
+-- a: issue A[t]; 4 edges
+   grounded  issue: ['OUT']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+   preferred issue: ['OUT']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+   stable    issue: ['OUT']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+      credulous -> exception μalt1:A.<att_a_a:A->~A||?OUT:A*?OUT:A*_F_>
+-- b: issue B[t]; 7 edges
+   grounded  issue: ['IN']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+   preferred issue: ['IN']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+   stable    issue: ['IN']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> value     !IN:B
+      credulous -> value     !IN:B
+-- a_on_a: issue A[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+   preferred issue: ['IN']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+   stable    issue: ['IN']
+      [1] A->~A[t]=IN ~A[t]=OUT A[c]=IN A[t]=OUT
+      skeptical -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+      credulous -> value     μ'alt2:A.<att_a_a:A->~A||μb3:A.<alt2:A||b3:A>*μb1:A.<alt2:A||b1:A>*_F_>
+-- a_on_b: issue B[c]; 7 edges
+   grounded  issue: ['OUT']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+   preferred issue: ['OUT']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+   stable    issue: ['OUT']
+      [1] A->~A[t]=IN A->~B[t]=IN ~A[t]=OUT ~B[t]=OUT A[c]=IN A[t]=OUT B[c]=OUT B[t]=IN
+      skeptical -> open      μ'alt5:B.<alt5:B||OUT:B?>
+      credulous -> open      μ'alt5:B.<alt5:B||OUT:B?>
+== done in 0.5s

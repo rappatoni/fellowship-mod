@@ -1,0 +1,38 @@
+# Tweety lp-asp krue2008_ex2_union.asp:
+# b.
+# c.
+# -a :- b.
+# a :- c.
+lk.
+declare A, B, C : bool.
+declare r0_rule : (B).
+declare r1_rule : (C).
+declare r2_rule : (B -> ~A).
+declare r3_rule : (C -> A).
+# r0 (strict): B
+argument r0 : (B).
+axiom r0_rule.
+dixi.
+# r1 (strict): C
+argument r1 : (C).
+axiom r1_rule.
+dixi.
+# r2 (strict): B -> ~A
+counterargument r2 : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom r2_rule.
+elim.
+next.
+axiom th.
+elim.
+axiom.
+dixi.
+# r3 (strict): C -> A
+argument r3 : (A).
+cut (C -> A) th.
+axiom r3_rule.
+elim.
+next.
+axiom th.
+dixi.

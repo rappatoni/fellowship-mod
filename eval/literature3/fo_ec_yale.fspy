@@ -1,0 +1,139 @@
+# The Yale shooting problem in the event calculus (Shanahan 1997), first
+# order: fluents, events and time points are sorts; the successor of a time
+# point is a declared relation (no arithmetic); the axioms are quantified.
+#   effect:      forall e f t t', Happens e t -> Initiates e f t -> Next t t' -> HoldsAt f t'
+#   persistence: forall f t t', HoldsAt f t -> Next t t' -> ~Clipped f t -> HoldsAt f t'
+#   clipping:    forall e f t, Happens e t -> Terminates e f t -> Clipped f t
+#   shooting:    forall t, HoldsAt loaded t -> Terminates shoot alive t
+# Narrative: alive at 0, load at 0, wait at 1, shoot at 2.
+# Event calculus (circumscription or negation as failure on Clipped):
+# HoldsAt loaded 2, not HoldsAt alive 3.
+lk.
+declare Fl, Ev, Tm : type.
+declare alive, loaded : Fl.
+declare load, wait, shoot : Ev.
+declare t0, t1, t2, t3 : Tm.
+declare Happens : Ev -> Tm -> bool.
+declare Initiates, Terminates : Ev -> Fl -> Tm -> bool.
+declare HoldsAt, Clipped : Fl -> Tm -> bool.
+declare Next : Tm -> Tm -> bool.
+declare n01 : (Next [t0] [t1]).
+declare n12 : (Next [t1] [t2]).
+declare n23 : (Next [t2] [t3]).
+declare alive0 : (HoldsAt [alive] [t0]).
+declare h_load : (Happens [load] [t0]).
+declare h_wait : (Happens [wait] [t1]).
+declare h_shoot : (Happens [shoot] [t2]).
+declare i_load : (Initiates [load] [loaded] [t0]).
+declare effect : (forall e:Ev, forall f:Fl, forall t:Tm, forall u:Tm, Happens [e] [t] -> Initiates [e] [f] [t] -> Next [t] [u] -> HoldsAt [f] [u]).
+declare persist : (forall f:Fl, forall t:Tm, forall u:Tm, HoldsAt [f] [t] -> Next [t] [u] -> (Clipped [f] [t] -> false) -> HoldsAt [f] [u]).
+declare clip : (forall e:Ev, forall f:Fl, forall t:Tm, Happens [e] [t] -> Terminates [e] [f] [t] -> Clipped [f] [t]).
+declare shooting : (forall t:Tm, HoldsAt [loaded] [t] -> Terminates [shoot] [alive] [t]).
+# Loaded at 1, by the effect of load.
+argument loaded1 : (HoldsAt [loaded] [t1]).
+cut (forall e:Ev, forall f:Fl, forall t:Tm, forall u:Tm, Happens [e] [t] -> Initiates [e] [f] [t] -> Next [t] [u] -> HoldsAt [f] [u]) r.
+axiom effect.
+elim [load].
+elim [loaded].
+elim [t0].
+elim [t1].
+elim.
+axiom h_load.
+elim.
+axiom i_load.
+elim.
+axiom n01.
+axiom r.
+dixi.
+# Loaded at 2, by persistence (not clipped at 1, presumed).
+argument loaded2 : (HoldsAt [loaded] [t2]).
+cut (forall f:Fl, forall t:Tm, forall u:Tm, HoldsAt [f] [t] -> Next [t] [u] -> (Clipped [f] [t] -> false) -> HoldsAt [f] [u]) r.
+axiom persist.
+elim [loaded].
+elim [t1].
+elim [t2].
+elim.
+next.
+elim.
+axiom n12.
+elim.
+elim h.
+cut (Clipped [loaded] [t1]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# Alive at 1, 2, 3 by persistence, each step presuming no clipping.
+argument alive1 : (HoldsAt [alive] [t1]).
+cut (forall f:Fl, forall t:Tm, forall u:Tm, HoldsAt [f] [t] -> Next [t] [u] -> (Clipped [f] [t] -> false) -> HoldsAt [f] [u]) r.
+axiom persist.
+elim [alive].
+elim [t0].
+elim [t1].
+elim.
+axiom alive0.
+elim.
+axiom n01.
+elim.
+elim h.
+cut (Clipped [alive] [t0]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument alive2 : (HoldsAt [alive] [t2]).
+cut (forall f:Fl, forall t:Tm, forall u:Tm, HoldsAt [f] [t] -> Next [t] [u] -> (Clipped [f] [t] -> false) -> HoldsAt [f] [u]) r.
+axiom persist.
+elim [alive].
+elim [t1].
+elim [t2].
+elim.
+next.
+elim.
+axiom n12.
+elim.
+elim h.
+cut (Clipped [alive] [t1]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+argument alive3 : (HoldsAt [alive] [t3]).
+cut (forall f:Fl, forall t:Tm, forall u:Tm, HoldsAt [f] [t] -> Next [t] [u] -> (Clipped [f] [t] -> false) -> HoldsAt [f] [u]) r.
+axiom persist.
+elim [alive].
+elim [t2].
+elim [t3].
+elim.
+next.
+elim.
+axiom n23.
+elim.
+elim h.
+cut (Clipped [alive] [t2]) k.
+axiom h.
+by default.
+next.
+axiom r.
+dixi.
+# Shooting with a loaded gun clips alive at 2.
+argument clipped2 : (Clipped [alive] [t2]).
+cut (forall e:Ev, forall f:Fl, forall t:Tm, Happens [e] [t] -> Terminates [e] [f] [t] -> Clipped [f] [t]) r.
+axiom clip.
+elim [shoot].
+elim [alive].
+elim [t2].
+elim.
+axiom h_shoot.
+elim.
+cut (forall t:Tm, HoldsAt [loaded] [t] -> Terminates [shoot] [alive] [t]) s.
+axiom shooting.
+elim [t2].
+elim.
+next.
+axiom s.
+axiom r.
+dixi.

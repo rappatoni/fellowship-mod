@@ -1,0 +1,78 @@
+# Tweety lp-asp ex6.asp:
+# p(a).
+# p(b).
+# {q(X) : p(X)}.
+# Translation notes:
+#  - choice `{q(X) : p(X)}` written with the auxiliary atom n_q(X)
+lk.
+declare N_q_a, N_q_b, P_a, P_b, Q_a, Q_b : bool.
+declare r0_rule : (P_a).
+declare r1_rule : (P_b).
+declare r2_rule : (P_a -> (N_q_a -> false) -> Q_a).
+declare r3_rule : (P_b -> (N_q_b -> false) -> Q_b).
+declare r4_rule : (P_a -> (Q_a -> false) -> N_q_a).
+declare r5_rule : (P_b -> (Q_b -> false) -> N_q_b).
+# r0 (strict): P_a
+argument r0 : (P_a).
+axiom r0_rule.
+dixi.
+# r1 (strict): P_b
+argument r1 : (P_b).
+axiom r1_rule.
+dixi.
+# r2 (strict): P_a -> (N_q_a -> false) -> Q_a
+argument r2 : (Q_a).
+cut (P_a -> (N_q_a -> false) -> Q_a) th.
+axiom r2_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (N_q_a) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r3 (strict): P_b -> (N_q_b -> false) -> Q_b
+argument r3 : (Q_b).
+cut (P_b -> (N_q_b -> false) -> Q_b) th.
+axiom r3_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (N_q_b) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r4 (strict): P_a -> (Q_a -> false) -> N_q_a
+argument r4 : (N_q_a).
+cut (P_a -> (Q_a -> false) -> N_q_a) th.
+axiom r4_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Q_a) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.
+# r5 (strict): P_b -> (Q_b -> false) -> N_q_b
+argument r5 : (N_q_b).
+cut (P_b -> (Q_b -> false) -> N_q_b) th.
+axiom r5_rule.
+elim.
+next.
+elim.
+elim h1.
+cut (Q_b) k1.
+axiom h1.
+by default.
+next.
+axiom th.
+dixi.

@@ -1,0 +1,28 @@
+== literature/grounded_predicate.fspy: check ok=True (0.1s)
+-- flies_tweety: issue Flies tweety[t]; 4 edges
+   grounded  issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN Bird tweety->(Ab tweety->false)->Flies tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+   preferred issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN Bird tweety->(Ab tweety->false)->Flies tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+   stable    issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN Bird tweety->(Ab tweety->false)->Flies tweety[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<flies_tweety_rule:Bird tweety->(Ab tweety->false)->Flies tweety||bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+-- ab_sam: issue Ab sam[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab sam[t]=IN Penguin sam[t]=IN Penguin sam->Ab sam[t]=IN
+      skeptical -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+      credulous -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+   preferred issue: ['IN']
+      [1] Ab sam[t]=IN Penguin sam[t]=IN Penguin sam->Ab sam[t]=IN
+      skeptical -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+      credulous -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+   stable    issue: ['IN']
+      [1] Ab sam[t]=IN Penguin sam[t]=IN Penguin sam->Ab sam[t]=IN
+      skeptical -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+      credulous -> value     μab_sam:Ab sam.<ab_sam_rule:Penguin sam->Ab sam||penguin_sam:Penguin sam*ab_sam:Ab sam>
+== done in 0.5s

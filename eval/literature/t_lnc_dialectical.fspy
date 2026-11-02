@@ -1,0 +1,21 @@
+# Law of non-contradiction, ~(P - P), proved dialectically.
+lk.
+declare P : bool.
+# P: I claim it.
+argument p1 : (~(P - P)).
+dixi.
+# S: assume P - P (h); derive falsum.
+argument s1 : (~(P - P)).
+elim h.
+dixi.
+# P: falsum, from P - P (owed: the skeptic's h) against a refutation of P - P (owed).
+argument p2 : (false).
+cut (P - P) x.
+next.
+next.
+dixi.
+# P: P - P is refuted: from P, P.
+counterargument c1 : (P - P).
+elim k.
+axiom k.
+dixi.

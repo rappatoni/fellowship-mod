@@ -1,0 +1,116 @@
+== literature4/lottery_sources.fspy: check ok=True (0.1s)
+-- lose1: issue T1[c]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      UNDEC:T1?
+      credulous -> open      UNDEC:T1?
+   preferred issue: ['IN', 'IN', 'IN', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T1?
+      credulous -> value     μ'lose1:T1.<stat1:S1->T1->false||!IN:S1*lose1:T1*_F_>
+   stable    issue: ['IN', 'IN', 'IN', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T1?
+      credulous -> value     μ'lose1:T1.<stat1:S1->T1->false||!IN:S1*lose1:T1*_F_>
+-- lose2: issue T2[c]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      UNDEC:T2?
+      credulous -> open      UNDEC:T2?
+   preferred issue: ['IN', 'IN', 'OUT', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T2?
+      credulous -> value     μ'lose2:T2.<stat2:S2->T2->false||!IN:S2*lose2:T2*_F_>
+   stable    issue: ['IN', 'IN', 'OUT', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T2?
+      credulous -> value     μ'lose2:T2.<stat2:S2->T2->false||!IN:S2*lose2:T2*_F_>
+-- lose3: issue T3[c]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      UNDEC:T3?
+      credulous -> open      UNDEC:T3?
+   preferred issue: ['IN', 'OUT', 'IN', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T3?
+      credulous -> value     μ'lose3:T3.<stat3:S3->T3->false||!IN:S3*lose3:T3*_F_>
+   stable    issue: ['IN', 'OUT', 'IN', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      UNDEC:T3?
+      credulous -> value     μ'lose3:T3.<stat3:S3->T3->false||!IN:S3*lose3:T3*_F_>
+-- a1: issue T1[t]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      ?UNDEC:T1
+      credulous -> open      ?UNDEC:T1
+   preferred issue: ['OUT', 'OUT', 'OUT', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T1
+      credulous -> value     μa1:T1.<one1:(T2->false)->(T3->false)->T1||λb1:T2.μb2:false.<stat2:S2->T2->false||!IN:S2*b1:T2*_F_>*λb5:T3.μb6:false.<stat3:S3->T3->false||!IN:S3*b5:T3*_F_>*a1:T1>
+   stable    issue: ['OUT', 'OUT', 'OUT', 'IN']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T1
+      credulous -> value     μa1:T1.<one1:(T2->false)->(T3->false)->T1||λb1:T2.μb2:false.<stat2:S2->T2->false||!IN:S2*b1:T2*_F_>*λb5:T3.μb6:false.<stat3:S3->T3->false||!IN:S3*b5:T3*_F_>*a1:T1>
+-- a2: issue T2[t]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      ?UNDEC:T2
+      credulous -> open      ?UNDEC:T2
+   preferred issue: ['OUT', 'OUT', 'IN', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T2
+      credulous -> value     μa2:T2.<one2:(T1->false)->(T3->false)->T2||λb1:T1.μb2:false.<stat1:S1->T1->false||!IN:S1*b1:T1*_F_>*λb5:T3.μb6:false.<stat3:S3->T3->false||!IN:S3*b5:T3*_F_>*a2:T2>
+   stable    issue: ['OUT', 'OUT', 'IN', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T2
+      credulous -> value     μa2:T2.<one2:(T1->false)->(T3->false)->T2||λb1:T1.μb2:false.<stat1:S1->T1->false||!IN:S1*b1:T1*_F_>*λb5:T3.μb6:false.<stat3:S3->T3->false||!IN:S3*b5:T3*_F_>*a2:T2>
+-- a3: issue T3[t]; 18 edges
+   grounded  issue: ['UNDEC']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=UNDEC T2->false[t]=UNDEC T3->false[t]=UNDEC S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=UNDEC T1[t]=UNDEC T2[c]=UNDEC T2[t]=UNDEC T3[c]=UNDEC T3[t]=UNDEC
+      skeptical -> open      ?UNDEC:T3
+      credulous -> open      ?UNDEC:T3
+   preferred issue: ['OUT', 'IN', 'OUT', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T3
+      credulous -> value     μa3:T3.<one3:(T1->false)->(T2->false)->T3||λb1:T1.μb2:false.<stat1:S1->T1->false||!IN:S1*b1:T1*_F_>*λb5:T2.μb6:false.<stat2:S2->T2->false||!IN:S2*b5:T2*_F_>*a3:T3>
+   stable    issue: ['OUT', 'IN', 'OUT', 'OUT']
+      [1] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      [2] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=IN T3->false[t]=OUT S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=IN T2[t]=OUT T3[c]=OUT T3[t]=IN
+      [3] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=IN T2->false[t]=OUT T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=IN T1[t]=OUT T2[c]=OUT T2[t]=IN T3[c]=IN T3[t]=OUT
+      [4] (T1->false)->(T2->false)->T3[t]=IN (T1->false)->(T3->false)->T2[t]=IN (T2->false)->(T3->false)->T1[t]=IN S1->T1->false[t]=IN S2->T2->false[t]=IN S3->T3->false[t]=IN T1->false[t]=OUT T2->false[t]=IN T3->false[t]=IN S1[t]=IN S2[t]=IN S3[t]=IN T1[c]=OUT T1[t]=IN T2[c]=IN T2[t]=OUT T3[c]=IN T3[t]=OUT
+      skeptical -> open      ?UNDEC:T3
+      credulous -> value     μa3:T3.<one3:(T1->false)->(T2->false)->T3||λb1:T1.μb2:false.<stat1:S1->T1->false||!IN:S1*b1:T1*_F_>*λb5:T2.μb6:false.<stat2:S2->T2->false||!IN:S2*b5:T2*_F_>*a3:T3>
+== done in 2.3s

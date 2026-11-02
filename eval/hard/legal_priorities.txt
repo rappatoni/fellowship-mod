@@ -1,0 +1,67 @@
+== literature4/legal_priorities.fspy: check ok=True (0.1s)
+-- r1: issue Forbidden[t]; 10 edges
+   grounded  issue: ['IN']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+      credulous -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+   preferred issue: ['IN']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+      credulous -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+   stable    issue: ['IN']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+      credulous -> value     μr1:Forbidden.<!IN:Listed->Forbidden||listed:Listed*r1:Forbidden>
+-- r2: issue Forbidden[c]; 10 edges
+   grounded  issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+      credulous -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+   preferred issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+      credulous -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+   stable    issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Special12->~(Owner->~Forbidden)[t]=IN Forbidden[c]=OUT Forbidden[t]=IN Listed[t]=IN Newer21[t]=IN Owner[t]=IN SpecOverPost[t]=IN Special12[t]=IN
+      skeptical -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+      credulous -> exception μ'alt3:Forbidden.<!IN:Listed->Forbidden||listed:Listed*OUT:Forbidden?>
+-- lex_specialis: issue Owner->~Forbidden[c]; 2 edges
+   grounded  issue: ['IN']
+      [1] Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT Special12->~(Owner->~Forbidden)[t]=IN Special12[t]=IN
+      skeptical -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+      credulous -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+   preferred issue: ['IN']
+      [1] Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT Special12->~(Owner->~Forbidden)[t]=IN Special12[t]=IN
+      skeptical -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+      credulous -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+   stable    issue: ['IN']
+      [1] Owner->~Forbidden[c]=IN Owner->~Forbidden[t]=OUT Special12->~(Owner->~Forbidden)[t]=IN Special12[t]=IN
+      skeptical -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+      credulous -> value     μ'alt3:Owner->~Forbidden.<!IN:Special12->~(Owner->~Forbidden)||special12:Special12*μ'b4:~(Owner->~Forbidden).<b4:~(Owner->~Forbidden)||μb3:Owner->~Forbidden.<alt3:Owner->~Forbidden||b3:Owner->~Forbidden>*_F_>>
+-- lex_posterior: issue Listed->Forbidden[c]; 4 edges
+   grounded  issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Newer21[t]=IN SpecOverPost[t]=IN
+      skeptical -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+      credulous -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+   preferred issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Newer21[t]=IN SpecOverPost[t]=IN
+      skeptical -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+      credulous -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+   stable    issue: ['OUT']
+      [1] Listed->Forbidden[c]=OUT Listed->Forbidden[t]=IN Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN Newer21[t]=IN SpecOverPost[t]=IN
+      skeptical -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+      credulous -> open      μ'alt3:Listed->Forbidden.<alt3:Listed->Forbidden||OUT:Listed->Forbidden?>
+-- meta_rule: issue Newer21->~(Listed->Forbidden)[c]; 2 edges
+   grounded  issue: ['IN']
+      [1] Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN SpecOverPost[t]=IN
+      skeptical -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+      credulous -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+   preferred issue: ['IN']
+      [1] Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN SpecOverPost[t]=IN
+      skeptical -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+      credulous -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+   stable    issue: ['IN']
+      [1] Newer21->~(Listed->Forbidden)[c]=IN Newer21->~(Listed->Forbidden)[t]=OUT SpecOverPost->~(Newer21->~(Listed->Forbidden))[t]=IN SpecOverPost[t]=IN
+      skeptical -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+      credulous -> value     μ'alt3:Newer21->~(Listed->Forbidden).<!IN:SpecOverPost->~(Newer21->~(Listed->Forbidden))||meta:SpecOverPost*μ'b4:~(Newer21->~(Listed->Forbidden)).<b4:~(Newer21->~(Listed->Forbidden))||μb3:Newer21->~(Listed->Forbidden).<a...
+== done in 0.8s

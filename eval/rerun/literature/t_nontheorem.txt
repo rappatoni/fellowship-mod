@@ -1,0 +1,54 @@
+== literature/t_nontheorem.fspy: check ok=True (0.1s)
+-- p1: issue (A->B)->B->A[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+   preferred issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+   stable    issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+-- s1: issue (A->B)->B->A[t]; 2 edges
+   grounded  issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+   preferred issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+   stable    issue: ['OUT']
+      [1] (A->B)->B->A[t]=OUT B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:(A->B)->B->A
+      credulous -> open      ?OUT:(A->B)->B->A
+-- p2: issue A[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+   preferred issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+   stable    issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+-- p3: issue A[t]; 1 edges
+   grounded  issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+   preferred issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+   stable    issue: ['OUT']
+      [1] B->A[t]=OUT A[t]=OUT B[t]=OUT
+      skeptical -> open      ?OUT:A
+      credulous -> open      ?OUT:A
+== done in 0.6s

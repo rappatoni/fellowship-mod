@@ -1,0 +1,28 @@
+== literature2/dl_defeater.fspy: check ok=True (0.1s)
+-- r1: issue Flies[t]; 6 edges
+   grounded  issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Bird[t]=IN Flies[t]=OUT Heavy[t]=IN
+      skeptical -> open      ?OUT:Flies
+      credulous -> open      ?OUT:Flies
+   preferred issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Bird[t]=IN Flies[t]=OUT Heavy[t]=IN
+      skeptical -> open      ?OUT:Flies
+      credulous -> open      ?OUT:Flies
+   stable    issue: ['OUT']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Bird[t]=IN Flies[t]=OUT Heavy[t]=IN
+      skeptical -> open      ?OUT:Flies
+      credulous -> open      ?OUT:Flies
+-- defeater: issue Bird->Flies[c]; 4 edges
+   grounded  issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Heavy[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   preferred issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Heavy[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   stable    issue: ['IN']
+      [1] ~(Bird->Flies)[t]=IN Bird->Flies[c]=IN Bird->Flies[t]=OUT Heavy->~(Bird->Flies)[t]=IN Heavy[t]=IN
+      skeptical -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<heavy_defeats:Heavy->~(Bird->Flies)||heavy:Heavy*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+== done in 0.5s

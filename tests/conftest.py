@@ -4,12 +4,10 @@ import pytest
 import os
 import importlib.util, sys
 import logging
-from mod import store
 
 
 from wrap.cli import (
     configure_logging_cli,
-    pop,
     execute_script,
     interactive_mode,
     setup_prover,
@@ -30,18 +28,13 @@ PYTEST_TODO = ("Add version of trees with natural language renderings; update/tw
                "then implement scenarios.")
 
 DEFAULT_SCRIPTS = [
-    # These scripts contain bare `axiom.` commands, which currently fail in
-    # prover replay with "You need to specify one identifier." Keep them out
-    # of the default script suite until that known prover issue is addressed.
-    # "normalize_render.fspy",
-    # "tactics.fspy",
-    # "test1.fspy",
-    # "counterarguments_and_undercut.fspy",
-    # "multiple_undercuts.fspy",
+    "normalize_render.fspy",
+    "tactics.fspy",
+    "test1.fspy",
+    "counterarguments_and_undercut.fspy",
+    "multiple_undercuts.fspy",
     "multiple_supports_stack_vs_queue.fspy",
-    # The first-order fixtures.  They also use bare `axiom.`, but pass the
-    # commands straight through rather than recording an argument and
-    # replaying it, which is where the issue above bites.
+    # The first-order fixtures.
     "fo_forall.fspy",
     "fo_exists_forall.fspy",
     # The runnable rationality-postulate fixtures (tests/rationality/).
@@ -56,8 +49,6 @@ DEFAULT_SCRIPTS = [
     "rationality/modus_tollens.fspy",
     # CLI surface of the fragment pipeline: graph / label / evaluate.
     "label_evaluate.fspy",
-    #"tests/test2.fspy",
-    # "tests/negation_expanded.fspy",  # uncomment when ready
 ]
 
 def make_assert_log(logger: logging.Logger):
@@ -164,8 +155,11 @@ def pytest_report_header(config):
     return f"TODO: {PYTEST_TODO}"
 
 @pytest.fixture(autouse=True)
-def reset_global_store():
-    # Keep declarations session-scoped (per ProverWrapper instance).
-    # Arguments are global via mod.store; clear between tests to avoid bleed-through.
-    store.arguments.clear()
-    store.document.clear()
+def fresh_document(request):
+    """Every test that uses the session-wide `prover` starts on a fresh
+    document (wrap/document.py): nothing a test registers or declares leaks
+    into the next.  Tests with a prover of their own are fresh anyway."""
+    defs = request.node._fixtureinfo.name2fixturedefs.get("prover")
+    if defs and defs[-1].scope == "session":       # not a module's own `prover`
+        request.getfixturevalue("prover").new_document()
+    yield

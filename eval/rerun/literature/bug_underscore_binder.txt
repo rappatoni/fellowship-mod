@@ -1,0 +1,28 @@
+== literature/bug_underscore_binder.fspy: check ok=True (0.1s)
+-- a: issue P[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+   preferred issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+   stable    issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+-- b: issue P[t]; 1 edges
+   grounded  issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+   preferred issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+   stable    issue: ['IN']
+      [1] P[c]=OUT P[t]=IN
+      skeptical -> value     μalt2:P.<!IN:P||alt2:P>
+      credulous -> value     μalt2:P.<!IN:P||alt2:P>
+== done in 0.4s

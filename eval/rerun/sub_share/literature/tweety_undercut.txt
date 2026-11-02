@@ -1,0 +1,32 @@
+== literature/tweety_undercut.fspy: check ok=True (0.1s)
+-- birdsfly: issue Flies[t]; 8 edges
+   grounded  issue: ['OUT']
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   preferred issue: ['OUT']
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+   stable    issue: ['OUT']
+      skeptical -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+      credulous -> exception μalt4:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b3:~Flies.<b3:~Flies||?OUT:Flies*_F_>>
+-- penguinsdont: issue Flies[c]; 8 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   preferred issue: ['IN']
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+   stable    issue: ['IN']
+      skeptical -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+      credulous -> value     μ'penguinsdont:Flies.<!IN:Penguin->~Flies||penguin:Penguin*μ'b1:~Flies.<b1:~Flies||penguinsdont:Flies*_F_>>
+-- exception: issue Bird->Flies[c]; 4 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   preferred issue: ['IN']
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+   stable    issue: ['IN']
+      skeptical -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+      credulous -> value     μ'alt2:Bird->Flies.<penguin_exception:Penguin->~(Bird->Flies)||penguin:Penguin*μb1:Bird->Flies.<alt2:Bird->Flies||b1:Bird->Flies>*_F_>
+== done in 0.7s

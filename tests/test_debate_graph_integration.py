@@ -1,11 +1,11 @@
 """M3 integration: compile real prover-generated debate terms.
 
-These tests rebuild the exact support/attack compositions used to lock the
-scaffold shapes (see the M3 log in propositional-fragment-plan.org) and
-check that the compiler decomposes prover output - not just the hand-built
-replicas in test_debate_graph.py.  The executed Argument path doubles as
-the type-oracle validation: every compiled body replayed through
-Fellowship on construction.
+These tests rebuild the support/attack debates used to lock the scaffold
+shapes (see the M3 log in propositional-fragment-plan.org) - since
+aida-debate-objects as debates over registered prover output, unfolded
+and type-checked like any debate - and check that the compiler
+decomposes them, not just the hand-built replicas in
+test_debate_graph.py.
 """
 
 import pytest
@@ -28,57 +28,67 @@ def rules_prover():
     prover.close()
 
 
-def test_support_composition_compiles(rules_prover):
+def _debate_graph(prover, *lines):
+    """The issue graph of a closed debate over registered prover output -
+    the term the debate compiles to, decomposed by the compiler."""
+    from wrap.cli import debate_line, _debate_issue
+    from core.dc.strict import compile_issue
+    from core.dc.debate_graph import declaration_kinds
+    for line in lines:
+        assert debate_line(prover, line), line
+    debate = prover.debates[prover.recording_debate]
+    assert debate_line(prover, "cedat tempus.")
+    _arg, _issue, term, _shared = _debate_issue(prover, debate)
+    return compile_issue(term, debate.name, strict_names=prover.declarations.keys(),
+                         strict_kinds=declaration_kinds(prover.declarations))
+
+
+def _register(prover, *arguments):
+    for argument in arguments:
+        argument.execute()
+        prover.register_argument(argument)
+
+
+def test_support_debate_compiles(rules_prover):
     prover = rules_prover
     pArg = Argument(prover, 'pArg', 'P',
                     ['cut (Q->P) rule', 'axiom pRule', 'elim', 'next', 'axiom rule'])
-    pArg.execute()
     qArg = Argument(prover, 'qArg', 'Q',
                     ['cut ((R->false)->Q) rule', 'axiom qRule', 'elim', 'next', 'axiom rule'])
-    qArg.execute()
-    d = qArg.support(pArg, name='dsup')
-
-    g = compile_debate(d.body, 'dsup', strict_names=prover.declarations.keys())
-    by_role = {e.role: e for e in g.edges}
-    assert set(by_role) == {"argument", "supporter"}
-    host, scion = by_role["argument"], by_role["supporter"]
-    assert host.target_key == canonical_prop("P")
-    assert host.target_side == "term"
-    assert [s.key for s in host.sources] == [canonical_prop("Q")]
-    assert scion.target_key == canonical_prop("Q")
-    assert scion.target_side == "term"
-    assert [s.key for s in scion.sources] == [canonical_prop("R->false")]
+    _register(prover, pArg, qArg)
+    g = _debate_graph(prover, "debate pro closed dsup : P.", "pArg.", "support qArg pArg.")
+    by_name = {e.name: e for e in g.edges if e.role != "subargument"}
+    assert set(by_name) == {"pArg", "qArg"}
+    host, scion = by_name["pArg"], by_name["qArg"]
+    assert (host.target_key, host.target_side) == (canonical_prop("P"), "term")
+    assert [s.key for s in host.sources] == [canonical_prop("Q->P"), canonical_prop("Q")]
+    assert (scion.target_key, scion.target_side) == (canonical_prop("Q"), "term")
+    assert [s.key for s in scion.sources] == [canonical_prop("(R->false)->Q"), canonical_prop("R->false")]
     assert g.defaults[(canonical_prop("Q"), "term")] == {"obligation"}
 
 
-def test_attack_composition_compiles(rules_prover):
+def test_attack_debate_compiles(rules_prover):
     prover = rules_prover
     pArg = Argument(prover, 'pArg2', 'P',
                     ['cut (Q->P) rule', 'axiom pRule', 'elim', 'next', 'axiom rule'])
-    pArg.execute()
     qAtt = Argument(prover, 'qAtt', 'Q', [], is_anti=True)
-    qAtt.execute()
-    d = qAtt.attack(pArg, name='datt')
-
-    g = compile_debate(d.body, 'datt', strict_names=prover.declarations.keys())
-    by_role = {e.role: e for e in g.edges}
+    _register(prover, pArg, qAtt)
+    g = _debate_graph(prover, "debate pro closed datt : P.", "pArg2.", "rebut qAtt pArg2.")
     # The attacker is a bare challenge (identity edge): it leaves a
     # context-side obligation marker on Q instead of an edge.
-    assert set(by_role) == {"argument"}
-    assert by_role["argument"].sources[0].key == canonical_prop("Q")
+    assert {e.name for e in g.edges if e.role != "subargument"} == {"pArg2"}
+    host = next(e for e in g.edges if e.name == "pArg2")
+    assert [s.key for s in host.sources] == [canonical_prop("Q->P"), canonical_prop("Q")]
     assert g.defaults[(canonical_prop("Q"), "context")] == {"obligation"}
     assert g.defaults[(canonical_prop("Q"), "term")] == {"obligation"}
 
 
-def test_context_side_support_compiles(rules_prover):
+def test_context_side_support_debate_compiles(rules_prover):
     prover = rules_prover
     nP = Argument(prover, 'nP', 'P', [], is_anti=True)
-    nP.execute()
     nP2 = Argument(prover, 'nP2', 'P', [], is_anti=True)
-    nP2.execute()
-    d = nP2.support(nP, name='dctx')
-
-    g = compile_debate(d.body, 'dctx', strict_names=prover.declarations.keys())
+    _register(prover, nP, nP2)
+    g = _debate_graph(prover, "debate con closed dctx : P.", "nP.", "support nP2 nP.")
     # Both host and scion are bare challenges: everything collapses to
     # default markers on the single P node.
     assert g.edges == []
@@ -106,10 +116,10 @@ def even_loop_prover():
 
 
 def _replay_even_loop(prover):
-    # Replayed per test: conftest's autouse fixture clears the argument
-    # store between tests, so a module-level replay would be lost.
+    # Replayed per test, each time into a new document of the module's
+    # prover: nothing carries over from the test before.
     execute_script(prover, str(Path("tests/rationality/even_loop.fspy")),
-                   strict=True, stop_on_error=True, isolate=False)
+                   strict=True, stop_on_error=True, isolate=False, new_document=True)
     return prover.declarations.keys(), declaration_kinds(prover.declarations)
 
 
@@ -119,7 +129,8 @@ def test_even_loop_document_is_cyclic_and_has_two_stable_labellings(even_loop_pr
     bodies = [(n, prover.get_argument(n).body) for n in ("Pdefault", "Qdefault")]
     g = compile_document(bodies, strict_names=names, strict_kinds=kinds)
     assert not g.is_acyclic()                      # P[t] <- Q[c] ~ Q[t] <- P[c] ~ P[t]
-    assert set(grounded_labels(g).values()) == {"UNDEC"}
+    loop = {k: v for k, v in grounded_labels(g).items() if k[0] in (canonical_prop("P"), canonical_prop("Q"))}
+    assert set(loop.values()) == {"UNDEC"}         # the axioms' statements are IN
     assert grounded_labels(g) == grounded_labels_via_oracle(g)
     # The Dung even loop, two labellings.  The fixture's refutations are
     # bare PRESUMPTIONS, and since the asymmetric guard (2026-09-25) a bare

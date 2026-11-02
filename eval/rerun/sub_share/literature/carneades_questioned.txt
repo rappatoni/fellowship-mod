@@ -1,0 +1,36 @@
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on Consideration: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+/Users/maxrapp/Work/Uni/fellowship-mod-eval/core/comp/adf_label.py:253: OpposingPresumptions: opposing presumptions on Consideration: both sides delegate the onus of refutation, so neither side holds it; the contest is decided by the contrariness guard alone
+  conditions = compile_conditions(graph)
+== literature/carneades_questioned.fspy: check ok=True (0.1s)
+-- a1: issue Contract[t]; 4 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> open      ?UNDEC:Contract
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*μb4:Consideration.<!IN:Consideration||b4:Consideration>*λb6:Minor.μb7:false....
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      ?UNDEC:Contract
+      credulous -> value     μa1:Contract.<!IN:Agreement->Consideration->(Minor->false)->Contract||μb1:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*b1:Agreement>*μb4:Consideration.<!IN:Consideration||b4:Consideration>*λb6:Minor.μb7:false....
+-- a2: issue Agreement[t]; 2 edges
+   grounded  issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   preferred issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+   stable    issue: ['IN']
+      skeptical -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+      credulous -> value     μa2:Agreement.<witness_rule:Witness->Agreement||!IN:Witness*a2:Agreement>
+-- question: issue Consideration[c]; 0 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt1:Consideration.<alt1:Consideration||UNDEC:Consideration?>
+      credulous -> open      μ'alt1:Consideration.<alt1:Consideration||UNDEC:Consideration?>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:Consideration.<alt1:Consideration||UNDEC:Consideration?>
+      credulous -> value     μ'alt1:Consideration.<alt1:Consideration||IN:Consideration!>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt1:Consideration.<alt1:Consideration||UNDEC:Consideration?>
+      credulous -> value     μ'alt1:Consideration.<alt1:Consideration||IN:Consideration!>
+== done in 0.4s

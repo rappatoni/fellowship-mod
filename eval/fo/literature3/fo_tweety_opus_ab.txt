@@ -1,0 +1,54 @@
+== literature3/fo_tweety_opus_ab.fspy: check ok=True (0.1s)
+-- flies_tweety: issue Flies tweety[t]; 5 edges
+   grounded  issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+   preferred issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+   stable    issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Flies tweety[t]=IN Ab tweety->false[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+      credulous -> value     μflies_tweety:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λb1:Ab tweety.μb2:false.<b1:Ab tweety||IN:Ab tweety!>*flies_tweety:Flies tweety>
+-- flies_opus: issue Flies opus[t]; 8 edges
+   grounded  issue: ['OUT']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Bird opus[t]=IN Flies opus[t]=OUT Penguin opus[t]=IN Ab opus->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Flies opus
+      credulous -> open      ?OUT:Flies opus
+   preferred issue: ['OUT']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Bird opus[t]=IN Flies opus[t]=OUT Penguin opus[t]=IN Ab opus->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Flies opus
+      credulous -> open      ?OUT:Flies opus
+   stable    issue: ['OUT']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Bird opus[t]=IN Flies opus[t]=OUT Penguin opus[t]=IN Ab opus->false[t]=OUT forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN forall x:Animal,Penguin x->Bird x[t]=IN
+      skeptical -> open      ?OUT:Flies opus
+      credulous -> open      ?OUT:Flies opus
+-- ab_opus: issue Ab opus[t]; 3 edges
+   grounded  issue: ['IN']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+      credulous -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+   preferred issue: ['IN']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+      credulous -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+   stable    issue: ['IN']
+      [1] Ab opus[c]=OUT Ab opus[t]=IN Penguin opus[t]=IN forall x:Animal,Penguin x->Ab x[t]=IN
+      skeptical -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+      credulous -> value     μalt3:Ab opus.<penguins_ab:forall x:Animal,Penguin x->Ab x||opus*penguin_opus:Penguin opus*alt3:Ab opus>
+-- some_flier: issue exists x:Animal,Flies x[t]; 5 edges
+   grounded  issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Ab tweety->false[t]=IN exists x:Animal,Flies x[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+      credulous -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+   preferred issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Ab tweety->false[t]=IN exists x:Animal,Flies x[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+      credulous -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+   stable    issue: ['IN']
+      [1] Ab tweety[c]=IN Bird tweety[t]=IN Ab tweety->false[t]=IN exists x:Animal,Flies x[t]=IN forall x:Animal,Bird x->(Ab x->false)->Flies x[t]=IN
+      skeptical -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+      credulous -> value     μsome_flier:exists x:Animal,Flies x.<(tweety,μr:Flies tweety.<birds_fly:forall x:Animal,Bird x->(Ab x->false)->Flies x||tweety*bird_tweety:Bird tweety*λh_2:Ab tweety.μk_2:false.<h_2:Ab tweety||IN:Ab tweety!>*r:Flies twee...
+== done in 0.4s

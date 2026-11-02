@@ -1,0 +1,33 @@
+# Tweety the penguin (Reiter; Pollock; the ASPIC+ and DeLP running example).
+# Penguins are birds (strict), birds fly (defeasible), penguins do not fly
+# (defeasible), Tweety is a penguin (fact). Systems with specificity or rule
+# priorities (DeLP, ASPIC+ with a preference for the penguin rule, prioritised
+# default logic) conclude that Tweety does not fly. AIDA has no preference
+# relation, so the two defeasible rules meet head on.
+lk.
+declare Bird, Penguin, Flies : bool.
+declare penguin : (Penguin).
+declare penguins_are_birds : (Penguin -> Bird).
+# birdsfly: Tweety flies - it is a bird (strictly, being a penguin), and birds fly (presumed).
+argument birdsfly : (Flies).
+cut (Bird -> Flies) r.
+by default.
+next.
+elim.
+cut (Penguin -> Bird) s.
+axiom penguins_are_birds.
+elim.
+axiom penguin.
+axiom s.
+axiom r.
+dixi.
+# penguinsdont: Tweety does not fly - penguins do not fly (presumed).
+counterargument penguinsdont : (Flies).
+cut (Penguin -> ~Flies) r.
+by default.
+next.
+elim.
+axiom penguin.
+elim.
+axiom.
+dixi.

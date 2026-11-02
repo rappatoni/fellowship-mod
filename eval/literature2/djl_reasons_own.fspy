@@ -1,0 +1,40 @@
+# The two witnesses again, with one presumption per witness (see
+# djl_reasons.fspy): the undercutter of w1 leaves Robbery justified by w2.
+lk.
+declare Robbery, Said1, Said2, Reliable1, Reliable2, Absent1 : bool.
+declare said1 : (Said1).
+declare said2 : (Said2).
+declare absent1 : (Absent1).
+declare own1 : (Reliable1 -> Said1 -> Robbery).
+declare own2 : (Reliable2 -> Said2 -> Robbery).
+declare absent_undercuts_own : (Absent1 -> ~Reliable1).
+argument w1 : (Robbery).
+cut (Reliable1 -> Said1 -> Robbery) t.
+axiom own1.
+elim.
+by default.
+next.
+elim.
+axiom said1.
+axiom t.
+dixi.
+argument w2 : (Robbery).
+cut (Reliable2 -> Said2 -> Robbery) t.
+axiom own2.
+elim.
+by default.
+next.
+elim.
+axiom said2.
+axiom t.
+dixi.
+counterargument undercut1 : (Reliable1).
+cut (~Reliable1) x.
+cut (Absent1 -> ~Reliable1) th.
+axiom absent_undercuts_own.
+elim.
+axiom absent1.
+axiom.
+elim.
+axiom.
+dixi.

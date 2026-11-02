@@ -1,0 +1,83 @@
+== literature3/fo_seq.fspy: check ok=True (0.1s)
+-- all_p: issue forall x:D,P x[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] P a[c]=UNDEC P a[t]=UNDEC S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=UNDEC forall x:D,P x[t]=UNDEC S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:forall x:D,P x
+      credulous -> open      ?UNDEC:forall x:D,P x
+   preferred issue: ['OUT', 'IN', 'IN']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:forall x:D,P x
+      credulous -> value     μall_p:forall x:D,P x.<src_all:S1->(forall x:D,P x)||!IN:S1*all_p:forall x:D,P x>
+   stable    issue: ['OUT', 'IN', 'IN']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:forall x:D,P x
+      credulous -> value     μall_p:forall x:D,P x.<src_all:S1->(forall x:D,P x)||!IN:S1*all_p:forall x:D,P x>
+-- npa: issue P a[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] P a[c]=UNDEC P a[t]=UNDEC S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=UNDEC forall x:D,P x[t]=UNDEC S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:P a?
+      credulous -> open      UNDEC:P a?
+   preferred issue: ['IN', 'IN', 'OUT']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:P a?
+      credulous -> value     μ'npa:P a.<src_npa:S2->P a->false||!IN:S2*npa:P a*_F_>
+   stable    issue: ['IN', 'IN', 'OUT']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:P a?
+      credulous -> value     μ'npa:P a.<src_npa:S2->P a->false||!IN:S2*npa:P a*_F_>
+-- pb: issue P b[t]; 2 edges
+   grounded  issue: ['IN']
+      [1] P b[t]=IN S3->P b[t]=IN S3[t]=IN
+      skeptical -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+      credulous -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+   preferred issue: ['IN']
+      [1] P b[t]=IN S3->P b[t]=IN S3[t]=IN
+      skeptical -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+      credulous -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+   stable    issue: ['IN']
+      [1] P b[t]=IN S3->P b[t]=IN S3[t]=IN
+      skeptical -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+      credulous -> value     μpb:P b.<src_pb:S3->P b||!IN:S3*pb:P b>
+-- pa: issue P a[t]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] P a[c]=UNDEC P a[t]=UNDEC S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=UNDEC forall x:D,P x[t]=UNDEC S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:P a
+      credulous -> open      ?UNDEC:P a
+   preferred issue: ['OUT', 'OUT', 'IN']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:P a
+      credulous -> value     μpa:P a.<src_all:S1->(forall x:D,P x)||!IN:S1*a*pa:P a>
+   stable    issue: ['OUT', 'OUT', 'IN']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      ?UNDEC:P a
+      credulous -> value     μpa:P a.<src_all:S1->(forall x:D,P x)||!IN:S1*a*pa:P a>
+-- not_all: issue forall x:D,P x[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      [1] P a[c]=UNDEC P a[t]=UNDEC S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=UNDEC forall x:D,P x[t]=UNDEC S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:forall x:D,P x?
+      credulous -> open      UNDEC:forall x:D,P x?
+   preferred issue: ['IN', 'OUT', 'OUT']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:forall x:D,P x?
+      credulous -> value     μ'not_all:forall x:D,P x.<not_all:forall x:D,P x||a*μ'alt3:P a.<src_npa:S2->P a->false||!IN:S2*μpa:P a.<not_all:forall x:D,P x||a*pa:P a>*_F_>>
+   stable    issue: ['IN', 'OUT', 'OUT']
+      [1] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=IN forall x:D,P x[t]=OUT S1[t]=IN S2[t]=IN
+      [2] P a[c]=IN P a[t]=OUT S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      [3] P a[c]=OUT P a[t]=IN S1->(forall x:D,P x)[t]=IN S2->P a->false[t]=IN forall x:D,P x[c]=OUT forall x:D,P x[t]=IN S1[t]=IN S2[t]=IN
+      skeptical -> open      UNDEC:forall x:D,P x?
+      credulous -> value     μ'not_all:forall x:D,P x.<not_all:forall x:D,P x||a*μ'alt3:P a.<src_npa:S2->P a->false||!IN:S2*μpa:P a.<not_all:forall x:D,P x||a*pa:P a>*_F_>>
+== done in 0.5s

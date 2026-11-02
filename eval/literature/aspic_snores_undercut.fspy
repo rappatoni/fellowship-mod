@@ -1,0 +1,43 @@
+# The snoring professor with an undercutter of snores => misbehaves:
+# snoring while asleep is no misbehaviour (Asleep presumed).
+lk.
+declare Snores, Professor, Misbehaves, Denied, Asleep : bool.
+declare snores : (Snores).
+declare professor : (Professor).
+declare asleep_undercuts : (Asleep -> ~(Snores -> Misbehaves)).
+argument misbehaves : (Misbehaves).
+cut (Snores -> Misbehaves) r.
+by default.
+next.
+elim.
+axiom snores.
+axiom r.
+dixi.
+argument denied : (Denied).
+cut (Misbehaves -> Denied) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+counterargument allowed : (Denied).
+cut (Professor -> ~Denied) r.
+by default.
+next.
+elim.
+axiom professor.
+elim.
+axiom.
+dixi.
+counterargument asleep : (Snores -> Misbehaves).
+cut (~(Snores -> Misbehaves)) x.
+cut (Asleep -> ~(Snores -> Misbehaves)) th.
+axiom asleep_undercuts.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.

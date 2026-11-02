@@ -1,0 +1,137 @@
+# IndependenceExample.java (theory): arguments a, b, c, d, e, f, g, h; attacks a->b, b->a, b->e, c->d, d->c, d->e, d->h, e->f, f->g, g->e
+lk.
+declare A, B, C, D, E, F, G, H : bool.
+declare att_a_b : (A -> ~B).
+declare att_b_a : (B -> ~A).
+declare att_b_e : (B -> ~E).
+declare att_c_d : (C -> ~D).
+declare att_d_c : (D -> ~C).
+declare att_d_e : (D -> ~E).
+declare att_d_h : (D -> ~H).
+declare att_e_f : (E -> ~F).
+declare att_f_g : (F -> ~G).
+declare att_g_e : (G -> ~E).
+argument a : (A).
+by default.
+dixi.
+argument b : (B).
+by default.
+dixi.
+argument c : (C).
+by default.
+dixi.
+argument d : (D).
+by default.
+dixi.
+argument e : (E).
+by default.
+dixi.
+argument f : (F).
+by default.
+dixi.
+argument g : (G).
+by default.
+dixi.
+argument h : (H).
+by default.
+dixi.
+counterargument a_on_b : (B).
+cut (~B) x.
+cut (A -> ~B) th.
+axiom att_a_b.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_a : (A).
+cut (~A) x.
+cut (B -> ~A) th.
+axiom att_b_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument b_on_e : (E).
+cut (~E) x.
+cut (B -> ~E) th.
+axiom att_b_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument c_on_d : (D).
+cut (~D) x.
+cut (C -> ~D) th.
+axiom att_c_d.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_c : (C).
+cut (~C) x.
+cut (D -> ~C) th.
+axiom att_d_c.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_e : (E).
+cut (~E) x.
+cut (D -> ~E) th.
+axiom att_d_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument d_on_h : (H).
+cut (~H) x.
+cut (D -> ~H) th.
+axiom att_d_h.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument e_on_f : (F).
+cut (~F) x.
+cut (E -> ~F) th.
+axiom att_e_f.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument f_on_g : (G).
+cut (~G) x.
+cut (F -> ~G) th.
+axiom att_f_g.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument g_on_e : (E).
+cut (~E) x.
+cut (G -> ~E) th.
+axiom att_g_e.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

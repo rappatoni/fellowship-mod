@@ -1,0 +1,31 @@
+# EAFAgreementReasonerExample.java (af): arguments a, r; attacks a->r, r->a
+lk.
+declare A, R : bool.
+declare att_a_r : (A -> ~R).
+declare att_r_a : (R -> ~A).
+argument a : (A).
+by default.
+dixi.
+argument r : (R).
+by default.
+dixi.
+counterargument a_on_r : (R).
+cut (~R) x.
+cut (A -> ~R) th.
+axiom att_a_r.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument r_on_a : (A).
+cut (~A) x.
+cut (R -> ~A) th.
+axiom att_r_a.
+elim.
+next.
+axiom.
+elim.
+axiom.
+dixi.

@@ -1,0 +1,52 @@
+== literature/bug_credulous_tiebreak2.fspy: check ok=True (0.2s)
+-- pa: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- sa: issue A[t]; 11 edges
+   grounded  issue: ['IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   preferred issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+   stable    issue: ['IN', 'IN']
+      skeptical -> value     !IN:A
+      credulous -> value     !IN:A
+-- nb: issue B[c]; 9 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> value     μ'alt6:B.<r_nb:R->~B||!IN:R*μb1:B.<alt6:B||b1:B>*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt6:B.<alt6:B||UNDEC:B?>
+      credulous -> value     μ'alt6:B.<r_nb:R->~B||!IN:R*μb1:B.<alt6:B||b1:B>*_F_>
+-- nr: issue R[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt4:R.<alt4:R||UNDEC:R?>
+      credulous -> open      μ'alt4:R.<alt4:R||UNDEC:R?>
+   preferred issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt4:R.<alt4:R||UNDEC:R?>
+      credulous -> value     μ'alt4:R.<s_nr:S->~R||μb2:S.<r_ns:R->~S||μb1:R.<alt4:R||b1:R>*!IN:S*_F_>*μb1:R.<alt4:R||b1:R>*_F_>
+   stable    issue: ['IN', 'OUT']
+      skeptical -> open      μ'alt4:R.<alt4:R||UNDEC:R?>
+      credulous -> value     μ'alt4:R.<s_nr:S->~R||μb2:S.<r_ns:R->~S||μb1:R.<alt4:R||b1:R>*!IN:S*_F_>*μb1:R.<alt4:R||b1:R>*_F_>
+-- ns: issue S[c]; 6 edges
+   grounded  issue: ['UNDEC']
+      skeptical -> open      μ'alt4:S.<alt4:S||UNDEC:S?>
+      credulous -> open      μ'alt4:S.<alt4:S||UNDEC:S?>
+   preferred issue: ['OUT', 'IN']
+      skeptical -> open      μ'alt4:S.<alt4:S||UNDEC:S?>
+      credulous -> value     μ'alt4:S.<r_ns:R->~S||μb2:R.<s_nr:S->~R||μb1:S.<alt4:S||b1:S>*!IN:R*_F_>*μb1:S.<alt4:S||b1:S>*_F_>
+   stable    issue: ['OUT', 'IN']
+      skeptical -> open      μ'alt4:S.<alt4:S||UNDEC:S?>
+      credulous -> value     μ'alt4:S.<r_ns:R->~S||μb2:R.<s_nr:S->~R||μb1:S.<alt4:S||b1:S>*!IN:R*_F_>*μb1:S.<alt4:S||b1:S>*_F_>
+== done in 1.2s

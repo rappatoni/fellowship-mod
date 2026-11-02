@@ -1,6 +1,8 @@
+import threading
 import pytest
 
 from core.dc.argument import Argument
+from wrap.document import Document
 from wrap.prover import ProverError, ProverWrapper
 from wrap.sexp_parser import SexpParser
 
@@ -17,11 +19,12 @@ class _SpawnFakeChild:
 
 def test_prover_wrapper_disables_pexpect_send_delay_after_initial_prompt(monkeypatch):
     child = _SpawnFakeChild()
-    monkeypatch.setattr("wrap.prover.pexpect.spawn", lambda *args, **kwargs: child)
+    monkeypatch.setattr("wrap.prover._spawn", lambda *args, **kwargs: child)
 
     ProverWrapper("fsp")
 
-    assert child.expected == ["fsp <"]
+    from wrap.prover import REPLY_END
+    assert child.expected == [REPLY_END]
     assert child.delaybeforesend is None
 
 
@@ -30,7 +33,6 @@ class _BatchFakeProver:
         self.commands = []
         self.batches = []
         self.quiet_batches = []
-        self.tactics = []
         self.declarations = {}
         self.decorations = {}
         self.fail_final_next = fail_final_next
@@ -56,11 +58,6 @@ class _BatchFakeProver:
     def send_commands_quiet_final(self, commands, *args, **kwargs):
         self.quiet_batches.append(tuple(commands))
         return self._state()
-
-    def execute_tactic(self, tactic_name, *args):
-        self.tactics.append((tactic_name, args))
-        return self._state()
-
 
 @pytest.mark.parametrize("env_value", ["0", "false", "no"])
 def test_argument_execute_can_disable_batch_replay(monkeypatch, env_value):
@@ -104,18 +101,6 @@ def test_argument_execute_prefers_quiet_final_replay(monkeypatch):
     assert prover.commands[-1] == "discard theorem."
 
 
-def test_argument_execute_flushes_batch_around_custom_tactics(monkeypatch):
-    monkeypatch.delenv("FSP_BATCH_REPLAY", raising=False)
-    prover = _BatchFakeProver()
-    arg = Argument(prover, "demo", "A", instructions=["intro", "tactic foo X Y", "axiom"])
-
-    arg.execute()
-
-    assert prover.batches == []
-    assert prover.quiet_batches == [("intro.",), ("axiom.",)]
-    assert prover.tactics == [("foo", ("X", "Y"))]
-
-
 def test_argument_execute_preserves_final_next_error_special_case(monkeypatch):
     monkeypatch.delenv("FSP_BATCH_REPLAY", raising=False)
     prover = _BatchFakeProver(fail_final_next=True)
@@ -148,6 +133,7 @@ def _machine_output(messages: str = "(errors) (warnings) (notes)") -> str:
 
 def test_send_commands_surfaces_intermediate_errors():
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.prover = _PromptFakeChild([
         _machine_output(),
         _machine_output('(errors "boom") (warnings) (notes)'),
@@ -155,9 +141,9 @@ def test_send_commands_surfaces_intermediate_errors():
     ])
     wrapper._sexp = SexpParser()
     wrapper.echo_notes = False
-    wrapper.declarations = {}
+    wrapper.doc = Document()
+    wrapper.lock = threading.RLock()
     wrapper.last_state = None
-    wrapper.last_output_text = ""
 
     with pytest.raises(ProverError, match="boom"):
         wrapper.send_commands(["first.", "second.", "third."])
@@ -167,6 +153,7 @@ def test_send_commands_surfaces_intermediate_errors():
 
 def test_send_commands_quiet_final_toggles_quiet_and_returns_full_state(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
     wrapper.batches = []
 
@@ -201,6 +188,7 @@ def test_send_commands_quiet_final_toggles_quiet_and_returns_full_state(monkeypa
 
 def test_send_commands_quiet_final_falls_back_when_quiet_command_unavailable(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
     wrapper.batches = []
 
@@ -226,6 +214,7 @@ def test_send_commands_quiet_final_falls_back_when_quiet_command_unavailable(mon
 
 def test_send_commands_quiet_final_restores_quiet_mode_on_replay_error(monkeypatch):
     wrapper = object.__new__(ProverWrapper)
+    wrapper.lock = threading.RLock()
     wrapper.commands = []
 
     def send_command(cmd, *args, **kwargs):
