@@ -47,7 +47,8 @@ def printed():
         prover.send_command(command)
     for index, shape in enumerate(ALL_SHAPES):
         prover.send_command(f"declare d{index} : ({shape}).")
-    return {shape: str(prover.declarations[f"d{index}"]) for index, shape in enumerate(ALL_SHAPES)}
+    yield {shape: str(prover.declarations[f"d{index}"]) for index, shape in enumerate(ALL_SHAPES)}
+    prover.close()
 
 
 @pytest.mark.parametrize("left,right", DISTINCT_PAIRS, ids=lambda s: s.replace("/", ""))

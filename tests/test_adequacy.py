@@ -19,7 +19,7 @@ from conftest import DEFAULT_SCRIPTS
 from core.dc.unfold import argument_edge
 from pres.gen import pres_str
 from wrap.cli import setup_prover
-from wrap.service import Service
+from wrap.service import LogicRefused, Service, TypeCheckRefused
 
 TESTS = Path(__file__).parent
 FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
@@ -49,6 +49,12 @@ KNOWN |= {("hypothesis_horn.fspy", text, where)
                             "(exists x:Pub,Dr x->(forall y:Pub,Dr y))")
           for where in ("skeptical", "witness 1")}
 
+#: The fixtures with nothing to check: their debates are refused (lj) or no
+#: issue of theirs is IN.  Pinned, so that a fixture cannot drop out unnoticed.
+NOTHING_TO_CHECK = {"exposure/lemma_scope_cases.fspy", "first_order/birds_fly_open.fspy",
+                    "fo_exists_forall.fspy", "fo_forall.fspy", "rationality/even_loop.fspy",
+                    "rationality/self_attack.fspy", "tactics.fspy"}
+
 
 def targets(prover):
     found = [name for name in prover.arguments if argument_edge(prover.graph, name) is not None]
@@ -73,7 +79,7 @@ def test_an_issue_in_under_the_witness_evaluates_to_a_value(script):
                     target = svc.target(text)
                     skeptical = svc.evaluate(target, mode="skeptical")
                     witnesses = svc.evaluate(target, mode="credulous", witness="all")
-                except Exception:
+                except (LogicRefused, TypeCheckRefused):
                     continue                  # refused (lj, first order, ...): not this check's business
                 issue = svc.issue_term(target, want_term=False).issue
                 if skeptical.sigma.get(issue) == "IN":
@@ -87,6 +93,7 @@ def test_an_issue_in_under_the_witness_evaluates_to_a_value(script):
                             violations.add((name, text, f"witness {number}"))
     finally:
         prover.close()
+    assert (not checked) == (str(Path(script).relative_to(TESTS)) in NOTHING_TO_CHECK)
     if not checked:
         pytest.skip("no debate of this fixture is evaluated (refused or none)")
     assert violations == {k for k in KNOWN if k[0] == name}

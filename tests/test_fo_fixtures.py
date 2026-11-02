@@ -33,7 +33,9 @@ def own_prover():
     isolate=False, and that in turn needs a session no other test has declared
     into -- Fellowship rejects a redeclaration.
     """
-    return setup_prover()
+    prover = setup_prover()
+    yield prover
+    prover.close()
 
 
 @pytest.mark.parametrize("script", [FO_FORALL, FO_EXISTS_FORALL], ids=lambda p: p.stem)

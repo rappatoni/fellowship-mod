@@ -16,6 +16,7 @@ import re
 from pathlib import Path
 
 import pytest
+from lark.exceptions import LarkError
 
 from core.ac.syntax import _parser
 
@@ -116,7 +117,7 @@ def test_every_proof_term_in_the_suite_has_one_reading():
         start = "context" if text.lstrip().startswith("μ'") else "term"
         try:
             count = ambiguity_count(text, start)
-        except Exception:
+        except LarkError:
             continue  # a fragment of a multi-line literal, not a whole term
         if count:
             ambiguous.append((count, text))

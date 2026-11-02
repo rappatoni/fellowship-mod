@@ -250,6 +250,20 @@ elim x.
 """
 
 
+@pytest.fixture
+def new_prover():
+    """Start provers for a test and close them after it."""
+    from wrap import cli
+    started = []
+
+    def start():
+        started.append(cli.setup_prover())
+        return started[-1]
+    yield start
+    for prover in started:
+        prover.close()
+
+
 def _type_at_the_prompt(monkeypatch, lines):
     """The REPL's line reader fed ``lines``, each echoed after its prompt as
     a terminal shows it."""
@@ -266,14 +280,14 @@ def _type_at_the_prompt(monkeypatch, lines):
     monkeypatch.setattr(cli, "_setup_readline", lambda: None)
 
 
-def test_a_verbose_script_prints_what_the_repl_prints(monkeypatch, capsys, tmp_path):
+def test_a_verbose_script_prints_what_the_repl_prints(monkeypatch, capsys, tmp_path, new_prover):
     from wrap import cli
     script = tmp_path / "s.fspy"
     script.write_text(VERBOSE_SCRIPT)
-    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    cli.execute_script(new_prover(), str(script), verbose=True)
     verbose = capsys.readouterr().out
     _type_at_the_prompt(monkeypatch, VERBOSE_SCRIPT.splitlines())
-    cli.interactive_mode(cli.setup_prover())
+    cli.interactive_mode(new_prover())
     by_hand = capsys.readouterr().out
     stop = f"Stopped at {script}:9.\n"          # `elim x.` outside an argument: a script stops
     assert verbose.endswith(stop)
@@ -283,11 +297,11 @@ def test_a_verbose_script_prints_what_the_repl_prints(monkeypatch, capsys, tmp_p
     assert "1 goal yet to prove!" in verbose                           # the goals
 
 
-def test_a_verbose_script_still_stops_on_a_prover_error(capsys, tmp_path):
+def test_a_verbose_script_still_stops_on_a_prover_error(capsys, tmp_path, new_prover):
     from wrap import cli
     script = tmp_path / "s.fspy"
     script.write_text("lk.\nfrobnicate.\ndeclare A : bool.\n")
-    cli.execute_script(cli.setup_prover(), str(script), verbose=True)
+    cli.execute_script(new_prover(), str(script), verbose=True)
     out = capsys.readouterr().out
     assert out.rstrip().endswith(f"Stopped at {script}:2.")
     assert "acdc> declare A" not in out
@@ -325,12 +339,12 @@ def test_load_without_prompt_on_error_exits(monkeypatch, capsys, tmp_path):
     assert "acdc>" not in out and "nonsense is neither" not in out
 
 
-def test_load_at_the_prompt_is_verbose_unless_silent(monkeypatch, capsys, tmp_path):
+def test_load_at_the_prompt_is_verbose_unless_silent(monkeypatch, capsys, tmp_path, new_prover):
     from wrap import cli
     script = tmp_path / "s.fspy"
     script.write_text("lk.\ndeclare A : bool.\n")
     _type_at_the_prompt(monkeypatch, [f'load "{script}".', f'load silent "{script}".'])
-    cli.interactive_mode(cli.setup_prover())
+    cli.interactive_mode(new_prover())
     out = capsys.readouterr().out
     assert out.count("acdc> declare A : bool.") == 1               # only the first load
 

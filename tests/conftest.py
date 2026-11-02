@@ -2,8 +2,9 @@
 from pathlib import Path
 import pytest
 import os
-import importlib.util, sys
 import logging
+import subprocess
+from types import SimpleNamespace
 
 
 from wrap.cli import (
@@ -18,11 +19,6 @@ from wrap.cli import (
 )
 from wrap.prover import ProverWrapper, ProverError, MachinePayloadError
 from core.dc.argument import Argument
-from core.ac.grammar import Grammar, ProofTermTransformer
-import builtins as _builtins
-# Expose parser-era globals for legacy tests that reference them without import
-_builtins.Grammar = Grammar
-_builtins.ProofTermTransformer = ProofTermTransformer
 
 PYTEST_TODO = ("Add version of trees with natural language renderings; update/tweak natural language renderings; implement multiple undercuts, support, and rebut; add support for the '-' connective; "
                "then implement scenarios.")
@@ -88,6 +84,30 @@ def require_adf_bdd():
     resolve_adf_bdd()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def solver_answers_once():
+    """adf-bdd is asked the same question over and over: 93% of its calls in
+    a run of the suite repeat one already made.  Answer a repeat from memory;
+    the first call of each input still runs the solver.  Only the solver
+    module's view of `subprocess` changes."""
+    from core.comp import oracle
+    answers = {}
+
+    def run(command, **options):
+        key = (tuple(command[:-1]), Path(command[-1]).read_text())
+        if key not in answers:
+            answer = subprocess.run(command, **options)
+            if answer.returncode:
+                return answer
+            answers[key] = answer
+        return answers[key]
+
+    patch = pytest.MonkeyPatch()
+    patch.setattr(oracle, "subprocess", SimpleNamespace(run=run))
+    yield
+    patch.undo()
+
+
 @pytest.fixture(scope="session")
 def prover():
     """Launch a *single* FSP process for the whole test session."""
@@ -121,35 +141,16 @@ def script_paths(request) -> list[Path]:
     return resolved
 
 
-# --- OPTIONAL: If you do NOT already have a `prover` fixture, you can adapt this:
-# @pytest.fixture
-# def prover():
-#     \"\"\"Provide a real prover from your codebase, or adapt the stub below.\"\"\"
-#     try:
-#         # Example: from your_package.prover import Prover
-#         # return Prover(...)
-#         raise ImportError  # Remove this once you wire in your real prover
-#     except Exception:
-#         pytest.skip(
-#             "No `prover` fixture available. Provide one in your project that "
-#             "returns an initialized prover compatible with execute_script()."
-#         )
+def pytest_collection_modifyitems(config, items):
+    """Mark the tests of slow_tests.txt (made by tools/list_slow_tests.py)
+    `slow`.  A test renamed since just runs by default, which is the safe way
+    for the list to go stale."""
+    listed = (Path(__file__).parent / "slow_tests.txt").read_text().splitlines()
+    slow = {line for line in listed if line and not line.startswith("#")}
+    for item in items:
+        if item.nodeid in slow:
+            item.add_marker(pytest.mark.slow)
 
-def load_monolith():
-    p = Path(__file__).parent / "tests.py"
-    spec = importlib.util.spec_from_file_location("fsp_monolith_tests", p)
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["fsp_monolith_tests"] = mod
-    assert spec.loader is not None
-    spec.loader.exec_module(mod)
-    return mod
-
-def pytest_ignore_collect(collection_path: Path, config):
-    # Prevent legacy tests.py (manual runner) from being auto‑collected by pytest
-    try:
-        return collection_path.name == "tests.py"
-    except Exception:
-        return False
 
 def pytest_report_header(config):
     return f"TODO: {PYTEST_TODO}"

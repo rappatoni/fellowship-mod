@@ -4,6 +4,7 @@ from pres.gen import ProofTermGenerationVisitor
 from core.ac.ast import Mu, Goal, ID
 from copy import deepcopy
 import logging
+import pytest
 from conftest import make_assert_log
 logger = logging.getLogger("tests.non_affine")
 _assert_log = make_assert_log(logger)
@@ -30,20 +31,20 @@ def affine_mu_rule_nonaffine_test():
     result_term = printer.visit(res).pres
     logger.info("Result term: %s", result_term)
 
-    try:
-        # root still Mu
-        _assert_log(isinstance(res, Mu), "root not Mu")
-        # term is ?1
-        _assert_log(isinstance(res.term, Goal) and res.term.number == "2", "term not goal ?2")
-        # context is µw<B>
-        _assert_log(isinstance(res.context, ID), "context not ID term as expected")
-        inner = res.context
-        _assert_log(inner.name == "v", "inner context should be v")
-        # binder non‑affine: w occurs in term component (ID w)
-        #assert isinstance(inner.term, (ID, DI)) and inner.term.name == "w", "inner term should be w"
-        #logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")
-    except AssertionError as e:
-        logger.error("Affine μ‑rule #2 (non‑affine t*) test failed: %s", e)
+    # root still Mu
+    _assert_log(isinstance(res, Mu), "root not Mu")
+    # term is ?1
+    _assert_log(isinstance(res.term, Goal) and res.term.number == "2", "term not goal ?2")
+    # context is µw<B>
+    _assert_log(isinstance(res.context, ID), "context not ID term as expected")
+    inner = res.context
+    _assert_log(inner.name == "v", "inner context should be v")
+    # binder non‑affine: w occurs in term component (ID w)
+    #assert isinstance(inner.term, (ID, DI)) and inner.term.name == "w", "inner term should be w"
+    #logger.info("Affine μ‑rule #2 (non‑affine t*) test passed")
 
+@pytest.mark.xfail(strict=True, reason="the reducer stops at μalpha:B.<?2||μ'w:B.<w||v>>, not the "
+                                        "expected μalpha:B.<?2||v>; the reducer is due to go "
+                                        "(tasks.org, aida-retire-deprecated-term-commands)")
 def test_affine_mu_rule_nonaffine():
     affine_mu_rule_nonaffine_test()

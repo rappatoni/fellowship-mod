@@ -8277,6 +8277,59 @@ Questions the design has to answer:
 
 * Correctness and maintenance
 
+** DONE Keep the test suite fast and its tests able to fail
+CLOSED: [2026-11-02 Mon]
+:PROPERTIES:
+:ID:             aida-test-suite-cost
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        The default run is parallel and takes under two minutes, the slow tests run by =make test-all=, and no test that cannot fail, is never collected or is wholly commented out remains: =tests/tests.py=, its wrappers and the helpers in =tests/conftest.py= that only they use are gone.
+:VERIFY:         =pytest -n auto tests= and =pytest -n auto -m "not perf" tests= pass with no xpassed test; =grep -rn load_monolith tests= finds nothing.
+:END:
+
+Analysis of 2026-10-30, AI-written, on =68e5ffb= plus the uncommitted change.
+All timings are on 6 CPUs and call pytest directly, not through =make=.
+
+| Run                             | Before         | After                  |
+|---------------------------------+----------------+------------------------|
+| Default, sequential             | 7:31, 7:33     | 2:50, 2:58             |
+| Default, parallel               | -              | 1:09, 1:16, 1:24       |
+| All but =perf=, sequential      | 7:31, 7:33     | 5:50                   |
+| All but =perf=, parallel        | -              | 2:22, 2:19             |
+
+The "before" runs predate =68e5ffb=. After: the default run has 2275 passed, 8
+skipped, 3 xfailed, 1 xpassed; all but =perf= has 2508 passed and the same rest.
+The slow list (233 tests) loses no line of core/, wrap/ or pres/ that the full
+suite reaches, by line coverage, which sees neither the OCaml side nor how
+strong an assertion is.
+
+Found on the way: a command and its newline were two writes, which put a stray
+prompt into replies (the flaky =test_a_verbose_script_prints_what_the_repl_prints=:
+161 failures in 900 runs before, 0 in 900 after) and is one cause of the broken
+pipes at =close()= under parallel runs. =tests/non_affine_test.py= had been failing behind its
+exception handler: the reducer stops at =μalpha:B.<?2||μ'w:B.<w||v>>=, the test
+expects =μalpha:B.<?2||v>=. It is a strict xfail until
+=aida-retire-deprecated-term-commands=, or until the author decides otherwise.
+
+Closed 2026-11-02, after the author deleted =tests/tests.py=, =smoketest.py=,
+=fsp_machine_mode_tests.py=, =test_moxia_antitheorem.py= and the eleven
+wrappers calling =load_monolith=, and the helpers only they used went from
+=tests/conftest.py=. Then: default, parallel, 2266 passed, 7 skipped, 3 xfailed
+in 1:17; all but =perf=, parallel, 2499 passed and the same rest in 3:13;
+default, sequential, 3:47 (a busier machine than the table's runs). No test
+xpasses; =grep -rn load_monolith tests --include='*.py'= finds nothing.
+
+The =perf= tests take 2.4 s, so on the author's decision they are back in the
+default run (=AGENTS.md= says so now): 2282 passed, 7 skipped, 3 xfailed in 1:15,
+parallel.
+
 ** DONE Replay a nested binder named thesis instead of dropping its cut
 CLOSED: [2026-10-30 Fri]
 :PROPERTIES:

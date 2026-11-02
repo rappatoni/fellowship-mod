@@ -12,7 +12,7 @@ import pytest
 from core.dc.debate_graph import canonical_prop as K
 from pres.gen import pres_str
 from wrap.cli import setup_prover, execute_script
-from wrap.service import Service, NotFound
+from wrap.service import AidaError, Service, NotFound
 from wrap.serialize import VERSION, to_json, term_tree, term_from_tree
 
 SCHEMA = json.loads(Path("wrap/schemas/aida.schema.json").read_text())
@@ -61,7 +61,7 @@ def test_term_trees_read_back_losslessly(script):
             try:
                 terms.append(svc.term(name).term)
                 terms.append(svc.evaluate(name).normal_form)
-            except Exception:
+            except AidaError:
                 pass
         assert terms
         for t in terms:

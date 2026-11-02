@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
   "pytest>=8,<9",
+  "pytest-xdist>=3.5,<4",
   "jsonschema>=4,<5",
 ]
 
@@ -30,9 +31,10 @@ include = ["core*", "pres*", "wrap*"]
 wrap = ["schemas/*.json"]
 
 [tool.pytest.ini_options]
-# The performance tests (scaling on generated documents) are left out of the
-# default run; run them sparingly, with `make test-perf` or `pytest -m perf`.
+# The slow tests (tests/slow_tests.txt) are left out of the default run:
+# `make test-all` runs them.  `make test-perf` runs the performance tests alone.
 markers = [
-    "perf: performance test - size and growth on generated documents; run sparingly (pytest -m perf)",
+    "perf: performance test - size and growth on generated documents (make test-perf runs them alone)",
+    "slow: costly and adding little to the default run; listed in tests/slow_tests.txt (make test-all)",
 ]
-addopts = "-m 'not perf'"
+addopts = "-m 'not slow'"

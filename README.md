@@ -1288,13 +1288,19 @@ pytest -q tests
 The performance tests - size and growth of the debate on generated
 documents (doubled chains of up to sixteen levels, the size table of
 docs/minicourses/minicourse-sharing.org) - carry the pytest marker `perf`
-and are left out of the default run (`pyproject.toml`). Run them
-sparingly: after a change to sharing, unfolding or the instance resolver,
-and before stating a performance claim.
+and are part of the default run; they take about two seconds. Run them on
+their own before stating a performance claim.
 
 ```bash
 make test-perf          # or: pytest -q -m perf tests
 ```
+
+`make test` runs on every core and leaves out the slow tests, listed in
+`tests/slow_tests.txt`: the costlier fixture sweeps and most random-document
+seeds. Run them with `make test-all` before a commit that touches sharing,
+unfolding, evaluation or the solver. `tools/list_slow_tests.py` regenerates the
+list from a sequential run's timings. A plain `pytest` runs sequentially, with
+the same selection.
 
 ## Development commands
 

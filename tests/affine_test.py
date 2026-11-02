@@ -25,15 +25,10 @@ def affine_mu_rule_test():
     printer = ProofTermGenerationVisitor()
     result_term = printer.visit(result).pres
     logger.info("Result term %s", result_term)
-    try:
-        _assert_log(isinstance(result, Mu), "root must be Mu")
-        _assert_log(isinstance(result.term, Goal) and result.term.number == "1.1", "term should be ?1.1")
-        _assert_log(isinstance(result.context, ID) and result.context.name == "alpha", "context should be alpha")
-        logger.info("AFFINE μ‑RULE REDUCTION TEST PASSED")
-    except AssertionError as e:
-        logger.error("AFFINE μ‑RULE REDUCTION TEST FAILED: %s", e)
-    except Exception:
-        logger.exception("Unexpected exception during affine μ‑rule test")
+    _assert_log(isinstance(result, Mu), "root must be Mu")
+    _assert_log(isinstance(result.term, Goal) and result.term.number == "1.1", "term should be ?1.1")
+    _assert_log(isinstance(result.context, ID) and result.context.name == "alpha", "context should be alpha")
+    logger.info("AFFINE μ‑RULE REDUCTION TEST PASSED")
 
 def test_affine_mu_rule():
     affine_mu_rule_test()

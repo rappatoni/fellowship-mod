@@ -7,11 +7,13 @@ from pres.gen import ProofTermGenerationVisitor
 from wrap.cli import setup_prover, execute_script
 
 
-@pytest.mark.skip(reason="passes alone; in the full suite the shared session is contaminated (Symbol A_h undefined)")
-def test_vanilla_render_marius_example_matches_generated_pres(prover):
+def test_vanilla_render_marius_example_matches_generated_pres(prover, tmp_path):
     # Run the real script to produce the argument in the prover session.
-    # This ensures we test the exact pipeline the user cares about.
-    script = Path(__file__).parent / "marius_example.fspy"
+    # This ensures we test the exact pipeline the user cares about.  Without
+    # arg0, which the pure level refuses (tests/test_discipline.py).
+    text = (Path(__file__).parent / "marius_example.fspy").read_text()
+    script = tmp_path / "marius_example.fspy"
+    script.write_text(text[:text.index("argument arg0")] + text[text.index("#Then via argument operations"):])
     execute_script(prover, str(script), strict=True, stop_on_error=True, echo_notes=False, isolate=False)
 
     arg = prover.get_argument("arg1")

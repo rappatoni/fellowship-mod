@@ -6,7 +6,7 @@ PIP := $(VENV)/bin/pip
 ADF_BDD_VERSION := 0.3.0
 ADF_BDD := $(VENV)/bin/adf-bdd
 
-.PHONY: venv install reset-venv cli test test-perf lint format typecheck binlink clean adf-bdd
+.PHONY: venv install reset-venv cli test test-all test-perf lint format typecheck binlink clean adf-bdd
 
 # Create the venv only if none exists: re-running `python3 -m venv` over a
 # venv made by a different interpreter (e.g. uv's 3.12 vs Homebrew's 3.14)
@@ -36,9 +36,14 @@ cli: install
 	$(VENV)/bin/acdc $(ARGS)
 
 test: install
-	$(VENV)/bin/pytest -q tests
+	$(VENV)/bin/pytest -q -n auto tests
 
-# The performance tests (pytest marker `perf`): run sparingly.
+# Every test, the slow ones included: before a commit that touches sharing,
+# unfolding, evaluation or the solver.
+test-all: install
+	$(VENV)/bin/pytest -q -n auto -m "slow or not slow" tests
+
+# The performance tests (pytest marker `perf`) alone.
 test-perf: install
 	$(VENV)/bin/pytest -q -m perf tests
 

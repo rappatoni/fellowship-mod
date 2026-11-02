@@ -302,13 +302,28 @@ def run(prover, script, **options):
                        render_files=False, **options)
 
 
+@pytest.fixture(scope="module")
+def replayed():
+    """A fixture's replay, made once, for the sweeps that only read it."""
+    provers = {}
+
+    def replay(script):
+        if script not in provers:
+            provers[script] = setup_prover()
+            run(provers[script], script, stop_marker=False)
+        return provers[script]
+    yield replay
+    for prover in provers.values():
+        prover.close()
+
+
 @pytest.mark.parametrize("script", SCRIPTS)
-def test_expansion_is_unfolding_on_fixtures(fresh, script, capsys):
-    run(fresh, script, stop_marker=False)
-    doc = fresh.graph
+def test_expansion_is_unfolding_on_fixtures(replayed, script):
+    prover = replayed(script)
+    doc = prover.graph
     assert doc.statements(), "the fixture registered no argument"
     for statement in doc.statements():
-        shared = share(doc, statement, fresh.debate_names(), fresh.anon_name)
+        shared = share(doc, statement, prover.debate_names(), prover.anon_name)
         assert shape(shared.expand()) == shape(unfold(doc, statement)), statement
         shared.to_text()                         # printing never raises
 
@@ -579,10 +594,10 @@ class TestIssueGraphFromInstances:
             same_graph(doc, statement, strict, semantics=("grounded", "complete"))
 
     @pytest.mark.parametrize("script", SCRIPTS)
-    def test_fixtures(self, fresh, script, capsys):
-        run(fresh, script, stop_marker=False)
-        doc = fresh.graph
-        names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    def test_fixtures(self, replayed, script):
+        prover = replayed(script)
+        doc = prover.graph
+        names, kinds = list(prover.declarations.keys()), declaration_kinds(prover.declarations)
         for statement in doc.statements():
             same_graph(doc, statement, names, kinds, semantics=("grounded", "complete", "stable"))
 
@@ -745,10 +760,10 @@ class TestEvaluateFromTheSharedDebate:
             same_evaluation(doc, statement, strict, semantics=("grounded", "complete"), bases=("cbn",))
 
     @pytest.mark.parametrize("script", SCRIPTS)
-    def test_fixtures(self, fresh, script, capsys):
-        run(fresh, script, stop_marker=False)
-        doc = fresh.graph
-        names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    def test_fixtures(self, replayed, script):
+        prover = replayed(script)
+        doc = prover.graph
+        names, kinds = list(prover.declarations.keys()), declaration_kinds(prover.declarations)
         for statement in doc.statements():
             small = len(referenced_statements(
                 compile_issue(unfold(doc, statement), "x", strict_names=names, strict_kinds=kinds))) <= 10
@@ -907,12 +922,12 @@ SETTING_SCRIPTS = [
 
 @pytest.mark.parametrize("setting", ["preserve", "share"])
 @pytest.mark.parametrize("script", SETTING_SCRIPTS)
-def test_the_settings_agree_with_the_unfolded_term(fresh, script, setting, capsys):
+def test_the_settings_agree_with_the_unfolded_term(replayed, script, setting):
     """Expansion, issue graph and evaluation under the setting, against the
     unfolded term under the same setting (the default is every other test)."""
-    run(fresh, script, stop_marker=False)
-    doc = fresh.graph
-    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
+    prover = replayed(script)
+    doc = prover.graph
+    names, kinds = list(prover.declarations.keys()), declaration_kinds(prover.declarations)
     for statement in doc.statements():
         term = unfold(doc, statement, setting)
         assert shape(share(doc, statement, subarguments=setting).expand()) == shape(term), statement
@@ -941,13 +956,13 @@ def argument_edges(prover):
 
 
 @pytest.mark.parametrize("script", SCRIPTS)
-def test_an_argument_term_is_its_unfolding(fresh, script, capsys):
+def test_an_argument_term_is_its_unfolding(replayed, script):
     """``share(..., top=edge)`` against ``unfold_argument``: expansion, issue
     graph and evaluation, credulous with and without ``favour``."""
-    run(fresh, script, stop_marker=False)
-    doc = fresh.graph
-    names, kinds = list(fresh.declarations.keys()), declaration_kinds(fresh.declarations)
-    edges = argument_edges(fresh)
+    prover = replayed(script)
+    doc = prover.graph
+    names, kinds = list(prover.declarations.keys()), declaration_kinds(prover.declarations)
+    edges = argument_edges(prover)
     assert edges, "the fixture registered no argument with an edge"
     for edge in edges:
         issue = (edge.target_key, edge.target_side)

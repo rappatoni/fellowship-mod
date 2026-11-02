@@ -23,49 +23,44 @@ def lambda_rule_test():
     deep-copy sub-trees or failed to re-link the new nodes correctly.
     """
     logger.info("Lambda rule reduction test")
-    try:
-        # A tiny proof term that exhibits the redex *once*.
-        #    μ thesis:B . < λx:A.x || y * thesis >
-        # After one reduction we expect
-        #    μ thesis:B . <  y  ||  μ' x:A .< x || thesis > >
-        test_terms = ["μthesis:B.<λx:A.t||y*thesis>", "μ'thesis:B.<λx:A.thesis||y*z>"]
-        counter = 0
-        reduced_terms = []
-        for test_term in test_terms:
-            logger.debug("Input term: %s", test_term)
-            grammar   = Grammar()
-            transformer = ProofTermTransformer()
-            tree      = grammar.parser.parse(test_term)
-            ast       = transformer.transform(tree)
-            printer = ProofTermGenerationVisitor()            
-            reducer   = ArgumentTermReducer()            
-            result    = reducer.reduce(ast)
-            result_term = printer.visit(result).pres
-            logger.info("Reduced proof term %d: %s", counter, result_term)
-            reduced_terms = reduced_terms + [result_term]
-            logger.debug("Reduced terms so far: %r", reduced_terms)
-            if counter == 0:                
-            # --- structural assertions -------------------------------------
-                _assert_log(isinstance(result, Mu), "Root must remain a Mu node")
-                # term part becomes the argument "y"
-                _assert_log(isinstance(result.term, DI) and result.term.name == "t",
-                    f"Expected term to be DI 't', got {type(result.term).__name__}:{getattr(result.term, 'name', '-')}")
+    # A tiny proof term that exhibits the redex *once*.
+    #    μ thesis:B . < λx:A.x || y * thesis >
+    # After one reduction we expect
+    #    μ thesis:B . <  y  ||  μ' x:A .< x || thesis > >
+    test_terms = ["μthesis:B.<λx:A.t||y*thesis>", "μ'thesis:B.<λx:A.thesis||y*z>"]
+    counter = 0
+    reduced_terms = []
+    for test_term in test_terms:
+        logger.debug("Input term: %s", test_term)
+        grammar   = Grammar()
+        transformer = ProofTermTransformer()
+        tree      = grammar.parser.parse(test_term)
+        ast       = transformer.transform(tree)
+        printer = ProofTermGenerationVisitor()            
+        reducer   = ArgumentTermReducer()            
+        result    = reducer.reduce(ast)
+        result_term = printer.visit(result).pres
+        logger.info("Reduced proof term %d: %s", counter, result_term)
+        reduced_terms = reduced_terms + [result_term]
+        logger.debug("Reduced terms so far: %r", reduced_terms)
+        if counter == 0:                
+        # --- structural assertions -------------------------------------
+            _assert_log(isinstance(result, Mu), "Root must remain a Mu node")
+            # term part becomes the argument "y"
+            _assert_log(isinstance(result.term, DI) and result.term.name == "t",
+                f"Expected term to be DI 't', got {type(result.term).__name__}:{getattr(result.term, 'name', '-')}")
 
-                # context part becomes a fresh µ' binder
-                _assert_log(isinstance(result.context, ID), "Context must be an ID after reduction")
-                ctx = result.context
-                _assert_log(ctx.name == "thesis", "thesis gets substituted in by mu' rule")
-                #assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
-                #assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
-            counter += 1
-            logger.debug("Counter: %d", counter)
-        logger.info("Lambda rule reduction test passed")
-        logger.debug("Original proof terms: %r", test_terms)
-        logger.debug("Reduced proof terms: %r", reduced_terms)
-    except AssertionError as e:
-        logger.error("Lambda rule reduction test failed: %s", e)
-    except Exception:
-        logger.exception("Unexpected exception during lambda-rule test")
+            # context part becomes a fresh µ' binder
+            _assert_log(isinstance(result.context, ID), "Context must be an ID after reduction")
+            ctx = result.context
+            _assert_log(ctx.name == "thesis", "thesis gets substituted in by mu' rule")
+            #assert isinstance(ctx.term, DI) and ctx.term.name == "t", "Inner term should be the body 't'"
+            #assert isinstance(ctx.context, ID) and ctx.context.name == "thesis", "Continuation should be 'thesis'"
+        counter += 1
+        logger.debug("Counter: %d", counter)
+    logger.info("Lambda rule reduction test passed")
+    logger.debug("Original proof terms: %r", test_terms)
+    logger.debug("Reduced proof terms: %r", reduced_terms)
 
 def test_lambda_rule():
     lambda_rule_test()

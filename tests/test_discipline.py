@@ -4,6 +4,7 @@ counterarguments dual-linear, no debate scaffold in either; enforced at
 `dixi.` and by `register`."""
 
 import glob
+import subprocess
 import warnings
 from pathlib import Path
 
@@ -170,11 +171,20 @@ def test_an_unused_continuation_is_allowed():
 
 # -- the census --------------------------------------------------------------
 
+def tracked_top_level_fixtures():
+    """tests/*.fspy under version control: a scratch file left beside the
+    fixtures is not part of the census.  Every file, outside a checkout."""
+    listed = subprocess.run(["git", "ls-files", "*.fspy"], cwd=TESTS, capture_output=True, text=True)
+    if listed.returncode:
+        return set(glob.glob(str(TESTS / "*.fspy")))
+    return {str(TESTS / line) for line in listed.stdout.splitlines() if "/" not in line}
+
+
 FIXTURES = sorted({str(TESTS / s) for s in DEFAULT_SCRIPTS}
                   | set(glob.glob(str(TESTS / "minicourse" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "demo" / "*.fspy")))
                   | set(glob.glob(str(TESTS / "rationality" / "*.fspy")))
-                  | set(glob.glob(str(TESTS / "*.fspy"))))
+                  | tracked_top_level_fixtures())
 
 #: The two fixture arguments the pure level refuses, by design.
 REFUSED = {("alternative_arguments.fspy", "admaltest"), ("marius_example.fspy", "arg0")}

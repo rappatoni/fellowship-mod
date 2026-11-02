@@ -33,19 +33,14 @@ def mutilde_affine_defence_test():
     logger.info("Result term: %s", result_term)
 
 
-    try:
-        # root binder unchanged (µ')
-        _assert_log(isinstance(res, Mutilde), "root should remain µ'")
-        # term should now be the goal ?1
-        logger.debug("Context number: %s", res.context.number)
-        _assert_log(isinstance(res.context, Laog) and res.context.number == "3", "term should be ?3")
-        # context must be ID alpha
-        _assert_log(isinstance(res.term, DI) and res.term.name == "alpha", "context should be ID 'alpha'")
-        logger.info("Mutilde affine defence test passed")
-    except AssertionError as e:
-        logger.error("Mutilde affine defence test failed: %s", e)
-    except Exception:
-        logger.exception("Unexpected exception during mutilde affine defence test")
+    # root binder unchanged (µ')
+    _assert_log(isinstance(res, Mutilde), "root should remain µ'")
+    # term should now be the goal ?1
+    logger.debug("Context number: %s", res.context.number)
+    _assert_log(isinstance(res.context, Laog) and res.context.number == "3", "term should be ?3")
+    # context must be ID alpha
+    _assert_log(isinstance(res.term, DI) and res.term.name == "alpha", "context should be ID 'alpha'")
+    logger.info("Mutilde affine defence test passed")
 
 def test_mutilde_affine_defence():
     mutilde_affine_defence_test()

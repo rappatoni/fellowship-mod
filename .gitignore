@@ -77,6 +77,7 @@ papers/comma2026/.cecli/
 *.json
 !wrap/schemas/*.json
 *.txt
+!tests/slow_tests.txt
 !eval/**/*.txt
 
 # Tweety jars for the reference driver (eval/tweety/setup_tweety.sh)
