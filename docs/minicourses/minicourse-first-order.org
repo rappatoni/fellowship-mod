@@ -48,15 +48,25 @@ side. Each leaves a mark in the proof term:
 |------------------------+-------------+--------------+-----------------------------------|
 | universal, right       | =elim z=    | =λz:Pub.v=   | names an arbitrary individual =z= |
 | existential, right     | =elim [c]=  | =(c, v)=     | names the witness =c=             |
-| universal, left        | =elim [c]=  | =c * e=      | instantiates a hypothesis at =c=  |
-| existential, left      | =elim=      | =(x:Pub).e=  | unpacks a hypothesis into =x=     |
+| universal, left        | =elim [c]=  | =c * e=      | names the counterexample =c=      |
+| existential, left      | =elim=      | =(x:Pub).e=  | names an arbitrary individual =x= |
+
+On the left the proof term is a context, which refutes its proposition:
+=c * e= refutes the universal by refuting its instance at =c=, and
+=(x:Pub).e= refutes the existential by refuting its instance at an
+arbitrary =x=. Read as using the left-side proposition as an assumption,
+the same two steps instantiate the universal at =c= and unpack the
+existential into a fresh =x=.
 
 Two of them introduce a variable: the universal on the right and the
 existential on the left. Such a variable names an individual nobody
-chose - any individual for the universal, an unknown one for the
-existential. The course calls these two the *binders*. The other two,
-the existential on the right and the universal on the left, are *witness
-positions*: there the argument itself says which individual it means.
+chose - an arbitrary one, for which the proof or the refutation must go
+through whichever individual it is. (Seen from whoever uses the
+existential as an assumption, it is the individual the existential
+promises, about which nothing else is known.) The course calls these
+two the *binders*. The other two, the existential on the right and the
+universal on the left, are *witness positions*: there the argument
+itself says which individual it means.
 
 ** Example
 
@@ -75,8 +85,8 @@ site on the left (=next=): the open places of an argument, as in the
 propositional fragment. What is new is what surrounds them. In
 =everyone= the site =Dr z= sits under =λz=, so it is a claim about an
 arbitrary individual. In =from_someone= the site =Dr x= sits under
-=(x:Pub).=, so it is about the unknown individual the hypothesis
-promised.
+=(x:Pub).=, so it is about an arbitrary individual: the refutation of
+the existential must refute =Dr x= whichever individual =x= is.
 
 ** Exercises
 

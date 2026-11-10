@@ -14,7 +14,7 @@ argument someone : (exists x:Pub, Dr [x]).
 elim [c].
 by default.
 dixi.
-# universal on the left: elim [c] instantiates the hypothesis
+# universal on the left: elim [c] names the counterexample c
 argument from_everyone : (forall z:Pub, Dr [z]) -> Dr [c].
 elim h.
 cut (forall z:Pub, Dr [z]) k.
@@ -22,7 +22,7 @@ axiom h.
 elim [c].
 next.
 dixi.
-# existential on the left: elim unpacks the hypothesis
+# existential on the left: elim names an arbitrary individual
 argument from_someone : (exists x:Pub, Dr [x]) -> Dr [c].
 elim h.
 cut (exists x:Pub, Dr [x]) k.
