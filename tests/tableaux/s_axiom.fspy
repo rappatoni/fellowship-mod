@@ -1,0 +1,57 @@
+# Closed tableau: refuting the S axiom (A->(B->C))->((A->B)->(A->C)).
+# One argument per tableau rule instance (tasks.org,
+# aida-tableau-correspondence, aida-tableau-branch-copying).
+#   s1: S^F => (A->(B->C))^T, ((A->B)->(A->C))^F
+#   s2: ((A->B)->(A->C))^F => (A->B)^T, (A->C)^F
+#   s3: (A->C)^F => A^T, C^F
+#   ab1, ab2:   (A->B)^T      => A^F | B^T
+#   abc1, abc2: (A->(B->C))^T => A^F | (B->C)^T
+#   bc1, bc2:   (B->C)^T      => B^F | C^T
+# Every branch closes, but only if the pending compound formulas are
+# expanded on each branch the splits create: the case for copying them.
+lk.
+declare A,B,C:bool.
+
+counterargument s1 : (A->(B->C))->((A->B)->(A->C)).
+elim.
+dixi.
+
+counterargument s2 : (A->B)->(A->C).
+elim.
+dixi.
+
+counterargument s3 : A->C.
+elim.
+dixi.
+
+argument ab1 : A->B.
+elim x.
+cut (A) y.
+axiom.
+dixi.
+
+argument ab2 : A->B.
+elim x.
+dixi.
+
+argument abc1 : A->(B->C).
+elim x.
+cut (A) y.
+axiom.
+dixi.
+
+argument abc2 : A->(B->C).
+elim x.
+dixi.
+
+argument bc1 : B->C.
+elim x.
+cut (B) y.
+axiom.
+dixi.
+
+argument bc2 : B->C.
+elim x.
+dixi.
+
+label s1.

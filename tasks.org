@@ -8153,6 +8153,285 @@ CLOSED: [2026-10-08 Thu]
 :VERIFY:         Regression: existing color.py fixtures produce identical colours through both paths; the _combine_pair tables are re-derived from the Kleene evaluation with no remaining incomplete-case exceptions.
 :END:
 
+** BACKLOG Design: propositional debates that simulate analytic tableaux
+:PROPERTIES:
+:ID:             aida-tableau-correspondence
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         12:00
+:DEFERRALS:      0
+:OUTCOME:        The correspondence between propositional tableaux (for -> and its dual -) and debates is written down at two levels - the document graph (done in principle, recorded below) and the debate term (the children) - with each child decided, implemented or dropped, and the gap between "every branch closed" and "no countermodel exists" stated with its resolution.
+:VERIFY:         Each child is DONE or DROPPED with its evidence; the fixtures tests/tableaux/modus_ponens.fspy, open_implication.fspy and s_axiom.fspy still compile to exactly their rule instances, and the documented suite passes.
+:END:
+
+Raised by the author 2026-11-10 on tests/tableaux/tableau_sim.fspy. The
+aim: a one-to-one correspondence between propositional debates and
+analytic tableaux. A tableau refutes the goal: it shows a countermodel
+does not exist. Its rules for the connectives here are
+A->B^F => A^T, B^F (same branch) and A->B^T => A^F | B^T (split); those
+for - follow by duality. A branch closes when a formula occurs with both
+labels; the tableau closes when every branch closes. The debate starts
+from the refutation of the goal (the issue G[c]).
+
+*At the level of the document graph (checked 2026-11-10, scratch runs).*
+X^T is the statement X[t] and X^F is X[c]. A non-splitting rule is one
+argument whose sources are the formulas it adds (the counterargument
+=elim.= on A->B: edge A->B[c] <- A[t], B[c]). A splitting rule is two
+arguments for one statement (A->B[t] <- A[c], the author's
+=elim x. cut (A) y. axiom.=; A->B[t] <- B[t], =elim x.=). The sources
+of one edge are the "," of a branch; several edges into one statement
+are the "|". A branch is one choice of deriving edge for every
+statement reached from G[c]; multiplying out G[c]'s acceptance
+condition gives one conjunction per branch. For modus ponens:
+G[c] = (A[t] & A[c] & B[c]) | (A[t] & B[t] & B[c]), both branches
+closed. Closure is the contrary guard: no labelling has X[t] and X[c]
+both IN. A valuation is one delegation per atom; a countermodel is a
+consistent set of such delegations under which G[c] is IN. Runs:
+refuting A->B with A and not-B delegated gives A->B[c] IN (a
+countermodel); refuting A->A with A and not-A delegated is an onus
+conflict (UNDEC); modus ponens is OUT under all four valuations. Limits:
+one node per signed formula (the graph shares what a tableau tree
+copies, so the bijection is with the set of branches, i.e. the tableau
+up to expansion order); only documents whose arguments are exactly the
+rule instances; closure is not reported - telling a closed tableau from
+an open one means ranging over valuations (propositional validity).
+
+*At the level of the debate term (the children).* The intended
+correspondence, on modus ponens (G = A->((A->B)->B), Q = (A->B)->B;
+r1, r2 the counterarguments =elim.=, i1, i2 the two arguments for A->B):
+
+| Tableau                         | Debate term                                                                 | State           |
+|---------------------------------+-----------------------------------------------------------------------------+-----------------|
+| root G^F                        | the refutation's debate PUS(1:G?)(++ ...)                                   | today           |
+| rule application G^F => A^T,Q^F | r1 with its sites captured by branch binders                                | by hand         |
+| T-formula on the branch (A^T)   | a binder holding a term demand, mu'yA:A                                     | by hand         |
+| F-formula on the branch (B^F)   | a binder holding a context demand, mu bB:B                                  | by hand         |
+| atom                            | a demand no argument supports, never expanded                               | today           |
+| "," (same branch)               | the compound demand's debate nested inside the other demands' binders      | by hand         |
+| expanding Q^F by r2             | Q[c]'s debate unfolded in scope of every earlier binder                     | by hand         |
+| "|" (split) A->B^T              | the supporter stack SUP(?4:A->B)(++ i1, ++ i2)                              | today           |
+| pending formulas copied         | the rest of the branch unfolded inside each supporter                      | proposed        |
+| closing pair A^T ... A^F        | i1's demand attacked by the branch binder: TTA(5:A?)(-- yA)                 | by hand         |
+| branch closes                   | strictness decides it: the demand is a clash, strictly OUT on that branch   | by hand         |
+| the branch's step fails         | an argument with a strictly OUT demand is strictly defeated (on its branch) | proposed        |
+| all branches closed             | every supporter defeated; the statements above OUT, not strictly            | proposed        |
+| no countermodel exists          | G[c] strictly OUT: a strict attacker, the proof of G (lambda x.lambda f.f x) | proof extraction |
+| open branch (countermodel)      | no closing capture; delegating its atoms makes the refutation IN            | document only   |
+
+*The gap, corrected by the author 2026-11-10.* Supporters are
+alternatives: defeating every supporter of a statement leaves it OUT,
+not strictly OUT, since a new supporter could reinstate it. What holds:
+a statement with a strict attacker is strictly OUT. Defeat propagates
+strictly only through demands - an argument with a strictly OUT demand
+is strictly defeated. And the closings are strict only relative to their
+branch: =yA= holds A[t] because r1 demands it there. So a debate can
+show that every branch fails; "no countermodel exists" holds only with
+a strict attacker of the refutation, the proof of the goal that the
+closed tableau encodes. Tableau rules are exhaustive, a document is not.
+
+*Findings on the way (2026-11-10).*
+- Nothing built from the refutation and closing arguments alone can
+  normalise to a strict term of the goal: a strict A->A in normal form
+  contains a lambda, normalisation creates none, and refutations,
+  their closing arguments and the scaffolds contain none. So "from
+  above" - an argument that captures the refutation's demands and
+  derives the goal - is circular: a refutation is used only by handing
+  it a proof of the goal.
+- Stacking the demands inside a counterargument is refused at the pure
+  level ([[id:aida-argument-lj-restriction]]): a stacked r1
+  (=μ'h:G.<?A || μ'y:A.<h || y*Q?>>=) is not dual-linear. A stacked r2,
+  holding B with a continuation binder, is accepted. The holding has to
+  be done by the debate.
+- The hand-threaded modus ponens term (built from the unfolder's own
+  pieces for r1; tests/tableaux/threaded_experiment.py on
+  tests/tableaux/modus_ponens.fspy, rerun from there 2026-11-10)
+  type-checks through Fellowship. With the two closing captures written
+  in, the strict phase decides both closings (2 strict decisions; 0
+  without), and each closed branch becomes a clash in the term:
+  =μ'alt6.<yA || 5:A?>= in i1, =μalt7.<?6:B || bB>= in i2. The verdict
+  stays OPEN with the issue OUT, as for the unthreaded term: nothing
+  propagates the defeats, and the witness labelling - taken from the
+  document graph, where the atoms are bare obligations - rejects r1 at
+  the root. The closing captures without threading do not type-check
+  ("yA is neither in your hypothesis nor in your conclusion").
+- Granting every demand IN does not show the clashes either: a
+  statement labelled IN resolves to its root and drops its supporters
+  ([[id:aida-evaluate-keep-supporters-of-in-obligations]]).
+
+*** BACKLOG Thread a supporter's demands through branch binders in the unfolder
+:PROPERTIES:
+:ID:             aida-tableau-threaded-unfolding
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        An unfolding option places each supporter with its demand sites captured by branch binders - a term demand X[t] held by mu'x:X, a context demand X[c] by mu x:X - each binder in a cut against the debate about its demand, with the debate of the compound demand nested inside the binders of the others, so that every later expansion on the branch is in scope of every earlier formula; the default unfolding is unchanged.
+:VERIFY:         Under the option, tests/tableaux/modus_ponens.fspy unfolds (from r1) to the hand-threaded term of [[id:aida-tableau-correspondence]] up to binder names and site numbers, and Fellowship's type check accepts it; with the option off, every fixture's unfolded term is unchanged; the suite passes.
+:END:
+
+The holding is classical and so belongs to the debate, not the
+arguments ([[id:aida-argument-lj-restriction]]: "Debates, not
+arguments, may be classical"). For r1 =μ'h:G.<h || ?A * Q?>= the
+threaded placement is
+
+: μ'gG:G.< D_A || μ'yA:A.< μqQ:Q.< gG || μ'r1.<r1 || yA*qQ> > || D_Q > >
+
+and for r2 =μ'g:Q.<g || ?(A->B) * B?>=
+
+: μ'gQ:Q.< μbB:B.< D_{A->B} || μ'fAB.< gQ || μ'r2.<r2 || fAB*bB> > > || D_B >
+
+where D_X is the debate about the demand X. Plain nesting suffices when
+each rule adds at most one compound formula, as in modus ponens; the
+general case is [[id:aida-tableau-branch-copying]]. The branch binders
+are not scaffold binders and must not be mistaken for an argument's own
+binders (see [[id:aida-tableau-branch-closing-capture]]). Open: whether
+the issue graph and labels stay the document's unchanged (they should:
+statements and edges do not change), and how the shared route mirrors it.
+
+*** BACKLOG Close a branch: a branch binder of the opposite side attacks a demand strictly
+:PROPERTIES:
+:ID:             aida-tableau-branch-closing-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-tableau-threaded-unfolding
+:OUTCOME:        In a threaded unfolding, a demand X[c] in scope of a branch binder holding X[t] (or the reverse) gets an attack scaffold whose wing is that branch binder, not the scaffold's own alt, and the strict phase decides it as a defeat; a demand under a branch binder of the same side is captured as today; an argument's own binders never close a branch.
+:VERIFY:         On the modus ponens fixture, the threaded term carries TTA(5:A?)(-- yA) in i1 and ATT(?6:B)(-- bB) in i2 and the strict phase decides both (two strict decisions); a unit test shows that i1's own hypothesis x does not attack i1's demand; the open fixture (A->B) has no closing attack; the suite passes.
+:END:
+
+Checked by hand 2026-11-10 ([[id:aida-tableau-correspondence]]): with
+the two wings set to the branch binders the strict phase decides both
+attacks. Today the scaffold's own alt captures the bare contrary first
+([[id:aida-unfold-scaffold-binders-capture]], 2026-10-07); between
+2026-10-05 and 2026-10-07 an outer binder captured it and "the strict
+phase decides each attack as a defeat"
+([[id:aida-unfold-bare-contrary-capture]]). This task brings that back
+for branch binders only. The closing is strict relative to the branch:
+=yA= holds A[t] because r1 demands it on this branch, so the demand is
+strictly OUT given its branch, never outright. The trigger for the
+attack scaffold is a branch binder for the contrary in scope, not an
+obligation marker ([[id:aida-unfold-obligation-no-scaffold]]). Why only
+branch binders: i1 = =λx:A.μy:B.<x || 5:A?>= has its own hypothesis x:A
+over the demand; capture by x would defeat i1 by its own hypothesis,
+but that clash is how i1 works (refuting A under A yields B).
+
+*** BACKLOG Propagate strict defeat through demands, not through supporters
+:PROPERTIES:
+:ID:             aida-tableau-strict-propagation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-tableau-branch-closing-capture
+:OUTCOME:        The strict phase treats an argument with a strictly OUT demand as strictly defeated (relative to the branch the demand is OUT on), while a statement is strictly OUT only when it has a strict attacker; a statement all of whose supporters are strictly defeated is OUT but reinstatable; the verdict of a refutation whose every branch closes says so instead of the plain OPEN of an open tableau.
+:VERIFY:         On the modus ponens fixture, i1 and i2 are strictly defeated on their branches, A->B[t], Q[c] and G[c] are OUT but not strictly, and the evaluation reports every branch closed; adding a bare delegation of G[c] reinstates the refutation; the open fixture (A->B) reports an open branch; the suite passes.
+:END:
+
+The author's correction of 2026-11-10: supporters are disjunctive, so
+defeating all present supporters cannot make a statement strictly OUT -
+another supporter could reinstate it. A statement with a strict
+attacker is strictly OUT. Demands are conjunctive, so a strictly OUT
+demand defeats its argument whatever else is added. How the verdict
+should report "every branch closed" (a qualifier on OPEN, a class of
+its own) is to be decided with
+[[id:aida-uncatchable-exception-terminology]]. Whether the labelling
+must see branches - a demand under branch binders as a statement under
+assumptions ("A false, given A true and B false"), perhaps through the
+statements-in-context of [[id:aida-discourse-referents]] - so that
+document graph and term agree, is open; not checked against the
+referent design.
+
+*** BACKLOG Copy the pending formulas of a branch into each of its splits
+:PROPERTIES:
+:ID:             aida-tableau-branch-copying
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            4
+:EFFORT:         8:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-tableau-threaded-unfolding
+:OUTCOME:        It is decided whether, and how, the threaded unfolding unfolds the rest of a branch - the formulas still to expand - inside each supporter of a split, so that formulas obtained by expanding two compound siblings meet; if adopted, a tableau whose closure needs it closes in the term.
+:VERIFY:         The decision is written here. If adopted: tests/tableaux/s_axiom.fspy ((A->(B->C))->((A->B)->(A->C))) closes every branch in the threaded term, and the term's size growth over the fixtures is measured and recorded.
+:END:
+
+A binder holds a formula whole, not what its expansion yields. In the S
+axiom, B^T comes from expanding A->B^T and B^F from expanding
+A->(B->C)^T; neither debate lies inside the other's results, so with
+plain nesting the pair never meets. A tableau copies every pending
+formula into both branches of a split; the term would have to unfold
+the rest of the branch inside each leaf of a sub-debate, duplicated at
+every split - unfolding driven by the branch's agenda rather than by
+sites. The term so obtained is the sequent-calculus skeleton of the
+proof, with closing by capture. Expect the term to grow with the number
+of branches.
+
+*** BACKLOG Extract the proof of the goal from a closed tableau as a strict attacker
+:PROPERTIES:
+:ID:             aida-tableau-proof-extraction
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        A tactic (or wrapper command) turns a refutation whose every branch is closed into a strict argument for the goal, built from the rule instances' duals with each closing as a capture, so that the refutation has a strict attacker and is strictly OUT; for a branch left open it builds nothing.
+:VERIFY:         On the modus ponens fixture the extracted argument is strict, normalises to λx.λf. f x up to names, and the refutation then evaluates as EXCEPTION with its issue OUT; on tests/tableaux/tableau_sim.fspy's A->A the same holds for its refutation; on tests/tableaux/open_implication.fspy the tactic refuses; the suite passes.
+:END:
+
+The step from "every branch closed" to "no countermodel exists"
+([[id:aida-tableau-correspondence]]). Each rule has a dual - the other
+constructor of the same connective on the opposite side, with a binder
+at each position and its sites left open - and capture closes the
+branches:
+
+| On the branch | Expanded by                        | Closed by (dual, sites open)                      |
+|---------------+------------------------------------+---------------------------------------------------|
+| A->B^F        | counterargument ?A * B?            | argument lambda x:A.mu b:B.[.]                    |
+| A->B^T        | argument lambda x:A.?B (or impl)   | counterargument (mu a:A.[.]) * (mu' z:B.[.])      |
+| A-B^T         | argument B? .' ?A                  | counterargument lambda' x:B.mu' y:A.[.]           |
+| A-B^F         | counterargument lambda' x:B.A?     | argument (mu' z:B.[.]) .' (mu a:A.[.])            |
+
+Checked 2026-11-10 by hand: the A->A closing
+(=elim y. cut (A) b. next. next.=) normalises to λy.μb.<y||b> and is
+strict, and simple then evaluates as EXCEPTION; the modus ponens
+closings (=elim x.=; =elim f. cut (A->B) b2. next. next.=;
+=elim. cut (A) a. next. next. cut (B) z. next. next.=) give VALUE with
+normal form λx.λf.μb.<f || x*b>; the A-A closing
+(=elim x. cut (A) y. next. next.= on the context side) is strict and
+makes its pair argument an EXCEPTION. The A-B^F row is from duality
+only. These closings capture inside themselves: they do not use the
+refutation's own sites, which is why they are the proof the tableau
+encodes rather than a debate move. Where a tactic is registered:
+[[id:aida-tactic-registration]].
+
 * Performance and architecture
 
 ** BACKLOG Replace stepwise proof replay with certificate-oriented checking

@@ -1,0 +1,14 @@
+# Open tableau: refuting A->B.  One argument per tableau rule instance
+# (tasks.org, aida-tableau-correspondence).
+#   refute: (A->B)^F => A^T, B^F
+# No rule applies to the atoms and the branch {A^T, B^F} stays open: the
+# countermodel A true, B false.  Delegating A and not-B makes the
+# refutation IN.
+lk.
+declare A,B,C:bool.
+
+counterargument refute : A->B.
+elim.
+dixi.
+
+label refute.

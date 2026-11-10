@@ -1,0 +1,28 @@
+# Closed tableau: refuting A->((A->B)->B).  One argument per tableau rule
+# instance (tasks.org, aida-tableau-correspondence).
+#   r1: G^F => A^T, Q^F        (G = A->((A->B)->B), Q = (A->B)->B)
+#   r2: Q^F => (A->B)^T, B^F
+#   i1, i2: (A->B)^T => A^F | B^T
+# Both branches close: {A^T, A^F, B^F} and {A^T, B^T, B^F}.
+lk.
+declare A,B,C:bool.
+
+counterargument r1 : A->((A->B)->B).
+elim.
+dixi.
+
+counterargument r2 : (A->B)->B.
+elim.
+dixi.
+
+argument i1 : A->B.
+elim x.
+cut (A) y.
+axiom.
+dixi.
+
+argument i2 : A->B.
+elim x.
+dixi.
+
+label r1.
