@@ -799,6 +799,43 @@ and =argument all : (A).= are recorded and fail at =dixi= with
 Fellowship's bare parse error. The names are checked for uniqueness
 already (README, "Names are unique per document"); the keyword list is
 in wrap/fellowship/lexer.mll.
+The same mistake inside Fellowship itself (a reserved word as a tactic
+argument, a bound variable, ...) is [[id:aida-fsp-reserved-word-messages]].
+
+** BACKLOG Fellowship: name the reserved word when one is used as a name
+:PROPERTIES:
+:ID:             aida-fsp-reserved-word-messages
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        Wherever Fellowship expects a name (a tactic's name argument, a theorem or declaration name, a bound variable), a reserved word from the keyword table in wrap/fellowship/lexer.mll is refused with a message that names the word, says it is reserved, and gives its position, instead of a bare parse error or a message about a different argument.
+:VERIFY:         A Fellowship test script puts every word of the keyword table into each name position and checks each message names that word; =cut (A -> A) right.= no longer says "You need to specify a proposition"; Fellowship rebuilt, its tests and the AIDA suite pass.
+:END:
+
+Found 2026-11-10 by the author: =cut (A -> A) right.= =cut Q x= wants
+a proposition and a fresh name, but =right= and =left= are keywords that
+the argument grammar reads as side markers (parser.mly, =arg=), so the
+arguments do not match =cut='s pattern (tactics.ml, =cut=) and the
+catch-all answers about the proposition, which was given. Observed with
+=fsp -c=:
+- =cut (A -> A) right.= - "You need to specify a proposition."
+- =elim right.= (implication on the right) - "You need to specify an
+  identifier."
+- =axiom right.= - "You need to specify at most one identifier."
+- =theorem right: (A).= - "Line 2, character 14: Parse error: syntactical
+  analysis."
+- =declare in: type.= - "Line 1, character 9: Parse error: syntactical
+  analysis."
+So =left= and =right= give a message about the wrong argument, and every
+other keyword gives a bare parse error. AIDA's own check on argument and
+statement names ([[id:aida-reserved-names]]) could read the same keyword
+list.
 
 ** DONE Never register a discarded argument or a refused declaration
 CLOSED: [2026-10-19 Mon]
