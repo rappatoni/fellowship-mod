@@ -164,9 +164,16 @@ each other, and the conflict reaches the site by weakening.
 ** Definition
 
 A *discourse referent* is a name an argument uses for an individual it
-does not declare: =?x= or =!x=. Fellowship keeps it in the argument's
-environment, never in the signature. An argument can list its referents
-before its statement, =[?x:Pub]=, or have them collected from it.
+does not declare: =?x= or =!x=. Fellowship as modified for AIDA reads
+them as referents (since 2026-10-20). Inside the proof a referent
+behaves like a constant, but it belongs to that one theorem only. It
+sits in the goal's local environment, next to the variables the binders
+introduce, and is never added to the signature. =declare= cannot name
+one, and =qed= refuses a theorem that mentions one, so no fact about an
+undeclared individual is ever registered. AIDA uses the proof term and
+discards the theorem. An argument can list its referents before its
+statement, =[?x:Pub]=, or have them collected from it; a sort left out
+is inferred from the uses.
 
 The sigil before the name is the onus of the *individual*: =?x= owes an
 individual, =!x= presumes one. It is separate from the onus of a
