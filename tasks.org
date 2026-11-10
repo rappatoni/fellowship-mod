@@ -7792,6 +7792,149 @@ Evidence:
 - Not shared: composed debates (=support deb1 arg2 arg1=), which keep
   their unfolded term - [[id:aida-share-composed-debates]].
 
+*** BACKLOG Do not unfold an obligation on the contrary as an attack
+:PROPERTIES:
+:ID:             aida-unfold-obligation-no-scaffold
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The unfolder (and the shared route, equally) builds a statement's attack scaffold only when its contrary has a deriving argument or a delegation; an obligation on the contrary alone adds no scaffold, and no obligation alone adds a support scaffold.
+:VERIFY:         tests/tableaux/tableau_sim.fspy unfolded from =simple= has no attack scaffold on A->A[c]; a new unit test pins both cases (contrary only owed: no scaffold; contrary delegated: scaffold kept); labels, classes and normal forms of every fixture of tests/test_unfold_entrypoints.py, tests/minicourse, tests/rationality and tests/demo are unchanged or each change is justified here; tests/test_issue_graph_from_document.py passes or each difference in markers is accepted with a reason; the shared route agrees with the unfolded one; the suite passes.
+:END:
+
+Raised by the author 2026-11-10 on the unfolded term of =simple= in
+tests/tableaux/tableau_sim.fspy. The term opens with an attack scaffold
+on A->A[c] whose wing is nothing but its own captured =alt8=:
+=μ'alt8.< μb8.< μ_.<alt8||b8> || μ'_.<alt8||b8> > || T >=. Nobody
+argues for A->A[t]; the scaffold is there only because =attack_left= and
+=attack_right= each owe A->A (the open first premise of their =cut=).
+
+*Today.* =Unfolder._debate= (core/dc/unfold.py) adds the attack scaffold
+when the contrary has deriving edges *or any entry in*
+=DebateGraph.defaults=, and that map holds obligations as well as
+delegations (the code calls both "default markers" - a misnomer: an
+obligation is never a default). The wing's root is always captured by
+the scaffold's own =alt=, so with no deriving edges the wing is the bare
+=alt= and the scaffold is the shape above.
+
+*The author's reasoning.* An obligation exists implicitly for every
+declared proposition of the document. It adds no information, so an
+unfolded term should not carry it: an owed contrary nobody derives is
+OUT and the attack can never succeed. A delegation does add information
+- see [[id:aida-unfold-keep-captured-delegation]].
+
+*Runs (2026-11-10, unfolded route).* Each pair differs only in the
+contrary's marker; the outcome is the same with and without the attack:
+- =b : R= owes P; P has no supporter. With =counterargument c : P. by
+  default.= the term carries the scaffold with wing =alt2= and the labels
+  are P[t]=OUT, P[c]=IN, R[t]=OUT; without =c= no scaffold, and R[t]=OUT
+  as well. Both classify OPEN (obligation OUT:R undischarged).
+- =a : P= owing Q, nobody mentioning P[c]: no attack scaffold today
+  either.
+
+*What needs care.* The compiler counts obligations among the markers it
+reads off the term (=mark_default=, core/dc/debate_graph.py), so the
+issue graph compiled from the term loses the obligation on the contrary
+that the document's graph keeps; tests/test_issue_graph_from_document.py
+will show where that matters. Any special treatment of obligations in
+the compiler is to be kept as small as the term change allows. Mirror in
+the shared route (core/dc/share.py, core/dc/instances.py). The rule as
+written in docs/minicourses/minicourse-evaluation.org (lesson 6: "whenever
+S has attackers or S̄ a default marker"), docs/minicourses/glossary.org
+and the docstrings of =_debate= and =_bare= is restated.
+
+*** BACKLOG Keep a delegated contrary's attack scaffold, though its root is always captured
+:PROPERTIES:
+:ID:             aida-unfold-keep-captured-delegation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        It is recorded that the attack scaffold of a statement whose contrary is only delegated stays in the unfolded term, and the captured delegation reaches both the labelling and the renderer as an opposing default excluded from this debate.
+:VERIFY:         A test unfolds a statement whose contrary is only delegated and asserts that the scaffold is there, that the captured =alt= carries the delegation (=captured_default=), that the labelling has the delegated contrary IN, and - once [[id:aida-match-vacuous-attack]] is done - that the rendered term shows the attack and its captured delegation.
+:END:
+
+Decided in principle by the author 2026-11-10 (an inclination, with
+[[id:aida-unfold-obligation-no-scaffold]] and
+[[id:aida-match-vacuous-attack]]). A delegated contrary is captured by the
+attack's own =alt= and never shows as a site, yet it is information: an
+opposing default exists, and the current debate has excluded it as
+question-begging, since the debate holds the onus to argue its issue
+anyway. That information is to be kept, for rendering among others, so
+the "vacuous" scaffold is right when a delegation was captured.
+
+*Today.* The delegation reaches the labelling through the flag
+=captured_default= on the captured variable (=Unfolder._bare=), which the
+compiler turns back into the marker (=variable= in
+=DebateGraph.compile=). The renderer does not show it: the scaffold
+matches no shape and is printed as raw binders. In the runs of
+[[id:aida-unfold-obligation-no-scaffold]] the delegated P[c] is IN;
+against a supporter of P whose premises hold (=a : P= with Q
+delegated) P[t] is IN and P[c] OUT, since a derivation beats a bare
+delegation outright (2026-09-25).
+
+*** BACKLOG Render an attack whose wing is only its captured root as an attack
+:PROPERTIES:
+:ID:             aida-match-vacuous-attack
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        The scaffold matcher recognises a paper scaffold whose two wiring halves coincide as an attack whose scion is the bound contrary, decided from the term alone; the renderers show it as an attack, and either every evaluation outcome is unchanged or the tie-break is rejected with the evidence.
+:VERIFY:         Unit tests in tests/test_scaffold_capture.py match both sides of the coinciding shape as attacks; the tree and natural-language renderings of a delegated contrary's scaffold show an attack; strict decisions, sigma, labels, classes and normal forms (up to eta) of every fixture of tests/test_unfold_entrypoints.py, tests/minicourse, tests/rationality and tests/demo are compared before and after and recorded here; the suite passes.
+:END:
+
+Raised by the author 2026-11-10. =_match_paper_scaffold=
+(core/dc/debate_graph.py) does not match the scaffold of
+[[id:aida-unfold-keep-captured-delegation]]. Its wiring halves are the
+same cut: on the context side =μ_.<alt||b>= and =μ'_.<alt||b>=, on the
+term side =μ_.<b||alt>= and =μ'_.<b||alt>=. That fits the support shape
+with scion =b= and the attack shape with scion =alt= at once, and each
+shape has a guard excluding the other (support: the first half's other
+side is not =b=; attack: the scion is not =alt=), so neither matches.
+The rewriters then recurse into its raw children, where the inner
+wiring looks like a legacy support of =alt= by itself; =_same_variable=
+was added on 2026-10-07 only to stop that
+([[id:aida-unfold-scaffold-binders-capture]]). Since then the shape has
+been "no special case, left to normalisation", which normalises to the
+same outcome but renders the scaffold as raw binders.
+
+*Approaches.*
+- Rejected by the author: deciding from what the unfolder built (a mark
+  on the node). The rendering would no longer be compositional - it
+  would depend on how the term was made, not on the term.
+- To try: break the tie in favour of the attack, always. The shape then
+  reads as an attack whose wing is the bound contrary.
+
+*To find out.* Whether a support whose scion is the bare =b= (a
+statement supporting itself) can arise anywhere - from the unfolder,
+the shared route, an exposed node captured under primacy, or a
+hand-written term - and would now be misread. What the strict phase and
+sigma do with an attack whose wing is a bare =alt= (=alt= counts as open
+in =strict_in_scope=), compared with leaving it to normalisation.
+Whether =_same_variable= becomes dead code once the outer node matches
+(=scaffold_parts= keeps the rewriters out of the wiring). The matcher is
+shared by the renderers (pres/gen.py, pres/nl.py), the strict phase
+(core/dc/strict.py), sigma and standings (core/comp/evaluate.py,
+core/comp/standing.py) and the shared route (core/dc/instances.py), so
+the tie-break is an evaluation change as well as a rendering change.
+
 ** BACKLOG Share composed debates
 :PROPERTIES:
 :ID:             aida-share-composed-debates
@@ -9560,3 +9703,72 @@ Evidence (worktree branch shared-route-stack-shape):
   install that maps =core=, =wrap= and =pres= to the main checkout, so
   pytest run from another worktree tests the main checkout's code unless
   =PYTHONPATH= names the worktree. The runs above set it.
+
+** BACKLOG Stop calling an obligation a default in code, specification and documentation
+:PROPERTIES:
+:ID:             aida-obligation-not-default-naming
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        No identifier, docstring, log message, specification sentence or documentation text calls an obligation a default: what holds both kinds of site has a neutral name chosen by the author, and what holds only delegations says delegation (or default); the JSON graph format changes only with a version step the author has approved.
+:VERIFY:         grep -rni "default marker" over core, pres, wrap, tests, docs, README.md and debate-graph-spec.org finds only text that means delegations; =DebateGraph.defaults=, =mark_default=, =Unfolder._defaults= and =captured_default= are renamed or shown to hold delegations only; the suite passes; if the JSON key =defaults= of wrap/serialize.py changed, =VERSION= changed with it and the document UI side was told.
+:END:
+
+Raised by the author 2026-11-10 while discussing the attack scaffold of an
+owed contrary ([[id:aida-unfold-obligation-no-scaffold]]). The author's
+terms: a *default* (the logical view) is a proposition that can be
+defeated or challenged; a *delegation* (the computational view) is a term
+left out of the current compilation and handed to its continuation -
+the rest of the program has to provide a counterargument, else the
+labeller treats it as IN and the compiled term is evaluated around it.
+*Presumption* is logical language an AI agent introduced; default,
+delegation and presumption are used for the same thing. An *obligation*
+is never a default: logically an enthymeme of type 1, an omitted premise;
+computationally a term left out without warrant, which the compilation
+still owes - never provided, the labeller treats it as OUT and the
+compiled program evaluates to an exception.
+
+*Where the code says otherwise (2026-11-10).*
+- =DebateGraph.defaults= (core/dc/debate_graph.py), documented as "default
+  markers", maps a statement to the kinds of site that reference it,
+  =obligation= and =presumption= both; =mark_default= adds either. It is
+  read in about 60 places: core/comp/adf_label.py, core/comp/standing.py,
+  core/dc/debate.py, core/dc/share.py, core/dc/instances.py,
+  core/dc/strict.py, core/dc/unfold.py, wrap/cli.py, wrap/serialize.py
+  and some 15 test modules.
+- =Unfolder._defaults= and =captured_default= (core/dc/unfold.py, read in
+  core/dc/debate_graph.py and core/comp/standing.py) carry every kind,
+  obligations included.
+- "default marker" in prose: core/dc/debate_graph.py (7),
+  core/comp/adf_label.py (4), core/dc/unfold.py, core/dc/debate.py,
+  core/dc/strict.py, core/dc/instances.py, wrap/prover.py, about ten
+  test docstrings, README.md (3), debate-graph-spec.org (2),
+  docs/minicourses/minicourse.org (4), minicourse-evaluation.org (4),
+  minicourse-api.org, glossary.org and docs/dui-integration.md.
+- Ambiguous wording: debate-graph-spec.org says an obligation site
+  "contributes the literal =false= by default", and core/comp/adf_label.py
+  calls an obligation "default OUT". There "default" means the label when
+  nothing else decides, not a default in the author's sense; reword so
+  the two cannot be confused.
+- The JSON graph format: wrap/serialize.py emits ={"defaults": [...]}=
+  with both kinds (format =VERSION= 1.1). Renaming the key is a breaking
+  change for the document UI ([[id:aida-dui-api]]); adding the new key
+  beside the old one and deprecating it is the alternative. Either needs
+  the author's approval.
+
+*Where a passage means delegations only* (the asymmetric guard of
+2026-09-25, "a side that carries only a default marker", the onus
+conflict), say delegation; where it means both kinds, use the neutral
+name.
+
+*Not in scope.* The tactic =by default= (it makes a delegation, so the
+name is right); the code name =presumption= for the delegation kind (the
+author treats the words as interchangeable); ordinary "by default" for
+an option's default value; the closed records of tasks.org, which stay
+as written.
