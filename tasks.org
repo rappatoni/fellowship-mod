@@ -1614,9 +1614,10 @@ Proposed fix (Claude, 2026-10-22; to be confirmed):
   is not needed anywhere ([[id:aida-referents-counter-instances]]).
 
 Spelling (the author, 2026-10-22: "Denote binder variables as x!, x?",
-"so that the user can also see/identify them"). Claude's reading, not
-yet confirmed: the sigil after the name marks a binder entry, before the
-name a witness entry; on a binder entry it shows the onus of the site,
+"so that the user can also see/identify them"). Claude's reading,
+confirmed by the author 2026-11-10 (verdict and design note under
+[[id:aida-referents-review-lineup]]): the sigil after the name marks a
+binder entry, before the name a witness entry; on a binder entry it shows the onus of the site,
 =[z?:Animal] |- Wings z?= owed, =[z!:Animal] |- Wings z!= presumed by
 default, so it is display derived from the site's kind and not part of
 the key (an owed and a presumed statement stay one node). Author input
@@ -1796,11 +1797,38 @@ am still not sure I understand"; "in the meantime, implement the open
 question as you recommended").  The recorded question is the subsection
 "Context entries, their kinds, and the witness lineup" under
 [[id:aida-referents-instantiation]]; the implementation is described
-under [[id:aida-referents-witness-scaffold]].  One reading still to
-confirm: the sigil after a binder entry's name shows the onus of the
+under [[id:aida-referents-witness-scaffold]].  One reading was still
+to confirm (confirmed 2026-11-10, below): the sigil after a binder entry's name shows the onus of the
 statement (=x?= owed, =x!= presumed); printed proof terms keep the plain
 binder (=λx:Animal.=), since a binder there carries no onus and the term
 must stay readable by the term parser.
+
+*Verdict on the spelling, 2026-11-10.* The author confirms the reading
+above: the sigil after a binder entry's name is display only, derived
+from the kind of the site (obligation or delegation), and not part of
+the node's key (=context_key= ignores it), so an owed and a delegated
+statement in the same context are one node. The kinds of context entry
+and the lineup rule are not yet reviewed; this task stays open for them.
+
+*Design note (open, 2026-11-10): remove the trailing sigil?* The author:
+"the trailing marks might also just be confusing", and asked for a note
+that they might be removed altogether. Points to weigh, nothing decided:
+- The trailing sigil repeats what the site's marker already shows
+  (=[obligation]= in a graph), so it adds no information.
+- It looks like the leading sigil (=?x=, =!x=), which does matter: that
+  is the onus of the individual, and it changes verdicts
+  (=whistles [!c]= is a value, =whistles [?c]= open). Two marks
+  that look alike but mean different things invite misreading.
+- The same variable shows =z?= at one site and =z!= at another, which
+  reads as if the individual changed.
+- Against removal: the sigil was asked for so that a reader can tell a
+  binder's variable apart (2026-10-22). Without it =display_name= would
+  print a bound =z= bare, like a declared constant =z=, so removal needs
+  another way to mark it, or a decision that the context
+  (=[z:Pub] ⊢ ...=) is enough.
+A decision to remove it gets its own task (=display_name= in
+core/ac/referents.py, the graph and node-name printers, the minicourses
+and the tests that pin printed contexts).
 
 *** Found 2026-10-22 in the anaphora discussion (for review)
 
