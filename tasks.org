@@ -8143,6 +8143,60 @@ arguments, e.g. CF2Example: 6 arguments, 6 attacks) time out at 120 s
 for complete and preferred, two of them for stable
 (eval/tweety/af.out).
 
+Cause found 2026-11-13 (IRIS combined graph, see
+[[id:aida-default-semantics-not-preferred]]): adf-bdd's =complete()= and
+plain =stable()= are generate-and-test over the 3^u resp. 2^u
+interpretations extending the grounded model (u = statements undecided
+in it), whatever the BDD backend; the backend only changes the cost per
+candidate. The nogood-learning routines (=--stmng=, =--twoval=) search
+instead and took 0.02-0.06 s where plain =--stm= took 7.3 s - but only
+with =--lib hybrid=; with =naive= they print nothing.
+
+** BACKLOG Make grounded or stable the default semantics instead of preferred
+:PROPERTIES:
+:ID:             aida-default-semantics-not-preferred
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-multi-extension-labelling-cost
+:OUTCOME:        =evaluate=, =explain= and =graph ... skeptical|credulous= (and the service's =evaluate=) default to a semantics chosen by the author - grounded or stable - instead of preferred; stable is computed by an adf-bdd routine that searches (nogood learning) rather than by generate-and-test; preferred stays available on request, with a warning about its cost.
+:VERIFY:         The defaults are stated in README.md (=evaluate=, =label=, the phases) and wrap/service.py; the IRIS combined RQ 3 document (lib/iris_experiment/rq3-combined.org, 101 ADF statements) evaluates under the default in a few seconds; every fixture whose documented verdict was computed under preferred is re-run and its verdict restated or pinned to =preferred= explicitly; the suite passes.
+:END:
+
+Requested by the author 2026-11-13 ([[id:aida-iris-usufruct]]):
+preferred should not be the default; grounded or stable. Why
+(measured 2026-11-13 on the IRIS combined graph, 101 ADF statements, 16
+of them undecided in the grounded labelling; adf-bdd 0.3.0):
+- AIDA computes preferred as the maximal members of =--com=, and
+  adf-bdd's =complete()= (=adf.rs:678=) is generate-and-test: it
+  enumerates every three-valued interpretation extending the grounded
+  model and checks each, so ~3^u candidates for u undecided statements
+  (3^16 = 43 million here). =--com= timed out (>90 s) with =naive= and
+  =hybrid=.
+- Plain =--stm= (what AIDA calls for stable, =core/comp/oracle.py:385=)
+  is generate-and-test over the 2^u two-valued extensions of the
+  grounded model (=adf.rs:264=): 7.3 s with =naive=, 4.1 s with
+  =hybrid=, >90 s with =biodivine=; 5 stable models.
+- The search-based routines give the same 5 models in 0.02-0.06 s
+  (=--stmng= nogood learning, =--twoval=, =--stmca=, =--stmrew=), but
+  only with =--lib hybrid=: with =--lib naive= =--stmng= and =--twoval=
+  print nothing and exit 0 - a silent empty answer, which the wrapper
+  must never take for "no stable model". AIDA pins =--lib naive=
+  (tasks.org, aida-adf-bdd-primary, measured on support chains), so the
+  backend choice has to be made per mode.
+- Grounded: 0.01 s.
+To decide with the author: grounded for skeptical and stable for
+credulous, or one semantics for both; what to do where stable has no
+model (odd cycles: today credulous falls back to grounded, skeptically
+resolved, and says so); whether =hybrid --stmng= keeps the chain
+behaviour that made =naive= the choice.
+
 ** BACKLOG Design: registering tactics in the wrapper
 :PROPERTIES:
 :ID:             aida-tactic-registration
