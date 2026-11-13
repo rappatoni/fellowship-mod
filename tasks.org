@@ -9813,3 +9813,125 @@ Evidence (worktree branch shared-route-stack-shape):
   install that maps =core=, =wrap= and =pres= to the main checkout, so
   pytest run from another worktree tests the main checkout's code unless
   =PYTHONPATH= names the worktree. The runs above set it.
+
+** BACKLOG Unfolding renames a negation binder inconsistently: the replay refuses the debate
+:PROPERTIES:
+:ID:             aida-unfold-negation-binder-capture
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        A debate in which counterarguments refute their targets through a negation lemma (=cut (~X) x. ... elim. axiom.=) and meet under one scaffold unfolds to a term Fellowship accepts; =graph=, =label= and =evaluate= give results instead of "Fellowship rejected the unfolded term for 'd': H1_4 is neither in your hypothesis nor in your conclusion".
+:VERIFY:         The reproduction below runs =graph d.= without a refusal on the shared and the unfolded pipeline; a test pins it (the discourse-referents branch carries it as the strict xfail tests/iris/test_iris.py::test_bug_unfold_negation_lemma with the fixture tests/iris/fixtures/bug_unfold_negation_lemma.fspy); the suite passes.
+:END:
+
+Found 2026-11-13 on the branch discourse-referents (the IRIS follow-up,
+=lib/iris_experiment/=, task aida-iris-usufruct there) and checked on
+main (ce21e92, its own code and fsp) the same day: refused on both
+pipelines. Each argument's own =graph= is fine, and so is the debate
+without the move =undermine excl restraint=.
+
+Reproduction:
+
+#+begin_example
+lk.
+declare X, B, C, Y, E : bool.
+declare ry : (X -> Y).
+declare re : (E -> ~Y).
+deny de : (E - ~X).
+declare rx : (B -> ~C -> ~X).
+argument root : (Y).
+cut (X -> Y) r. axiom ry. elim. next. axiom r.
+dixi.
+counterargument restraint : (Y).
+cut (~Y) x. cut (E -> ~Y) r. axiom re. elim. by default. next. axiom. elim. axiom.
+dixi.
+counterargument excl : (E).
+cut (E - ~X) th. elim. elim. next. axiom th. moxia de.
+dixi.
+counterargument p3 : (X).
+cut (~X) x. cut (B -> ~C -> ~X) r. axiom rx. elim. by default. next.
+elim. elim. by default. next. axiom. elim. axiom.
+dixi.
+argument p2 : (X).
+by default.
+dixi.
+debate pro closed d : Y.
+root.
+support p2 root.
+attack restraint root.
+undermine excl restraint.
+attack p3 p2.
+cedat tempus.
+graph d.
+#+end_example
+
+(One tactic per line in a script; the rule =B -> ~C -> ~X= can be
+=B -> ~X= with the same refusal, then "H1_3".)
+
+=H1= is Fellowship's name for a negation's hypothesis, =μ'H1:~X.<H1||x*_F_>=;
+it occurs in the terms of =restraint=, =excl= and =p3=, and the
+unfolder's renaming (=H1_4=) seems to miss an occurrence - or the
+replay's instruction generator mistranslates the renamed binder, as in
+[[id:aida-replay-neg-elim-shortcut]] (an unconfirmed guess; the place
+has not been located). Workaround: refute by applying the rule directly
+(=cut (B -> ~X) r. axiom rx. elim. by default. next. elim. axiom.=) and
+state negative facts as denials (=deny=, used with =moxia=), so no =~X=
+lemma is cut.
+
+** BACKLOG Read a subtraction introduction that is the left operand of a stack
+:PROPERTIES:
+:ID:             aida-parse-subtraction-intro-in-stack
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        An argument whose proof applies an implication to a subtraction introduction, so that Fellowship prints the pair as the left operand of a stack (=1.2.1.1!*!1.2.1.2*rr=), is read and registered by AIDA; either Fellowship prints the parentheses that make the term unambiguous or the term grammar accepts the subtraction introduction there.
+:VERIFY:         The reproduction below registers =bird= with the conclusion =Bird= and the subtraction as a node =Fly-~Feathers= with its two presumed sources, as the variant that cuts the subtraction first already does; the suite passes.
+:END:
+
+Found 2026-11-13 on the branch discourse-referents (IRIS follow-up,
+conjunction written as =A - ~B=) and checked on main (ce21e92) the same
+day. Refused at =dixi.= with "'bird' cannot be read by AIDA (cannot
+parse 'μthesis:Bird.<μrr:Bird.<r||1.2.1.1!*!1.2.1.2*rr>||thesis>' as a
+term: Unexpected token Token('_STAR', '*') ...)". The term grammar
+(=core/ac/syntax.py=) has =context: tight_term _STAR context -> cons=;
+the pair =1.2.1.1!*!1.2.1.2= (a refutation site and a proof site: the
+subtraction introduction) is not a =tight_term=, and without parentheses
+the right-associated reading =e*(t*rr)= is ill-formed.
+
+Reproduction:
+
+#+begin_example
+lk.
+declare Fly, Feathers, Bird : bool.
+declare r : ((Fly - ~Feathers) -> Bird).
+argument bird : (Bird).
+cut ((Fly - ~Feathers) -> Bird) rr.
+axiom r.
+elim.
+elim.
+by default.
+next.
+by default.
+next.
+axiom rr.
+dixi.
+#+end_example
+
+Workaround: cut the subtraction first, which puts its introduction in
+term position, =μc:Bird.<1.1.1!*!1.1.2||μ'rr.<r||rr*c>>=:
+=cut (Fly - ~Feathers) c. elim. by default. next. by default. next.
+cut ((Fly - ~Feathers) -> Bird) rr. axiom r. elim. axiom. axiom c.=
+A derived conjunction connective defined as =A - ~B= would meet this
+whenever its introduction is applied directly.
