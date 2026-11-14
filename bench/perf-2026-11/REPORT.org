@@ -1,0 +1,372 @@
+#+title: Performance report: type check (Fellowship replay) and labelling (adf-bdd)
+#+date: 2026-11-13/14
+
+AI-written report of measurements made during the IRIS follow-up on the
+branch =discourse-referents= (task aida-iris-usufruct there), recorded on
+main at the author's request.
+- The tasks it proposes are in =tasks.org= (section "Performance and
+  architecture" and the tasks linked below).
+- Everything needed to repeat the measurements is in this directory:
+  =builds/=, =core-pathcopy.patch=, =scripts/=.
+
+*Caveat on the numbers.*
+- Unless a row says otherwise, each timing is a single run on one
+  machine. They show orders of magnitude and growth rates, not
+  benchmark-grade figures (AGENTS.md asks for repeated timings before a
+  performance claim).
+- The equivalence checks recorded with them (same models, same replay
+  results, the suite) are exact.
+
+* Environment
+
+| Item           | Value                                                                    |
+|----------------+--------------------------------------------------------------------------|
+| Machine        | Apple silicon (arm64), macOS (Darwin 27)                                  |
+| OCaml          | 5.5.2 (Homebrew; =ocamlrun-a104= for bytecode)                            |
+| Python         | 3.12.12 (uv venv), lark 1.3.1, pexpect                                    |
+| adf-bdd        | adf-bdd-bin 0.3.0, library adf_bdd 0.3.1 (=~/.cargo/bin/adf-bdd=)          |
+| Code measured  | AIDA and Fellowship of branch =discourse-referents= at 39ece40 (+ uncommitted IRIS files, none in core/, wrap/ or wrap/fellowship/) |
+| Main           | =instantiate_in_t3rm= and the tactic driver are identical on main (ce21e92); main's =fsp= is also a bytecode build; =core-pathcopy.patch= applies to main |
+
+* Summary
+
+1. *The type check slows down superlinearly with term size.* Five
+   mechanisms, each measured:
+   - Fellowship rebuilds the whole proof term on every tactic step.
+   - Fellowship runs as OCaml bytecode.
+   - The replay ends with one full snapshot that pretty-prints the whole
+     term.
+   - The wrapper reads that snapshot with pexpect in 2,000-byte chunks,
+     re-searching the whole buffer after each.
+   - Python parses the returned term with an Earley parser.
+
+   Three fixes prototyped together (path copying in Fellowship, a native
+   build, pexpect settings) take a 45,000-node replay from 331 s to 57 s.
+   Fellowship's part goes from 280 s to 15 s and is now roughly linear;
+   the Python parse-back (32 s) is the largest remaining cost.
+2. *A single statement spelled two ways silently switches the type check
+   to the whole expanded term.* =~A= and =A -> false= is enough. In the
+   IRIS combined document that meant 62,000 nodes instead of 1,800 and
+   about 25 minutes instead of 2 s.
+3. *Preferred (the default semantics) and plain stable are
+   generate-and-test in adf-bdd.* They enumerate the 3^u resp. 2^u
+   interpretations above the grounded model, whatever the BDD backend.
+   adf-bdd's nogood-learning stable routine is about 150x faster, but
+   only with =--lib hybrid=; with =naive= it silently prints nothing.
+   With the grounded labelling solved first and only the undecided rest
+   given to =hybrid --stmng=:
+   - it agrees with =naive --stm= on all 870 distinct graphs of the test
+     suite
+   - it removes hybrid's cost on long chains
+4. *Upstream:* adf-bdd has had no performance work since v0.3.0 (2022).
+   Newer solvers exist (BAss, 2026; k++ADF).
+
+* 1. Labelling: adf-bdd
+
+** How AIDA calls it
+
+=core/comp/oracle.py:385=:
+=adf-bdd -q --lx --lib naive {--grd|--com|--stm} FILE=, timeout 120 s.
+- Preferred = the ≤_i-maximal members of =--com=, filtered in Python
+  (=core/comp/adf_label.py:363=).
+- =--lib naive= was chosen on 2026-09-16: hybrid grew about quartically
+  on support chains.
+
+** What adf-bdd does (source, adf_bdd 0.3.1 and adf-bdd-bin 0.3.0)
+
+- =complete()= (=adf.rs:678=) iterates *every* three-valued
+  interpretation extending the grounded model
+  (=ThreeValuedInterpretationsIterator=) and keeps the complete ones.
+  That is generate-and-test over 3^u candidates, u = statements left
+  undecided by grounded.
+- =stable()= (=adf.rs:264=) does the same over the 2^u two-valued
+  extensions.
+- =stable_nogood= (=--stmng=) and =two_val_nogood= (=--twoval=) search
+  with learned nogoods. Further stable variants: =--stmca=, =--stmcb=
+  (model counting), =--stmpre=, =--stmrew=, =--stmrew2=.
+- =main.rs=: only the =hybrid= branch dispatches the nogood and
+  counting modes. Under =--lib naive= the binary handles only =--grd=,
+  =--com= and =--stm=, and *silently ignores* every other mode flag:
+  exit 0, no output.
+- The library README: =naive= is adf-bdd's own OBDD implementation. Its
+  formula-to-BDD construction "does not perform well on bigger formulae",
+  but it offers reuse of reductions, memoisation and counter-model
+  counting. =biodivine= (biodivine-lib-bdd) builds BDDs fast. =hybrid=
+  instantiates with biodivine and solves on the naive representation
+  (=Adf::from_biodivine=).
+
+** The IRIS combined graph (101 ADF statements, 16 undecided by grounded)
+
+| Call                                        | Time      | Result                        |
+|---------------------------------------------+-----------+-------------------------------|
+| =--grd= naive                               | 0.01 s    | 1 model                       |
+| =--stm= naive (AIDA's stable today)         | 7.3 s     | 5 models                      |
+| =--stm= hybrid                              | 4.1 s     | 5                             |
+| =--stm= biodivine                           | >90 s     | timeout                       |
+| =--stmng=, =--stmca=, =--stmrew=, =--twoval= hybrid | 0.02-0.06 s | the same 5 models     |
+| =--stmpre= hybrid                           | 0.73 s    | 5                             |
+| =--stmng=, =--twoval= naive                 | 0.02 s    | *no output, exit 0*           |
+| =--com= naive / hybrid (preferred's input)  | >90 s     | timeout                       |
+
+** No model and ignored flag look alike
+
+=ac(a,neg(a))=, a three-cycle of negations, and =--stmng= under naive on
+an even loop all give exit 0 with empty output. The routes print models
+in different orders, so comparisons must sort.
+
+** Agreement on every graph of the test suite
+
+=scripts/stmcheck_plugin.py=, run as =pytest -p stmcheck_plugin tests=
+with =PYTHONPATH= naming =scripts/=: at every adf-bdd call AIDA makes, it
+also computes the stable models with =naive --stm= and =hybrid --stmng=,
+once per distinct ADF.
+
+| Measure                         | Value                                                |
+|---------------------------------+------------------------------------------------------|
+| Distinct ADFs                   | 870 (largest 101 statements, median 9)               |
+| Identical stable model sets     | 870 / 870 (31 with no model on both sides)           |
+| Identical grounded, naive/hybrid | 870 / 870                                           |
+| Timeouts (30 s)                 | none                                                 |
+| Summed time =naive --stm=       | 11.6 s (7.8 s of it the IRIS graph)                  |
+| Summed time =hybrid --stmng=    | 3.3 s                                                |
+
+** Synthetic scaling (=scripts/adf_routes.py=, timeout 60 s)
+
+| Graph               | n   | naive grd | hybrid grd | naive stm | hybrid stmng |
+|---------------------+-----+-----------+------------+-----------+--------------|
+| support chain       | 100 | 0.01 s    | 0.19 s     | 0.02 s    | 0.19 s       |
+| support chain       | 200 | 0.04 s    | 2.3 s      | 0.09 s    | 2.5 s        |
+| support chain       | 400 | 0.32 s    | 35 s       | 0.79 s    | 36 s         |
+| support chain       | 800 | 2.8 s     | >60 s      | 6.6 s     | >60 s        |
+| layered (fan-in, attacks) | 433 | 0.01 s | 0.48 s  | 0.01 s    | 0.48 s       |
+| layered             | 858 | 0.02 s    | 2.9 s      | 0.03 s    | 3.2 s        |
+| 4 even loops (16 models) | 16 | 0.00 s | 0.01 s    | 0.55 s    | 0.01 s       |
+| 8 even loops (256 models) | 32 | 0.00 s | 0.00 s   | >60 s     | 0.67 s       |
+| 12 even loops (4096 models) | 48 | 0.00 s | 0.00 s | >60 s     | >60 s        |
+
+- Hybrid's cost is the BDD instantiation: grounded and =--stmng= cost
+  the same.
+- Many independent disputes make the *output* exponential. Skeptical
+  evaluation, which intersects all models, inherits that. adf-bdd offers
+  no cautious reasoning without enumeration.
+
+** Grounded reduction (prototype in =scripts/adf_routes.py=)
+
+Every stable model extends the grounded model. So:
+1. Compute grounded with =naive --grd=.
+2. Fix the decided statements and simplify the acceptance conditions.
+3. Give only the undecided rest to =hybrid --stmng=.
+4. Add the fixed values back.
+
+Same model sets as =naive --stm= on:
+- chains of 100, 400 and 800 (all decided by grounded: no stable search)
+- layered graphs of 213 and 858
+- 4 even loops
+- the IRIS graph: 0.01 s instead of 8.8 s
+
+That the reduction preserves stable models for ADFs in general needs a
+proof; it is the analogue of well-founded simplification for normal
+logic programs. The agreement is evidence, not proof.
+
+** Upstream and alternatives (checked 2026-11-13)
+
+- [[https://github.com/ellmau/adf-obdd/releases][adf-obdd releases]]:
+  newest v0.3.0-beta.2, whose changelog already contains the nogood
+  milestone.
+  [[https://github.com/ellmau/adf-obdd/commits/main][Commits on main]]
+  since then are maintenance. The latest, 30 June 2025, is "Add naive af
+  support to webserver". Nothing on enumeration, preferred or backends.
+- *BAss* (Pastva, Trinh;
+  [[https://arxiv.org/abs/2604.27576][arXiv 2604.27576]], April 2026;
+  code per the paper at [[https://github.com/sybila/biodivine-bass][sybila/biodivine-bass]], Rust):
+  - fully symbolic admissible, complete, preferred, two-valued and stable
+    sets as BDDs, without enumeration
+  - per the paper's benchmark (1,165 instances, 1,200 s): stable solved
+    1,149 vs k++ADF 1,115 (adf-bdd not run on stable); complete 974 vs
+    adf-bdd 476; preferred 982 vs k++ADF 1,081
+  - these figures were taken from a summary of the paper's HTML, not
+    checked verbatim
+- *k++ADF* ([[https://www.cs.helsinki.fi/group/coreo/k++adf/][Helsinki]],
+  SAT-based, MIT): credulous (=-c=) and skeptical (=-s=) acceptance
+  without enumeration, and enumeration. The page lists
+  cf/nai/adm/com/prf/grd, not stable.
+- Not measured: encoding AIDA's ADFs for clingo, whose brave and
+  cautious reasoning answers credulous and skeptical queries without
+  enumeration.
+
+* 2. Type check: the Fellowship replay
+
+** What the type check does
+
+=core/dc/typecheck.py=:
+1. It turns the term into Fellowship tactics
+   (=core/ac/instructions.py=).
+2. It replays them in a throwaway theorem, in quiet machine mode
+   (=wrap/prover.py:365=, =send_commands_quiet_final=).
+3. It switches quiet mode off to receive the full state with the rebuilt
+   proof term.
+4. It parses that term (=core/ac/syntax.py=, Lark Earley).
+5. It compares shapes.
+
+On the shared route it replays one skeleton per sub-debate. It replays
+the whole expanded term only if =typecheck expanded= is set or a
+statement has two spellings (=wrap/service.py:943-947=).
+
+** The spelling fallback (IRIS combined document)
+
+| Measure                                   | Value                               |
+|-------------------------------------------+-------------------------------------|
+| Graph                                     | 86 statements, 106 edges            |
+| Sub-debates                               | 47 (20 non-trivial), ~1,800 AST nodes |
+| Expanded term                             | ~62,000 AST nodes (1.3 MB as text)  |
+| Spelling clash                            | =~Liability usufruct= as =~Liability= and =Liability -> false= |
+| Cause                                     | a premise =~Liability= proved on the right: Fellowship builds a λ typed =Liability -> false= |
+| Per-sub-debate check after removing the clash | ~2 s                            |
+| Expanded check                            | the whole-issue =graph= took up to ~28 min |
+
+The expanded term repeats sub-debates once per path. Measured copy
+factors (occurrences, expanded / shared):
+- =Registrable= 1.0
+- =Need= 6.7
+- =CoDetermines= 41
+- =Powerless= 85
+- =ConsentConstitutive= 167
+- =VotesDayToDay= 183
+
+** Where the time goes (München document, 1,822 nodes, cProfile, 3.6 s)
+
+| Share   | Where                                                                  |
+|---------+------------------------------------------------------------------------|
+| ~2.5 s  | Lark Earley parsing: 1,104 parses (mostly repeated propositions) and the parse of the returned term |
+| ~1.0 s  | pipe I/O, of which 0.76 s =time.sleep= in pexpect's polling            |
+| ~0.4 s  | instruction generation                                                 |
+
+Replay rate on the four IRIS court documents (450-1,800 nodes): 780-880
+nodes/s, roughly linear in that range.
+
+** Scaling with term size (=scripts/replay_scale.py=; "double" chains, the expanded issue term doubles with k)
+
+Shipped bytecode build, wrapper defaults:
+
+| k | Nodes  | Steps  | Fellowship (quiet replay + snapshot) | µs/step | Parse back | Total  |
+|---+--------+--------+--------------------------------------+---------+------------+--------|
+| 4 | 1,321  | 917    | 0.47 s                               | 512     | 0.29 s     | 1.0 s  |
+| 5 | 2,729  | 1,893  | 1.2 s                                | 619     | 0.74 s     | 2.4 s  |
+| 6 | 5,545  | 3,845  | 2.9 s                                | 746     | 2.1 s      | 6.0 s  |
+| 7 | 11,177 | 7,749  | 8.6 s                                | 1,105   | 5.1 s      | 16 s   |
+| 8 | 22,441 | 15,557 | 30 s                                 | 1,945   | 12 s       | 48 s   |
+| 9 | 44,969 | 31,173 | 280 s                                | 8,994   | 26 s       | 331 s  |
+
+** The mechanisms
+
+1. *Whole-term rebuild on every step.*
+   - =instantiate_in_t3rm= (=wrap/fellowship/core.ml:657-713=) fills one
+     metavariable, but walks the whole proof term and allocates a new
+     copy of every node, with no early exit and no sharing.
+   - The tactic driver (=tactics.ml:227-241=) does list work over all
+     open goals (=split_list=, =g_before @ l @ g_after=) and adds the
+     goal's environment to the signature. In a debate, delegations and
+     obligations stay open as goals: 253 at k = 6, 1,021 at k = 8.
+   - Every successful tactic pushes the state onto the trace and onto
+     =history= (=tactics.ml:802-804=).
+   - Round trips with constant reply size (105 chars) grow from 302 to
+     636 µs between the start and the middle of the k = 8 replay.
+2. *Bytecode.* =OCamlMakefile='s default target is =byte-code=, so
+   =fsp= runs under =ocamlrun=. =make nc= builds native code.
+3. *The final full snapshot.*
+   - =machine quiet off.= returns the full state (=machine.ml:110-157=):
+     the whole term pretty-printed, its MD5, goals and declarations. At
+     k = 8 that is 8.2 MB.
+   - The printer builds strings by nested =sprintf= (=core.ml:601= ff.),
+     copying each subterm once per enclosing level.
+   - =discard theorem.= returns another full snapshot (272 KB).
+4. *pexpect reads quadratically.* =PopenSpawn= defaults: =maxread=
+   2,000, =searchwindowsize= None. After every 2,000-byte chunk the
+   whole accumulated buffer is searched for the end marker. The 8.2 MB
+   reply took 17 s.
+5. *Earley parse-back.* It is roughly linear at first, then grows
+   faster: 10 s at k = 8, 32 s at k = 9 (with the fixes below in place).
+
+macOS =sample= of =fsp= during a long replay: most samples in =read=
+(waiting for the wrapper), and the rest in =caml_bytecode_interpreter=.
+Fellowship's resident memory could not be sampled reliably, so the role
+of the retained history in the jump at k = 9 is inferred, not measured.
+
+** Prototyped fixes (k = 8)
+
+| Configuration                                             | Round trip start → middle | Final 8.2 MB snapshot | =discard= |
+|-----------------------------------------------------------+---------------------------+-----------------------+-----------|
+| shipped (bytecode), wrapper defaults                      | 302 → 636 µs              | 17.0 s                | 2.1 s     |
+| + pexpect =maxread= 1 MiB, =searchwindowsize= 512         | 302 → 636 µs              | 8.9 s                 | 2.1 s     |
+| + native build (=make nc=)                                | 300 → 579 µs              | 1.4 s                 | 0.34 s    |
+| + path copying (=core-pathcopy.patch=)                    | 275 → 289 µs              | 0.9 s                 | 0.18 s    |
+
+All three, by size:
+
+| k | Nodes  | Fellowship before → after | Parse back | Total before → after |
+|---+--------+---------------------------+------------+----------------------|
+| 7 | 11,177 | 8.6 s → 2.8 s             | 3.9 s      | 16 s → 8 s           |
+| 8 | 22,441 | 30 s → 6.7 s              | 9.9 s      | 48 s → 20 s          |
+| 9 | 44,969 | 280 s → 15 s              | 32 s       | 331 s → 57 s         |
+
+Path copying alone, bytecode, k = 8: 2,313 → 1,574 µs per step (-32 %).
+
+*Equivalence.*
+- Every replay above passed the type check: Fellowship's rebuilt term
+  equals the sent term up to alpha, site numbering and spelling.
+- The suite against the native path-copying build (discourse-referents
+  worktree, =ACDC_FSP= set to =fsp-native-pathcopy=, 2026-11-14): 2466
+  passed, 9 skipped, 4 xfailed, 1 xpassed, none failed, in 543 s. The one
+  xpass appears also in an earlier run of the same suite with the stock
+  build, so it does not come from path copying.
+
+** Proposed changes (tasks.org)
+
+1. Fellowship: path-copying instantiation:
+   [[id:aida-fsp-instantiate-path-copying]]
+2. Build =fsp= as native code: [[id:aida-fsp-native-build]]
+3. Wrapper: pexpect read size and search window:
+   [[id:aida-pexpect-read-window]]
+4. Cheaper parse-back: [[id:aida-typecheck-parse-back-cost]]
+5. Never force the expanded check through spellings: measurements added
+   to [[id:aida-negation-spelling-in-unfolding]]
+6. Semantics and solver: [[id:aida-default-semantics-not-preferred]],
+   [[id:aida-multi-extension-labelling-cost]]
+
+* 3. Reproducing
+
+| File                          | What it is                                                         |
+|-------------------------------+--------------------------------------------------------------------|
+| =builds/fsp-bytecode=         | Fellowship as shipped (bytecode; needs =/opt/homebrew/bin/ocamlrun-a104=) |
+| =builds/fsp-bytecode-pathcopy= | bytecode with =core-pathcopy.patch=                               |
+| =builds/fsp-native=           | native (=make nc=), unmodified                                     |
+| =builds/fsp-native-pathcopy=  | native with =core-pathcopy.patch=                                  |
+| =core-pathcopy.patch=         | the path-copying =instantiate_in_*= (applies to main and to discourse-referents) |
+| =scripts/build.sh=            | rebuilds all four from a Fellowship source tree into =builds-local/= (ignored) |
+| =scripts/replay_scale.py=     | the replay scaling and the per-reply timings (=PX_FIX=1= for the pexpect settings) |
+| =scripts/adf_routes.py=       | adf-bdd routes on synthetic graphs, plus the grounded reduction checked against =naive --stm= |
+| =scripts/stmcheck_plugin.py=  | the pytest plugin of the suite-wide stable agreement               |
+
+The builds are macOS arm64 binaries of discourse-referents@39ece40's
+=wrap/fellowship=:
+
+| Build                    | SHA-256                                                          |
+|--------------------------+------------------------------------------------------------------|
+| fsp-bytecode             | c4ddf55a7a9b641ec63a70977d3191b007774d45ac178a638c33452199929f27 |
+| fsp-bytecode-pathcopy    | 6e3192c741b23820bf253e0058b899d56db0c4f7ca2d46d9eab150303b0c7649 |
+| fsp-native               | 051121676618310d5b9b77ef41aa1053813ec8c7621d7eb2453d204f4c4caa8f |
+| fsp-native-pathcopy      | 63b30a7e65b0815b8d817e19339cac16e618eb1c02300aad45608a02842293ce |
+
+On another platform, rebuild with =scripts/build.sh=.
+
+#+begin_example
+ACDC_FSP=bench/perf-2026-11/builds/fsp-native-pathcopy FSP_TYPECHECK=0 FSP_MACHINE=1 \
+  ACDC_TIMEOUT=1200 PX_FIX=1 .venv/bin/python bench/perf-2026-11/scripts/replay_scale.py 7 8 9
+.venv/bin/python bench/perf-2026-11/scripts/adf_routes.py
+PYTHONPATH=bench/perf-2026-11/scripts STMCHECK_LOG=/tmp/stmcheck.jsonl \
+  .venv/bin/python -m pytest -q -p stmcheck_plugin tests
+#+end_example
+
+The scripts were run in the discourse-referents worktree. Its wrapper
+API (=Service.issue_term=, =session.issue_term=, =typecheck=) is the one
+they call.

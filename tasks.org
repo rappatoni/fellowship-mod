@@ -8376,6 +8376,109 @@ Questions the design has to answer:
 - delivery: a standalone HTML file opened like the PNGs today, or a view
   in the document UI.
 
+** BACKLOG Fellowship: fill a metavariable by path copying, not by rebuilding the proof term
+:PROPERTIES:
+:ID:             aida-fsp-instantiate-path-copying
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        =instantiate_in_t3rm= / =instantiate_in_context= / =instantiate_in_command= (wrap/fellowship/core.ml) return a node unchanged when nothing below it changed, so a tactic step allocates only along the path to the filled metavariable and the time per replay step no longer grows with the size of the proof term.
+:VERIFY:         bench/perf-2026-11/scripts/replay_scale.py 7 8 9 shows round trips per step that stay flat between the start and the middle of the replay (measured with the prototype: 275 -> 289 µs at k = 8, against 302 -> 636 µs before); every replay still passes the type check; Fellowship's tests and the AIDA suite pass with the rebuilt fsp.
+:END:
+
+Found 2026-11-13 (bench/perf-2026-11/REPORT.org, section 2). The function fills one
+metavariable but walks the whole proof term and allocates a new copy of
+every node, with no early exit and no sharing; with n replay steps over
+a term of n nodes that is O(n^2), and every copy is retained by the
+trace and =history= (=tactics.ml:802-804=). Prototype:
+=bench/perf-2026-11/core-pathcopy.patch= (physical-equality path
+copying; applies to main), builds in =bench/perf-2026-11/builds/=.
+Bytecode alone: -32 % per step at k = 8; with a native build the growth
+per step disappears. A further step - finding the metavariable without
+walking the whole term - would need an index from metavariable to
+position. Related: the per-step list work over all open goals
+(=split_list=, =g_before @ l @ g_after=, =tactics.ml:227-241=), which
+grows with the number of open goals (1,021 at k = 8); not separately
+measured.
+
+** BACKLOG Build fsp as native code
+:PROPERTIES:
+:ID:             aida-fsp-native-build
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:00
+:DEFERRALS:      0
+:OUTCOME:        =make -C wrap/fellowship= (and =make install=) build Fellowship with ocamlopt (=make nc=) wherever a native compiler is available, falling back to bytecode with a message otherwise; README.md says which build is used.
+:VERIFY:         =head -c 2 wrap/fellowship/fsp= is no longer =#!=; the final 8.2 MB snapshot of replay_scale.py at k = 8 takes ~1.4 s instead of ~9 s; Fellowship's tests and the AIDA suite pass with the native fsp.
+:END:
+
+Found 2026-11-13 (bench/perf-2026-11/REPORT.org): OCamlMakefile's default target is
+=byte-code=, so =fsp= runs under =ocamlrun= (=#!/opt/homebrew/bin/ocamlrun-a104=).
+At k = 8 the native build takes the final snapshot from 8.9 s to 1.4 s
+and =discard theorem.= from 2.1 s to 0.34 s (pexpect fix on). Check the
+platforms AIDA targets for ocamlopt before switching the default.
+
+** BACKLOG Wrapper: read Fellowship's replies in large chunks and search only their tail
+:PROPERTIES:
+:ID:             aida-pexpect-read-window
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         0:30
+:DEFERRALS:      0
+:OUTCOME:        The Fellowship process (=wrap/prover.py=, =_spawn=) is read with a large =maxread= (1 MiB) and a small =searchwindowsize= (the end marker is at the end of a reply), so reading a reply is linear in its size; polling no longer sleeps where a blocking read would do.
+:VERIFY:         The 8.2 MB reply of replay_scale.py at k = 8 (=machine quiet off.=) takes ~9 s instead of ~17 s with the bytecode fsp and under 1 s with the native path-copying one; the suite passes.
+:END:
+
+Found 2026-11-13 (bench/perf-2026-11/REPORT.org, mechanism 4): =PopenSpawn= defaults to
+=maxread= 2,000 and =searchwindowsize= None, so after every 2,000-byte
+chunk the whole accumulated buffer is searched for =REPLY_END=:
+quadratic in the reply size (17 s for 8.2 MB). Two lines; measured by
+setting the attributes after =setup_prover()=. Related: the polling
+sleeps noted under [[id:aida-scaling-benchmarks]]'s profile (=time.sleep=
+0.76 s of a 3.6 s replay; 19 s at k = 8).
+
+** BACKLOG Make the type check's parse-back cheaper
+:PROPERTIES:
+:ID:             aida-typecheck-parse-back-cost
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        Parsing in the type check no longer dominates it: repeated propositions are parsed once (a cache keyed by the text), the grammar is parsed by a deterministic parser (Lark LALR) if it admits one, and the parse of the term Fellowship returns is skipped or replaced where the shape comparison does not need it.
+:VERIFY:         At k = 9 of replay_scale.py (45,000 nodes) the parse-back takes a small fraction of the 32 s measured on 2026-11-14 (native path-copying fsp, pexpect fix); the München IRIS document's cProfile no longer shows Earley in the top entries; the suite passes.
+:END:
+
+Found 2026-11-13/14 (bench/perf-2026-11/REPORT.org): Lark Earley parsing is ~70 % of a 1,822-node
+replay (1,104 parses, mostly of the same propositions; =core/ac/syntax.py:189=
+uses =parser="earley"=, =lexer="basic"=), and the parse of the returned
+term becomes the largest remaining cost once Fellowship is fixed: 10 s
+at k = 8, 32 s at k = 9 (superlinear). Options to weigh: memoise the
+proposition parser; try LALR; compare structurally without a text round
+trip, or skip the comparison when the replay itself succeeded and the
+debugging diff is not wanted.
+
+
 * Correctness and maintenance
 
 ** DONE Keep the test suite fast and its tests able to fail
@@ -9459,6 +9562,16 @@ your hypothesis nor in your conclusion"); spelled =~A= throughout
 (=~A -> C=) it is IN and a value. eval/tweety/spelling_two_arguments.fspy
 is the smallest case across arguments (an obligation on =A -> false= met
 by an argument for =~A=: "This is not trivial. Work some more.").
+
+Measured 2026-11-13 (bench/perf-2026-11/REPORT.org, section 2): the cost of falling back is
+large. In the IRIS combined RQ 3 document (branch discourse-referents)
+one clash - a premise =~Liability= proved on the right, which Fellowship
+builds as a λ typed =Liability -> false= - made the type check replay
+the whole expanded term, ~62,000 AST nodes instead of ~1,800 in 20
+sub-debate skeletons: the whole-issue =graph= took up to ~28 min instead
+of ~2 s, and with the default 5 s =ACDC_TIMEOUT= it failed and broke the
+session for every later command. Normalising the spellings before the
+per-definition check would remove the fallback altogether.
 
 ** DONE Name output sites by number so unfolded terms parse back
 CLOSED: [2026-10-30 Fri]

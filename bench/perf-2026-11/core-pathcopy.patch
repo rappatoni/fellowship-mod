@@ -1,0 +1,96 @@
+--- a/wrap/fellowship/core.ml
++++ b/wrap/fellowship/core.ml
+@@ -654,6 +654,9 @@
+     Play (t,c) -> sprintf "<%s||%s>" (pretty_t3rm t) (pretty_context c)
+ 
+ (*Metavariable instantiation*)
++(* EXPERIMENT (scratch copy only): path copying - a node whose children are
++   physically unchanged is returned as it is, so filling one metavariable
++   allocates only along the path to it. *)
+ let rec instantiate_in_t3rm id t =
+  function
+     TermMeta id' when id = id' ->
+@@ -663,22 +666,20 @@
+   | TermMeta _
+   | DelegationTermMeta _
+   | True_constructor
+-  | Hyp _ as t' -> t' 
+-  | Lambda (id',p,t') -> Lambda (id',p,instantiate_in_t3rm id t t')
+-  | LambdaFO (id',p,t') -> LambdaFO (id',p,instantiate_in_t3rm id t t')
+-  | Cons'(c,t') ->
+-     Cons'
+-      (instantiate_in_context id t c,
+-       instantiate_in_t3rm id t t')
+-  | TermsPair (t',t'') ->
+-     TermsPair
+-      (instantiate_in_t3rm id t t',
+-       instantiate_in_t3rm id t t'')
+-  | TermsPairFO (p,t',t'') ->
+-     TermsPairFO (p,t', instantiate_in_t3rm id t t'')
+-  | Left t' -> Left (instantiate_in_t3rm id t t')
+-  | Right t' -> Right (instantiate_in_t3rm id t t')
+-  | Mu (id',p,cmd) -> Mu (id',p,instantiate_in_command id t cmd)
++  | Hyp _ as t' -> t'
++  | Lambda (id',p,t') as n -> let a = instantiate_in_t3rm id t t' in if a == t' then n else Lambda (id',p,a)
++  | LambdaFO (id',p,t') as n -> let a = instantiate_in_t3rm id t t' in if a == t' then n else LambdaFO (id',p,a)
++  | Cons'(c,t') as n ->
++     let a = instantiate_in_context id t c and b = instantiate_in_t3rm id t t' in
++     if a == c && b == t' then n else Cons' (a, b)
++  | TermsPair (t',t'') as n ->
++     let a = instantiate_in_t3rm id t t' and b = instantiate_in_t3rm id t t'' in
++     if a == t' && b == t'' then n else TermsPair (a, b)
++  | TermsPairFO (p,t',t'') as n ->
++     let b = instantiate_in_t3rm id t t'' in if b == t'' then n else TermsPairFO (p,t',b)
++  | Left t' as n -> let a = instantiate_in_t3rm id t t' in if a == t' then n else Left a
++  | Right t' as n -> let a = instantiate_in_t3rm id t t' in if a == t' then n else Right a
++  | Mu (id',p,cmd) as n -> let a = instantiate_in_command id t cmd in if a == cmd then n else Mu (id',p,a)
+ and instantiate_in_context id t =
+  function
+     ContextMeta id' when id = id' ->
+@@ -688,29 +689,25 @@
+   | ContextMeta _
+   | DelegationContextMeta _
+   | False_eliminator
+-  | Concl _ as t' -> t' 
+-  | Cons (t',c) ->
+-     Cons
+-      (instantiate_in_t3rm id t t',
+-       instantiate_in_context id t c)
+-  | ConsFO (t',c) ->
+-     ConsFO (t',instantiate_in_context id t c)
+-  | Lambda' (id',p,c) -> Lambda' (id',p,instantiate_in_context id t c)
+-  | DestructTermsPair (id',p',id'',p'',cmd) ->
+-     DestructTermsPair (id',p',id'',p'',instantiate_in_command id t cmd)
+-  | DestructTermsPairFO (id',p',c) ->
+-     DestructTermsPairFO (id',p',instantiate_in_context id t c)
+-  | ContextsPair (c,c') ->
+-     ContextsPair
+-      (instantiate_in_context id t c,
+-       instantiate_in_context id t c')
+-  | MuTilde (id',p,cmd) -> MuTilde (id',p,instantiate_in_command id t cmd)
++  | Concl _ as t' -> t'
++  | Cons (t',c) as n ->
++     let a = instantiate_in_t3rm id t t' and b = instantiate_in_context id t c in
++     if a == t' && b == c then n else Cons (a, b)
++  | ConsFO (t',c) as n -> let b = instantiate_in_context id t c in if b == c then n else ConsFO (t',b)
++  | Lambda' (id',p,c) as n -> let b = instantiate_in_context id t c in if b == c then n else Lambda' (id',p,b)
++  | DestructTermsPair (id',p',id'',p'',cmd) as n ->
++     let a = instantiate_in_command id t cmd in if a == cmd then n else DestructTermsPair (id',p',id'',p'',a)
++  | DestructTermsPairFO (id',p',c) as n ->
++     let b = instantiate_in_context id t c in if b == c then n else DestructTermsPairFO (id',p',b)
++  | ContextsPair (c,c') as n ->
++     let a = instantiate_in_context id t c and b = instantiate_in_context id t c' in
++     if a == c && b == c' then n else ContextsPair (a, b)
++  | MuTilde (id',p,cmd) as n -> let a = instantiate_in_command id t cmd in if a == cmd then n else MuTilde (id',p,a)
+ and instantiate_in_command id t =
+  function
+-    Play (t',c) ->
+-     Play
+-      (instantiate_in_t3rm id t t',
+-       instantiate_in_context id t c)
++    Play (t',c) as n ->
++     let a = instantiate_in_t3rm id t t' and b = instantiate_in_context id t c in
++     if a == t' && b == c then n else Play (a, b)
+ 
+ let instantiate_t3rm    id t = instantiate_in_t3rm id (Term t)
+ let instantiate_context id c = instantiate_in_t3rm id (Context c)

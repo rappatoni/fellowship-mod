@@ -8,6 +8,11 @@ repeated, equivalence-checked timings is that task.
 
 Run everything from the repository root.
 
+`perf-2026-11/` holds the type-check and labelling performance report of
+2026-11-13/14 (`perf-2026-11/REPORT.org`): Fellowship replay scaling,
+adf-bdd routes, the experimental Fellowship builds and the scripts
+behind the measurements.
+
 | Script                 | Measures                                                      |
 |------------------------|---------------------------------------------------------------|
 | `gen.py KIND N`        | writes a synthetic `.fspy` (`chain`, `stated`, `double`, `decls`) |
