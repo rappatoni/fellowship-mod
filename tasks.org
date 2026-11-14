@@ -4315,6 +4315,29 @@ TweetyProject evaluation (2026-10-21, eval/REPORT.org part 6):
   assumption c is accepted though it strictly yields the self-refuting
   d; ABA's preferred extension excludes c.
 
+Evidence from the IRIS follow-up (2026-11-14, branch discourse-referents,
+=lib/iris_experiment/rq3-fragments.org=, fragment (g); analysis in
+=lib/iris_experiment/evaluation/comparison.org=, "Classicality"):
+- The labelling is not closed under the contraposition the design
+  decision above asks for.
+- In the con labelling of fragment (g) the accepted statements are:
+  - =Consent1071 usufruct= (strict, § 1071 BGB)
+  - Oldenburg's presumed rule =Consent1071 usufruct -> CoDetermines
+    usufruct= (IN)
+  - the refutation of =CoDetermines usufruct= (IN, from Köln's presumption
+    =Powerless=)
+
+  These are classically inconsistent.
+- With the transposal of the delegated implication, Köln's
+  counterargument would also attack the rule (=CoDetermines[c] ->
+  Consent1071[c]= meets the strict § 1071), and the con reading would
+  have to reject Oldenburg's inference. That is what Köln's reasons
+  actually dispute.
+- The same material shows the cost: a transposed presumed rule yields
+  arguments nobody made. "A claim limits the scope" transposes to "the
+  scope is not limited, so there is no claim", the circular reading the
+  IRIS draft criticises.
+
 *** DONE Design: should the intermediate conclusions of curried implications be attack points?
 CLOSED: [2026-10-13 Tue]
 :PROPERTIES:
@@ -8682,6 +8705,78 @@ tests/test_unfold_entrypoints.py::test_argument_names_ending_in_digits_stay_apar
 ::test_unfolding_copies_still_fold_under_their_argument (Peirce: one
 =s3=, no suffixed name); full suite 1486 passed, the two failures being
 the author's working copy of even_loop_lk.fspy.
+
+** BACKLOG Make the text render styles readable for legal readers
+:PROPERTIES:
+:ID:             aida-render-text-styles
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         6:00
+:DEFERRALS:      0
+:OUTCOME:        `render TARGET argumentation` produces text in one language, without internal binder names (alt1, r_3, H1, _F_), for argument, debate and evaluated terms; `pruefschema` stays the German check-list frame but does not report an unsupported site of an unevaluated term as a failed check; the decorations fill both styles.
+:VERIFY:         On the IRIS fragments (discourse-referents: lib/iris_experiment/rq3-debate-dynamics.org, debate read_c; rq4-6-7-metanorm.org, render decision argumentation evaluated) the argumentation output contains none of "Für", "weil", "und", "gegen ... spricht", "Prüfpunkt" and no internal binder name; the pruefschema output of the unevaluated debate contains no "Prüfung fehlgeschlagen" for a site that is merely unsupported; tests pin both; the suite passes.
+:END:
+
+Found in the IRIS follow-up (2026-11-14, branch discourse-referents;
+=lib/iris_experiment/rq3-debate-dynamics.org=, section "Reading the
+debate"):
+- =argumentation= switches into the German check-list phrases at every
+  cut ("Für X ist hinreichend, dass Y", "weil", "und", "gegen X spricht",
+  "Prüfpunkt"), so an English rendering with English decorations comes
+  out in two languages.
+- It prints internal names: alternatives (=alt1=), cut binders (=r_3=),
+  hypotheses (=H1=, =H1_2=) and the falsum continuation (=_F_=).
+- =pruefschema= prints "Prüfung fehlgeschlagen" for a site of an
+  unevaluated debate term that has no support yet, which reads as a
+  verdict.
+- =render … evaluated= is the most readable output, one line per kept
+  step, but has the same language mixing at its cuts.
+
+The branch task =aida-render-english-argumentation= (discourse-referents
+tasks.org, the IRIS experiment's) asks for an English counterpart of the
+check-list frame; this task is the general fix of the styles it builds
+on. Related: [[id:aida-tree-renderer-overhaul]].
+
+** BACKLOG Document, and let authors state, the order of a witness scaffold's candidates
+:PROPERTIES:
+:ID:             aida-witness-candidate-order
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      no
+:URGENT:         no
+:EISENHOWER:     Q4
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        The README (Discourse referents, witness scaffolds) states how declared constants are ordered among a witness scaffold's alternatives: by the order in which the document graph first holds a statement about each (in practice the order of the arguments about them, the later on top), the sort's other constants below; the author decides whether an explicit preference among candidates is wanted and, if so, how it is stated.
+:VERIFY:         The README paragraph names the rule and points to core/dc/unfold.py (_alternatives); a test registers two arguments for two candidates that both stand, in both orders, and pins that the later-registered candidate is the witness; the author's decision on an explicit preference is recorded here.
+:END:
+
+Found in the IRIS follow-up (2026-11-14, branch discourse-referents,
+where discourse referents and witness scaffolds live; this checkout
+does not have them yet).
+- =lib/iris_experiment/rq4-6-7-metanorm.org=, layer 2b: =decision :
+  [?o:Order] (exists o:Order, Lawful [o])= returns the order the court
+  has to make.
+- With two orders both standing, the witness was the order whose =Lawful=
+  argument was registered later.
+- Swapping the =declare= line of the constants changed nothing, while
+  swapping the two arguments swapped the witness.
+- Cause, from the code: =_alternatives= (core/dc/unfold.py on that branch)
+  collects the constants by matching the open site against the
+  document graph's nodes in node order. The scaffold keeps the topmost
+  alternative that stands, as at any statement.
+- The README says "declared constants" without their mutual order; for
+  the =!= choices of earlier arguments it says "in document order".
+- Legally the choice between two lawful candidates needs a rule. The IRIS
+  encoding states one (the orders exclude each other), so an explicit
+  preference may be the better tool than argument order.
 
 ** BACKLOG Overhaul the acceptance-tree renderer (deprecated)
 :PROPERTIES:
