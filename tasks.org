@@ -8197,6 +8197,53 @@ model (odd cycles: today credulous falls back to grounded, skeptically
 resolved, and says so); whether =hybrid --stmng= keeps the chain
 behaviour that made =naive= the choice.
 
+Decided by the author 2026-11-13: stable for both modes (credulous and
+skeptical) as the default - the founded reading is fine as default
+(this supersedes, for the default, the coinductive acceptance of
+unfounded loops kept by [[id:aida-unfounded-credulous-witness]], which
+remains available under complete/preferred); where no stable model
+exists, fall back to grounded with a warning; guard against adf-bdd's
+silent empty answer.
+
+Viability of the hybrid route, measured 2026-11-13 (discourse-referents
+worktree, adf-bdd 0.3.0):
+- *Agreement on every real graph.* The whole suite run with a plugin
+  that, at each adf-bdd call, also computed the stable models with
+  =naive --stm= and with =hybrid --stmng=: 870 distinct ADFs (up to 101
+  statements, median 9), 870 identical model sets, 31 of them with no
+  model on both sides, no timeout; grounded identical under =naive= and
+  =hybrid= on all 870. Summed solver time: =naive --stm= 11.6 s (7.8 s
+  of it the IRIS graph), =hybrid --stmng= 3.3 s.
+- *Chains are hybrid's weak point, as measured 2026-09-16.* Pure
+  support chains: =hybrid= (grounded or =--stmng=, the cost is the BDD
+  instantiation) 0.19 s at 100 statements, 2.3 s at 200, 35 s at 400,
+  >60 s at 800; =naive= 0.01-2.8 s. Layered graphs with fan-in and
+  attacks: =hybrid= 0.5 s at 433, 2.9 s at 858. Independent even loops:
+  =--stmng= enumerates 256 models in 0.7 s (8 loops), >60 s at 12 loops
+  (4096 models: output-bound); =naive --stm= >60 s already at 8 loops.
+- *The guard cannot read the output.* "No stable model" and "flag
+  ignored" are both exit 0 with no output: the naive branch of adf-bdd's
+  main.rs handles only =--grd=, =--com=, =--stm= and silently ignores
+  every other mode flag. So: pin =--stmng= to =--lib hybrid= in the
+  code, and self-test once per process on a two-model even loop
+  (=s(a). s(b). ac(a,neg(b)). ac(b,neg(a)).= must give exactly 2 models).
+  The two routes print models in different orders: compare sorted.
+- *Grounded reduction removes the chain cost.* Every stable model
+  extends the grounded one. Prototype: grounded with =naive=, fix the
+  decided statements, simplify the acceptance conditions, give only the
+  undecided rest to =hybrid --stmng=, add the fixed values back. Same
+  model sets as =naive --stm= on chains of 100/400/800 (all decided by
+  grounded: no stable search at all), layered graphs of 213/858, 4 even
+  loops and the IRIS graph (101 statements, 16 undecided: 0.01 s instead
+  of 8.8 s). That the reduction preserves the stable models of an ADF in
+  general still needs a proof (it is the known well-founded
+  simplification for normal logic programs); the agreement above is
+  evidence, not proof.
+Proposal: stable = grounded (=naive --grd=) + =hybrid --stmng= on the
+reduced ADF, with the self-test guard; skeptical intersects the
+enumerated models (cautious reasoning without enumeration is not
+offered by adf-bdd); grounded as the no-model fallback with a warning.
+
 ** BACKLOG Design: registering tactics in the wrapper
 :PROPERTIES:
 :ID:             aida-tactic-registration
