@@ -25,7 +25,7 @@ Authorship: the paper's prose is the authors'. These files hold:
 | =rq4-gap-dynamics.org=  | RQ 4/8: the case law as one debate in time (open enumeration, open structure, revision) |
 | =rq4-6-7-metanorm.org=  | Phases 3-5: the meta-norm, the burden of proof and its processing (the court's order as output, witnesses rising to the top), the cycle (22 scenarios) |
 | =figures/=              | images written by =graph ... show=                               |
-| =paper-examples.org=, =paper/= | the extracts assembled for the paper: snippet, verdict, vanilla and check-list renderings, decorated figures (=paper/make_examples.py= writes =paper/out/=) |
+| =paper-examples.org=, =paper-examples.md=, =paper/= | the extracts assembled for the paper: snippet, verdict, vanilla and check-list renderings, decorated figures (=paper/make_examples.py= writes =paper/out/= and exports the Markdown version, which GitHub shows with the includes expanded) |
 | =build/= (ignored)      | the tangled =.fspy= scripts                                      |
 | =evaluation/=           | Phase 7: =survey.org=, =comparison.org=, one directory per tool with its encodings and saved outputs, =run.sh= |
 
@@ -114,7 +114,7 @@ section under each layer of =rq4-6-7-metanorm.org=. Phase 7:
 * Extracts for the paper (Phase 6)
 
 AI NOTE: candidate extracts, each a snippet, a figure and a verdict line,
-with the claim it could support. =paper-examples.org= assembles them
+with the claim it could support. =paper-examples.org= (on GitHub: [[file:paper-examples.md][paper-examples.md]]) assembles them
 with their renderings (vanilla and English check list) and decorated
 figures. The claims are for the authors to adopt
 or reject, and every legal reading still needs review.

@@ -11,11 +11,15 @@ Run from the repository root with this checkout's Fellowship:
     ACDC_FSP=$PWD/wrap/fellowship/fsp .venv/bin/python lib/iris_experiment/paper/make_examples.py
 
 Everything is written to lib/iris_experiment/paper/out/ (overwritten).
+Afterwards paper-examples.org is exported, with its #+include lines expanded,
+to paper-examples.md, the version GitHub can show (its Org renderer ignores
+#+include). With --markdown only that export runs.
 """
 
 from __future__ import annotations
 
 import copy
+import json
 import re
 import shutil
 import subprocess
@@ -78,7 +82,34 @@ def write(name: str, text: str) -> None:
     (OUT / name).write_text(text if text.endswith("\n") else text + "\n")
 
 
+def export_markdown() -> None:
+    """Export paper-examples.org to paper-examples.md with Emacs's ox-md.
+
+    The includes are expanded by the exporter; the title, which ox-md drops,
+    becomes the one level-1 heading. Skipped with a message if there is no Emacs.
+    """
+    org, md = IRIS / "paper-examples.org", IRIS / "paper-examples.md"
+    emacs = shutil.which("emacs")
+    if emacs is None:
+        print("no emacs on PATH: paper-examples.md not regenerated")
+        return
+    lisp = ("(progn (require 'ox-md)"
+            " (setq org-md-headline-style 'atx org-md-toplevel-hlevel 2"
+            "       org-export-with-toc nil make-backup-files nil)"
+            f" (find-file {json.dumps(str(org))}) (org-export-to-file 'md {json.dumps(str(md))}))")
+    subprocess.run([emacs, "-Q", "--batch", "--eval", lisp], check=True, capture_output=True)
+    title = next(line.split(":", 1)[1].strip() for line in org.read_text().splitlines()
+                 if line.lower().startswith("#+title:"))
+    note = ("*Generated from `paper-examples.org` by `paper/make_examples.py`; "
+            "edit the Org file, not this one.*")
+    md.write_text(f"# {title}\n\n{note}\n\n{md.read_text().lstrip()}")
+    print(f"wrote {md.relative_to(ROOT)}")
+
+
 def main() -> None:
+    if "--markdown" in sys.argv[1:]:
+        export_markdown()
+        return
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
@@ -141,6 +172,7 @@ def main() -> None:
         shutil.rmtree(tmp, ignore_errors=True)
     write("SUMMARY.txt", "\n".join(summary))
     print("\n".join(summary))
+    export_markdown()
 
 
 if __name__ == "__main__":
