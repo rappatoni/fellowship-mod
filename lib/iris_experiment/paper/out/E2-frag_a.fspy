@@ -1,0 +1,7 @@
+debate con closed frag_a : Registrable [usufruct].
+muc_restraint.
+undermine excl_needs_no_need muc_restraint.
+support app_need_liab excl_needs_no_need.
+support app_liab app_need_liab.
+attack muc_no_liab app_liab.
+cedat tempus.

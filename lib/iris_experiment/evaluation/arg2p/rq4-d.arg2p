@@ -1,0 +1,9 @@
+graphBuildMode(aspic).
+f1 :=> metanorm.
+f2 :=> passed.
+f3 :=> written_only.
+a1 :-> no_written.
+a2 :-> presupposed.
+positivist : written_only, no_written -> -metanorm.
+anchor : presupposed -> -written_only.
+meta : metanorm, passed -> duty.

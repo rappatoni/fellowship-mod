@@ -1,0 +1,9 @@
+# Kept local, never published:
+# - the beck-online copies of the decisions (Beck reserves text and data
+#   mining); sources/*.org hold the courts' own texts (§ 5 UrhG)
+# - the IRIS 2026 overview paper draft (unpublished, the colleagues' text)
+sources/*.pdf
+*.docx
+# Ciao's compiled output of the PROLEG re-implementation
+evaluation/proleg/*.po
+evaluation/proleg/*.itf

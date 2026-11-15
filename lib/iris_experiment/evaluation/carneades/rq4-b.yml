@@ -1,0 +1,15 @@
+meta: {title: 'IRIS RQ 4, 4b: the meta-norm an ordinary premise'}
+argument_schemes:
+  - id: presumption
+    weight: {constant: 0.5}
+statements:
+  duty: the register court owes the applicants the entry
+  metanorm: the unwritten meta-norm is in force
+  ¬metanorm: the meta-norm is not in force
+  passed: the examination of the entry is passed
+issues:
+  i0: {positions: [metanorm, ¬metanorm]}
+arguments:
+  duty_arg: {conclusion: duty, premises: [metanorm, passed]}
+  pres_passed: {conclusion: passed, premises: [], scheme: presumption}
+assumptions: []

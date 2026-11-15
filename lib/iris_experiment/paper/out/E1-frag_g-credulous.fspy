@@ -1,0 +1,10 @@
+debate con closed frag_g : Registrable [usufruct].
+koe_restraint.
+undermine excl_needs_no_need koe_restraint.
+support old_need_codet excl_needs_no_need.
+support old_codet_1071 old_need_codet.
+attack koe_no_codet old_codet_1071.
+undermine powerless_needs_no_constitutive koe_no_codet.
+support stg_constitutive powerless_needs_no_constitutive.
+attack koe_not_constitutive stg_constitutive.
+cedat tempus.

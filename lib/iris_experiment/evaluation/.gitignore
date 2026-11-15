@@ -1,0 +1,4 @@
+# The saved tool outputs are the evidence comparison.org cites: keep them,
+# although the repository ignores *.out and *.txt elsewhere.
+!*.out
+!*.txt

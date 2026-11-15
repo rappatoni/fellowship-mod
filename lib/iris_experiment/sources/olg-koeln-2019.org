@@ -1,0 +1,56 @@
+#+title: OLG Köln, Beschluss vom 7.10.2019, 18 Wx 18/19
+#+language: de
+
+Source: MittBayNot 4/2020, 368-369 (Nr. 18), notare.bayern.de; also NZG 2020, 641 (note Wertenbruch); ZIP 2020, 322.
+Outcome: appeal dismissed; usufruct not registrable; further appeal (Rechtsbeschwerde) allowed.
+Rn. as printed.
+
+Text as printed; page headers removed, hyphenation joined, the
+two-column order restored by hand where the print interleaves columns.
+=(…)= marks omissions made by the printing journal, not by us. The
+journal's headnote (Leitsatz) and any annotation are not reproduced
+(they are not official works, § 5 UrhG); they are cited only.
+Retrieved 2026-11-13. Checked against the print by: (pending, author).
+
+* Rn. 1
+:PROPERTIES:
+:CUSTOM_ID: koe-rn1
+:END:
+
+I. Die Beteiligte zu 3 ist Kommanditistin der Gesellschaft. Durch notariellen Vertrag vom 31.5.2019 hat sie einen Teil ihres Kommanditanteils auf die Beteiligte zu 4 übertragen. Weiter heißt es in dem Vertrag: „An dem übertragenen Kommanditanteil ist Frau A der lebenslängliche, in der Ausübung unentgeltliche Nießbrauch zu einer Quote von 80 % vorbehalten (eintragungsfähig, Staudinger, BGB 2009, §§ 1068, 1069 Rdnr. 57 ff., Ulmer, MK, § 705 Rdnr. 99 ff., OLG Stuttgart, Beschluss vom 28.1.2019, 8 W 25/13).“
+
+* Rn. 2
+:PROPERTIES:
+:CUSTOM_ID: koe-rn2
+:END:
+
+Den entsprechenden Eintragungsantrag vom 5.6.2019 (…) hat das Handelsregister durch einen am 25.6.2019 erlassenen Beschluss (…) mit der Begründung zurückgewiesen, dass eine solche Eintragung gesetzlich nicht geboten sei und deshalb zu unterbleiben habe. Der hiergegen am 1.7.2019 eingelegten Beschwerde (…) hat das Handelsregister durch am 9.7.2019 erlassenen Beschluss (…) nicht abgeholfen und die Beschwerde dem OLG zur Entscheidung vorgelegt.
+
+* Rn. 3
+:PROPERTIES:
+:CUSTOM_ID: koe-rn3
+:END:
+
+II. Die Beschwerde ist zulässig, bleibt in der Sache aber ohne Erfolg. Grundsätzlich sind nur solche Tatsachen in das Handelsregister einzutragen, deren Eintragung im Gesetz, für die Kommanditgesellschaft in §§ 106 Abs. 2, 162 Abs. 1 HGB, vorgesehen ist. Hierzu gehört der Nießbrauch an einem Kommanditanteil nicht. Dies allein steht der Eintragung aber nicht zwingend entgegen, denn es ist anerkannt, dass auch nicht eintragungspflichtige Tatsachen eintragungsfähig sind, wenn ein erhebliches Bedürfnis des Rechtsverkehrs an deren Verlautbarung besteht (BGH, Beschluss vom 14.2.2012, II ZB 15/11, NZG 2012, 385 Rdnr. 16 m. w. N.). Die Frage, ob dies für den Nießbrauch an einem Kommanditanteil gilt, ist in Rechtsprechung und Schrifttum umstritten.
+
+* Rn. 4
+:PROPERTIES:
+:CUSTOM_ID: koe-rn4
+:END:
+
+Zum Teil wird ein die Eintragungsfähigkeit begründendes Informationsbedürfnis verneint, weil der Nießbraucher im Außenverhältnis nicht hafte (OLG München, Beschluss vom 8.8.2016, 31 Wx 204/16, NZG 2016, 1064 Rdnr. 23-25; MünchKomm-HGB/K. Schmidt, 4. Aufl. 2016, § 106 Rdnr. 36; Ebenroth/Boujong/Joost/Strohn/Born, HGB, 3. Aufl. 2014, § 106 Rdnr. 11; Röhricht/Graf von Westphalen/Haas/Haas, HGB, 5. Aufl. 2019, § 106 Rdnr. 8). Auch sei die Beteiligung des Nießbrauchers an den Verwaltungsrechten nicht mit denen eines Testamentsvollstreckers, für den der BGH (a. a. O.) die Eintragungsfähigkeit bejaht hat, vergleichbar. Nach der Gegenauffassung soll dagegen ein Informationsbedürfnis des Rechtsverkehrs bestehen. Dies wird zum einen aus dem Einfluss des Nießbrauchers auf die Verwaltung der Kommanditgesellschaft gefolgert, wobei teilweise angenommen wird, der Nießbraucher habe ein eigenes Stimmrecht bei Beschlüssen über die laufende Verwaltung (OLG Stuttgart, Beschluss vom 28.1.2013, 8 W 25/13, NZG 2013, 432, 433; wohl auch Oetker/Lieder, HGB, 6. Aufl. 2019, § 106 Rdnr. 62), teilweise aber auch darauf abgestellt wird, dass gemäß § 1071 BGB Änderungen des Gesellschaftsvertrages nur mit seiner Zustimmung erfolgen könnten (OLG Oldenburg, Beschluss vom 9.3.2015, 12 W 51/15, NZG 2015, 634 Rdnr. 8). Zum anderen wird auch eine eigene Haftung des Nießbrauchers bejaht (Staub/Schäfer, HGB, 5. Aufl. 2009, § 106 Rdnr. 16).
+
+* Rn. 5
+:PROPERTIES:
+:CUSTOM_ID: koe-rn5
+:END:
+
+Der Senat schließt sich der erstgenannten Auffassung an und verneint ein die Eintragung des Nießbrauchs rechtfertigendes Informationsbedürfnis. Haftungsrechtliche Erwägungen vermögen ein Informationsbedürfnis des Rechtsverkehrs nicht zu begründen. Entgegen der oben zitierten Auffassung begründet der Nießbrauch keine Haftung des Nießbrauchers im Außenverhältnis. Der Nießbrauch begründet ein Recht, Nutzungen zu ziehen (§ 1030 Abs. 1, § 1068 Abs. 2 BGB). Hieraus folgt aber keine Verpflichtung gegenüber Dritten. Entgegen der Auffassung des OLG Stuttgart (a. a. O.) steht dem Nießbraucher auch kein Stimmrecht in der Gesellschafterversammlung zu, denn die Bestellung des Nießbrauchs ändert nichts an der Gesellschafterstellung des Kommanditisten. Dies zeigt sich insbesondere auch in dem hier gegebenen Fall, dass der Nießbrauch nur zu einem prozentualen Anteil des Rechts bestellt wird, im Übrigen aber beim Kommanditisten bleibt, denn das Stimmrecht kann für jeden Gesellschaftsanteil nur einheitlich ausgeübt werden (MünchKomm-HGB/K. Schmidt, § 105 Rdnr. 235; Staudinger/Heinze, Neub. 2017, Anh. §§ 1068, 1069 Rdnr. 72), was sogar bei Grundlagenbeschlüssen gilt (BGH, Urteil vom 9.11.1998, II ZR 213/97, NJW 1999, 571, 572). Richtig ist allerdings, dass Grundlagenentscheidungen gemäß § 1071 BGB der Zustimmung des Nießbrauchers bedürfen. Dies bedeutet aber keineswegs, dass die Zustimmung des Nießbrauchers konstitutive Bedeutung für die entsprechende Beschlussfassung innerhalb der Kommanditgesellschaft hätte. Eine solche weitgehende Wirkung ist vielmehr im Hinblick darauf, dass die Bestellung des Nießbrauchs, die ohne Mitwirkung und Kenntnis der Gesellschaft erfolgen kann und nichts an der Gesellschafterstellung des Kommanditisten ändert, abzulehnen (ebenso OLG Düsseldorf, Beschluss vom 14.9.1998, 3 Wx 209/98, NZG 1999, 26; MünchKomm-BGB/Pohlmann, 7. Aufl. 2017, § 1071 Rdnr. 13; a. A. Staudinger/Heinze, Anh. §§ 1068, 1069 Rdnr. 76).
+
+* Rn. 6
+:PROPERTIES:
+:CUSTOM_ID: koe-rn6
+:END:
+
+III. Die Kostenentscheidung beruht auf § 84 FamFG; die Festsetzung des Wertes folgt aus § 36 Abs. 3 GNotKG. Im Hinblick auf die Divergenz in der obergerichtlichen Rechtsprechung war gemäß § 70 Abs. 2 Nr. 2 FamFG die Rechtsbeschwerde zuzulassen.
+

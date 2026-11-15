@@ -1,0 +1,329 @@
+#+title: RQ 3: OLG Köln, 7.10.2019, 18 Wx 18/19 (not registrable)
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-koeln.fspy
+#+fspy_prelude: vocabulary.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- The German text is the court's (=sources/olg-koeln-2019.org=), with
+  citations cut to =[...]=.
+- AI DRAFT TRANSLATION — not reviewed by a lawyer.
+- Comments of ours are marked AI NOTE.
+
+* Rn. 1-2: the facts
+
+#+begin_quote
+[...] „An dem übertragenen Kommanditanteil ist Frau A der lebenslängliche,
+in der Ausübung unentgeltliche Nießbrauch zu einer Quote von 80 %
+vorbehalten [...].“ Den entsprechenden Eintragungsantrag [...] hat das
+Handelsregister [...] mit der Begründung zurückgewiesen, dass eine solche
+Eintragung gesetzlich nicht geboten sei und deshalb zu unterbleiben habe.
+[...]
+#+end_quote
+
+/Translation./ [...] "A life usufruct, gratuitous in its exercise, at a
+quota of 80 % is reserved to Ms A on the transferred limited partner's
+interest [...]." The register court rejected the corresponding
+application [...] because such an entry is not required by statute and
+must therefore not be made. [...]
+
+* Rn. 3: the principle and its exception
+
+#+begin_quote
+Die Beschwerde ist zulässig, bleibt in der Sache aber ohne Erfolg.
+Grundsätzlich sind nur solche Tatsachen in das Handelsregister
+einzutragen, deren Eintragung im Gesetz, für die Kommanditgesellschaft in
+§§ 106 Abs. 2, 162 Abs. 1 HGB, vorgesehen ist. Hierzu gehört der
+Nießbrauch an einem Kommanditanteil nicht. Dies allein steht der
+Eintragung aber nicht zwingend entgegen, denn es ist anerkannt, dass auch
+nicht eintragungspflichtige Tatsachen eintragungsfähig sind, wenn ein
+erhebliches Bedürfnis des Rechtsverkehrs an deren Verlautbarung besteht
+[...]. Die Frage, ob dies für den Nießbrauch an einem Kommanditanteil gilt,
+ist in Rechtsprechung und Schrifttum umstritten.
+#+end_quote
+
+/Translation./ The complaint is admissible but fails on the merits. In
+principle, only facts whose entry the statute provides for, for the
+limited partnership in §§ 106 (2), 162 (1) HGB, are to be entered in the
+Commercial Register. The usufruct on a limited partner's interest is not
+among them. That alone does not necessarily bar the entry, since it is
+recognised that facts not required to be entered are registrable if
+there is a substantial need of legal dealings for their disclosure [...].
+Whether that holds for the usufruct on a limited partner's interest is
+disputed in case law and literature.
+
+AI NOTE: the meta-norm with principle and exception, almost word for
+word as in =vocabulary.org=.
+- Exclusion is presumed.
+- Its exception, a need, is owed by whoever claims it
+  (=excl_needs_no_need=).
+- The statutory point is the denial =s_162=.
+
+#+begin_src fspy
+# Rn. 3: the usufruct is not among the facts the statute provides for.
+counterargument koe_not_statute : (ProvidedByStatute [usufruct]).
+moxia s_162.
+dixi.
+
+# Rn. 3: in principle only statutory facts; the entry is excluded unless excepted.
+counterargument koe_restraint : (Registrable [usufruct]).
+cut (Excluded [usufruct] -> ~Registrable [usufruct]) r.
+axiom m_excl.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* Rn. 4: the dispute as the court reports it
+
+#+begin_quote
+Zum Teil wird ein die Eintragungsfähigkeit begründendes
+Informationsbedürfnis verneint, weil der Nießbraucher im Außenverhältnis
+nicht hafte [...]. Auch sei die Beteiligung des Nießbrauchers an den
+Verwaltungsrechten nicht mit denen eines Testamentsvollstreckers, für den
+der BGH [...] die Eintragungsfähigkeit bejaht hat, vergleichbar. Nach der
+Gegenauffassung soll dagegen ein Informationsbedürfnis des Rechtsverkehrs
+bestehen. Dies wird zum einen aus dem Einfluss des Nießbrauchers auf die
+Verwaltung der Kommanditgesellschaft gefolgert, wobei teilweise
+angenommen wird, der Nießbraucher habe ein eigenes Stimmrecht bei
+Beschlüssen über die laufende Verwaltung (OLG Stuttgart [...]), teilweise
+aber auch darauf abgestellt wird, dass gemäß § 1071 BGB Änderungen des
+Gesellschaftsvertrages nur mit seiner Zustimmung erfolgen könnten (OLG
+Oldenburg [...]). Zum anderen wird auch eine eigene Haftung des
+Nießbrauchers bejaht (Staub/Schäfer [...]).
+#+end_quote
+
+/Translation./ Some deny a need for information that would ground
+registrability, because the usufructuary is not liable towards third
+parties [...]. Also, the usufructuary's share in the rights of
+administration is said not to be comparable to an executor's, for whom
+the BGH [...] affirmed registrability. The opposing view holds that legal
+dealings do need the information. On the one hand, this is inferred from
+the usufructuary's influence on the administration of the limited
+partnership: some assume that the usufructuary has a vote of their own on
+resolutions about day-to-day administration (OLG Stuttgart [...]); others
+point out that under § 1071 BGB amendments of the partnership agreement
+require the usufructuary's consent (OLG Oldenburg [...]). On the other
+hand, the usufructuary's own liability is affirmed (Staub/Schäfer [...]).
+
+The opposing positions as the court reports them, so that its debate
+can answer them. In =rq3-combined.org= they stand beside the
+originals: =stg_votes= and =old_codet_1071= are the same statements.
+
+#+begin_src fspy
+# Rn. 4 (reporting OLG Stuttgart): a vote of their own on day-to-day affairs.
+argument koe_rep_votes : (VotesDayToDay [usufruct]).
+by default.
+dixi.
+
+argument koe_rep_codet_votes : (CoDetermines [usufruct]).
+cut (VotesDayToDay [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 4 (reporting OLG Oldenburg): influence through the § 1071 consent.
+argument koe_rep_codet_1071 : (CoDetermines [usufruct]).
+cut (Consent1071 [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+axiom s_1071.
+axiom r.
+dixi.
+
+argument koe_rep_need_codet : (Need [usufruct]).
+cut (CoDetermines [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 4 (reporting Staub/Schäfer): the usufructuary's own liability.
+argument koe_rep_liab : (Liability [usufruct]).
+by default.
+dixi.
+
+argument koe_rep_need_liab : (Need [usufruct]).
+cut (Liability [usufruct] -> Need [usufruct]) r.
+axiom g_liab.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 5: the court's answer
+
+#+begin_quote
+Der Senat schließt sich der erstgenannten Auffassung an und verneint ein
+die Eintragung des Nießbrauchs rechtfertigendes Informationsbedürfnis.
+Haftungsrechtliche Erwägungen vermögen ein Informationsbedürfnis des
+Rechtsverkehrs nicht zu begründen. Entgegen der oben zitierten Auffassung
+begründet der Nießbrauch keine Haftung des Nießbrauchers im
+Außenverhältnis. Der Nießbrauch begründet ein Recht, Nutzungen zu ziehen
+(§ 1030 Abs. 1, § 1068 Abs. 2 BGB). Hieraus folgt aber keine Verpflichtung
+gegenüber Dritten.
+#+end_quote
+
+/Translation./ The senate joins the first view and denies a need for
+information that would justify entering the usufruct. Liability
+considerations cannot ground a need of legal dealings for information.
+Contrary to the view cited above, the usufruct creates no liability of
+the usufructuary towards third parties. The usufruct is a right to take
+emoluments (§ 1030 (1), § 1068 (2) BGB). No obligation towards third
+parties follows from it.
+
+#+begin_src fspy
+# Rn. 5: a right to take emoluments creates no obligation towards third parties.
+counterargument koe_no_liab : (Liability [usufruct]).
+cut (EmolumentsRight [usufruct] -> ~Liability [usufruct]) r.
+by default.
+next.
+elim.
+axiom s_1030.
+elim.
+axiom.
+dixi.
+#+end_src
+
+#+begin_quote
+Entgegen der Auffassung des OLG Stuttgart [...] steht dem Nießbraucher auch
+kein Stimmrecht in der Gesellschafterversammlung zu, denn die Bestellung
+des Nießbrauchs ändert nichts an der Gesellschafterstellung des
+Kommanditisten. Dies zeigt sich insbesondere auch in dem hier gegebenen
+Fall, dass der Nießbrauch nur zu einem prozentualen Anteil des Rechts
+bestellt wird, im Übrigen aber beim Kommanditisten bleibt, denn das
+Stimmrecht kann für jeden Gesellschaftsanteil nur einheitlich ausgeübt
+werden [...], was sogar bei Grundlagenbeschlüssen gilt [...].
+#+end_quote
+
+/Translation./ Contrary to OLG Stuttgart's view [...], the usufructuary
+has no vote in the partners' meeting either, since creating the usufruct
+does not change the limited partner's status as a partner. This shows in
+particular in the present case, where the usufruct is created only for a
+percentage of the right and otherwise remains with the limited partner:
+the vote attached to an interest can only be exercised uniformly [...],
+which holds even for fundamental resolutions [...].
+
+#+begin_src fspy
+# Rn. 5: the vote on an interest can only be exercised uniformly.
+counterargument koe_no_vote : (VotesDayToDay [usufruct]).
+cut (UniformVote [usufruct] -> ~VotesDayToDay [usufruct]) r.
+by default.
+next.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+#+begin_quote
+Richtig ist allerdings, dass Grundlagenentscheidungen gemäß § 1071 BGB der
+Zustimmung des Nießbrauchers bedürfen. Dies bedeutet aber keineswegs, dass
+die Zustimmung des Nießbrauchers konstitutive Bedeutung für die
+entsprechende Beschlussfassung innerhalb der Kommanditgesellschaft hätte.
+Eine solche weitgehende Wirkung ist vielmehr im Hinblick darauf, dass die
+Bestellung des Nießbrauchs, die ohne Mitwirkung und Kenntnis der
+Gesellschaft erfolgen kann und nichts an der Gesellschafterstellung des
+Kommanditisten ändert, abzulehnen [...].
+#+end_quote
+
+/Translation./ It is true that fundamental decisions require the
+usufructuary's consent under § 1071 BGB. But this by no means gives the
+usufructuary's consent constitutive significance for the resolution
+within the limited partnership. Such a far-reaching effect is rather to
+be rejected, given that the usufruct can be created without the
+partnership's involvement and knowledge and changes nothing in the
+limited partner's status as a partner [...].
+
+AI NOTE:
+- The court grants =Consent1071= and denies its constitutive effect.
+- Against the inference "consent right, so influence" (Oldenburg),
+  the court's position is the helper =Powerless=: no means of influence
+  unless a vote or a constitutive consent is shown. Whoever claims
+  influence owes one of them. The court presumes it.
+- Oldenburg's direct rule from the consent right to influence and this
+  presumption then collide on =CoDetermines=. That is exactly the point
+  on which the two decisions part.
+
+#+begin_src fspy
+# Rn. 5: a usufruct created without the partnership cannot condition its measures.
+counterargument koe_not_constitutive : (ConsentConstitutive [usufruct]).
+cut (CreatedWithoutPartnership [usufruct] -> ~ConsentConstitutive [usufruct]) r.
+by default.
+next.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+# Rn. 5: no means of influence shown, so no co-determination (presumed).
+counterargument koe_no_codet : (CoDetermines [usufruct]).
+cut (Powerless [usufruct] -> ~CoDetermines [usufruct]) r.
+axiom m_powerless.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* Rn. 6: costs; further appeal admitted
+
+#+begin_quote
+[...] Im Hinblick auf die Divergenz in der obergerichtlichen Rechtsprechung
+war gemäß § 70 Abs. 2 Nr. 2 FamFG die Rechtsbeschwerde zuzulassen.
+#+end_quote
+
+/Translation./ [...] In view of the divergence among the higher courts, a
+complaint on points of law had to be admitted under § 70 (2) no. 2
+FamFG.
+
+* The court's debate
+
+A =con= debate.
+- The court's restraint comes first.
+- The applicant's way out is the exception: a need, through one of the
+  reported grounds.
+- The court rebuts each ground. With every ground down, the need is
+  owed and unsupplied, so the exception fails and the restraint stands.
+  That is the "refutation only" pattern of the IRIS draft (§ 2.2.1).
+
+#+begin_src fspy
+debate con closed koe : Registrable [usufruct].
+koe_restraint.
+undermine excl_needs_no_need koe_restraint.
+support koe_rep_need_codet excl_needs_no_need.
+support koe_rep_codet_votes koe_rep_need_codet.
+support koe_rep_votes koe_rep_codet_votes.
+support koe_rep_codet_1071 koe_rep_need_codet.
+support koe_rep_need_liab excl_needs_no_need.
+support koe_rep_liab koe_rep_need_liab.
+attack koe_no_liab koe_rep_liab.
+attack koe_no_vote koe_rep_votes.
+attack koe_no_codet koe_rep_codet_1071.
+undermine powerless_needs_no_vote koe_no_codet.
+undermine powerless_needs_no_constitutive koe_no_codet.
+support koe_rep_votes powerless_needs_no_vote.
+attack koe_not_constitutive powerless_needs_no_constitutive.
+cedat tempus.
+#+end_src
+
+#+begin_src fspy :combined no
+label koe.
+evaluate koe.
+evaluate koe credulous.
+#+end_src

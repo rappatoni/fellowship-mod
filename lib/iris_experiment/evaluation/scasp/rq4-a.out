@@ -1,0 +1,14 @@
+## rq4-a: with the target
+% QUERY:?- duty(court,app,e1).
+
+	ANSWER:	1 (in 0.159 ms)
+
+MODEL:
+{ duty(court,app,e1),  metanorm,  enter(e1,court,kp_c),  passed(e1) }
+BINDINGS:
+
+## rq4-a: without the target
+% QUERY:?- not duty(court,app,e1).
+
+no models
+

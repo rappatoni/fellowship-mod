@@ -1,0 +1,12 @@
+frag_g   codet:out consent1071:in constitutive:out created_without:in excluded:in need:out powerless:in registrable:out ¬codet:in ¬constitutive:out ¬registrable:in 
+rq4-a    duty:in metanorm:in passed:in ¬metanorm:out 
+rq4-b    duty:out metanorm:out passed:in ¬metanorm:out 
+rq4-c    duty:out metanorm:out no_written:in passed:in presupposed:out written_only:in ¬metanorm:in ¬written_only:out 
+rq4-d    duty:in metanorm:in no_written:in passed:in presupposed:in written_only:out ¬metanorm:out ¬written_only:in 
+rq6-a    conflict:out correct:in duty:in metanorm:in passed:in proved:out registrable:in statute:in submitted:in ¬correct:out 
+rq6-b    conflict:out correct:in duty:out metanorm:in passed:out proved:out registrable:in statute:in submitted:out ¬correct:out 
+rq6-c    conflict:in correct:out duty:out metanorm:in passed:out proved:out registrable:in statute:in submitted:in ¬correct:out 
+rq6-d    conflict:in correct:in duty:in metanorm:in passed:in proved:in registrable:in statute:in submitted:in ¬correct:out 
+rq7-a    claim:undec conflict:out contract_missing:in correct:in demand_unmet:undec demanded:in duty:undec improper:undec limited:undec metanorm:in passed:undec proved:out registrable:in statute:in submitted:in unrequired:in ¬correct:out 
+rq7-b    claim:in conflict:out contract_missing:in correct:in demand_unmet:out demanded:in duty:in improper:in limited:in metanorm:in passed:in proved:out registrable:in statute:in submitted:in unrequired:in ¬correct:out 
+rq7-c    claim:undec conflict:in contract_missing:in correct:out demand_unmet:undec demanded:in duty:undec improper:undec limited:undec metanorm:in passed:undec proved:out registrable:in statute:in submitted:in unrequired:in ¬correct:out 

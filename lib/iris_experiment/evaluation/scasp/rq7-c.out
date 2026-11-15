@@ -1,0 +1,21 @@
+## rq7-c: with the target
+% QUERY:?- claim(app,court,e1).
+
+no models
+
+## rq7-c: without the target
+% QUERY:?- not claim(app,court,e1).
+
+	ANSWER:	1 (in 10.358 ms)
+
+MODEL:
+{ not claim(app,court,e1),  not duty(court,app,e1),  metanorm,  not enter(e1,court,Var0 | {Var0 \= kp_c}),  enter(e1,court,kp_c),  not passed(e1),  not enter(e1,Var1 | {Var1 \= court},Var2),  not enter(e1,court,Var3 | {Var3 \= kp_c}),  -passed(e1),  -correct(kp_c),  conflict(kp_c),  not correct_proved(kp_c),  not -proper(Var4,Var5 | {Var5 \= e1}),  not limited(Var5 | {Var5 \= e1}),  not claim(Var6 | {Var6 \= app},Var7,Var5 | {Var5 \= e1}),  not duty(Var7,Var6 | {Var6 \= app},Var5 | {Var5 \= e1}),  not claim(app,Var8,Var5 | {Var5 \= e1}),  not duty(Var8,app,Var5 | {Var5 \= e1}),  not enter(Var5 | {Var5 \= e1},Var8,Var9),  not -proper(Var4,e1),  not limited(e1),  not claim(Var10 | {Var10 \= app},Var11,e1),  not duty(Var11,Var10 | {Var10 \= app},e1),  not claim(app,Var12 | {Var12 \= court},e1),  not duty(Var12 | {Var12 \= court},app,e1),  not enter(e1,Var12 | {Var12 \= court},Var13),  not -correct(Var14 | {Var14 \= kp_c}),  not conflict(Var14 | {Var14 \= kp_c}),  not correct(kp_c),  not enter(Var15 | {Var15 \= e1},Var16,kp_c),  not enter(e1,Var17 | {Var17 \= court},kp_c),  not -passed(Var18 | {Var18 \= e1}),  not enter(Var18 | {Var18 \= e1},Var19,Var20),  not required(Var21 | {Var21 \= d_appl},Var18 | {Var18 \= e1}),  not required(d_appl,Var18 | {Var18 \= e1}),  not enter(Var18 | {Var18 \= e1},Var22,Var23),  not demanded(Var24 | {Var24 \= d_contract},Var18 | {Var18 \= e1}),  not demanded(d_contract,Var18 | {Var18 \= e1}) }
+BINDINGS:
+
+
+	ANSWER:	2 (in 11.555 ms)
+
+MODEL:
+{ not claim(app,court,e1),  not duty(court,app,e1),  metanorm,  not enter(e1,court,Var0 | {Var0 \= kp_c}),  enter(e1,court,kp_c),  not passed(e1),  not enter(e1,Var1 | {Var1 \= court},Var2),  not enter(e1,court,Var3 | {Var3 \= kp_c}),  -passed(e1),  demanded(d_contract,e1),  proper(d_contract,e1),  not -proper(d_contract,e1),  not limited(e1),  not claim(Var4 | {Var4 \= app},Var5,e1),  not duty(Var5,Var4 | {Var4 \= app},e1),  not claim(app,Var6 | {Var6 \= court},e1),  not duty(Var6 | {Var6 \= court},app,e1),  not enter(e1,Var6 | {Var6 \= court},Var7),  not submitted(d_contract),  not -proper(Var8,Var9 | {Var9 \= e1}),  not limited(Var9 | {Var9 \= e1}),  not claim(Var10 | {Var10 \= app},Var11,Var9 | {Var9 \= e1}),  not duty(Var11,Var10 | {Var10 \= app},Var9 | {Var9 \= e1}),  not claim(app,Var12,Var9 | {Var9 \= e1}),  not duty(Var12,app,Var9 | {Var9 \= e1}),  not enter(Var9 | {Var9 \= e1},Var12,Var13),  not -proper(Var8,e1),  not -correct(Var14 | {Var14 \= kp_c}),  not conflict(Var14 | {Var14 \= kp_c}),  -correct(kp_c),  conflict(kp_c),  not correct_proved(kp_c),  not correct(kp_c),  not enter(Var15 | {Var15 \= e1},Var16,kp_c),  not enter(e1,Var17 | {Var17 \= court},kp_c),  not -passed(Var18 | {Var18 \= e1}),  not enter(Var18 | {Var18 \= e1},Var19,Var20),  not required(Var21 | {Var21 \= d_appl},Var18 | {Var18 \= e1}),  not required(d_appl,Var18 | {Var18 \= e1}),  not enter(Var18 | {Var18 \= e1},Var22,Var23),  not demanded(Var24 | {Var24 \= d_contract},Var18 | {Var18 \= e1}),  not demanded(d_contract,Var18 | {Var18 \= e1}) }
+BINDINGS:
+

@@ -1,0 +1,63 @@
+declare Order : type.
+declare o_submit, o_prove, o_entry : Order.
+declare Lawful : Order -> bool.
+decorate o_entry : "the entry of C as limited partner".
+decorate o_submit : "an interim order to submit the application in certified form".
+decorate o_prove : "an interim order to clear the doubt the register raises".
+decorate Lawful : "@arg1 is the lawful order".
+declare entry_rule : (Duty [court] [app] [e1] -> Lawful [o_entry]).
+declare submitted_moot_rule : (Submitted [d_appl] -> ~Lawful [o_submit]).
+declare no_delay_submit_rule : (Duty [court] [app] [e1] -> ~Lawful [o_submit]).
+declare no_delay_prove_rule : (Duty [court] [app] [e1] -> ~Lawful [o_prove]).
+
+argument lawful_entry : (Lawful [o_entry]).
+cut (Duty [court] [app] [e1] -> Lawful [o_entry]) r.
+axiom entry_rule.
+elim.
+next.
+axiom r.
+dixi.
+
+argument lawful_submit : (Lawful [o_submit]).
+by default.
+dixi.
+
+counterargument submitted_moots : (Lawful [o_submit]).
+cut (Submitted [d_appl] -> ~Lawful [o_submit]) r.
+axiom submitted_moot_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+counterargument no_delay_submit : (Lawful [o_submit]).
+cut (Duty [court] [app] [e1] -> ~Lawful [o_submit]) r.
+axiom no_delay_submit_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+argument lawful_prove : (Lawful [o_prove]).
+cut (Conflict [kp_c] -> Lawful [o_prove]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument no_delay_prove : (Lawful [o_prove]).
+cut (Duty [court] [app] [e1] -> ~Lawful [o_prove]) r.
+axiom no_delay_prove_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+argument decision : [?o:Order] (exists o:Order, Lawful [o]).
+elim [?o].
+dixi.

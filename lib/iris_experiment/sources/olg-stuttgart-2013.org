@@ -1,0 +1,134 @@
+#+title: OLG Stuttgart, Beschluss vom 28.1.2013, 8 W 25/13
+#+language: de
+
+Source: DNotZ 2013, 793-796 (beck-online, copy retrieved 2026-11-13 by the
+project); also NZG 2013, 432; ZIP 2013, 624. Outcome: complaint allowed;
+usufruct on a limited partner's interest registrable.
+Rn. as printed. The print omits Rn. 5 and the end of Rn. 18 (=(…)=).
+
+Only the court's own text is reproduced (§ 5 UrhG): the journal's
+headnote, headings, page markers and footnotes are left out. Two
+footnote markers fused with the citations were removed ("NJW 1999,
+571" and "II ZB 15/11"; the footnotes give DNotZ 1999, 607 and DNotZ
+2012, 788). Page headers removed, hyphenation joined.
+Checked against the print by: (pending, author).
+
+* Rn. 1
+:PROPERTIES:
+:CUSTOM_ID: stg-rn1
+:END:
+
+I. Die Beteiligte zu 1) hat durch den beglaubigenden Notar am 19. 12. 2011 zur Eintragung in das Handelsregister u.a. angemeldet, dass die als Kommanditistin aus der Gesellschaft ausgeschiedene Beteiligte zu 3) ihre Kommanditeinlage von 50000,– € im Wege der Sonderrechtsnachfolge auf die Kommanditistin, die Beteiligte zu 2), überträgt, dass ihr aber an dem übertragenen Kommanditanteil der unentgeltliche Nießbrauch auf Lebenszeit vorbehalten ist.
+
+* Rn. 2
+:PROPERTIES:
+:CUSTOM_ID: stg-rn2
+:END:
+
+Das RegisterG hat mit Schreiben vom 8. 3. 2012 darauf hingewiesen, dass die Bestellung eines Nießbrauchs im Handelsregister nicht eintragungsfähig sei, weswegen Gelegenheit zur Rücknahme der diesbezüglichen Anmeldung gegeben werde.
+
+* Rn. 3
+:PROPERTIES:
+:CUSTOM_ID: stg-rn3
+:END:
+
+Mit Beschl. v. 12. 11. 2012 hat sie die Anmeldung kostenpflichtig zurückgewiesen.
+
+* Rn. 4
+:PROPERTIES:
+:CUSTOM_ID: stg-rn4
+:END:
+
+Gegen die am 15./16. 11. 2012 zugestellte Entscheidung hat die Beteiligte zu 1) durch ihren Verfahrensbevollmächtigten bezüglich der Ablehnung der Eintragung des Nießbrauchsrechts in das Handelsregister am 1. 12. 2012 Beschwerde eingelegt, die sie am 28. 12. 2012 begründet hat. (…)
+
+* Rn. 6
+:PROPERTIES:
+:CUSTOM_ID: stg-rn6
+:END:
+
+II. Die gemäß §§ 374 Nr. 1, 378 Abs. 2, 382 Abs. 3, 58 ff. FamFG statthafte und auch im Übrigen zulässige Beschwerde ist in der Sache begründet.
+
+* Rn. 7
+:PROPERTIES:
+:CUSTOM_ID: stg-rn7
+:END:
+
+Das RegisterG vertritt die Auffassung, dass eine Außenhaftung des Nießbrauchers gegenüber Dritten nicht gegeben sei, weswegen eine Eintragung des Nießbrauchs im Handelsregister zu unterbleiben habe, das lediglich die Haftungslage wiedergeben solle (Krafka/Willer/Kühn, Registerrecht, 8. Aufl., 2010, Rdn. 770; Hopt in Baumbach/Hopt, HGB, 35. Aufl., 2012, § Rdn. 44; Wertenbruch in Ebenroth/Boujong/Joost/Strohn, HGB, 2. Aufl., 2008, § 105 Rdn. 116, je m.w.Nachw. zu der Streitfrage).
+
+* Rn. 8
+:PROPERTIES:
+:CUSTOM_ID: stg-rn8
+:END:
+
+Demgegenüber wird überwiegend die Auffassung vertreten, dass unabhängig von der Problematik einer etwaigen Außenhaftung des Nießbrauchers gegenüber Dritten (eine Außenhaftung annehmend: Ulmer in MünchKommBGB, 5. Aufl., 2009, § 705 Rdn. 106 m.w.Nachw.) die Eintragungsfähigkeit des Nießbrauchs an einem Kommanditanteil zu bejahen ist im Hinblick auf die dem Nießbraucher zustehenden Verwaltungsrechte (vgl. im Einzelnen hierzu: Frank in Staudinger, BGB [2009], §§ 1068, 1069 Rdn. 57 ff.; Ulmer, aaO, § 705 BGB Rdn. 99 ff.; LG Aachen, NZG 2009, 881; LG Oldenburg, DNotI-Report 2008, 166; LG Aachen, RNotZ 2003, 398; LG Köln, RNotZ 2001, 170 und Beschl. v. 12. 5. 2000 – 89 T 10/00 mit zust. Anm. Lindenmaier in RNotZ 2001, 155; sowie zur dinglichen Belastung der Mitgliedschaft durch die Nießbrauchsbestellung: BGH, NJW 1999, 571; je m.w.Nachw.).
+
+* Rn. 9
+:PROPERTIES:
+:CUSTOM_ID: stg-rn9
+:END:
+
+Der Senat schließt sich dieser überwiegend vertretenen Rechtsauffassung an und verweist insoweit auf die jeweils ausführlich begründeten zuvor zitierten Entscheidungen der genannten Landgerichte.
+
+* Rn. 10
+:PROPERTIES:
+:CUSTOM_ID: stg-rn10
+:END:
+
+Diese haben überzeugend dargelegt, dass die Einräumung eines Nießbrauchs an einem Geschäftsanteil dem Nießbraucher eine dingliche Berechtigung verschafft, kraft derer er zusammen mit dem Gesellschafter eine Rechtsgemeinschaft bildet. Nießbraucher und Gesellschafter sind gemeinsam an dem Geschäftsanteil berechtigt. Der Nießbraucher wird in den Geschäftsverband einbezogen. Die Gesellschafterrechte, insbesondere die Verwaltungsrechte werden zwischen dem Gesellschafter und dem Nießbraucher aufgeteilt, sofern dem Nießbraucher die Verwaltung nicht insgesamt übertragen wurde.
+
+* Rn. 11
+:PROPERTIES:
+:CUSTOM_ID: stg-rn11
+:END:
+
+Nachdem aber im Handelsregister auch das einzutragen ist, was ohne ausdrückliche gesetzliche Vorschrift nach Sinn und Zweck des Handelsregisters eine Eintragung erfordert, führen folgerichtig zur Eintragungsfähigkeit des Nießbrauchs schon die hieraus resultierenden Mitwirkungsrechte, ohne dass es auf die Frage einer etwaigen Außenhaftung des Nießbrauchers Dritten gegenüber ankommt.
+
+* Rn. 12
+:PROPERTIES:
+:CUSTOM_ID: stg-rn12
+:END:
+
+So hat der Nießbraucher grundsätzlich ein das Mitwirkungsrecht des Gesellschafters ausschließendes eigenes Stimmrecht bei Beschlüssen der Gesellschafter über die laufenden Angelegenheiten der Gesellschaft. Im Übrigen ist seine Rechtsposition durch § 1071 BGB abgesichert, der den Nießbraucher bei der ordentlichen Kündigung der Mitgliedschaft durch den Gesellschafter sowie bei der Auflösung der Gesellschaft und bei Änderungen des Gesellschaftsvertrages schützt. Der dinglichen Rechtsstellung des Nießbrauchs entspricht es dabei, dem sich aus § 1071 BGB ergebenden Zustimmungsvorbehalt nicht lediglich Auswirkungen auf das Innenverhältnis zwischen dem Nießbraucher und dem Gesellschafter einzuräumen, sondern dem Nießbraucher Einfluss auf die gesellschaftsrechtliche Maßnahme zuzubilligen.
+
+* Rn. 13
+:PROPERTIES:
+:CUSTOM_ID: stg-rn13
+:END:
+
+Unter Berücksichtigung dieser Mitverwaltungsrechte ist der Nießbraucher aber im Handelsregister einzutragen. Nur so kann das RegisterG überprüfen, ob eine Anmeldung zum Handelsregister von allen erforderlichen Personen vorgenommen wurde und die Richtigkeit der zu erfolgenden Eintragung überwachen, woraus sich ein öffentliches Interesse an der Eintragung des Nießbrauchs herleitet. Im Hinblick auf die Befugnisse des Nießbrauchers ist er i.S. des § 108 HGB letztlich einem Gesellschafter gleichzustellen.
+
+* Rn. 14
+:PROPERTIES:
+:CUSTOM_ID: stg-rn14
+:END:
+
+Da auch der Rechtsverkehr ein berechtigtes Interesse daran hat zu wissen, wer innerhalb der Gesellschaft an der Beschlussfassung mitwirken kann, muss unter diesem Aspekt ebenfalls die Eintragungsfähigkeit des Nießbrauchs bejaht werden.
+
+* Rn. 15
+:PROPERTIES:
+:CUSTOM_ID: stg-rn15
+:END:
+
+Eine Bestätigung findet diese Rechtsauffassung auch in der Entsch. des BGH v. 14. 2. 2012 – II ZB 15/11 (u.a. in NJW-RR 2012, 730) zur Eintragung der Dauertestamentsvollstreckung über den Nachlass eines Kommanditisten in das Handelsregister.
+
+* Rn. 16
+:PROPERTIES:
+:CUSTOM_ID: stg-rn16
+:END:
+
+Der BGH führt dort u.a. aus, es sei nicht zutreffend, dass die Publizitätsfunktion des Handelsregisters das Verhältnis der Gesellschaft zu Dritten betreffe, die Testamentsvollstreckung aber allein das Verhältnis des Gesellschafters zu Dritten. Das Handelsregister solle nach §§ 106 Abs. 2 Nr. 1, 107, 162 HGB auch Auskunft über die Personen geben, die an der Gesellschaft beteiligt seien. Sie hätten entscheidenden Einfluss auf die Geschicke der Gesellschaft. Deshalb habe der Rechtsverkehr ein berechtigtes Interesse, über diese Personen informiert zu werden. Das gelte im Grundsatz auch für die Kommanditisten. Diese seien zwar im gesetzlichen Regelfall von der Geschäftsführung ausgeschlossen (§ 164 Satz 1 Halbsatz 1 HGB). Sie hätten aber an etwaigen Änderungen des Gesellschaftsvertrages mitzuwirken und ihnen stehe gemäß § 164 Satz 1 Halbsatz 2 HGB ein Widerspruchsrecht bei Handlungen zu, die über den gewöhnlichen Geschäftsbetrieb hinausgingen. Da diese Rechte gemäß §§ 2205, 2211 BGB, jedenfalls soweit nicht in die unentziehbare Rechtsstellung des Gesellschafters eingegriffen werde, allein der Testamentsvollstrecker ausüben könne, habe der Rechtsverkehr ein berechtigtes Interesse daran, nicht nur die Namen der Kommanditisten zu erfahren, sondern auch über die angeordnete Testamentsvollstreckung unterrichtet zu werden.
+
+* Rn. 17
+:PROPERTIES:
+:CUSTOM_ID: stg-rn17
+:END:
+
+Diese Grundsätze sind ohne Weiteres übertragbar auf den Nießbrauch an einem Kommanditanteil im Hinblick auf die zuvor dargelegten weitreichenden Mitwirkungsrechte des Nießbrauchers.
+
+* Rn. 18
+:PROPERTIES:
+:CUSTOM_ID: stg-rn18
+:END:
+
+Danach aber war der Beschl. der Rechtspflegerin v. 12. 11. 2012 aufzuheben. Diese hat erneut über die Anmeldung der Eintragung in das Handelsregister vom 19. 12. 2011 unter Zugrundelegung der Rechtsauffassung des Senats zu entscheiden. (…)
+

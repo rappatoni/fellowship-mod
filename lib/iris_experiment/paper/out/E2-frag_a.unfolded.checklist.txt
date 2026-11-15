@@ -1,0 +1,66 @@
+It must be checked whether the usufruct is registrable. Starting check alt1:
+├─ In favour of the usufruct is registrable:
+│  │  └─ Check alt1 completed (refuted).
+│  └─ but
+│     └─ It must be checked whether the usufruct is registrable. Starting check muc_restraint:
+│        ├─ Check muc_restraint completed (refuted).
+│        └─ It must be checked whether the usufruct is registrable. Starting check r:
+│           ├─ established: the principle of restraint excludes the usufruct from the register implies it is not the case that the usufruct is registrable (m_excl)
+│           ├─ and
+│           ├─ It suffices to check that the principle of restraint excludes the usufruct from the register. Starting check alt2:
+│           │  ├─ unless something speaks against it: the principle of restraint excludes the usufruct from the register
+│           │  └─ To check the principle of restraint excludes the usufruct from the register, the following points must be worked through:
+│           │     ├─ Point 1:
+│           │     │  └─ It must be checked whether the principle of restraint excludes the usufruct from the register. Starting check alt3:
+│           │     │     ├─ In favour of the principle of restraint excludes the usufruct from the register:
+│           │     │     │  │  └─ Check alt3 completed (refuted).
+│           │     │     │  └─ but
+│           │     │     │     └─ It must be checked whether the principle of restraint excludes the usufruct from the register. Starting check excl_needs_no_need:
+│           │     │     │        ├─ Check excl_needs_no_need completed (refuted).
+│           │     │     │        └─ For the principle of restraint excludes the usufruct from the register it is necessary that it is not the case that legal dealings need the usufruct to be entered holds. Starting check th:
+│           │     │     │           ├─ because
+│           │     │     │           │  ├─ it is excluded that: the principle of restraint excludes the usufruct from the register without it is not the case that legal dealings need the usufruct to be entered (dn_excl_need)
+│           │     │     │           │  └─ It must be checked whether it is not the case that legal dealings need the usufruct to be entered. Starting check H1:
+│           │     │     │           │     ├─ Check H1 completed (refuted).
+│           │     │     │           │     ├─ and
+│           │     │     │           │     ├─ It suffices to check that legal dealings need the usufruct to be entered. Starting check alt4:
+│           │     │     │           │     │  ├─ otherwise not established: legal dealings need the usufruct to be entered
+│           │     │     │           │     │  └─ Against legal dealings need the usufruct to be entered:
+│           │     │     │           │     │     │  └─ Check alt4 completed (holds).
+│           │     │     │           │     │     └─ but
+│           │     │     │           │     │        └─ It suffices to check that legal dealings need the usufruct to be entered. Starting check app_need_liab:
+│           │     │     │           │     │           ├─ For legal dealings need the usufruct to be entered it suffices that the usufruct makes its holder liable towards third parties holds. Starting check r_2:
+│           │     │     │           │     │           │  ├─ because
+│           │     │     │           │     │           │  │  └─ established: the usufruct makes its holder liable towards third parties implies legal dealings need the usufruct to be entered (g_liab)
+│           │     │     │           │     │           │  ├─ and
+│           │     │     │           │     │           │  │  └─ It suffices to check that the usufruct makes its holder liable towards third parties. Starting check alt5:
+│           │     │     │           │     │           │  │     ├─ unless something speaks against it: the usufruct makes its holder liable towards third parties
+│           │     │     │           │     │           │  │     └─ To check the usufruct makes its holder liable towards third parties, the following points must be worked through:
+│           │     │     │           │     │           │  │        ├─ Point 1:
+│           │     │     │           │     │           │  │        │  └─ It must be checked whether the usufruct makes its holder liable towards third parties. Starting check alt6:
+│           │     │     │           │     │           │  │        │     ├─ In favour of the usufruct makes its holder liable towards third parties:
+│           │     │     │           │     │           │  │        │     │  │  └─ Check alt6 completed (refuted).
+│           │     │     │           │     │           │  │        │     │  └─ but
+│           │     │     │           │     │           │  │        │     │     └─ It must be checked whether the usufruct makes its holder liable towards third parties. Starting check muc_no_liab:
+│           │     │     │           │     │           │  │        │     │        ├─ Check muc_no_liab completed (refuted).
+│           │     │     │           │     │           │  │        │     │        └─ It must be checked whether the usufruct makes its holder liable towards third parties. Starting check r_3:
+│           │     │     │           │     │           │  │        │     │           ├─ unless something speaks against it: the usufruct makes its holder liable towards third parties implies the holder of the usufruct is a partner
+│           │     │     │           │     │           │  │        │     │           ├─ and
+│           │     │     │           │     │           │  │        │     │           ├─ Check r_3 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           └─ it is excluded that: the holder of the usufruct is a partner (bgh_partner)
+│           │     │     │           │     │           │  │        │     └─ Check alt5 completed (holds).
+│           │     │     │           │     │           │  │        └─ and point 2:
+│           │     │     │           │     │           │  │           └─ Check alt5 completed (holds).
+│           │     │     │           │     │           │  └─ Check r_2 completed.
+│           │     │     │           │     │           └─ Check app_need_liab completed (holds).
+│           │     │     │           │     └─ contradiction.
+│           │     │     │           └─ Check th completed.
+│           │     │     └─ Check alt2 completed (holds).
+│           │     └─ and point 2:
+│           │        └─ Check alt2 completed (holds).
+│           └─ It must be checked whether it is not the case that the usufruct is registrable. Starting check H1_2:
+│              ├─ Check H1_2 completed (refuted).
+│              ├─ and
+│              ├─ Check r completed (refuted).
+│              └─ contradiction.
+└─ otherwise not established: the usufruct is registrable

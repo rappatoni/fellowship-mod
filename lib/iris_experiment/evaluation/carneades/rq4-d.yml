@@ -1,0 +1,24 @@
+meta: {title: 'IRIS RQ 4, 4d: the objection answered'}
+argument_schemes:
+  - id: presumption
+    weight: {constant: 0.5}
+statements:
+  duty: the register court owes the applicants the entry
+  metanorm: the unwritten meta-norm is in force
+  ¬metanorm: the meta-norm is not in force
+  passed: the examination of the entry is passed
+  written_only: only a written norm can bind the register court
+  ¬written_only: a norm the written rules presuppose can bind the court
+  no_written: no written norm orders the entry
+  presupposed: the written rules presuppose the meta-norm
+issues:
+  i0: {positions: [metanorm, ¬metanorm]}
+  i1: {positions: [written_only, ¬written_only]}
+arguments:
+  duty_arg: {conclusion: duty, premises: [metanorm, passed]}
+  pres_meta: {conclusion: metanorm, premises: [], scheme: presumption}
+  pres_passed: {conclusion: passed, premises: [], scheme: presumption}
+  pres_written_only: {conclusion: written_only, premises: [], scheme: presumption}
+  positivist: {conclusion: ¬metanorm, premises: [written_only, no_written]}
+  anchor: {conclusion: ¬written_only, premises: [presupposed]}
+assumptions: [no_written, presupposed]

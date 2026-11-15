@@ -1,0 +1,222 @@
+#+title: RQ 3: showcase fragments for the paper
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-fragments.fspy
+#+fspy_prelude: vocabulary.org
+#+fspy_include: rq3-stuttgart.org
+#+fspy_include: rq3-oldenburg.org
+#+fspy_include: rq3-muenchen.org
+#+fspy_include: rq3-koeln.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- Each fragment is a small closed debate over arguments the four
+  decision files already hold, so its graph shows only its own scope.
+- Each is a candidate for a paper figure: =graph NAME show= writes
+  =NAME_graph.png= into =figures/= (=make iris=).
+- The verdict quoted under each is from the queries at the end, under
+  stable semantics, and is pinned in =tests/iris=.
+- The claims the fragments could support are AI NOTEs for the authors
+  to adopt or reject.
+
+* (a) Refutation only: München against the liability ground
+
+The restraint stands unless a need is shown. The appellant offers
+liability, and the court refutes it. With the ground gone, the owed need
+is unmet and the exception fails.
+
+#+begin_src fspy
+debate con closed frag_a : Registrable [usufruct].
+muc_restraint.
+undermine excl_needs_no_need muc_restraint.
+support app_need_liab excl_needs_no_need.
+support app_liab app_need_liab.
+attack muc_no_liab app_liab.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): a value, the refutation of =Registrable=.
+Its normal form rests on =!IN:Excluded usufruct=, the presumed exclusion.
+
+AI NOTE (claim): the "refutation only" pattern (IRIS draft § 2.2.1) is a
+burden allocation. The restraint is presumed and the need is owed by the
+applicant, so a court that only rebuts the grounds offered does decide
+the case. AIDA makes the allocation explicit as which sites are
+delegations and which are obligations.
+
+* (b) A question left undecided: Oldenburg's influence through § 1071
+
+The court reaches a need through the § 1071 consent and never uses the
+vote on day-to-day affairs. No argument about the vote touches this
+debate.
+
+#+begin_src fspy
+debate pro closed frag_b : Registrable [usufruct].
+old_registrable.
+support old_need_codet old_registrable.
+support old_codet_1071 old_need_codet.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): a value; one stable labelling, equal to
+the grounded one.
+
+AI NOTE (claim): leaving a question undecided is choosing an argument
+that does not depend on it. The graph shows it as the absence of the
+statement =VotesDayToDay=.
+
+* (c) A reductio against a principle: late filings (Oldenburg)
+
+#+begin_src fspy
+debate pro closed frag_c : Need [usufruct].
+old_need_codet.
+support old_codet_1071 old_need_codet.
+attack rc_old_delay old_need_codet.
+undermine old_no_delay rc_old_delay.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): a value; =DelayDefeatsInterest= OUT,
+=DelayedFilings= IN.
+
+AI NOTE (claim): the register court's argument rests on a general
+principle, which Oldenburg refutes by contraposition from § 15 (2) HGB.
+The register court's factual premise (late filings) is never contested.
+
+* (d) Weighing, argued: interest in information against clarity (München)
+
+#+begin_src fspy
+debate pro closed frag_d : Need [usufruct].
+muc_hyp_info.
+undermine muc_counter_deputy muc_hyp_info.
+undermine muc_clarity muc_hyp_info.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): open, =?OUT:Need usufruct=; the interest in
+information stays IN, the principle that it suffices goes OUT.
+
+AI NOTE (claim): the only stated priority in the four decisions is
+itself a defeasible statement ("as a rule"), which the court argues for.
+In AIDA it is a presumption that can be attacked, not a preference order
+fixed outside the argument. The counter-instances make the same point
+strictly.
+
+* (e) Analogy and distinction: the executorship (Stuttgart against München)
+
+#+begin_src fspy
+debate pro closed frag_e : Registrable [usufruct].
+stg_analogy.
+support stg_like_exec stg_analogy.
+support stg_codet_votes stg_like_exec.
+support stg_votes stg_codet_votes.
+attack muc_unlike stg_analogy.
+undermine unlike_needs_no_liability muc_unlike.
+support app_liab unlike_needs_no_liability.
+attack muc_no_liab app_liab.
+attack muc_no_vote stg_votes.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): open, =?OUT:Registrable usufruct=, both
+skeptically and credulously; one stable labelling, with =Unlike= IN and
+=LikeExecutorship= OUT.
+
+AI NOTE (claim):
+- München does not reject reasoning by analogy. It rejects the
+  similarity, and it does so by reading the precedent's reasons
+  differently.
+- With the helper =Unlike=, the analogy survives only if one of the
+  precedent's features is shown for the usufruct. So the analogy's fate
+  depends on another disputed question: liability.
+
+* (f) Where the courts part: influence from a consent right (Oldenburg against Köln)
+
+#+begin_src fspy
+debate pro closed frag_f : CoDetermines [usufruct].
+old_codet_1071.
+attack koe_no_codet old_codet_1071.
+undermine powerless_needs_no_constitutive koe_no_codet.
+attack koe_not_constitutive powerless_needs_no_constitutive.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): skeptically open, =?UNDEC:CoDetermines
+usufruct=; credulously a value. Two stable labellings, which differ only
+in =CoDetermines=.
+
+AI NOTE (claim):
+- Köln rebuts constitutive effect, which Oldenburg never claimed.
+  Oldenburg's inference from the mere consent right to influence is met
+  only by Köln's presumption that there is no influence.
+- Two presumed legal readings meet at one statement: grounded and
+  skeptically undecided, two stable labellings.
+- AIDA localises the disagreement between the decisions to this
+  statement.
+
+* (g) The core of the dispute, for the comparison with other tools
+
+The smallest debate in which both outcomes appear:
+- Köln's restraint, which a need defeats
+- Oldenburg's route to a need through the § 1071 consent right
+- Köln's presumption that the usufructuary has no influence, which
+  constitutive effect would defeat
+- Stuttgart's constitutive effect against Köln's refutation of it
+
+=evaluation/= re-encodes this debate in the other tools.
+
+#+begin_src fspy
+debate con closed frag_g : Registrable [usufruct].
+koe_restraint.
+undermine excl_needs_no_need koe_restraint.
+support old_need_codet excl_needs_no_need.
+support old_codet_1071 old_need_codet.
+attack koe_no_codet old_codet_1071.
+undermine powerless_needs_no_constitutive koe_no_codet.
+support stg_constitutive powerless_needs_no_constitutive.
+attack koe_not_constitutive stg_constitutive.
+cedat tempus.
+#+end_src
+
+Verdict (stable, 2026-11-14): skeptically open, credulously a value
+(the restraint). Three stable labellings:
+- [1] con: =Powerless= IN, =CoDetermines= OUT, =Excluded= IN
+- [2] pro: =Powerless= IN as well, but =CoDetermines= IN; the two meet
+  head on, and this labelling takes Oldenburg's side
+- [3] pro: =ConsentConstitutive= IN, so =Powerless= OUT
+
+Grounded leaves every disputed statement undecided.
+
+* Queries
+
+#+begin_src fspy
+label frag_a.
+label frag_a stable.
+evaluate frag_a stable.
+label frag_b.
+label frag_b stable.
+evaluate frag_b stable.
+label frag_c.
+label frag_c stable.
+evaluate frag_c stable.
+label frag_d.
+label frag_d stable.
+evaluate frag_d stable.
+label frag_e.
+label frag_e stable.
+evaluate frag_e stable.
+evaluate frag_e credulous stable.
+label frag_f.
+label frag_f stable.
+evaluate frag_f stable.
+evaluate frag_f credulous stable.
+label frag_g.
+label frag_g stable.
+evaluate frag_g stable.
+evaluate frag_g credulous stable.
+graph frag_a show.
+graph frag_b show.
+graph frag_c show.
+graph frag_d show.
+graph frag_e show.
+graph frag_f show.
+graph frag_g show.
+#+end_src

@@ -1,0 +1,539 @@
+#+title: Phase 1: argument analysis and choice of logical base
+#+language: en
+
+AI DRAFT (Phase 1 of task =aida-iris-usufruct=), for review at gate R1.
+These are analysis notes, not manuscript text. The argument maps
+paraphrase the decisions in English. The paragraph IDs point to
+=sources/=. OLG Stuttgart was first mapped from the other courts'
+reports; since 2026-11-14 its map follows its own text. The Phase 2
+results are in =rq3-combined.org= (Results) and =rq3-fragments.org=.
+
+* Decisions recorded with the author
+
+- 2026-11-13: "burden of proof" is used in a general sense here. It
+  means the standard of evidence the applicant has to meet and,
+  dually, the amount and depth of examination (due diligence) the
+  register court performs. This is not the civil-procedure burden.
+- 2026-11-13, conjunction encoding:
+  - Default: a helper statement that holds by default, with one denial
+    per conjunct.
+  - Where a real conjunction is needed: the derived =A - ~B= rather
+    than currying.
+  - Transpositions are added by hand.
+  - Preference is the order of arguments within each stack.
+  - No opposing presumptions is a consistency condition.
+
+* 1. Argument maps
+
+Notation:
+- =⇒= derives
+- =⊣= attacks; the target is given after it
+- =[Rn]= is the paragraph ID in =sources/=
+- /Phenomenon/ tags are given in italics
+
+** OLG München, 8.8.2016, 31 Wx 204/16 — not registrable
+
+| #   | Para                | Content (paraphrase)                                                                                                   | Role                                                  | Phenomenon |
+|-----+---------------------+------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+------------|
+| M1  | [[file:sources/olg-muenchen-2016.org::#muc-ii-1-p1][II.1 ¶1]] | § 162 (1) HGB requires only the names and contributions of limited partners; the usufruct is not provided by statute, so it is neither required to be entered nor registrable by force of statute | ⇒ ¬ProvidedByStatute | statutory list |
+| M2  | II.1 ¶2             | Recognised: registrability without statute is possible (publicity function), but no guarantee of completeness; only by interpretation, analogy or judicial development, and only if the circumstances outweigh the danger of overloading the register: a /compelling/ need ("unabweisbares Bedürfnis"); register clarity to be given special weight | rule: Registrable ⇐ ProvidedByStatute; Registrable ⇐ CompellingNeed | /open texture/ (threshold "compelling") |
+| M3  | II.1 ¶3             | Strict formalisation, so great restraint with entries not provided by statute                                          | backs M2's threshold                                  | restraint as default |
+| M4  | II.2                | Applying M2: no compelling need recognisable, so not registrable                                                       | ¬CompellingNeed ⇒ ¬Registrable (given ¬ProvidedByStatute) | /refutation without a positive argument/ |
+| M5  | II.2 a)             | Usufruct is permissible, a usufruct in a right (§§ 1068 ff. BGB); the usufructuary does not become a partner; the content is the fruits (distributable profit) | ⇒ ¬PartnerStatus; ⇒ IncomeOnly | background |
+| M6  | II.2 b)             | Rights to participate in management are not fruits; without an agreement the voting right stays with the partner, for fundamental resolutions (BGH) and, in the senate's view, also for day-to-day affairs; liability (§ 128 HGB) lies with the partner only; information and control rights give no influence | ⊣ VotingRightDayToDay (against Stuttgart); ⊣ Influence ⇒ Need | /rebuttal/ of a ground for need |
+| M7  | II.2 c)             | § 1071 BGB consent only for measures that endanger the usufruct; lack of consent does not affect validity under partnership law, only damages | ⊣ Consent1071Constitutive (against Oldenburg's ground) | /rebuttal/ |
+| M8  | II.2 d)             | No personal liability of the usufructuary (§§ 128, 171 (1) HGB, partner only) ⇒ no entry needed to disclose liability  | ⊣ ExternalLiability ⇒ Need                            | /rebuttal/ |
+| M9  | II.2 e)             | No participation in representation (§§ 164, 170 HGB; the usufructuary's rights cannot exceed the partner's) ⇒ no entry needed to disclose representation | ⊣ Representation ⇒ Need | /rebuttal/ |
+| M10 | II.2 f) aa)-cc)     | BGH (ZIP 2012, 623) note of executorship: the executor has power of disposal, external liability effect and a procedural position; the usufructuary has none ⇒ the analogy fails; no significant influence on representation or liability ⇒ no compelling interest | ⊣ ExecutorAnalogy ⇒ Need | /analogy/ and its distinction |
+| M11 | II.2 g) aa), (1), (2) | Reductio: if information interest sufficed, incapacity, guardianship, executorship over a GmbH share and the "deputy" addition would be registrable, which the BGH denies | ⊣ InformationInterest ⇒ Need | /reductio/, /analogy/ (negative precedents) |
+| M12 | II.2 g) bb)         | The register is not a general collection of information; register clarity *regularly* takes precedence over the interest in comprehensive information ⇒ no room for the entry | Clarity ⊣ Need, with stated priority | /weighing/, priority argued, defeasible ("regelmäßig") |
+
+AI NOTE (structure):
+- From II.2 b) on, every subsection rebuts one ground that the appeal,
+  OLG Stuttgart or OLG Oldenburg offered for a need: voting rights,
+  § 1071, liability, representation, the executor analogy.
+- The only positive step is M4: because no compelling need is shown, the
+  fact is not registrable.
+- In AIDA's terms this is a burden allocation. The need's refutation is
+  presumed, so the applicant must establish the need, and the court
+  only rebuts the grounds offered. That is the "refutation-only"
+  pattern of the IRIS draft (§ 2.2.1), and it falls out of the helper
+  encoding with a presumed refutation (spike, section 5).
+
+** OLG Oldenburg, 9.3.2015, 12 W 51/15 — registrable
+
+| #   | Para   | Content (paraphrase)                                                                                                   | Role                                                  | Phenomenon |
+|-----+--------+------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------+------------|
+| O0a | I ¶2   | Register court: not provided by statute; the register reflects only the liability position; no liability under § 128 ⇒ no entry; strict formalisation ⇒ utmost restraint; only facts with substantial need; no legitimate interest because applications are often filed late, so the register cannot give binding information | the rejected position | opponent's argument chain |
+| O1  | II ¶1  | Complaint admissible and well-founded; the register court's concerns do not hold                                       | conclusion                                            |            |
+| O2  | II ¶2  | Literature split, rooted in the legal position of the usufructuary: assimilation to a partner (own liability, own vote) ⇒ registrable (even mandatory); pure income usufruct ⇒ no need | meta-level: the dispute reduced to one issue | /equal treatment with a partner/ (IRIS issue 2) |
+| O3  | II ¶3  | OLG Stuttgart affirmed registrability, continuing earlier LG case law; the senate follows                              | precedent ⇒ Registrable                               | /blanket reference/ |
+| O4  | II ¶4  | Starting point: clarity ⇒ not every fact; beyond statute only facts with a /substantial/ need (BGH ZIP 2012, 623 Rn. 16); needs not limited to liability; the register informs about persons who can co-determine the company's fate (BGH Rn. 21); also the register court itself needs this to check resolutions | rule: Registrable ⇐ SubstantialNeed; Influence ⇒ SubstantialNeed | /open texture/ (threshold "substantial") |
+| O5  | II ¶5  | The usufructuary has decisive influence at least on fundamental decisions: no own vote on amendments (BGH NJW 1999, 571), but via § 1071 BGB the partner's consent needs the usufructuary's ⇒ this influence already justifies entry; *left undecided*: own vote in day-to-day affairs (Stuttgart: yes), of little weight for a limited partner anyway (§ 164 HGB) | Consent1071 ⇒ Influence ⇒ SubstantialNeed; VotingRightDayToDay left open | /question left undecided/; sufficiency of one ground |
+| O6  | II ¶6  | The delayed-filings argument fails: it would make all non-constitutive facts non-registrable; the legislator addressed this via the different publicity effects (§ 15 (1), (3) vs (2) HGB) | ⊣ (DelayedFilings ⇒ ¬LegitimateInterest) | /reductio/, systematic argument |
+
+** OLG Köln, 7.10.2019, 18 Wx 18/19 — not registrable
+
+| #  | Para   | Content (paraphrase)                                                                                                   | Role                                         | Phenomenon |
+|----+--------+------------------------------------------------------------------------------------------------------------------------+----------------------------------------------+------------|
+| K1 | Rn. 1-2 | Facts: 80 % quota usufruct reserved on a transferred interest; the register court refused: not required by law          | background                                   |            |
+| K2 | Rn. 3  | In principle only facts provided by statute (§§ 106 (2), 162 (1) HGB); the usufruct is not among them; not decisive, since facts are registrable if there is a substantial need (BGH NZG 2012, 385 Rn. 16); contested | rule: Registrable ⇐ ProvidedByStatute; Registrable ⇐ SubstantialNeed | same meta-norm as Oldenburg; threshold "substantial" |
+| K3 | Rn. 4  | Survey: no need because no external liability (München and others), not comparable to the executor; counter-view: need from influence (own vote, Stuttgart; § 1071, Oldenburg) and from own liability (Staub/Schäfer) | map of the dispute | positions attributed to courts |
+| K4 | Rn. 5  | Follows the first view: liability cannot ground a need, since the usufruct is a right to take emoluments (§§ 1030 (1), 1068 (2) BGB) with no obligation to third parties; contra Stuttgart no vote (partner status unchanged; the quota usufruct shows the vote can only be exercised uniformly, even for fundamental resolutions, BGH); § 1071 consent required, but not constitutive for the resolution (OLG Düsseldorf), since the usufruct can be created without the partnership's knowledge | ⊣ ExternalLiability; ⊣ VotingRightDayToDay; ⊣ Consent1071Constitutive | /rebuttal/; refutation-only like München |
+| K5 | Rn. 6  | Complaint on points of law admitted because the OLG decisions diverge                                                  | procedural                                   | divergence acknowledged |
+
+** OLG Stuttgart, 28.1.2013, 8 W 25/13 — registrable
+
+From =sources/olg-stuttgart-2013.org= (DNotZ 2013, 793), formalised in
+=rq3-stuttgart.org=. This replaces the earlier map, which was
+reconstructed from the other courts' reports before the text was
+available.
+
+| #  | Rn.    | Content                                                                                       | Logical role                                       | Phenomenon |
+|----+--------+-----------------------------------------------------------------------------------------------+----------------------------------------------------+------------|
+| S0 | 7      | Register court: no liability, and the register shows only the liability position ⇒ not registrable | the rejected position: restraint; ⊣ Need (LiabilityOnly) | opponent's argument chain |
+| S1 | 8-10   | Joins the prevailing view and refers to the regional courts: the usufruct splits the rights of administration between partner and usufructuary | ManagementShare, presumed (=by default=) | /blanket reference/: a literal delegation |
+| S2 | 11     | The register's purpose, not only liability, decides; the participation rights already lead to registrability | ⊣ LiabilityOnly; ManagementShare ⇒ CoDetermines | /rebuttal/ of the register court's principle |
+| S3 | 12     | Own vote in day-to-day affairs; § 1071 consent gives influence on the measure itself, not only internally | VotesDayToDay ⇒ CoDetermines; Consent1071 ⇒ ConsentConstitutive ⇒ CoDetermines | converging reasons |
+| S4 | 13     | The register court needs the entry to check that all required persons applied; the usufructuary is like a partner under § 108 HGB | ManagementShare ⇒ EquatedWithPartner ⇒ CourtNeedsInfo ⇒ Need | the court's own need |
+| S5 | 14     | Legal dealings have a legitimate interest in knowing who takes part in resolutions | CoDetermines ⇒ Need | /open texture/ (test: "berechtigtes Interesse") |
+| S6 | 15-17  | BGH II ZB 15/11 (executorship): the register informs about persons with decisive influence; this carries over to the usufruct | Registrable(executorship) ∧ LikeExecutorship ⇒ Registrable; CoDetermines ⇒ LikeExecutorship | /analogy/ |
+
+AI NOTE: the earlier reported reading "a blanket reference to earlier
+decisions" (IRIS draft) is confirmed by Rn. 8-10. Stuttgart is the only
+court that argues the vote in day-to-day affairs positively (S3), which
+München and Köln rebut.
+
+** Cross-court view
+
+- *Same meta-norm, different thresholds.* All courts use "registrable if
+  provided by statute or if there is a need of legal dealings". The
+  threshold differs:
+  - München: "unabweisbar" (compelling)
+  - Oldenburg and Köln: "erheblich" (substantial)
+  - Stuttgart: "berechtigtes Interesse" (legitimate interest)
+
+  For RQ 3 these become distinct statements. Which test applies is
+  itself a point of disagreement (open texture, RQ 8 of the IRIS draft).
+- *Grounds for a need* are alternatives, so they become separate
+  supporters: liability, representation, influence (vote; § 1071),
+  analogy (executor; GmbH list and share register, which no court uses),
+  the register court's own need for information.
+- *Disputed sub-issues* (the attack targets):
+  - ExternalLiability: München, Köln: no. Staub/Schäfer: yes.
+  - VotingRightDayToDay: Stuttgart: yes. München, Köln: no. Oldenburg: left open.
+  - Consent1071 suffices for influence: Oldenburg: yes. München, Köln: no, not constitutive.
+  - ExecutorAnalogy: München: distinguished.
+  - DelayedFilings: Oldenburg: rebutted.
+- *Priority.* München states one explicitly and defeasibly: register
+  clarity "regularly" takes precedence over the interest in
+  information. This is the only place where precedence is argued
+  rather than presupposed.
+  - In AIDA's natural preference this matches the default: the attack
+    stack goes on top of the support stack, so clarity, as an attacker
+    of the need, wins.
+  - A court that wanted the need to prevail would need the top/bottom
+    switch (task =aida-support-attack-priority-switch=). Oldenburg does
+    not argue that. It argues that influence is a need clarity does not
+    exclude (O4).
+
+* 2. Meta-norm and scope of examination (IRIS draft §§ 3.1-3.2)
+
+| #   | Statement (IRIS draft, paraphrase)                                                                              | Role in the model |
+|-----+-----------------------------------------------------------------------------------------------------------------+-------------------|
+| N1  | No written norm orders a duty to register or grants a claim to registration                                     | the gap (RQ 4): the meta-norm is a delegation |
+| N2  | From the rule-of-law principle: the court examines the formal requirements, including abstract registrability   | requirement (helper conjunct) |
+| N3  | Recognised in principle: the court also examines the substantive requirements (the facts are true, the legal acts valid) | requirement (helper conjunct) |
+| N4  | No norm fixes the scope of examination positively; only punctual negative limits (§ 9c (2) GmbHG, § 38 (2) AktG) | the scope is itself argued (RQ 6, RQ 7) |
+| N5  | Duty to avoid incorrect entries ⇒ power to examine substantive requirements                                     | supports N3 |
+| N6  | On the level of evidence: the court assumes, in principle, that the reported facts are correct                  | presumption: reported facts are correct (generic, per fact) |
+| N7  | The examination extends only as far as the law requires the relevant facts to be submitted                      | limits which requirements are owed |
+| N8  | BGH: an unwritten claim to registration limits the scope of examination; conversely the limited scope grounds the claim | the cycle (RQ 7) |
+| N9  | § 59 (1), (2) FamFG presupposes an impaired subjective right ⇒ the claim is presupposed in every complaint      | an independent anchor of the claim (RQ 7) |
+| N10 | Meta-norm wording (§ 3.2): the court has to enter a fact if the formal and substantive requirements are met; abstractly registrable are facts provided by statute or with a substantial need of legal dealings | the rule the RQ 4-7 example formalises |
+
+* 3. Choice of logical base
+
+Decision (proposed for R1):
+- *RQ 3: propositional.*
+  - Each court's argument relates closed propositions about the one
+    case before it.
+  - The general principles the courts invoke (the meta-norm, the
+    reductio in M11) enter as rules over those propositions.
+  - Nothing in the four decisions needs to quantify over individuals
+    to be represented faithfully.
+  - Propositional debates also use AIDA's most mature part: the
+    shared route, every semantics, rendering.
+- *RQ 4, 6, 7: first order with reified eventualities and deontic
+  predicates.*
+  - The norms there are general: "for every fact reported", "for
+    every entry e, the claim to e and the duty to make e correspond",
+    and the meta-norm for "a fact".
+  - The burden question is a per-fact presumption (N6). The spike
+    shows that a generic argument with a discourse referent expresses
+    it directly: =face_value : Correct [?f]= by default reaches the
+    instance =Correct uf=.
+  - The spike (section 5) runs every needed feature.
+  - Cost: these debates must use =pipeline unfolded.= (referents).
+
+Deontic encoding: reification after Hobbs (1985) as used by Robaldo &
+Sun (2017) and the DAPRECO knowledge base (Robaldo et al. 2020); the
+references are checked in =README.org=.
+- An eventuality is a term of sort =Ev=. =Enter [e] [c] [f]= reads "e is
+  an entering of fact f by c". In Hobbs's notation that is
+  =enter'(e, c, f)=. Its real existence (=Rexist e=) is folded into the
+  predicate, because AIDA has no conjunction (as in
+  =eval/literature3/fo_rio.fspy=).
+- Deontic notions are ordinary predicates over agents and eventuality
+  terms: =Duty [c] [a] [e]= ("c owes a that e is realised") and
+  =Claim [a] [c] [e]= ("a can claim from c that e is realised"). So the
+  classical calculus carries them with no modal operator.
+- Hohfeld's correlativity is two universally quantified rules, because
+  AIDA has no biconditional: =Duty b a e -> Claim a b e= and
+  =Claim a b e -> Duty b a e=. Correlation therefore creates the
+  derivation cycle of RQ 7 as soon as both directions are argued.
+
+AI NOTE: this encoding keeps deontic reasoning *inside* the
+argumentation.
+- An obligation is a statement that can be presumed, owed, attacked or
+  supported like any other.
+- There is no detachment rule of a deontic logic.
+- Whether that is enough for the paper's claims (for example, that a
+  conflict of duties is not a contradiction) should be checked when
+  the RQ 7 example is written.
+
+* 4. Conjunction encodings compared
+
+The spike runs all three on "fly and feathers ⇒ bird", with Fly proven
+and nothing said about Feathers, then with Feathers refuted. Outcomes
+are in section 5.
+
+| Criterion | Helper + one denial per conjunct | Derived =A - ~B= | Curried =A -> B -> C= |
+|---+---+---+---|
+| Open to a further conjunct | yes: one more denial and counterargument; the existing arguments are unchanged | no: the rule names its conjuncts | no: a new rule; the old strict rule stays valid |
+| Burden per conjunct | yes, chosen *per denial*: the counterargument's site on the conjunct's refutation is a delegation (the proponent must prove the conjunct) or an obligation (an opponent must refute it) | yes, per conjunct site: =by default= or =next= | yes, per premise site |
+| What an attack on a conjunct defeats | the helper (one node), and with it every consequent derived from it | the conjunction node =A-~B= (a lemma of its own, =bird.c1=) | the argument directly |
+| Graph | helper node, one attacker per conjunct; necessary conditions visible as attackers | a conjunction node with its two conjunct sources | no conjunction node; conjuncts are premises of the rule's edge |
+| Reading | the helper is "jointly sufficient", a due-diligence check: passed unless a necessary condition fails | "A and B" as one statement others can cite | a chain of conditions |
+| Cost | 1 helper + 1 rule + n denials + n counterarguments | 1 rule; tactic order matters (see the AIDA issue below) | 1 rule |
+| First order | works: denial as a universal implication =forall ..., H -> C= (equivalent to =deny (H - C)= classically), one generic or instance counterargument per conjunct | not tried at first order | works |
+| Later derived ∧ (task =aida-derived-conjunction=) | no migration needed; a different idiom | direct: the derived ∧ is meant to replace it | rewrite needed |
+
+AIDA issue found:
+- With the tactic order =cut (rule) …; axiom r; elim; elim; …=,
+  Fellowship prints the subtraction introduction as the left operand of
+  a stack, =1.2.1.1!*!1.2.1.2*rr=, without parentheses. AIDA's term
+  grammar (=core/ac/syntax.py=, =cons: tight_term _STAR context=)
+  cannot read it ("Unexpected token '*'"), so the argument is not
+  registered.
+- Cutting the subtraction first (=cut (Fly - ~Feathers) c. elim. …=)
+  avoids it.
+- Recorded under task =aida-derived-conjunction=.
+
+Recommendation (for R1):
+1. *Helper* wherever the conditions form a list the law or the courts
+   may extend, and wherever the burden differs between conditions:
+   - the meta-norm's requirements (N2, N3, N10)
+   - the requirements whose proof the applicant owes, and those whose
+     refutation the court owes (RQ 6)
+
+   This is the default.
+2. *Derived =A - ~B=* where a conjunction is itself a statement that
+   other arguments cite as a whole, and closedness is intended.
+   Candidate: "formal and substantive requirements are met" if a court
+   refers to that pair as one thing. None is needed so far.
+3. *Currying* only for a closed list fixed by its source, with no one
+   arguing about its parts or extending it. In the four decisions,
+   nearly every rule has a single premise ("no liability ⇒ no need to
+   disclose liability"), so currying hardly arises. Where a premise
+   pair occurs in a court's chain, use 1 or 2 rather than currying,
+   so the chain stays open to the other courts' grounds.
+
+* 5. Feasibility spike
+
+Each block below is tangled to =build/= and run by =make iris= and
+=tests/iris=. The outcomes quoted are from runs on 2026-11-13. They will
+be pinned in =tests/iris= when the phases rely on them.
+
+** Conjunction encodings (propositional)
+
+Helper encoding. Fly's refutation is presumed, so the proponent must
+prove Fly. Feathers' refutation is owed, so an opponent must refute
+Feathers.
+
+#+begin_src fspy :tangle build/spike-helper.fspy
+lk.
+declare Fly, Feathers, Bird, H : bool.
+declare r1 : (H -> Bird).
+deny d_fly : (H - Fly).
+deny d_feathers : (H - Feathers).
+declare ax_fly : (Fly).
+
+argument bird : (Bird).
+cut (H -> Bird) r.
+axiom r1.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+counterargument no_fly : (H).
+cut (H - Fly) th.
+elim.
+by default.
+next.
+axiom th.
+moxia d_fly.
+dixi.
+
+counterargument no_feathers : (H).
+cut (H - Feathers) th.
+elim.
+next.
+axiom th.
+moxia d_feathers.
+dixi.
+
+label bird.
+evaluate bird.
+
+argument fly : (Fly).
+axiom ax_fly.
+dixi.
+
+label bird.
+evaluate bird.
+#+end_src
+
+Outcomes:
+- Before =fly=: =Fly[c]= IN (presumed refutation, unanswered),
+  =H[c]= IN, =Bird= OUT; =evaluate bird= is OPEN, =?OUT:Bird=.
+- After =fly=: =Fly[c]= OUT, =Feathers[c]= OUT (owed, unsupplied),
+  =H= IN, =Bird= IN; a VALUE, =μbird:Bird.<r1:H->Bird||!IN:H*bird:Bird>=.
+- With a strict refutation of Feathers added, =Feathers[c]= IN, =H= and
+  =Bird= OUT, OPEN.
+
+Derived =A - ~B=. The subtraction is cut first; the tactic order is
+the point.
+
+#+begin_src fspy :tangle build/spike-subtraction.fspy
+lk.
+declare Fly, Feathers, Bird : bool.
+declare r : ((Fly - ~Feathers) -> Bird).
+declare ax_fly : (Fly).
+declare ax_nofeathers : (~Feathers).
+
+argument bird : (Bird).
+cut (Fly - ~Feathers) c.
+elim.
+by default.
+next.
+by default.
+next.
+cut ((Fly - ~Feathers) -> Bird) rr.
+axiom r.
+elim.
+axiom.
+axiom c.
+dixi.
+
+argument fly : (Fly).
+axiom ax_fly.
+dixi.
+
+label bird.
+evaluate bird.
+
+argument featherless : (~Feathers).
+axiom ax_nofeathers.
+dixi.
+
+label bird.
+evaluate bird.
+#+end_src
+
+Outcomes:
+- The conjunction becomes a node of its own,
+  =bird.c1: Fly-~Feathers[t] <- Fly[t:pres], ~Feathers[c:pres]=.
+- With =fly=: everything IN; a VALUE.
+- With =featherless=: =~Feathers[c]= OUT, so =Fly-~Feathers= and =Bird=
+  are OUT; OPEN.
+
+** First order: reified duty, the helper, a per-fact presumption, the cycle
+
+#+begin_src fspy :tangle build/spike-first-order.fspy
+lk.
+pipeline unfolded.
+declare Ag, Fact, Ev : type.
+declare court, kg : Ag.
+declare uf : Fact.
+declare e1 : Ev.
+declare Enter : Ev -> Ag -> Fact -> bool.
+declare Duty, Claim : Ag -> Ag -> Ev -> bool.
+declare Passed : Ev -> bool.
+declare Registrable, Correct, SubstNeed, Conflict : Fact -> bool.
+declare entering : (Enter [e1] [court] [uf]).
+declare meta : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [kg] [e]).
+declare n_reg : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]).
+declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]).
+declare corr1 : (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]).
+declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
+declare need_rule : (forall f:Fact, SubstNeed [f] -> Registrable [f]).
+declare conflict_rule : (forall f:Fact, Conflict [f] -> ~Correct [f]).
+declare conflict_uf : (Conflict [uf]).
+
+# The duty to enter e1, the examination passed by default (the helper).
+argument duty : (Duty [court] [kg] [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [kg] [e]) r.
+axiom meta.
+elim [e1].
+elim [court].
+elim [uf].
+elim.
+axiom entering.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+# Reported facts are taken at face value: a presumption for every fact.
+argument face_value : (Correct [?f]).
+by default.
+dixi.
+
+# Necessary condition 1: registrability; its refutation presumed, so
+# the applicant must establish it.
+counterargument no_reg : (Passed [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
+axiom n_reg.
+elim [e1].
+elim [court].
+elim [uf].
+elim.
+axiom entering.
+elim.
+axiom.
+by default.
+dixi.
+
+# Necessary condition 2: correctness; its refutation owed, so only a
+# justified doubt defeats the pass.
+counterargument no_cor : (Passed [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]) r.
+axiom n_cor.
+elim [e1].
+elim [court].
+elim [uf].
+elim.
+axiom entering.
+elim.
+axiom.
+dixi.
+
+# Correlativity both ways: a derivation cycle.
+argument claim : (Claim [kg] [court] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]) r.
+axiom corr1.
+elim [kg].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+argument duty_back : (Duty [court] [kg] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]) r.
+axiom corr2.
+elim [kg].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+label claim.
+evaluate claim.
+evaluate claim credulous.
+label claim stable.
+
+# Scenario 2: registrability argued from a substantial need.
+argument need : (Registrable [uf]).
+cut (forall f:Fact, SubstNeed [f] -> Registrable [f]) r.
+axiom need_rule.
+elim [uf].
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+label claim.
+evaluate claim.
+
+# Scenario 3: a justified doubt from the register.
+counterargument doubt : (Correct [uf]).
+cut (~Correct [uf]) x.
+cut (forall f:Fact, Conflict [f] -> ~Correct [f]) r.
+axiom conflict_rule.
+elim [uf].
+elim.
+axiom conflict_uf.
+axiom r.
+elim.
+axiom.
+dixi.
+
+label claim.
+evaluate claim.
+render duty argumentation.
+#+end_src
+
+Outcomes:
+
+| Scenario                                | =Passed e1= | =Duty=, =Claim= (grounded) | skeptical     | credulous             | stable            |
+|-----------------------------------------+-------------+----------------------------+---------------+-----------------------+-------------------|
+| 1: no argument for registrability       | OUT         | UNDEC (the cycle)          | OPEN =?UNDEC= | VALUE =!IN:Claim …= (bare delegation) | OUT, =?OUT= |
+| 2: registrability from a substantial need | IN        | IN                         | VALUE         | VALUE                 |                   |
+| 3: 2 plus a justified doubt (register conflict) | OUT | UNDEC                      | OPEN          |                       |                   |
+
+Observations for the later phases:
+- *RQ 6:* the per-condition burden is the choice between a delegation
+  and an obligation inside the denial's counterargument:
+  - =no_reg= presumes the refutation of registrability, so the
+    applicant must establish it.
+  - =no_cor= owes the refutation of correctness, so the court must
+    find a doubt.
+  - =face_value= is generic and reaches =Correct uf= as an instance,
+    which is N6.
+  - A doubt has to rest on something. A *presumed* refutation of
+    =Correct uf= would oppose =face_value='s presumption. That is
+    exactly the inconsistency the author ruled out, and AIDA does not
+    refuse it yet (task =aida-onus-delegation-polarity=).
+  - My first draft of =need= made this mistake: it presumed
+    =Registrable uf= while =no_reg= presumed its refutation, and both
+    went UNDEC. The final version derives registrability from a
+    presumed substantial need instead.
+- *RQ 7:* once the examination fails, the two correlativity arguments
+  keep each other alive:
+  - grounded and skeptical: UNDEC, open
+  - credulous: an unfounded acceptance, the bare delegation of the
+    claim
+  - stable (the founded reading): OUT
+
+  So the circular argument the BGH line runs (N8) is visible as an
+  unfounded cycle, and an independent anchor (N9) is what would found
+  it. This is to be built in Phase 5.
+- *Rendering:* =render … pruefschema= produces the German check-list
+  frame ("Es genügt zu prüfen, dass …", "sofern nichts entgegensteht:
+  …") but prints predicates raw (=Duty court kg e1=). For the English
+  paper, =argumentation= with =decorate= templates is the better
+  choice.
+- *Not yet tried:* the order of arguments deciding among attackers.
+  It is checked in Phase 2 where a court's weighing needs it.
+- A transposed (contraposed) argument added by hand registers and
+  attacks as expected (=no_pass_from_no_duty=: =Passed e1[c] <- …,
+  Duty court kg e1[c:obli]=).

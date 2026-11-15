@@ -1,0 +1,10 @@
+graphBuildMode(aspic).
+f_meta :=> metanorm.
+meta : metanorm, passed -> duty.
+exam : registrable(kp_c), submitted(d_appl), correct(kp_c) => passed.
+a_stat :-> statute(kp_c).
+reg_stat : statute(F) -> registrable(F).
+face_value :=> correct(kp_c).
+finding :=> missing(d_appl).
+moot : submitted(D) => -missing(D).
+interim_rule : missing(D) => lawful(interim(D)).

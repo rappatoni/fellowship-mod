@@ -1,0 +1,4 @@
+# The outputs of make_examples.py are kept (README.org, paper-examples.org),
+# except the expanded rendering of the combined debate (9.7 MB): regenerate it.
+!out/*.txt
+out/S-combined.expanded.checklist.txt

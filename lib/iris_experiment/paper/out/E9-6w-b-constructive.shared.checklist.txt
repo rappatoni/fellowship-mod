@@ -1,0 +1,55 @@
+It suffices to check that for some o of type Order, o is the lawful order. Starting check alt1:
+├─ otherwise not established: for some o of type Order, o is the lawful order
+└─ Against for some o of type Order, o is the lawful order:
+   │  └─ Check alt1 completed (holds).
+   └─ but
+      └─ It suffices to check that for some o of type Order, o is the lawful order. Starting check decision_c:
+         ├─ It suffices to check that for some o of type Order, o is the lawful order. Starting check m:
+         │  ├─ It suffices to check that for some d of type Doc, d is missing. Starting check alt3:
+         │  │  ├─ otherwise not established: for some d of type Doc, d is missing
+         │  │  └─ Against for some d of type Doc, d is missing:
+         │  │     │  └─ Check alt3 completed (holds).
+         │  │     └─ but
+         │  │        └─ It suffices to check that for some d of type Doc, d is missing. Starting check finding:
+         │  │           ├─ witnessed by the application in certified form
+         │  │           ├─ It suffices to check that the application in certified form is missing. Starting check alt4:
+         │  │           │  ├─ unless something speaks against it: the application in certified form is missing
+         │  │           │  └─ To check the application in certified form is missing, the following points must be worked through:
+         │  │           │     ├─ Point 1:
+         │  │           │     │  └─ It must be checked whether the application in certified form is missing. Starting check alt5:
+         │  │           │     │     ├─ In favour of the application in certified form is missing:
+         │  │           │     │     │  │  └─ Check alt5 completed (refuted).
+         │  │           │     │     │  └─ but
+         │  │           │     │     │     └─ It must be checked whether the application in certified form is missing. Starting check finding_moot:
+         │  │           │     │     │        ├─ Check finding_moot completed (refuted).
+         │  │           │     │     │        └─ It must be checked whether the application in certified form is missing. Starting check r_2:
+         │  │           │     │     │           ├─ established: for all d of type Doc, d is submitted implies it is not the case that d is missing (submitted_not_missing)
+         │  │           │     │     │           ├─ instantiating d with the application in certified form
+         │  │           │     │     │           ├─ and
+         │  │           │     │     │           ├─ It suffices to check that the application in certified form is submitted. Starting check alt6:
+         │  │           │     │     │           │  ├─ otherwise not established: the application in certified form is submitted
+         │  │           │     │     │           │  └─ To check the application in certified form is submitted, the following points must be worked through:
+         │  │           │     │     │           │     ├─ Point 1:
+         │  │           │     │     │           │     │  └─ Check alt6 completed (holds).
+         │  │           │     │     │           │     └─ and point 2:
+         │  │           │     │     │           │        └─ Check alt6 completed (holds).
+         │  │           │     │     │           └─ It must be checked whether it is not the case that the application in certified form is missing. Starting check H1:
+         │  │           │     │     │              ├─ Check H1 completed (refuted).
+         │  │           │     │     │              ├─ and
+         │  │           │     │     │              ├─ Check r_2 completed (refuted).
+         │  │           │     │     │              └─ contradiction.
+         │  │           │     │     └─ Check alt4 completed (holds).
+         │  │           │     └─ and point 2:
+         │  │           │        └─ Check alt4 completed (holds).
+         │  │           └─ Check finding completed (holds).
+         │  ├─ let d of type Doc be such a thing
+         │  └─ It must be checked whether d is missing. Starting check k:
+         │     ├─ witnessed by an interim order to submit d
+         │     ├─ It suffices to check that an interim order to submit d is the lawful order. Starting check r:
+         │     │  ├─ established: for all d of type Doc, d is missing implies an interim order to submit d is the lawful order (interim_rule)
+         │     │  ├─ instantiating d with d
+         │     │  ├─ and
+         │     │  ├─ Check k completed (refuted).
+         │     │  └─ Check r completed (holds).
+         │     └─ Check m completed (holds).
+         └─ Check decision_c completed (holds).

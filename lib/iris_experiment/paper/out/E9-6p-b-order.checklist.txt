@@ -1,0 +1,4 @@
+It suffices to check that for some o of type Order, o is the lawful order. Starting check decision:
+├─ witnessed by an interim order to submit the application in certified form
+├─ unless something speaks against it: an interim order to submit the application in certified form is the lawful order
+└─ Check decision completed (holds).

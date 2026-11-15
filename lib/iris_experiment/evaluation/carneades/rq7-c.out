@@ -1,0 +1,118 @@
+meta: 
+    title: "IRIS RQ 7, 7c: a justified doubt on the cycle"
+issues: 
+    i0: 
+        positions:
+            - correct
+            - ¬correct
+        standard: PE
+statements: 
+    statute: 
+        text: the entry is provided by statute 
+        label: in
+    registrable: 
+        text: the entry is abstractly registrable 
+        label: in
+    duty: the register court owes the applicants the entry
+    improper: the demand is outside the scope of examination
+    submitted: 
+        text: the application in certified form is submitted 
+        label: in
+    conflict: 
+        text: the register contradicts the reported change 
+        label: in
+    passed: the examination of the entry is passed
+    demanded: 
+        text: the court demands the transfer agreement 
+        label: in
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: in
+    demand_unmet: a demand of the court within the scope is unmet
+    claim: the applicants have a claim to the entry
+    correct: 
+        text: the reported change is correct 
+        label: out
+    unrequired: 
+        text: the law does not require the transfer agreement 
+        label: in
+    limited: the examination is limited to what the law requires
+    proved: 
+        text: the applicants have proved the change 
+        label: out
+    ¬correct: 
+        text: the reported change is not correct 
+        label: out
+    contract_missing: 
+        text: the transfer agreement is not submitted 
+        label: in
+assumptions:
+    - statute
+    - submitted
+    - demanded
+    - contract_missing
+    - unrequired
+    - conflict
+arguments: 
+    reg_stat:
+        premises:
+            - statute
+        conclusion: registrable
+        weight: 1.00
+        scheme: linked
+    court_extra:
+        premises:
+            - demanded
+            - contract_missing
+        conclusion: demand_unmet
+        scheme: presumption
+        undercutter: improper
+    doubt:
+        premises:
+            - conflict
+        conclusion: ¬correct
+        weight: 0.50
+        scheme: presumption
+    corr1:
+        premises:
+            - duty
+        conclusion: claim
+        scheme: linked
+    bgh_rule:
+        premises:
+            - claim
+        conclusion: limited
+        scheme: linked
+    exam:
+        premises:
+            - registrable
+            - submitted
+            - correct
+        conclusion: passed
+        scheme: linked
+        undercutter: demand_unmet
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption
+    corr2:
+        premises:
+            - claim
+        conclusion: duty
+        scheme: linked
+    bgh_limit:
+        premises:
+            - limited
+            - unrequired
+        conclusion: improper
+        scheme: linked
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        scheme: linked
+    face_value:
+        conclusion: correct
+        weight: 0.50
+        scheme: presumption

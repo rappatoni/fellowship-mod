@@ -1,0 +1,17 @@
+frag_g    registrable  grounded:und  stable:in,in,out
+frag_g-bp registrable  grounded:und  stable:in,in,out  bpGrounded:und
+frag_g-bpr registrable  grounded:und  stable:in,in,out  bpGrounded:out
+rq4-a     duty         grounded:in  stable:in
+rq4-b     duty         grounded:-  stable:-
+rq4-c     duty         grounded:und  stable:out,in
+rq4-d     duty         grounded:in  stable:in
+rq6-a     duty         grounded:in  stable:in
+rq6-b     duty         grounded:-  stable:-
+rq6-c     duty         grounded:und  stable:out,in
+rq6-c-bp  duty         grounded:und  stable:out,in  bpGrounded:out
+rq6-d     duty         grounded:und  stable:out,in
+rq6-d-sup duty         grounded:in  stable:in
+rq7-a     claim        grounded:und  stable:in,out
+rq7-a-bp  claim        grounded:und  stable:in,out  bpGrounded:out
+rq7-b     claim        grounded:in  stable:in
+rq7-c     claim        grounded:und  stable:out,in,out

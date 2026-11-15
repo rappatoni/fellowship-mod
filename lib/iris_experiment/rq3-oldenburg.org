@@ -1,0 +1,371 @@
+#+title: RQ 3: OLG Oldenburg, 9.3.2015, 12 W 51/15 (registrable)
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-oldenburg.fspy
+#+fspy_prelude: vocabulary.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- The German text is the court's (=sources/olg-oldenburg-2015.org=, from
+  MittBayNot 1/2016), with citations cut to =[...]=. Rn. are NZG's.
+- AI DRAFT TRANSLATION — not reviewed by a lawyer.
+- Comments of ours are marked AI NOTE.
+
+* I: the facts and the register court's reasons
+
+#+begin_quote
+[...] Gleichzeitig wurde mitgeteilt, dass der Kommanditistin A. an dem
+Kommanditanteil ihres Mitgesellschafters B. in Höhe einer Einlagesumme
+von 72.500 € ein Nießbrauchsrecht eingeräumt worden sei. [...]
+Das Registergericht hat diesen Antrag mit Beschluss vom 9.1.2015
+zurückgewiesen. Zur Begründung hat es ausgeführt, dass die Eintragung
+eines Nießbrauchsrechts an einem Gesellschaftsanteil gesetzlich nicht
+vorgesehen sei. Das Handelsregister solle bezüglich der Eintragung der
+Gesellschafter lediglich die Haftungslage wiedergeben. Da der
+Nießbraucher nicht nach § 128 HGB gegenüber Dritten hafte, habe die
+Eintragung des Nießbrauchs zu unterbleiben. Mit Rücksicht auf die strenge
+Formalisierung des Registerrechts sei bei der Bejahung gesetzlich nicht
+geregelter Eintragungen äußerste Zurückhaltung geboten. Lediglich
+diejenigen Tatsachen und Rechtsverhältnisse, für deren Eintragung ein
+erhebliches Bedürfnis des Rechtsverkehrs bestehe, dürften eingetragen
+werden. Ein berechtigtes Interesse des Rechtsverkehrs an der Eintragung
+des Nießbrauchs fehle schon deshalb, weil die Anmeldungen oft zeitlich
+sehr verzögert eingereicht würden, so dass das Handelsregister über eine
+solche Rechtsbeziehung keine verbindliche Auskunft geben könne.
+#+end_quote
+
+/Translation./ [...] At the same time it was reported that the limited
+partner A had been granted a usufruct on her fellow partner B's interest
+in the amount of a contribution of €72,500. [...] The register court
+rejected the application by order of 9.1.2015. It reasoned that the
+statute does not provide for entering a usufruct on a partnership
+interest. As far as the partners are concerned, the Commercial Register
+is to show only the liability position. Since the usufructuary is not
+liable towards third parties under § 128 HGB, the usufruct is not to be
+entered. In view of the strict formalisation of register law, utmost
+restraint is called for in affirming entries the statute does not
+provide for. Only facts and legal relationships for whose entry there is
+a substantial need of legal dealings may be entered. A legitimate
+interest of legal dealings in entering the usufruct is lacking if only
+because such applications are often filed very late, so that the
+register cannot give binding information about such a relationship.
+
+The register court's three arguments: restraint, liability only, and
+late filings. The statutory point is the denial =s_162=.
+
+#+begin_src fspy
+# I: utmost restraint; the entry is excluded unless excepted.
+counterargument rc_old_restraint : (Registrable [usufruct]).
+cut (Excluded [usufruct] -> ~Registrable [usufruct]) r.
+axiom m_excl.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+# I: the register shows liability only, and there is no liability; that there
+# is no liability is owed, not presumed (see rq3-stuttgart.org, Rn. 7).
+counterargument rc_old_no_need : (Need [usufruct]).
+cut (LiabilityOnly -> Need [usufruct] -> Liability [usufruct]) r.
+axiom p_liab_only.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+# I: such applications are often filed late, which defeats the interest.
+counterargument rc_old_delay : (Need [usufruct]).
+cut (DelayDefeatsInterest -> DelayedFilings [usufruct] -> ~Need [usufruct]) r.
+axiom p_delay.
+elim.
+by default.
+next.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* II ¶1 (Rn. 4): the result
+
+#+begin_quote
+Die [...] Beschwerde der Antragstellerin ist zulässig und begründet. Die
+vom Registergericht gegen die beantragte Eintragung eines
+Nießbrauchsrechts an einem Kommanditanteil vorgebrachten Bedenken
+bestehen nicht.
+#+end_quote
+
+/Translation./ The applicant's complaint is admissible and well-founded.
+The register court's concerns about entering a usufruct on a limited
+partner's interest do not hold.
+
+#+begin_src fspy
+# Rn. 4: registrable, since there is a need (owed).
+argument old_registrable : (Registrable [usufruct]).
+cut (Need [usufruct] -> Registrable [usufruct]) r.
+axiom m_need.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* II ¶2-3 (Rn. 5-6): the state of opinion, and Stuttgart
+
+#+begin_quote
+Die Frage der Eintragungsfähigkeit eines Nießbrauchs an einem
+Gesellschaftsanteil ist allerdings in der Literatur sehr umstritten. Die
+unterschiedlichen Auffassungen [...] gründen sich dabei weniger auf
+registerrechtlichen Erwägungen, sondern haben ihren Ausgangspunkt in
+unterschiedlichen Auffassungen zur rechtlichen Stellung des
+Nießbrauchsberechtigten eines Gesellschaftsanteils. Diejenigen, die diesem
+eine dem Gesellschafter angeglichene Stellung zubilligen, namentlich eine
+eigene Haftung des Berechtigten befürworten und für diesen ein eigenes
+Stimmrecht bejahen, treten auch für eine Eintragungsfähigkeit des
+Nießbrauchsrechtes ein [...]. Die Gegenstimmen befürworten eine
+Beschränkung des Nießbrauchsrechts auf einen reinen Ertragsnießbrauch,
+ohne eigene Haftung oder eigene Verwaltungsrechte des
+Nießbrauchsberechtigten. [...] In der obergerichtlichen Rechtsprechung hat
+sich bislang das OLG Stuttgart mit der Eintragungsfähigkeit des
+Nießbrauchs eines Gesellschaftsanteils befasst und diese bejaht [...].
+Auch der Senat schließt sich dieser Rechtsprechung an.
+#+end_quote
+
+/Translation./ The registrability of a usufruct on a partnership interest
+is, however, highly contested in the literature. The opposing views [...]
+rest less on register-law considerations than on different views of the
+legal position of the usufructuary of a partnership interest. Those who
+grant the usufructuary a position assimilated to a partner's, in
+particular their own liability and a vote of their own, also favour
+registrability [...]. The opposing voices restrict the usufruct to a mere
+income usufruct, without liability or administrative rights of the
+usufructuary. [...] Among the higher courts, so far only OLG Stuttgart has
+dealt with the question and affirmed registrability [...]. The senate
+joins this case law.
+
+AI NOTE: not formalised as arguments of this court.
+- The two literature camps reappear as the disputed statements
+  =Liability=, =VotesDayToDay= and =ManagementShare=, which other
+  decisions argue.
+- Joining Stuttgart is the same move as Stuttgart's reference to the
+  regional courts: a delegation to arguments outside the decision. In
+  =rq3-combined.org= both meet in one document.
+- The court's own reasons follow.
+
+* II ¶4 (Rn. 7): the starting point, and more than liability
+
+#+begin_quote
+Zutreffender Ansatzpunkt ist dabei der auch vom Registergericht
+beachtete Grundsatz, dass zur Wahrung der Registerklarheit nicht jede die
+Gesellschaft oder deren Gesellschafter betreffende Tatsache eingetragen
+werden kann. Neben den ausdrücklich gesetzlich angeordneten Fällen können
+lediglich solche Tatsachen und Rechtsverhältnisse eingetragen werden, für
+deren Eintragung ein erhebliches Bedürfnis des Rechtsverkehrs besteht
+[...]. Derartige Bedürfnisse reduzieren sich aber nicht allein auf die
+Kenntnis der Haftungsverhältnisse. Das Handelsregister soll auch Auskunft
+über diejenigen Personen liefern, die an der Gesellschaft beteiligt sind
+und deren Geschicke maßgeblich mitbestimmen können [...]. Der Rechtsverkehr
+hat ein berechtigtes Interesse daran, zu erfahren, wer innerhalb der
+Gesellschaft an Beschlussfassungen mitwirken kann. Dies gilt nicht
+zuletzt auch für das Registergericht selbst, welches nur mithilfe dieser
+Informationen die Wirksamkeit gesellschaftsintern gefasster Beschlüsse
+überprüfen kann [...].
+#+end_quote
+
+/Translation./ The correct starting point is the principle, also observed
+by the register court, that to preserve the clarity of the register not
+every fact concerning the partnership or its partners can be entered.
+Besides the cases expressly ordered by statute, only those facts and
+legal relationships can be entered for whose entry there is a
+substantial need of legal dealings [...]. Such needs are not, however,
+reduced to knowledge of the liability position. The Commercial Register
+is also to inform about the persons who take part in the partnership and
+can decisively co-determine its fortunes [...]. Legal dealings have a
+legitimate interest in learning who can take part in the partnership's
+resolutions. Not least, this holds for the register court itself, which
+only with this information can check the validity of resolutions passed
+within the partnership [...].
+
+AI NOTE:
+- The first two sentences are the meta-norm (=vocabulary.org=), which
+  the court shares with the register court.
+- The disagreement starts with "not only liability".
+
+#+begin_src fspy
+# Rn. 7: needs are not reduced to liability (BGH).
+counterargument old_not_liab_only : (LiabilityOnly).
+moxia bgh_participants.
+dixi.
+
+# Rn. 7: who co-determines is of legitimate interest to legal dealings.
+argument old_need_codet : (Need [usufruct]).
+cut (CoDetermines [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 7: the register court itself needs to know, to check resolutions.
+argument old_court_info : (CourtNeedsInfo [usufruct]).
+cut (CoDetermines [usufruct] -> CourtNeedsInfo [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+argument old_need_court : (Need [usufruct]).
+cut (CourtNeedsInfo [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* II ¶5 (Rn. 8): influence on fundamental decisions; the vote left open
+
+#+begin_quote
+Vor diesem Hintergrund ist auch die Eintragung eines Nießbrauchsrechtes an
+einem Gesellschaftsanteil zuzulassen. Der Nießbrauchsberechtigte hat
+jedenfalls bei Grundsatzentscheidungen maßgeblichen Einfluss auf die
+Entscheidungsfindung innerhalb der Gesellschaft. Insoweit ist zwar
+inzwischen höchstrichterlich geklärt, dass ihm bei derartigen
+Beschlussgegenständen, die eine Änderung des Gesellschaftsvertrages
+verfolgen, kein eigenes Stimmrecht zusteht [...]. Änderungen des
+Gesellschaftsvertrages haben aber Einfluss auf die Mitgliedschaft des
+Gesellschafters und damit mittelbar auch auf den Bestand des
+Nießbrauchsrechtes. Insoweit wird der Nießbrauchsberechtigte über § 1071
+BGB geschützt und an der Entscheidungsfindung beteiligt. Die Zustimmung
+des Gesellschafters, dessen Anteil mit einem Nießbrauchsrecht belastet
+ist, zur Änderung des Gesellschaftsvertrages ist hiernach ihrerseits nur
+mit Zustimmung des Nießbrauchsberechtigten möglich [...]. Diese
+Einflussmöglichkeit des Nießbrauchsberechtigten insbesondere auf
+Grundsatzentscheidungen der Gesellschaft rechtfertigt bereits die
+Eintragung seiner Rechtsstellung in das Handelsregister. Keiner
+Entscheidung bedarf daher die in Rechtsprechung und Literatur sehr
+umstrittene Frage, ob dem Nießbraucher darüber hinaus auch ein eigenes
+Stimmrecht bei Beschlussfassungen der Gesellschafter über die laufenden
+Angelegenheiten der Gesellschaft zukommt [...]. Einem derart abgespaltenen
+Stimmrecht käme bei dem hier vereinbarten Nießbrauch an einer
+Kommanditbeteiligung ohnehin kaum Bedeutung zu. Schon die Rechtsstellung
+als Kommanditist schließt gemäß § 164 HGB einen Einfluss auf
+Geschäftsführungsentscheidungen weitestgehend aus.
+#+end_quote
+
+/Translation./ Against this background the entry of a usufruct on a
+partnership interest is to be admitted as well. The usufructuary has
+decisive influence on decision-making within the partnership, at least
+for fundamental decisions. It is now settled by the highest court that
+they have no vote of their own on resolutions aimed at amending the
+partnership agreement [...]. But amendments affect the partner's
+membership and so, indirectly, the existence of the usufruct. To that
+extent the usufructuary is protected by § 1071 BGB and involved in the
+decision. The consent of the partner whose interest is burdened with the
+usufruct to an amendment is thus itself possible only with the
+usufructuary's consent [...]. This possibility of influence, in
+particular on fundamental decisions, already justifies entering the
+usufructuary's position in the Commercial Register. The question, highly
+contested in case law and literature, whether the usufructuary also has
+a vote of their own on the partners' resolutions about day-to-day affairs
+therefore need not be decided [...]. Such a split-off vote would in any
+case hardly matter for the usufruct agreed here on a limited partnership
+interest. The position of a limited partner as such largely excludes
+influence on management decisions under § 164 HGB.
+
+AI NOTE (RQ 3):
+- The court derives co-determination from the § 1071 consent alone.
+  The rule "a consent right confers co-determination" is the court's
+  own; it is presumed here, and Köln attacks it.
+- The question left undecided is a statement the argument does not
+  use. No dispute about =VotesDayToDay= can reach this court's verdict.
+  In the graph this shows as the absence of an edge.
+
+#+begin_src fspy
+# Rn. 8: the § 1071 consent gives influence on fundamental decisions.
+argument old_codet_1071 : (CoDetermines [usufruct]).
+cut (Consent1071 [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+axiom s_1071.
+axiom r.
+dixi.
+#+end_src
+
+* II ¶6 (Rn. 9): late filings are no reason
+
+#+begin_quote
+Ein berechtigtes Interesse des Rechtsverkehrs an der Eintragung ist auch
+nicht deshalb zu verneinen, weil Registeranmeldungen nach den praktischen
+Erfahrungen des Registergerichts oft zeitlich verzögert eingereicht
+werden, so dass das Handelsregister über die aktuell geltenden
+Verhältnisse keine verbindliche Auskunft geben kann. Würde man dieser
+Argumentation folgen, wären sämtliche Umstände, deren Eintragung in das
+Handelsregister keine konstitutive Wirkung hat, nicht eintragungsfähig.
+Der Gesetzgeber hat diesem Umstand vielmehr mit den unterschiedlichen
+Publizitätswirkungen des Registers für eintragungspflichtige Tatsachen
+einerseits (§ 15 Abs. 1 und 3 HGB) und bloß eintragungsfähigen Tatsachen
+anderseits (§ 15 Abs. 2 HGB) Rechnung getragen.
+#+end_quote
+
+/Translation./ Nor can a legitimate interest of legal dealings be denied
+because, in the register court's practical experience, applications are
+often filed late, so that the register cannot give binding information
+about the current position. If one followed this argument, every
+circumstance whose entry has no constitutive effect would be
+unregistrable. Rather, the legislator has accounted for this by the
+different publicity effects of the register for facts required to be
+entered (§ 15 (1) and (3) HGB) and for merely registrable facts (§ 15
+(2) HGB).
+
+AI NOTE: a reductio against a general principle.
+- If late filing defeated the interest, no declaratory fact would be
+  registrable (=p_delay_decl=).
+- But § 15 (2) HGB presupposes registrable declaratory facts (=s_15=).
+- The register court's premise =DelayDefeatsInterest= is refuted by
+  contraposition. Its factual premise =DelayedFilings= stands.
+
+#+begin_src fspy
+# Rn. 9: a principle that would make declaratory facts unregistrable fails.
+counterargument old_no_delay : (DelayDefeatsInterest).
+cut (DelayDefeatsInterest -> ~DeclaratoryRegistrable) r.
+axiom p_delay_decl.
+elim.
+axiom.
+elim.
+axiom s_15.
+dixi.
+#+end_src
+
+* The court's debate
+
+#+begin_src fspy
+debate pro closed old : Registrable [usufruct].
+old_registrable.
+support old_need_codet old_registrable.
+support old_codet_1071 old_need_codet.
+support old_need_court old_registrable.
+support old_court_info old_need_court.
+support old_codet_1071 old_court_info.
+attack rc_old_restraint old_registrable.
+undermine excl_needs_no_need rc_old_restraint.
+attack rc_old_no_need old_need_codet.
+undermine old_not_liab_only rc_old_no_need.
+attack rc_old_delay old_need_codet.
+undermine old_no_delay rc_old_delay.
+cedat tempus.
+#+end_src
+
+#+begin_src fspy :combined no
+label old.
+evaluate old.
+#+end_src

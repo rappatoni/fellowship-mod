@@ -1,0 +1,119 @@
+#+title: Phase 7: survey of frameworks and their implementations
+#+language: en
+
+AI DRAFT (Phase 7 of task =aida-iris-usufruct=). These are notes for the
+authors, not manuscript text. The comparison itself is in
+=comparison.org=.
+
+* What was compared, and why these
+
+The plan named the frameworks: Carneades, PROLEG, s(CASP), Defeasible
+Deontic Logic, and abstract/structured tools (ASPARTIX on clingo, ASPIC+
+through TOAST or PyArg, Arg2P). They are the systems the IRIS draft's
+community uses for legal argumentation. Each is compared on the same
+material (=comparison.org=, section "Material").
+
+| Framework | Tool used here | Version | Status |
+|-----------+----------------+---------+--------|
+| Carneades (CAES) | Carneades 4, built from source | commit d19d543 (2024-10-15) | run |
+| ASPIC+ | PyArg (=python-argumentation=) | 2.0.2 | run |
+| ASPIC+ with burdens of persuasion | Arg2P (=arg2p= Python package, bundled JVM) | 0.26.5 | run |
+| Abstract argumentation | ASPARTIX encodings on clingo | stable.dl as downloaded 2026-11-14; clingo 5.8.3 | run, as the stable solver for PyArg's frameworks |
+| s(CASP) (goal-directed ASP) | s(CASP) | 0.25.12.04 | run |
+| Defeasible Deontic Logic | gvdgdo/Defeasible-Deontic-Logic (DDL in clingo) | commit 679c638 (2026-05-25) | run |
+| PROLEG | a re-implementation of its published core in Ciao Prolog 1.25.0-m1 | — | run; the original is not public |
+| Houdini (DDL reasoner) | — | — | not public; the clingo implementation stands in |
+| TOAST (ASPIC+ web tool) | — | — | not used; PyArg and Arg2P cover ASPIC+ |
+
+* The frameworks, briefly, with sources
+
+AI NOTE: the citations below were checked on 2026-11-14 where marked
+(✓). The others are standard citations that were not re-checked.
+
+- *Carneades.* Arguments pro and con a statement, grouped into issues, are
+  weighed under a proof standard (preponderance of evidence, clear and
+  convincing evidence, beyond reasonable doubt). Premises are ordinary
+  premises, assumptions or exceptions, which is where the model places
+  the burden of proof. Version 4 adds cyclic graphs and weighing
+  functions.
+  - T. F. Gordon, H. Prakken, D. Walton, "The Carneades model of argument
+    and burden of proof", Artificial Intelligence 171(10-15), 2007,
+    875-896.
+  - Carneades 4: https://github.com/carneades/carneades-4 (MPL-2.0).
+  - The DIREGA group already has a Carneades map of the usufruct case
+    (=DIREGA/formalizations/carneades/nießbrauch.yml=).
+- *ASPIC+.* Arguments are built from a knowledge base (axioms, ordinary
+  premises) with strict and defeasible rules. They attack each other by
+  undermining, rebutting and undercutting, and preferences turn attacks
+  into defeats. The result is a Dung framework.
+  - S. Modgil, H. Prakken, "A general account of argumentation with
+    preferences", Artificial Intelligence 195, 2013, 361-397.
+  - PyArg: A. Borg, D. Odekerken, "PyArg for solving and explaining
+    argumentation in Python: demonstration", COMMA 2022; D. Odekerken,
+    A. Borg, M. Berthold, "Demonstrating PyArg 2.0", COMMA 2023 (✓ for
+    the names and the package).
+- *Arg2P.* An ASPIC+-like engine on tuProlog, with burdens of persuasion:
+  a statement that carries the burden and stays undecided is labelled
+  OUT (two-stage labelling).
+  - R. Calegari, A. Omicini, G. Pisano, G. Sartor, "Arg2P: an
+    argumentation framework for explainable intelligent systems", Journal
+    of Logic and Computation 32(2), 2022, 369-401,
+    doi:10.1093/logcom/exab089 (✓).
+  - R. Calegari, G. Sartor, "A model for the burden of persuasion in
+    argumentation", JURIX 2020, FAIA 334, 13-22; also "Burden of
+    persuasion in argumentation", ICLP 2020, EPTCS 325, 151-163 (✓).
+- *s(CASP).* Answer set programming with constraints, evaluated top down
+  without grounding, so programs keep their variables. Negation as
+  failure gives defaults, classical negation gives refutations, and the
+  answer comes with a justification tree.
+  - J. Arias, M. Carro, E. Salazar, K. Marple, G. Gupta, "Constraint
+    answer set programming without grounding", Theory and Practice of
+    Logic Programming 18(3-4), 2018, 337-354.
+  - The external importer =../scasp-aida= translates s(CASP) programs to
+    AIDA (helper atoms per conjunction).
+- *Defeasible Deontic Logic.* Defeasible logic (strict and defeasible
+  rules, defeaters, a superiority relation, ambiguity blocking or
+  propagating) extended with obligations, permissions and compensations.
+  - G. Antoniou, D. Billington, G. Governatori, M. J. Maher,
+    "Representation results for defeasible logic", ACM TOCL 2(2), 2001,
+    255-287.
+  - G. Governatori, F. Olivieri, A. Rotolo, S. Scannapieco, "Computing
+    strong and weak permissions in defeasible logic", Journal of
+    Philosophical Logic 42(6), 2013, 799-829.
+  - The clingo implementation: https://github.com/gvdgdo/Defeasible-Deontic-Logic.
+  - Houdini (M. Cristani, G. Governatori, F. Olivieri et al.) is
+    described in CEUR-WS Vol-3354 (2022) and Procedia Computer Science
+    (2023), but no download was found (✓ for the absence, 2026-11-14).
+- *PROLEG.* Legal rules as Prolog rules with exceptions, implementing the
+  Japanese "presupposed ultimate fact" theory: the split into rule and
+  exception allocates the burden of proof.
+  - K. Satoh et al., "PROLEG: an implementation of the presupposed
+    ultimate fact theory of Japanese civil code by PROLOG technology",
+    JSAI-isAI 2010 workshops, 153-164 (✓ for the citation; no source code
+    was found).
+- *Abstract argumentation, ASP encodings.*
+  - U. Egly, S. A. Gaggl, S. Woltran, "Answer-set programming encodings
+    for argumentation frameworks", Argument & Computation 1(2), 2010,
+    147-177.
+  - ASPARTIX: https://dbai.tuwien.ac.at/proj/argumentation/systempage/dung.html
+  - Bipolar frameworks (cited by the IRIS draft): C. Cayrol,
+    M.-C. Lagasquie-Schiex, "Bipolar abstract argumentation systems", in
+    Argumentation in Artificial Intelligence, 2009, 65-84. ASPARTIX's
+    published Dung encodings have no support relation, so supports are
+    compiled away by the structured layer (ASPIC+) before the solver sees
+    the framework.
+
+* How each tool was installed (2026-11-14, macOS 27 arm64)
+
+All tools were installed outside the repository, each in its own
+directory; nothing was installed system-wide.
+
+| Tool | Steps | Notes |
+|------+-------+-------|
+| Carneades 4 | Go 1.22.12 tarball from go.dev; =git clone https://github.com/carneades/carneades-4=; =go build -ldflags=-linkmode=external ./src/cmd/carneades= | the default Go linker's binary lacks LC_UUID, which macOS 27's loader requires; external linking adds it |
+| PyArg, clingo | =python3 -m venv=; =pip install clingo python-argumentation= | PyArg's own stable-extension routine took 166 s on rq7-a (32 arguments, 93 defeats); the runner computes stable extensions of PyArg's framework with clingo and ASPARTIX's stable.dl instead (0.2 s for everything) |
+| ASPARTIX | =stable.dl=, =comp.dl=, =condLit_ground.lp=, =prefex_gringo.lp= from the system page | used with clingo's Python API |
+| Arg2P | =uv venv --python 3.12=; =uv pip install arg2p= | under Python 3.15 its dependency JPype1 does not build |
+| s(CASP) | already installed (Ciao-based, 0.25.12.04) | does not accept named anonymous variables such as =_F= |
+| DDL | =git clone https://github.com/gvdgdo/Defeasible-Deontic-Logic= | =deontic.asp= alone has unsafe rules under clingo 5.8.3; =deontic-comp.asp= (the one its own example uses) works |
+| PROLEG core | Ciao Prolog 1.25.0-m1, already installed | written for this comparison, =proleg/proleg.pl= |

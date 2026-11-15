@@ -1,0 +1,243 @@
+#+title: RQ 4 (and RQ 8): the gap as a process
+#+language: en
+#+property: header-args:fspy :tangle build/rq4-gap-dynamics.fspy
+#+fspy_prelude: vocabulary.org
+#+fspy_include: rq3-stuttgart.org
+#+fspy_include: rq3-oldenburg.org
+#+fspy_include: rq3-muenchen.org
+#+fspy_include: rq3-koeln.org
+
+AI DRAFT (extension of Phase 3, task =aida-iris-usufruct=, after the
+author's remarks of 2026-11-14).
+
+- *The question.* A gap is not only a state of the law but a task.
+  Practitioners close it tentatively, case by case, by interpretation,
+  analogy and distinguishing, and later decisions revise the closure.
+  RQ 4 therefore asks how this dynamics can be represented, not only a
+  snapshot.
+- *Two patterns* (the author's terms):
+  - *Open enumeration.* The gap is filled by examples of the concept
+    that accumulate: one more fact held registrable, one more held not.
+    The concept becomes an open disjunction of its examples, extended by
+    analogy.
+  - *Open structure.* The concept is constrained by necessary conditions
+    and exceptions that later decisions add to examples already
+    established.
+- *The connection to RQ 8* (open texture, analogy): the second limb of
+  the meta-norm, "a substantial need of legal dealings", is an
+  open-textured term. The courts even word its threshold differently.
+  Its meaning is what the two patterns build up.
+- *The material.* The four decisions of RQ 3 and the precedents they cite,
+  read as one process in time: a closed debate =lawdev= whose moves come
+  in the order the decisions were handed down, with the state queried
+  after each stage. The document only grows. What changes is the status
+  of its statements.
+
+* How the two patterns appear in AIDA
+
+| Pattern | In the material | AIDA construct | What adding a step does |
+|---------+-----------------+----------------+-------------------------|
+| Open enumeration, positive | the executorship held registrable (BGH 2012); the usufruct argued to be like it (Stuttgart) | a precedent as a strict fact (=bgh_exec_reg=); an analogy schema (=analogy_exec=) whose similarity premise is argued (=stg_like_exec=) | one more supporter of =Registrable=; nothing existing is edited |
+| Open enumeration, negative | the deputy note and the GmbH executorship note held not registrable although of interest | precedents as strict denials (=bgh_deputy_reg=, =bgh_gmbh_reg=), used as counter-instances (=muc_counter_deputy=, =muc_counter_gmbh=) | a counter-instance refutes a generalisation (=InfoSuffices=: information interest suffices) |
+| Defeasible closure of the enumeration | not registrable unless provided by statute or needed | the restraint as a presumption (=Excluded=) with one exception per limb (=excl_needs_no_statute=, =excl_needs_no_need=) | a new example of either limb defeats the closure for that fact |
+| Open structure, conditions | München: the analogy needs one of the executor's features (disposal, liability, procedural position); Köln: influence needs a constitutive consent | a helper with one denial per necessary condition (=Unlike= with three; =Powerless= with two) | a later court adds a denial; it constrains every earlier example of the concept that does not meet it |
+| Revision | München distinguishes the executorship; Köln denies influence from § 1071 | a counterargument against an earlier step (=muc_unlike=, =koe_no_codet=) | the earlier conclusion changes its label; its argument stays in the record |
+| A disputed threshold (RQ 8) | "unabweisbar" (München), "erheblich" (Oldenburg, Köln), "berechtigt" (Stuttgart) | not separated in this encoding: all courts argue the one statement =Need= | see AI NOTE below |
+
+AI NOTE (limits):
+- The thresholds are one statement here. Separating them, as three
+  statements with rules between them (=Compelling -> Substantial ->
+  Legitimate=), would make the courts' disagreement about the test itself
+  arguable. That is not done here.
+- A precedent's holding is strict, and its reasons are presumed or owed
+  like any other argument. A court that overrules a precedent rather than
+  distinguishing it would need the holding to be defeasible.
+
+* The case law as one debate
+
+The debate opens with the register court's restraint (Stuttgart's
+register court, 2012): not registrable, as no statute provides for it.
+The precedents (BGH 2012 executorship, BGH 1998 deputy note, BGH 2015
+GmbH list) are declarations in =vocabulary.org=, so they are in scope
+from the start.
+
+Moves without a verb are not checked as replies; they join the scope in
+the order given. Within a stack, a later move stands above an earlier
+one.
+
+AI NOTE (type check switched off for this debate):
+- Every argument was type-checked when it was registered in its court's
+  file. What =typecheck off= skips is AIDA's replay of the unfolded
+  debate term through Fellowship, the oracle.
+- With the replay on (2026-11-14), stages 0-3 replay, but the whole
+  script takes 9 minutes on the stock bytecode build.
+- Stage 4, with 48 moves, exceeds the prover's I/O timeout on that build.
+- On the native, path-copying build of the performance report
+  (=bench/perf-2026-11/= on main) the script takes 3 min 20 s, and stage
+  4's skeptical evaluation replays. Its credulous evaluation then hits
+  the read timeout while Fellowship prints a large snapshot
+  (task =aida-pexpect-read-window=, task =aida-fsp-instantiate-path-copying=
+  on main).
+- The verdicts are the same with and without the replay for every stage
+  that completed with it.
+
+#+begin_src fspy
+typecheck off.
+debate con closed lawdev : Registrable [usufruct].
+rc_stg_restraint.
+excl_needs_no_statute.
+excl_needs_no_need.
+label lawdev stable.
+evaluate lawdev stable.
+#+end_src
+
+** Stage 1: OLG Stuttgart, 28.1.2013 (registrable)
+
+Open enumeration by analogy: the usufruct is like the executorship
+because of the usufructuary's participation rights. Besides that, a need
+from co-determination and from the court's own need for information.
+
+#+begin_src fspy
+rc_stg_no_need.
+stg_not_liab_only.
+stg_mgmt.
+stg_codet_mgmt.
+stg_votes.
+stg_codet_votes.
+stg_constitutive.
+stg_codet_consent.
+stg_need_codet.
+stg_equated.
+stg_court_info.
+stg_need_court.
+stg_like_exec.
+stg_analogy.
+stg_registrable.
+label lawdev stable.
+evaluate lawdev stable.
+evaluate lawdev credulous stable.
+#+end_src
+
+** Stage 2: OLG Oldenburg, 9.3.2015 (registrable)
+
+A second route to co-determination (the § 1071 consent right), with the
+vote in day-to-day affairs left undecided; the late-filings argument
+refuted.
+
+#+begin_src fspy
+old_codet_1071.
+old_need_codet.
+old_court_info.
+old_need_court.
+rc_old_delay.
+old_no_delay.
+old_registrable.
+label lawdev stable.
+evaluate lawdev stable.
+evaluate lawdev credulous stable.
+#+end_src
+
+** Stage 3: OLG München, 8.8.2016 (not registrable)
+
+Open structure and revision: the analogy is distinguished (three
+necessary features, none of which the usufruct has), the participation
+rights are refuted one by one, and the generalisation "an interest in
+information suffices" falls to two counter-instances from the BGH.
+
+#+begin_src fspy
+muc_no_mgmt.
+muc_no_vote.
+muc_not_constitutive.
+muc_no_codet.
+powerless_needs_no_vote.
+powerless_needs_no_constitutive.
+app_liab.
+app_need_liab.
+muc_no_liab.
+unlike_needs_no_disposal.
+unlike_needs_no_liability.
+unlike_needs_no_procedural.
+muc_unlike.
+muc_hyp_info.
+muc_counter_deputy.
+muc_counter_gmbh.
+muc_clarity.
+muc_restraint.
+label lawdev stable.
+evaluate lawdev stable.
+evaluate lawdev credulous stable.
+#+end_src
+
+** Stage 4: OLG Köln, 7.10.2019 (not registrable)
+
+A further necessary condition for influence: the consent must be
+constitutive, which Köln refutes (the usufruct can be created without
+the partnership).
+
+#+begin_src fspy
+koe_no_vote.
+koe_no_liab.
+koe_not_constitutive.
+koe_no_codet.
+koe_restraint.
+label lawdev stable.
+evaluate lawdev stable.
+evaluate lawdev credulous stable.
+cedat tempus.
+typecheck on.
+#+end_src
+
+* Results (run 2026-11-14, stable)
+
+How to read the classes: =lawdev= is a =con= debate. A value means the
+restraint stands (not registrable). An exception means it aborts,
+because registrability is established. Open means undecided.
+
+| Stage | After | Labellings | Skeptical | Credulous | Registrable usufruct |
+|-------+-------+------------+-----------+-----------+----------------------|
+| 0     | the restraint alone (register court, 2012) | 1 | value | | OUT: the gap is closed by the presumption |
+| 1     | OLG Stuttgart 2013 | 1 | exception | exception | IN, by need (co-determination, the court's own need) and by analogy |
+| 2     | OLG Oldenburg 2015 | 1 | exception | exception | IN; a second route to co-determination (§ 1071) added |
+| 3     | OLG München 2016 | 5 | open | value | OUT in 1 labelling, IN in 4 |
+| 4     | OLG Köln 2019 | 5 | open | value | as stage 3 |
+
+The statements that carry the two patterns (term side, one column per
+stable labelling at stages 3 and 4):
+
+| Statement | Stage 0 | Stages 1-2 | Stages 3-4 |
+|-----------+---------+------------+------------|
+| =Registrable= | OUT | IN | OUT IN IN IN IN |
+| =LikeExecutorship= (analogy) | - | IN | OUT OUT IN OUT IN |
+| =VotesDayToDay= | - | IN | OUT (all) |
+| =ConsentConstitutive= | - | IN | OUT OUT OUT IN IN |
+| =Powerless= (Köln/München's presumption) | - | - | IN IN IN OUT OUT |
+| =CoDetermines= | - | IN | OUT IN IN IN IN |
+| =InfoSuffices= (generalisation) | - | - | OUT (all) |
+| =Liability= | - | refutation OUT (not argued) | OUT (all) |
+
+AI NOTE (observations for the authors):
+- *Tentative closure, then revision, in one record.* The gap is first
+  closed against the usufruct by a presumption (stage 0). It is reopened
+  and closed for it by analogy and by the need argument (stages 1-2), and
+  reopened by the refutations (stages 3-4). The record only grows, and
+  each step is a move. What changes is the status of statements.
+- *Open enumeration.* The executorship enters as a positive example and
+  is extended to the usufruct by analogy (stage 1). The deputy note and
+  the GmbH list enter as negative examples, which refute the
+  generalisation "an interest in information suffices" (=InfoSuffices=
+  OUT from stage 3). Each example is one more argument, and no earlier
+  argument is edited.
+- *Open structure.* München adds necessary conditions to the analogy (the
+  executor's three features) and to influence (no vote, no constitutive
+  consent). The added conditions turn the analogy OUT in three of five
+  labellings, and the vote OUT in all. Köln's further reason (created
+  without the partnership) changes no reading, since the condition it
+  supports was already contested.
+- *What stays open is exactly what the later decisions dispute.*
+  Constitutive effect and the analogy remain undecided between the
+  courts. The two open questions of RQ 3 (=rq3-combined.org=) are the
+  residue of this process.
+- *Redundancy.* Oldenburg's second route changes nothing at stage 2. It
+  is what keeps four of five readings pro after München refutes the
+  vote. A model that records only verdicts would not show why a later
+  refutation does not end the matter.

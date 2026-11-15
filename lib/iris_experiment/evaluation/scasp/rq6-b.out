@@ -1,0 +1,14 @@
+## rq6-b: with the target
+% QUERY:?- duty(court,app,e1).
+
+no models
+
+## rq6-b: without the target
+% QUERY:?- not duty(court,app,e1).
+
+	ANSWER:	1 (in 2.598 ms)
+
+MODEL:
+{ not duty(court,app,e1),  metanorm,  not enter(e1,court,Var0 | {Var0 \= kp_c}),  enter(e1,court,kp_c),  not passed(e1),  not enter(e1,Var1 | {Var1 \= court},Var2),  not enter(e1,court,Var3 | {Var3 \= kp_c}),  -passed(e1),  required(d_appl,e1),  not submitted(d_appl),  not -passed(Var4 | {Var4 \= e1}),  not enter(Var4 | {Var4 \= e1},Var5,Var6),  not required(Var7 | {Var7 \= d_appl},Var4 | {Var4 \= e1}),  not required(d_appl,Var4 | {Var4 \= e1}),  not enter(Var4 | {Var4 \= e1},Var8,Var9) }
+BINDINGS:
+

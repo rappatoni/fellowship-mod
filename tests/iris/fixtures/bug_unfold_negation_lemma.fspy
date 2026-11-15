@@ -1,0 +1,58 @@
+lk.
+declare X, B, C, Y, E : bool.
+declare ry : (X -> Y).
+declare re : (E -> ~Y).
+deny de : (E - ~X).
+declare rx : (B -> ~C -> ~X).
+argument root : (Y).
+cut (X -> Y) r.
+axiom ry.
+elim.
+next.
+axiom r.
+dixi.
+counterargument restraint : (Y).
+cut (~Y) x.
+cut (E -> ~Y) r.
+axiom re.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+counterargument excl : (E).
+cut (E - ~X) th.
+elim.
+elim.
+next.
+axiom th.
+moxia de.
+dixi.
+counterargument p3 : (X).
+cut (~X) x.
+cut (B -> ~C -> ~X) r.
+axiom rx.
+elim.
+by default.
+next.
+elim.
+elim.
+by default.
+next.
+axiom.
+elim.
+axiom.
+dixi.
+argument p2 : (X).
+by default.
+dixi.
+debate pro closed d : Y.
+root.
+support p2 root.
+attack restraint root.
+undermine excl restraint.
+attack p3 p2.
+cedat tempus.
+graph d.

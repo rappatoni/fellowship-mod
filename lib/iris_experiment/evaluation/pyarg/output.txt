@@ -1,0 +1,68 @@
+=== variant plain
+        stable [1]: registrable:- -registrable:IN codet:IN -codet:- constitutive:- -constitutive:IN
+        stable [2]: registrable:- -registrable:IN codet:IN -codet:- constitutive:IN -constitutive:-
+        stable [3]: registrable:IN -registrable:- codet:IN -codet:- constitutive:- -constitutive:IN
+        stable [4]: registrable:IN -registrable:- codet:IN -codet:- constitutive:IN -constitutive:-
+        stable [5]: registrable:- -registrable:IN codet:- -codet:IN constitutive:- -constitutive:IN
+frag_g  target registrable    args= 18 stable=5  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq4-a   target duty           args=  3 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq4-b   target duty           args=  1 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-c   target duty           args=  8 stable=2  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq4-d   target duty           args= 11 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-a   target duty           args= 15 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-b   target duty           args= 14 stable=2  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq6-c   target duty           args= 18 stable=2  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq6-d   target duty           args= 21 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-a   target claim          args= 32 stable=3  grounded:-   stable-skeptical:-   stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-b   target claim          args= 35 stable=3  grounded:-   stable-skeptical:-   stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [4]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-c   target claim          args= 35 stable=4  grounded:-   stable-skeptical:-   stable-credulous:IN
+=== variant lastlink
+        stable [1]: registrable:- -registrable:IN codet:- -codet:IN constitutive:- -constitutive:IN
+frag_g  target registrable    args= 18 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-a   target duty           args=  3 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq4-b   target duty           args=  1 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-c   target duty           args=  8 stable=2  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq4-d   target duty           args= 11 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-a   target duty           args= 15 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-b   target duty           args= 14 stable=2  grounded:-   stable-skeptical:-   stable-credulous:IN
+rq6-c   target duty           args= 18 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-d   target duty           args= 21 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-a   target claim          args= 32 stable=3  grounded:-   stable-skeptical:-   stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-b   target claim          args= 35 stable=3  grounded:-   stable-skeptical:-   stable-credulous:IN
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+        stable [2]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+        stable [3]: claim:- duty:- passed:IN -passed:- limited:- proper:IN -proper:-
+rq7-c   target claim          args= 35 stable=3  grounded:-   stable-skeptical:-   stable-credulous:IN
+=== variant burden
+        stable [1]: registrable:- -registrable:IN codet:- -codet:IN constitutive:- -constitutive:IN
+frag_g  target registrable    args= 18 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-a   target duty           args=  3 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq4-b   target duty           args=  1 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-c   target duty           args=  8 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq4-d   target duty           args= 11 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-a   target duty           args= 15 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-b   target duty           args= 14 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+rq6-c   target duty           args= 18 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+rq6-d   target duty           args= 21 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+        stable [1]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+rq7-a   target claim          args= 32 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-
+        stable [1]: claim:IN duty:IN passed:IN -passed:- limited:IN proper:- -proper:IN
+rq7-b   target claim          args= 35 stable=1  grounded:IN  stable-skeptical:IN  stable-credulous:IN
+        stable [1]: claim:- duty:- passed:- -passed:IN limited:- proper:IN -proper:-
+rq7-c   target claim          args= 35 stable=1  grounded:-   stable-skeptical:-   stable-credulous:-

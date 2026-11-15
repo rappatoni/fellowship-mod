@@ -1,0 +1,11 @@
+pyclingo version 5.8.3
+Reading from defeasible-ab.asp ...
+Solving...
+Answer: 1 (Time: 0.010s)
+defeasible(consent1071) defeasible(created_without) defeasible(powerless) defeasible(excluded) defeasible(non(registrable)) refuted(non(consent1071)) refuted(non(created_without)) refuted(non(need)) refuted(non(codet)) refuted(non(constitutive)) refuted(constitutive) refuted(non(powerless)) refuted(codet) refuted(need) refuted(non(excluded)) refuted(registrable)
+SATISFIABLE
+
+Models       : 1
+Calls        : 1
+Time         : 0.010s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
+CPU Time     : 0.005s

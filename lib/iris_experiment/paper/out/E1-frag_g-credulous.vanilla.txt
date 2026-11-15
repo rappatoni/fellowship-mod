@@ -1,0 +1,7 @@
+μ'koe_restraint:Registrable usufruct.<
+├─ m_excl:Excluded usufruct->~Registrable usufruct||
+└─ !IN:Excluded usufruct*μ'b1:~Registrable usufruct.<
+   ├─ b1:~Registrable usufruct||
+   └─ koe_restraint:Registrable usufruct*_F_
+   >
+>

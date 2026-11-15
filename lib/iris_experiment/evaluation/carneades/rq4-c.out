@@ -1,0 +1,66 @@
+meta: 
+    title: "IRIS RQ 4, 4c: the positivist objection"
+issues: 
+    i0: 
+        positions:
+            - metanorm
+            - ¬metanorm
+        standard: PE
+    i1: 
+        positions:
+            - written_only
+            - ¬written_only
+        standard: PE
+statements: 
+    duty: 
+        text: the register court owes the applicants the entry 
+        label: out
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: out
+    ¬metanorm: 
+        text: "the meta-norm is not in force" 
+        label: in
+    passed: 
+        text: the examination of the entry is passed 
+        label: in
+    written_only: 
+        text: only a written norm can bind the register court 
+        label: in
+    ¬written_only: 
+        text: a norm the written rules presuppose can bind the court 
+        label: out
+    no_written: 
+        text: no written norm orders the entry 
+        label: in
+    presupposed: 
+        text: "the written rules presuppose the meta-norm" 
+        label: out
+assumptions:
+    - no_written
+arguments: 
+    pres_written_only:
+        conclusion: written_only
+        weight: 0.50
+        scheme: presumption
+    positivist:
+        premises:
+            - written_only
+            - no_written
+        conclusion: ¬metanorm
+        weight: 1.00
+        scheme: linked
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        scheme: linked
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption
+    pres_passed:
+        conclusion: passed
+        weight: 0.50
+        scheme: presumption

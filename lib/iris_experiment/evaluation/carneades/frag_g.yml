@@ -1,0 +1,31 @@
+meta: {title: 'IRIS RQ 3, fragment (g): the core of the dispute'}
+argument_schemes:
+  - id: presumption
+    weight: {constant: 0.5}
+statements:
+  registrable: the usufruct is registrable
+  ¬registrable: the usufruct is not registrable
+  excluded: registration is excluded (restraint)
+  need: legal dealings need the information
+  codet: the usufructuary co-determines the partnership's fate
+  ¬codet: the usufructuary does not co-determine
+  consent1071: the partner's measures need the usufructuary's consent (§ 1071 BGB)
+  powerless: the usufructuary has no influence
+  constitutive: the consent conditions the validity of the measure
+  ¬constitutive: the consent does not condition the measure's validity
+  created_without: the usufruct can be created without the partnership
+issues:
+  i0: {positions: [registrable, ¬registrable]}
+  i1: {positions: [codet, ¬codet]}
+  i2: {positions: [constitutive, ¬constitutive]}
+arguments:
+  m_need: {conclusion: registrable, premises: [need]}
+  pres_excluded: {conclusion: excluded, premises: [], scheme: presumption}
+  koe_restraint: {conclusion: ¬registrable, premises: [excluded], undercutter: need}
+  old_need_codet: {conclusion: need, premises: [codet], scheme: presumption}
+  old_codet_1071: {conclusion: codet, premises: [consent1071], scheme: presumption}
+  pres_powerless: {conclusion: powerless, premises: [], scheme: presumption}
+  koe_no_codet: {conclusion: ¬codet, premises: [powerless], undercutter: constitutive}
+  stg_constitutive: {conclusion: constitutive, premises: [consent1071], scheme: presumption}
+  koe_not_constitutive: {conclusion: ¬constitutive, premises: [created_without], scheme: presumption}
+assumptions: [consent1071, created_without]

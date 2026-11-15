@@ -1,0 +1,4 @@
+rq6p-a: O = o_entry 
+rq6p-b: O = o_submit 
+rq6p-c: O = o_prove 
+rq6p-d: O = o_entry 

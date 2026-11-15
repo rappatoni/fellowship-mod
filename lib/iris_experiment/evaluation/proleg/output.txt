@@ -1,0 +1,12 @@
+frag_g registrable: no
+rq4a duty: yes
+rq4b duty: no
+rq4c duty: no
+rq4d duty: yes
+rq6a duty: yes
+rq6b duty: no
+rq6c duty: no
+rq6d duty: yes
+rq7a claim: loop
+rq7b claim: yes
+rq7c claim: loop

@@ -1,0 +1,789 @@
+#+title: RQ 3: OLG München, 8.8.2016, 31 Wx 204/16 (not registrable)
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-muenchen.fspy
+#+fspy_prelude: vocabulary.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- The German text is the court's (=sources/olg-muenchen-2016.org=, from
+  MittBayNot 6/2016, which ends with =(…)=), with citations cut to
+  =[...]=.
+- AI DRAFT TRANSLATION — not reviewed by a lawyer.
+- Comments of ours are marked AI NOTE.
+
+* Facts 1-4: the application, the register court, the appeal
+
+#+begin_quote
+[...] Herr Rudolf E. sen. hat sich an den vorbezeichneten
+Teilkommanditeinlagen [...] jeweils einen Nießbrauch auf Lebzeit
+einräumen lassen. [...]
+
+Das Registergericht hat [...] den Antrag auf Eintragung der Belastung der
+Kommanditanteile mit einem Nießbrauch zurückgewiesen. [...]
+
+Hiergegen wendet sich die Beschwerdeführerin mit der Begründung, dem
+Antrag auf Eintragung des Nießbrauchs am Kommanditanteil sei deswegen
+stattzugeben, da für dessen Eintragung ein erhebliches Bedürfnis des
+Rechtsverkehrs bestehe. Nießbraucher und Gesellschafter bildeten eine
+Rechtsgemeinschaft und seien dementsprechend gemeinsam an dem
+Kommanditanteil berechtigt. Der Nießbraucher habe insbesondere ein eigenes
+Stimmrecht bei allen Beschlüssen der Gesellschaft über die laufenden
+Angelegenheiten der Gesellschaft. Darüber hinaus seien Maßnahmen wie z. B.
+Kündigung oder Auflösung der Gesellschaft ohne Mitwirkung des
+Nießbrauchers nicht wirksam (§ 1071 BGB). Im Hinblick auf diese
+Verwaltungs- und Mitbestimmungsrechte müsse der Nießbrauch am
+Kommanditanteil ins Handelsregister eingetragen werden. Darüber hinaus
+hafte der Nießbraucher unter Umständen auch im Außenverhältnis.
+#+end_quote
+
+/Translation./ [...] Mr Rudolf E. sen. had a life usufruct granted to him
+in each of the partial limited partner's interests described [...].
+
+The register court rejected the application to enter the encumbrance of
+the limited partners' interests with a usufruct. [...]
+
+The appellant objects that the application must be granted because there
+is a substantial need of legal dealings for the entry. Usufructuary and
+partner form a community of rights and are accordingly jointly entitled
+to the interest. In particular, the usufructuary has a vote of their own
+on all resolutions of the partnership about its day-to-day affairs.
+Moreover, measures such as termination or dissolution of the partnership
+are ineffective without the usufructuary's participation (§ 1071 BGB). In
+view of these rights of administration and co-determination, the
+usufruct must be entered in the Commercial Register. Moreover, the
+usufructuary may also be liable towards third parties.
+
+AI NOTE: the appellant's grounds are formalised so the court's answers
+have targets. The register court's own reasons (facts 2 and 4: liability
+position, clarity) are left out; the senate's reasons below cover them.
+
+#+begin_src fspy
+# Fact 3 (appellant): registrable, since there is a need (owed).
+argument app_registrable : (Registrable [usufruct]).
+cut (Need [usufruct] -> Registrable [usufruct]) r.
+axiom m_need.
+elim.
+next.
+axiom r.
+dixi.
+
+# Fact 3: joint entitlement, so a share in the management rights.
+argument app_mgmt : (ManagementShare [usufruct]).
+by default.
+dixi.
+
+argument app_codet_mgmt : (CoDetermines [usufruct]).
+cut (ManagementShare [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Fact 3: a vote of their own on day-to-day affairs.
+argument app_votes : (VotesDayToDay [usufruct]).
+by default.
+dixi.
+
+argument app_codet_votes : (CoDetermines [usufruct]).
+cut (VotesDayToDay [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Fact 3: measures are ineffective without the usufructuary (§ 1071).
+argument app_constitutive : (ConsentConstitutive [usufruct]).
+cut (Consent1071 [usufruct] -> ConsentConstitutive [usufruct]) r.
+by default.
+next.
+elim.
+axiom s_1071.
+axiom r.
+dixi.
+
+argument app_codet_consent : (CoDetermines [usufruct]).
+cut (ConsentConstitutive [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Fact 3: these rights of co-determination require the entry.
+argument app_need_codet : (Need [usufruct]).
+cut (CoDetermines [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Fact 3: possibly liable towards third parties.
+argument app_liab : (Liability [usufruct]).
+by default.
+dixi.
+
+argument app_need_liab : (Need [usufruct]).
+cut (Liability [usufruct] -> Need [usufruct]) r.
+axiom g_liab.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* II.1 ¶1: not provided by statute
+
+#+begin_quote
+Gemäß § 162 Abs. 1 HGB sind nur die Bezeichnung der Kommanditisten und die
+betragsmäßige Einlage eines jeden Kommanditisten ins Handelsregister
+einzutragen. Der Eintrag des Nießbrauchs auf einen Kommanditanteil ist
+indes gesetzlich nicht vorgesehen. Insoweit handelt es sich bei der
+Bestellung eines Nießbrauchs an einem Kommanditanteil weder um eine
+eintragungspflichtige noch um eine kraft Gesetzes eintragungsfähige
+Tatsache. [...]
+#+end_quote
+
+/Translation./ Under § 162 (1) HGB only the names of the limited partners
+and the amount of each limited partner's contribution are to be entered
+in the Commercial Register. The statute does not provide for entering a
+usufruct on a limited partner's interest. To that extent, creating a
+usufruct on a limited partner's interest is neither a fact required to
+be entered nor a fact registrable by force of statute. [...]
+
+#+begin_src fspy
+# II.1: the statute does not provide for the entry.
+counterargument muc_not_statute : (ProvidedByStatute [usufruct]).
+moxia s_162.
+dixi.
+#+end_src
+
+* II.1 ¶2-3: registrable beyond statute only for a compelling need; restraint
+
+#+begin_quote
+Es ist anerkannt, dass eine Tatsache allerdings auch ohne gesetzliche
+Normierung eintragungsfähig sein kann [...]. Das Handelsregister hat die
+Aufgabe, wesentliche Rechtsverhältnisse der Unternehmer und Unternehmen zu
+offenbaren und über im Handelsverkehr rechtserhebliche Tatsachen
+zutreffend Auskunft zu geben (sog. Publizitätsfunktion [...]). Dies ist
+jedoch nicht im Sinne einer Vollständigkeitsgewähr zu verstehen, denn ein
+lückenloses Bild der Unternehmer und Unternehmen kann das Register schon
+deshalb nicht vermitteln, weil es sonst unübersichtlich würde und seine
+Funktion, rasche und verständliche Informationen zu bieten, nicht
+erfüllen könnte [...]. Nur in dem so begrenzten Rahmen können durch
+Auslegung gesetzlicher Vorschriften, durch Analogie oder richterliche
+Rechtsfortbildung bestimmte Tatsachen auch ohne gesetzliche Normierung als
+eintragungsfähig angesehen werden [...]. Dabei muss den eine gesetzlich
+nicht normierte Eintragungsfähigkeit begründenden Umständen im Einzelfall
+eine derartige Bedeutung zukommen, dass die Gefahr der Überfrachtung des
+Handelsregisters zurückzutreten hat. Es muss mithin ein unabweisbares
+Bedürfnis für ihre Eintragung bestehen [...]. Dabei ist dem Grundsatz der
+Registerklarheit, der Ausfluss der strengen Formalisierung des
+Registerrechts ist, in besonderer Weise Rechnung zu tragen. [...]
+
+Im Hinblick auf die strenge Formalisierung des Registerrechts ist daher mit
+gesetzlich nicht vorgesehenen Eintragungen große Zurückhaltung geboten.
+Insbesondere darf dadurch das Handelsregister nicht unübersichtlich werden
+oder zu Missverständnissen Anlass geben [...].
+#+end_quote
+
+/Translation./ It is recognised that a fact can be registrable even
+without statutory provision [...]. The Commercial Register has the task of
+disclosing the essential legal relationships of traders and enterprises
+and of giving correct information on facts legally relevant in commerce
+(the publicity function [...]). This is not to be understood as a
+guarantee of completeness: the register cannot give a complete picture of
+traders and enterprises, if only because it would otherwise become
+confusing and could not fulfil its function of providing quick and
+intelligible information [...]. Only within these limits can certain facts
+be regarded as registrable without statutory provision, by interpretation
+of statutory provisions, by analogy or by judicial development of the law
+[...]. The circumstances grounding a registrability not provided by
+statute must, in the individual case, be of such weight that the danger
+of overloading the Commercial Register must give way. There must
+therefore be a compelling need for their entry [...]. The principle of
+clarity of the register, which flows from the strict formalisation of
+register law, must be given special weight. [...]
+
+In view of the strict formalisation of register law, great restraint is
+therefore called for with entries the statute does not provide for. In
+particular, the Commercial Register must not become confusing or give
+rise to misunderstandings [...].
+
+AI NOTE:
+- The meta-norm again, with the threshold "compelling"
+  ("unabweisbar") where Oldenburg and Köln say "substantial". The
+  vocabulary has one =Need=, so the difference in wording is recorded
+  here and not formalised (open texture, IRIS RQ 8).
+- The restraint is presumed. Clarity enters again in II.2 g) bb),
+  where the court weighs it against the interest in information.
+
+#+begin_src fspy
+# II.1: great restraint; the entry is excluded unless a need is shown.
+counterargument muc_restraint : (Registrable [usufruct]).
+cut (Excluded [usufruct] -> ~Registrable [usufruct]) r.
+axiom m_excl.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* II.2: no compelling need
+
+#+begin_quote
+Unter Zugrundelegung dieser Grundsätze stellt der Nießbrauch an einem
+Kommanditanteil nach Auffassung des Senats keine eintragungsfähige
+Tatsache dar. Denn ein unabweisbares Bedürfnis des Rechtsverkehrs an der
+Eintragung des Nießbrauchs an einem Kommanditanteil vermag der Senat nicht
+zu erkennen.
+#+end_quote
+
+/Translation./ On these principles, in the senate's view, the usufruct on
+a limited partner's interest is not a registrable fact, since the senate
+cannot recognise a compelling need of legal dealings for its entry.
+
+AI NOTE: no new argument. The conclusion follows from the restraint
+once no ground of a need survives; a) to g) take the grounds one by one.
+
+* II.2 a): what the usufruct gives
+
+#+begin_quote
+Es ist in Rechtsprechung und Literatur anerkannt, dass die Bestellung
+eines Nießbrauchs an einem Kommanditanteil rechtlich zulässig ist [...].
+Dabei handelt es sich bei einem Nießbrauch an einem Kommanditanteil um
+einen Nießbrauch an einem Recht gemäß §§ 1068 ff. BGB. Der Nießbraucher
+erhält zwar ein dingliches Nutzungsrecht, wird aber nicht selbst
+Gesellschafter [...]. Inhalt seines Nutzungsrechts sind vor allem die
+Früchte der Mitgliedschaft des Gesellschafters an der Gesellschaft [...].
+#+end_quote
+
+/Translation./ Case law and literature recognise that creating a usufruct
+on a limited partner's interest is legally permissible [...]. A usufruct
+on a limited partner's interest is a usufruct in a right under §§ 1068
+ff. BGB. The usufructuary obtains an in-rem right of use but does not
+become a partner [...]. The content of the right of use is above all the
+fruits of the partner's membership [...].
+
+AI NOTE: background the following subsections use. "Not a partner" is
+the BGH's holding, the denial =bgh_partner=.
+
+* II.2 b): no share in management, no vote
+
+#+begin_quote
+Nicht zu den Erträgen oder Gebrauchsvorteilen des Kommanditanteils und der
+damit verbundenen Gesellschafterstellung des Bestellers gehören die dem
+Gesellschafter als Ausfluss seiner Mitgliedschaft in der Gesellschaft
+zustehenden Mitverwaltungsrechte [...]. Das Gesetz enthält – vom
+Zustimmungserfordernis des § 1071 BGB abgesehen – keine Regelung über eine
+Aufteilung von Befugnissen zwischen Nießbraucher und bestellendem
+Gesellschafter. Zwar sind diesbezüglich Vereinbarungen [...] möglich und
+zulässig [...]. Fehlt es aber – wie hier – an einer solchen Vereinbarung,
+so steht das Stimmrecht ausschließlich dem Gesellschafter zu. [...] Nach
+Auffassung des Senats besteht aber auch im Hinblick auf die laufenden
+Angelegenheiten der Gesellschaft grundsätzlich keine gesellschaftsrechtliche
+Mitwirkungsbefugnis des Nießbrauchers. [...] Dies folgt letztlich auch
+daraus, dass die Haftung gemäß § 128 HGB nur den Gesellschafter trifft und
+eine Zuweisung von Mitverwaltungsrechten ohne gesonderte Vereinbarung die
+Substanz der Mitgliedschaft in der Gesellschaft berührt [...]. Dem
+Nießbraucher stehen allerdings eigene Informations- und Kontrollrechte zur
+Sicherung seines Fruchtziehungsrechts zu, die ihm jedoch nicht ohne
+Weiteres Einfluss auf Entscheidungen der Gesellschafter verschaffen und
+daher für sich genommen auch kein unabweisbares Bedürfnis für eine
+Eintragung [...] begründen können.
+#+end_quote
+
+/Translation./ The rights of participation in management, which the
+partner holds as a consequence of membership, are not among the income or
+benefits of the interest and of the grantor's partner status [...]. Apart
+from the consent requirement of § 1071 BGB, the statute does not provide
+for splitting powers between usufructuary and granting partner.
+Agreements to that effect are possible and permissible [...]. But where,
+as here, there is no such agreement, the vote belongs to the partner
+alone. [...] In the senate's view, the usufructuary has, as a rule, no
+power of participation under partnership law in day-to-day affairs
+either. [...] This follows, in the end, also from the fact that liability
+under § 128 HGB falls on the partner only, and that allocating rights of
+participation in management without a separate agreement affects the
+substance of membership [...]. The usufructuary does have rights of
+information and control of their own, to secure the right to take the
+fruits. But these do not of themselves give influence on the partners'
+decisions, and so cannot by themselves ground a compelling need for
+entry.
+
+AI NOTE:
+- Two rebuttals with one structure: management rights and the vote
+  belong to membership, and the usufructuary is not a member. Each is
+  a contraposition of a presumed rule of the court's against the denial
+  =bgh_partner=.
+- The last sentence rules out a ground (information rights) that no one
+  argued. It is not formalised.
+
+#+begin_src fspy
+# II.2 b): management rights flow from membership; not a partner, no share.
+counterargument muc_no_mgmt : (ManagementShare [usufruct]).
+cut (ManagementShare [usufruct] -> PartnerStatus [usufruct]) r.
+by default.
+next.
+elim.
+axiom.
+moxia bgh_partner.
+dixi.
+
+# II.2 b): the vote stays with the partner, day-to-day affairs included.
+counterargument muc_no_vote : (VotesDayToDay [usufruct]).
+cut (VotesDayToDay [usufruct] -> PartnerStatus [usufruct]) r.
+by default.
+next.
+elim.
+axiom.
+moxia bgh_partner.
+dixi.
+#+end_src
+
+* II.2 c): the § 1071 consent is not constitutive
+
+#+begin_quote
+Lediglich bei bestandsgefährdenden Maßnahmen des Gesellschafters [...]
+sieht § 1071 BGB die Zustimmung des Nießbrauchers vor. Jedoch berührt die
+fehlende Zustimmung des Nießbrauchers die gesellschaftsrechtliche
+Wirksamkeit einer ohne Zustimmung des Nießbrauchers erfolgten Maßnahme der
+Gesellschafter nicht. Sie kann nur eine Schadensersatzpflicht des
+bestellenden Gesellschafters gegenüber dem Nießbraucher herbeiführen [...].
+Der Nießbraucher hat vielmehr Beschlüsse der Gesellschafter, die ohne seine
+an sich nach § 1071 BGB erforderliche Zustimmung ergangen sind,
+hinzunehmen, wenn diese von der Mehrheit der Gesellschafter ohne oder
+gegen die Stimme des bestellenden Gesellschafters gefasst werden können.
+Insoweit stehen dem Nießbraucher nicht mehr Rechte zu als dem bestellenden
+Gesellschafter [...].
+#+end_quote
+
+/Translation./ Only for measures of the partner that endanger the
+usufruct's existence [...] does § 1071 BGB provide for the usufructuary's
+consent. But the lack of consent does not affect the validity, under
+partnership law, of a measure the partners took without it. It can only
+make the granting partner liable to the usufructuary in damages [...].
+Rather, the usufructuary has to accept partners' resolutions passed
+without the consent § 1071 BGB in itself requires, where the majority
+can pass them without or against the granting partner's vote. To that
+extent the usufructuary has no more rights than the granting partner
+[...].
+
+AI NOTE:
+- This rebuts the appellant's (and Stuttgart's) constitutive consent.
+- Like Köln, the court then denies influence: no vote, no constitutive
+  consent, so no means of influence (the helper =Powerless=, presumed).
+
+#+begin_src fspy
+# II.2 c): acting without the consent gives rise only to damages.
+counterargument muc_not_constitutive : (ConsentConstitutive [usufruct]).
+cut (OnlyDamages [usufruct] -> ~ConsentConstitutive [usufruct]) r.
+by default.
+next.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+# II.2 c), f) cc): no means of influence shown, so no co-determination (presumed).
+counterargument muc_no_codet : (CoDetermines [usufruct]).
+cut (Powerless [usufruct] -> ~CoDetermines [usufruct]) r.
+axiom m_powerless.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* II.2 d): no liability towards third parties
+
+#+begin_quote
+Der Senat teilt die Auffassung der herrschenden Meinung, dass den
+Nießbraucher keine persönliche Haftung trifft. Diese trifft gemäß §§ 128,
+171 Abs. 1 HGB nur den Kommanditisten in dem gesetzlich bestimmten Umfang,
+nicht den Nießbraucher. Eine Haftung des Nießbrauchers im Außenverhältnis
+im Umfang der §§ 128, 171 Abs. 1 HGB besteht schon im Hinblick auf seine
+fehlende Gesellschafterstellung nicht [...]. Die Haftung ist vielmehr an
+die Gesellschafterstellung gebunden. Auch aus den gesetzlichen
+Bestimmungen über den Nießbrauch lässt sich keine Grundlage für eine
+Haftung des Nießbrauchers im Außenverhältnis entnehmen. Zum Zwecke der
+Verlautbarung der Haftungsverhältnisse ist daher ein Registereintrag nicht
+veranlasst [...].
+#+end_quote
+
+/Translation./ The senate shares the prevailing opinion that the
+usufructuary bears no personal liability. Under §§ 128, 171 (1) HGB that
+liability falls only on the limited partner, to the extent the statute
+fixes, not on the usufructuary. Liability of the usufructuary towards
+third parties to the extent of §§ 128, 171 (1) HGB does not exist if only
+because they are not a partner [...]. Liability is bound to partner
+status. Nor do the statutory provisions on usufruct yield a basis for
+liability of the usufructuary towards third parties. An entry is
+therefore not called for to disclose the liability position [...].
+
+#+begin_src fspy
+# II.2 d): liability is bound to partner status (§§ 128, 171 HGB); not a partner.
+counterargument muc_no_liab : (Liability [usufruct]).
+cut (Liability [usufruct] -> PartnerStatus [usufruct]) r.
+by default.
+next.
+elim.
+axiom.
+moxia bgh_partner.
+dixi.
+#+end_src
+
+* II.2 e): no part in representation
+
+#+begin_quote
+Auch zum Zwecke der Verlautbarung der Vertretungsverhältnisse ist die
+Eintragung des Nießbrauchs an einem Kommanditanteil nicht geboten [...]. An
+der organschaftlichen Vertretung der Gesellschaft ist der Nießbraucher
+nicht beteiligt. Denn der Kommanditist ist grundsätzlich weder zur
+Geschäftsführung (§ 164 HGB) noch zur Vertretung der Gesellschaft (§ 170
+HGB) berechtigt bzw. ermächtigt. Da die Rechte des Nießbrauchers aber nicht
+weitergehen können als die des Gesellschafters selbst, kann ein
+Nießbraucher grundsätzlich weder die Geschäfte der Gesellschaft führen
+noch diese rechtswirksam nach außen vertreten.
+#+end_quote
+
+/Translation./ Nor is the entry required to disclose the position on
+representation [...]. The usufructuary takes no part in the organic
+representation of the partnership. As a rule, the limited partner is
+entitled neither to manage the partnership (§ 164 HGB) nor to represent
+it (§ 170 HGB). Since the usufructuary's rights cannot go beyond the
+partner's own, a usufructuary can, as a rule, neither manage the
+partnership's business nor represent it effectively towards third
+parties.
+
+AI NOTE: a pre-emptive rebuttal. No one in the case argued
+representation; the court rules out a ground the register is known to
+disclose (=g_repr=).
+
+#+begin_src fspy
+# II.2 e): no more rights than the limited partner, who does not represent.
+counterargument muc_no_repr : (Representation [usufruct]).
+cut (Representation [usufruct] -> LimitedPartnerRepresents) r.
+by default.
+next.
+elim.
+axiom.
+moxia s_170.
+dixi.
+#+end_src
+
+* II.2 f): the executorship decision does not carry over
+
+#+begin_quote
+Aus der Entscheidung des BGH zur Eintragungsfähigkeit eines
+Testamentsvollstreckervermerks bei Dauertestamentsvollstreckung über den
+Nachlass eines Kommanditisten [...] lässt sich die Eintragungsfähigkeit
+eines Nießbrauchs an einem Kommanditanteil nicht ableiten.
+
+aa) Als maßgeblich für die Eintragungsfähigkeit eines
+Testamentsvollstreckervermerks hat der BGH angesehen, dass der
+Testamentsvollstrecker [...] materiellrechtlich Inhaber der
+gesamthänderischen Verfügungsbefugnis ist. [...] Insoweit entfaltet die
+Testamentsvollstreckung eine unmittelbare haftungsrechtliche Außenwirkung.
+[...]
+
+bb) Insoweit besteht ein wesentlicher Unterschied zwischen Nießbrauch und
+Testamentsvollstreckung. Der Nießbrauch entfaltet weder eine
+haftungsrechtliche Außenwirkung noch stehen dem Nießbraucher die einem
+Testamentsvollstrecker vergleichbaren Rechte zu. Sofern hinsichtlich eines
+Kommanditanteils Testamentsvollstreckung angeordnet ist, muss ein
+Gesellschaftsgläubiger, der den Kommanditisten [...] persönlich in
+Anspruch nehmen will, den Testamentsvollstrecker als Partei kraft Amtes
+verklagen. Gerade dieser Umstand rechtfertigt die Eintragung eines
+Testamentsvollstreckervermerks ins Handelsregister [...]. Eine solche, dem
+Testamentsvollstrecker vergleichbare materiellrechtliche Stellung hat der
+Nießbraucher nicht inne bzw. es besteht bei der Bestellung des Nießbrauchs
+keine vergleichbare prozessuale Lage.
+
+cc) Da somit regelmäßig weder im Hinblick auf die Vertretungsverhältnisse
+noch im Hinblick auf die Haftungsverteilung ein signifikanter Einfluss des
+Nießbrauchers besteht, ist nicht ersichtlich, worin ein unabweisbares
+Interesse des gesamten Rechtsverkehrs an der Eintragung des Nießbrauchs an
+einem Kommanditanteil begründet sein soll.
+#+end_quote
+
+/Translation./ The registrability of a usufruct on a limited partner's
+interest cannot be derived from the BGH's decision on the registrability
+of a note of executorship for long-term administration of a limited
+partner's estate [...].
+
+aa) The BGH regarded as decisive that the executor [...] holds, in
+substantive law, the joint power of disposal. [...] To that extent the
+executorship has a direct external effect on liability. [...]
+
+bb) In this respect there is an essential difference between usufruct
+and executorship. The usufruct has no external effect on liability, nor
+does the usufructuary have rights comparable to an executor's. Where an
+executorship over a limited partner's interest is ordered, a creditor of
+the partnership who wants to claim against the limited partner
+personally [...] must sue the executor as a party by virtue of office. It
+is precisely this circumstance that justifies entering a note of
+executorship [...]. The usufructuary holds no comparable substantive
+position, and creating a usufruct gives rise to no comparable procedural
+situation.
+
+cc) Since, as a rule, the usufructuary has no significant influence
+either on representation or on the distribution of liability, it is not
+apparent what could ground a compelling interest of legal dealings as a
+whole in entering the usufruct.
+
+AI NOTE (RQ 3, analogy):
+- The court attacks the similarity, not the analogy schema. On its
+  reading, the BGH's reason was power of disposal, liability effect and
+  procedural position.
+- The usufruct is unlike the executorship if it has none of them: the
+  helper =Unlike=, presumed.
+- Whoever upholds the analogy owes one of the three (=unlike_needs_no_*=).
+  =Liability= is the only one anyone argues, so the analogy's fate
+  hangs on the liability dispute.
+- The analogy argument itself is Stuttgart's (Rn. 15-17). It is
+  restated here as the argument the court answers.
+
+#+begin_src fspy
+# The analogy as OLG Stuttgart drew it (answered here).
+argument muc_hyp_analogy : (Registrable [usufruct]).
+cut (Registrable [executorship] -> LikeExecutorship [usufruct] -> Registrable [usufruct]) r.
+axiom analogy_exec.
+elim.
+axiom bgh_exec_reg.
+elim.
+next.
+axiom r.
+dixi.
+
+argument muc_hyp_like : (LikeExecutorship [usufruct]).
+cut (CoDetermines [usufruct] -> LikeExecutorship [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# II.2 f) bb): none of the executorship's decisive features (presumed).
+counterargument muc_unlike : (LikeExecutorship [usufruct]).
+cut (Unlike [usufruct] -> ~LikeExecutorship [usufruct]) r.
+axiom m_unlike.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* II.2 g): an interest in information does not suffice; clarity first
+
+#+begin_quote
+Es besteht nach Auffassung des Senats auch kein erhebliches praktisches
+Bedürfnis und kein über ein allgemeines Informationsinteresse
+hinausgehendes erhebliches Interesse des Rechtsverkehrs an einer solchen
+Eintragung [...].
+
+aa) Hielte man die Eintragungsfähigkeit des Nießbrauchs an einem
+Kommanditanteil unter Bezugnahme auf ein unabweisbares Bedürfnis für
+zulässig, so müsste generell ein solches unabweisbares Bedürfnis des
+Rechtsverkehrs an einer Eintragung ins Handelsregister auch bezüglich
+solcher Tatsachen bejaht werden, bezüglich derer ein erhebliches
+(Informations-)Interesse des Rechtsverkehrs an den mit der Eintragung
+solcher Tatsachen einhergehenden Informationen besteht. So wären
+Informationen über das Erlöschen der Geschäftsfähigkeit eines
+Gesellschafters oder über das Bestehen einer Betreuung bezüglich eines
+Gesellschafters für den Geschäftsverkehr ebenso von Interesse wie das
+Bestehen von Testamentsvollstreckung hinsichtlich eines
+GmbH-Gesellschaftsanteils oder der Stellvertreterzusatz bei
+stellvertretenden GmbH-Geschäftsführern. Indes sind all diese Tatsachen
+auch nach der Rechtsprechung des BGH nicht eintragungsfähig, obwohl das
+Interesse des Rechtsverkehrs von diesen Tatsachen Kenntnis zu erlangen,
+nicht zu bestreiten ist [...].
+
+(1) [Stellvertreterzusatz, BGH NJW 1998, 1071] [...]
+
+(2) In der Entscheidung vom 24.2.2015 [...] führt der BGH aus, ein
+Testamentsvollstreckervermerk gehöre nicht zu den gesetzlich vorgesehenen
+Angaben in einer Gesellschafterliste [...]. Es genüge für die Aufnahme
+weiterer Angaben ins Handelsregister nicht, dass es sich um für Dritte im
+Hinblick auf weitere Nachforschungen „sinnvolle“ Informationen handeln
+kann. [...]
+
+bb) In diesem Sinn kann das Handelsregister nicht eine allgemeine
+Sammelstelle für Informationen betreffend Kaufleute und
+Handelsgesellschaften sein. Vielmehr darf es nur Eintragungen enthalten,
+die für den Rechts- und Geschäftsverkehr von essentieller Bedeutung sind
+und insbesondere Angaben über Vertretungs- und Haftungsverhältnisse
+enthalten. Das Register muss klar geordnet, übersichtlich und
+verständlich sein. Der Grundsatz der Registerklarheit hat daher regelmäßig
+Vorrang vor dem Interesse des Rechts- und Geschäftsverkehrs an umfassenden
+Informationen über Kaufleute und Handelsgesellschaften. Demgemäß ist für
+die Eintragung eines Nießbrauchs an einem Kommanditanteil ins
+Handelsregister kein Raum.
+(…)
+#+end_quote
+
+/Translation./ In the senate's view there is also no substantial
+practical need, and no substantial interest of legal dealings beyond a
+general interest in information, for such an entry [...].
+
+aa) If one held the usufruct registrable by reference to a compelling
+need, such a compelling need would have to be affirmed generally for all
+facts in whose information legal dealings have a substantial interest.
+Information on a partner's loss of legal capacity or on a partner's
+guardianship would then be as interesting to commerce as an executorship
+over a GmbH share or the "deputy" addition for deputy managing directors
+of a GmbH. Yet none of these facts is registrable, on the BGH's case law
+too, although legal dealings' interest in knowing of them is undeniable
+[...].
+
+(1) [the "deputy" addition, BGH NJW 1998, 1071] [...]
+
+(2) In its decision of 24.2.2015 [...] the BGH holds that a note of
+executorship is not among the particulars the statute provides for in a
+list of shareholders [...]. It does not suffice for including further
+particulars that they may be "useful" information for third parties'
+further inquiries. [...]
+
+bb) In this sense, the Commercial Register cannot be a general
+collection point for information on traders and commercial companies. It
+may contain only entries of essential importance to legal and commercial
+dealings, in particular particulars of representation and liability. The
+register must be clearly ordered, transparent and intelligible. The
+principle of clarity of the register therefore, as a rule, takes
+precedence over legal and commercial dealings' interest in comprehensive
+information about traders and commercial companies. Accordingly, there
+is no room for entering a usufruct on a limited partner's interest.
+(…)
+
+AI NOTE (RQ 3, weighing):
+- aa) is a reductio by counter-instances against the principle "a
+  general interest in information suffices" (=InfoSuffices=). The
+  principle would make the "deputy" addition and the GmbH executorship
+  registrable, which the BGH denies (strict).
+- bb) is a second, defeasible attack on the same principle: clarity
+  "as a rule" takes precedence. The priority is itself a presumed
+  statement (=ClarityPrecedence=), so it can be argued about. It is the
+  only priority any of the four courts states.
+- The principle's proponent is the hypothetical "if one held …". It is
+  formalised as such.
+
+#+begin_src fspy
+# II.2 g) aa) (hypothetical): a general interest in information suffices.
+argument muc_hyp_info : (Need [usufruct]).
+cut (InfoSuffices -> InfoInterest [usufruct] -> Need [usufruct]) r.
+axiom p_info.
+elim.
+by default.
+next.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+# II.2 g) aa) (1): the "deputy" addition is of interest yet not registrable.
+counterargument muc_counter_deputy : (InfoSuffices).
+cut (InfoSuffices -> InfoInterest [deputy_note] -> Need [deputy_note]) r.
+axiom p_info_deputy.
+elim.
+axiom.
+elim.
+axiom bgh_deputy_interest.
+cut (Need [deputy_note] -> Registrable [deputy_note]) r2.
+axiom m_need_deputy.
+elim.
+axiom.
+moxia bgh_deputy_reg.
+dixi.
+
+# II.2 g) aa) (2): so is the executorship over a GmbH share.
+counterargument muc_counter_gmbh : (InfoSuffices).
+cut (InfoSuffices -> InfoInterest [gmbh_executorship] -> Need [gmbh_executorship]) r.
+axiom p_info_gmbh.
+elim.
+axiom.
+elim.
+axiom bgh_gmbh_interest.
+cut (Need [gmbh_executorship] -> Registrable [gmbh_executorship]) r2.
+axiom m_need_gmbh.
+elim.
+axiom.
+moxia bgh_gmbh_reg.
+dixi.
+
+# II.2 g) bb): clarity, as a rule, takes precedence over comprehensive information.
+counterargument muc_clarity : (InfoSuffices).
+cut (ClarityPrecedence -> ~InfoSuffices) r.
+by default.
+next.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* The court's debate
+
+A =con= debate.
+- The restraint comes first.
+- The appellant's way out is the exception, a need, through each
+  ground offered.
+- The court rebuts every ground and the means behind it: management,
+  vote, constitutive consent, influence, liability, the analogy, and an
+  interest in information. The pre-emptive rebuttal of representation
+  has no target in the debate and stays out of it.
+
+#+begin_src fspy
+debate con closed muc : Registrable [usufruct].
+muc_restraint.
+undermine excl_needs_no_need muc_restraint.
+support app_need_codet excl_needs_no_need.
+support app_codet_mgmt app_need_codet.
+support app_mgmt app_codet_mgmt.
+support app_codet_votes app_need_codet.
+support app_votes app_codet_votes.
+support app_codet_consent app_need_codet.
+support app_constitutive app_codet_consent.
+support app_need_liab excl_needs_no_need.
+support app_liab app_need_liab.
+support muc_hyp_info excl_needs_no_need.
+attack muc_no_mgmt app_mgmt.
+attack muc_no_vote app_votes.
+attack muc_not_constitutive app_constitutive.
+attack muc_no_codet app_codet_mgmt.
+undermine powerless_needs_no_vote muc_no_codet.
+undermine powerless_needs_no_constitutive muc_no_codet.
+support app_votes powerless_needs_no_vote.
+support app_constitutive powerless_needs_no_constitutive.
+attack muc_no_liab app_liab.
+undermine muc_counter_deputy muc_hyp_info.
+undermine muc_counter_gmbh muc_hyp_info.
+undermine muc_clarity muc_hyp_info.
+cedat tempus.
+#+end_src
+
+#+begin_src fspy :combined no
+label muc.
+evaluate muc.
+evaluate muc credulous.
+#+end_src
+
+AI NOTE: the analogy (=muc_hyp_analogy= against =muc_unlike=) concludes
+=Registrable= directly rather than a need. It is a separate route past
+the restraint, and it enters the combined graph.

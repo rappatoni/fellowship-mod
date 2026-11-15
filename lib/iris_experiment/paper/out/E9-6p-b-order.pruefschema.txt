@@ -1,0 +1,4 @@
+Es genügt zu prüfen, dass es gibt ein o vom Typ Order, so dass o is the lawful order. Beginn der Prüfung decision:
+├─ belegt durch an interim order to submit the application in certified form
+├─ sofern nichts entgegensteht: an interim order to submit the application in certified form is the lawful order
+└─ Prüfung decision abgeschlossen (bejaht).

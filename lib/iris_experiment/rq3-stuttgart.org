@@ -1,0 +1,431 @@
+#+title: RQ 3: OLG Stuttgart, 28.1.2013, 8 W 25/13 (registrable)
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-stuttgart.fspy
+#+fspy_prelude: vocabulary.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- The German text is the court's (=sources/olg-stuttgart-2013.org=),
+  with citations cut to =[...]=.
+- AI DRAFT TRANSLATION — not reviewed by a lawyer.
+- Comments of ours are marked AI NOTE.
+- Statement names are in =vocabulary.org=.
+
+* Rn. 1-4: the facts
+
+#+begin_quote
+[...] angemeldet, dass die als Kommanditistin aus der Gesellschaft
+ausgeschiedene Beteiligte zu 3) ihre Kommanditeinlage [...] im Wege der
+Sonderrechtsnachfolge auf die Kommanditistin, die Beteiligte zu 2),
+überträgt, dass ihr aber an dem übertragenen Kommanditanteil der
+unentgeltliche Nießbrauch auf Lebenszeit vorbehalten ist. [...] Mit
+Beschl. v. 12. 11. 2012 hat [das RegisterG] die Anmeldung
+kostenpflichtig zurückgewiesen. [...]
+#+end_quote
+
+/Translation./ [...] applied for registration that participant 3, who had
+left the partnership as a limited partner, transfers her contribution
+[...] by singular succession to the limited partner, participant 2, but
+that she reserves a gratuitous life usufruct in the transferred
+interest. [...] By order of 12.11.2012 [the register court] rejected the
+application, with costs. [...]
+
+AI NOTE: not formalised. The fact applied for is the constant =usufruct=.
+
+* Rn. 6: the result
+
+#+begin_quote
+Die [...] zulässige Beschwerde ist in der Sache begründet.
+#+end_quote
+
+/Translation./ The admissible complaint is well-founded.
+
+The court's conclusion is registrability. By the meta-norm it rests on
+a need of legal dealings, which the court owes and supplies below.
+
+#+begin_src fspy
+# Rn. 6: registrable, since there is a need (owed).
+argument stg_registrable : (Registrable [usufruct]).
+cut (Need [usufruct] -> Registrable [usufruct]) r.
+axiom m_need.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 7: the register court's view
+
+#+begin_quote
+Das RegisterG vertritt die Auffassung, dass eine Außenhaftung des
+Nießbrauchers gegenüber Dritten nicht gegeben sei, weswegen eine
+Eintragung des Nießbrauchs im Handelsregister zu unterbleiben habe, das
+lediglich die Haftungslage wiedergeben solle [...].
+#+end_quote
+
+/Translation./ The register court holds that the usufructuary is not
+liable towards third parties, so that the usufruct must not be entered
+in the Commercial Register, which is to show only the liability position
+[...].
+
+Two arguments of the register court:
+- the restraint: not registrable unless excepted
+- no need: the register shows liability only, and there is no liability
+
+#+begin_src fspy
+# Rn. 7: the principle of restraint excludes the entry (presumed).
+counterargument rc_stg_restraint : (Registrable [usufruct]).
+cut (Excluded [usufruct] -> ~Registrable [usufruct]) r.
+axiom m_excl.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+
+# Rn. 7: liability only, and no liability, so no need. That there is no
+# liability is owed (a legal conclusion others argue: München II.2 d),
+# Köln Rn. 5), not presumed: presuming it would oppose the presumption of
+# liability (München's appellant, Köln Rn. 4) - both sides delegating.
+counterargument rc_stg_no_need : (Need [usufruct]).
+cut (LiabilityOnly -> Need [usufruct] -> Liability [usufruct]) r.
+axiom p_liab_only.
+elim.
+by default.
+next.
+elim.
+axiom.
+dixi.
+#+end_src
+
+* Rn. 8-10: the prevailing view, adopted by reference
+
+#+begin_quote
+Demgegenüber wird überwiegend die Auffassung vertreten, dass unabhängig
+von der Problematik einer etwaigen Außenhaftung des Nießbrauchers
+gegenüber Dritten [...] die Eintragungsfähigkeit des Nießbrauchs an einem
+Kommanditanteil zu bejahen ist im Hinblick auf die dem Nießbraucher
+zustehenden Verwaltungsrechte [...]. Der Senat schließt sich dieser
+überwiegend vertretenen Rechtsauffassung an und verweist insoweit auf die
+jeweils ausführlich begründeten zuvor zitierten Entscheidungen der
+genannten Landgerichte. Diese haben überzeugend dargelegt, dass die
+Einräumung eines Nießbrauchs an einem Geschäftsanteil dem Nießbraucher
+eine dingliche Berechtigung verschafft, kraft derer er zusammen mit dem
+Gesellschafter eine Rechtsgemeinschaft bildet. [...] Die
+Gesellschafterrechte, insbesondere die Verwaltungsrechte werden zwischen
+dem Gesellschafter und dem Nießbraucher aufgeteilt, sofern dem
+Nießbraucher die Verwaltung nicht insgesamt übertragen wurde.
+#+end_quote
+
+/Translation./ By contrast, the prevailing view holds that, whatever the
+question of the usufructuary's liability towards third parties [...], the
+usufruct on a limited partner's interest is registrable in view of the
+usufructuary's rights of administration [...]. The senate joins this
+prevailing view and refers to the detailed reasons of the regional
+courts' decisions cited above. These have shown convincingly that
+granting a usufruct on an interest gives the usufructuary an in-rem
+entitlement by which, together with the partner, they form a community
+of rights. [...] The partner's rights, in particular the rights of
+administration, are split between partner and usufructuary, unless the
+administration was transferred to the usufructuary as a whole.
+
+AI NOTE (RQ 3, RQ 4): the senate's reference to the regional courts is
+a *delegation* in the literal sense.
+- The management share is presumed (=by default=). Its justification is
+  handed to decisions outside the document.
+- A counterargument has to come from elsewhere: München II.2 b) and
+  Köln Rn. 5 supply one.
+
+#+begin_src fspy
+# Rn. 9-10: the management rights are split (by reference to the LG decisions).
+argument stg_mgmt : (ManagementShare [usufruct]).
+by default.
+dixi.
+#+end_src
+
+* Rn. 11: what the purpose of the register requires, liability aside
+
+#+begin_quote
+Nachdem aber im Handelsregister auch das einzutragen ist, was ohne
+ausdrückliche gesetzliche Vorschrift nach Sinn und Zweck des
+Handelsregisters eine Eintragung erfordert, führen folgerichtig zur
+Eintragungsfähigkeit des Nießbrauchs schon die hieraus resultierenden
+Mitwirkungsrechte, ohne dass es auf die Frage einer etwaigen Außenhaftung
+des Nießbrauchers Dritten gegenüber ankommt.
+#+end_quote
+
+/Translation./ Since the Commercial Register must also show what its
+sense and purpose require to be entered, even without an express
+statutory provision, the rights of participation resulting from this
+already lead to registrability, without the question of the
+usufructuary's liability towards third parties mattering.
+
+Two steps:
+- the participation rights follow from the management share
+- liability is not the only measure. The court rests that on the
+  register's purpose, which Rn. 16 makes concrete with the BGH:
+  =bgh_participants=.
+
+#+begin_src fspy
+# Rn. 11: participation rights from the split management rights.
+argument stg_codet_mgmt : (CoDetermines [usufruct]).
+cut (ManagementShare [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 11, 16: the register shows more than liability.
+counterargument stg_not_liab_only : (LiabilityOnly).
+moxia bgh_participants.
+dixi.
+#+end_src
+
+* Rn. 12: the participation rights
+
+#+begin_quote
+So hat der Nießbraucher grundsätzlich ein das Mitwirkungsrecht des
+Gesellschafters ausschließendes eigenes Stimmrecht bei Beschlüssen der
+Gesellschafter über die laufenden Angelegenheiten der Gesellschaft. Im
+Übrigen ist seine Rechtsposition durch § 1071 BGB abgesichert, der den
+Nießbraucher bei der ordentlichen Kündigung der Mitgliedschaft durch den
+Gesellschafter sowie bei der Auflösung der Gesellschaft und bei
+Änderungen des Gesellschaftsvertrages schützt. Der dinglichen
+Rechtsstellung des Nießbrauchs entspricht es dabei, dem sich aus § 1071
+BGB ergebenden Zustimmungsvorbehalt nicht lediglich Auswirkungen auf das
+Innenverhältnis zwischen dem Nießbraucher und dem Gesellschafter
+einzuräumen, sondern dem Nießbraucher Einfluss auf die
+gesellschaftsrechtliche Maßnahme zuzubilligen.
+#+end_quote
+
+/Translation./ Thus the usufructuary has, as a rule, a vote of their own,
+excluding the partner's, on partners' resolutions about the
+partnership's day-to-day affairs. Moreover, their position is secured by
+§ 1071 BGB, which protects the usufructuary against the partner's
+ordinary termination of membership, against dissolution of the
+partnership and against amendments of the partnership agreement. The
+in-rem position of the usufruct requires that the consent reserved by
+§ 1071 BGB affect not merely the internal relationship between
+usufructuary and partner, but give the usufructuary influence on the
+measure under partnership law itself.
+
+#+begin_src fspy
+# Rn. 12: a vote of their own on day-to-day affairs, as a rule (presumed).
+argument stg_votes : (VotesDayToDay [usufruct]).
+by default.
+dixi.
+
+argument stg_codet_votes : (CoDetermines [usufruct]).
+cut (VotesDayToDay [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 12: the § 1071 consent reaches the partners' measure itself.
+argument stg_constitutive : (ConsentConstitutive [usufruct]).
+cut (Consent1071 [usufruct] -> ConsentConstitutive [usufruct]) r.
+by default.
+next.
+elim.
+axiom s_1071.
+axiom r.
+dixi.
+
+argument stg_codet_consent : (CoDetermines [usufruct]).
+cut (ConsentConstitutive [usufruct] -> CoDetermines [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 13: the register court's own need, and § 108 HGB
+
+#+begin_quote
+Unter Berücksichtigung dieser Mitverwaltungsrechte ist der Nießbraucher
+aber im Handelsregister einzutragen. Nur so kann das RegisterG
+überprüfen, ob eine Anmeldung zum Handelsregister von allen
+erforderlichen Personen vorgenommen wurde und die Richtigkeit der zu
+erfolgenden Eintragung überwachen, woraus sich ein öffentliches Interesse
+an der Eintragung des Nießbrauchs herleitet. Im Hinblick auf die
+Befugnisse des Nießbrauchers ist er i.S. des § 108 HGB letztlich einem
+Gesellschafter gleichzustellen.
+#+end_quote
+
+/Translation./ In view of these rights of co-administration, the
+usufructuary must be entered in the Commercial Register. Only so can the
+register court check whether an application was made by all persons
+required and supervise the correctness of the entry to be made, from
+which a public interest in the entry of the usufruct derives. Given the
+usufructuary's powers, they are ultimately to be treated like a partner
+within the meaning of § 108 HGB.
+
+AI NOTE: the court gives the steps in the order conclusion, reason,
+qualification. The chain below runs from the management share through
+§ 108 to the court's need for the information.
+
+#+begin_src fspy
+# Rn. 13: treated like a partner (§ 108 HGB).
+argument stg_equated : (EquatedWithPartner [usufruct]).
+cut (ManagementShare [usufruct] -> EquatedWithPartner [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 13: so the register court must know of the usufruct.
+argument stg_court_info : (CourtNeedsInfo [usufruct]).
+cut (EquatedWithPartner [usufruct] -> CourtNeedsInfo [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 13: a public interest, i.e. a need.
+argument stg_need_court : (Need [usufruct]).
+cut (CourtNeedsInfo [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 14: the interest of legal dealings
+
+#+begin_quote
+Da auch der Rechtsverkehr ein berechtigtes Interesse daran hat zu
+wissen, wer innerhalb der Gesellschaft an der Beschlussfassung mitwirken
+kann, muss unter diesem Aspekt ebenfalls die Eintragungsfähigkeit des
+Nießbrauchs bejaht werden.
+#+end_quote
+
+/Translation./ Since legal dealings, too, have a legitimate interest in
+knowing who can take part in the partnership's resolutions,
+registrability must be affirmed under this aspect as well.
+
+#+begin_src fspy
+# Rn. 14: who co-determines is of legitimate interest to legal dealings.
+argument stg_need_codet : (Need [usufruct]).
+cut (CoDetermines [usufruct] -> Need [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 15-17: the executorship decision of the BGH
+
+#+begin_quote
+Eine Bestätigung findet diese Rechtsauffassung auch in der Entsch. des
+BGH v. 14. 2. 2012 – II ZB 15/11 [...] zur Eintragung der
+Dauertestamentsvollstreckung über den Nachlass eines Kommanditisten in
+das Handelsregister. Der BGH führt dort u.a. aus, [...] Das
+Handelsregister solle nach §§ 106 Abs. 2 Nr. 1, 107, 162 HGB auch Auskunft
+über die Personen geben, die an der Gesellschaft beteiligt seien. Sie
+hätten entscheidenden Einfluss auf die Geschicke der Gesellschaft.
+Deshalb habe der Rechtsverkehr ein berechtigtes Interesse, über diese
+Personen informiert zu werden. [...] Diese Grundsätze sind ohne Weiteres
+übertragbar auf den Nießbrauch an einem Kommanditanteil im Hinblick auf
+die zuvor dargelegten weitreichenden Mitwirkungsrechte des Nießbrauchers.
+#+end_quote
+
+/Translation./ This view is confirmed by the BGH's decision of
+14.2.2012 (II ZB 15/11) [...] on entering a long-term executorship over
+a limited partner's estate in the Commercial Register. The BGH states,
+among other things, [...] that under §§ 106 (2) no. 1, 107, 162 HGB the
+Commercial Register is also to inform about the persons taking part in
+the partnership. They have decisive influence on its fortunes, so legal
+dealings have a legitimate interest in being informed about them. [...]
+These principles carry over without more to the usufruct on a limited
+partner's interest, in view of the far-reaching rights of participation
+of the usufructuary set out above.
+
+AI NOTE: an analogy.
+- The BGH's holding (=bgh_exec_reg=) and the analogy schema
+  (=analogy_exec=) are given.
+- The court supplies the similarity: the usufruct shares the
+  executorship's relevant features because of the participation rights.
+- That similarity is what München II.2 f) attacks.
+
+#+begin_src fspy
+# Rn. 15-17: the BGH's executorship holding carries over.
+argument stg_analogy : (Registrable [usufruct]).
+cut (Registrable [executorship] -> LikeExecutorship [usufruct] -> Registrable [usufruct]) r.
+axiom analogy_exec.
+elim.
+axiom bgh_exec_reg.
+elim.
+next.
+axiom r.
+dixi.
+
+# Rn. 17: similar in view of the participation rights.
+argument stg_like_exec : (LikeExecutorship [usufruct]).
+cut (CoDetermines [usufruct] -> LikeExecutorship [usufruct]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+* Rn. 18: the order
+
+#+begin_quote
+Danach aber war der Beschl. der Rechtspflegerin v. 12. 11. 2012
+aufzuheben. [...]
+#+end_quote
+
+/Translation./ Accordingly, the order of 12.11.2012 was to be set aside.
+[...]
+
+* The court's debate
+
+The decision as a closed debate: the court's own arguments in its order,
+and its answers to the register court. =excl_needs_no_need= is the
+meta-norm's exception (=vocabulary.org=). The need that the court
+establishes defeats the restraint.
+
+#+begin_src fspy
+debate pro closed stg : Registrable [usufruct].
+stg_registrable.
+support stg_need_codet stg_registrable.
+support stg_codet_mgmt stg_need_codet.
+support stg_mgmt stg_codet_mgmt.
+support stg_codet_votes stg_need_codet.
+support stg_votes stg_codet_votes.
+support stg_codet_consent stg_need_codet.
+support stg_constitutive stg_codet_consent.
+support stg_need_court stg_registrable.
+support stg_court_info stg_need_court.
+support stg_equated stg_court_info.
+support stg_mgmt stg_equated.
+support stg_analogy stg_registrable.
+support stg_like_exec stg_analogy.
+attack rc_stg_restraint stg_registrable.
+undermine excl_needs_no_need rc_stg_restraint.
+attack rc_stg_no_need stg_need_codet.
+undermine stg_not_liab_only rc_stg_no_need.
+cedat tempus.
+#+end_src
+
+#+begin_src fspy :combined no
+label stg.
+evaluate stg.
+#+end_src

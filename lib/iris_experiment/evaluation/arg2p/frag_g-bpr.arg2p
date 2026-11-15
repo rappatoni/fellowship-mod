@@ -1,0 +1,11 @@
+graphBuildMode(aspic).
+a1 :-> consent1071.
+a2 :-> created_without.
+m_need : need => registrable.
+koe_restraint : ~(need) => -registrable.
+old_codet_1071 : consent1071 => codet.
+old_need_codet : codet => need.
+koe_no_codet : ~(constitutive) => -codet.
+stg_constitutive : consent1071 => constitutive.
+koe_not_constitutive : created_without => -constitutive.
+bp(registrable).

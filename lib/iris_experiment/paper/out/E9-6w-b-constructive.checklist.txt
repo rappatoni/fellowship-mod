@@ -1,0 +1,9 @@
+It suffices to check that for some o of type Order, o is the lawful order. Starting check decision_c:
+├─ witnessed by an interim order to submit the application in certified form
+├─ It suffices to check that an interim order to submit the application in certified form is the lawful order. Starting check b3:
+│  ├─ established: for all d of type Doc, d is missing implies an interim order to submit d is the lawful order (interim_rule)
+│  ├─ instantiating d with the application in certified form
+│  ├─ and
+│  ├─ unless something speaks against it: the application in certified form is missing
+│  └─ Check b3 completed (holds).
+└─ Check decision_c completed (holds).

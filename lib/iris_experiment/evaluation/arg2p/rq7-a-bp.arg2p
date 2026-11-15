@@ -1,0 +1,16 @@
+graphBuildMode(aspic).
+f1 :=> metanorm.
+meta : metanorm, passed -> duty.
+exam : registrable, submitted, correct, ~(demand_unmet) => passed.
+a1 :-> statute.
+reg_stat : statute -> registrable.
+face_value :=> correct.
+a2 :-> submitted.
+corr1 : duty -> claim.
+corr2 : claim -> duty.
+a5 :-> demanded.
+a6 :-> unrequired.
+court_extra : demanded, ~(improper) => demand_unmet.
+bgh_rule : claim -> limited.
+bgh_limit : limited, unrequired -> improper.
+bp(claim).

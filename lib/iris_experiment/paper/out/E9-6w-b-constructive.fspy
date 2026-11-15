@@ -1,0 +1,41 @@
+declare Order : type.
+declare interim : Doc -> Order.
+declare Missing : Doc -> bool.
+declare Lawful : Order -> bool.
+decorate interim : "an interim order to submit @arg1".
+decorate Missing : "@arg1 is missing".
+decorate Lawful : "@arg1 is the lawful order".
+declare interim_rule : (forall d:Doc, Missing [d] -> Lawful [interim d]).
+declare submitted_not_missing : (forall d:Doc, Submitted [d] -> ~Missing [d]).
+
+# The court's finding: some document the law requires is missing.
+argument finding : (exists d:Doc, Missing [d]).
+elim [d_appl].
+by default.
+dixi.
+
+counterargument finding_moot : (Missing [d_appl]).
+cut (forall d:Doc, Submitted [d] -> ~Missing [d]) r.
+axiom submitted_not_missing.
+elim [d_appl].
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+# The decision never names a document: it opens the finding and builds the order from it.
+argument decision_c : (exists o:Order, Lawful [o]).
+cut (exists d:Doc, Missing [d]) m.
+next.
+elim.
+cut (exists o:Order, Lawful [o]) k.
+elim [interim d].
+cut (forall d:Doc, Missing [d] -> Lawful [interim d]) r.
+axiom interim_rule.
+elim [d].
+elim.
+axiom.
+axiom r.
+axiom m.
+dixi.

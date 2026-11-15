@@ -1,0 +1,8 @@
+#+title: Smoke test: one document assembled from another
+#+property: header-args:fspy :tangle smoke_combined.fspy
+#+fspy_prelude: smoke_vocabulary.org
+#+fspy_include: smoke.org
+
+#+begin_src fspy
+label pArg.
+#+end_src

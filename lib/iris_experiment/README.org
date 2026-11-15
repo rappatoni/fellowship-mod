@@ -1,0 +1,222 @@
+#+title: IRIS follow-up: AIDA on registering a usufruct on a limited partner's interest
+#+language: en
+
+Research material for a short English follow-up paper to the IRIS 2026
+overview paper (=IRIS2026 V3 24.12.2025 clean version.docx=, DIREGA).
+It gives tentative answers to research questions 3, 4, 6 and 7 with
+AIDA. Task: =tasks.org=, task =aida-iris-usufruct=. The phases and their
+review gates are listed there.
+
+Authorship: the paper's prose is the authors'. These files hold:
+- the decision texts
+- AI draft translations marked =AI DRAFT TRANSLATION — not reviewed by a lawyer=
+- formalisations
+- comments marked =AI NOTE=
+
+* Layout
+
+| Path                    | What it holds                                                    |
+|-------------------------+------------------------------------------------------------------|
+| =sources/=              | the decision texts, one Org file each, paragraph IDs as =CUSTOM_ID= |
+| =glossary.org=          | German legal terms and proposed English renderings, with review status |
+| =analysis.org=          | Phase 1: argument maps, logic choice, conjunction encodings, spike |
+| =vocabulary.org=        | the shared signature every formalisation tangles first           |
+| =rq3-*.org=             | Phase 2: the four decisions, formalised in full; =rq3-debate-dynamics.org=: the course of a debate and its readers |
+| =rq4-gap-dynamics.org=  | RQ 4/8: the case law as one debate in time (open enumeration, open structure, revision) |
+| =rq4-6-7-metanorm.org=  | Phases 3-5: the meta-norm, the burden of proof and its processing (the court's order as output, witnesses rising to the top), the cycle (22 scenarios) |
+| =figures/=              | images written by =graph ... show=                               |
+| =paper-examples.org=, =paper/= | the extracts assembled for the paper: snippet, verdict, vanilla and check-list renderings, decorated figures (=paper/make_examples.py= writes =paper/out/=) |
+| =build/= (ignored)      | the tangled =.fspy= scripts                                      |
+| =evaluation/=           | Phase 7: =survey.org=, =comparison.org=, one directory per tool with its encodings and saved outputs, =run.sh= |
+
+* Building
+
+- =make iris= tangles every =*.org= here into =build/= with
+  =tools/tangle_fspy.py= and runs each script from =figures/= with this
+  checkout's Fellowship. This needs discourse referents, so the target
+  sets =ACDC_FSP= itself; override it with =IRIS_FSP=.
+- The tests (=tests/iris/=) need =ACDC_FSP= pointing at this checkout's
+  =wrap/fellowship/fsp= as well.
+- =make iris= does not run the other tools of the comparison. They are
+  installed outside the repository; =evaluation/run.sh= re-runs them, and
+  its header names the variables that point at each tool
+  (=evaluation/survey.org=, installation).
+
+A literate document marks its scripts like this:
+
+#+begin_example
+,#+property: header-args:fspy :tangle build/rq3-muenchen.fspy
+,#+fspy_prelude: vocabulary.org
+
+,#+begin_src fspy
+argument ... .
+,#+end_src
+#+end_example
+
+=#+fspy_prelude:= is ours. Org ignores it, and Emacs's own tangling
+leaves the vocabulary out. =:noweb yes= with =<<name>>= works as in
+Org.
+
+* Sources
+
+| Decision                                     | Text                     | Status                                      |
+|----------------------------------------------+--------------------------+---------------------------------------------|
+| OLG Stuttgart, 28.01.2013, 8 W 25/13         | =sources/olg-stuttgart-2013.org= | from DNotZ 2013, 793 (beck-online copy, 2026-11-13); the print omits Rn. 5 and the end of Rn. 18 |
+| OLG Oldenburg, 09.03.2015, 12 W 51/15        | =sources/olg-oldenburg-2015.org= | from MittBayNot 1/2016, 65 f.; to check against the print |
+| OLG München, 08.08.2016, 31 Wx 204/16        | =sources/olg-muenchen-2016.org=  | from MittBayNot 6/2016, 538 ff.; the print omits the end (=(…)=); the beck-online copy is the same print, so the full text (NZG 2016, 1064 / BeckRS 2016, 14495) is still unseen |
+| OLG Köln, 07.10.2019, 18 Wx 18/19            | =sources/olg-koeln-2019.org=     | from MittBayNot 4/2020, 368 f.; columns re-ordered by hand |
+
+The beck-online PDFs the author added (2026-11-13) stay local: =*.pdf=
+is ignored, and beck-online reserves text and data mining; only the
+courts' own text (§ 5 UrhG) is reproduced in the Org files.
+
+AI NOTE: the MittBayNot prints may abridge the reasons. The München
+print ends with =(…)= after II.2 g) bb). Where a full official text
+turns up (juris, beck-online via FAU), compare the two. Note also the
+Köln contract's citation "OLG Stuttgart, Beschluss vom 28.1.2019" in
+Rn. 1: it is the parties' wording, with the year wrong for 2013.
+
+* References checked (2026-11-13)
+
+- J. R. Hobbs, "Ontological Promiscuity", Proc. 23rd ACL, 1985, 60-69, doi:10.3115/981210.981218.
+- L. Robaldo, X. Sun, "Reified Input/Output logic: Combining Input/Output logic and Reification to represent norms coming from existing legislation", J. Logic and Computation 27(8), 2017, 2471-2503, doi:10.1093/logcom/exx009.
+- L. Robaldo, C. Bartolini, M. Palmirani, A. Rossi, M. Martoni, G. Lenzini, "Formalizing GDPR provisions in reified I/O logic: the DAPRECO knowledge base", J. Logic, Language and Information 29(4), 2020, 401-449, doi:10.1007/s10849-019-09309-z.
+- M. J. Sergot, "A computational theory of normative positions", ACM Trans. Computational Logic 2(4), 2001, 581-622, doi:10.1145/502166.502172.
+- W. N. Hohfeld, "Some Fundamental Legal Conceptions as Applied in Judicial Reasoning", Yale Law Journal 23(1), 1913, 16-59. (Standard citation, not re-checked online.)
+
+AI NOTE on the burden of proof (for Phase 4, needs legal review):
+- Register proceedings are FamFG proceedings, where the court inquires
+  ex officio (§ 26 FamFG). So there is no burden of proof on a party in
+  the adversarial sense.
+- What remains is the objective burden: who bears the risk that a fact
+  stays unproven. To that are added the limits of the inquiry: the
+  presumption that reported facts are correct, and the documents the law
+  requires the applicant to submit.
+- The IRIS draft's § 3.1 describes exactly these limits. Phase 4 should
+  name them in these terms rather than as a civil-procedure burden.
+
+* Review log
+
+| Gate | Date | Reviewer | Verdict |
+|------+------+----------+---------|
+| R0   | 2026-11-13 | author | partial: "burden of proof" settled; continue |
+| R1   | 2026-11-13 | author | logic split, helper encoding, no switch needed; go ahead with Phase 2 |
+| R2   |      |          |         |
+| R3-R5 |     |          |         |
+| R6   |      |          |         |
+| R7   |      |          |         |
+
+Phase 2 results: =rq3-combined.org= (section Results) and the verdicts
+under each fragment in =rq3-fragments.org=. Phases 3-5: the Results
+section under each layer of =rq4-6-7-metanorm.org=. Phase 7:
+=evaluation/comparison.org=.
+
+* Extracts for the paper (Phase 6)
+
+AI NOTE: candidate extracts, each a snippet, a figure and a verdict line,
+with the claim it could support. =paper-examples.org= assembles them
+with their renderings (vanilla and English check list) and decorated
+figures. The claims are for the authors to adopt
+or reject, and every legal reading still needs review.
+
+** E1 (RQ 3): both outcomes as stable labellings
+- Snippet: =rq3-fragments.org=, fragment (g): the 10-line closed debate.
+- Figure: =figures/frag_g_graph.png=.
+- Verdict: three stable labellings, one con (München, Köln) and two pro
+  (Stuttgart, Oldenburg); skeptically open; grounded undecided. The same
+  pattern holds across all four decisions in one document: 5 stable
+  labellings, 1 con and 4 pro (=rq3-combined.org=, Results).
+- Claim: the IRIS § 2.2.2 hypothesis, that each court's position is an
+  extension of one framework, holds for the four decisions. The courts
+  part at two points only: the effect of the § 1071 consent right, and
+  the executorship analogy.
+
+** E2 (RQ 3): refutation as burden allocation
+- Snippet: fragment (a), München against the liability ground.
+- Figure: =figures/frag_a_graph.png=.
+- Verdict: a value, resting on =!IN:Excluded usufruct=.
+- Claim: a court that only rebuts the grounds offered still decides the
+  case, because the restraint is presumed and the need is owed. AIDA
+  shows this as which sites are delegations and which obligations.
+
+** E3 (RQ 4): the gap as a delegation
+- Snippet: =rq4-6-7-metanorm.org=, block =duty=, against =duty_owed=.
+  The two differ in one line: =by default.= at the meta-norm.
+- Verdict: delegated, a value with =!IN:MetaNorm= in the normal form;
+  owed, open with =MetaNorm= OUT. A positivist objection and the IRIS
+  draft's answer (the written rules presuppose the meta-norm) move the
+  verdict as expected (4c, 4d).
+- Claim: an unwritten norm the written law presupposes can be
+  represented as a delegation. The verdict then names the gap it rests
+  on, and the gap stays open to argument.
+
+** E4 (RQ 6): the burden of proof per requirement
+- Snippet: block =requirements= and the table of who must act.
+- Figure: =figures/duty_graph.png= (scenario 6a).
+- Verdict: complete application: a value; missing document: open with
+  the missing item named (the interim order); justified doubt: open;
+  doubt answered by proof: a value. No opposing presumptions in any
+  scenario.
+- Claim: the burden of proof, in the general sense of what the applicant
+  must show and what the court must examine, becomes the polarity of
+  single sites: a presumed or an owed refutation. Its shift after a
+  justified doubt needs no further machinery.
+
+** E5 (RQ 7): the circle between claim and scope of examination
+- Snippet: block =cycle=.
+- Figure: =figures/claim_graph.png= (scenario 7a).
+- Verdict: alone, grounded undecided and two stable labellings (claim,
+  limited scope and duty all IN, or all OUT); with an independent anchor,
+  a value (a presumption from case law, or strict from a statute as in
+  § 38 AktG); with a doubt, the claim is OUT.
+- Claim: the circular justification the BGH line uses is represented
+  without refusal, as two founded readings. An independent anchor
+  decides it, and the graph shows whether that anchor is written law or
+  a presumption.
+
+** E6 (evaluation): the same material in six other systems
+- Snippet: the results matrix of =evaluation/comparison.org=.
+- Claim: all systems reach the RQ 4 and RQ 6 verdicts, but they state the
+  burden in different places. On the core of the RQ 3 dispute three of
+  them decide by tie-breaking. On the RQ 7 circle they range from two
+  readings to non-termination.
+
+** E7 (RQ 3): a decision as a course of moves
+- Snippet: =rq3-debate-dynamics.org=, the traced Oldenburg debate.
+- Verdict: open, open, value, value, value, value, open, value, value,
+  value, open, value: each objection of the register court opens the
+  issue, and each answer closes it.
+- Claim: a suitable model keeps the decision's order of objections and
+  answers. AIDA shows it as the state of the debate after every move.
+
+** E8 (RQ 4, RQ 8): the gap as a process
+- Snippet: =rq4-gap-dynamics.org=, the case law from the register court
+  (2012) to Köln (2019) as one debate.
+- Verdict: closed by the restraint; filled for the usufruct by Stuttgart
+  and Oldenburg (one labelling, registrable); contested from München on
+  (5 labellings, 1 con).
+- Claim: gaps are closed tentatively and revised. With an append-only
+  record whose statuses change, open enumeration is one more supporting
+  argument per example, open structure is one more denial per added
+  necessary condition, and what stays open is what the latest decisions
+  dispute.
+
+** E9 (RQ 6, "verarbeiten"): the court's order as the evaluation's output
+- Snippet: =rq4-6-7-metanorm.org=, layer 2b (block =orders=).
+- Verdict: the witness is the entry order (complete application, or
+  doubt cleared), the submission order (application missing), or the
+  proof order (register contradicts the report). It comes with a
+  certificate whose delegations mark what the court presumed.
+- Claim: once the debate is complete, the burden of proof is processed.
+  The evaluation returns the order to issue, and its unmet obligations
+  are the content of an interim order.
+- Further (layer 2c): the witness rises to the top even where the
+  argument does not name it.
+  - Constructively: =decision_c= opens the finding "some required
+    document is missing", and cut elimination puts =interim d_appl= at
+    the head of the normal form.
+  - Classically: =decision_k= proves that some order is lawful through an
+    argued Peirce step without deciding whether the entry is owed. The
+    labelling decides, and the normal form shows =o_entry= or =o_submit=
+    accordingly.
+

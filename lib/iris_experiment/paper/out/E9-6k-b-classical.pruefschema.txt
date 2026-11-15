@@ -1,0 +1,9 @@
+Es genügt zu prüfen, dass es gibt ein o vom Typ Order, so dass o is the lawful order. Beginn der Prüfung alt14:
+├─ belegt durch an interim order to remedy the application
+├─ Für an interim order to remedy the application is the lawful order ist es hinreichend, dass the register court owes the applicants the entry applied for impliziert false gilt. Beginn der Prüfung b1:
+│  ├─ weil
+│  │  └─ es liegt vor: the register court owes the applicants the entry applied for impliziert false impliziert an interim order to remedy the application is the lawful order (remedy_rule)
+│  ├─ und
+│  │  └─ sofern nichts entgegensteht: the register court owes the applicants the entry applied for impliziert false
+│  └─ Prüfung b1 abgeschlossen.
+└─ Prüfung alt14 abgeschlossen (bejaht).

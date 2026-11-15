@@ -1,0 +1,196 @@
+#+title: OLG München, Beschluss vom 8.8.2016, 31 Wx 204/16
+#+language: de
+
+Source: MittBayNot 6/2016, 538-540 (Nr. 14), notare.bayern.de; also NZG 2016, 1064.
+Outcome: appeal dismissed; usufruct on a limited partner's interest not registrable.
+The print ends with =(…)=: the costs part and possibly further reasons are omitted.
+
+Text as printed; page headers removed, hyphenation joined, the
+two-column order restored by hand where the print interleaves columns.
+=(…)= marks omissions made by the printing journal, not by us. The
+journal's headnote (Leitsatz) and any annotation are not reproduced
+(they are not official works, § 5 UrhG); they are cited only.
+Retrieved 2026-11-13. Checked against the print by: (pending, author).
+
+* Sachverhalt 1 (Anmeldung)
+:PROPERTIES:
+:CUSTOM_ID: muc-s1
+:END:
+
+1. Es liegt folgende Anmeldung vom 26.2.2016 zur Eintragung ins Handelsregister vor: „1. Der Kommanditist Rudolf E. (…) hat von seiner Kommanditeinlage i. H. v. 100.000 €
+
+* Sachverhalt 1 a)
+:PROPERTIES:
+:CUSTOM_ID: muc-s1a
+:END:
+
+a) einen Teilkommanditanteil von 45.000 € im Wege der Sonderrechtsnachfolge an seine Tochter Frau Anna E (…)
+
+* Sachverhalt 1 b)
+:PROPERTIES:
+:CUSTOM_ID: muc-s1b
+:END:
+
+b) einen Teilkommanditanteil i. H. v. 45.000 € im Wege der Sonderrechtsnachfolge auf seinen Sohn Herrn Rudolf E. jun. (…) übertragen, die dadurch jeweils mit einer Kommanditeinlage i. H. v. 45.000 € in die Gesellschaft eingetreten sind. Die Kommanditeinlage des Herrn Rudolf E. sen. i. H. v. 100.000 € wurde dadurch von 100.000 € um 90.000 € auf 10.000 € herabgesetzt.
+
+* Sachverhalt 1 (Anmeldung, Ziff. 2)
+:PROPERTIES:
+:CUSTOM_ID: muc-s1-2
+:END:
+
+2. Herr Rudolf E. sen. hat sich an den vorbezeichneten Teilkommanditeinlagen von Frau Anna E. und Herrn Rudolf E. jun. jeweils einen Nießbrauch auf Lebzeit einräumen lassen. Ein inhaltsgleicher Nießbrauch ist jeweils auf seine Ehefrau Maria E. (…), aufschiebend bedingt auf das Ableben von Herrn Rudolf E. sen., vereinbart. (…)“
+
+* Sachverhalt 2 (Registergericht)
+:PROPERTIES:
+:CUSTOM_ID: muc-s2
+:END:
+
+2. Das Registergericht hat mit Beschluss vom 5.4.2016 den Antrag auf Eintragung der Belastung der Kommanditanteile mit einem Nießbrauch zurückgewiesen. Zur Begründung führt es aus, die Eintragung eines Nießbrauchs am Kommanditanteil ins Handelsregister sei gesetzlich nicht vorgesehen. Eine Eintragung sei daher nur dann möglich, wenn ein erhebliches Interesse des Rechtsverkehrs hinsichtlich der einzutragenden Tatsache bestehe. Dies sei im vorliegenden Fall nicht gegeben. Da nach wohl überwiegender Meinung eine Haftung des Nießbrauchers nicht angenommen werde, sei die Eintragung zur Wiedergabe der Haftungslage nicht angezeigt. Der Registerklarheit werde der Vorzug geben.
+
+* Sachverhalt 3 (Beschwerde)
+:PROPERTIES:
+:CUSTOM_ID: muc-s3
+:END:
+
+3. Hiergegen wendet sich die Beschwerdeführerin mit der Begründung, dem Antrag auf Eintragung des Nießbrauchs am Kommanditanteil sei deswegen stattzugeben, da für dessen Eintragung ein erhebliches Bedürfnis des Rechtsverkehrs bestehe. Nießbraucher und Gesellschafter bildeten eine Rechtsgemeinschaft und seien dementsprechend gemeinsam an dem Kommanditanteil berechtigt. Der Nießbraucher habe insbesondere ein eigenes Stimmrecht bei allen Beschlüssen der Gesellschaft über die laufenden Angelegenheiten der Gesellschaft. Darüber hinaus seien Maßnahmen wie z. B. Kündigung oder Auflösung der Gesellschaft ohne Mitwirkung des Nießbrauchers nicht wirksam (§ 1071 BGB). Im Hinblick auf diese Verwaltungs- und Mitbestimmungsrechte müsse der Nießbrauch am Kommanditanteil ins Handelsregister eingetragen werden. Darüber hinaus hafte der Nießbraucher unter Umständen auch im Außenverhältnis.
+
+* Sachverhalt 4 (Nichtabhilfe)
+:PROPERTIES:
+:CUSTOM_ID: muc-s4
+:END:
+
+4. Das Registergericht hat der Beschwerde mit der Begründung nicht abgeholfen, dass für die Frage des Interesses des Rechtsverkehrs an der Eintragung einer Tatsache ins Handelsregister es in erster Linie auf die Haftungslage ankomme. Der Ansicht, der Nießbraucher hafte auch im Außenverhältnis gegenüber Dritten, könne nicht gefolgt werden.
+
+* II
+:PROPERTIES:
+:CUSTOM_ID: muc-ii
+:END:
+
+II. Die zulässige Beschwerde hat in der Sache keinen Erfolg. Das Registergericht hat die Eintragung des Nießbrauchs an einem Kommanditanteil im Ergebnis zu Recht abgelehnt.
+
+* II.1 ¶1
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-1-p1
+:END:
+
+1. Gemäß § 162 Abs. 1 HGB sind nur die Bezeichnung der Kommanditisten und die betragsmäßige Einlage eines jeden Kommanditisten ins Handelsregister einzutragen. Der Eintrag des Nießbrauchs auf einen Kommanditanteil ist indes gesetzlich nicht vorgesehen. Insoweit handelt es sich bei der Bestellung eines Nießbrauchs an einem Kommanditanteil weder um eine eintragungspflichtige noch um eine kraft Gesetzes eintragungsfähige Tatsache. Eintragungsfähig ohne Anmeldepflicht sind kraft Gesetzes nur wenige ausdrücklich genannte Tatsachen (Baumbach/Hopt, HGB, 36. Aufl. 2014, § 8 HGB Rdnr. 5 a. E.).
+
+* II.1 ¶2
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-1-p2
+:END:
+
+Es ist anerkannt, dass eine Tatsache allerdings auch ohne gesetzliche Normierung eintragungsfähig sein kann (vgl. Baumbach/Hopt, a. a. O., § 8 Rdnr. 5 a. E.). Das Handelsregister hat die Aufgabe, wesentliche Rechtsverhältnisse der Unternehmer und Unternehmen zu offenbaren und über im Handelsverkehr rechtserhebliche Tatsachen zutreffend Auskunft zu geben (sog. Publizitätsfunktion; vgl. Schaub in Ebenroth/Boujong/Joost/Strohn, HGB, 3. Aufl. 2014, § 8 Rdnr. 44). Dies ist jedoch nicht im Sinne einer Vollständigkeitsgewähr zu verstehen, denn ein lückenloses Bild der Unternehmer und Unternehmen kann das Register schon deshalb nicht vermitteln, weil es sonst unübersichtlich würde und seine Funktion, rasche und verständliche Informationen zu bieten, nicht erfüllen könnte (Schaub in Ebenroth/Boujong/Joost/Strohn, a. a. O., Rdnr. 45). Nur in dem so begrenzten Rahmen können durch Auslegung gesetzlicher Vorschriften, durch Analogie oder richterliche Rechtsfortbildung bestimmte Tatsachen auch ohne gesetzliche Normierung als eintragungsfähig angesehen werden (OLG Düsseldorf, ZIP 2010, 227 ff., 228; Schaub in Ebenroth/Boujong/Joost/Strohn, a. a. O., Rdnr. 72). Dabei muss den eine gesetzlich nicht normierte Eintragungsfähigkeit begründenden Umständen im Einzelfall eine derartige Bedeutung zukommen, dass die Gefahr der Überfrachtung des Handelsregisters zurückzutreten hat. Es muss mithin ein unabweisbares Bedürfnis für ihre Eintragung bestehen (OLG Düsseldorf, a. a. O.; Staub/Koch, Großkommentar HGB, 5. Aufl. 2009, § 8 Rdnr. 46.). Dabei ist dem Grundsatz der Registerklarheit, der Ausfluss der strengen Formalisierung des Registerrechts ist, in besonderer Weise Rechnung zu tragen. Das Handelsregister soll nicht unübersichtlich und in sich widersprüchlich werden. Es soll auch nicht zum Sammelsurium aller möglichen denkbaren Eintragungen werden, an denen der Rechtsverkehr ein wie auch immer geartetes wirtschaftliches Interesse hat (Keidel/Heinemann, FamFG, 18. Aufl. 2014, § 374 Rdnr. 14). Das Handelsregister soll insbesondere und in erster Linie über Unternehmensformen, ihre jeweilige konkrete Ausgestaltung sowie Vertretung- und Haftungsverhältnisse Auskunft geben. Interessierte Dritte sollen über wesentliche Tatsachen, die für den Rechtsverkehr mit Einzelkaufleuten und Handelsgesellschaften von Bedeutung sind, Auskunft geben (Fleischhauer/Preuß, Handelsregisterrecht, 3. Aufl. 2013, Rdnr.4).
+
+* II.1 ¶3
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-1-p3
+:END:
+
+Im Hinblick auf die strenge Formalisierung des Registerrechts ist daher mit gesetzlich nicht vorgesehenen Eintragungen große Zurückhaltung geboten. Insbesondere darf dadurch das Handelsregister nicht unübersichtlich werden oder zu Missverständnissen Anlass geben (BGH, NJW 1998, 1071, 1072).
+
+* II.2
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2
+:END:
+
+2. Unter Zugrundelegung dieser Grundsätze stellt der Nießbrauch an einem Kommanditanteil nach Auffassung des Senats keine eintragungsfähige Tatsache dar. Denn ein unabweisbares Bedürfnis des Rechtsverkehrs an der Eintragung des Nießbrauchs an einem Kommanditanteil vermag der Senat nicht zu erkennen.
+
+* II.2 a)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-a
+:END:
+
+a) Es ist in Rechtsprechung und Literatur anerkannt, dass die Bestellung eines Nießbrauchs an einem Kommanditanteil rechtlich zulässig ist (Baumbach/Hopt, a. a. O., § 105 Rdnr. 44; BGH, BB 1975, 295, 296). Dabei handelt es sich bei einem Nießbrauch an einem Kommanditanteil um einen Nießbrauch an einem Recht gemäß §§ 1068 ff. BGB. Der Nießbraucher erhält zwar ein dingliches Nutzungsrecht, wird aber nicht selbst Gesellschafter (BGH, NJW 1999, 571, 572; Wertenbruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., § 105 ff. Rdnr. 228). Inhalt seines Nutzungsrechts sind vor allem die Früchte der Mitgliedschaft des Gesellschafters an der Gesellschaft (BGHZ 58, 316, 320). Aus dem Nießbrauch folgt das Recht des Nießbrauchers, die Erträge und sonstigen Vorteile zu ziehen, die der Kommanditanteil bestimmungsgemäß gewährt, § 1068 Abs. 2, § 1030 i. V. m. § 99 Abs. 2, § 100 Alt. 2 BGB. Dazu gehören die entnahmefähigen Gewinne einschließlich der Zinsen, die von der Gesellschaft auf die Guthaben der Gesellschafterprivatkonten gewährt werden (BGHZ 58, 316, 320). Dagegen hat er keinen Anspruch auf nicht entnahmefähige Gewinne, die als Rücklage auf ein Kapitalkonto gebucht oder zur Kapitalerhöhung aus Gesellschaftsmitteln verwendet werden (BGHZ 58, 316, 321). Als bestimmungsgemäßer, dem Nießbraucher zustehender Ertrag ist demgemäß nur der von den Gesellschaftern nach Bildung etwaiger Rücklagen als „Überschuss“ erklärte und damit zur Ausschüttung freigegebene Anteil am Gesellschaftsvermögen zu verstehen (BGH, BB 1975, 295, 296).
+
+* II.2 b)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-b
+:END:
+
+b) Nicht zu den Erträgen oder Gebrauchsvorteilen des Kommanditanteils und der damit verbundenen Gesellschafterstellung des Bestellers gehören die dem Gesellschafter als Ausfluss seiner Mitgliedschaft in der Gesellschaft zustehenden Mitverwaltungsrechte (BGH, BB 1975, 295, 296). Das Gesetz enthält – vom Zustimmungserfordernis des § 1071 BGB abgesehen – keine Regelung über eine Aufteilung von Befugnissen zwischen Nießbraucher und bestellendem Gesellschafter. Zwar sind diesbezüglich Vereinbarungen zwischen bestellendem Gesellschafter und Nießbraucher möglich und zulässig, wonach dem Nießbraucher Verwaltungsbefugnisse eingeräumt werden können. Fehlt es aber – wie hier – an einer solchen Vereinbarung, so steht das Stimmrecht ausschließlich dem Gesellschafter zu. Dies gilt jedenfalls nach der Rechtsprechung des BGH immer für solche Beschlüsse, die die Grundlagen der Gesellschaft betreffen, wozu der BGH auch die Beschlussfassung über den Jahresabschluss zählt (BGH, NJW 1999, 571, 572). Nach Auffassung des Senats besteht aber auch im Hinblick auf die laufenden Angelegenheiten der Gesellschaft grundsätzlich keine gesellschaftsrechtliche Mitwirkungsbefugnis des Nießbrauchers. Das Stimmrecht steht auch hier – vorbehaltlich möglicher abweichender Vereinbarungen – grundsätzlich ausschließlich dem Gesellschafter zu. Dies folgt letztlich auch daraus, dass die Haftung gemäß § 128 HGB nur den Gesellschafter trifft und eine Zuweisung von Mitverwaltungsrechten ohne gesonderte Vereinbarung die Substanz der Mitgliedschaft in der Gesellschaft berührt (BGH, NJW 1999, 571, 572; Wertenbruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., § 105 Rdnr. 235; Karsten Schmidt, ZGR 1999, 601 ff., 610). Dem Nießbraucher stehen allerdings eigene Informations- und Kontrollrechte zur Sicherung seines Fruchtziehungsrechts zu, die ihm jedoch nicht ohne Weiteres Einfluss auf Entscheidungen der Gesellschafter verschaffen und daher für sich genommen auch kein unabweisbares Bedürfnis für eine Eintragung des Nießbrauchs an einem Kommanditanteil ins Handelsregister begründen können.
+
+* II.2 c)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-c
+:END:
+
+c) Lediglich bei bestandsgefährdenden Maßnahmen des Gesellschafters – das sind Gesellschafterbeschlüsse oder Verfügungen des Gesellschafters, die den Nießbrauch unmittelbar in seinem Bestand betreffen – sieht § 1071 BGB die Zustimmung des Nießbrauchers vor. Jedoch berührt die fehlende Zustimmung des Nießbrauchers die gesellschaftsrechtliche Wirksamkeit einer ohne Zustimmung des Nießbrauchers erfolgten Maßnahme der Gesellschafter nicht. Sie kann nur eine Schadensersatzpflicht des bestellenden Gesellschafters gegenüber dem Nießbraucher herbeiführen (OLG Düsseldorf, NJW-RR 1999, 619, 620). Der Nießbraucher hat vielmehr Beschlüsse der Gesellschafter, die ohne seine an sich nach § 1071 BGB erforderliche Zustimmung ergangen sind, hinzunehmen, wenn diese von der Mehrheit der Gesellschafter ohne oder gegen die Stimme des bestellenden Gesellschafters gefasst werden können. Insoweit stehen dem Nießbraucher nicht mehr Rechte zu als dem bestellenden Gesellschafter (Baumbach/Hopt, a. a. O., § 105 HGB Rdnr. 46).
+
+* II.2 d)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-d
+:END:
+
+d) Der Senat teilt die Auffassung der herrschenden Meinung, dass den Nießbraucher keine persönliche Haftung trifft. Diese trifft gemäß §§ 128, 171 Abs. 1 HGB nur den Kommanditisten in dem gesetzlich bestimmten Umfang, nicht den Nießbraucher. Eine Haftung des Nießbrauchers im Außenverhältnis im Umfang der §§ 128, 171 Abs. 1 HGB besteht schon im Hinblick auf seine fehlende Gesellschafterstellung nicht (MünchKomm-BGB/Pohlmann, 6. Aufl. 2013, § 1068 Rdnr. 67 m. w. N.; Wertenbruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., § 105 HGB Rdnr. 237). Die Haftung ist vielmehr an die Gesellschafterstellung gebunden. Auch aus den gesetzlichen Bestimmungen über den Nießbrauch lässt sich keine Grundlage für eine Haftung des Nießbrauchers im Außenverhältnis entnehmen. Zum Zwecke der Verlautbarung der Haftungsverhältnisse ist daher ein Registereintrag nicht veranlasst (Wertebruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., § 105 HGB Rdnr. 238).
+
+* II.2 e)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-e
+:END:
+
+e) Auch zum Zwecke der Verlautbarung der Vertretungsverhältnisse ist die Eintragung des Nießbrauchs an einem Kommanditanteil nicht geboten (Wertenbruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., Rdnr. 238). An der organschaftlichen Vertretung der Gesellschaft ist der Nießbraucher nicht beteiligt. Denn der Kommanditist ist grundsätzlich weder zur Geschäftsführung (§ 164 HGB) noch zur Vertretung der Gesellschaft (§ 170 HGB) berechtigt bzw. ermächtigt. Da die Rechte des Nießbrauchers aber nicht weitergehen können als die des Gesellschafters selbst, kann ein Nießbraucher grundsätzlich weder die Geschäfte der Gesellschaft führen noch diese rechtswirksam nach außen vertreten.
+
+* II.2 f)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-f
+:END:
+
+f) Aus der Entscheidung des BGH zur Eintragungsfähigkeit eines Testamentsvollstreckervermerks bei Dauertestamentsvollstreckung über den Nachlass eines Kommanditisten (BGH, ZIP 2012, 623) lässt sich die Eintragungsfähigkeit eines Nießbrauchs an einem Kommanditanteil nicht ableiten.
+
+* II.2 f) aa)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-f-aa
+:END:
+
+aa) Als maßgeblich für die Eintragungsfähigkeit eines Testamentsvollstreckervermerks hat der BGH angesehen, dass der Testamentsvollstrecker – soweit die Testamentsvollstreckung an einem Gesellschaftsanteil zulässig ist – materiellrechtlich Inhaber der gesamthänderischen Verfügungsbefugnis ist. Er kann grundsätzlich die mit der Beteiligung verbundenen Mitgliedschaftsrechte ausüben. Allein der Testamentsvollstrecker ist – soweit der Erblasser ihm nicht nur beschränkte Rechte eingeräumt hat – nach §§ 2205, 2211 BGB befugt, die Rechte und Pflichten der Erben hinsichtlich des Kommanditanteils auszuüben und über den Anteil zu verfügen. Eine sich aus dem Gesellschaftsrecht ergebende Einschränkung besteht lediglich insoweit, als er die persönliche und nicht auf den Nachlass beschränkbare Haftung der Kommanditistenerben nach §§ 128, 171, 172 Abs. 4 HGB nicht erweitern darf. Das der Testamentsvollstreckung unterliegende Nachlassvermögen, somit auch der Kommanditanteil, dient während der Dauer der Testamentsvollstreckung nur den Nachlassgläubigern, nicht auch den Eigengläubigern des Gesellschaftererben als Haftungsmasse. Insoweit entfaltet die Testamentsvollstreckung eine unmittelbare haftungsrechtliche Außenwirkung. Ein Interesse des Rechtsverkehrs an der Verlautbarung der Testamentsvollstreckung besteht nach Auffassung des BGH auch insofern, als der Testamentsvollstrecker nicht berechtigt ist, die Haftsumme des Kommanditistenerben zu erhöhen, jedenfalls ohne dessen dadurch ausgelöste persönliche Haftung mittels einer Leistung aus dem Nachlass sogleich auszuschließen (BGH, a. a. O.).
+
+* II.2 f) bb)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-f-bb
+:END:
+
+bb) Insoweit besteht ein wesentlicher Unterschied zwischen Nießbrauch und Testamentsvollstreckung. Der Nießbrauch entfaltet weder eine haftungsrechtliche Außenwirkung noch stehen dem Nießbraucher die einem Testamentsvollstrecker vergleichbaren Rechte zu. Sofern hinsichtlich eines Kommanditanteils Testamentsvollstreckung angeordnet ist, muss ein Gesellschaftsgläubiger, der den Kommanditisten nach § 171 BGB persönlich in Anspruch nehmen will, den Testamentsvollstrecker als Partei kraft Amtes verklagen. Gerade dieser Umstand rechtfertigt die Eintragung eines Testamentsvollstreckervermerks ins Handelsregister (Wertenbruch in Ebenroth/Boujong/Joost/Strohn, a. a. O., § 105 Rdnr. 238). Eine solche, dem Testamentsvollstrecker vergleichbare materiellrechtliche Stellung hat der Nießbraucher nicht inne bzw. es besteht bei der Bestellung des Nießbrauchs keine vergleichbare prozessuale Lage.
+
+* II.2 f) cc)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-f-cc
+:END:
+
+cc) Da somit regelmäßig weder im Hinblick auf die Vertretungsverhältnisse noch im Hinblick auf die Haftungsverteilung ein signifikanter Einfluss des Nießbrauchers besteht, ist nicht ersichtlich, worin ein unabweisbares Interesse des gesamten Rechtsverkehrs an der Eintragung des Nießbrauchs an einem Kommanditanteil begründet sein soll.
+
+* II.2 g)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-g
+:END:
+
+g) Es besteht nach Auffassung des Senats auch kein erhebliches praktisches Bedürfnis und kein über ein allgemeines Informationsinteresse hinausgehendes erhebliches Interesse des Rechtsverkehrs an einer solchen Eintragung (BGH, NJW 2015, 1303).
+
+* II.2 g) aa)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-g-aa
+:END:
+
+aa) Hielte man die Eintragungsfähigkeit des Nießbrauchs an einem Kommanditanteil unter Bezugnahme auf ein unabweisbares Bedürfnis für zulässig, so müsste generell ein solches unabweisbares Bedürfnis des Rechtsverkehrs an einer Eintragung ins Handelsregister auch bezüglich solcher Tatsachen bejaht werden, bezüglich derer ein erhebliches (Informations-)Interesse des Rechtsverkehrs an den mit der Eintragung solcher Tatsachen einhergehenden Informationen besteht. So wären Informationen über das Erlöschen der Geschäftsfähigkeit eines Gesellschafters oder über das Bestehen einer Betreuung bezüglich eines Gesellschafters für den Geschäftsverkehr ebenso von Interesse wie das Bestehen von Testamentsvollstreckung hinsichtlich eines GmbH-Gesellschaftsanteils oder der Stellvertreterzusatz bei stellvertretenden GmbH-Geschäftsführern. Indes sind all diese Tatsachen auch nach der Rechtsprechung des BGH nicht eintragungsfähig, obwohl das Interesse des Rechtsverkehrs von diesen Tatsachen Kenntnis zu erlangen, nicht zu bestreiten ist (Baumbach/Hopt, a. a. O., § 8 Rdnr. 5).
+
+* II.2 g) aa) (1)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-g-aa-1
+:END:
+
+(1) Zur Eintragung eines – auch fakultativen – Stellvertreterzusatzes eines GmbH-Geschäftsführers führt der BGH aus, dass sich eine Eintragung des Stellvertreterzusatzes auch nicht damit begründen lässt, dass es für einen Dritten wichtig sein könne, zu wissen, ob er mit einem nur stellvertretenden Geschäftsführer in Verbindung trete, weil er sich unter Umständen die Einrede der Arglist entgegenhalten lassen müsse, wenn er die Überschreitung der Geschäftsführungsbefugnis des Stellvertreters bei Anwendung der erforderlichen Sorgfalt hätte erkennen können (BGH, NJW 1998, 1071, 1072).
+
+* II.2 g) aa) (2)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-g-aa-2
+:END:
+
+(2) In der Entscheidung vom 24.2.2015 (BGH, GmbHR 2015, 526-531) führt der BGH aus, ein Testamentsvollstreckervermerk gehöre nicht zu den gesetzlich vorgesehenen Angaben in einer Gesellschafterliste (§ 40 Abs. 1 Satz 1 GmbHG), weshalb das Registergericht die Aufnahme einer mit einem Testamentsvollstreckervermerk versehenen Gesellschafterliste ablehnen könne. Es stehe nicht im Belieben der Beteiligten, den Inhalt der von ihnen eingereichten Gesellschafterliste abweichend von den gesetzlichen Vorgaben um weitere, ihnen sinnvoll erscheinende Bestandteile freiwillig zu ergänzen. Dem stehe der Grundsatz der Registerklarheit entgegen. Es liege im Interesse des Rechtsverkehrs, dass die abrufbaren Informationen übersichtlich und geordnet seien, um Missverständnisse zu vermeiden. Würden solche Eintragungen ins Belieben der Beteiligten gestellt, erhöhe dies die Gefahr von Unverständlichkeit und Unübersichtlichkeit des Handelsregisters. Es genüge für die Aufnahme weiterer Angaben ins Handelsregister nicht, dass es sich um für Dritte im Hinblick auf weitere Nachforschungen „sinnvolle“ Informationen handeln kann. Das Handelsregister sei nicht als allgemeines Register zur Information des Rechtsverkehrs über die Verhältnisse in der Gesellschaft ausgestaltet.
+
+* II.2 g) bb)
+:PROPERTIES:
+:CUSTOM_ID: muc-ii-2-g-bb
+:END:
+
+bb) In diesem Sinn kann das Handelsregister nicht eine allgemeine Sammelstelle für Informationen betreffend Kaufleute und Handelsgesellschaften sein. Vielmehr darf es nur Eintragungen enthalten, die für den Rechts- und Geschäftsverkehr von essentieller Bedeutung sind und insbesondere Angaben über Vertretungs- und Haftungsverhältnisse enthalten. Das Register muss klar geordnet, übersichtlich und verständlich sein. Der Grundsatz der Registerklarheit hat daher regelmäßig Vorrang vor dem Interesse des Rechts- und Geschäftsverkehrs an umfassenden Informationen über Kaufleute und Handelsgesellschaften. Demgemäß ist für die Eintragung eines Nießbrauchs an einem Kommanditanteil ins Handelsregister kein Raum.
+

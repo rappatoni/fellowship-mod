@@ -1,0 +1,18 @@
+## frag_g: with the target
+% QUERY:?- registrable.
+
+	ANSWER:	1 (in 0.641 ms)
+
+MODEL:
+{ registrable,  need,  codet,  consent1071,  not -codet,  not powerless,  -powerless,  constitutive,  not -constitutive,  created_without,  not -registrable,  not excluded,  -excluded }
+BINDINGS:
+
+## frag_g: without the target
+% QUERY:?- not registrable.
+
+	ANSWER:	1 (in 0.755 ms)
+
+MODEL:
+{ not registrable,  not need,  not codet,  consent1071,  -codet,  powerless,  not -powerless,  not constitutive,  -constitutive,  created_without,  -registrable,  excluded,  not -excluded }
+BINDINGS:
+

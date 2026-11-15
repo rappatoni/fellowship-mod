@@ -1,0 +1,77 @@
+meta: 
+    title: "IRIS RQ 6, 6c: a justified doubt"
+issues: 
+    i0: 
+        positions:
+            - correct
+            - ¬correct
+        standard: PE
+statements: 
+    duty: 
+        text: the register court owes the applicants the entry 
+        label: out
+    passed: 
+        text: the examination of the entry is passed 
+        label: out
+    ¬correct: 
+        text: the reported change is not correct 
+        label: out
+    submitted: 
+        text: the application in certified form is submitted 
+        label: in
+    correct: 
+        text: the reported change is correct 
+        label: out
+    proved: 
+        text: the applicants have proved the change 
+        label: out
+    statute: 
+        text: the entry is provided by statute 
+        label: in
+    conflict: 
+        text: the register contradicts the reported change 
+        label: in
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: in
+    registrable: 
+        text: the entry is abstractly registrable 
+        label: in
+assumptions:
+    - statute
+    - submitted
+    - conflict
+arguments: 
+    face_value:
+        conclusion: correct
+        weight: 0.50
+        scheme: presumption
+    doubt:
+        premises:
+            - conflict
+        conclusion: ¬correct
+        weight: 0.50
+        scheme: presumption
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        scheme: linked
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption
+    exam:
+        premises:
+            - registrable
+            - submitted
+            - correct
+        conclusion: passed
+        scheme: linked
+    reg_stat:
+        premises:
+            - statute
+        conclusion: registrable
+        weight: 1.00
+        scheme: linked

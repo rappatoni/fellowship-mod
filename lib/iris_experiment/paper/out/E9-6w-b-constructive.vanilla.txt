@@ -1,0 +1,8 @@
+μdecision_c:exists o:Order,Lawful o.<
+├─ (interim d_appl,μb3:Lawful (interim d_appl).<
+│  ├─ interim_rule:forall d:Doc,Missing d->Lawful (interim d)||
+│  └─ d_appl*!IN:Missing d_appl*b3:Lawful (interim d_appl)
+│  >
+│  )||
+└─ decision_c:exists o:Order,Lawful o
+>

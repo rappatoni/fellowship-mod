@@ -1,0 +1,16 @@
+frag_g   answer sets with the target: 1, without: 1
+rq4-a    answer sets with the target: 1, without: 0
+rq4-b    answer sets with the target: 0, without: 1
+rq4-c    answer sets with the target: 0, without: 1
+rq4-d    answer sets with the target: 1, without: 0
+rq6-a    answer sets with the target: 1, without: 0
+rq6-b    answer sets with the target: 0, without: 1
+rq6-c    answer sets with the target: 0, without: 1
+rq6-d    answer sets with the target: 1, without: 0
+rq7-a    answer sets with the target: 1, without: 1
+rq7-b    answer sets with the target: 2, without: 0
+rq7-c    answer sets with the target: 0, without: 2
+rq6p-a   lawful order: O = o_entry 
+rq6p-b   lawful order: O = o_submit 
+rq6p-c   lawful order: O = o_prove 
+rq6p-d   lawful order: O = o_entry 

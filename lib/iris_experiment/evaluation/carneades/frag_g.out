@@ -1,0 +1,106 @@
+meta: 
+    title: "IRIS RQ 3, fragment (g): the core of the dispute"
+issues: 
+    i0: 
+        positions:
+            - registrable
+            - ¬registrable
+        standard: PE
+    i1: 
+        positions:
+            - codet
+            - ¬codet
+        standard: PE
+    i2: 
+        positions:
+            - constitutive
+            - ¬constitutive
+        standard: PE
+statements: 
+    codet: 
+        text: "the usufructuary co-determines the partnership's fate" 
+        label: out
+    constitutive: 
+        text: the consent conditions the validity of the measure 
+        label: out
+    registrable: 
+        text: the usufruct is registrable 
+        label: out
+    consent1071: 
+        text: "the partner's measures need the usufructuary's consent (§ 1071 BGB)" 
+        label: in
+    need: 
+        text: legal dealings need the information 
+        label: out
+    ¬registrable: 
+        text: the usufruct is not registrable 
+        label: in
+    excluded: 
+        text: registration is excluded (restraint) 
+        label: in
+    ¬constitutive: 
+        text: "the consent does not condition the measure's validity" 
+        label: out
+    ¬codet: 
+        text: "the usufructuary does not co-determine" 
+        label: in
+    created_without: 
+        text: the usufruct can be created without the partnership 
+        label: in
+    powerless: 
+        text: the usufructuary has no influence 
+        label: in
+assumptions:
+    - consent1071
+    - created_without
+arguments: 
+    m_need:
+        premises:
+            - need
+        conclusion: registrable
+        scheme: linked
+    koe_restraint:
+        premises:
+            - excluded
+        conclusion: ¬registrable
+        weight: 1.00
+        scheme: linked
+        undercutter: need
+    koe_not_constitutive:
+        premises:
+            - created_without
+        conclusion: ¬constitutive
+        weight: 0.50
+        scheme: presumption
+    old_need_codet:
+        premises:
+            - codet
+        conclusion: need
+        scheme: presumption
+    old_codet_1071:
+        premises:
+            - consent1071
+        conclusion: codet
+        weight: 0.50
+        scheme: presumption
+    pres_powerless:
+        conclusion: powerless
+        weight: 0.50
+        scheme: presumption
+    koe_no_codet:
+        premises:
+            - powerless
+        conclusion: ¬codet
+        weight: 1.00
+        scheme: linked
+        undercutter: constitutive
+    pres_excluded:
+        conclusion: excluded
+        weight: 0.50
+        scheme: presumption
+    stg_constitutive:
+        premises:
+            - consent1071
+        conclusion: constitutive
+        weight: 0.50
+        scheme: presumption

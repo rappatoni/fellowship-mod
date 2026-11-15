@@ -1,0 +1,10 @@
+graphBuildMode(aspic).
+f_meta :=> metanorm.
+meta : metanorm, passed -> duty.
+exam : registrable(kp_c), submitted(d_appl), correct(kp_c) => passed.
+a_stat :-> statute(kp_c).
+reg_stat : statute(F) -> registrable(F).
+face_value :=> correct(kp_c).
+lawful_entry : duty => lawful(o_entry).
+lawful_submit : ~(submitted(d_appl)), ~(duty) => lawful(o_submit).
+lawful_prove : conflict(kp_c), ~(duty) => lawful(o_prove).

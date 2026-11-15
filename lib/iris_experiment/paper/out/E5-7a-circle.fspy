@@ -1,0 +1,68 @@
+declare corr1 : (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]).
+declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
+declare n_dem : (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]).
+declare bgh_rule : (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]).
+declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]).
+declare dem : (Demanded [d_contract] [e1]).
+declare unreq : (Unrequired [d_contract] [e1]).
+
+argument claim : (Claim [app] [court] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]) r.
+axiom corr1.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+argument duty_back : (Duty [court] [app] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]) r.
+axiom corr2.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument court_extra : (Passed [e1]).
+cut (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]) r.
+axiom n_dem.
+elim [d_contract].
+elim [e1].
+elim.
+axiom dem.
+elim.
+by default.
+next.
+elim.
+axiom.
+by default.
+dixi.
+
+argument limited : (Limited [e1]).
+cut (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]) r.
+axiom bgh_rule.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument bgh_limit : (Proper [d_contract] [e1]).
+cut (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]) r.
+axiom scope_rule.
+elim [d_contract].
+elim [e1].
+elim.
+next.
+elim.
+axiom unreq.
+elim.
+axiom.
+dixi.

@@ -1,0 +1,124 @@
+#+title: RQ 3: the four decisions in one document
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-combined.fspy
+#+fspy_prelude: vocabulary.org
+#+fspy_include: rq3-stuttgart.org
+#+fspy_include: rq3-oldenburg.org
+#+fspy_include: rq3-muenchen.org
+#+fspy_include: rq3-koeln.org
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=).
+- One document holding every argument of the four decisions
+  (=#+fspy_include:=, without each file's own queries).
+- Conflicts between the courts arise by proposition identity.
+- The four closed debates (=stg=, =old=, =muc=, =koe=) are still there,
+  each with its own scope.
+
+* The issue across all decisions
+
+Semantics: grounded and stable, not the default preferred.
+- Preferred is computed from all complete labellings, and adf-bdd
+  enumerates those by generate-and-test: here 3^16 candidates, beyond
+  the solver timeout.
+- Stable is the founded reading. The author made it the intended
+  default, tasks.org aida-default-semantics-not-preferred on main.
+
+#+begin_src fspy
+graph issue :Registrable[usufruct].
+label issue :Registrable[usufruct].
+label issue :Registrable[usufruct] stable.
+evaluate issue :Registrable[usufruct] stable.
+evaluate issue :Registrable[usufruct] credulous stable all.
+#+end_src
+
+* Each court's debate, inside the combined document
+
+#+begin_src fspy
+evaluate stg stable.
+evaluate old stable.
+evaluate muc stable.
+evaluate muc credulous stable.
+evaluate koe stable.
+evaluate koe credulous stable.
+#+end_src
+
+* Results (run 2026-11-14)
+
+AI NOTE: these are observations from the run, for the authors to check.
+They are not claims of the paper.
+
+** The issue: five stable labellings
+
+=label issue :Registrable[usufruct] stable= finds five stable
+labellings. The rows below are the statements that decide them (=t= is
+the statement, =c= its refutation):
+
+| Statement                  | [1] | [2] | [3] | [4] | [5] |
+|----------------------------+-----+-----+-----+-----+-----|
+| Registrable [t]            | OUT | IN  | IN  | IN  | IN  |
+| Registrable [c]            | IN  | OUT | OUT | OUT | OUT |
+| CoDetermines               | OUT | IN  | IN  | IN  | IN  |
+| Powerless                  | IN  | IN  | IN  | OUT | OUT |
+| ConsentConstitutive        | OUT | OUT | OUT | IN  | IN  |
+| LikeExecutorship           | OUT | OUT | IN  | OUT | IN  |
+
+The same in all five:
+- OUT: =VotesDayToDay=, =ManagementShare=, =Liability=, =InfoSuffices=,
+  =DelayDefeatsInterest=, =LiabilityOnly=.
+- IN: =Unlike=, =ClarityPrecedence=.
+
+Reading of the table:
+- Labelling [1] is the position of München and Köln. The restraint holds
+  (=Excluded= IN), and Köln's presumption that the usufructuary has no
+  influence (=Powerless=) defeats Oldenburg's inference from the § 1071
+  consent right to influence (=CoDetermines=).
+- Labellings [2]-[5] are the position of Stuttgart and Oldenburg. The
+  issue is reached through =CoDetermines= and the need for registration.
+  They differ in two further choices, which are independent of each other:
+  - =ConsentConstitutive=. Stuttgart and the appellant before München
+    derive constitutive effect from § 1071. München (only damages) and
+    Köln (created without the partnership) refute it. Neither side
+    outranks the other, so the stable labellings take each side once.
+    Where constitutive effect holds, it defeats =Powerless= ([4], [5]).
+  - =LikeExecutorship=. Stuttgart's analogy with the executorship needs
+    =CoDetermines=. Where that holds, the analogy is complete and meets
+    München's distinction (=Unlike=) head on. Again neither outranks the
+    other ([3], [5] against [2], [4]).
+- So the pro side counts four labellings, 2 × 2 for the two open
+  questions. The con side counts one, because it needs both questions
+  decided against the usufructuary.
+
+Verdicts:
+- Skeptically (stable) the issue is open: =?UNDEC:Registrable usufruct=.
+- Credulously it is a value, with four accepting witnesses ([2]-[5]).
+  Their normal forms alternate between the need route (=app_registrable=,
+  through § 1071) and the analogy route (=muc_hyp_analogy=).
+- Grounded leaves =Registrable= undecided.
+
+** The IRIS § 2.2.2 hypothesis
+
+AI NOTE: the hypothesis that each court's position is an extension holds
+here.
+- Both outcomes are stable labellings of the one framework: the con
+  outcome as [1], the pro outcome as [2]-[5].
+- The disagreement is localised. Every labelling agrees on liability, on
+  the vote in day-to-day affairs, on clarity and on late filings. The
+  labellings part only at the consent right's effect (=CoDetermines=,
+  =ConsentConstitutive=, =Powerless=) and at the executorship analogy.
+  Fragment (f) in =rq3-fragments.org= shows the first point in isolation.
+- The pro outcome is not a single position. Stuttgart and Oldenburg reach
+  it by different routes. Their four labellings are combinations of
+  those routes, not four court positions.
+
+** Each court's debate inside the combined document
+
+| Debate | Skeptical (stable) | Credulous (stable) |
+|--------+--------------------+--------------------|
+| =stg=  | value              | value              |
+| =old=  | value              | value              |
+| =muc=  | open               | value (the restraint, on =!IN:Excluded usufruct=) |
+| =koe=  | open               | value (the restraint, on =!IN:Excluded usufruct=) |
+
+These are the same verdicts as in each court's own file (pinned in
+=tests/iris=). So closed scope keeps each court's debate apart from the
+others' arguments in the shared document.

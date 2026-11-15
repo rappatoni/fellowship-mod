@@ -1,0 +1,7 @@
+#+title: Smoke test: a shared vocabulary
+
+#+begin_src fspy :tangle smoke.fspy
+lk.
+declare Q, P : bool.
+declare pRule : (Q -> P).
+#+end_src

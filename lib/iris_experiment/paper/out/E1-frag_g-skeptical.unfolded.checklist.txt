@@ -1,0 +1,136 @@
+It must be checked whether the usufruct is registrable. Starting check alt1:
+├─ In favour of the usufruct is registrable:
+│  │  └─ Check alt1 completed (refuted).
+│  └─ but
+│     └─ It must be checked whether the usufruct is registrable. Starting check koe_restraint:
+│        ├─ Check koe_restraint completed (refuted).
+│        └─ It must be checked whether the usufruct is registrable. Starting check r:
+│           ├─ established: the principle of restraint excludes the usufruct from the register implies it is not the case that the usufruct is registrable (m_excl)
+│           ├─ and
+│           ├─ It suffices to check that the principle of restraint excludes the usufruct from the register. Starting check alt2:
+│           │  ├─ unless something speaks against it: the principle of restraint excludes the usufruct from the register
+│           │  └─ To check the principle of restraint excludes the usufruct from the register, the following points must be worked through:
+│           │     ├─ Point 1:
+│           │     │  └─ It must be checked whether the principle of restraint excludes the usufruct from the register. Starting check alt3:
+│           │     │     ├─ In favour of the principle of restraint excludes the usufruct from the register:
+│           │     │     │  │  └─ Check alt3 completed (refuted).
+│           │     │     │  └─ but
+│           │     │     │     └─ It must be checked whether the principle of restraint excludes the usufruct from the register. Starting check excl_needs_no_need:
+│           │     │     │        ├─ Check excl_needs_no_need completed (refuted).
+│           │     │     │        └─ For the principle of restraint excludes the usufruct from the register it is necessary that it is not the case that legal dealings need the usufruct to be entered holds. Starting check th:
+│           │     │     │           ├─ because
+│           │     │     │           │  ├─ it is excluded that: the principle of restraint excludes the usufruct from the register without it is not the case that legal dealings need the usufruct to be entered (dn_excl_need)
+│           │     │     │           │  └─ It must be checked whether it is not the case that legal dealings need the usufruct to be entered. Starting check H1:
+│           │     │     │           │     ├─ Check H1 completed (refuted).
+│           │     │     │           │     ├─ and
+│           │     │     │           │     ├─ It suffices to check that legal dealings need the usufruct to be entered. Starting check alt4:
+│           │     │     │           │     │  ├─ otherwise not established: legal dealings need the usufruct to be entered
+│           │     │     │           │     │  └─ Against legal dealings need the usufruct to be entered:
+│           │     │     │           │     │     │  └─ Check alt4 completed (holds).
+│           │     │     │           │     │     └─ but
+│           │     │     │           │     │        └─ It suffices to check that legal dealings need the usufruct to be entered. Starting check old_need_codet:
+│           │     │     │           │     │           ├─ For legal dealings need the usufruct to be entered it suffices that the holder of the usufruct can decisively co-determine the partnership's affairs holds. Starting check r_2:
+│           │     │     │           │     │           │  ├─ because
+│           │     │     │           │     │           │  │  └─ unless something speaks against it: the holder of the usufruct can decisively co-determine the partnership's affairs implies legal dealings need the usufruct to be entered
+│           │     │     │           │     │           │  ├─ and
+│           │     │     │           │     │           │  │  └─ It suffices to check that the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check alt6:
+│           │     │     │           │     │           │  │     ├─ It suffices to check that the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check alt5:
+│           │     │     │           │     │           │  │     │  ├─ otherwise not established: the holder of the usufruct can decisively co-determine the partnership's affairs
+│           │     │     │           │     │           │  │     │  └─ Against the holder of the usufruct can decisively co-determine the partnership's affairs:
+│           │     │     │           │     │           │  │     │     │  └─ Check alt5 completed (holds).
+│           │     │     │           │     │           │  │     │     └─ but
+│           │     │     │           │     │           │  │     │        └─ It suffices to check that the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check old_codet_1071:
+│           │     │     │           │     │           │  │     │           ├─ For the holder of the usufruct can decisively co-determine the partnership's affairs it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_3:
+│           │     │     │           │     │           │  │     │           │  ├─ because
+│           │     │     │           │     │           │  │     │           │  │  └─ unless something speaks against it: measures affecting the usufruct need its holder's consent (§ 1071 BGB) implies the holder of the usufruct can decisively co-determine the partnership's affairs
+│           │     │     │           │     │           │  │     │           │  ├─ and
+│           │     │     │           │     │           │  │     │           │  │  └─ established: measures affecting the usufruct need its holder's consent (§ 1071 BGB) (s_1071)
+│           │     │     │           │     │           │  │     │           │  └─ Check r_3 completed.
+│           │     │     │           │     │           │  │     │           └─ Check old_codet_1071 completed (holds).
+│           │     │     │           │     │           │  │     └─ To check the holder of the usufruct can decisively co-determine the partnership's affairs, the following points must be worked through:
+│           │     │     │           │     │           │  │        ├─ Point 1:
+│           │     │     │           │     │           │  │        │  └─ It must be checked whether the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check alt7:
+│           │     │     │           │     │           │  │        │     ├─ In favour of the holder of the usufruct can decisively co-determine the partnership's affairs:
+│           │     │     │           │     │           │  │        │     │  │  └─ Check alt7 completed (refuted).
+│           │     │     │           │     │           │  │        │     │  └─ but
+│           │     │     │           │     │           │  │        │     │     └─ It must be checked whether the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check koe_no_codet:
+│           │     │     │           │     │           │  │        │     │        ├─ Check koe_no_codet completed (refuted).
+│           │     │     │           │     │           │  │        │     │        └─ It must be checked whether the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check r_4:
+│           │     │     │           │     │           │  │        │     │           ├─ established: the holder of the usufruct has no means of influence implies it is not the case that the holder of the usufruct can decisively co-determine the partnership's affairs (m_powerless)
+│           │     │     │           │     │           │  │        │     │           ├─ and
+│           │     │     │           │     │           │  │        │     │           ├─ It suffices to check that the holder of the usufruct has no means of influence. Starting check alt8:
+│           │     │     │           │     │           │  │        │     │           │  ├─ unless something speaks against it: the holder of the usufruct has no means of influence
+│           │     │     │           │     │           │  │        │     │           │  └─ To check the holder of the usufruct has no means of influence, the following points must be worked through:
+│           │     │     │           │     │           │  │        │     │           │     ├─ Point 1:
+│           │     │     │           │     │           │  │        │     │           │     │  └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check alt9:
+│           │     │     │           │     │           │  │        │     │           │     │     ├─ In favour of the holder of the usufruct has no means of influence:
+│           │     │     │           │     │           │  │        │     │           │     │     │  │  └─ Check alt9 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │  └─ but
+│           │     │     │           │     │           │  │        │     │           │     │     │     └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check powerless_needs_no_constitutive:
+│           │     │     │           │     │           │  │        │     │           │     │     │        ├─ Check powerless_needs_no_constitutive completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │        └─ For the holder of the usufruct has no means of influence it is necessary that it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) holds. Starting check th_2:
+│           │     │     │           │     │           │  │        │     │           │     │     │           ├─ because
+│           │     │     │           │     │           │  │        │     │           │     │     │           │  ├─ it is excluded that: the holder of the usufruct has no means of influence without it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) (dn_pw_cons)
+│           │     │     │           │     │           │  │        │     │           │     │     │           │  └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_2:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     ├─ Check H1_2 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     ├─ and
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     ├─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt11:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  ├─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt10:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │  ├─ otherwise not established: the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │  └─ Against the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │     │  └─ Check alt10 completed (holds).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │     └─ but
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │        └─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check stg_constitutive:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           ├─ For the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_5:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           │  ├─ because
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           │  │  └─ unless something speaks against it: measures affecting the usufruct need its holder's consent (§ 1071 BGB) implies the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           │  ├─ and
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           │  │  └─ established: measures affecting the usufruct need its holder's consent (§ 1071 BGB) (s_1071)
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           │  └─ Check r_5 completed.
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  │           └─ Check stg_constitutive completed (holds).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │  └─ To check the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct), the following points must be worked through:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     ├─ Point 1:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │  └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt12:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     ├─ In favour of the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │  │  └─ Check alt12 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │  └─ but
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │     └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check koe_not_constitutive:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │        ├─ Check koe_not_constitutive completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │        └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check r_6:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │           ├─ unless something speaks against it: the usufruct can be created without the partnership's involvement implies it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │           ├─ and
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │           ├─ unless something speaks against it: the usufruct can be created without the partnership's involvement
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │           └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_3:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │              ├─ Check H1_3 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │              ├─ and
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │              ├─ Check r_6 completed (refuted).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     │              └─ contradiction.
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     │     └─ Check alt11 completed (holds).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │     └─ and point 2:
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     │        └─ Check alt11 completed (holds).
+│           │     │     │           │     │           │  │        │     │           │     │     │           │     └─ contradiction.
+│           │     │     │           │     │           │  │        │     │           │     │     │           └─ Check th_2 completed.
+│           │     │     │           │     │           │  │        │     │           │     │     └─ Check alt8 completed (holds).
+│           │     │     │           │     │           │  │        │     │           │     └─ and point 2:
+│           │     │     │           │     │           │  │        │     │           │        └─ Check alt8 completed (holds).
+│           │     │     │           │     │           │  │        │     │           └─ It must be checked whether it is not the case that the holder of the usufruct can decisively co-determine the partnership's affairs. Starting check H1_4:
+│           │     │     │           │     │           │  │        │     │              ├─ Check H1_4 completed (refuted).
+│           │     │     │           │     │           │  │        │     │              ├─ and
+│           │     │     │           │     │           │  │        │     │              ├─ Check r_4 completed (refuted).
+│           │     │     │           │     │           │  │        │     │              └─ contradiction.
+│           │     │     │           │     │           │  │        │     └─ Check alt6 completed (holds).
+│           │     │     │           │     │           │  │        └─ and point 2:
+│           │     │     │           │     │           │  │           └─ Check alt6 completed (holds).
+│           │     │     │           │     │           │  └─ Check r_2 completed.
+│           │     │     │           │     │           └─ Check old_need_codet completed (holds).
+│           │     │     │           │     └─ contradiction.
+│           │     │     │           └─ Check th completed.
+│           │     │     └─ Check alt2 completed (holds).
+│           │     └─ and point 2:
+│           │        └─ Check alt2 completed (holds).
+│           └─ It must be checked whether it is not the case that the usufruct is registrable. Starting check H1_5:
+│              ├─ Check H1_5 completed (refuted).
+│              ├─ and
+│              ├─ Check r completed (refuted).
+│              └─ contradiction.
+└─ otherwise not established: the usufruct is registrable

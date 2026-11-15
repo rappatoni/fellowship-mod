@@ -1,0 +1,14 @@
+## rq4-d: with the target
+% QUERY:?- duty(court,app,e1).
+
+	ANSWER:	1 (in 0.283 ms)
+
+MODEL:
+{ duty(court,app,e1),  metanorm,  not -metanorm,  not written_only,  -written_only,  presupposed,  enter(e1,court,kp_c),  passed(e1) }
+BINDINGS:
+
+## rq4-d: without the target
+% QUERY:?- not duty(court,app,e1).
+
+no models
+

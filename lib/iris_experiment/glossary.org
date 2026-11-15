@@ -1,0 +1,122 @@
+#+title: Glossary: German legal terms and their English renderings
+#+language: en
+
+AI DRAFT — not reviewed by a lawyer. Review status per row: =pending=,
+=author ok=, =author: <correction>=, later =Basaran ok=.
+
+The /Basis/ column says where a rendering comes from:
+- =BMJ= is the official English translation by the Federal Ministry of
+  Justice on gesetze-im-internet.de (HGB, FamFG, BGB), retrieved
+  2026-11-13. It is preferred wherever the term occurs there.
+- =AI= is a proposal of ours that has no official model.
+
+* Statutes and citations
+
+AI NOTE: the decisions (2013-2019) cite the HGB as it stood before the
+Act to Modernise the Law on Partnerships (MoPeG), which entered into
+force on 1.1.2024 and renumbered parts of the partnership law (e.g. the
+partners' liability, old § 128 HGB). The IRIS draft partly cites the
+new numbering (§§ 121 ff. HGB). Quote each decision with its own
+numbering. A paper sentence that mixes the two needs a note. The
+mapping of old to new sections is not checked here (pending).
+
+| German                    | English (proposed)                          | Alternatives                         | Basis | Status  |
+|---------------------------+---------------------------------------------+--------------------------------------+-------+---------|
+| HGB (Handelsgesetzbuch)   | Commercial Code (HGB)                       |                                      | BMJ   | pending |
+| FamFG                     | Act on Proceedings in Family Matters and in Matters of Non-contentious Jurisdiction (FamFG) | | BMJ | pending |
+| BGB                       | Civil Code (BGB)                            |                                      | BMJ   | pending |
+| GmbHG                     | Limited Liability Companies Act (GmbHG)     |                                      | BMJ   | pending |
+| AktG                      | Stock Corporation Act (AktG)                |                                      | BMJ   | pending |
+| HRV (Handelsregisterverordnung) | Commercial Register Ordinance (HRV)   |                                      | AI    | pending |
+| Beschluss (of an OLG)     | order                                       | decision                             | BMJ (FamFG) | pending |
+| Oberlandesgericht (OLG)   | Higher Regional Court (OLG)                 |                                      | BMJ   | pending |
+| Leitsatz                  | headnote                                    |                                      | AI    | pending |
+| h.M. (herrschende Meinung) | prevailing opinion                         | majority view                        | AI    | pending |
+| Richterrecht              | judge-made law                              | case law                             | AI    | pending |
+| richterliche Rechtsfortbildung | judicial development of the law        | judicial law-making                  | AI    | pending |
+
+* Register and procedure
+
+| German                                  | English (proposed)                                 | Alternatives                                 | Basis       | Status  |
+|-----------------------------------------+----------------------------------------------------+----------------------------------------------+-------------+---------|
+| Handelsregister                         | Commercial Register                                | commercial register                          | BMJ (HGB)   | pending |
+| Registergericht                         | register court                                     | registry court (BMJ BGB uses it once)        | BMJ (FamFG) | pending |
+| Registersachen                          | registry matters                                   |                                              | BMJ (FamFG § 374) | pending |
+| Anmeldung (zur Eintragung)              | application for registration                       | application for an entry in the register; filing | BMJ (HGB, FamFG § 382) | pending |
+| Anmelder / Antragsteller                | applicant                                          |                                              | BMJ         | pending |
+| Eintragung                              | entry (in the register); registration              |                                              | BMJ         | pending |
+| eintragungsfähig                        | registrable; capable of being entered              | eligible for registration                    | AI          | pending |
+| Eintragungsfähigkeit                    | registrability                                     | eligibility for registration                 | AI          | pending |
+| abstrakte Eintragungsfähigkeit          | abstract registrability (the kind of fact may be entered at all) |                                | AI          | pending |
+| eintragungspflichtige Tatsache          | fact required to be entered                        | fact subject to mandatory registration       | BMJ (HGB § 15) | pending |
+| (Rechts-)Tatsache                       | fact (legal fact)                                  |                                              | AI          | pending |
+| Eintragungsvoraussetzungen, formelle / materielle | formal / substantive requirements for registration | procedural / material requirements | AI    | pending |
+| Prüfungspflicht (des Registergerichts)  | duty of examination                                | duty to review                               | AI          | pending |
+| Prüfungsrecht / Prüfungsbefugnis        | power of examination                               | right to examine                             | AI          | pending |
+| Prüfungsumfang                          | scope of examination                               | scope of review                              | AI          | pending |
+| Eintragungspflicht (objektive)          | (objective) duty to register                       | duty to make the entry                       | AI          | pending |
+| Eintragungsanspruch (subjektiver)       | (subjective) claim to registration                 | right to have the entry made                 | AI          | pending |
+| Recht auf Vollzug der Anmeldung         | right to have the application executed             |                                              | AI          | pending |
+| Amtsermittlung (§ 26 FamFG)             | inquiry ex officio                                 | ex officio investigation                     | BMJ (FamFG § 26) | pending |
+| Zwischenverfügung (§ 382 Abs. 4 FamFG)  | interim order (setting a time limit to remedy a hindrance to entry) | intermediate order          | AI; the BMJ text describes it without naming it | pending |
+| Eintragungshindernis                    | hindrance to entry                                 | obstacle to registration                     | BMJ (FamFG § 382) | pending |
+| Zurückweisung (des Antrags)             | rejection (of the application)                     | dismissal                                    | BMJ (FamFG § 382 (3)) | pending |
+| Beschwerde                              | complaint                                          | appeal                                       | BMJ (FamFG § 58 ff.) | pending |
+| beschwerdeberechtigt (§ 59 FamFG)       | entitled to file a complaint                       |                                              | BMJ (FamFG § 59) | pending |
+| Rechtsbeschwerde                        | complaint on points of law                         | appeal on points of law                      | BMJ (FamFG § 70) | pending |
+| Nichtabhilfe(beschluss)                 | refusal to grant relief (order not remedying the complaint) | non-remedy decision                 | AI          | pending |
+| Beweislast                              | burden of proof                                    |                                              | AI          | pending |
+| Feststellungslast (objektive Beweislast) | objective burden of proof (who bears the risk of a fact remaining unproven) | burden of non-persuasion | AI   | pending |
+| Darlegungslast                          | burden of presentation                             | burden of assertion                          | AI          | pending |
+| Registerklarheit                        | clarity of the register                            | register clarity                             | AI          | pending |
+| Publizitätsfunktion                     | publicity function (of the register)               | disclosure function                          | AI          | pending |
+| Publizitätswirkung (§ 15 HGB)           | publicity effect                                   | effect of publication                        | AI          | pending |
+| Überfrachtung des Handelsregisters      | overloading of the Commercial Register             | cluttering                                   | AI          | pending |
+| Rechtsverkehr                           | legal (and commercial) dealings; the public dealing with the company | legal transactions        | AI          | pending |
+| erhebliches Bedürfnis des Rechtsverkehrs | substantial need of legal dealings                | considerable need of the public              | AI          | pending |
+| unabweisbares Bedürfnis                 | compelling need                                    | imperative need                              | AI          | pending |
+| berechtigtes Interesse                  | legitimate interest                                |                                              | AI          | pending |
+| Informationsbedürfnis / -interesse      | need for information / interest in information     |                                              | AI          | pending |
+| Testamentsvollstreckervermerk           | note of executorship (in the register)             | executor's notation                          | AI          | pending |
+| Dauertestamentsvollstreckung            | long-term administration by an executor            | permanent executorship                       | AI          | pending |
+| Gesellschafterliste (GmbH)              | list of shareholders                               |                                              | AI (BMJ GmbHG to check) | pending |
+| Aktienregister                          | share register                                     |                                              | AI (BMJ AktG to check)  | pending |
+| Stellvertreterzusatz                    | "deputy" addition (to a managing director's entry) |                                              | AI          | pending |
+| Metanorm                                | meta-norm                                          |                                              | AI          | pending |
+| Rechtsstaatsprinzip                     | rule-of-law principle                              |                                              | AI          | pending |
+
+* Partnership and usufruct
+
+| German                                 | English (proposed)                                 | Alternatives                              | Basis       | Status  |
+|----------------------------------------+----------------------------------------------------+-------------------------------------------+-------------+---------|
+| Kommanditgesellschaft (KG)             | limited partnership (KG)                           |                                           | BMJ (HGB)   | pending |
+| Kommanditist                           | limited partner                                    |                                           | BMJ (HGB)   | pending |
+| Komplementär                           | general partner                                    | personally liable partner                 | BMJ (HGB)   | pending |
+| Kommanditanteil / Kommanditbeteiligung | limited partner's interest                         | limited partnership interest; limited partner's share | AI | pending |
+| Teilkommanditanteil                    | part of a limited partner's interest               |                                           | AI          | pending |
+| Kommanditeinlage / Haftsumme           | limited partner's contribution / amount of liability | the amount for which the limited partner is liable towards third parties | BMJ (HGB § 162) | pending |
+| Gesellschafter                         | partner (of a partnership); shareholder (of a GmbH) |                                          | BMJ         | pending |
+| Gesellschafterstellung                 | status as a partner                                | membership                                | AI          | pending |
+| Mitgliedschaft                         | membership                                         |                                           | AI          | pending |
+| Gesellschaftsvertrag                   | partnership agreement                              | articles (for a GmbH: articles of association) | BMJ    | pending |
+| Gesellschafterbeschluss                | partners' resolution                               |                                           | AI          | pending |
+| Grundlagenbeschluss / -entscheidung    | resolution on fundamental matters                  | basic resolution                          | AI          | pending |
+| laufende Angelegenheiten               | day-to-day affairs                                 | ordinary course of business               | AI          | pending |
+| Geschäftsführung (§ 164 HGB)           | management of the partnership business             |                                           | BMJ (HGB § 164) | pending |
+| Vertretung (organschaftliche)          | (organic) representation                           | power of representation                   | BMJ (HGB § 106) | pending |
+| Stimmrecht                             | voting right                                       |                                           | AI          | pending |
+| Mitverwaltungsrechte                   | rights of participation in management              | co-administration rights                  | AI          | pending |
+| Informations- und Kontrollrechte       | rights to information and control                  | information and inspection rights         | AI          | pending |
+| Haftung im Außenverhältnis             | liability towards third parties                    | external liability                        | BMJ (HGB § 162, "towards third parties") | pending |
+| Außenverhältnis / Außenwirkung         | external relationship / effect towards third parties |                                         | AI          | pending |
+| Nießbrauch                             | usufruct                                           |                                           | BMJ (BGB § 1030) | pending |
+| Nießbrauch an Rechten (§ 1068 BGB)     | usufruct in rights                                 |                                           | BMJ (BGB § 1068) | pending |
+| Nießbraucher / Nießbrauchsberechtigter | usufructuary                                       | person entitled to the usufruct           | AI (BMJ BGB to check) | pending |
+| Besteller (des Nießbrauchs)            | grantor (of the usufruct)                          |                                           | AI          | pending |
+| Bestellung (eines Nießbrauchs)         | creation (of a usufruct)                           | grant                                     | BMJ (BGB § 1069 "Creation") | pending |
+| Belastung                              | encumbrance                                        | charge                                    | BMJ (BGB § 1030) | pending |
+| Nutzungen ziehen / Fruchtziehungsrecht | take the emoluments / right to take the fruits     |                                           | BMJ (BGB § 1030) | pending |
+| Ertragsnießbrauch                      | usufruct limited to income                         | income usufruct                           | AI          | pending |
+| Zustimmung (§ 1071 BGB)                | approval                                           | consent                                   | BMJ (BGB § 1071) | pending |
+| Sonderrechtsnachfolge                  | singular succession                                | special legal succession                  | AI          | pending |
+| Vorbehaltsnießbrauch                   | reserved usufruct (retained by the transferor)     |                                           | AI          | pending |

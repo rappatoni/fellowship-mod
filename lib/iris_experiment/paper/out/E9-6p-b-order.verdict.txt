@@ -1,0 +1,2 @@
+decision, stable, skeptical: value
+μdecision:exists o:Order,Lawful o.<(o_submit,!IN:Lawful o_submit)||decision:exists o:Order,Lawful o>

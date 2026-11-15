@@ -1,0 +1,25 @@
+meta: {title: 'IRIS RQ 6, 6c: a justified doubt'}
+argument_schemes:
+  - id: presumption
+    weight: {constant: 0.5}
+statements:
+  duty: the register court owes the applicants the entry
+  metanorm: the unwritten meta-norm is in force
+  passed: the examination of the entry is passed
+  registrable: the entry is abstractly registrable
+  statute: the entry is provided by statute
+  submitted: the application in certified form is submitted
+  correct: the reported change is correct
+  ¬correct: the reported change is not correct
+  conflict: the register contradicts the reported change
+  proved: the applicants have proved the change
+issues:
+  i0: {positions: [correct, ¬correct]}
+arguments:
+  duty_arg: {conclusion: duty, premises: [metanorm, passed]}
+  pres_meta: {conclusion: metanorm, premises: [], scheme: presumption}
+  exam: {conclusion: passed, premises: [registrable, submitted, correct]}
+  reg_stat: {conclusion: registrable, premises: [statute]}
+  face_value: {conclusion: correct, premises: [], scheme: presumption}
+  doubt: {conclusion: ¬correct, premises: [conflict], scheme: presumption}
+assumptions: [statute, submitted, conflict]

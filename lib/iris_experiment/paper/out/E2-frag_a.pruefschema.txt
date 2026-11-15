@@ -1,0 +1,9 @@
+Es ist notwendigerweise zu prüfen, ob the usufruct is registrable. Beginn der Prüfung muc_restraint:
+├─ es liegt vor: the principle of restraint excludes the usufruct from the register impliziert nicht the usufruct is registrable (m_excl)
+├─ und
+├─ sofern nichts entgegensteht: the principle of restraint excludes the usufruct from the register
+└─ Es ist notwendigerweise zu prüfen, ob nicht the usufruct is registrable. Beginn der Prüfung b1:
+   ├─ Prüfung b1 abgeschlossen (verneint).
+   ├─ und
+   ├─ Prüfung muc_restraint abgeschlossen (verneint).
+   └─ Widerspruch.

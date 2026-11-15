@@ -1,0 +1,723 @@
+#+title: Phase 7: AIDA compared with other frameworks on the IRIS material
+#+language: en
+
+AI DRAFT (Phase 7 of task =aida-iris-usufruct=). These are notes for the
+authors, not manuscript text. Tools, versions and sources:
+=survey.org=. Re-run: =run.sh= (paths to the tools in its header).
+Every result below comes from the saved outputs in the tool's
+directory, from the run of 2026-11-14.
+
+* Material
+
+The same material in every tool:
+- *Fragment (g)* of =../rq3-fragments.org=. It is the core of the RQ 3
+  dispute: Köln's restraint, which a need defeats; Oldenburg's route to
+  a need through the § 1071 consent right; Köln's presumption that the
+  usufructuary has no influence, which constitutive effect would defeat;
+  and Stuttgart's constitutive effect against Köln's refutation of it.
+- *The RQ 4/6/7 example* of =../rq4-6-7-metanorm.org=, in its 11
+  scenarios. 4a-4d: the meta-norm delegated, owed, objected to, defended.
+  6a-6d: complete application, missing document, justified doubt, doubt
+  answered by proof. 7a-7c: the claim-scope cycle alone, with an
+  independent anchor, with a doubt. (7d, the statutory anchor, differs
+  from 7b only in the anchor being strict, so it was not re-encoded.)
+
+AIDA's results, the reference (stable semantics, pinned in
+=tests/iris=):
+
+| Scenario | AIDA |
+|----------+------|
+| frag_g   | 3 stable labellings (1 con, 2 pro); skeptically open; grounded all undecided |
+| 4a       | duty: value, resting on =!IN:MetaNorm= |
+| 4b       | duty: open, the owed meta-norm OUT |
+| 4c       | duty: open |
+| 4d       | duty: value |
+| 6a       | duty: value |
+| 6b       | duty: open, the missing document named |
+| 6c       | duty: open |
+| 6d       | duty: value |
+| 7a       | claim: 2 stable labellings (all IN or all OUT); grounded undecided |
+| 7b       | claim: value |
+| 7c       | claim: OUT in the only stable labelling |
+
+* Results
+
+Legend:
+- =in= / =out=: accepted / not accepted
+- =und=: undecided
+- =cred.=: accepted in some but not all stable extensions or answer
+  sets
+- =n st.=: the number of stable extensions or labellings
+- ✓ marks agreement with AIDA's stable verdict
+
+| Scenario | Carneades 4 | ASPIC+ plain (PyArg) | ASPIC+ with premise prefs (PyArg) | Arg2P (aspic) | s(CASP) | DDL (clingo) | PROLEG core |
+|----------+-------------+----------------------+-----------------------------------+---------------+---------+--------------+-------------|
+| frag_g   | con         | cred., 5 st.         | con, 1 st. (no preferences stated: PyArg's default ordering) | cred., 3 st. (2 pro, 1 con) ✓ | cred. ✓ | con | con |
+| 4a       | in ✓        | in ✓                 | in ✓                              | in ✓          | in ✓    | in ✓         | in ✓        |
+| 4b       | out ✓       | out ✓                | out ✓                             | out ✓         | out ✓   | out ✓        | out ✓       |
+| 4c       | out ✓       | cred., 2 st.         | out ✓                             | und; cred., 2 st. | out ✓ | out ✓ (superiority stated) | out ✓ |
+| 4d       | in ✓        | in ✓                 | in ✓                              | in ✓          | in ✓    | in ✓         | in ✓        |
+| 6a       | in ✓        | in ✓                 | in ✓                              | in ✓          | in ✓    | in ✓         | in ✓        |
+| 6b       | out ✓       | cred., 2 st.         | out ✓                             | out ✓         | out ✓   | out ✓        | out ✓       |
+| 6c       | out ✓ (weights) | cred., 2 st.     | in (premise beats defeasible doubt) | und; with =bp(correct)=: out ✓ | out ✓ | out ✓ (superiority) | out ✓ |
+| 6d       | in ✓ (weights) | in ✓              | in ✓                              | und; with a superiority: in ✓ | in ✓ | in ✓ (superiority) | in ✓ |
+| 7a       | und         | cred., 3 st.         | out, 1 st.                        | und; 2 st. (in, out) ✓; with =bp(claim)=: out | cred. ✓ | in (1 model) | does not terminate |
+| 7b       | in ✓        | cred., 3 st.         | in ✓                              | in ✓          | in ✓    | in ✓         | in ✓ only with the anchor clause first |
+| 7c       | und         | cred., 4 st.         | out ✓                             | und; 3 st. (out, in, out) | out ✓ | in (unfounded loop) | does not terminate |
+
+What the table shows, in short:
+- *RQ 4 and RQ 6 are expressible everywhere, at a price.* Every tool
+  reaches AIDA's verdicts on the meta-norm and the burden of proof. But
+  the asymmetry AIDA has built in, that a counterargument defeats a
+  presumption, has to be supplied in each tool by its own means:
+  - Carneades: weights (presumptions 0.5, other arguments 1.0)
+  - ASPIC+: premise preferences
+  - Arg2P: a declared burden of persuasion, or superiority
+  - DDL: superiority between rules
+  - PROLEG and s(CASP): where a requirement is placed (rule body or
+    exception; negation as failure or classical negation)
+
+  Without these, ASPIC+ (plain) and Arg2P leave 4c, 6b and 6c
+  credulous or undecided.
+- *Fragment (g) splits the tools into two groups.*
+  - Arg2P (3 stable labellings, 2 pro and 1 con, as in AIDA) and
+    s(CASP) keep both court positions.
+  - Carneades, DDL (ambiguity blocking) and the PROLEG core decide con.
+    The tie over constitutive effect and influence leaves both positions
+    OUT, so the presumption at the top, the restraint, stands.
+  - In those three tools the con outcome is a consequence of how they
+    break ties, not of anything the courts argued. In AIDA the con
+    outcome is one of three labellings, and fragment (g) shows where the
+    courts part.
+  - Plain ASPIC+ keeps both positions too, but with 5 stable extensions,
+    since it builds the contrapositions of every strict rule as further
+    arguments.
+- *RQ 7, the cycle, separates the semantics most clearly.*
+  - Two readings, as in AIDA: s(CASP) (stable models) and Arg2P (stable).
+  - Undecided: Carneades (grounded-style), and grounded in Arg2P and
+    AIDA.
+  - The cycle accepted in one model: DDL accepts it in 7a, and in 7c it
+    keeps the duty and the claim, supported only by each other, after
+    the doubt has defeated the examination. That happens in both the
+    ambiguity-blocking and the well-founded variant of the
+    implementation. Whether this comes from the implementation or from
+    encoding the duty as an obligation in a rule body was not checked.
+  - Not terminating: the PROLEG core. Prolog's depth-first search does
+    not end on the cycle, and 7b terminates only if the anchor clause
+    comes first.
+  - ASPIC+ with preferences closes the cycle in the court's favour. The
+    preferences decide the case, so the two readings disappear.
+
+* Criteria
+
+The criteria come from the research questions. Where they fit, they
+reuse the criteria of =eval/REPORT.org=.
+
+| Criterion | AIDA | Carneades 4 | ASPIC+ (PyArg) | Arg2P | s(CASP) | DDL | PROLEG |
+|-----------+------+-------------+----------------+-------+---------+-----+--------|
+| A gap as presumed or as owed (RQ 4) | delegation vs obligation, one tactic each; the normal form names the delegated gap (=!IN:MetaNorm=) | presumption argument vs unsupported premise (assumptions are accepted outright, not presumed) | ordinary premise vs missing premise | ordinary premise vs missing premise | default (=not -p=) vs no rule | rule with empty body vs missing rule | empty-bodied rule vs missing rule |
+| Burden per requirement, and its shift (RQ 6) | per site: presumed or owed refutation; the shift after a doubt needs nothing extra | proof standards per issue; weights | premise preferences | =bp/1= (burden of persuasion), the most direct construct among the tools | negation as failure vs classical negation | superiority | rule body vs exception (PROLEG's own design goal) |
+| Consistency of the burden (no opposing presumptions) | checked by AIDA (warning) | not checked | not checked | not checked | p and -p excluded by a constraint (a different, stronger check) | not checked | not checked |
+| Cycles (RQ 7) | stable: the founded readings; grounded: undecided; credulous on an unfounded loop: the bare delegation | undecided | depends on preferences | as AIDA (grounded/stable) | stable models, as AIDA | loop accepted (observed) | non-termination |
+| Claim and duty, correlativity | two universal rules over reified eventualities | propositional only | propositional only (ground) | first-order rules, ground here | first-order, as AIDA | obligation as modality; the claim is not a modality, correlativity needs a rule with =obl()= in its body | first-order Prolog |
+| First-order generality | sorts, predicates, quantifiers, function terms; open sites under binders (=pipeline unfolded.=) | ground statements; schemes with variables | ground | Prolog terms | full, without grounding | ground atoms (=atom/1= declarations) | Prolog terms |
+| Preferences argued about | the order of arguments within a stack; a priority stated as a defeasible statement (fragment d) | weighing functions | fixed preorders | =sup/2= concluded by rules (=defeasiblePref=) | via defaults | superiority facts | clause order |
+| Explanation | normal form (the delegations and obligations the verdict rests on), =explain= trace, =render= text, graph figures | labels, graph output | extensions, explanation algorithms | argument graph, IDE | justification tree (=--tree=, =--human=) | extensions | Prolog proof trace |
+| Encoding size, RQ 7 scenario 7c (non-blank lines) | 162 (proof scripts with tactics; plus 26 decorations) | 37 | ~25 theory entries | 16 | 23 | 51 for all 11 scenarios | 65 for all scenarios |
+| Usability of the implementation | needs a Fellowship build with discourse referents; replay of a large combined graph is slow (task =aida-fsp-instantiate-path-copying= on main) | Go build; one quirk on macOS 27 | pip; own stable routine slow (166 s on 7a) | pip, Python ≤ 3.12 | ready | clingo; one module has unsafe rules | ad hoc |
+
+* Per tool
+
+** Carneades 4
+- Mapping in =carneades/gen.py=:
+  - a fact is an assumption
+  - a presumption is an argument without premises, at weight 0.5
+  - an owed premise is one nobody argues for
+  - the helper is one linked argument over the requirements
+- Carneades accepts assumptions outright. A rebuttable presumption has to
+  be an argument. That was found by running 4c and 6c with assumptions,
+  where the objection and the doubt had no effect.
+- Ties within an issue leave both positions OUT. That decides fragment
+  (g) for the restraint.
+- The proof's win over the doubt (6d) can only be stated through
+  weights: the doubt rests on a presumed rule, so it gets 0.5.
+- The cycle stays undecided (7a, 7c). The doubt in 7c does not propagate
+  through it.
+
+** ASPIC+ (PyArg)
+- Mapping in =pyarg/aspic.py=:
+  - a fact is an axiom
+  - a presumption is an ordinary premise
+  - a presumed rule is defeasible
+  - the helper is an ordinary premise with one strict rule per
+    requirement
+  - strict rules are closed under transposition, which is ASPIC+'s own
+    condition for its rationality postulates
+- PyArg's default ordering is last-link elitist with empty preferences,
+  not "every attack defeats". Under it, a premise beats a
+  defeasible-rule-based doubt (6c: =in=). The runner therefore reports
+  three variants: plain, PyArg's default, and premise preferences
+  (=output.txt=).
+- ASPIC+ builds every argument the knowledge base allows. That includes
+  reductio arguments no court stated. In 7a, the presumed propriety of
+  the demand contraposes into "no limited scope, so no claim, so no
+  duty". And the presumed passing of the examination makes the transfer
+  agreement count as submitted. Hence 3 stable extensions where AIDA,
+  which uses only the arguments the document states, has 2.
+- PyArg's own stable routine needed 166 s for 7a (32 arguments, 93
+  defeats). clingo with ASPARTIX's =stable.dl= computes the same
+  extensions in milliseconds.
+
+** Arg2P
+- Mapping in =arg2p/run.py=:
+  - presumptions are ordinary premises, or exceptions with weak negation
+  - burdens are =bp/1=
+- Profile =aspic= (no preference counts). Under =aspicPlus= the default
+  last-link ordering decides 6c and 7c for the face-value premise, as in
+  PyArg.
+- The profile refuses a contrary to the conclusion of a strict rule. So
+  rules with a contested conclusion had to be defeasible, including the
+  proof in 6d, which then deadlocks with the doubt. A superiority under
+  =aspicPlus= settles it (=rq6-d-sup=).
+- The burden of persuasion is the closest construct to AIDA's burden
+  allocation among the tools. =bp(correct)= turns 6c's deadlock into OUT,
+  =bp(claim)= closes the cycle against the claim (7a), and
+  =bp(registrable)= decides fragment (g) for the restraint. =bp(codet)=
+  does not settle fragment (g); the reason was not investigated.
+- On fragment (g), Arg2P finds the same three stable labellings as AIDA.
+
+** s(CASP)
+- Mapping in =scasp/gen.py=:
+  - presumptions are defaults =p :- not -p=
+  - counterarguments are rules for =-p=
+  - the first-order, reified form is kept as in AIDA
+- It agrees with AIDA's stable verdicts in every scenario, credulously
+  and skeptically. That is expected: both compute founded readings, and
+  AIDA's stable semantics is the founded reading the author chose.
+- Model counts are not comparable, because s(CASP) returns partial models
+  relevant to the query.
+- What s(CASP) does not have: the argument as an object with its
+  delegations and obligations, debates with moves, and the distinction
+  between a presumed and an owed site within one argument. The burden
+  lives in the choice between negation as failure and classical
+  negation.
+
+** Defeasible Deontic Logic (clingo implementation)
+- Mapping in =ddl/metanorm.lp= and =ddl/frag_g.lp=:
+  - the duty to enter is =obligation(enter)= from a prescriptive rule
+  - presumptions are rules without body
+  - requirements are rules for =non(passed)=, superior to the helper
+- The deontic modality is native here, unlike in any other tool,
+  including AIDA, where the duty is an ordinary predicate over a
+  reified eventuality.
+- Every conflict needs a stated superiority. Without one, ambiguity
+  blocking leaves both sides unproved. That is why fragment (g) comes
+  out con.
+- The cycle: see Results. The duty and the claim survive the doubt in 7c.
+
+** PROLEG core (re-implementation)
+- =proleg/proleg.pl= follows PROLEG's published semantics (rule and
+  exception). It is not the original system.
+- The rule/exception split states the burden directly. RQ 4 and RQ 6
+  read naturally.
+- Fragment (g) is decided by where the exceptions sit. Köln's
+  presumption is an exception to Oldenburg's rule, so the con outcome
+  follows from the encoding.
+- Cycles do not terminate. That is a limit of the depth-first proof
+  procedure, and PROLEG states it as an assumption on rule bases.
+
+* Further criteria (after the author's remarks of 2026-11-14)
+
+The first round compared verdicts. The author pointed out that the
+research questions ask for more:
+- RQ 3: a faithful model of the debate and its readers.
+- RQ 4: the dynamics of a gap.
+- RQ 6: the processing of the burden of proof, not only its
+  representation.
+
+In the table, "tested" marks what was run in this experiment, and
+"documented" marks what the tool's documentation states but was not
+tried here.
+
+| Criterion | AIDA | Carneades 4 | ASPIC+ (PyArg) | Arg2P | s(CASP) | DDL (clingo) | PROLEG |
+|-----------+------+-------------+----------------+-------+---------+--------------+--------|
+| The debate as an object: order of moves, who replies to whom | first-class: debates with ordered, checked moves (tested, =rq3-debate-dynamics.org=) | an argument graph; no move order | a framework; no move order | a theory; no move order | a program; no move order | a theory; no move order | a rule base; no move order |
+| The course of a debate (state after each move) | queries between moves (tested: Oldenburg and München move by move; the case law stage by stage) | re-run on each version of the file | re-run per version | re-run per version | re-run per version | re-run per version | re-run per version |
+| Natural-language output | five render styles with decorations; German check-list frame; text of the normal form (tested; not yet readable for legal users: language mixing, internal names) | statement texts and verbalisation templates (=language=) in the output graph (documented) | argument structure, explanation algorithms (documented, =py_arg/algorithms/explanation=) | no generated text; the playground shows the argument graph and the stages of the computation (documented); =naturalTerms.= normalises natural-language-like terms on input (documented) | justification trees, =--human= with templates (documented) | the extension only (tested) | the original has a block-diagram view (documented by its authors) |
+| Graphs | labelled graph with onus markings and a legend (tested) | DOT, GraphML, PNG via Graphviz (documented) | via its GUI (documented) | interactive argument graph in the playground and the VS Code extension (documented) | none built in | none | none in the core |
+| Incremental addition | append-only document; debates recorded move by move; on main, debates extended without editing (=extends=) | edit the YAML | rebuild the theory | =add(text)= adds clauses to a solver (tested); queries goal-directed (=queryMode=) | add clauses | add rules and superiority | add rules |
+| Gap dynamics: open enumeration | one more supporting argument per example; analogy schema with an argued similarity (tested, =rq4-gap-dynamics.org=) | schemes with variables generate arguments from examples (documented) | one more rule or premise | one more rule | one more clause | one more rule | one more rule |
+| Gap dynamics: open structure (added necessary conditions) | one more denial of a helper; applies to all earlier examples (tested) | exceptions and assumptions of schemes, i.e. critical questions (documented) | undercutters | undercut or weak negation | one more rule for the negated helper | a defeater or a superior rule | one more exception |
+| Revision visible over time | the status of statements changes across stages, the record stays (tested) | by comparing outputs | by comparing outputs | by comparing outputs | by comparing outputs | by comparing outputs | by comparing outputs |
+| Processing: a concrete output | the normal form's witness: the order, with its justification as a certificate whose delegations show what was presumed (tested, 6p-a to 6p-d) | labels only | labels only | query answers with bindings (tested: =lawful(O)= gives the same orders, =interim(d_appl)= included; see Processing side by side) | bindings with a justification tree (tested: =lawful(O)= gives the same orders) | the derived obligations | query bindings |
+| Classicality of the reasoning inside an argument | classical first-order sequent calculus: reductio, contraposition of every implication, excluded middle | directional rules | strict rules closed under transposition (by condition), defeasible rules directional | strict rules closed under transposition automatically (=autoTransposition=, on by default under =aspicPlus= and =aspic=; tested), defeasible rules directional | directional rules; classical negation as a constraint | directional | directional |
+
+AI NOTE on processing: AIDA and s(CASP) both compute the right order in
+every scenario. What AIDA adds is the onus in the certificate. The entry
+order's justification marks =!IN:MetaNorm= and =!IN:Passed e1= as
+presumed, so the output says which of its grounds were never
+established. s(CASP)'s justification tree records which literals hold
+by negation as failure, which is the closest counterpart.
+
+* Processing side by side: AIDA and Arg2P
+
+The same six scenarios as AIDA's layers 2b and 2c
+(=../rq4-6-7-metanorm.org=), in Arg2P with Prolog terms and the query
+=lawful(O)= (=arg2p/processing.py=, output =arg2p/processing.txt=,
+2026-11-15). Both compute the same order in every scenario:
+
+| Scenario | AIDA: head of the normal form | AIDA: rests on (delegations) | Arg2P: =lawful(O)= accepted for | Arg2P: presumed premises; assumed not shown |
+|----------+-------------------------------+------------------------------+---------------------------------+---------------------------------------------|
+| 6p-a complete | =o_entry= | =!IN:MetaNorm=, =!IN:Passed e1= | =o_entry= | =f_meta=, =face_value=; - |
+| 6p-b missing application | =o_submit= | =!IN:Lawful o_submit= | =o_submit= | -; =duty=, =submitted(d_appl)= |
+| 6p-c register conflict | =o_prove= | =!IN:Conflict kp_c->Lawful o_prove= | =o_prove= (needs =bp(correct(kp_c))=, bpGrounded) | -; =duty= |
+| 6p-d doubt cleared | =o_entry= | as 6p-a | =o_entry=, by two arguments (needs =sup(evidence, doubt)=) | =f_meta=, =face_value= / =f_meta=; - |
+| 6w-a submitted | open | the finding is defeated | nothing | |
+| 6w-b missing, computed | =interim d_appl= | =!IN:Missing d_appl= | =interim(d_appl)= | =finding=; - |
+
+What is the same:
+- *Computed objects.* Both return a term, not only a yes or no.
+  =interim(d_appl)= is computed by unification in Arg2P and by cut
+  elimination in AIDA (an existential's witness meeting its
+  elimination). Both start from a generic rule that never names the
+  document.
+- *Presumptions in the output.* Both say what the result rests on
+  without having established it.
+  - Arg2P: the argument's ordinary premises and the weak-negation
+    conditions of its rules ("the duty is not shown").
+  - AIDA: the =!IN= sites of the normal form.
+  - AIDA's presumed "not owed" site of layer 2c and Arg2P's =~(duty)= are
+    the same idea.
+
+Where they differ:
+- *One witness or all instances.* Arg2P answers a query with a variable
+  and lists every accepted instance, each with all its arguments: in
+  6p-d two arguments support =lawful(o_entry)=. AIDA's argument concludes
+  "some order is lawful". Its evaluation yields one normal form, one
+  witness with one justification, and when two candidates stand it keeps
+  one by its rule (=aida-witness-candidate-order= on main).
+- *A term or a set.* AIDA's output is a cut-free proof term: the witness
+  at its head and the justification as one composed argument, which the
+  renderer prints as one text. Arg2P's output is a labelling with
+  argument records (identifier, rules, subarguments, attacks).
+- *Classical existence.* AIDA's =decision_k= is one classical argument
+  (an argued Peirce step) that proves an order exists without deciding
+  the duty; the evaluation resolves the case split. Arg2P has no
+  classical reasoning inside arguments. The case split lives in the rule
+  base as two rules guarded by =~(duty)=, so the "argument for existence"
+  is not one object.
+- *The burden.*
+  - AIDA's onus is part of every site, so no scenario needed anything
+    extra.
+  - Arg2P needed a burden of persuasion for the doubt (6p-c) and a
+    superiority for the proof (6p-d), both as found in =run.py=. Without
+    them, 6p-c and 6p-d deadlock under the =aspic= profile.
+- *The encodings differ in one place that shows in the output.* Arg2P's
+  examination is a closed conjunction, so the face-value presumption is a
+  premise of the entry order's argument and appears in its record. In
+  AIDA the examination is the helper =Passed=, presumed, with one denial
+  per requirement. The face-value presumption acts in the labelling (it
+  defeats the correctness objection) and does not appear in the normal
+  form.
+- *Size.* The Arg2P theories are 10 to 16 lines each. AIDA's blocks are
+  proof scripts several times longer.
+
+* AIDA and Arg2P, feature by feature
+
+Arg2P has moved fast: 27 releases since 1 October 2026 (0.16.5 to
+0.26.6). This table compares it with AIDA as of
+2026-11-15.
+- Arg2P: version 0.26.5 as installed. Sources are the
+  documentation of its repository (=doc/site/content/docs=, read
+  2026-11-15), its release notes, and the checks in
+  =arg2p/features.py= (output =arg2p/features.txt=), =run.py= and
+  =processing.py=.
+- AIDA: this branch (=discourse-referents=) and main. Its README and the
+  IRIS runs are the sources.
+
+Marks: (T) tested in this experiment; (R) stated in AIDA's README; (D)
+stated in Arg2P's documentation; "main" means on AIDA's main branch only,
+"branch" on =discourse-referents= only.
+
+** Logic and language
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Underlying logic | classical (LK) or intuitionistic (LJ) sequent calculus, arguments are proof terms of Fellowship (R); debates need LK (R) | ASPIC+ on tuProlog: rules over Prolog terms (D) |
+| Strict and defeasible rules | declared axioms and theorems are strict; a rule an argument presumes (=by default=) is defeasible (T) | =->= strict, =\=>= defeasible, =:->= axiom, =:\=>= ordinary premise (T) |
+| Negation | classical =~A= (one statement with =A -> false=, though spelled apart in replay, main task =aida-negation-spelling-in-unfolding=) (T) | strong =-p= and weak =~(p)= ("unless p is shown") (T) |
+| Classical reasoning inside an argument | yes: reductio, Peirce, excluded middle, the drinker (R, T: layer 2c) | no; arguments are rule trees (D) |
+| Contraposition | every implication, defeasible ones included, by design; not yet closed in the labelling (main task =aida-strict-layer=) (T) | strict rules closed automatically (=autoTransposition=) (T); defeasible rules directional (D) |
+| First-order generality | sorts, =forall=, =exists=, function terms (T); discourse referents =?x= / =!x= (branch) (T) | schematic rules with Prolog variables (T); no existential statements; open conclusions for all values with the experimental =constraints= extension (D) |
+| Conjunction | no derived connective yet (helper with denials, or =A - ~B=) (T) | conjunction of premises in rule bodies (T) |
+| Computation inside rules | no | =prolog(Goal)= premises (D) |
+| Deontic modalities | none native; duties and claims as predicates over reified eventualities (T) | =o/1=, =p/1= with a deontic conflict model (T) |
+| Time | none native | event calculus (=temporal=, experimental) (D) |
+| Natural-language input | decorations map names to templates (T) | =naturalTerms.= normalises natural-language-like terms (D) |
+
+** Arguments, debates and conflicts
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Authoring an argument | interactively, tactic by tactic in Fellowship, with the open goals shown; statements can be refined later; the author chooses presumed or owed per site (R, T) | not authored: rules and facts are written, and the engine builds every argument they allow (=queryMode=: those relevant to a query) (D, T) |
+| Type checking | every argument type-checked by Fellowship at registration, sorts for first-order terms; every unfolded debate term replayed through Fellowship (the type oracle) (R, T) | none: untyped Prolog terms; syntax errors shown as typed (language server, =check_theory=) and profile checks (D) |
+| Argument as an object | an authored object: a proof term with open sites, registered by name, citable (=cite=), moved in debates (R, T) | a computed record in the output graph: identifier, conclusion, top rule, rules, subarguments; not named or cited by the author (T) |
+| Arguments built | only the stated ones (T) | all the rules allow; =queryMode= restricts to those relevant to a query (D) |
+| Debates: ordered moves, who replies to whom | first-class, with checked verbs, open or closed scope (R, T) | none: no dialogues, moves or turns in the documentation; "conversation" there means the AI-assistant integration, and the distributed solver splits a knowledge base for speed (D) |
+| State after each move | queries while a debate is recorded (T) | re-solve after =add= (T) |
+| Extending without editing | append-only document (T); registered debates extended (=debate X extends Y=) (main, R) | =add(text)= (T), =load(text)= replaces (D) |
+| Supports as well as attacks | yes: ADF acceptance conditions (bipolar) (R, T) | subargument supports; attacks: rebut, undermine, undercut (T) |
+| Cycles | admitted; unfounded loops credulously as bare delegations (R, T: RQ 7) | admitted by the semantics (T: RQ 7) |
+| Preferences | the order of arguments within a stack (R); no stated preferences, no cross-stack switch (branch task =aida-support-attack-priority-switch=) | =sup/2=, last- or weakest-link, elitist/democrat/normal (D); preferences concluded by rules (=defeasiblePref=) (D) |
+| Rules and conflicts argued about | a presumed rule is a statement and can be refuted (T, fragment (f)); no =applicable= machinery | =metaRules= (rules fire only if argued =applicable=) (T), =metaConflicts=, defeasible preferences and burdens (D) |
+| Custom conflicts | by proposition identity only (R) | =conflict/2,3=, with Prolog guards (D) |
+| Other input frameworks | s(CASP) import (main, R); TweetyProject bridge (separate repository =tweety-aida=) | ABA, ABA+, abstract frameworks as profiles (D) |
+
+** Burden of proof
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Burden per site | every open site is a delegation (presumed, =!=) or an obligation (owed, =?=) (R, T) | ordinary premises and weak negation play the presumption role (T) |
+| Burden of persuasion | expressed by which side presumes; no separate semantics (T) | =bp/1= with =bpGrounded=, =bpGroundedPartial=, =bpGroundedComplete= (T) |
+| Burden itself argued | no: fixed by the tactic | yes: =graphExtension(bp)=, rules concluding =bp/1= (D) |
+| Consistency of the burden | warns on opposing presumptions (R, T) | none documented |
+| Burden in the output | the normal form names delegations (=!IN:=) and unmet obligations (=?OUT:=) (T) | presumed premises and weak-negation conditions are readable from the argument records (T, =processing.txt=) |
+
+** Semantics and evaluation
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Labelling semantics | grounded, complete, preferred, stable, through adf-bdd (R); stable the chosen default (main task =aida-default-semantics-not-preferred=) | 17: grounded, complete, preferred, stable, semi-stable, ideal, eager, naive, stage, cf2, stage2, conflict-free, admissible, strongly admissible, three bp-grounded variants (D) |
+| Credulous and skeptical | =evaluate … credulous/skeptical=, also per labelling =N= / =all= (R, T) | =answerMode(credulous/skeptical/enumerate)= (T) |
+| Evaluation beyond labels | label-guided cut elimination to a normal form, cbn or cbv; classes value, exception, open (R, T) | none: labels and argument records |
+| Concrete output | the witness at the head of the normal form, with its certificate (T: layers 2b, 2c) | bindings of a query with variables (T: =processing.txt=) |
+| One answer or all | one normal form (one witness) (T) | every accepted instance, each with all its arguments (T) |
+| Causality | none | NESS and but-for tests (=causality::ness=, =butFor=) (T: the missing application is a but-for and NESS cause of the interim order) |
+
+** Presentation and interaction
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Natural-language text | five render styles, a German check-list style, decorations; not yet readable for legal users (main tasks =aida-render-text-styles=, =aida-render-fo-terms=) (T) | none generated (D) |
+| Graph view | Graphviz picture with onus markings and a legend; DOT (R, T) | interactive graph (Cytoscape) in the playground and VS Code, stages of the computation (D) |
+| Account of the evaluation | =explain=, stage by stage (R, T) | stages of the resolution (=graph_at(branch)=, =context_facts=) (D) |
+| Editors and environments | CLI with script and interactive modes (R) | web playground (offline app, shareable links), VS Code extension with a language server, syntax errors as typed (D) |
+| Programs and services | Python service layer, versioned JSON, an HTTP adapter (main, R) | the same API on the JVM, JavaScript and Python; a sandboxed solver for untrusted theories (D) |
+| AI assistants | none | an MCP server, an MCP App, skills and plugins for Claude Code and Codex (D) |
+
+** Scale and engineering
+
+| Feature | AIDA | Arg2P |
+|---------+------+-------|
+| Large theories | the type-check replay is quadratic in the term size; long debates time out on the stock build (T); fixes measured in the report on main | compact graphs, a warm-up, a parallel solver, a federation over the local network, an actor-based distributed solver (D; partly experimental) |
+| Checking | every unfolded debate term replayed through Fellowship, the type oracle (R) | profiles refuse theories outside their framework, e.g. non-flat ABA (D) |
+| Distribution | a research prototype in this repository; no packages | Maven Central, npm, PyPI, Marketplace (D) |
+| Documentation | README, six minicourses, =tasks.org= (R) | a documentation site, examples, troubleshooting, references (D) |
+| Release cadence | none | near-daily (D) |
+
+** Reading the comparison
+
+AI NOTE (observations for the authors):
+- *Where Arg2P is ahead.* It is ahead as a tool and in breadth: more
+  semantics, preferences and burdens of persuasion that can themselves
+  be argued, meta-argumentation about rules, deontic and temporal
+  vocabulary, causality tests, ABA and abstract inputs, scale, packaging,
+  editors, and AI assistants. For the IRIS question of open texture (RQ
+  8), =metaRules= states directly which test applies to the need: the
+  readings become arguments (=features.txt=, check 4).
+- *Where AIDA is distinct.*
+  - It is closer to a proof assistant for arguments than to a rule-based
+    reasoner. Arguments are authored interactively, type-checked, named
+    and cited, while Arg2P generates its arguments from rules and
+    returns them as records.
+  - It treats a debate as a sequence of moves.
+  - It puts the burden of proof into every site, with a consistency
+    check.
+  - It evaluates a debate to a program-like normal form, with a witness
+    and a certificate.
+  - It reasons classically inside arguments, including existence proofs
+    that do not decide the case.
+  - It has quantifiers, existential statements and discourse referents.
+- *Where they meet.* Both compute the same outputs on the IRIS
+  processing examples (=processing.txt=). Both expose what an answer
+  presumes. Both admit cycles and give two stable readings of the RQ 7
+  circle.
+- *Where AIDA lags as a tool.* Rendering, performance, packaging and
+  documentation for users. The comparison suggests that AIDA's
+  contribution is its calculus (onus per site, evaluation to normal
+  forms, classical first-order debates), not its tooling.
+- *Not compared.* Arg2P's explanation pages and its distributed solvers
+  were not run. Its experimental modules (constraints, time) were read,
+  not tried.
+
+* Strengths and weaknesses of each system
+
+** AIDA
+Strengths:
+- Debates as first-class objects. Order, replies and the course move by
+  move are part of the model and can be queried.
+- The burden of proof per site (delegation or obligation), with AIDA's
+  own consistency check (no opposing presumptions). Moving a burden is
+  one tactic.
+- Processing. Evaluation returns a value, an exception, or an open term
+  that names what is missing. Witness scaffolds return a concrete object
+  with a certificate.
+- Classical first-order logic with reified eventualities and discourse
+  referents. Correlativity, quantified rules and reductio arguments are
+  written as the law states them.
+- Several semantics side by side (grounded, stable, skeptical,
+  credulous). Cycles are represented, not refused. The founded reading
+  is available.
+- Literate formalisation with decorations next to the source text.
+
+Weaknesses:
+- Verbose. Arguments are proof scripts: 162 lines for scenario 7c
+  against 16-37 elsewhere.
+- Performance. The type-check replay is quadratic, so long debates time
+  out on the stock build (the case-law debate's last stage); see the
+  report on main.
+- Rendering not ready for legal readers: language mixing, internal
+  names. The tree renderer is deprecated.
+- The labelling is not yet closed under transposition. A labelling can
+  accept a rule and its antecedent while rejecting its consequent (see
+  Classicality).
+- No derived conjunction, and no preference across the support and
+  attack stacks.
+- Features spread over branches: =extends= and registered debates are on
+  main, discourse referents on this branch.
+- Bugs met on the way: binder capture, subtraction introduction, a
+  reserved word.
+- Needs knowledge of the calculus to write arguments.
+
+** Carneades 4
+Strengths:
+- Designed for legal argument and the burden of proof: proof standards,
+  critical questions as scheme exceptions and assumptions.
+- Weighing functions (cumulative, criteria, preferences).
+- Compact YAML. Argument generation from schemes. Cycles in version 4.
+- Used by the DIREGA group already.
+
+Weaknesses:
+- A tie within an issue leaves both positions OUT, which decided
+  fragment (g) for the restraint.
+- Assumptions are accepted outright, not presumed. Presumptions need
+  premise-less arguments and weights.
+- One labelling only: alternative readings (RQ 7, fragment (g)) are not
+  shown.
+- No move order and no output object.
+- Numeric weights where AIDA uses the onus.
+- Ground statements; no quantified rules.
+
+** ASPIC+ (PyArg)
+Strengths:
+- A standard structured framework with a large literature.
+- Arguments are generated exhaustively, including ones no participant
+  stated (the reductio readings of 7a). That is a check for hidden
+  consequences.
+- Preferences and orderings are explicit and configurable. PyArg is easy
+  to install and has explanation algorithms.
+
+Weaknesses:
+- Without preferences, a presumption and its counterargument attack
+  each other symmetrically. Every burden has to be supplied as a
+  preference.
+- The default last-link ordering changed 6c's verdict.
+- Exhaustive generation also produces arguments no court made (3 to 5
+  extensions where AIDA has 2 or 3).
+- Ground and propositional here. PyArg's own stable routine needed 166 s
+  for 32 arguments.
+- No debate, no output object.
+
+** Arg2P
+Strengths:
+- The burden of persuasion as a construct (=bp/1=, two-stage labelling).
+  It is the closest to AIDA's onus among the tools, and it can itself be
+  argued (=graphExtension(bp)=).
+- Meta-argumentation:
+  - rules apply only if argued applicable (=metaRules=); on the IRIS
+    threshold question this gives one labelling per reading
+  - conflicts and preferences can be concluded by rules
+- Breadth:
+  - 17 semantics
+  - strict rules closed under transposition automatically
+  - obligations and permissions
+  - causality tests (NESS, but-for)
+  - event calculus and constraints (experimental)
+  - ABA and abstract frameworks
+  - Prolog computation inside rules
+- Tooling: the same API on the JVM, JavaScript and Python; a web
+  playground; a VS Code extension with a language server; an MCP server
+  and skills for AI assistants; compact graphs and parallel solving for
+  large theories; near-daily releases.
+- On the IRIS material:
+  - the same three stable labellings as AIDA on fragment (g)
+  - the same orders, =interim(d_appl)= included, as query bindings
+
+Weaknesses:
+- Profiles refuse a contrary to a strict conclusion, so a proof that
+  should be strict had to be defeasible (6d deadlocked without a
+  superiority).
+- Burdens are declared per statement. A burden on =codet= did not
+  settle fragment (g); one on =registrable= did.
+- No debates as sequences of moves. No classical reasoning inside an
+  argument. No existential statements. No generated natural-language
+  text.
+- The default last-link ordering decided 6c and 7c for the face-value
+  premise, until the =aspic= profile was chosen.
+- Installation needs Python ≤ 3.12 for the Python package.
+
+** s(CASP)
+Strengths:
+- First-order without grounding.
+- Its stable-model semantics agreed with AIDA's stable verdicts in every
+  scenario.
+- Justification trees, constraints and arithmetic (counting; the DIREGA
+  notes value this).
+- Computes output objects as bindings (the lawful order).
+
+Weaknesses:
+- No argument objects and no debates. The burden is only the choice
+  between negation as failure and classical negation.
+- Answer counts are partial models, so they are not comparable.
+- The DIREGA notes report unusable Prolog features (=forall/2=) and
+  suspected bugs.
+- Named anonymous variables are refused.
+
+** Defeasible Deontic Logic (clingo implementation)
+Strengths:
+- Native deontic modalities: obligation, permission, compensation
+  (contrary-to-duty).
+- Superiority as an explicit priority. A well-understood proof theory,
+  efficient in principle.
+
+Weaknesses:
+- Every conflict needs a stated superiority, otherwise ambiguity
+  blocking leaves both sides unproved (fragment (g): con).
+- In this implementation the RQ 7 cycle is accepted as an unfounded loop
+  (7c keeps duty and claim after the doubt). Whether that is the
+  implementation or the encoding was not checked.
+- One module has unsafe rules. Ground atoms. No explanation and no
+  debate.
+
+** PROLEG (core re-implemented)
+Strengths:
+- The rule/exception split is the burden of proof of a legal doctrine.
+  Lawyers read it directly.
+- Small and transparent.
+
+Weaknesses:
+- The original is not public.
+- Depth-first evaluation does not terminate on cycles, and it depends on
+  clause order (7b).
+- One answer: alternatives are invisible. Fragment (g) is decided by
+  where the exceptions sit.
+
+* Classicality: every implication contraposes
+
+AIDA reasons inside an argument in classical first-order sequent
+calculus. Every implication, a presumed one included, can be used
+backwards (modus tollens), and a debate's scaffolds are classical: they
+"throw to a second conclusion, which LJ forbids" (=README.md=). The other
+six systems use directional rules for what is defeasible. ASPIC+ requires
+its strict rules to be closed under transposition, and Arg2P closes them
+automatically (=autoTransposition=, checked in =arg2p/features.txt=). Both
+keep defeasible rules directional.
+
+AI NOTE (correction, 2026-11-15): an earlier version of this file said
+Arg2P does not close strict rules automatically. That was wrong.
+Arg2P's run of 2026-11-14 used the =aspic= profile, under which
+transposition is on as well.
+
+What it buys, in this material:
+- *Reductio as the courts use it.* Oldenburg refutes the principle "late
+  filing defeats the interest in registration" by modus tollens. If it
+  held, facts entered only declaratorily could not be registrable, but
+  § 15 (2) HGB presupposes that they are (fragment (c)).
+  - In AIDA this is one argument over the principle's instance.
+  - In a directional system the backward rule has to be written as a rule
+    of its own, which no longer shows that it is the same principle.
+- *One rule, both directions.* The register court's principle "the
+  register shows liability only" serves as "no liability, so no need" and
+  as "a need, so liability" (=p_liab_only= is stated in the second form,
+  =vocabulary.org=). Correlativity of claim and duty is two universal
+  rules, and either can be used in either direction.
+- *Classical first-order debates.* Witnesses, reductio over quantifiers,
+  the drinker paradox: AIDA's tests show debates that directional
+  systems cannot state without a classical principle as a premise.
+- *Disagreement located where it is.* With contraposition, Köln's
+  presumption that the usufructuary has no influence, together with
+  Oldenburg's presumed rule "§ 1071 ⇒ co-determination" and the strict
+  § 1071, is inconsistent. One of the two presumptions must go. That is
+  what Köln's reasons actually dispute: whether a consent right gives
+  influence.
+
+What it costs, or risks:
+- *Contrapositives nobody argued.* A presumed rule used backwards can
+  produce arguments a court would not make. Two examples from the
+  material:
+  - "A register conflict shows the report incorrect" contraposes to
+    "the report is presumed correct, so the register does not
+    contradict it". That is harmless only because the conflict is a
+    strict fact here.
+  - The BGH rule "a claim limits the scope" contraposes to "the scope is
+    not limited, so there is no claim". That is the second reading of the
+    RQ 7 circle, which the IRIS draft criticises as circular.
+
+  ASPIC+ shows what full generation of such arguments does (3-5
+  extensions where AIDA has 2-3). AIDA considers only the arguments the
+  document states, so the author controls which contrapositions enter.
+- *Not yet closed in the labelling.* AIDA's labelling is not closed under
+  transposition (task =aida-strict-layer= on main: no premise attacks
+  through strict edges).
+  - In fragment (g)'s con labelling the accepted statements are § 1071
+    (strict), Oldenburg's presumed rule (IN) and the refutation of
+    co-determination (IN). They are classically inconsistent.
+  - With the closure, Köln's counterargument would also defeat Oldenburg's
+    rule, and the con reading would state that rejection explicitly.
+  - Until then, classicality holds inside arguments but not across the
+    labelling.
+- *Spelling.* =~A= and =A -> false= are the same statement classically
+  but were spelled differently in the RQ 3 files. That forced the
+  type-check replay of the whole expanded term (62k nodes) until one
+  spelling was chosen (task =aida-negation-spelling-in-unfolding= on
+  main).
+- *Inconsistency.* Contradicting strict facts do not make everything
+  follow. A clash surfaces as an =EXCEPTION= (=README.md=). This was not
+  exercised in this material.
+
+AI NOTE: the comparison is about this material. AIDA's design decision to
+contrapose defeasible implications is AIDA's own and is not judged here
+by another framework's conventions. The examples show where it helps
+the legal reading and where the author has to decide which contrapositive
+to state.
+
+* Candidate claims for the paper
+
+AI NOTE: for the authors to adopt or reject.
+- Every compared system can reach the verdicts of RQ 4 and RQ 6 on this
+  material. They differ in where the burden of proof is stated:
+  - in AIDA, as the polarity of single sites in an argument (presumed or
+    owed)
+  - elsewhere, as weights, preferences, superiority, burden declarations
+    or rule placement
+- On the core of the RQ 3 dispute, three of the six other systems decide
+  the case by their tie-breaking. AIDA, Arg2P and s(CASP) keep both court
+  positions, which is what IRIS RQ 3 asks to model.
+- The circular justification of RQ 7 is represented without refusal by
+  AIDA, s(CASP) and Arg2P, as two stable readings. It is accepted
+  silently by the DDL implementation, and it does not terminate in
+  PROLEG-style evaluation.
+- AIDA models a decision as a course of moves, not only as an outcome.
+  Oldenburg's decision is a sequence of objections and answers that
+  alternate the issue's status, and München's decision turns only when
+  the BGH counter-instances defeat the "interest in information"
+  generalisation.
+- A gap in codified law can be modelled as a process: an append-only
+  record whose status changes. Open enumeration is one more supporting
+  argument per example, and open structure is one more denial per
+  necessary condition. What remains open at the end is exactly what the
+  latest decisions dispute.
+- Once a debate is complete, its result can be executed. AIDA's
+  evaluation returns the order the court has to make, with a certificate
+  that marks the grounds it presumed rather than established.
+

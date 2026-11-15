@@ -1,0 +1,8 @@
+graphBuildMode(aspic).
+f1 :=> metanorm.
+meta : metanorm, passed -> duty.
+exam : registrable, submitted, correct => passed.
+a1 :-> statute.
+reg_stat : statute -> registrable.
+face_value :=> correct.
+a2 :-> submitted.

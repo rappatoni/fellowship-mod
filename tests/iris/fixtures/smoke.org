@@ -1,0 +1,30 @@
+#+title: Smoke test: tangling a literate AIDA document
+#+property: header-args:fspy :tangle smoke.fspy
+#+fspy_prelude: smoke_vocabulary.org
+
+A paragraph of prose, then its formalisation.
+
+#+name: body
+#+begin_src fspy
+# P follows from Q by the rule; Q is delegated.
+argument pArg : (P).
+cut (Q -> P) rule.
+axiom pRule.
+elim.
+by default.
+next.
+axiom rule.
+dixi.
+#+end_src
+
+A block not tangled.
+
+#+begin_src fspy :tangle no
+this is not AIDA.
+#+end_src
+
+#+begin_src fspy :noweb yes :tangle smoke_noweb.fspy
+<<body>>
+label pArg.
+evaluate pArg.
+#+end_src

@@ -1,0 +1,16 @@
+1. Transposition of strict rules (autoTransposition, on under aspicPlus)
+- autoTransposition on (default): arguments for -metanorm: ['A5 : A3,A2,meta_i : - metanorm']
+- autoTransposition off: arguments for -metanorm: none
+2. Obligations and permissions (deontic conflict model)
+- an obligation against a permission not to: o(enter) -> in=['o(enter)'] out=[] und=[]
+3. Causality (NESS and but-for) on the processing example
+- butFor(missing(d_appl), lawful(interim(d_appl))): [True]
+- ness(X, missing(d_appl), lawful(interim(d_appl))): ["[Struct(functor='-', args=(Struct(functor='missing', args=('d_appl',)),))]"]
+4. Arguable rule applicability (metaRules): the threshold of the need (RQ 8)
+- which test applies to the need: need -> in=[] out=['need'] und=[] | in=['need'] out=[] und=[]
+5. Incremental addition (add)
+- before: need in = ['need']
+- after adding a counterargument: need -> in=[] und=['need']
+6. answerMode across labellings (fragment (g) in stable)
+- registrable, credulous: registrable -> in=['registrable'] out=[] und=[]
+- registrable, skeptical: registrable -> in=[] out=['registrable'] und=[]

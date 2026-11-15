@@ -1,0 +1,37 @@
+meta: 
+    title: "IRIS RQ 4, 4a: the meta-norm presumed"
+issues: 
+    i0: 
+        positions:
+            - metanorm
+            - ¬metanorm
+        standard: PE
+statements: 
+    passed: 
+        text: the examination of the entry is passed 
+        label: in
+    duty: 
+        text: the register court owes the applicants the entry 
+        label: in
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: in
+    ¬metanorm: 
+        text: "the meta-norm is not in force" 
+        label: out
+arguments: 
+    pres_passed:
+        conclusion: passed
+        weight: 0.50
+        scheme: presumption
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        weight: 1.00
+        scheme: linked
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption

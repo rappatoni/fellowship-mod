@@ -1,0 +1,9 @@
+It must be checked whether the usufruct is registrable. Starting check koe_restraint:
+├─ established: the principle of restraint excludes the usufruct from the register implies it is not the case that the usufruct is registrable (m_excl)
+├─ and
+├─ unless something speaks against it: the principle of restraint excludes the usufruct from the register
+└─ It must be checked whether it is not the case that the usufruct is registrable. Starting check b1:
+   ├─ Check b1 completed (refuted).
+   ├─ and
+   ├─ Check koe_restraint completed (refuted).
+   └─ contradiction.

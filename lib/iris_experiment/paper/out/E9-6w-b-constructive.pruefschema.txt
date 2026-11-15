@@ -1,0 +1,9 @@
+Es genügt zu prüfen, dass es gibt ein o vom Typ Order, so dass o is the lawful order. Beginn der Prüfung decision_c:
+├─ belegt durch an interim order to submit the application in certified form
+├─ Es genügt zu prüfen, dass an interim order to submit the application in certified form is the lawful order. Beginn der Prüfung b3:
+│  ├─ es liegt vor: für alle d vom Typ Doc gilt: d is missing impliziert an interim order to submit d is the lawful order (interim_rule)
+│  ├─ eingesetzt für d: the application in certified form
+│  ├─ und
+│  ├─ sofern nichts entgegensteht: the application in certified form is missing
+│  └─ Prüfung b3 abgeschlossen (bejaht).
+└─ Prüfung decision_c abgeschlossen (bejaht).

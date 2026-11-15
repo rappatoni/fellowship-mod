@@ -1,0 +1,4 @@
+graphBuildMode(aspic).
+f1 :=> metanorm.
+f2 :=> passed.
+meta : metanorm, passed -> duty.

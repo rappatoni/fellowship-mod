@@ -1,0 +1,73 @@
+meta: 
+    title: "IRIS RQ 4, 4d: the objection answered"
+issues: 
+    i1: 
+        positions:
+            - written_only
+            - ¬written_only
+        standard: PE
+    i0: 
+        positions:
+            - metanorm
+            - ¬metanorm
+        standard: PE
+statements: 
+    ¬written_only: 
+        text: a norm the written rules presuppose can bind the court 
+        label: in
+    no_written: 
+        text: no written norm orders the entry 
+        label: in
+    presupposed: 
+        text: "the written rules presuppose the meta-norm" 
+        label: in
+    duty: 
+        text: the register court owes the applicants the entry 
+        label: in
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: in
+    ¬metanorm: 
+        text: "the meta-norm is not in force" 
+        label: out
+    passed: 
+        text: the examination of the entry is passed 
+        label: in
+    written_only: 
+        text: only a written norm can bind the register court 
+        label: out
+assumptions:
+    - no_written
+    - presupposed
+arguments: 
+    pres_passed:
+        conclusion: passed
+        weight: 0.50
+        scheme: presumption
+    pres_written_only:
+        conclusion: written_only
+        weight: 0.50
+        scheme: presumption
+    positivist:
+        premises:
+            - written_only
+            - no_written
+        conclusion: ¬metanorm
+        scheme: linked
+    anchor:
+        premises:
+            - presupposed
+        conclusion: ¬written_only
+        weight: 1.00
+        scheme: linked
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        weight: 1.00
+        scheme: linked
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption

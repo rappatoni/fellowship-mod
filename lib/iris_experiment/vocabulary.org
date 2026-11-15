@@ -1,0 +1,310 @@
+#+title: Shared vocabulary for the RQ 3 formalisations
+#+language: en
+#+property: header-args:fspy :tangle build/vocabulary.fspy
+
+AI DRAFT (Phase 2 of task =aida-iris-usufruct=). Every RQ 3 document
+tangles this file first (=#+fspy_prelude: vocabulary.org=). Statements
+are therefore the same propositions across the four decisions, and the
+courts' arguments meet in one document graph by proposition identity.
+
+Logic: quantifier-free predicate logic over constants (R1, 2026-11-13).
+- One sort, =Fact=: a fact (legal relationship) that someone applies to
+  have entered.
+- The predicates are properties of the legal position the fact creates.
+  For example, =Liability [usufruct]= reads "the usufruct makes its
+  holder liable towards third parties".
+- General principles that a court argues about as such (by reductio,
+  for example) are propositional atoms.
+
+* Individuals
+
+| Constant              | The fact                                                                                   |
+|-----------------------+--------------------------------------------------------------------------------------------|
+| =usufruct=            | the usufruct on a limited partner's interest, the fact applied for in all four cases       |
+| =executorship=        | long-term administration by an executor of a limited partner's estate (BGH, 14.2.2012, II ZB 15/11: registrable) |
+| =deputy_note=         | the "deputy" addition to a managing director's entry (BGH NJW 1998, 1071: not registrable)  |
+| =gmbh_executorship=   | a note of executorship in a GmbH's list of shareholders (BGH, 24.2.2015: not admissible)     |
+
+#+begin_src fspy
+lk.
+declare Fact : type.
+declare usufruct, executorship, deputy_note, gmbh_executorship : Fact.
+#+end_src
+
+* Predicates
+
+| Predicate              | =P [f]= reads                                                                                   |
+|------------------------+-------------------------------------------------------------------------------------------------|
+| =Registrable=          | f is registrable (eintragungsfähig)                                                              |
+| =ProvidedByStatute=    | the statute provides for f's entry                                                              |
+| =Need=                 | there is a need of legal dealings for f's entry, sufficient for registration. The courts word the threshold differently ("unabweisbar", "erheblich", "berechtigtes Interesse"); see =analysis.org= |
+| =Excluded=             | the principle of restraint excludes f from the register (helper of the meta-norm, below)         |
+| =Liability=            | f makes its holder liable towards third parties                                                  |
+| =Representation=       | f makes its holder take part in representing the partnership                                     |
+| =VotesDayToDay=        | f gives its holder a vote of their own on day-to-day affairs                                     |
+| =ConsentConstitutive=  | the holder's consent under § 1071 BGB conditions the validity of the partners' measure           |
+| =Consent1071=          | measures affecting f need its holder's consent (§ 1071 BGB)                                      |
+| =ManagementShare=      | the partner's management rights are split between the partner and f's holder                    |
+| =CoDetermines=         | f's holder can decisively co-determine the partnership's affairs                                 |
+| =EquatedWithPartner=   | f's holder is to be treated like a partner (§ 108 HGB)                                           |
+| =CourtNeedsInfo=       | the register court needs to know of f to check applications and resolutions                      |
+| =InfoInterest=         | legal dealings have a (general) interest in knowing of f                                         |
+| =DelayedFilings=       | applications to register facts like f are often filed late                                       |
+| =DisposalPower=        | f's holder has power of disposal over the interest                                               |
+| =ProceduralParty=      | creditors must sue f's holder (party by virtue of office)                                        |
+| =LikeExecutorship=     | f shares the features for which the BGH held the executorship registrable                       |
+| =EmolumentsRight=      | f is a right to take emoluments (§§ 1030 (1), 1068 (2) BGB)                                      |
+| =PartnerStatus=        | f's holder becomes a partner                                                                     |
+| =UniformVote=          | the vote attached to the interest f burdens can only be exercised uniformly                      |
+| =CreatedWithoutPartnership= | f can be created without the partnership's involvement or knowledge                         |
+| =OnlyDamages=          | acting without f's holder's consent gives rise only to damages                                    |
+| =Powerless=            | helper: f's holder has no means of influence on the partners' decisions (below)                  |
+| =Unlike=               | helper: f lacks every feature for which the executorship was held registrable (below)            |
+
+#+begin_src fspy
+declare Registrable, ProvidedByStatute, Need, Excluded : Fact -> bool.
+declare Liability, Representation, VotesDayToDay, ConsentConstitutive, Consent1071 : Fact -> bool.
+declare ManagementShare, CoDetermines, EquatedWithPartner, CourtNeedsInfo, InfoInterest : Fact -> bool.
+declare DelayedFilings, DisposalPower, ProceduralParty, LikeExecutorship : Fact -> bool.
+declare EmolumentsRight, PartnerStatus, UniformVote, CreatedWithoutPartnership, OnlyDamages : Fact -> bool.
+declare Powerless, Unlike : Fact -> bool.
+#+end_src
+
+* General principles (propositional)
+
+| Atom                     | Reads                                                                                         |
+|--------------------------+-----------------------------------------------------------------------------------------------|
+| =LiabilityOnly=          | the register is to show the liability position only                                           |
+| =InfoSuffices=           | a general interest of legal dealings in a piece of information suffices for its registration  |
+| =ClarityPrecedence=      | clarity of the register (as a rule) takes precedence over the interest in comprehensive information |
+| =DelayDefeatsInterest=   | that such applications are filed late defeats the interest in their registration               |
+| =DeclaratoryRegistrable= | facts whose entry has no constitutive effect can be registrable (§ 15 (2) HGB)                 |
+| =LimitedPartnerRepresents= | a limited partner represents the partnership                                                |
+
+#+begin_src fspy
+declare LiabilityOnly, InfoSuffices, ClarityPrecedence, DelayDefeatsInterest, DeclaratoryRegistrable : bool.
+declare LimitedPartnerRepresents : bool.
+#+end_src
+
+* English renderings (decorations)
+
+Templates for the natural-language renderer (=render … argumentation=;
+the =tree= renderer is deprecated). They are wrapper-side and are not sent to Fellowship.
+The graph drawings do not use them.
+
+#+begin_src fspy
+decorate usufruct : "the usufruct".
+decorate executorship : "the long-term executorship over a limited partner's estate".
+decorate deputy_note : "the deputy addition to a managing director's entry".
+decorate gmbh_executorship : "a note of executorship in a GmbH's list of shareholders".
+decorate Registrable : "@arg1 is registrable".
+decorate ProvidedByStatute : "the statute provides for entering @arg1".
+decorate Need : "legal dealings need @arg1 to be entered".
+decorate Excluded : "the principle of restraint excludes @arg1 from the register".
+decorate Liability : "@arg1 makes its holder liable towards third parties".
+decorate Representation : "@arg1 makes its holder take part in representing the partnership".
+decorate VotesDayToDay : "@arg1 gives its holder a vote on day-to-day affairs".
+decorate ConsentConstitutive : "the holder's consent under § 1071 BGB conditions the validity of the partners' measures (@arg1)".
+decorate Consent1071 : "measures affecting @arg1 need its holder's consent (§ 1071 BGB)".
+decorate ManagementShare : "the partner's management rights are split with the holder of @arg1".
+decorate CoDetermines : "the holder of @arg1 can decisively co-determine the partnership's affairs".
+decorate EquatedWithPartner : "the holder of @arg1 is to be treated like a partner (§ 108 HGB)".
+decorate CourtNeedsInfo : "the register court needs to know of @arg1".
+decorate InfoInterest : "legal dealings have an interest in knowing of @arg1".
+decorate DelayedFilings : "applications to register facts like @arg1 are often filed late".
+decorate DisposalPower : "the holder of @arg1 has power of disposal over the interest".
+decorate ProceduralParty : "creditors must sue the holder of @arg1 as a party".
+decorate LikeExecutorship : "@arg1 shares the features for which the executorship was held registrable".
+decorate EmolumentsRight : "@arg1 is a right to take emoluments".
+decorate PartnerStatus : "the holder of @arg1 is a partner".
+decorate UniformVote : "the vote on the interest burdened by @arg1 can only be exercised uniformly".
+decorate CreatedWithoutPartnership : "@arg1 can be created without the partnership's involvement".
+decorate OnlyDamages : "acting without consent under @arg1 gives rise only to damages".
+decorate Powerless : "the holder of @arg1 has no means of influence".
+decorate Unlike : "@arg1 lacks every feature for which the executorship was held registrable".
+decorate LiabilityOnly : "the register is to show the liability position only".
+decorate InfoSuffices : "a general interest in information suffices for registration".
+decorate ClarityPrecedence : "clarity of the register, as a rule, takes precedence over comprehensive information".
+decorate DelayDefeatsInterest : "late filing defeats the interest in registration".
+decorate DeclaratoryRegistrable : "facts without constitutive entry can be registrable (§ 15 (2) HGB)".
+decorate LimitedPartnerRepresents : "a limited partner represents the partnership".
+#+end_src
+
+* What no court disputes (declared, hence strict)
+
+A negative fact is a denial (=deny NAME : (P).=, used with =moxia=), not
+a declared =~P=. A counterargument then refutes P directly. The
+=cut (~P) x= lemma pattern is avoided because of an AIDA unfolding bug
+(=tests/iris/fixtures/bug_unfold_negation_lemma.fspy=, tasks.org).
+
+- Statutes, the BGH holdings the courts take as given, and the content
+  of the principles above.
+- Whatever a court /argues/ is formalised in that court's file, not
+  here.
+
+#+begin_src fspy
+# §§ 106 (2), 162 (1) HGB do not list the usufruct.
+deny s_162 : (ProvidedByStatute [usufruct]).
+# § 1071 BGB.
+declare s_1071 : (Consent1071 [usufruct]).
+# §§ 1030 (1), 1068 (2) BGB: the usufruct is a right to take emoluments.
+declare s_1030 : (EmolumentsRight [usufruct]).
+# BGH NJW 1999, 571: the usufructuary does not become a partner.
+deny bgh_partner : (PartnerStatus [usufruct]).
+# § 170 HGB: a limited partner does not represent the partnership.
+deny s_170 : (LimitedPartnerRepresents).
+# BGH, 14.2.2012, II ZB 15/11: the executorship is registrable, and the
+# executor holds power of disposal, liability effect, procedural position.
+declare bgh_exec_reg : (Registrable [executorship]).
+declare bgh_exec_disposal : (DisposalPower [executorship]).
+declare bgh_exec_liab : (Liability [executorship]).
+declare bgh_exec_proc : (ProceduralParty [executorship]).
+# BGH NJW 1998, 1071 and BGH 24.2.2015: of interest, yet not registrable.
+declare bgh_deputy_interest : (InfoInterest [deputy_note]).
+deny bgh_deputy_reg : (Registrable [deputy_note]).
+declare bgh_gmbh_interest : (InfoInterest [gmbh_executorship]).
+deny bgh_gmbh_reg : (Registrable [gmbh_executorship]).
+# § 15 (2) HGB presupposes registrable facts without constitutive entry.
+declare s_15 : (DeclaratoryRegistrable).
+# BGH, 14.2.2012, II ZB 15/11 (Rn. 21): the register is also to inform about
+# the persons taking part in the partnership, not only about liability.
+deny bgh_participants : (LiabilityOnly).
+# The analogy schema: what holds for the executorship holds for a fact
+# that shares the features for which it held.
+declare analogy_exec : (Registrable [executorship] -> LikeExecutorship [usufruct] -> Registrable [usufruct]).
+#+end_src
+
+* The meta-norm (IRIS draft § 3.2) as every court applies it
+
+A fact is registrable if the statute provides for its entry, or if there
+is a need of legal dealings. Conversely, the principle of restraint
+excludes it. That principle is a helper with one denial per necessary
+condition (analysis.org §4):
+- The exclusion requires that the statute does not provide for the
+  entry.
+- It also requires that there is no need. Whoever claims the need has
+  to establish it. The counterargument's site on the need is owed:
+  =next=.
+
+The content of the general principles enters as their instances at the
+facts concerned.
+
+#+begin_src fspy
+declare m_stat : (ProvidedByStatute [usufruct] -> Registrable [usufruct]).
+declare m_need : (Need [usufruct] -> Registrable [usufruct]).
+declare m_need_deputy : (Need [deputy_note] -> Registrable [deputy_note]).
+declare m_need_gmbh : (Need [gmbh_executorship] -> Registrable [gmbh_executorship]).
+declare m_excl : (Excluded [usufruct] -> ~Registrable [usufruct]).
+deny dn_excl_stat : (Excluded [usufruct] - ~ProvidedByStatute [usufruct]).
+deny dn_excl_need : (Excluded [usufruct] - ~Need [usufruct]).
+# The principles' content, at the facts concerned.
+declare p_info : (InfoSuffices -> InfoInterest [usufruct] -> Need [usufruct]).
+declare p_info_deputy : (InfoSuffices -> InfoInterest [deputy_note] -> Need [deputy_note]).
+declare p_info_gmbh : (InfoSuffices -> InfoInterest [gmbh_executorship] -> Need [gmbh_executorship]).
+declare p_liab_only : (LiabilityOnly -> Need [usufruct] -> Liability [usufruct]).
+declare p_delay : (DelayDefeatsInterest -> DelayedFilings [usufruct] -> ~Need [usufruct]).
+declare p_delay_decl : (DelayDefeatsInterest -> ~DeclaratoryRegistrable).
+# Grounds of a need that no court disputes as grounds: the register
+# discloses liability and representation.
+declare g_liab : (Liability [usufruct] -> Need [usufruct]).
+declare g_repr : (Representation [usufruct] -> Need [usufruct]).
+
+# Exclusion needs that the statute does not provide for the entry.
+counterargument excl_needs_no_statute : (Excluded [usufruct]).
+cut (Excluded [usufruct] - ~ProvidedByStatute [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_excl_stat.
+dixi.
+
+# Exclusion needs that there is no need; whoever claims the need owes it.
+counterargument excl_needs_no_need : (Excluded [usufruct]).
+cut (Excluded [usufruct] - ~Need [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_excl_need.
+dixi.
+#+end_src
+
+* Two more helpers
+
+- *No means of influence* (=Powerless=). München II.2 b)-c) and Köln
+  Rn. 5 deny co-determination by denying, one after another, the means
+  of influence claimed.
+  - The helper makes that an open list. Its necessary conditions are
+    "no vote of their own" and "no constitutive consent".
+  - Whoever claims influence owes the means: the sites are owed.
+- *Unlike the executorship* (=Unlike=). München II.2 f) reads the
+  BGH's holding as resting on power of disposal, liability effect and
+  procedural position. The analogy fails if the usufruct has none of
+  them; each is a necessary condition of the difference.
+
+#+begin_src fspy
+declare m_powerless : (Powerless [usufruct] -> ~CoDetermines [usufruct]).
+deny dn_pw_vote : (Powerless [usufruct] - ~VotesDayToDay [usufruct]).
+deny dn_pw_cons : (Powerless [usufruct] - ~ConsentConstitutive [usufruct]).
+declare m_unlike : (Unlike [usufruct] -> ~LikeExecutorship [usufruct]).
+deny dn_un_disp : (Unlike [usufruct] - ~DisposalPower [usufruct]).
+deny dn_un_liab : (Unlike [usufruct] - ~Liability [usufruct]).
+deny dn_un_proc : (Unlike [usufruct] - ~ProceduralParty [usufruct]).
+
+counterargument powerless_needs_no_vote : (Powerless [usufruct]).
+cut (Powerless [usufruct] - ~VotesDayToDay [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_pw_vote.
+dixi.
+
+counterargument powerless_needs_no_constitutive : (Powerless [usufruct]).
+cut (Powerless [usufruct] - ~ConsentConstitutive [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_pw_cons.
+dixi.
+
+counterargument unlike_needs_no_disposal : (Unlike [usufruct]).
+cut (Unlike [usufruct] - ~DisposalPower [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_un_disp.
+dixi.
+
+counterargument unlike_needs_no_liability : (Unlike [usufruct]).
+cut (Unlike [usufruct] - ~Liability [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_un_liab.
+dixi.
+
+counterargument unlike_needs_no_procedural : (Unlike [usufruct]).
+cut (Unlike [usufruct] - ~ProceduralParty [usufruct]) th.
+elim.
+elim.
+next.
+axiom th.
+moxia dn_un_proc.
+dixi.
+#+end_src
+
+AI NOTE: =p_liab_only= is stated in contraposed form ("if the register
+shows liability only, a need requires liability"). The form with the
+negated premise =~Liability= made Fellowship prove that premise as a
+λ typed =Liability -> false=. That spelled the statement two ways, and
+it forced the expanded type check of the whole combined term (62,000
+AST nodes instead of 1,800; see =README.org=).
+
+AI NOTE: in =p_info= and =p_liab_only= a general principle and its
+condition are curried. That is analysis.org §4 recommendation 3: the
+schema "principle, condition, conclusion" is closed by its source.

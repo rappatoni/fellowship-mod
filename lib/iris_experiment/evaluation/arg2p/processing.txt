@@ -1,0 +1,18 @@
+6p-a (aspic, grounded)
+  labelling 1: lawful(O) in for ['lawful(o_entry)']
+     lawful(o_entry): rules ['a_stat', 'a_sub', 'exam', 'f_meta', 'face_value', 'lawful_entry', 'meta', 'reg_stat']; presumed premises ['f_meta', 'face_value']; assumes not shown []
+6p-b (aspic, grounded)
+  labelling 1: lawful(O) in for ['lawful(o_submit)']
+     lawful(o_submit): rules ['lawful_submit']; presumed premises []; assumes not shown ['duty', 'submitted(d_appl)']
+6p-c (aspic, bp_grounded)
+  labelling 1: lawful(O) in for ['lawful(o_prove)']
+     lawful(o_prove): rules ['a_conf', 'lawful_prove']; presumed premises []; assumes not shown ['duty']
+6p-d (aspicPlus, grounded)
+  labelling 1: lawful(O) in for ['lawful(o_entry)']
+     lawful(o_entry): rules ['a_stat', 'a_sub', 'exam', 'f_meta', 'face_value', 'lawful_entry', 'meta', 'reg_stat']; presumed premises ['f_meta', 'face_value']; assumes not shown []
+     lawful(o_entry): rules ['a_proved', 'a_stat', 'a_sub', 'evidence', 'exam', 'f_meta', 'lawful_entry', 'meta', 'reg_stat']; presumed premises ['f_meta']; assumes not shown []
+6w-a (aspic, grounded)
+  labelling 1: lawful(O) in for nothing
+6w-b (aspic, grounded)
+  labelling 1: lawful(O) in for ['lawful(interim(d_appl))']
+     lawful(interim(d_appl)): rules ['finding', 'interim_rule']; presumed premises ['finding']; assumes not shown []

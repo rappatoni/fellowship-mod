@@ -1,0 +1,19 @@
+It suffices to check that the register court owes the applicants the entry applied for. Starting check alt1:
+├─ otherwise not established: the register court owes the applicants the entry applied for
+└─ Against the register court owes the applicants the entry applied for:
+   │  └─ Check alt1 completed (holds).
+   └─ but
+      └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check duty:
+         ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check r:
+         │  ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
+         │  ├─ and
+         │  ├─ to be checked: the unwritten meta-norm is in force
+         │  ├─ instantiating e with the entry applied for
+         │  ├─ instantiating c with the register court
+         │  ├─ instantiating f with C's entry as limited partner
+         │  ├─ and
+         │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  ├─ and
+         │  ├─ unless something speaks against it: the examination of the entry applied for is passed
+         │  └─ Check r completed (holds).
+         └─ Check duty completed (holds).

@@ -6,7 +6,7 @@ PIP := $(VENV)/bin/pip
 ADF_BDD_VERSION := 0.3.0
 ADF_BDD := $(VENV)/bin/adf-bdd
 
-.PHONY: venv install reset-venv cli test test-perf lint format typecheck binlink clean adf-bdd
+.PHONY: venv install reset-venv cli test test-perf lint format typecheck binlink clean adf-bdd iris
 
 # Create the venv only if none exists: re-running `python3 -m venv` over a
 # venv made by a different interpreter (e.g. uv's 3.12 vs Homebrew's 3.14)
@@ -41,6 +41,21 @@ test: install
 # The performance tests (pytest marker `perf`): run sparingly.
 test-perf: install
 	$(VENV)/bin/pytest -q -m perf tests
+
+# The IRIS follow-up (lib/iris_experiment/, tasks.org aida-iris-usufruct):
+# tangle the literate Org documents into build/ and run every script from
+# figures/, where `graph ... show` and `tree` write their images. The
+# scripts need this checkout's Fellowship (discourse referents), whatever
+# ACDC_FSP says; override with IRIS_FSP=... if needed.
+IRIS := lib/iris_experiment
+IRIS_FSP ?= $(CURDIR)/wrap/fellowship/fsp
+
+iris:
+	$(PY) tools/tangle_fspy.py --outdir $(IRIS)/build $(wildcard $(IRIS)/*.org)
+	mkdir -p $(IRIS)/figures
+	cd $(IRIS)/figures && for f in ../build/*.fspy; do \
+	  [ -e "$$f" ] || continue; echo "== $$f"; \
+	  ACDC_FSP=$(IRIS_FSP) ACDC_NO_OPEN=1 $(CURDIR)/$(VENV)/bin/acdc --script $$f || exit 1; done
 
 lint: install
 	$(VENV)/bin/ruff check core pres wrap tests

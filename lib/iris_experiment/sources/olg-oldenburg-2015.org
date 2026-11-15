@@ -1,0 +1,81 @@
+#+title: OLG Oldenburg, Beschluss vom 9.3.2015, 12 W 51/15
+#+language: de
+
+Source: MittBayNot 1/2016, 65-66 (Nr. 16), notare.bayern.de; also NZG 2015, 634; BeckRS 2015, 06985.
+Outcome: appeal allowed; usufruct on a limited partner's interest registrable.
+Paragraph numbers (¶) are ours; MittBayNot prints no Rn. NZG 2015, 643
+(beck-online copy, 2026-11-13) numbers the reasons Rn. 4-9 = II ¶1-6, and
+abridges the facts, so the MittBayNot text is kept. (Köln Rn. 4 cites
+"NZG 2015, 634", the NZG page is 643.) The annotation by Omlor that follows
+in the print is not reproduced.
+
+Text as printed; page headers removed, hyphenation joined, the
+two-column order restored by hand where the print interleaves columns.
+=(…)= marks omissions made by the printing journal, not by us. The
+journal's headnote (Leitsatz) and any annotation are not reproduced
+(they are not official works, § 5 UrhG); they are cited only.
+Retrieved 2026-11-13. Checked against the print by: (pending, author).
+
+* I ¶1
+:PROPERTIES:
+:CUSTOM_ID: old-i-p1
+:END:
+
+Die Antragstellerin ist eine im Handelsregister des AG Aurich eingetragene Kommanditgesellschaft. Einzige Kommanditisten sind Frau A. mit einer Kommanditeinlage von 122.500 € sowie Herr B. mit einer Kommanditeinlage i. H. v. 127.500 €. Mit Erklärung vom 27.11.2014 haben die Gesellschafter der Antragstellerin eine teilweise Übertragung der Kommanditeinlage der Gesellschafterin A. i. H. v. 72.500 € auf ihren Mitgesellschafter B. angemeldet. Gleichzeitig wurde mitgeteilt, dass der Kommanditistin A. an dem Kommanditanteil ihres Mitgesellschafters B. in Höhe einer Einlagesumme von 72.500 € ein Nießbrauchsrecht eingeräumt worden sei. Die Antragstellerin beantragt, sowohl die teilweise Übertragung der Kommanditeinlage als auch die quotale Belastung der Kommanditbeteiligung ihres Gesellschafters B. mit einem Nießbrauchsrecht in das Handelsregister einzutragen.
+
+* I ¶2
+:PROPERTIES:
+:CUSTOM_ID: old-i-p2
+:END:
+
+Das Registergericht hat diesen Antrag mit Beschluss vom 9.1.2015 zurückgewiesen. Zur Begründung hat es ausgeführt, dass die Eintragung eines Nießbrauchsrechts an einem Gesellschaftsanteil gesetzlich nicht vorgesehen sei. Das Handelsregister solle bezüglich der Eintragung der Gesellschafter lediglich die Haftungslage wiedergeben. Da der Nießbraucher nicht nach § 128 HGB gegenüber Dritten hafte, habe die Eintragung des Nießbrauchs zu unterbleiben. Mit Rücksicht auf die strenge Formalisierung des Registerrechts sei bei der Bejahung gesetzlich nicht geregelter Eintragungen äußerste Zurückhaltung geboten. Lediglich diejenigen Tatsachen und Rechtsverhältnisse, für deren Eintragung ein erhebliches Bedürfnis des Rechtsverkehrs bestehe, dürften eingetragen werden. Ein berechtigtes Interesse des Rechtsverkehrs an der Eintragung des Nießbrauchs fehle schon deshalb, weil die Anmeldungen oft zeitlich sehr verzögert eingereicht würden, so dass das Handelsregister über eine solche Rechtsbeziehung keine verbindliche Auskunft geben könne.
+
+* I ¶3
+:PROPERTIES:
+:CUSTOM_ID: old-i-p3
+:END:
+
+Gegen diese Entscheidung wendet sich die Antragstellerin mit ihrer Beschwerde. II.
+
+* II ¶1 (NZG Rn. 4)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p1
+:END:
+
+Die nach § 58 Abs. 1 FamFG statthafte Beschwerde der Antragstellerin ist zulässig und begründet. Die vom Registergericht gegen die beantragte Eintragung eines Nießbrauchsrechts an einem Kommanditanteil vorgebrachten Bedenken bestehen nicht.
+
+* II ¶2 (NZG Rn. 5)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p2
+:END:
+
+Die Frage der Eintragungsfähigkeit eines Nießbrauchs an einem Gesellschaftsanteil ist allerdings in der Literatur sehr umstritten. Die unterschiedlichen Auffassungen der Gegner einerseits (Krafka/Kühn, Registerrecht, 9. Aufl., Rdnr. 770, MünchKommHGB/Langhein, 3. Aufl., § 106 Rdnr. 24; MünchKommHGB/Schmidt, 3. Aufl., vor § 230 Rdnr. 16; Wertenbruch in Ebenroth/Boujong/Joost/Strohn, HGB, 3. Aufl., § 105 Rdnr. 238) und der Befürworter andererseits (Frank in Staudinger, Anhang zu § 1068 Rdnr. 92; Lindemeier, RNotZ 2001, 155, 157 f.; MünchKommBGB/Pohlmann, 6. Aufl., § 1068 Rdnr. 83; Roth in Baumbach/Hopt, HGB, 36. Aufl., § 105 Rdnr. 44; Schön, ZHR 158, 229, 256; Soergel/Stürner, BGB, 13. Aufl., § 1068 Rdnr. 7g; Staub/Schäfer, HGB, 5. Aufl., § 105 Rdnr. 128) gründen sich dabei weniger auf registerrechtlichen Erwägungen, sondern haben ihren Ausgangspunkt in unterschiedlichen Auffassungen zur recht lichen Stellung des Nießbrauchsberechtigten eines Gesellschaftsanteils. Diejenigen, die diesem eine dem Gesellschafter angeglichene Stellung zubilligen, namentlich eine eigene Haftung des Berechtigten befürworten und für diesen ein eigenes Stimmrecht bejahen, treten auch für eine Eintragungsfähigkeit des Nießbrauchsrechtes ein und bejahen teilweise sogar eine Eintragungspflicht. Die Gegenstimmen befürworten eine Beschränkung des Nießbrauchsrechts auf einen reinen Ertragsnießbrauch, ohne eigene Haftung oder eigene Verwaltungsrechte des Nießbrauchsberechtigten. Sie sehen damit auch keine Notwendigkeit für eine Eintragung des Nießbrauchs im Handelsregister.
+
+* II ¶3 (NZG Rn. 6)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p3
+:END:
+
+In der obergerichtlichen Rechtsprechung hat sich bislang das OLG Stuttgart mit der Eintragungsfähigkeit des Nießbrauchs eines Gesellschaftsanteils befasst und diese bejaht (ZIP 2013, 624, zitiert aus juris Rdnr. 9). Hierbei hat es eine entsprechende Rechtsprechung der früher in Beschwerdeverfahren zuständigen LG fortgesetzt (vgl. Nachweise bei OLG Stuttgart, a. a. O., Rdnr. 8). Auch der Senat schließt sich dieser Rechtsprechung an.
+
+* II ¶4 (NZG Rn. 7)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p4
+:END:
+
+Zutreffender Ansatzpunkt ist dabei der auch vom Registergericht beachtete Grundsatz, dass zur Wahrung der Registerklarheit nicht jede die Gesellschaft oder deren Gesellschafter betreffende Tatsache eingetragen werden kann. Neben den ausdrücklich gesetzlich angeordneten Fällen können lediglich solche Tatsachen und Rechtsverhältnisse eingetragen werden, für deren Eintragung ein erhebliches Bedürfnis des Rechtsverkehrs besteht (BGH, ZIP 2012, 623, zitiert aus juris Rdnr. 16). Derartige Bedürfnisse reduzieren sich aber nicht allein auf die Kenntnis der Haftungsverhältnisse. Das Handelsregister soll auch Auskunft über diejenigen Personen liefern, die an der Gesellschaft beteiligt sind und deren Geschicke maßgeblich mitbestimmen können (vgl. BGH, a. a. O., Rdnr. 21). Der Rechtsverkehr hat ein berechtigtes Interesse daran, zu erfahren, wer innerhalb der Gesellschaft an Beschlussfassungen mitwirken kann. Dies gilt nicht zuletzt auch für das Registergericht selbst, welches nur mithilfe dieser Informationen die Wirksamkeit gesellschaftsintern gefasster Beschlüsse überprüfen kann (vgl. OLG Stuttgart, a. a. O., Rdnr. 13 f.).
+
+* II ¶5 (NZG Rn. 8)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p5
+:END:
+
+Vor diesem Hintergrund ist auch die Eintragung eines Nießbrauchsrechtes an einem Gesellschaftsanteil zuzulassen. Der Nießbrauchsberechtigte hat jedenfalls bei Grundsatzentscheidungen maßgeblichen Einfluss auf die Entscheidungsfindung innerhalb der Gesellschaft. Insoweit ist zwar inzwischen höchstrichterlich geklärt, dass ihm bei derartigen Beschlussgegenständen, die eine Änderung des Gesellschaftsvertrages verfolgen, kein eigenes Stimmrecht zusteht (vgl. BGH, NJW 1999, 571, zitiert aus juris Rdnr. 12). Änderungen des Gesellschaftsvertrages haben aber Einfluss auf die Mitgliedschaft des Gesellschafters und damit mittelbar auch auf den Bestand des Nießbrauchsrechtes. Insoweit wird der Nießbrauchsberechtigte über § 1071 BGB geschützt und an der Entscheidungsfindung beteiligt. Die Zustimmung des Gesellschafters, dessen Anteil mit einem Nießbrauchsrecht belastet ist, zur Änderung des Gesellschaftsvertrages ist hiernach ihrerseits nur mit Zustimmung des Nießbrauchsberechtigten möglich (OLG Stuttgart, a. a. O., Rdnr. 13). Diese Einflussmöglichkeit des Nießbrauchsberechtigten insbesondere auf Grundsatzentscheidungen der Gesellschaft rechtfertigt bereits die Eintragung seiner Rechtsstellung in das Handelsregister. Keiner Entscheidung bedarf daher die in Rechtsprechung und Literatur sehr umstrittene Frage, ob dem Nießbraucher darüber hinaus auch ein eigenes Stimmrecht bei Beschlussfassungen der Gesellschafter über die laufenden Angelegenheiten der Gesellschaft zukommt (so OLG Stuttgart, a. a. O., Rdnr. 12; Baumbach/Roth, a. a. O., Rdnr. 46; Schön, ZHR 158, 229 (261 f.); Staub/Schäfer, a. a. O., Rdnr. 126; Staudinger/Habermeier, 2003, § 717 Rdnr. 7; ablehnend dagegen OLG Koblenz, NJW 1992, 2163, zitiert aus juris Rdnr. 21; Hadding/Kießling in Soergel, BGB, 13. Aufl., § 717 Rdnr. 18; Heymann/Emmerich, HGB, 2. Aufl., § 105 Rdnr. 68; MünchKommBGB/Pohlmann, a. a. O., Rdnr. 71 ff.; Staudinger/Frank, a. a. O., Rdnr. 72; Wertenbruch, a. a. O., Rdnr. 235). Einem derart abgespaltenen Stimmrecht käme bei dem hier vereinbarten Nießbrauch an einer Kommanditbeteiligung ohnehin kaum Bedeutung zu. Schon die Rechtsstellung als Kommanditist schließt gemäß § 164 HGB einen Einfluss auf Geschäftsführungsentscheidungen weitestgehend aus.
+
+* II ¶6 (NZG Rn. 9)
+:PROPERTIES:
+:CUSTOM_ID: old-ii-p6
+:END:
+
+Ein berechtigtes Interesse des Rechtsverkehrs an der Eintragung ist auch nicht deshalb zu verneinen, weil Registeranmeldungen nach den praktischen Erfahrungen des Registergerichts oft zeitlich verzögert eingereicht werden, so dass das Handelsregister über die aktuell geltenden Verhältnisse keine verbindliche Auskunft geben kann. Würde man dieser Argumentation folgen, wären sämtliche Umstände, deren Eintragung in das Handelsregister keine konstitutive Wirkung hat, nicht eintragungsfähig. Der Gesetzgeber hat diesem Umstand vielmehr mit den unterschiedlichen Publizitätswirkungen des Registers für eintragungspflichtige Tatsachen einerseits (§ 15 Abs. 1 und 3 HGB) und bloß eintragungsfähigen Tatsachen anderseits (§ 15 Abs. 2 HGB) Rechnung getragen.
+

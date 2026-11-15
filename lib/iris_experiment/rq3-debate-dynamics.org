@@ -1,0 +1,260 @@
+#+title: RQ 3 beyond the verdict: the debate, its course and its readers
+#+language: en
+#+property: header-args:fspy :tangle build/rq3-debate-dynamics.fspy
+#+fspy_prelude: vocabulary.org
+#+fspy_include: rq3-stuttgart.org
+#+fspy_include: rq3-oldenburg.org
+#+fspy_include: rq3-muenchen.org
+#+fspy_include: rq3-koeln.org
+
+AI DRAFT (extension of Phase 2, task =aida-iris-usufruct=, after the
+author's remarks of 2026-11-14).
+
+RQ 3 asks for a /geeignete Modellierung/: a suitable model of the courts'
+argumentation. Phase 2 checked that the abstract argumentative situation
+comes out right (the courts' positions as labellings). A suitable model
+has to do more:
+- *The debate itself.* The order of the arguments, who replies to whom,
+  how the state of the debate evolves move by move, and how the
+  decision's text is structured.
+- *Its readers.* Whether people can follow, explore and extend it: a
+  natural-language rendering, exploring subarguments, graphs, an account
+  of the evaluation, and adding new arguments.
+
+This file checks these points for AIDA. =evaluation/comparison.org=
+compares them across the tools.
+
+* The course of a debate, move by move
+
+AIDA compiles a debate as it stands while it is being recorded, so a
+query between two moves shows the state after the first. The two traced
+debates below repeat the courts' debates of =rq3-oldenburg.org= and
+=rq3-muenchen.org= move for move, with the verbs (attack, support,
+undermine) the courts' replies have, and evaluate after every move.
+
+How to read the classes:
+- In a =pro= debate (Oldenburg) a value means the issue is established,
+  and open means it is not (yet).
+- In a =con= debate (München) a value means the refutation stands. An
+  exception means the refutation aborts because the other side
+  prevails, and open means undecided.
+
+** Oldenburg (pro)
+
+#+begin_src fspy
+debate pro closed old_t : Registrable [usufruct].
+old_registrable.
+evaluate old_t stable.
+support old_need_codet old_registrable.
+evaluate old_t stable.
+support old_codet_1071 old_need_codet.
+evaluate old_t stable.
+support old_need_court old_registrable.
+evaluate old_t stable.
+support old_court_info old_need_court.
+evaluate old_t stable.
+support old_codet_1071 old_court_info.
+evaluate old_t stable.
+attack rc_old_restraint old_registrable.
+evaluate old_t stable.
+undermine excl_needs_no_need rc_old_restraint.
+evaluate old_t stable.
+attack rc_old_no_need old_need_codet.
+evaluate old_t stable.
+undermine old_not_liab_only rc_old_no_need.
+evaluate old_t stable.
+attack rc_old_delay old_need_codet.
+evaluate old_t stable.
+undermine old_no_delay rc_old_delay.
+evaluate old_t stable.
+cedat tempus.
+#+end_src
+
+** München (con)
+
+#+begin_src fspy
+debate con closed muc_t : Registrable [usufruct].
+muc_restraint.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine excl_needs_no_need muc_restraint.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_need_codet excl_needs_no_need.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_codet_mgmt app_need_codet.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_mgmt app_codet_mgmt.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_codet_votes app_need_codet.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_votes app_codet_votes.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_codet_consent app_need_codet.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_constitutive app_codet_consent.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_need_liab excl_needs_no_need.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_liab app_need_liab.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support muc_hyp_info excl_needs_no_need.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+attack muc_no_mgmt app_mgmt.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+attack muc_no_vote app_votes.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+attack muc_not_constitutive app_constitutive.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+attack muc_no_codet app_codet_mgmt.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine powerless_needs_no_vote muc_no_codet.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine powerless_needs_no_constitutive muc_no_codet.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_votes powerless_needs_no_vote.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+support app_constitutive powerless_needs_no_constitutive.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+attack muc_no_liab app_liab.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine muc_counter_deputy muc_hyp_info.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine muc_counter_gmbh muc_hyp_info.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+undermine muc_clarity muc_hyp_info.
+evaluate muc_t stable.
+evaluate muc_t credulous stable.
+cedat tempus.
+#+end_src
+
+* Reading the debate: renderings, the account of the evaluation, graphs
+
+Three of AIDA's natural-language styles on Oldenburg's reductio against
+late filings (fragment (c) of =rq3-fragments.org=, re-stated here for
+the scope), and the pipeline's account of one evaluation.
+
+#+begin_src fspy
+debate pro closed read_c : Need [usufruct].
+old_need_codet.
+support old_codet_1071 old_need_codet.
+attack rc_old_delay old_need_codet.
+undermine old_no_delay rc_old_delay.
+cedat tempus.
+render read_c argumentation.
+render read_c dialectical.
+render read_c pruefschema.
+evaluate read_c stable.
+render read_c argumentation evaluated.
+explain read_c stable.
+#+end_src
+
+* Results (run 2026-11-14, stable)
+
+** The course of Oldenburg's decision
+
+| Move | Who | Move | State after it |
+|------+-----+------+----------------|
+| 1 | Oldenburg | registrable (the claim, its need still owed) | open |
+| 2 | Oldenburg | a need from co-determination | open |
+| 3 | Oldenburg | co-determination from the § 1071 consent right | value |
+| 4-6 | Oldenburg | the register court's own need for the information | value |
+| 7 | register court | the restraint | open |
+| 8 | Oldenburg | the need defeats the restraint | value |
+| 9 | register court | no need: the register shows liability only | value (the need argued elsewhere stands) |
+| 10 | Oldenburg | the register is not about liability only | value |
+| 11 | register court | late filings defeat the interest | open |
+| 12 | Oldenburg | reductio from § 15 (2) HGB | value |
+
+** The course of München's decision
+
+| Moves | Who | What | Skeptical | Credulous |
+|-------+-----+------+-----------+-----------|
+| 1-4 | München; the appellant | the restraint; its exception; a need from co-determination (still owed) | value | value |
+| 5-12 | the appellant | the management share, the vote, § 1071, liability, the interest in information | open | open |
+| 13-21 | München | refutes the management share, the vote, constitutive effect, co-determination, liability | open | open |
+| 22-24 | München | two counter-instances (BGH) and clarity against "an interest in information suffices" | open | value |
+
+AI NOTE (observations for the authors):
+- *The state of the debate is visible move by move.* Oldenburg's text
+  is a sequence of objections and answers, and the trace alternates open
+  and value accordingly. The decision's structure becomes a trajectory.
+- *München's decision turns late.* Its specific refutations (moves
+  13-21) do not yet restore its outcome even credulously. What does is
+  the defeat of the generalisation "an interest in information
+  suffices", by the BGH's counter-instances (move 22). Read this way, the
+  counter-instances carry München's decision, more than the refutations
+  of the participation rights do. Whether that matches the court's own
+  weighting is a question for the legal reviewer.
+- *Order and replies are part of the model.*
+  - A debate keeps who replied to whom (the verbs are checked against
+    their targets) and in which order.
+  - The order also matters for evaluation: within a stack, the later
+    move is judged first.
+  - The literate files keep each move next to the paragraph it
+    formalises (the paragraph =CUSTOM_ID=s of =sources/=).
+
+** Reading the debate
+
+What a reader gets, tried on =read_c=:
+
+| Means | What it gives | Assessment |
+|-------+---------------+------------|
+| =render … argumentation= | nested text with the decorated statements, "We will argue for …", "by default! …" | readable in outline; mixes in the German check-list phrases ("Für … ist hinreichend, dass", "weil", "und", "gegen … spricht"); shows internal names (=alt1=, =r_3=, =H1=, =_F_=); deep nesting |
+| =render … pruefschema= | a German check-list ("Es genügt zu prüfen, dass …", "sofern nichts entgegensteht: …", "Prüfpunkt") | the frame is the one German lawyers use for the order of examination; the statements stay English (decorations are English); in the unevaluated term an unsupported site shows as "Prüfung fehlgeschlagen" |
+| =render … dialectical= | the scaffold term (=SUP=, =ATT=, =PUS=) with proof terms | for experts on the calculus only |
+| =render … evaluated= | the normal form as text: what the verdict rests on | the most useful for a reader: one line of reasons per kept step |
+| =explain= | the pipeline's account, stage by stage | a developer trace; its =sigma= lines are readable reasons ("attacker … is OUT -> keep the original") |
+| =graph … show= | a picture with labels, onus markings (=[t:p]=, =[c:o]=) and a legend | legible for small debates (fragments); large ones are unwieldy (=figures/claim_graph.png=) |
+| =label= | the labelling, statement by statement | complete but long |
+
+AI NOTE (assessment):
+- *For a legal reader, AIDA is not ready.* It has every ingredient: a
+  rendering per argument and per normal form, check-list structure,
+  decorations, a graph with a legend, and incremental queries. But the
+  text output mixes languages and leaks internal names.
+  - A rendering for this experiment's audience would need an English
+    counterpart of the check-list frame, and the internal binders left
+    out (task =aida-render-english-argumentation= on the branch).
+  - The acceptance-tree renderer is deprecated.
+- *Exploration.* Subarguments are named and can be targeted (=render=,
+  =graph=, =evaluate= take any argument or debate). The interactive CLI
+  and the Emacs integration let a reader add an argument and re-query.
+  The document graph is global, so a new counterargument contests every
+  use of its statement at once. This was not tested with users.
+- *Incremental addition.* Arguments are added, never edited. A debate
+  can be queried while it is recorded. The combined document arises by
+  including the four court files, and the case-law debate of
+  =rq4-gap-dynamics.org= by adding moves in time. On main, a registered
+  debate can also be extended (=debate X extends Y=) without changing
+  its parent. That is not on this branch.
+- *The legal text's control flow (cf. Catala).* Catala mirrors a
+  statute's structure (scopes, default rules with exceptions in the
+  order of the text) and computes with it. AIDA mirrors the reasoning of
+  a decision: its order of moves and its replies. A statute's own
+  structure is represented here only through the meta-norm's helper and
+  its denials (one per requirement), which is a check-list. The
+  =pruefschema= rendering prints it in the order of examination. Catala
+  was not run (it is outside the plan's comparison set); the DIREGA
+  group has Catala material in =DIREGA/formalizations/catala=.

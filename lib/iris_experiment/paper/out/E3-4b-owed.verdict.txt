@@ -1,0 +1,2 @@
+duty, stable, skeptical: open
+?OUT:Duty court app e1

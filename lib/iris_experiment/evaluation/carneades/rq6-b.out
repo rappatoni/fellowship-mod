@@ -1,0 +1,69 @@
+meta: 
+    title: "IRIS RQ 6, 6b: the application is missing"
+issues: 
+    i0: 
+        positions:
+            - correct
+            - ¬correct
+        standard: PE
+statements: 
+    conflict: 
+        text: the register contradicts the reported change 
+        label: out
+    submitted: 
+        text: the application in certified form is submitted 
+        label: out
+    duty: 
+        text: the register court owes the applicants the entry 
+        label: out
+    passed: 
+        text: the examination of the entry is passed 
+        label: out
+    statute: 
+        text: the entry is provided by statute 
+        label: in
+    ¬correct: 
+        text: the reported change is not correct 
+        label: out
+    metanorm: 
+        text: "the unwritten meta-norm is in force" 
+        label: in
+    registrable: 
+        text: the entry is abstractly registrable 
+        label: in
+    correct: 
+        text: the reported change is correct 
+        label: in
+    proved: 
+        text: the applicants have proved the change 
+        label: out
+assumptions:
+    - statute
+arguments: 
+    face_value:
+        conclusion: correct
+        weight: 0.50
+        scheme: presumption
+    duty_arg:
+        premises:
+            - metanorm
+            - passed
+        conclusion: duty
+        scheme: linked
+    pres_meta:
+        conclusion: metanorm
+        weight: 0.50
+        scheme: presumption
+    exam:
+        premises:
+            - registrable
+            - submitted
+            - correct
+        conclusion: passed
+        scheme: linked
+    reg_stat:
+        premises:
+            - statute
+        conclusion: registrable
+        weight: 1.00
+        scheme: linked

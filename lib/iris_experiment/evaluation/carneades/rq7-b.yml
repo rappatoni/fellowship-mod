@@ -1,0 +1,37 @@
+meta: {title: 'IRIS RQ 7, 7b: the scope principle as anchor'}
+argument_schemes:
+  - id: presumption
+    weight: {constant: 0.5}
+statements:
+  duty: the register court owes the applicants the entry
+  metanorm: the unwritten meta-norm is in force
+  passed: the examination of the entry is passed
+  registrable: the entry is abstractly registrable
+  statute: the entry is provided by statute
+  submitted: the application in certified form is submitted
+  correct: the reported change is correct
+  ¬correct: the reported change is not correct
+  conflict: the register contradicts the reported change
+  proved: the applicants have proved the change
+  claim: the applicants have a claim to the entry
+  demand_unmet: a demand of the court within the scope is unmet
+  demanded: the court demands the transfer agreement
+  contract_missing: the transfer agreement is not submitted
+  improper: the demand is outside the scope of examination
+  limited: the examination is limited to what the law requires
+  unrequired: the law does not require the transfer agreement
+issues:
+  i0: {positions: [correct, ¬correct]}
+arguments:
+  duty_arg: {conclusion: duty, premises: [metanorm, passed]}
+  pres_meta: {conclusion: metanorm, premises: [], scheme: presumption}
+  exam: {conclusion: passed, premises: [registrable, submitted, correct], undercutter: demand_unmet}
+  reg_stat: {conclusion: registrable, premises: [statute]}
+  face_value: {conclusion: correct, premises: [], scheme: presumption}
+  corr1: {conclusion: claim, premises: [duty]}
+  corr2: {conclusion: duty, premises: [claim]}
+  court_extra: {conclusion: demand_unmet, premises: [demanded, contract_missing], undercutter: improper, scheme: presumption}
+  bgh_rule: {conclusion: limited, premises: [claim]}
+  bgh_limit: {conclusion: improper, premises: [limited, unrequired]}
+  scope_n7: {conclusion: limited, premises: [], scheme: presumption}
+assumptions: [statute, submitted, demanded, contract_missing, unrequired]

@@ -1,0 +1,42 @@
+declare Order : type.
+declare o_submit, o_entry : Order.
+declare Lawful : Order -> bool.
+decorate o_entry : "the entry of C as limited partner".
+decorate o_submit : "an interim order to remedy the application".
+decorate Lawful : "@arg1 is the lawful order".
+declare entry_rule : (Duty [court] [app] [e1] -> Lawful [o_entry]).
+declare remedy_rule : ((Duty [court] [app] [e1] -> false) -> Lawful [o_submit]).
+
+# Peirce at the duty, argued: its open site is "the entry is not owed".
+argument peirce_duty : (((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) -> Duty [court] [app] [e1]).
+elim f.
+cut ((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) g.
+axiom f.
+elim.
+by default.
+next.
+axiom g.
+dixi.
+
+# First witness the entry order; to show the duty, assume it is not owed
+# and offer the claim again with the submission order.
+argument decision_k : (exists o:Order, Lawful [o]).
+elim [o_entry].
+cut (Duty [court] [app] [e1] -> Lawful [o_entry]) r.
+axiom entry_rule.
+elim.
+cut (((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) -> Duty [court] [app] [e1]) p.
+next.
+elim.
+elim n.
+cut (exists o:Order, Lawful [o]) k.
+elim [o_submit].
+cut ((Duty [court] [app] [e1] -> false) -> Lawful [o_submit]) s.
+axiom remedy_rule.
+elim.
+axiom n.
+axiom s.
+next.
+axiom p.
+axiom r.
+dixi.

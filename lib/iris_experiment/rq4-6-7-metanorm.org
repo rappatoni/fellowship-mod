@@ -1,0 +1,1162 @@
+#+title: RQ 4, 6, 7: the missing meta-norm, the burden of proof, the cycle
+#+language: en
+
+AI DRAFT (Phases 3-5 of task =aida-iris-usufruct=).
+
+- *What it is:* one example in three layers, all about a single entry:
+  - layer 1 (RQ 4): the unwritten meta-norm that obliges the register
+    court to enter a fact
+  - layer 2 (RQ 6): what the applicant must show and what the court must
+    examine
+  - layer 3 (RQ 7): the claim to registration and the scope of
+    examination, each argued from the other
+- *Logic:* first order with reified eventualities (=analysis.org= § 3).
+  - =Enter e c f= says that e is an entering of fact f by court c.
+  - The deontic notions are ordinary predicates over agents and an
+    eventuality: =Duty c a e= (c owes a the eventuality e) and
+    =Claim a c e= (a has a claim against c to e).
+  - Sources: Hobbs 1985; Robaldo & Sun 2017; Robaldo et al. 2020
+    (DAPRECO). Hohfeld's correlativity of claim and duty is written as
+    two universal rules, one per direction (Hohfeld 1913; Sergot 2001).
+    Full references: =README.org=.
+- *The entry:* to keep the burden of proof apart from the RQ 3 dispute,
+  the example uses the uncontroversial part of the IRIS scenario.
+  - The limited partner B transfers the interest to C, who joins as
+    limited partner by special succession (/Sonderrechtsnachfolge/). The
+    partners apply for the entry of C.
+  - This entry is provided by statute (§§ 162 (1), 106 (2), 107 HGB).
+  - For the usufruct itself, =Registrable= is the issue RQ 3 leaves open.
+    It would take the place of =ProvidedByStatute= below.
+- *How the scenarios are built:* AIDA scripts accumulate arguments, so
+  each scenario is its own script. The blocks below are named. Each
+  scenario at the end of a section assembles its script from them with
+  noweb references and states its expected verdict before the run. The
+  recorded verdicts are pinned in =tests/iris/test_iris.py=.
+- *Legal content:* the readings of German law below are an AI draft. The
+  IRIS draft's §§ 3.1-3.2 are the source. Every reading needs legal
+  review.
+
+Figures (=make iris=, in =figures/=): =duty_graph.png= is scenario 6a
+(the requirements around the helper), =claim_graph.png= scenario 7a (the
+cycle). A graph image is named after its target, so only one scenario
+per target draws one.
+
+Semantics: the queries use stable semantics, the author's chosen default
+(founded reading, task =aida-default-semantics-not-preferred= on main),
+and grounded where the contrast matters.
+
+* The shared signature
+
+#+name: vocab
+#+begin_src fspy
+lk.
+pipeline unfolded.
+declare Ag, Fact, Ev, Doc : type.
+declare court, app : Ag.
+declare kp_c : Fact.
+declare e1 : Ev.
+declare d_appl, d_contract : Doc.
+declare MetaNorm, WrittenOnly, NoWrittenNorm, Presupposed : bool.
+declare Enter : Ev -> Ag -> Fact -> bool.
+declare Duty, Claim : Ag -> Ag -> Ev -> bool.
+declare Passed, Limited, StatScope : Ev -> bool.
+declare Registrable, ProvidedByStatute, Correct, Conflict, Proved : Fact -> bool.
+declare Required, Demanded, Proper, Unrequired : Doc -> Ev -> bool.
+declare Submitted : Doc -> bool.
+
+decorate court : "the register court".
+decorate app : "the applicants".
+decorate kp_c : "C's entry as limited partner".
+decorate e1 : "the entry applied for".
+decorate d_appl : "the application in certified form".
+decorate d_contract : "the transfer agreement".
+decorate MetaNorm : "the unwritten meta-norm is in force".
+decorate WrittenOnly : "only a written norm can bind the register court".
+decorate NoWrittenNorm : "no written norm orders the entry".
+decorate Presupposed : "the written rules presuppose the meta-norm".
+decorate Enter : "@arg1 is an entering of @arg3 by @arg2".
+decorate Duty : "@arg1 owes @arg2 @arg3".
+decorate Claim : "@arg1 can claim @arg3 from @arg2".
+decorate Passed : "the examination of @arg1 is passed".
+decorate Limited : "the examination of @arg1 is limited to what the law requires to be submitted".
+decorate StatScope : "a statute fixes the scope of examination of @arg1".
+decorate Registrable : "@arg1 is abstractly registrable".
+decorate ProvidedByStatute : "the entry of @arg1 is provided by statute".
+decorate Correct : "the reported @arg1 is correct".
+decorate Conflict : "the register contradicts @arg1".
+decorate Proved : "the applicants have proved @arg1".
+decorate Required : "the law requires @arg1 for @arg2".
+decorate Demanded : "the court demands @arg1 for @arg2".
+decorate Proper : "the demand of @arg1 for @arg2 is within the scope of examination".
+decorate Unrequired : "the law does not require @arg1 for @arg2".
+decorate Submitted : "@arg1 is submitted".
+#+end_src
+
+The facts of the case, and the statutes:
+
+#+name: facts
+#+begin_src fspy
+declare entering : (Enter [e1] [court] [kp_c]).
+declare s_162 : (ProvidedByStatute [kp_c]).
+declare req_appl : (Required [d_appl] [e1]).
+declare no_written : (NoWrittenNorm).
+declare presupposed : (Presupposed).
+declare reg_stat : (forall f:Fact, ProvidedByStatute [f] -> Registrable [f]).
+#+end_src
+
+- =s_162=: §§ 162 (1), 106 (2), 107 HGB provide for the entry of a
+  limited partner and of a change of limited partners.
+- =req_appl=: § 12 (1) HGB requires the application in electronic,
+  publicly certified form. § 108 HGB requires all partners to apply.
+- =no_written=: the IRIS draft's § 3.1. No written norm orders a duty to
+  enter or grants a claim to entry.
+- =presupposed=: the IRIS draft's § 3.2. The written rules presuppose
+  the meta-norm: § 59 (1), (2) FamFG presupposes an impaired subjective
+  right in every appeal; § 9c (2) GmbHG and § 38 (2) AktG only limit an
+  examination that is otherwise presupposed.
+
+* Layer 1 (RQ 4): the gap as a delegation
+
+#+begin_quote
+Eine solche geschriebene Meta-Rechtsnorm existiert jedoch nicht.
+[...] Die Existenz einer Metanorm wird also von den geschriebenen
+Rechtsregeln vorausgesetzt. (IRIS draft, §§ 3.1, 3.2)
+#+end_quote
+
+/AI DRAFT TRANSLATION — not reviewed by a lawyer./ Such a written meta-norm
+does not exist, however. [...] The existence of a meta-norm is thus
+presupposed by the written legal rules.
+
+The meta-norm in the IRIS draft's wording (§ 3.2 (1) sentence 1): "The
+register court has to enter a fact in the commercial register if the
+formal and substantive requirements for registration are met."
+
+The encoding:
+- =MetaNorm= is a statement: "the unwritten meta-norm is in force".
+- =bridge= is the meta-norm's content, conditional on it being in force.
+  The requirements are folded into one helper statement, =Passed e=
+  ("the examination of e is passed"). Layer 2 opens it up.
+- =duty= derives the court's duty. Both =MetaNorm= and =Passed e1= are
+  *delegations* (=by default.=). Nothing in the written law supplies the
+  meta-norm, so the argument hands it on as a presumption. That is the
+  gap.
+
+#+name: bridge
+#+begin_src fspy
+declare bridge : (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]).
+#+end_src
+
+#+name: duty
+#+begin_src fspy
+argument duty : (Duty [court] [app] [e1]).
+cut (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]) r.
+axiom bridge.
+elim.
+by default.
+next.
+elim [e1].
+elim [court].
+elim [kp_c].
+elim.
+axiom entering.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+#+end_src
+
+The contrast: the same argument with the meta-norm *owed* (=next.=, an
+obligation). It reads "the duty holds once someone supplies the
+meta-norm". Nobody does.
+
+#+name: duty_owed
+#+begin_src fspy
+argument duty : (Duty [court] [app] [e1]).
+cut (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]) r.
+axiom bridge.
+elim.
+next.
+elim [e1].
+elim [court].
+elim [kp_c].
+elim.
+axiom entering.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+#+end_src
+
+A positivist objection: only a written norm can bind the court, and
+there is none. The principle =WrittenOnly= is itself presumed.
+
+#+name: positivist
+#+begin_src fspy
+declare positivism : (WrittenOnly -> NoWrittenNorm -> ~MetaNorm).
+counterargument positivist : (MetaNorm).
+cut (WrittenOnly -> NoWrittenNorm -> ~MetaNorm) r.
+axiom positivism.
+elim.
+by default.
+next.
+elim.
+axiom no_written.
+elim.
+axiom.
+dixi.
+#+end_src
+
+The answer from the IRIS draft (§ 3.2): the written rules presuppose the
+meta-norm, so the absence of a written norm does not exclude it.
+
+#+name: anchor
+#+begin_src fspy
+declare presupp_rule : (Presupposed -> ~WrittenOnly).
+counterargument anchor : (WrittenOnly).
+cut (Presupposed -> ~WrittenOnly) r.
+axiom presupp_rule.
+elim.
+axiom presupposed.
+elim.
+axiom.
+dixi.
+#+end_src
+
+** Scenarios
+
+Expected, written before the run:
+- (4a) delegated meta-norm: a value. The normal form shows =!IN:MetaNorm=:
+  the verdict rests on the delegated gap.
+- (4b) owed meta-norm: not a value. The owed site is OUT (AIDA's class
+  for this is open, =?OUT=).
+- (4c) 4a with the positivist objection: open. The objection defeats the
+  presumption.
+- (4d) 4c with the anchor: a value again.
+
+#+begin_src fspy :tangle build/rq4-a.fspy :noweb yes
+<<vocab>>
+<<facts>>
+<<bridge>>
+<<duty>>
+label duty stable.
+evaluate duty stable.
+explain duty stable.
+render duty argumentation.
+#+end_src
+
+#+begin_src fspy :tangle build/rq4-b.fspy :noweb yes
+<<vocab>>
+<<facts>>
+<<bridge>>
+<<duty_owed>>
+label duty stable.
+evaluate duty stable.
+evaluate duty credulous stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq4-c.fspy :noweb yes
+<<vocab>>
+<<facts>>
+<<bridge>>
+<<duty>>
+<<positivist>>
+label duty stable.
+evaluate duty stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq4-d.fspy :noweb yes
+<<vocab>>
+<<facts>>
+<<bridge>>
+<<duty>>
+<<positivist>>
+<<anchor>>
+label duty stable.
+evaluate duty stable.
+#+end_src
+
+** Results (run 2026-11-14, stable)
+
+| Scenario | Verdict | Normal form / labels |
+|----------+---------+----------------------|
+| 4a       | value   | =…!IN:MetaNorm*…*!IN:Passed e1*duty…=; one stable labelling |
+| 4b       | open    | =?OUT:Duty court app e1=; =MetaNorm= OUT, the owed site never supplied; credulously the same |
+| 4c       | open    | =?OUT:Duty court app e1=; =MetaNorm= OUT, its refutation IN |
+| 4d       | value   | as 4a; =WrittenOnly= OUT |
+
+AI NOTE (observations for the authors):
+- The verdict of 4a rests on the delegated gap, and the normal form says
+  so: =!IN:MetaNorm=. =render duty argumentation= prints the step as "by
+  default! the unwritten meta-norm is in force".
+- Delegation or obligation is the modelling decision RQ 4 asks about.
+  The same argument is a value when the gap is presumed (4a) and open
+  when it is owed (4b). A delegation is a claim that the gap may be
+  filled until someone objects. An obligation is a claim that it must
+  be filled first.
+- The delegated meta-norm can be argued about like any other
+  presumption (4c, 4d). The IRIS draft's own reason, that the written
+  rules presuppose the meta-norm, becomes a counterargument against the
+  positivist principle.
+
+* Layer 2 (RQ 6): what must be shown, and by whom
+
+#+begin_quote
+Diese Befugnis wird auf der Beweisebene jedoch dahingehend
+eingeschränkt, dass das Gericht grundsätzlich von der Richtigkeit der
+mitgeteilten Tatsachen auszugehen hat. Die mitgeteilten
+(Rechts-)Tatsachen begrenzen wiederum den normativen Prüfungsumfang –
+insbesondere ist eine solche grundsätzlich nur insoweit vorzunehmen, als
+das Gesetz auch die Vorlage der hierfür erforderlichen
+(Rechts-)Tatsachen vorsieht. (IRIS draft, § 3.1)
+#+end_quote
+
+/AI DRAFT TRANSLATION — not reviewed by a lawyer./ On the level of
+evidence, however, this power is restricted: the court has, in
+principle, to assume that the reported facts are correct. The reported
+(legal) facts in turn limit the normative scope of examination. In
+particular, an examination is in principle to be made only so far as the
+law also provides for the submission of the (legal) facts required for
+it.
+
+"Burden of proof" here means, as the author settled (2026-11-13), the
+standard the applicant has to meet and, dually, the depth of the court's
+examination. Register proceedings are ex officio proceedings (§ 26
+FamFG), so this is not a civil-procedure burden (=README.org=, AI NOTE).
+
+The encoding opens the helper =Passed e1= of layer 1. Each requirement
+is a necessary condition, stated as a rule from =Passed= and attacked by
+one counterargument. Who carries the burden for a requirement is decided
+by one choice inside its counterargument:
+- the refutation of the requirement is *presumed* (=by default.=): the
+  applicant has to establish the requirement;
+- the refutation is *owed* (left open): the court has to find a reason
+  against it.
+
+| Requirement                    | Rule    | Refutation | Who must act                              |
+|--------------------------------+---------+------------+-------------------------------------------|
+| abstract registrability        | =n_reg= | presumed   | the applicant (restraint, cf. RQ 3)       |
+| documents the law requires     | =n_doc= | presumed   | the applicant must submit them            |
+| correctness of reported facts  | =n_cor= | owed       | the court, by a justified doubt           |
+
+The presumption that reported facts are correct (=face_value=) is
+generic: one delegation for every fact, which reaches =Correct kp_c= as
+an instance.
+
+#+name: requirements
+#+begin_src fspy
+declare n_reg : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]).
+declare n_doc : (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]).
+declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]).
+
+argument face_value : (Correct [?f]).
+by default.
+dixi.
+
+counterargument no_reg : (Passed [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
+axiom n_reg.
+elim [e1].
+elim [court].
+elim [kp_c].
+elim.
+axiom entering.
+elim.
+axiom.
+by default.
+dixi.
+
+counterargument no_doc : (Passed [e1]).
+cut (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]) r.
+axiom n_doc.
+elim [d_appl].
+elim [e1].
+elim.
+axiom req_appl.
+elim.
+axiom.
+by default.
+dixi.
+
+counterargument no_cor : (Passed [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]) r.
+axiom n_cor.
+elim [e1].
+elim [court].
+elim [kp_c].
+elim.
+axiom entering.
+elim.
+axiom.
+dixi.
+
+argument reg : (Registrable [kp_c]).
+cut (forall f:Fact, ProvidedByStatute [f] -> Registrable [f]) r.
+axiom reg_stat.
+elim [kp_c].
+elim.
+axiom s_162.
+axiom r.
+dixi.
+#+end_src
+
+The applicants submit the application:
+
+#+name: submitted
+#+begin_src fspy
+declare submitted_appl : (Submitted [d_appl]).
+argument doc_appl : (Submitted [d_appl]).
+axiom submitted_appl.
+dixi.
+#+end_src
+
+A justified doubt: the register contradicts the reported change, for
+instance because it shows B's interest as already transferred to someone
+else. That the contradiction shows the report incorrect is presumed, not
+strict: the contradiction can be explained.
+
+#+name: doubt
+#+begin_src fspy
+declare reg_conflict : (Conflict [kp_c]).
+counterargument doubt : (Correct [kp_c]).
+cut (Conflict [kp_c] -> ~Correct [kp_c]) r.
+by default.
+next.
+elim.
+axiom reg_conflict.
+elim.
+axiom.
+dixi.
+#+end_src
+
+After the doubt the applicants have to prove the fact. A presumption no
+longer carries it. The proof is an argument of their own (named =evidence=; =proof= is
+a reserved word of Fellowship):
+
+#+name: evidence
+#+begin_src fspy
+declare proved_kp : (Proved [kp_c]).
+declare proof_rule : (forall f:Fact, Proved [f] -> Correct [f]).
+argument evidence : (Correct [kp_c]).
+cut (forall f:Fact, Proved [f] -> Correct [f]) r.
+axiom proof_rule.
+elim [kp_c].
+elim.
+axiom proved_kp.
+axiom r.
+dixi.
+#+end_src
+
+** Scenarios
+
+Expected, written before the run:
+- (6a) complete application: a value.
+- (6b) the application is missing: open. The presumed refutation of
+  =Submitted d_appl= stands, so =Passed e1= is OUT. This corresponds to
+  an interim order (/Zwischenverfügung/, § 382 (4) FamFG).
+- (6c) 6a with the justified doubt: open. The doubt defeats
+  =face_value= for =kp_c=. Nobody presumes the refutation of
+  =Correct kp_c=, so there are no opposing presumptions.
+- (6d) 6c with the applicants' proof: a value.
+
+#+name: layer2
+#+begin_src fspy :noweb yes
+<<vocab>>
+<<facts>>
+<<bridge>>
+<<duty>>
+<<requirements>>
+#+end_src
+
+#+begin_src fspy :tangle build/rq6-a.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+label duty stable.
+evaluate duty stable.
+graph duty show.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6-b.fspy :noweb yes
+<<layer2>>
+label duty stable.
+evaluate duty stable.
+explain duty stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6-c.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+label duty stable.
+evaluate duty stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6-d.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+<<evidence>>
+label duty stable.
+evaluate duty stable.
+#+end_src
+
+** Results (run 2026-11-14, stable)
+
+| Scenario | Verdict | Labels |
+|----------+---------+--------|
+| 6a       | value   | =Passed e1= IN; every requirement's counterargument fails |
+| 6b       | open    | =?OUT:Duty court app e1=; the presumed refutation of =Submitted d_appl= stands, =Passed e1= OUT |
+| 6c       | open    | =Correct kp_c= OUT, its refutation IN; =Passed e1= OUT |
+| 6d       | value   | =Correct kp_c= IN through the proof; the doubt's presumed rule stays IN as a statement, but its conclusion does not hold |
+
+The consistency condition holds in every scenario: no statement is
+presumed on both sides (checked in =tests/iris= with the same test AIDA
+uses for its warning).
+
+AI NOTE (observations for the authors):
+- The table of who must act becomes a property of single sites. Each
+  site is a presumed or an owed refutation inside one counterargument.
+  Moving a burden means changing one tactic (=by default.= or none).
+- The shift of the burden after a justified doubt (6c to 6d) needs no
+  extra machinery. The doubt defeats the generic presumption for this one
+  fact. What the applicant then has to bring is an argument, not a
+  report.
+- 6b is the interim order. The verdict is not "refused" but open, with
+  the missing site named (=?OUT=). That is what an interim order is: a
+  request for what is missing.
+- The examination's scope is visible as the set of denials. A
+  requirement the law does not impose has no denial, so a document the
+  law does not require cannot defeat =Passed=. Layer 3 adds exactly such
+  a demand.
+
+* Layer 2b (RQ 6, "verarbeiten"): the evaluation returns the court's order
+
+RQ 6 asks how the burden of proof can be represented *and processed*.
+Layer 2 shows that the debate's outcome depends on who must act. This
+layer uses that outcome: once the debate is complete, the evaluation
+returns a concrete object, namely the order the court has to make, with
+its justification attached.
+
+The orders, as individuals of a sort =Order=:
+- =o_entry=: enter C as limited partner (an entry order).
+- =o_submit=: an interim order (/Zwischenverfügung/, § 382 (4) FamFG)
+  asking for the application in certified form.
+- =o_prove=: an interim order asking the applicants to clear the doubt
+  the register raises.
+
+When is each order lawful?
+- *The entry order* is lawful if the court owes the entry (=entry_rule=,
+  from =Duty=; owed).
+- *The submission order* is lawful by default, since a missing document
+  is a defect the applicants can remedy. It is moot once the application
+  is submitted (=submitted_moots=), and unlawful when the court must
+  enter (=no_delay_submit=): a complete application may not be delayed.
+- *The proof order* is lawful if the register contradicts the reported
+  change. The rule is presumed, not strict: a contradiction calls for
+  clarification unless it has been resolved. The order is unlawful when
+  the court must enter (=no_delay_prove=). (A first draft stated the rule
+  strictly; the order then survived the proof in 6d, because a strict
+  argument cannot be defeated.)
+- =decision= proves that some order is lawful by its own open choice
+  =?o=. The debate tries the declared orders as witnesses and keeps one
+  that stands (AIDA's witness scaffold, =README.md=, Discourse
+  referents).
+
+#+name: orders
+#+begin_src fspy
+declare Order : type.
+declare o_submit, o_prove, o_entry : Order.
+declare Lawful : Order -> bool.
+decorate o_entry : "the entry of C as limited partner".
+decorate o_submit : "an interim order to submit the application in certified form".
+decorate o_prove : "an interim order to clear the doubt the register raises".
+decorate Lawful : "@arg1 is the lawful order".
+declare entry_rule : (Duty [court] [app] [e1] -> Lawful [o_entry]).
+declare submitted_moot_rule : (Submitted [d_appl] -> ~Lawful [o_submit]).
+declare no_delay_submit_rule : (Duty [court] [app] [e1] -> ~Lawful [o_submit]).
+declare no_delay_prove_rule : (Duty [court] [app] [e1] -> ~Lawful [o_prove]).
+
+argument lawful_entry : (Lawful [o_entry]).
+cut (Duty [court] [app] [e1] -> Lawful [o_entry]) r.
+axiom entry_rule.
+elim.
+next.
+axiom r.
+dixi.
+
+argument lawful_submit : (Lawful [o_submit]).
+by default.
+dixi.
+
+counterargument submitted_moots : (Lawful [o_submit]).
+cut (Submitted [d_appl] -> ~Lawful [o_submit]) r.
+axiom submitted_moot_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+counterargument no_delay_submit : (Lawful [o_submit]).
+cut (Duty [court] [app] [e1] -> ~Lawful [o_submit]) r.
+axiom no_delay_submit_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+argument lawful_prove : (Lawful [o_prove]).
+cut (Conflict [kp_c] -> Lawful [o_prove]) r.
+by default.
+next.
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument no_delay_prove : (Lawful [o_prove]).
+cut (Duty [court] [app] [e1] -> ~Lawful [o_prove]) r.
+axiom no_delay_prove_rule.
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+argument decision : [?o:Order] (exists o:Order, Lawful [o]).
+elim [?o].
+dixi.
+#+end_src
+
+** Scenarios
+
+Expected, written before the run: the witness of =decision= is
+- (6a) =o_entry=, complete application
+- (6b) =o_submit=, application missing
+- (6c) =o_prove=, the register contradicts the report
+- (6d) =o_entry=, the doubt cleared by proof
+
+#+begin_src fspy :tangle build/rq6p-a.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<orders>>
+label decision stable.
+evaluate decision stable.
+render decision argumentation evaluated.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6p-b.fspy :noweb yes
+<<layer2>>
+<<orders>>
+evaluate decision stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6p-c.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+<<orders>>
+evaluate decision stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6p-d.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+<<evidence>>
+<<orders>>
+evaluate decision stable.
+#+end_src
+
+** Results (run 2026-11-14, stable)
+
+| Scenario | Witness | Normal form (abridged) |
+|----------+---------+------------------------|
+| 6p-a     | =o_entry=  | =(o_entry, μlawful_entry … !IN:MetaNorm … !IN:Passed e1 …)= |
+| 6p-b     | =o_submit= | =(o_submit, !IN:Lawful o_submit)= |
+| 6p-c     | =o_prove=  | =(o_prove, μlawful_prove … !IN:Conflict kp_c->Lawful o_prove … reg_conflict …)= |
+| 6p-d     | =o_entry=  | as 6p-a |
+
+AI NOTE (observations for the authors):
+- *What "processing" gives here.* The evaluation returns a value: a pair
+  of the order and its justification. The justification is a certificate
+  of the decision. Its delegations (=!IN:MetaNorm=, =!IN:Passed e1= in the
+  entry order) are exactly what the court presumed rather than
+  established, and so what an appeal could attack.
+- *The burden decides the output.* The same document, with one site
+  changed from presumed to owed, yields a different order. An interim
+  order is the processed form of an unmet obligation of the applicant.
+- *The depth of examination, documented.* The certificate's delegations
+  are what the court relied on without examining it: the meta-norm, and
+  the examination presumed passed once no requirement's refutation
+  stands. The face-value presumption does not appear there. It acts in
+  the labelling, where it defeats the correctness objection, and that
+  scaffold is dropped from the normal form, so a full record would add
+  the labelling. That is the dual sense of "burden of proof" the author settled
+  (2026-11-13): what the applicant had to show, and how deep the court
+  looked. A register court could file the certificate with the entry,
+  as a record of its due diligence.
+- *An idea, not tested: the evaluation mode as a standard of proof.*
+  Skeptical evaluation demands that the outcome hold in every stable
+  reading, while credulous evaluation is satisfied by one consistent
+  reading. A procedure could prescribe the mode per kind of entry,
+  stricter where an entry has constitutive effect.
+- *Classification.* =evaluate= classifies the outcome as a value, an
+  exception (an uncatchable clash) or open, with the unmet obligations
+  named (=?OUT:…=). A register process could dispatch on these classes:
+  - value: execute the order
+  - open: ask for what is named
+  - exception: the documents contradict each other
+- *What it does not do (yet).*
+  - The orders are individuals the author declares. AIDA tries them as
+    candidates and keeps one that stands; it does not compose an order
+    from parts.
+  - When two candidates stand, the scaffold keeps the topmost one, as at
+    any statement. Candidates are stacked in the order in which the
+    document graph first holds a statement about them (=_alternatives=
+    in =core/dc/unfold.py=): in practice the order of the arguments for
+    them, the later on top. The declaration order of the constants plays
+    no part.
+    - Checked 2026-11-14 with entry and interim order both standing:
+      registering =lawful_interim= last kept the interim order, and
+      registering it first kept the entry order.
+    - This is AIDA's natural preference (the later statement stands
+      above), but the README does not say how declared constants are
+      ordered.
+    - Legally, the choice between two lawful orders needs a rule, not the
+      order of the arguments. The encoding states it by making the orders
+      exclude each other (=no_delay_*=, =submitted_moots=), so exactly one
+      stands in each scenario.
+  - The rendering of the evaluated decision (=render decision
+    argumentation evaluated=) mixes the English style with the German
+    check-list phrases ("Für … ist hinreichend, dass", "weil", "und")
+    at the cut. That is a rendering defect, to be recorded as an AIDA
+    task.
+
+* Layer 2c (RQ 6): the witness rises to the top
+
+Layer 2b let the argument name its own open choice, and the debate tried
+the declared orders. Here the argument does not name the order. It
+proves "some order is lawful" in a way that leaves the order to be
+determined, and the evaluation brings a concrete witness to the head of
+the normal form. Two ways:
+
+- *Constructively, by cut elimination.* =decision_c= opens the court's
+  finding "some document the law requires is missing" (=finding=) and
+  builds the order =interim d= (an interim order for that document) for
+  whatever =d= the finding supplies. It never mentions =d_appl=. When
+  the evaluation meets the finding's pair with this elimination, AIDA's
+  rule =<(u, v) || (y).e> → <v || e[u/y]>= (=README.md=, First-order
+  debates) substitutes the witness, so =interim d_appl= comes to the top.
+- *Classically, by an argued Peirce step.* =decision_k= offers the entry
+  order first. To show that the entry is owed, it uses Peirce at the
+  duty (=peirce_duty=, argued as in =tests/discourse/drinker_closed.fspy=).
+  Assuming the entry is not owed, it offers the claim again with the
+  submission order, and the claim's own binder catches that second
+  offer. The argument never decides whether the entry is owed; the
+  debate's labelling decides it, and with it which witness the normal
+  form shows.
+  - The open site of =peirce_duty=, "the entry is not owed", is
+    presumed: a duty that is not established counts as not owed.
+  - Owed instead, it would leave 6b open, since "not established" is
+    not "refuted". A first run showed exactly that.
+
+#+name: witness_constructive
+#+begin_src fspy
+declare Order : type.
+declare interim : Doc -> Order.
+declare Missing : Doc -> bool.
+declare Lawful : Order -> bool.
+decorate interim : "an interim order to submit @arg1".
+decorate Missing : "@arg1 is missing".
+decorate Lawful : "@arg1 is the lawful order".
+declare interim_rule : (forall d:Doc, Missing [d] -> Lawful [interim d]).
+declare submitted_not_missing : (forall d:Doc, Submitted [d] -> ~Missing [d]).
+
+# The court's finding: some document the law requires is missing.
+argument finding : (exists d:Doc, Missing [d]).
+elim [d_appl].
+by default.
+dixi.
+
+counterargument finding_moot : (Missing [d_appl]).
+cut (forall d:Doc, Submitted [d] -> ~Missing [d]) r.
+axiom submitted_not_missing.
+elim [d_appl].
+elim.
+next.
+elim.
+axiom.
+dixi.
+
+# The decision never names a document: it opens the finding and builds the order from it.
+argument decision_c : (exists o:Order, Lawful [o]).
+cut (exists d:Doc, Missing [d]) m.
+next.
+elim.
+cut (exists o:Order, Lawful [o]) k.
+elim [interim d].
+cut (forall d:Doc, Missing [d] -> Lawful [interim d]) r.
+axiom interim_rule.
+elim [d].
+elim.
+axiom.
+axiom r.
+axiom m.
+dixi.
+#+end_src
+
+#+name: witness_classical
+#+begin_src fspy
+declare Order : type.
+declare o_submit, o_entry : Order.
+declare Lawful : Order -> bool.
+decorate o_entry : "the entry of C as limited partner".
+decorate o_submit : "an interim order to remedy the application".
+decorate Lawful : "@arg1 is the lawful order".
+declare entry_rule : (Duty [court] [app] [e1] -> Lawful [o_entry]).
+declare remedy_rule : ((Duty [court] [app] [e1] -> false) -> Lawful [o_submit]).
+
+# Peirce at the duty, argued: its open site is "the entry is not owed".
+argument peirce_duty : (((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) -> Duty [court] [app] [e1]).
+elim f.
+cut ((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) g.
+axiom f.
+elim.
+by default.
+next.
+axiom g.
+dixi.
+
+# First witness the entry order; to show the duty, assume it is not owed
+# and offer the claim again with the submission order.
+argument decision_k : (exists o:Order, Lawful [o]).
+elim [o_entry].
+cut (Duty [court] [app] [e1] -> Lawful [o_entry]) r.
+axiom entry_rule.
+elim.
+cut (((Duty [court] [app] [e1] -> false) -> Duty [court] [app] [e1]) -> Duty [court] [app] [e1]) p.
+next.
+elim.
+elim n.
+cut (exists o:Order, Lawful [o]) k.
+elim [o_submit].
+cut ((Duty [court] [app] [e1] -> false) -> Lawful [o_submit]) s.
+axiom remedy_rule.
+elim.
+axiom n.
+axiom s.
+next.
+axiom p.
+axiom r.
+dixi.
+#+end_src
+
+** Scenarios
+
+Expected, written before the run:
+- constructive: 6w-a open (application submitted, so the finding is
+  defeated and no interim order is derivable); 6w-b =interim d_appl=
+- classical: 6k-a and 6k-d =o_entry=; 6k-b and 6k-c =o_submit=
+
+#+begin_src fspy :tangle build/rq6w-a.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<witness_constructive>>
+evaluate decision_c stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6w-b.fspy :noweb yes
+<<layer2>>
+<<witness_constructive>>
+evaluate decision_c stable.
+render decision_c argumentation evaluated.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6k-a.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<witness_classical>>
+evaluate decision_k stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6k-b.fspy :noweb yes
+<<layer2>>
+<<witness_classical>>
+evaluate decision_k stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6k-c.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+<<witness_classical>>
+evaluate decision_k stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq6k-d.fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<doubt>>
+<<evidence>>
+<<witness_classical>>
+evaluate decision_k stable.
+#+end_src
+
+** Results (run 2026-11-15, stable)
+
+| Scenario | Head of the normal form | Rests on |
+|----------+-------------------------+----------|
+| 6w-a | open: =?OUT:exists o:Order,Lawful o= | the finding is defeated (the application was submitted) |
+| 6w-b | =(interim d_appl, …)= | =!IN:Missing d_appl=, the court's finding |
+| 6k-a | =(o_entry, …)= | the duty argument of layer 1 in place of the Peirce step: =!IN:MetaNorm=, =!IN:Passed e1= |
+| 6k-b | =(o_submit, …)= | =!IN:Duty court app e1->false=, the presumption that the entry is not owed |
+| 6k-c | =(o_submit, …)= | as 6k-b |
+| 6k-d | =(o_entry, …)= | as 6k-a |
+
+AI NOTE (observations for the authors):
+- *Constructive.* The order's content is computed. =decision_c= is a
+  general rule ("for any missing required document, an interim order for
+  it"), and the evaluation instantiates it with what the debate
+  established, so the interim order names the document. The witness term
+  is a function application, =interim d_appl=, not a declared constant.
+- *Classical.* An existence proof that does not decide the case still
+  evaluates to a definite witness. The case split on the duty sits in
+  the Peirce step. The labelling resolves it, and the normal form keeps
+  either the first offer (with the duty's justification substituted) or
+  the second (with the presumption it rests on). This is the drinker
+  paradox's mechanism, applied to a legal decision.
+- *The onus decides how the case split is read.* With the "not owed" site
+  presumed, an unestablished duty yields the interim order. Owed, it
+  yields no order at all (open). Which reading a register procedure
+  wants is a legal choice, and AIDA makes it one tactic.
+- *Limits.*
+  - The classical variant here has no proof order: the doubt of 6k-c
+    yields the general interim order.
+  - The renderer fills decorations of predicates and constants, but not
+    of function symbols. A template for =interim= was printed with its
+    =@arg1= unfilled, and the witness line prints the raw term
+    (=witnessed by interim d_appl=). So =interim= is left undecorated.
+    The witness and instantiation lines also print decorated constants
+    raw (=instantiated at e1=). Recorded on main as
+    =aida-render-fo-terms=, reproduced there and with its causes in
+    =pres/decorations.py= and =pres/nl.py=.
+  - Combining both variants, with the second offer being =interim d= from
+    the finding, is a straightforward next step and was not done.
+
+* Layer 3 (RQ 7): claim and scope of examination, each from the other
+
+#+begin_quote
+Infolgedessen wurde ein solcher Eintragungsanspruch sowohl als Argument
+für die Beschränkung des Prüfungsumfangs des Registergerichts bemüht als
+auch aus dem (u.a. so begründeten) beschränkten Prüfungsumfang auf einen
+subjektiven Eintragungsanspruch geschlossen. (IRIS draft, § 3.1, citing
+BGH NJW-RR 2011, 1184 Rn. 10)
+#+end_quote
+
+/AI DRAFT TRANSLATION — not reviewed by a lawyer./ Consequently, such a
+claim to registration was invoked as an argument for limiting the
+register court's scope of examination, and conversely a subjective claim
+to registration was inferred from the limited scope of examination
+(grounded, among other things, in this way).
+
+The encoding:
+- Correlativity: =corr1= (duty ⇒ claim) and =corr2= (claim ⇒ duty).
+- The court demands a document the law does not require (the transfer
+  agreement). If the demand is within the scope of examination, its
+  absence defeats =Passed e1= (=court_extra=, with =Proper= presumed).
+- The BGH line: the claim limits the scope (=limited=), and a limited
+  scope makes a demand for an unrequired document improper
+  (=bgh_limit=).
+- So the claim defends =Passed e1= against the demand, and =Passed e1=
+  grounds the duty, which grounds the claim. That is the cycle.
+
+#+name: cycle
+#+begin_src fspy
+declare corr1 : (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]).
+declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
+declare n_dem : (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]).
+declare bgh_rule : (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]).
+declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]).
+declare dem : (Demanded [d_contract] [e1]).
+declare unreq : (Unrequired [d_contract] [e1]).
+
+argument claim : (Claim [app] [court] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]) r.
+axiom corr1.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+argument duty_back : (Duty [court] [app] [e1]).
+cut (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]) r.
+axiom corr2.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument court_extra : (Passed [e1]).
+cut (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]) r.
+axiom n_dem.
+elim [d_contract].
+elim [e1].
+elim.
+axiom dem.
+elim.
+by default.
+next.
+elim.
+axiom.
+by default.
+dixi.
+
+argument limited : (Limited [e1]).
+cut (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]) r.
+axiom bgh_rule.
+elim [app].
+elim [court].
+elim [e1].
+elim.
+next.
+axiom r.
+dixi.
+
+counterargument bgh_limit : (Proper [d_contract] [e1]).
+cut (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]) r.
+axiom scope_rule.
+elim [d_contract].
+elim [e1].
+elim.
+next.
+elim.
+axiom unreq.
+elim.
+axiom.
+dixi.
+#+end_src
+
+An independent anchor for the limited scope: the IRIS draft's normative
+scope (§ 3.1, quoted in layer 2), which case law derives from the
+register's purpose. It is unwritten, so it is a delegation.
+
+#+name: scope_principle
+#+begin_src fspy
+argument scope_n7 : (Limited [e1]).
+by default.
+dixi.
+#+end_src
+
+The cross-field contrast: where a statute fixes the scope of
+examination, the anchor is strict. § 38 (1) AktG states the court's
+examination of a stock corporation's first entry positively; § 38 (2),
+(3) AktG and § 9c (2) GmbHG limit it (IRIS draft, notes 24, 25). The
+variant supposes such a statute for this entry (=StatScope e1=). It is
+counterfactual for a limited partnership.
+
+#+name: statute
+#+begin_src fspy
+declare stat_scope : (StatScope [e1]).
+declare stat_rule : (forall e:Ev, StatScope [e] -> Limited [e]).
+argument by_statute : (Limited [e1]).
+cut (forall e:Ev, StatScope [e] -> Limited [e]) r.
+axiom stat_rule.
+elim [e1].
+elim.
+axiom stat_scope.
+axiom r.
+dixi.
+#+end_src
+
+** Scenarios
+
+Expected, written before the run:
+- (7a) the complete application, the court's extra demand and the cycle:
+  grounded undecided. Two stable labellings: claim, limited scope and
+  duty all IN, or all OUT with the demand standing. Skeptically open.
+- (7b) 7a with the normative-scope principle: a value. The cycle is
+  founded from outside.
+- (7c) 7a with the justified doubt of layer 2: the duty and the claim are
+  OUT in every labelling. The counterargument on the examination side
+  propagates around the cycle to the claim.
+- (7d) 7a with the statutory anchor: a value, as in 7b, but the anchor
+  is strict.
+
+#+name: layer3
+#+begin_src fspy :noweb yes
+<<layer2>>
+<<submitted>>
+<<cycle>>
+#+end_src
+
+#+begin_src fspy :tangle build/rq7-a.fspy :noweb yes
+<<layer3>>
+label claim.
+label claim stable.
+evaluate claim stable.
+evaluate claim credulous stable.
+graph claim show.
+#+end_src
+
+#+begin_src fspy :tangle build/rq7-b.fspy :noweb yes
+<<layer3>>
+<<scope_principle>>
+label claim stable.
+evaluate claim stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq7-c.fspy :noweb yes
+<<layer3>>
+<<doubt>>
+label claim stable.
+evaluate claim stable.
+evaluate claim credulous stable.
+#+end_src
+
+#+begin_src fspy :tangle build/rq7-d.fspy :noweb yes
+<<layer3>>
+<<statute>>
+label claim stable.
+evaluate claim stable.
+#+end_src
+
+** Results (run 2026-11-14)
+
+| Scenario | Grounded | Stable labellings | Skeptical (stable) | Credulous (stable) |
+|----------+----------+-------------------+--------------------+--------------------|
+| 7a       | claim, duty, limit, pass all UNDEC | 2: all IN, or all OUT with the demand standing | open, =?UNDEC= | value |
+| 7b       |          | 1, claim IN       | value              |                    |
+| 7c       |          | 1, claim OUT      | open, =?OUT=       | open (no stable labelling accepts the claim; grounded fallback, =?UNDEC=) |
+| 7d       |          | 1, claim IN       | value              |                    |
+
+AI NOTE (observations for the authors):
+- AIDA represents the circular argument as it is and does not refuse
+  it. Under stable semantics the circle supports two readings:
+  - the claim exists, so the scope is limited, the demand is improper,
+    the examination passes and the duty, hence the claim, follows;
+  - there is no claim, so the demand stands, the examination fails and
+    there is no duty.
+
+  Grounded semantics leaves all of it undecided. That is the formal
+  counterpart of the IRIS draft's observation that duty of examination,
+  power of examination and claim were assumed to "always correspond".
+- An independent reason for one link decides the circle (7b, 7d). Whether
+  that reason is a presumption (the case-law principle of the normative
+  scope, 7b) or strict (a statute fixing the scope, as § 38 AktG does for
+  a stock corporation, 7d) is visible in the graph: a delegation in one
+  case, an axiom in the other. That is the cross-field contrast of
+  RQ 7.
+- A counterargument on one side of the circle propagates to the other
+  (7c). The doubt defeats the examination, and with it the duty and the
+  claim, in the only stable labelling. The claim's reading in which it
+  defended itself disappears.
+
