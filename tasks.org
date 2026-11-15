@@ -8742,6 +8742,73 @@ tasks.org, the IRIS experiment's) asks for an English counterpart of the
 check-list frame; this task is the general fix of the styles it builds
 on. Related: [[id:aida-tree-renderer-overhaul]].
 
+** BACKLOG Decorate first-order terms: function applications, witnesses and instantiations
+:PROPERTIES:
+:ID:             aida-render-fo-terms
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         2:00
+:DEFERRALS:      0
+:OUTCOME:        A decoration of a function symbol fills its @argN with the rendered arguments of each application (`decorate interim : "an interim order to submit @arg1"` renders `interim d0` as "an interim order to submit the application"), nested applications included; the witness line ("witnessed by ...") and the instantiation line ("instantiated at ...") of the text styles render their term through the decorations instead of printing it raw.
+:VERIFY:         The reproduction below renders the three lines as expected; a decorated constant in a witness or instantiation line (e1, court, kp_c in lib/iris_experiment/rq4-6-7-metanorm.org on discourse-referents) prints its decoration; an undecorated function symbol still prints as now (`f a`, `f (g a)`); tests in tests/test_decorations.py pin the cases; the suite passes.
+:END:
+
+Found in the IRIS follow-up (2026-11-15, branch discourse-referents,
+=lib/iris_experiment/rq4-6-7-metanorm.org=, layer 2c, where the
+evaluated decision is witnessed by the function term =interim d_appl=).
+Reproduced on main at 625582c with:
+
+#+begin_example
+lk.
+declare Doc, Order : type.
+declare d0 : Doc.
+declare interim : Doc -> Order.
+declare Lawful : Order -> bool.
+declare rule : (forall d:Doc, Lawful [interim d]).
+decorate d0 : "the application".
+decorate interim : "an interim order to submit @arg1".
+decorate Lawful : "@arg1 is the lawful order".
+argument a : (exists o:Order, Lawful [o]).
+elim [interim d0].
+cut (forall d:Doc, Lawful [interim d]) r.
+axiom rule.
+elim [d0].
+axiom.
+dixi.
+render a argumentation.
+#+end_example
+
+| Printed | Expected |
+|---------+----------|
+| =witnessed by interim d0= | =witnessed by an interim order to submit the application= |
+| =an interim order to submit @arg1 the application is the lawful order= | =an interim order to submit the application is the lawful order= |
+| =for all d of type Doc, an interim order to submit @arg1 d is the lawful order= | =for all d of type Doc, an interim order to submit d is the lawful order= |
+| =instantiated at d0= | =instantiated at the application= |
+
+Causes:
+- =pres/decorations.py=, =_render_term=, decorates symbol by symbol. The
+  head of an application gets its template filled with no arguments
+  (=_apply_template(decorations[name], [])=, so =@arg1= stays
+  literal), and the rendered argument is then appended after it.
+  - The fix: flatten a term application into head and arguments, as
+    =_flatten_application= already does for predicate applications, and
+    fill the head's template.
+  - The comment's intent, "a decoration names a thing, wherever that
+    thing occurs", holds for constants and is kept.
+- =pres/nl.py=, =visit_TermsPairFO= and =visit_ConsFO=, fill
+  =@witness= with =str(term.witness)= and =str(term.fo_term)=, bypassing
+  the decorations even for decorated constants. The tree printer's
+  =visit_TermsPairFO= / =visit_ConsFO= print the proof term and stay as
+  they are.
+
+Related: [[id:aida-render-text-styles]] (the text styles' language
+mixing and internal names).
+
 ** BACKLOG Document, and let authors state, the order of a witness scaffold's candidates
 :PROPERTIES:
 :ID:             aida-witness-candidate-order
