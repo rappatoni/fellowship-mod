@@ -23,6 +23,7 @@ from pres.nl import (
     dialectical_rendering,
     natural_language_argumentative_rendering,
     pruefschema_rendering,
+    checklist_rendering,
 )
 from core.ac import referents
 from wrap.prover import ProverError, StrictnessRefused, CitationRefused, ReferentRefused
@@ -549,6 +550,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         elif self.rendering == "pruefschema":
             self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
+        elif self.rendering == "checklist":
+            self.representation = pretty_natural(self.body, checklist_rendering, **render_context)
         open_sites = self.open_sites()
         if accept is not None:
             try:
@@ -929,6 +932,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             "argumentation": natural_language_argumentative_rendering,
             "dialectical":   dialectical_rendering,
             "intuitionistic": natural_language_rendering,
+            "pruefschema": pruefschema_rendering,
+            "checklist": checklist_rendering,
         }[self.rendering]
         self.normal_representation = pretty_natural(
             red_ast,

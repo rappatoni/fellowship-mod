@@ -383,6 +383,20 @@ _DOT_ROLE_TEXT = {"argument": "argument", "supporter": "supporter",
                   "weakening": "weakening:\\na smaller context\\nbears on a\\nlarger one",
                   "instantiation": "instantiation:\\na generic statement\\nbears on its\\ninstances"}
 _DOT_FILL = {"IN": "#cdebc5", "OUT": "#f2c4c4", "UNDEC": "#e0e0e0"}
+def _is_negation(text: str) -> bool:
+    """Whether a displayed statement is itself a negation: drawn as its
+    negation it would read "it is not the case that it is not the case",
+    and as the statement it negates it would look like that statement's
+    own box, so ``to_dot(prose=True)`` leaves it as it is."""
+    from core.ac.prop import PNeg, Prop, PropError
+    try:
+        return isinstance(Prop.parse(text.strip()), PNeg)
+    except PropError:
+        return text.strip().startswith("~")
+
+
+#: How ``to_dot(prose=True)`` words a default marker.
+_DOT_KIND_WORD = {"obligation": "owed", "presumption": "presumed"}
 
 
 class DebateGraph:
@@ -918,26 +932,70 @@ class DebateGraph:
                 out.append(f"  {annotate(statement)}")
         return "\n".join(out)
 
-    def to_dot(self, labels=None, legend: bool = True, labelling: Optional[str] = None) -> str:
+    def _sides_in_play(self, key, labels=None) -> set:
+        """The sides of a node anything in the drawing refers to: a label, a
+        default marker, an edge into it or out of it."""
+        sides = {side for side in ("term", "context")
+                 if (labels and (key, side) in labels) or self.defaults.get((key, side))}
+        for edge in self.edges:
+            if edge.target_key == key:
+                sides.add(edge.target_side)
+            sides.update(s.side for s in edge.sources if s.key == key)
+        return sides
+
+    def to_dot(self, labels=None, legend: bool = True, labelling: Optional[str] = None,
+               node_text=None, prose: bool = False) -> str:
         """Graphviz source.  With ``labels``, nodes are filled by status;
         with ``legend``, a box explains the symbols the drawing uses, and
-        ``labelling`` (which labelling ``labels`` is) heads its table."""
+        ``labelling`` (which labelling ``labels`` is) heads its table.
+        ``node_text``, a function of a node's displayed statement, gives the
+        text drawn in its place (``graph ... decorated``: the decorations).
+
+        ``prose`` (``graph ... decorated``) words the markings: "proof: IN ·
+        refutation: OUT" for ``t=IN c=OUT``, "proof presumed" for ``[t:p]``.
+        A node only whose refutation is in play is drawn as the negation of
+        its statement, so its proof is that refutation and its fill reads
+        the right way round: a green "the usufruct is registrable" under an
+        argument against it read as the opposite."""
         fill = _DOT_FILL
         lines = ["digraph debate {", "  rankdir=BT;",
                  '  node [shape=box, style="rounded,filled", fillcolor=white];']
         ids = {key: f"n{i}" for i, key in enumerate(self.nodes)}
+        self._prose_negated = set()
         for key, display in self.nodes.items():
+            negated = (prose and self._sides_in_play(key, labels) == {"context"}
+                       and not _is_negation(self.shown(key)))
+            if negated:
+                self._prose_negated.add(key)
             marks = []
             statuses = []
             for side in ("term", "context"):
+                word = "proof" if (side == "term") != negated else "refutation"
                 for kind in sorted(self.defaults.get((key, side), ())):
-                    marks.append(f"{side[0]}:{kind[0]}")
+                    marks.append(f"{word} {_DOT_KIND_WORD.get(kind, kind)}" if prose
+                                 else f"{side[0]}:{kind[0]}")
                 if labels and (key, side) in labels:
-                    statuses.append(f"{side[0]}={labels[(key, side)]}")
-            suffix = f"\\n[{' '.join(marks)}]" if marks else ""
-            if statuses:
-                suffix += f"\\n{' '.join(statuses)}"
-            label = self.shown(key).replace('"', '\\"')
+                    statuses.append(f"{word}: {labels[(key, side)]}" if prose
+                                    else f"{side[0]}={labels[(key, side)]}")
+            if prose:
+                statuses.sort(key=lambda text: not text.startswith("proof"))
+                marks.sort(key=lambda text: not text.startswith("proof"))
+                suffix = f"\\n{', '.join(marks)}" if marks else ""
+                if statuses:
+                    suffix += f"\\n{' · '.join(statuses)}"
+            else:
+                suffix = f"\\n[{' '.join(marks)}]" if marks else ""
+                if statuses:
+                    suffix += f"\\n{' '.join(statuses)}"
+            shown = self.shown(key)
+            if negated:
+                shown = f"~({shown})"
+            if node_text is not None:
+                try:
+                    shown = node_text(shown) or shown
+                except Exception:                   # noqa: BLE001 - draw the formula instead
+                    pass
+            label = shown.replace('"', '\\"')
             colour = ""
             if labels:
                 own = [labels.get((key, side)) for side in ("term", "context")]
@@ -957,10 +1015,14 @@ class DebateGraph:
         for i, edge in enumerate(self.edges):
             colour = _DOT_ROLE_COLOUR.get(edge.role, "black")
             width = " penwidth=2" if edge.strict else ""
-            head = "normal" if edge.target_side == "term" else "empty"
+            # drawn as its negation, a node's refutation is the proof drawn
+            flip = self._prose_negated
+            head = ("normal" if (edge.target_side == "term") != (edge.target_key in flip)
+                    else "empty")
             if len(edge.sources) == 1:
                 source = edge.sources[0]
-                dashed = " style=dashed" if source.side == "context" else ""
+                dashed = (" style=dashed" if (source.side == "context") != (source.key in flip)
+                          else "")
                 if edge.role == "weakening":
                     dashed = " style=dotted fontcolor=gray50"
                 lines.append(
@@ -974,7 +1036,8 @@ class DebateGraph:
                 f'label="{edge.name}"];'
             )
             for source in edge.sources:
-                dashed = " style=dashed" if source.side == "context" else ""
+                dashed = (" style=dashed" if (source.side == "context") != (source.key in flip)
+                          else "")
                 lines.append(
                     f"  {ids[source.key]} -> {junction} [color={colour}{width}{dashed} arrowhead=none];"
                 )
@@ -989,11 +1052,11 @@ class DebateGraph:
                 lines.append(f'  {ids[generic]} -> {ids[instance]} [color={colour} style=dotted '
                              f'arrowhead=onormal fontcolor=gray50 label="instance"];')
         if legend and (self.nodes or self.edges):
-            lines.extend(self._dot_legend(labels, labelling))
+            lines.extend(self._dot_legend(labels, labelling, prose=prose))
         lines.append("}")
         return "\n".join(lines)
 
-    def _dot_legend(self, labels=None, labelling: Optional[str] = None) -> list:
+    def _dot_legend(self, labels=None, labelling: Optional[str] = None, prose: bool = False) -> list:
         """A cluster explaining the symbols ``to_dot`` drew for this graph,
         and only those: a sample of every edge style in use, drawn as the
         edges are, and the node markings with their meaning."""
@@ -1011,11 +1074,13 @@ class DebateGraph:
         sources = [s for e in self.edges for s in e.sources]
         if any(e.strict for e in self.edges):
             samples.append(("color=black penwidth=2", "thick:\\nstrict, rests\\non no site"))
-        if any(s.side == "context" for s in sources):
+        flip = getattr(self, "_prose_negated", set()) if prose else set()
+        proof_heads = {(e.target_side == "term") != (e.target_key in flip) for e in self.edges}
+        if any((s.side == "context") != (s.key in flip) for s in sources):
             samples.append(("color=black style=dashed", "dashed:\\nthe source is\\na refutation"))
-        if any(e.target_side == "term" for e in self.edges):
+        if True in proof_heads:
             samples.append(("color=black arrowhead=normal", "filled head:\\nderives\\na proof"))
-        if any(e.target_side == "context" for e in self.edges):
+        if False in proof_heads:
             samples.append(("color=black arrowhead=empty", "empty head:\\nderives\\na refutation"))
         for i, (attributes, text) in enumerate(samples):
             out.append(f'    lg{i}a [label="", shape=point, width=0.05];')
@@ -1040,8 +1105,15 @@ class DebateGraph:
         if any(not e.sources for e in self.edges):
             rows.append('<TR><TD ALIGN="LEFT"><B>double border</B></TD><TD ALIGN="LEFT">'
                         'derived by an argument that rests on nothing</TD></TR>')
-        marks = sorted({f"{side[0]}:{kind[0]}" for (_key, side), kinds in self.defaults.items()
-                        for kind in kinds})
+        if prose and getattr(self, "_prose_negated", None):
+            rows.append('<TR><TD ALIGN="LEFT"><B>"it is not the case that"</B></TD><TD ALIGN="LEFT">'
+                        'a statement only whose refutation is in play, drawn as its '
+                        'negation: its proof is that refutation</TD></TR>')
+        marks = [] if prose else sorted({f"{side[0]}:{kind[0]}" for (_key, side), kinds
+                                         in self.defaults.items() for kind in kinds})
+        if prose and self.defaults:
+            rows.append('<TR><TD ALIGN="LEFT"><B>presumed, owed</B></TD><TD ALIGN="LEFT">'
+                        'the proof (refutation) is presumed, or owed (an obligation)</TD></TR>')
         meaning = {"t:o": "the proof is owed (obligation)", "t:p": "the proof is presumed",
                    "c:o": "the refutation is owed (obligation)", "c:p": "the refutation is presumed"}
         for mark in marks:
@@ -1052,12 +1124,18 @@ class DebateGraph:
                 from html import escape
                 rows.insert(0, f'<TR><TD ALIGN="LEFT"><B>labels</B></TD>'
                                f'<TD ALIGN="LEFT">{escape(labelling)}</TD></TR>')
-            rows.append('<TR><TD ALIGN="LEFT"><B>t=, c=</B></TD><TD ALIGN="LEFT">'
-                        'the label of the term side, the context side</TD></TR>')
+            if prose:
+                rows.append('<TR><TD ALIGN="LEFT"><B>proof:, refutation:</B></TD><TD ALIGN="LEFT">'
+                            'the label of the statement\'s proof, of its refutation</TD></TR>')
+            else:
+                rows.append('<TR><TD ALIGN="LEFT"><B>t=, c=</B></TD><TD ALIGN="LEFT">'
+                            'the label of the term side, the context side</TD></TR>')
             for status, colour in _DOT_FILL.items():
+                text = (f"fill: the proof is {status} (the refutation if the proof has no label)"
+                        if prose else f"fill: the term side is {status} "
+                        "(the context side if the term side has no label)")
                 rows.append(f'<TR><TD ALIGN="LEFT" BGCOLOR="{colour}"><B>{status}</B></TD>'
-                            f'<TD ALIGN="LEFT">fill: the term side is {status} '
-                            f'(the context side if the term side has no label)</TD></TR>')
+                            f'<TD ALIGN="LEFT">{text}</TD></TR>')
         out.append('    lgnodes [label=<<TABLE BORDER="0" CELLSPACING="2">'
                    + "".join(rows) + '</TABLE>>];')
         out.append("  }")

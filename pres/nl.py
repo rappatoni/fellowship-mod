@@ -1,6 +1,6 @@
 import re
 from typing import Mapping
-from pres.decorations import render_prop
+from pres.decorations import render_fo_term, render_prop
 from pres.pattern_render import (
     AlternativeCasesRenderer,
     AlternativeCounterexamplesRenderer,
@@ -67,7 +67,14 @@ class Rendering_Semantics:
                  LamdaFO_template="consider an arbitrary but fixed @var of type @sort",
                  DestructTermsPairFO_template="let @var of type @sort be such a thing",
                  ConsFO_template="instantiated at @witness",
-                 TermsPairFO_template="witnessed by @witness"):
+                 TermsPairFO_template="witnessed by @witness",
+                 ConsFO_anonymous_template=None,
+                 binder_template=None,
+                 owed_phrases=None,
+                 cite_template="see @name: @prop",
+                 shared_header_template="@name:",
+                 shared_site_templates=None,
+                 falsum_phrase=None):
         self.indentation = indentation
         self.Mu = Mu
         self.Mutilde = Mutilde
@@ -89,8 +96,33 @@ class Rendering_Semantics:
         self.DestructTermsPairFO = DestructTermsPairFO_template
         self.ConsFO = ConsFO_template
         self.TermsPairFO = TermsPairFO_template
+        # The instantiation line where the instantiated variable is unknown
+        # (an unenriched term); None drops nothing from ConsFO_template, which
+        # then simply has no @var.
+        self.ConsFO_anonymous = ConsFO_anonymous_template
+        # How a binder's name follows the proposition of its mu/mu~ line
+        # (@binder), e.g. ". Starting check @binder:"; None writes " (name)".
+        self.binder_template = binder_template
         self.tree_guides = tree_guides
         self.pattern_registry = PatternRenderingRegistry(pattern_renderers or [])
+        # The phrase of an owed site by its label (tasks.org,
+        # aida-render-text-styles): "pending" for a site of an unevaluated
+        # term, "OUT" and "UNDEC" for the sites of a normal form (named by
+        # their labels), "fallback" for the bottom alternative of a support
+        # scaffold - the site that stands if no supporter does.  None keeps
+        # the style's single Goal/Laog phrase.
+        self.owed_phrases = dict(owed_phrases) if owed_phrases else None
+        # A citation of a named sub-debate in a shared rendering
+        # (``render ... shared``): @name and @prop.
+        self.cite_template = cite_template
+        # The shared rendering's header of a named sub-debate (@name), and
+        # one line per open site it rests on: {"owed": ..., "presumed": ...},
+        # each with @prop.
+        self.shared_header_template = shared_header_template
+        self.shared_site_templates = dict(shared_site_templates or {})
+        # The falsum eliminator ``_F_`` (an empty proposition), where the
+        # style has words for it.
+        self.falsum_phrase = falsum_phrase
 
 natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "we proved ", ""], ["we proved ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"done ", f"by ")
 # The former `dialectical` style's phrases; only the acceptance tree's labels
@@ -98,51 +130,134 @@ natural_language_rendering = Rendering_Semantics('   ', ["we need to prove ", "w
 # render style is `dialectical_rendering` below.
 natural_language_dialectical_rendering = Rendering_Semantics('   ', ["Assume a refutation of ", "Assume a proof of  ", ""], ["Assume a proof of  ", ""], f"assume ", f"and", f"? ", f" ?", f" !", f"! ", f"but then we have a contradiction, done ", f"by ")
 natural_language_argumentative_rendering = Rendering_Semantics('   ', ["We will argue for ", "undercutting ", "supported by alternative ", "undercut by "], ["We will argue against ", "using ", "by adapter"], f"assume ", f"and", f"? ", f" ?", f"by default!", f"by default!", f"done ", f"by ", pattern_renderers=[AlternativeCasesRenderer(), AlternativeCounterexamplesRenderer(child_indent_delta=3), ApplicationRenderer(header_template="Für @prop ist hinreichend, dass @arg_prop", end_label=None), DualApplicationRenderer(header_template="Für @prop ist notwendig dass @condition_prop", warrant_indent_delta=3, end_label=None), DefeasibleWarrantRenderer(header_template="Für @prop spricht ", exception_indent_delta=3), DualDefeasibleWarrantRenderer(header_template="gegen @prop spricht ", support_indent_delta=3)])
-pruefschema_rendering = Rendering_Semantics(
-    '   ',
-    ["Es genügt zu prüfen, dass "],
-    ["Es ist notwendigerweise zu prüfen, ob "],
-    "Angenommen ",
-    "und",
-    "Prüfung fehlgeschlagen: ",
-    "Prüfung fehlgeschlagen: ",
-    "sofern nichts entgegensteht: ",
-    "sofern nichts anderes bekannt ist, ist zu verneinen: ",
-    ["es ist ausgeschlossen, dass: ", "Prüfung abgeschlossen: "],
-    ["es liegt vor: ", "Prüfung fehlgeschlagen: "],
-    pattern_renderers=[
-        AlternativeCasesRenderer(
-            header_template="Die Prüfung @binder, ob @prop gilt, zerfällt in folgende Fallgruppen:",
-            first_case_label="Fallgruppe @index:",
-            next_case_label="oder Fallgruppe @index:",
-        ),
-        AlternativeCounterexamplesRenderer(
-            header_template="Zur Prüfung von @prop müssen folgende Prüfpunkte abgearbeitet werden:",
-            first_condition_label="Prüfpunkt @index:",
-            next_condition_label="und Prüfpunkt @index:",
-        ),
-        ApplicationRenderer(
-            header_template="Für @prop (Prüfung: @binder) ist es hinreichend, dass @arg_prop gilt.",
-            reason_label="weil",
-            separator_label="und",
-            end_label="Prüfung @binder abgeschlossen.",
-        ),
-        DualApplicationRenderer(
-            header_template="Für @prop (Prüfung: @binder) ist notwendig, dass @condition_prop gilt.",
-            reason_label="weil",
-            end_label="Prüfung @binder abgeschlossen.",
-        ),
-        DefeasibleWarrantRenderer(
-            header_template="Für @prop spricht:",
-            exception_label="aber",
-        ),
-        DualDefeasibleWarrantRenderer(
-            header_template="Gegen @prop spricht:",
-            requirement_template="aber",
-        ),
-    ],
-    connective_templates={"->": "@left impliziert @right", "-": "@left ohne @right"},
-    tree_guides=True,
+def _checklist_semantics(*, mu, mutilde, lamda, cons, deleg, geled, id_, di, owed, patterns,
+                         connectives, fo, cite, shared_header, shared_sites, falsum, binder):
+    """A check-list style (German ``pruefschema``, English ``checklist``): the
+    two share their structure and differ only in their phrases."""
+    return Rendering_Semantics(
+        '   ', [mu], [mutilde], lamda, cons, owed["pending"], owed["pending"], deleg, geled,
+        list(id_), list(di),
+        pattern_renderers=[
+            AlternativeCasesRenderer(header_template=patterns["cases"],
+                                     first_case_label=patterns["first_case"],
+                                     next_case_label=patterns["next_case"]),
+            AlternativeCounterexamplesRenderer(header_template=patterns["conditions"],
+                                               first_condition_label=patterns["first_condition"],
+                                               next_condition_label=patterns["next_condition"]),
+            ApplicationRenderer(header_template=patterns["sufficient"], reason_label=patterns["because"],
+                                separator_label=cons, end_label=patterns["completed"]),
+            DualApplicationRenderer(header_template=patterns["necessary"], reason_label=patterns["because"],
+                                    end_label=patterns["completed"]),
+            DefeasibleWarrantRenderer(header_template=patterns["for"], exception_label=patterns["but"]),
+            DualDefeasibleWarrantRenderer(header_template=patterns["against"],
+                                          requirement_template=patterns["but"]),
+        ],
+        connective_templates=connectives,
+        tree_guides=True,
+        LamdaFO_template=fo["lamda"], DestructTermsPairFO_template=fo["destruct"],
+        ConsFO_template=fo["cons"], TermsPairFO_template=fo["pair"],
+        ConsFO_anonymous_template=fo["cons_anonymous"], binder_template=binder,
+        owed_phrases=owed, cite_template=cite,
+        shared_header_template=shared_header, shared_site_templates=shared_sites,
+        falsum_phrase=falsum,
+    )
+
+
+# The German check-list ("Prüfschema").  An owed site is phrased by its label
+# (aida-render-text-styles, decided with the author 2026-11-15): still to be
+# checked in an unevaluated term, failed only where a normal form names it
+# OUT, open where it names it UNDEC.  The end of a check names the result it
+# hands back, not a verdict about the case.
+pruefschema_rendering = _checklist_semantics(
+    mu="Es genügt zu prüfen, dass ",
+    mutilde="Es ist notwendigerweise zu prüfen, ob ",
+    lamda="Angenommen ",
+    cons="und",
+    deleg="sofern nichts entgegensteht: ",
+    geled="sofern nichts anderes bekannt ist, ist zu verneinen: ",
+    id_=("es ist ausgeschlossen, dass: ", "Prüfung @binder abgeschlossen (bejaht)."),
+    di=("es liegt vor: ", "Prüfung @binder abgeschlossen (verneint)."),
+    binder=". Beginn der Prüfung @binder:",
+    owed={"pending": "noch zu prüfen: ",
+          "OUT": "Prüfung fehlgeschlagen: ",
+          "UNDEC": "offen: ",
+          "IN": "es liegt vor: ",
+          "fallback": "andernfalls nicht erwiesen: "},
+    patterns={
+        "cases": "Die Prüfung @binder, ob @prop gilt, zerfällt in folgende Fallgruppen:",
+        "first_case": "Fallgruppe @index:",
+        "next_case": "oder Fallgruppe @index:",
+        "conditions": "Zur Prüfung von @prop müssen folgende Prüfpunkte abgearbeitet werden:",
+        "first_condition": "Prüfpunkt @index:",
+        "next_condition": "und Prüfpunkt @index:",
+        "sufficient": "Für @prop ist es hinreichend, dass @arg_prop gilt. Beginn der Prüfung @binder:",
+        "necessary": "Für @prop ist notwendig, dass @condition_prop gilt. Beginn der Prüfung @binder:",
+        "because": "weil",
+        "completed": "Prüfung @binder abgeschlossen.",
+        "for": "Für @prop spricht:",
+        "against": "Gegen @prop spricht:",
+        "but": "aber",
+    },
+    connectives={"->": "@left impliziert @right", "-": "@left ohne @right",
+                 "~": "nicht @body",
+                 "forall": "für alle @vars vom Typ @sort gilt: @body",
+                 "exists": "es gibt ein @vars vom Typ @sort, so dass @body"},
+    fo={"lamda": "für ein beliebiges, aber festes @var vom Typ @sort",
+        "destruct": "sei @var vom Typ @sort ein solches",
+        "cons": "eingesetzt für @var: @witness",
+        "cons_anonymous": "angewandt auf @witness",
+        "pair": "belegt durch @witness"},
+    cite="siehe Prüfung @name: @prop",
+    shared_header="Prüfung @name:",
+    shared_sites={"owed": "zu zeigen: @prop", "presumed": "vermutet: @prop"},
+    falsum="Widerspruch.",
+)
+
+# The English check-list: the Prüfschema's structure with English phrases
+# (tasks.org, aida-render-text-styles).
+checklist_rendering = _checklist_semantics(
+    mu="It suffices to check that ",
+    mutilde="It must be checked whether ",
+    lamda="Assume ",
+    cons="and",
+    deleg="unless something speaks against it: ",
+    geled="unless shown otherwise, deny: ",
+    id_=("it is excluded that: ", "Check @binder completed (holds)."),
+    di=("established: ", "Check @binder completed (refuted)."),
+    binder=". Starting check @binder:",
+    owed={"pending": "to be checked: ",
+          "OUT": "not established: ",
+          "UNDEC": "undecided: ",
+          "IN": "established: ",
+          "fallback": "otherwise not established: "},
+    patterns={
+        "cases": "The check @binder of whether @prop holds splits into the following cases:",
+        "first_case": "Case @index:",
+        "next_case": "or case @index:",
+        "conditions": "To check @prop, the following points must be worked through:",
+        "first_condition": "Point @index:",
+        "next_condition": "and point @index:",
+        "sufficient": "For @prop it suffices that @arg_prop holds. Starting check @binder:",
+        "necessary": "For @prop it is necessary that @condition_prop holds. Starting check @binder:",
+        "because": "because",
+        "completed": "Check @binder completed.",
+        "for": "In favour of @prop:",
+        "against": "Against @prop:",
+        "but": "but",
+    },
+    connectives={"->": "@left implies @right", "-": "@left without @right",
+                 "~": "it is not the case that @body",
+                 "forall": "for all @vars of type @sort, @body",
+                 "exists": "for some @vars of type @sort, @body"},
+    fo={"lamda": "for an arbitrary but fixed @var of type @sort",
+        "destruct": "let @var of type @sort be such a thing",
+        "cons": "instantiating @var with @witness",
+        "cons_anonymous": "instantiated at @witness",
+        "pair": "witnessed by @witness"},
+    cite="see check @name: @prop",
+    shared_header="Check @name:",
+    shared_sites={"owed": "to be shown: @prop", "presumed": "presumed: @prop"},
+    falsum="contradiction.",
 )
 
 # Vanilla rendering: preserves the full proof-term syntax, only adds indentation/line breaks.
@@ -150,6 +265,9 @@ pruefschema_rendering = Rendering_Semantics(
 vanilla_rendering = Rendering_Semantics('   ', "", "", "", "", "", "", "", "", "", "")
 
 from core.comp.visitor import ProofTermVisitor
+
+#: The binder of an alternative of a support or attack scaffold.
+_ALT_BINDER = re.compile(r"alt\d+$")
 from pres.gen import labelled_prop
 
 
@@ -430,6 +548,20 @@ class _DialecticalVisitor(_VanillaVisitor):
         self._cur = []
 
 
+def _instantiated_variable(cell: ConsFO) -> str | None:
+    """The variable a universal instantiation ``t * c`` replaces: the first
+    name of the quantifier it consumes (its enriched proposition), or None
+    where the proposition is unknown or not a universal."""
+    from core.ac.prop import PQuant, Prop, PropError
+    try:
+        quant = Prop.parse(str(cell.prop).strip()) if cell.prop else None
+    except PropError:
+        return None
+    if isinstance(quant, PQuant) and quant.quantifier.value == "forall":
+        return quant.names[0]
+    return None
+
+
 def _fill(template: str, **values: str) -> str:
     """Substitute @name placeholders, as decorations and connectives do."""
     for name, value in values.items():
@@ -457,9 +589,58 @@ class _NLVisitor(ProofTermVisitor):
         self.decorations = decorations or {}
         self.bound_ids = set(bound_ids or ())
         self.bound_dis = set(bound_dis or ())
+        # The site that is the bottom alternative of the support (attack)
+        # scaffold being rendered: what stands if no supporter does.
+        self._fallback = None
 
     def _indent_str(self) -> str:
         return self.semantic.indentation * self.indent
+
+    def _owed_phrase(self, term, default: str) -> str:
+        """The phrase of an owed site: by its label where the style phrases
+        sites by label (``owed_phrases``), else the style's one phrase."""
+        phrases = getattr(self.semantic, "owed_phrases", None)
+        if not phrases:
+            return default
+        label = getattr(term, "label", None) or (
+            term.number if str(getattr(term, "number", "")) in ("IN", "OUT", "UNDEC") else None)
+        if label is None and term is self._fallback:
+            return phrases.get("fallback", phrases["pending"])
+        return phrases.get(label or "pending", phrases["pending"])
+
+    def _mark_fallback(self, binder_name: str, site, site_class) -> None:
+        """Mark ``site`` as the bottom alternative of a scaffold: the term (or
+        context) of an alternative's binder (``alt1``, ...) that is an owed
+        site itself."""
+        if (getattr(self.semantic, "owed_phrases", None) and _ALT_BINDER.match(binder_name or "")
+                and isinstance(site, site_class)):
+            self._fallback = site
+
+    def _cite_line(self, term) -> str | None:
+        """A citation of a named sub-debate (``render ... shared``,
+        core/dc/share.py): the style's pointer to it, else None."""
+        if getattr(term, "debate", None) is None or not getattr(term, "cites", None):
+            return None
+        template = getattr(self.semantic, "cite_template", "see @name: @prop")
+        return (template.replace("@name", str(term.cites))
+                .replace("@prop", self._render_prop(term.prop)))
+
+    def _render_fo(self, term) -> str:
+        return render_fo_term(term, self.decorations)
+
+    def _binder_text(self, name: str, *, gap: bool) -> str:
+        """What follows the proposition of a mu/mu~ line: the style's binder
+        template, else the name in brackets."""
+        template = getattr(self.semantic, "binder_template", None)
+        if template:
+            return template.replace("@binder", name)
+        return f"{' ' if gap else ''}({name})"
+
+    def _bound_leaf(self, prefixes, name: str) -> str:
+        """A reference to a binder in scope: the style's phrase, with the name
+        in place of @binder, or followed by it."""
+        phrase = self._leaf_prefix(prefixes, 1)
+        return phrase.replace("@binder", name) if "@binder" in phrase else phrase + name
 
     def _render_prop(self, prop: str | None) -> str:
         return render_prop(
@@ -547,7 +728,9 @@ class _NLVisitor(ProofTermVisitor):
         #     self._with_indent(1, term.term)
         #     return term
 
-        self.lines.append(f"{indent_str}" + self.semantic.Mu[0] + f"{self._render_prop(term.prop)}" + f"({term.id.name})")
+        self.lines.append(f"{indent_str}" + self.semantic.Mu[0] + f"{self._render_prop(term.prop)}"
+                          + self._binder_text(term.id.name, gap=bool(getattr(self.semantic, "owed_phrases", None))))
+        self._mark_fallback(term.id.name, term.term, Goal)
         old_bound_ids = self.bound_ids
         self.bound_ids = set(old_bound_ids)
         self.bound_ids.add(term.id.name)
@@ -575,7 +758,9 @@ class _NLVisitor(ProofTermVisitor):
         #     self.visit(term.context)
         #     return term
 
-        self.lines.append(f"{indent_str}" + self.semantic.Mutilde[0] + f"{self._render_prop(term.prop)} " + f"({term.di.name})")
+        self.lines.append(f"{indent_str}" + self.semantic.Mutilde[0] + f"{self._render_prop(term.prop)}"
+                          + self._binder_text(term.di.name, gap=True))
+        self._mark_fallback(term.di.name, term.context, Laog)
         old_bound_dis = self.bound_dis
         self.bound_dis = set(old_bound_dis)
         self.bound_dis.add(term.di.name)
@@ -638,27 +823,32 @@ class _NLVisitor(ProofTermVisitor):
         return term
 
     def visit_ConsFO(self, term: ConsFO):
+        template, var = self.semantic.ConsFO, _instantiated_variable(term)
+        if "@var" in template and var is None:
+            template = getattr(self.semantic, "ConsFO_anonymous", None) or template
         self.lines.append(
-            self._indent_str() + _fill(self.semantic.ConsFO, witness=str(term.fo_term))
+            self._indent_str() + _fill(template, witness=self._render_fo(term.fo_term), var=var or "")
         )
         self.visit(term.context)
         return term
 
     def visit_TermsPairFO(self, term: TermsPairFO):
         self.lines.append(
-            self._indent_str() + _fill(self.semantic.TermsPairFO, witness=str(term.witness))
+            self._indent_str() + _fill(self.semantic.TermsPairFO, witness=self._render_fo(term.witness))
         )
         self.visit(term.term)
         return term
 
     def visit_Goal(self, term: Goal):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Goal + f"{self._render_prop(term.prop)}")
+        self.lines.append(f"{indent_str}" + self._owed_phrase(term, self.semantic.Goal)
+                          + f"{self._render_prop(term.prop)}")
         return term
-    
+
     def visit_Laog(self, term: Laog):
         indent_str = self._indent_str()
-        self.lines.append(f"{indent_str}" + self.semantic.Laog + f"{self._render_prop(term.prop)}")
+        self.lines.append(f"{indent_str}" + self._owed_phrase(term, self.semantic.Laog)
+                          + f"{self._render_prop(term.prop)}")
         return term
     
     def visit_Deleg(self, term: Deleg):
@@ -673,20 +863,32 @@ class _NLVisitor(ProofTermVisitor):
 
     def visit_DI(self, term: DI):
         indent_str = self._indent_str()
+        cite = self._cite_line(term)
+        if cite is not None:
+            self.lines.append(f"{indent_str}{cite}")
+            return term
         if term.name in self.bound_dis:
             if not getattr(self.semantic, "tree_guides", False):
                 indent_str = indent_str.removesuffix(self.semantic.indentation)
-            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 1) + f"{term.name}")
+            self.lines.append(f"{indent_str}" + self._bound_leaf(self.semantic.DI, term.name))
         else:
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.DI, 0) + f"{self._render_prop(term.prop)}" + f" ({term.name})")
         return term
 
     def visit_ID(self, term: ID):
         indent_str = self._indent_str()
+        cite = self._cite_line(term)
+        if cite is not None:
+            self.lines.append(f"{indent_str}{cite}")
+            return term
+        falsum = getattr(self.semantic, "falsum_phrase", None)
+        if falsum and term.name == "_F_" and term.name not in self.bound_ids:
+            self.lines.append(f"{indent_str}{falsum}")
+            return term
         if term.name in self.bound_ids:
             if not getattr(self.semantic, "tree_guides", False):
                 indent_str = indent_str.removesuffix(self.semantic.indentation)
-            self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 1) + f"{term.name}")
+            self.lines.append(f"{indent_str}" + self._bound_leaf(self.semantic.ID, term.name))
         else:
             self.lines.append(f"{indent_str}" + self._leaf_prefix(self.semantic.ID, 0) + f"{self._render_prop(term.prop)}" + f" ({term.name})")
         return term

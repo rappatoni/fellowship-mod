@@ -231,19 +231,53 @@ def _render_term(term, decorations: Mapping[str, str]) -> str:
     """Render a first-order term, decorating every symbol it contains.
 
     Recurses into applications so that a decoration for ``O`` also applies in
-    ``S O``; a decoration names a thing, wherever that thing occurs.
+    ``S O``; a decoration names a thing, wherever that thing occurs.  The
+    decoration of a function symbol is filled with the rendered arguments of
+    its application (``decorate f : "f of @arg1"`` renders ``f (g a)`` with
+    ``g a`` rendered in place of ``@arg1``; tasks.org, aida-render-fo-terms).
     """
     if isinstance(term, TSym):
         if term.name in decorations:
             return _apply_template(decorations[term.name], [])
         return term.name
     if isinstance(term, TApp):
+        head, args = _flatten_term_application(term)
+        if isinstance(head, TSym) and head.name in decorations:
+            return _apply_template(decorations[head.name],
+                                   [_render_term(arg, decorations) for arg in args])
         fun = _render_term(term.fun, decorations)
         arg = _render_term(term.arg, decorations)
         # Mirrors the term printer: a nested application in argument position
         # keeps its parentheses.
         return f"{fun} ({arg})" if isinstance(term.arg, TApp) else f"{fun} {arg}"
     return str(term)
+
+
+def _flatten_term_application(term) -> tuple:
+    """Split ``f a b`` into its head and its arguments, in order."""
+    args = []
+    node = term
+    while isinstance(node, TApp):
+        args.append(node.arg)
+        node = node.fun
+    args.reverse()
+    return node, args
+
+
+def render_fo_term(term, decorations: Mapping[str, str] | None) -> str:
+    """A first-order term as text through the decorations: a term object, or
+    its printed form (parsed first; unparseable text is shown as it is)."""
+    decorations = decorations or {}
+    if isinstance(term, str):
+        if not decorations:
+            return term
+        from core.ac.prop import parse_term
+        try:
+            term = parse_term(term)
+        except Exception as error:                  # noqa: BLE001 - render, never raise
+            logger.debug("Falling back to raw text for term %r: %s", term, error)
+            return term
+    return _render_term(term, decorations)
 
 
 def _apply_template(template: str, args: list[str]) -> str:

@@ -111,7 +111,8 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
         return
     k = o.kind
     if k == "graph":
-        _show_graph(prover, c["target"], o.value, c["dot_path"], c["show"])
+        _show_graph(prover, c["target"], o.value, c["dot_path"], c["show"],
+                    decorated=c.get("decorated", False))
     elif k == "label":
         _show_label(c["target"], o.value)
     elif k == "evaluate":
@@ -123,7 +124,10 @@ def _render(prover: ProverWrapper, o, *, interactive: bool = False) -> None:
             _show_term(prover, c["target"], value.description, value.term, c["style"])
         else:
             logger.info("")
-            logger.info("Rendering argument %s:", c["target"])
+            if getattr(value, "which", None) == "shared":
+                logger.info("Rendering %s, %s:", c["target"], value.description)
+            else:
+                logger.info("Rendering argument %s:", c["target"])
             logger.info(value.text)
             logger.info("")
     elif k == "tree":
@@ -842,6 +846,7 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         dialectical_rendering,
         natural_language_rendering,
         pruefschema_rendering,
+        checklist_rendering,
         vanilla_rendering,
     )
     sem_map = {
@@ -850,6 +855,7 @@ def render_argument_cmd(prover: ProverWrapper, name: str, normalized: bool = Fal
         "intuitionistic": natural_language_rendering,
         "vanilla": vanilla_rendering,
         "pruefschema": pruefschema_rendering,
+        "checklist": checklist_rendering,
     }
     sem = sem_map.get(style)
     if sem is None:
@@ -1142,14 +1148,15 @@ def explain_argument_cmd(prover: ProverWrapper, name: str, mode: str = "skeptica
 
 def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str] = None,
                        show: bool = False, whole: bool = False, semantics: str = "grounded",
-                       mode: str = "skeptical") -> None:
+                       mode: str = "skeptical", decorated: bool = False) -> None:
     """CLI: compile an argument's debate graph; print a summary, optionally DOT
     (wrap/service.py, ``graph``).
 
     Syntax:
-        graph ARG|DEBATE [all] [SEMANTICS] [skeptical|credulous] ["FILE.dot"] [show].
+        graph ARG|DEBATE [all] [SEMANTICS] [skeptical|credulous] [decorated] ["FILE.dot"] [show].
 
-    The labels drawn are the grounded labelling unless a semantics is named;
+    With `decorated`, nodes show the statements through their decorations
+    instead of the formulae.  The labels drawn are the grounded labelling unless a semantics is named;
     the mode picks one labelling of a semantics that has several (as
     `evaluate` picks its witness).
 
@@ -1166,11 +1173,22 @@ def graph_argument_cmd(prover: ProverWrapper, name: str, dot_path: Optional[str]
     except AidaError as e:
         _report(e)
         return
-    _show_graph(prover, name, result, dot_path, show)
+    _show_graph(prover, name, result, dot_path, show, decorated=decorated)
+
+
+def _decorated_text(prover: ProverWrapper):
+    """The node text of `graph ... decorated`: a statement through the
+    decorations (the propositional reading the text styles use)."""
+    from pres.decorations import render_prop
+    from pres.nl import checklist_rendering
+    declarations = getattr(prover, "declarations", {})
+    decorations = getattr(prover, "decorations", {})
+    connectives = checklist_rendering.connective_templates
+    return lambda shown: render_prop(shown, declarations, decorations, connectives)
 
 
 def _show_graph(prover: ProverWrapper, name: str, result, dot_path: Optional[str] = None,
-                show: bool = False) -> None:
+                show: bool = False, decorated: bool = False) -> None:
     whole = result.whole
     graph, arg, debate = result.graph, result.argument, result.debate
     if whole:
@@ -1212,12 +1230,16 @@ def _show_graph(prover: ProverWrapper, name: str, result, dot_path: Optional[str
     if dot_path:
         if may_render:
             with open(dot_path, "w") as fh:
-                fh.write(graph.to_dot(labels=labels, labelling=labelling))
+                fh.write(graph.to_dot(labels=labels, labelling=labelling,
+                                      node_text=_decorated_text(prover) if decorated else None,
+                                      prose=decorated))
             logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
         else:
             logger.info("File output is off (ACDC_NO_RENDER): not writing %s.", dot_path)
     if show:
-        image = (_render_graph_image(graph.to_dot(labels=labels, labelling=labelling), f"{name}_graph")
+        dot = graph.to_dot(labels=labels, labelling=labelling,
+                           node_text=_decorated_text(prover) if decorated else None, prose=decorated)
+        image = (_render_graph_image(dot, f"{name}_graph")
                  if may_render else None)
         if image and _open_file(image):
             logger.info("Graph rendered to %s and opened.", image)

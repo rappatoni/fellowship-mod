@@ -151,7 +151,8 @@ ANTI_KEYWORDS = tuple("anti" + k for k in STATEMENT_KEYWORDS)
 REFINE_VERBS = ("refine", "prove", "argue", "refute", "dispute")
 VERBS = ("attack", "rebut", "undermine", "undercut", "support", "buttress", "reinforce", "undergird")
 TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
-RENDER_STYLES = ("argumentation", "dialectical", "intuitionistic", "vanilla", "pruefschema")
+RENDER_STYLES = ("argumentation", "dialectical", "intuitionistic", "vanilla", "pruefschema",
+                 "checklist")
 PROJECTIONS = ("out", "tou", "sub", "bus", "attacker", "regatta")
 
 _NAME = r"[^\s:()]+"
@@ -368,7 +369,7 @@ def _p_query(verb):
         "label": "Use: label ARG|DEBATE|issue :X|X: [grounded|complete|preferred|stable].",
         "evaluate": "Use: evaluate ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",
         "explain": "Use: explain ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",
-        "render": "Use: render ARG|DEBATE|issue :X|X: [STYLE] [registered|enriched|unfolded|normal|evaluated].",
+        "render": "Use: render ARG|DEBATE|issue :X|X: [STYLE] [registered|enriched|unfolded|normal|evaluated|shared].",
         "tree": "Use: tree ARG [nl [STYLE]|pt] [registered|enriched|unfolded|normal|evaluated].",
     }[verb]
 
@@ -383,14 +384,14 @@ def _p_query(verb):
             semantics = [o for o in more if o in ("grounded", "complete", "preferred", "stable")]
             modes = [o for o in more if o in ("skeptical", "credulous")]
             paths = [o for o in more if o.startswith('"')]
-            unknown = [o for o in more if o not in ("show", "all") and o not in semantics
+            unknown = [o for o in more if o not in ("show", "all", "decorated") and o not in semantics
                        and o not in modes and o not in paths]
             if unknown:
                 raise SyntaxRefused(f"graph: unknown option(s) {' '.join(unknown)}; a file name is "
                                     f'double-quoted ("FILE.dot"). {usage}')
             if len(semantics) > 1 or len(modes) > 1 or len(paths) > 1:
                 raise SyntaxRefused(f"graph: one semantics, one mode and one file at most. {usage}")
-            args.update(whole="all" in more, show="show" in more,
+            args.update(whole="all" in more, show="show" in more, decorated="decorated" in more,
                         dot_path=unquote(paths[0]) if paths else None,
                         semantics=semantics[0] if semantics else "grounded",
                         mode=modes[0] if modes else "skeptical")
@@ -401,8 +402,9 @@ def _p_query(verb):
         elif verb in ("evaluate", "explain"):
             args.update(_eval_options(verb, more))
         elif verb == "render":
-            args["which"] = next((t for t in more if t in TERM_SELECTORS), None)
-            args["style"] = next((t for t in more if t not in TERM_SELECTORS), None)
+            selectors = TERM_SELECTORS + ("shared",)
+            args["which"] = next((t for t in more if t in selectors), None)
+            args["style"] = next((t for t in more if t not in selectors), None)
         elif verb == "tree":
             args["which"] = next((t for t in more if t in TERM_SELECTORS), None)
             plain = [t for t in more if t not in TERM_SELECTORS]

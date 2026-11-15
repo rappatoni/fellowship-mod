@@ -251,8 +251,8 @@ class Interpreter:
                                       base=c["base"], witness=c["witness"], favour=c["favour"])
             elif c.kind == "render":
                 target = svc.target(c["target"])
-                if c["which"] is None and target.kind == "argument":
-                    result = svc.render(target, None, c["style"])
+                if c["which"] == "shared" or (c["which"] is None and target.kind == "argument"):
+                    result = svc.render(target, c["which"], c["style"])
                 else:
                     result = svc.term(target, c["which"] or "unfolded")
             elif c.kind == "tree":

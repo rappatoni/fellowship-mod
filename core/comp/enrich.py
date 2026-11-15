@@ -28,6 +28,41 @@ def _cell_from_command(node) -> None:
             cell.prop = other.prop
             logger.debug("Enriching cell with type %s from its command", cell.prop)
         _nested_from_quantifier(cell)
+        _first_order_cells_along_spine(cell)
+
+
+def _first_order_cells_along_spine(cell) -> None:
+    """Type the universal instantiations further down an elimination spine.
+
+    In ``a * t * c`` against ``A -> forall x:S, B`` the instantiation ``t * c``
+    is in no command, so neither ``_cell_from_command`` nor
+    ``_nested_from_quantifier`` reaches it; its type is the consequent of the
+    arrow.  This walks the spine from a typed cell, carrying the type: an
+    arrow ``A -> B`` passes ``B`` to the cell's context, a universal passes
+    its body with the witness substituted.  It assigns a type only to a
+    first-order cell whose type is unset (the renderer reads it to name the
+    instantiated variable, tasks.org, aida-render-fo-terms); an ordinary
+    cell is passed through, never retyped."""
+    typ = str(cell.prop) if getattr(cell, "prop", None) else None
+    while typ is not None and isinstance(cell, (Cons, ConsFO)):
+        try:
+            prop = Prop.parse(typ.strip())
+        except PropError:
+            return
+        if isinstance(cell, Cons) and isinstance(prop, PBin) and prop.op is BinOp.IMP:
+            following = prop.right
+        elif (isinstance(cell, ConsFO) and isinstance(prop, PQuant)
+              and prop.quantifier is Quantifier.FORALL):
+            first, rest = prop.names[0], prop.names[1:]
+            body = PQuant(prop.quantifier, rest, prop.sort, prop.body) if rest else prop.body
+            following = body.subst(first, cell.fo_term)
+        else:
+            return
+        cell = cell.context
+        if isinstance(cell, ConsFO) and cell.prop is None:
+            cell.prop = str(following)
+            logger.debug("Enriching instantiation with type %s along its spine", cell.prop)
+        typ = str(cell.prop) if isinstance(cell, ConsFO) else str(following)
 
 
 def _nested_from_quantifier(cell) -> None:

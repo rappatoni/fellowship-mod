@@ -400,7 +400,8 @@ class ImportReport:
 #: Which of an argument's terms `term`/`render`/`tree` can show
 #: (aida-unfold-entrypoints).
 TERM_SELECTORS = ("registered", "enriched", "unfolded", "normal", "evaluated")
-RENDER_STYLES = ("argumentation", "dialectical", "intuitionistic", "vanilla", "pruefschema")
+RENDER_STYLES = ("argumentation", "dialectical", "intuitionistic", "vanilla", "pruefschema",
+                 "checklist")
 MODES = ("skeptical", "credulous")
 SEMANTICS = ("grounded", "complete", "preferred", "stable")
 BASES = ("cbn", "cbv")
@@ -408,22 +409,33 @@ BASES = ("cbn", "cbv")
 
 def render_term(term, style: str, declarations=None, decorations=None) -> str:
     """A term in one of the natural-language styles (pres/nl.py)."""
-    from pres.nl import (pretty_natural, natural_language_argumentative_rendering,
-                         dialectical_rendering, natural_language_rendering,
-                         pruefschema_rendering, vanilla_rendering)
+    from pres.nl import pretty_natural
+    sem = render_semantics(style)
+    return pretty_natural(term, sem, declarations=declarations or {}, decorations=decorations or {})
+
+
+def render_semantics(style: str):
+    """The rendering semantics of a natural-language style (pres/nl.py)."""
+    from pres.nl import (natural_language_argumentative_rendering, dialectical_rendering,
+                         natural_language_rendering, pruefschema_rendering, checklist_rendering,
+                         vanilla_rendering)
     sem = {"argumentation": natural_language_argumentative_rendering,
            "dialectical": dialectical_rendering,
            "intuitionistic": natural_language_rendering,
            "vanilla": vanilla_rendering,
-           "pruefschema": pruefschema_rendering}.get(style.strip().lower())
+           "pruefschema": pruefschema_rendering,
+           "checklist": checklist_rendering}.get(style.strip().lower())
     if sem is None:
         raise InvalidRequest(f"Invalid render style '{style}' (expected: {', '.join(RENDER_STYLES)})")
-    return pretty_natural(term, sem, declarations=declarations or {}, decorations=decorations or {})
+    return sem
 
 
 # ---------------------------------------------------------------------------
 # The service
 # ---------------------------------------------------------------------------
+
+from pres.decorations import render_prop  # noqa: E402
+
 
 class Service:
     def __init__(self, session):
@@ -1354,6 +1366,8 @@ class Service:
             text = (arg.render(normalized=False) if style is None
                     else render_term(arg.body, style, s.declarations, s.decorations))
             return Rendering(target, None, style, f"argument {arg.name}", text)
+        if which == "shared":
+            return self._render_shared(target, style)
         found = self.term(target, which or "unfolded")
         term = found.term
         if isinstance(term, str):
@@ -1363,6 +1377,58 @@ class Service:
         else:
             text = render_term(term, style, s.declarations, s.decorations)
         return Rendering(target, found.which, style, found.description, text)
+
+    def _render_shared(self, target, style: Optional[str]) -> Rendering:
+        """``render TARGET [STYLE] shared``: the debate as named sub-debates
+        (core/dc/share.py), each written once - the root's term, then every
+        named sub-debate under a header with the open sites it rests on,
+        citations pointing to them by name.  For an argument (its debate,
+        biased towards it) or an issue; a debate's own scope has no shared
+        form yet."""
+        from core.dc.unfold import UnfoldError
+        from pres.gen import pres_tree
+        from pres.nl import pretty_natural
+        s = self.session
+        if target.kind == "argument":
+            arg = s.get_argument(target.text)
+            if arg is None:
+                raise NotFound(f"Argument '{target.text}' not found.")
+            if not arg.executed:
+                arg.execute()
+            issue, top = s.issue_of(arg), arg
+        elif target.kind == "issue":
+            issue, top = target.issue, None
+        else:
+            raise InvalidRequest("`render ... shared` takes an argument or an issue; a debate's "
+                                 "own scope has no shared form yet.")
+        if issue not in set(s.graph.statements()):
+            raise Refused(f"'{target.text}' is not in the document graph; it has no debate to share.",
+                          stage="debate")
+        try:
+            shared = s.shared_debate(issue, top)
+            root, rows = shared.presented()
+        except UnfoldError as e:
+            raise UnfoldRefused(str(e), stage="debate", cause=e)
+        if style is None:
+            return Rendering(target, "shared", None, "the shared debate", shared.to_text(tree=True))
+        sem = render_semantics(style)
+        context = {"declarations": s.declarations, "decorations": s.decorations}
+        lines = [pretty_natural(root, sem, **context)]
+        sites = getattr(sem, "shared_site_templates", {}) or {}
+        for name, markers, body in rows:
+            lines.append("")
+            lines.append(sem.shared_header_template.replace("@name", name))
+            for marker in markers:
+                kind, _, prop = marker.partition(":")
+                template = sites.get("presumed" if kind.strip() == "!" else "owed")
+                if template:
+                    shown = render_prop(prop.strip(), s.declarations, s.decorations,
+                                        getattr(sem, "connective_templates", {}))
+                    lines.append(sem.indentation + template.replace("@prop", shown))
+            lines.extend(sem.indentation + line
+                         for line in pretty_natural(body, sem, **context).splitlines())
+        return Rendering(target, "shared", style, "the shared debate, sub-debates by name",
+                         "\n".join(lines))
 
     @_operation
     def share(self, name: str) -> Shared:

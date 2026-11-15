@@ -31,7 +31,8 @@ The current codebase supports:
 - debate graphs, ADF labelling (via adf-bdd) and label-guided evaluation,
   skeptical or credulous, call-by-name or call-by-value
 - natural-language rendering styles: `argumentation`, `dialectical`,
-  `intuitionistic`, `vanilla`, `pruefschema`
+  `intuitionistic`, `vanilla`, `pruefschema` (German check list) and
+  `checklist` (its English counterpart)
 - acceptance-tree export through Graphviz (with DOT fallback), coloured by
   the grounded labels
 - sessions and documents, a service layer for programs, whole-document
@@ -657,6 +658,10 @@ of the last `evaluate`).
 
 - `render TARGET [STYLE] [TERM]`
   - print the term in a natural-language style (see *Render styles*)
+- `render ARG|issue :X|X: [STYLE] shared`
+  - print the shared debate: the root, then each named sub-debate once,
+    cited by name wherever it recurs (see *Render styles*); a debate's own
+    scope has no shared form yet and is refused
 - `tree ARG [nl [STYLE] | pt] [TERM]`
   - render an acceptance tree coloured by the grounded labels (see
     Debate-graph commands); drawn uncoloured if the graph is refused
@@ -691,7 +696,7 @@ admitted; `graph` reports which fragment (acyclic or cyclic) a debate
 is in. First-order arguments take part as described under *First-order
 logic*.
 
-- `graph TARGET|document [all] [grounded|complete|preferred|stable] [skeptical|credulous] ["FILE.dot"] [show]`
+- `graph TARGET|document [all] [grounded|complete|preferred|stable] [skeptical|credulous] [decorated] ["FILE.dot"] [show]`
   - print the nodes, hyperedges and default markers of the target's issue
     graph (unfolded from the document) or of the document graph; write
     Graphviz DOT when a filename is given (double-quoted; any other word
@@ -715,6 +720,13 @@ logic*.
     it decides a scaffold, but it derives its statement only from an
     inconsistency, so it claims no strict edge and surfaces as an
     `EXCEPTION` instead
+  - `decorated` writes each node's proposition through the decorations
+    (with English connectives) instead of as a formula, in the DOT file
+    and the picture, and words its markings (`proof: IN · refutation:
+    OUT` for `t=IN c=OUT`, `proof presumed` for `[t:p]`); a statement only
+    whose refutation is in play is drawn as its negation ("it is not the
+    case that ..."), so its fill, arrowheads and dashes read the right
+    way round
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
   - the drawing (DOT file or picture) carries a legend of the symbols it
@@ -864,6 +876,14 @@ and may contain positional placeholders: `@arg1`, `@arg2`, ... refer to the
 arguments of a rendered proposition, so with the first line above the
 proposition `Bird Tweety` renders as `Tweety is a bird`. A single-quoted
 template is refused with its double-quoted replacement.
+
+A decoration names a thing wherever it occurs: a constant inside a term,
+and a function symbol, whose `@argN` are filled with its rendered
+arguments. With `decorate interim : "an interim order to submit @arg1".`
+and `decorate d_appl : "the application".` the term `interim d_appl`
+renders as `an interim order to submit the application`, also in the
+witness (`witnessed by ...`) and instantiation (`instantiated at ...`)
+lines of a first-order proof.
 
 A template uses JSON string syntax, which is also what the importers write
 (with `json.dumps`). These characters must be escaped:
@@ -1145,7 +1165,25 @@ a classical principle.
 - `dialectical`
 - `intuitionistic`
 - `vanilla`
-- `pruefschema`
+- `pruefschema`: a German check list (*Prüfschema*)
+- `checklist`: the same check list in English
+
+The two check-list styles phrase an owed site by its label once the term
+is evaluated: `not established:` / `Prüfung fehlgeschlagen:` (OUT),
+`undecided:` / `offen:` (UNDEC), `established:` / `es liegt vor:` (IN),
+and `to be checked:` / `noch zu prüfen:` before evaluation. The bottom
+alternative of a scaffold (the conclusion owed when every argument above
+it falls) reads `otherwise not established:` / `andernfalls nicht
+erwiesen:`, and a closed check names its outcome (`check completed
+(holds)` / `(refuted)`). Their quantifiers and connectives are in the
+style's language.
+
+`render ... shared` prints the shared form of a debate instead of its
+expansion, which abridges large terms: each sub-debate the debate reaches
+more than once is printed once under a header (`Check NAME:` / `Prüfung
+NAME:`) with its open sites (`to be shown:`, `presumed:`), and every
+occurrence cites it (`see check NAME: ...`). Without a style it prints the
+shared term itself.
 
 Examples:
 
@@ -1158,6 +1196,8 @@ Then inside the REPL:
 ```text
 render myarg vanilla.
 render myarg dialectical evaluated.
+render myarg checklist evaluated.
+render issue :Registrable checklist shared.
 ```
 
 ## Acceptance trees
