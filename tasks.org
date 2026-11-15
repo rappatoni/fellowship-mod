@@ -446,6 +446,497 @@ sessions run end to end: tests/demo/test_demo.py, 10 passed.
 :VERIFY:         Run the documented DIREGA demonstrator workflow end to end and record the tested integration revision.
 :END:
 
+** DOING IRIS follow-up: AIDA on the usufruct-registration case (RQ 3, 4, 6, 7)
+:PROPERTIES:
+:ID:             aida-iris-usufruct
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         40:00
+:DEFERRALS:      0
+:OUTCOME:        Literate AIDA formalisations under lib/iris_experiment/ give tentative answers to research questions 3, 4, 6 and 7 of the IRIS 2026 overview paper (DIREGA), on whether a usufruct on a limited partner's interest can be registered in the commercial register. The four OLG decisions are formalised in full; one shared example models the missing meta-norm (delegation), the burden of proof (delegations and obligations) and the mutual dependence of claim to registration and duty of examination; an evaluation compares AIDA with other frameworks on the same material.
+:VERIFY:         make iris tangles and runs every fixture; tests/iris passes; every phase gate below records the author's verdict; evaluation/comparison.org holds outputs from each compared tool.
+:END:
+
+Requested by the author 2026-11-13. Plan:
+=~/.claude/plans/check-out-lib-iris-experiment-iris2026-v-wild-sparkle.md=
+(the phases below mirror it). The paper is in English and its prose is
+the authors'; the literate files hold decision text, AI draft
+translations and formalisations, and mark every comment of ours as an
+AI NOTE. Legal review: the author first, possibly forwarded to Anil
+Basaran later.
+
+Encoding guidance from the author (2026-11-13):
+- Conjunction: by default a helper statement that holds by default
+  (a delegation), with one denial per conjunct (=declare r1 : (h_bird ->
+  bird).=, =deny r2 : (h_bird - fly).=, =deny r3 : (h_bird - feathers).=);
+  the conjunction stays open to further conjuncts. Where a real
+  conjunction is needed, the derived form =A - ~B= rather than currying
+  ([[id:aida-derived-conjunction]]). See
+  =../scasp-aida/docs/minicourse-scasp-import.org= (helper atoms).
+- Transpositions are added by hand where needed
+  ([[id:aida-strict-layer]] is not done).
+- Preference: the order of arguments in the document, within the
+  support stack and within the attack stack; across the stacks see
+  [[id:aida-support-attack-priority-switch]].
+- No opposing presumptions is a consistency condition of the burden of
+  proof; report any place where the law seems to violate it.
+- AIDA bugs met on the way, recorded on main (commit b519745):
+  [[id:aida-unfold-negation-binder-capture]] (worked around: no =~X=
+  lemma, negative facts as denials; reproduction
+  =tests/iris/fixtures/bug_unfold_negation_lemma.fspy=, strict xfail in
+  =tests/iris/test_iris.py=) and [[id:aida-parse-subtraction-intro-in-stack]].
+- Labelling cost (2026-11-13): preferred, the default, does not finish on
+  the combined RQ 3 graph (adf-bdd's =--com= is generate-and-test,
+  3^16 candidates); stable with nogood learning takes 0.06 s. Recorded
+  on main as [[id:aida-default-semantics-not-preferred]], with the cause
+  added to [[id:aida-multi-extension-labelling-cost]].
+- "Burden of proof" (2026-11-13) is meant in a general sense: the
+  standard of evidence the applicant has to meet and, dually, the
+  amount and depth of the register court's examination (due
+  diligence) - not the civil-procedure burden.
+- 2026-11-14: the author asked to conclude the remaining phases (3-7)
+  without the intermediate gates and to review everything at once. All
+  phases are in REVIEW; gates R0-R7 are pending in
+  =lib/iris_experiment/README.org= (review log).
+
+*** REVIEW Phase 0: sources, glossary, tangling
+:PROPERTIES:
+:ID:             aida-iris-p0-sources
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        The decision texts are in lib/iris_experiment/sources/ with provenance; glossary.org proposes English renderings of the legal terms; tools/tangle_fspy.py and make iris tangle and run Org src blocks; a smoke test in tests/iris passes.
+:VERIFY:         The author reviews sources, glossary and tangle mechanics (gate R0); pytest tests/iris passes.
+:END:
+
+Done 2026-11-13: München, Oldenburg and Köln from MittBayNot in
+=lib/iris_experiment/sources/=; glossary, README, tangler, =make iris=,
+=tests/iris= (5 tests; full suite 2458 passed). Open: OLG Stuttgart's
+text (the author fetches it via FAU, with full texts of München and Köln
+to check the MittBayNot prints); the glossary and the source texts
+await the author's check. R0 (2026-11-13, partial): the author settled
+the meaning of "burden of proof" (below) and asked to continue.
+
+*** REVIEW Phase 1: argument analysis and choice of logical base
+:PROPERTIES:
+:ID:             aida-iris-p1-analysis
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         6:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p0-sources
+:OUTCOME:        analysis.org maps each decision's claims, reasons, attacks and unstated premises by phenomenon; records the choice between propositional and first-order logic with reified events and deontics (with sources); compares conjunction encodings (helper, derived A - ~B, currying); and reports a feasibility spike of every AIDA feature the formalisation needs.
+:VERIFY:         The author's verdict at gate R1; the spike script runs with acdc --script.
+:END:
+
+Done 2026-11-13 in =lib/iris_experiment/analysis.org=: argument maps of
+München, Oldenburg and Köln (Stuttgart from the others' reports), the
+meta-norm and scope-of-examination table, the logic decision (RQ 3
+propositional; RQ 4/6/7 first order with reified eventualities), the
+conjunction comparison, and the spike, tangled and pinned in
+=tests/iris= (8 tests). Awaiting R1.
+
+*** REVIEW Phase 2: RQ 3, the four decisions formalised in full
+:PROPERTIES:
+:ID:             aida-iris-p2-rq3
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         12:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p1-analysis
+:OUTCOME:        One literate file per OLG decision (paragraph, translation, formalisation) over a shared vocabulary, a debate per court, and a combined graph whose labellings are compared with the courts' positions; showcase fragments are selected.
+:VERIFY:         The tangled fixtures run; tests/iris pins graph, labels and verdicts; the author's verdict at gate R2.
+:END:
+
+Done 2026-11-14 in =lib/iris_experiment/=:
+- =rq3-stuttgart.org=, =rq3-oldenburg.org=, =rq3-muenchen.org=,
+  =rq3-koeln.org=: every argumentative paragraph with its German text, an
+  AI draft translation and its formalisation, plus a closed debate per
+  court.
+- =rq3-combined.org=: all four in one document. Five stable labellings
+  of the issue: one con (München, Köln), four pro (Stuttgart, Oldenburg),
+  2 x 2 over =ConsentConstitutive= and =LikeExecutorship=. Skeptically
+  open, credulously a value. So the IRIS § 2.2.2 hypothesis holds, and
+  the disagreement is localised at the § 1071 consent right's effect and
+  at the executorship analogy.
+- =rq3-fragments.org=: six fragments (a)-(f) with figures and stable
+  verdicts.
+- =analysis.org=: the Stuttgart map now follows its text.
+- Tests: =tests/iris= pins the court debates, the fragments and the
+  combined labellings (16 tests then; 29 after Phases 3-6).
+- Semantics: grounded and stable throughout. Preferred does not finish
+  on the combined graph ([[id:aida-default-semantics-not-preferred]] on
+  main).
+- The combined graph's type check is fast again (about 1.8 s), since
+  =p_liab_only= is now stated in contraposed form. Before, the
+  refutation of =Liability= was spelled two ways, which forced the
+  expanded check ([[id:aida-negation-spelling-in-unfolding]] on main).
+- Opposing presumptions on =Liability= (AIDA's warning, 2026-11-13): the
+  register courts presumed no liability, while the appellant before
+  München and the literature Köln reports presumed liability. Each file
+  alone was consistent. This came from the encoding, not from the law: no
+  liability is a legal conclusion that München II.2 d) and Köln Rn. 5
+  argue for. The register courts' refutation (=rc_stg_no_need=,
+  =rc_old_no_need=) is now owed, and the warning is gone.
+
+
+Extended 2026-11-14 after the author's remarks (RQ 3 is about a faithful
+model of the debate and its readers, not only verdicts):
+=lib/iris_experiment/rq3-debate-dynamics.org= traces Oldenburg and
+München move by move. Oldenburg's trajectory is pinned. München turns
+credulously only at the BGH counter-instances.
+
+It also assesses the renderings, =explain=, graphs, incremental addition
+and the relation to Catala. Rendering findings:
+- the =argumentation= style mixes German check-list phrases into English
+- it shows internal names
+- =pruefschema= marks unsupported sites as "Prüfung fehlgeschlagen" before
+  evaluation
+
+Recorded on main as aida-render-text-styles (commit 625582c, 2026-11-15).
+Awaiting R2: the fidelity of the argument maps and translations, and the
+choice of fragments.
+
+*** REVIEW Phase 3: RQ 4, the missing meta-norm as a delegation
+:PROPERTIES:
+:ID:             aida-iris-p3-rq4
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p1-analysis
+:OUTCOME:        rq4-6-7-metanorm.org layer 1: the claim to registration derived from the unwritten meta-norm as a delegation, contrasted with the meta-norm as an obligation (an exception), and a counterargument to the delegation.
+:VERIFY:         The verdicts written down before the run match the run; the author's verdict at gate R3.
+:END:
+
+Done 2026-11-14 in =lib/iris_experiment/rq4-6-7-metanorm.org=, layer 1,
+scenarios 4a-4d (verdicts written before the run, all matched):
+- delegated meta-norm: a value, normal form =…!IN:MetaNorm…=
+- owed: open, =MetaNorm= OUT (AIDA classifies it as open, =?OUT=, not as
+  an exception)
+- positivist objection: open; the IRIS draft's answer (the written rules
+  presuppose the meta-norm): a value again
+- =render duty argumentation= with =decorate= gives English text
+- pinned in =tests/iris= (=test_metanorm_scenarios=)
+
+Extended 2026-11-14 (a gap as a process, RQ 8):
+=lib/iris_experiment/rq4-gap-dynamics.org= is the case law as one
+debate in time. It shows open enumeration, open structure and revision.
+- The verdict per stage is pinned: value, exception, exception, open (5),
+  open (5).
+- =typecheck off= for this debate. With the replay on, the last stage
+  exceeds the prover I/O timeout on the stock build; with the native
+  path-copying build it replays except for one credulous evaluation
+  ([[id:aida-pexpect-read-window]] on main).
+Awaiting R3.
+
+*** REVIEW Phase 4: RQ 6, burden of proof in the same example
+:PROPERTIES:
+:ID:             aida-iris-p4-rq6
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         5:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p3-rq4
+:OUTCOME:        Layer 2: reported facts as delegations, required documents as the applicant's obligations, justified doubts as counterarguments that move the burden, the scope of examination limited to what the law requires; three scenarios with verdicts and explain traces; no scenario holds opposing presumptions.
+:VERIFY:         Scenario verdicts match the expected outcomes; the author's verdict at gate R4.
+:END:
+
+Done 2026-11-14, layer 2, scenarios 6a-6d. The entry is C's entry as
+limited partner (provided by statute), to keep the burden of proof apart
+from the RQ 3 dispute.
+- Requirements as denials of the helper =Passed=. The refutation is
+  presumed for registrability and the required documents (the applicant
+  must show them) and owed for correctness (the court must doubt).
+- Results: complete: value; missing document: open with the site named
+  (interim order); justified doubt: open; proof: value.
+- No opposing presumptions in any scenario, checked by the test with
+  AIDA's own =opposing_presumptions=.
+
+Extended 2026-11-14 ("verarbeiten"): layer 2b of =rq4-6-7-metanorm.org=.
+- =decision= proves that a lawful order exists by an open choice, and
+  the witness scaffold returns the order (entry, submission order, proof
+  order), with the justification as a certificate. Pinned (4 tests).
+- A first draft stated the proof-order rule strictly, so it survived the
+  proof. It is now presumed.
+- s(CASP) computes the same orders as bindings.
+- With two orders standing, the witness is the one argued for later;
+  recorded on main as aida-witness-candidate-order (625582c).
+- Layer 2c (2026-11-15): the witness rises to the top without being named.
+  - Constructively, by existential elimination: =interim d_appl= is
+    computed from the finding.
+  - Classically, by an argued Peirce step at the duty (drinker style):
+    =o_entry= when the duty is established, =o_submit= when it is not;
+    the "not owed" site must be presumed for the latter.
+  - Pinned (6 tests).
+  - Function-symbol decorations are not filled by the renderer, and
+    witness and instantiation lines print terms raw; recorded on main as
+    aida-render-fo-terms (2026-11-15, not yet committed there).
+Awaiting R4.
+
+*** REVIEW Phase 5: RQ 7, mutually dependent claim and duty
+:PROPERTIES:
+:ID:             aida-iris-p5-rq7
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         5:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p4-rq6
+:OUTCOME:        Layer 3: the cycle between scope of examination and claim to registration, with the Hohfeldian correlation of claim and duty; the unfounded loop, the loop anchored by an independent source, and a counterargument propagating round the loop; the AG case as a contrast.
+:VERIFY:         Verdicts under credulous and skeptical evaluation are recorded and pinned; the author's verdict at gate R5.
+:END:
+
+Done 2026-11-14, layer 3, scenarios 7a-7d.
+- The cycle: the court demands a document the law does not require; the
+  claim limits the scope (BGH NJW-RR 2011, 1184 Rn. 10), which makes the
+  demand improper, which lets the examination pass, which grounds the
+  duty, hence the claim (Hohfeld correlativity as two rules).
+- 7a: grounded undecided, two stable labellings (all IN or all OUT).
+- 7b: anchor by the case-law scope principle (a delegation): a value.
+- 7c: a doubt propagates round the cycle: the claim is OUT.
+- 7d: anchor by a statute fixing the scope (strict), the AG contrast
+  (§ 38 AktG): a value.
+- Pinned (=test_metanorm_scenarios=, =test_rq7_cycle_two_readings=).
+Awaiting R5.
+
+*** REVIEW Phase 6: integration and paper extracts
+:PROPERTIES:
+:ID:             aida-iris-p6-extracts
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         3:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p5-rq7
+:OUTCOME:        tests/iris pins every fixture; make iris renders the figures; README.org lists 3-5 paper-sized extracts, at least one per research question.
+:VERIFY:         make test passes; the author's verdict at gate R6.
+:END:
+
+Done 2026-11-14:
+- =tests/iris= pins the court debates, fragments (a)-(g), the combined
+  labellings and all 12 RQ 4/6/7 scenarios (29 tests).
+- =make iris= runs every script and writes 9 figures to =figures/=.
+- =README.org= lists six extracts E1-E6 (at least one per RQ, plus the
+  evaluation), each with its claim as an AI NOTE.
+- Full suite (2026-11-14, =ACDC_FSP= at this checkout's =fsp=): 2481
+  passed, 9 skipped, 4 xfailed, 1 xpassed (the same xpass as before), none
+  failed, 653 s.
+
+Extended 2026-11-15 (the examples for the paper, at the author's request):
+- =lib/iris_experiment/paper-examples.org= assembles E1-E5, E9 and the
+  sharing example S: snippet, verdict, vanilla and English check-list
+  renderings, decorated figure. =paper/make_examples.py= regenerates
+  =paper/out/= (verdicts equal to the pinned ones).
+- Sharing: the combined issue's check list goes from 34,065 lines
+  expanded to 1,133 shared (12 named sub-debates, 38 citations).
+- Rendering, implemented on this branch as the author confirmed:
+  - =render ... checklist= (English) beside =pruefschema=, both phrasing
+    an owed site by its label (pending, OUT, UNDEC, IN, the scaffold's
+    fallback); a check opens with ". Starting check x:" and closes with
+    "Check x completed (holds)." / "(refuted)."
+  - first-order lines in the style's language; function symbols
+    decorated; an instantiation names its variable ("instantiating d
+    with ..."), for which enrichment now types the instantiations along
+    an elimination spine (=core/comp/enrich.py=, first-order cells only)
+  - =render ARG|issue [STYLE] shared=; =graph ... decorated=, which words
+    the markings ("proof: IN · refutation: OUT") and draws a statement
+    only whose refutation is in play as its negation, arrows included
+    (the author found the top of E1 read backwards: a green "the usufruct
+    is registrable" under the restraint)
+  - this implements main's aida-render-text-styles and
+    aida-render-fo-terms: close them there when the branch is merged
+- Tests: =tests/test_checklist_rendering.py= (20), one IRIS rendering
+  test (=test_rq6_witness_rendered_as_a_checklist=).
+- The ID links of the literate files are plain task names now (task
+  =aida-...=): an export of a file outside =tasks.org= could not resolve
+  them, and aborted.
+- Vocabulary: =decorate interim= added; =Claim= reworded ("can claim ...
+  from ...") so the plural applicants read correctly.
+- Full suite (2026-11-15, after the prose graphs, =ACDC_FSP= at this
+  checkout's =fsp=): 2519 passed, 9 skipped, 4 xfailed, 1 xpassed (the
+  same xpass), none failed, 864 s.
+Awaiting R6.
+
+*** REVIEW Phase 7: evaluation against other frameworks
+:PROPERTIES:
+:ID:             aida-iris-p7-evaluation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         16:00
+:DEFERRALS:      0
+:BLOCKED_BY:     id:aida-iris-p5-rq7
+:OUTCOME:        evaluation/survey.org surveys frameworks and their implementations; the meta-norm example and one RQ 3 fragment are encoded in Carneades, PROLEG, s(CASP), a defeasible deontic logic reasoner, a bipolar AF in ASPARTIX/clingo, an ASPIC+ tool and Arg2P; evaluation/comparison.org compares them with AIDA on criteria drawn from the research questions.
+:VERIFY:         Each encoding runs in its tool with its output saved; the author's verdict at gate R7.
+:END:
+
+Done 2026-11-14 in =lib/iris_experiment/evaluation/=: =survey.org= (tools,
+versions, sources, installation), =comparison.org= (results matrix,
+criteria, per-tool notes, AIDA's weaknesses), one directory per tool with
+encodings and saved outputs, =run.sh=.
+- Run: Carneades 4, ASPIC+ (PyArg, three preference variants), Arg2P
+  (with burdens of persuasion), s(CASP), DDL (gvdgdo's clingo
+  implementation), and a PROLEG-style core in Ciao Prolog.
+- Departures from the OUTCOME:
+  - PROLEG is not public. Its published core (rules and exceptions) was
+    re-implemented and labelled as such.
+  - Houdini is not public. The clingo DDL implementation stands in.
+  - ASPARTIX/clingo is used as the stable solver for the frameworks
+    ASPIC+ builds. Its published encodings have no support relation, so
+    there is no separate bipolar encoding.
+- Main findings:
+  - All tools reach the RQ 4/6 verdicts, each stating the burden by its
+    own means.
+  - On fragment (g), Carneades, DDL and the PROLEG core decide con by
+    tie-breaking; Arg2P and s(CASP) keep both positions, as AIDA does.
+  - On the RQ 7 cycle: two readings in AIDA, s(CASP) and Arg2P;
+    undecided in Carneades; accepted as an unfounded loop by the DDL
+    implementation; non-terminating in the PROLEG core.
+- AIDA's encodings are the longest (162 lines for 7c against 16-37).
+
+Extended 2026-11-14: =comparison.org= now has:
+- the further criteria (debate as an object, course of a debate,
+  readers, incremental addition, gap dynamics, processing, classicality),
+  each marked as tested or documented
+- strengths and weaknesses for every system, AIDA included
+- a section on classicality
+
+Key finding on classicality: AIDA's labelling is not closed under
+transposition. Fragment (g)'s con labelling accepts § 1071, Oldenburg's
+presumed rule and the refutation of its consequent together
+([[id:aida-strict-layer]] on main; evidence added there in 625582c).
+Awaiting R7.
+
+** BACKLOG English argumentation rendering: no German pattern templates, readable negation and denials
+:PROPERTIES:
+:ID:             aida-render-english-argumentation
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         3:00
+:DEFERRALS:      0
+:OUTCOME:        =render NAME argumentation= on a decorated document produces English only: the pattern renderers the style uses speak English (or the style takes its pattern templates from a language setting), a negated proposition reads as a decorated negation rather than "not <sentence>", an implication used as a warrant reads as a rule rather than "A -> B", and a step closed by a denial reads as a refutation rather than "done <the denied proposition>".
+:VERIFY:         Rendering =muc_no_liab=, =old_codet_1071= and the evaluated =frag_a= of lib/iris_experiment (=rq3-fragments.org=) gives English sentences with none of "Für", "hinreichend", "weil", "und", "->"; tests/test_pattern_rendering.py is updated where it pins the German wording of this style; the =pruefschema= style stays German.
+:END:
+
+Found 2026-11-13 while decorating the IRIS RQ 3 vocabulary
+([[id:aida-iris-usufruct]]). The style =argumentation=
+(=pres/nl.py:100=, =natural_language_argumentative_rendering=) installs
+=ApplicationRenderer(header_template="Für @prop ist hinreichend, dass
+@arg_prop")= and the dual and defeasible-warrant renderers with German
+templates, and =pres/pattern_render.py:122-124= defaults to
+"weil"/"und", so an English decorated argument comes out as "We will
+argue for X ... Für X ist hinreichend, dass Y weil ... und ...". The
+graph drawings (=DebateGraph.to_dot=) do not use decorations at all;
+whether they should is a separate question for the author.
+
+** BACKLOG A derived connective and tactic for conjunction
+:PROPERTIES:
+:ID:             aida-derived-conjunction
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            2
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        Conjunction is available as a connective derived inside the calculus, A /\ B defined as A - ~B (the intuitionistic definition), with a tactic to prove and to use it, so that arguments written with the derived form A - ~B can switch to it without being rewritten.
+:VERIFY:         A fixture proves and uses A /\ B through the tactic; its registered term equals the one written with A - ~B; the debate graph, labels and verdict of an argument are the same in both spellings; the suite passes.
+:END:
+
+Requested by the author 2026-11-13 ([[id:aida-iris-usufruct]]). Today
+there is no conjunction to argue with. The idiomatic encoding of a
+conjunctive condition is a helper statement held by default with one
+denial per conjunct (open: further conjuncts can be added later); where
+a real conjunction is wanted, the derived form =A - ~B= is preferred to
+currying, because a later derived connective is easier to bring into
+existing proofs.
+
+Found 2026-11-13 (IRIS spike, =lib/iris_experiment/analysis.org= §4):
+with the tactic order =cut ((A - ~B) -> C) r. axiom rule. elim. elim.
+by default. next. by default. next. axiom r.= Fellowship prints the
+subtraction introduction as the left operand of a stack without
+parentheses, =1.2.1.1!*!1.2.1.2*r=, and AIDA's term grammar
+(=core/ac/syntax.py=, =cons: tight_term _STAR context=) refuses it
+("Unexpected token '*'"); the argument is not registered. Cutting the
+subtraction first (=cut (A - ~B) c. elim. ...=) puts it in term
+position and works. Still present on main (ce21e92), checked 2026-11-13;
+recorded on main as [[id:aida-parse-subtraction-intro-in-stack]]
+(commit b519745). Either Fellowship should parenthesise or the
+grammar should accept a subtraction introduction there; a derived
+conjunction tactic must not produce the unreadable form.
+
+** BACKLOG Design a simple natural preference between attacks and supports
+:PROPERTIES:
+:ID:             aida-support-attack-priority-switch
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            3
+:EFFORT:         4:00
+:DEFERRALS:      0
+:OUTCOME:        A design, agreed with the author, of a binary top/bottom switch per argument: the default is bottom for supporters and top for attackers, and a supporter switched to top is placed by the compiler above the existing attack stack, so that it takes priority over the attackers.
+:VERIFY:         The design is written here with its effect on unfolding, compilation and labelling, and a worked fixture in which a prioritised supporter beats an attacker that would win today.
+:END:
+
+Requested by the author 2026-11-13 ([[id:aida-iris-usufruct]]). The
+order of arguments in the document already gives a natural preference,
+but only among supporters and among attackers: the two have separate
+stacks and the attack stack always goes on top of the support stack.
+
 ** DONE Add first-order support to AIDA's front end
 CLOSED: [2026-08-19 Wed]
 :PROPERTIES:
@@ -4794,6 +5285,14 @@ cArg's cell for B->C.
 
 Raised and decided by the author 2026-09-25, while settling the
 asymmetric contrariness guard (see below).
+
+Met again 2026-11-13 in the IRIS spike ([[id:aida-iris-usufruct]],
+=lib/iris_experiment/analysis.org= §5): a first draft presumed
+=Registrable uf= while a necessary-condition counterargument presumed
+its refutation, and both went UNDEC; nothing refused it. The author
+restated the rule for the IRIS work as a consistency condition of the
+burden of proof (the burden cannot rest with both sides at once) and
+asked to be told if the legal material ever seems to violate it.
 
 *The rule.* "Presumption" is the implementation's word; *delegation* is
 the author's, and it is the accurate one. Writing =!1:P= does not just
