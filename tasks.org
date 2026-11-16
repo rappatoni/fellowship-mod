@@ -8809,6 +8809,69 @@ Causes:
 Related: [[id:aida-render-text-styles]] (the text styles' language
 mixing and internal names).
 
+** BACKLOG Let an author abort the debate being recorded
+:PROPERTIES:
+:ID:             aida-debate-abort
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         no
+:EISENHOWER:     Q2
+:ICK:            1
+:EFFORT:         1:30
+:DEFERRALS:      0
+:OUTCOME:        A command aborts the debate being recorded: the recording ends, the debate is not registered, its moves are dropped and its name is free again; the arguments it moved stay in the document; a registered debate's child Fellowship session is closed. Outside a recording the command is refused. Proposed spelling `discard debate.`, parallel to `discard theorem.` for an argument; the spelling is the author's choice.
+:VERIFY:         In the reproduction below, the abort after the refused opening move lets `debate pro closed d : (B).`, `b.` and `cedat tempus.` record d; an abort with no debate being recorded is refused; an abort in the middle of a script leaves the arguments, the names and the document graph as they were before the `debate` line; aborting a registered debate ([[id:aida-registered-debates]]) closes its child process; README *Debates* and the CLI help list the command; tests pin these cases; the suite passes.
+:END:
+
+Found in the IRIS follow-up (2026-11-16, branch discourse-referents).
+A debate whose opening move is refused cannot be left: it has no move,
+so it cannot be closed, and while it is recorded no other debate can be
+started. The only way out is =discard all.=, which resets the whole
+document. Reproduced on main at 173768d with:
+
+#+begin_example
+lk.
+declare A, B : bool.
+declare r : (A -> B).
+argument b : (B).
+cut (A -> B) h.
+axiom r.
+elim.
+by default.
+next.
+axiom h.
+dixi.
+debate pro closed d : (A).
+cedat tempus.
+debate pro closed d2 : (B).
+b.
+cedat tempus.
+debate pro closed d : (B).
+#+end_example
+
+#+begin_example
+Recording debate 'd' (pro, closed scope) about :(A).
+Refused (repro.fspy:13): debate 'd' has no move yet; open it with an argument.
+Refused (repro.fspy:14): debate 'd' is still being recorded; close it with `cedat tempus.` first.
+Refused (repro.fspy:15): debate 'd': the opening move must be an argument for (A); 'b' concludes :B.
+Refused (repro.fspy:16): debate 'd' has no move yet; open it with an argument.
+Refused (repro.fspy:17): debate 'd' is still being recorded; close it with `cedat tempus.` first.
+Debate 'd' was not closed with `cedat tempus.`; it keeps the 0 move(s) recorded so far.
+#+end_example
+
+Causes:
+- =wrap/service.py=, =start_debate=, refuses a debate while another is
+  recorded; =close_debate= refuses a debate with no move.
+- =wrap/prover.py=, =register_debate=, claims the name at the =debate=
+  line, and nothing releases it.
+- =wrap/cli.py=, the script runner, only warns when a script ends while
+  a debate is recorded, and leaves it recording.
+
+Out of scope: deleting a debate that is already closed, which raises its
+own questions (citations of it, a registered debate's extensions).
+
 ** BACKLOG Document, and let authors state, the order of a witness scaffold's candidates
 :PROPERTIES:
 :ID:             aida-witness-candidate-order
