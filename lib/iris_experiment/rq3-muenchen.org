@@ -321,30 +321,31 @@ entry.
 AI NOTE:
 - Two rebuttals with one structure: management rights and the vote
   belong to membership, and the usufructuary is not a member. Each is
-  a contraposition of a presumed rule of the court's against the denial
-  =bgh_partner=.
+  a presumed denial of the court's (membership is a necessary
+  condition: =ManagementShare - PartnerStatus= is refuted by default),
+  and the denial =bgh_partner= refutes the condition. (Until 2026-11-16
+  a presumed rule =ManagementShare -> PartnerStatus=, used by modus
+  tollens.)
 - The last sentence rules out a ground (information rights) that no one
   argued. It is not formalised.
 
 #+begin_src fspy
 # II.2 b): management rights flow from membership; not a partner, no share.
 counterargument muc_no_mgmt : (ManagementShare [usufruct]).
-cut (ManagementShare [usufruct] -> PartnerStatus [usufruct]) r.
-by default.
-next.
+cut (ManagementShare [usufruct] - PartnerStatus [usufruct]) th.
 elim.
-axiom.
 moxia bgh_partner.
+axiom th.
+by default.
 dixi.
 
 # II.2 b): the vote stays with the partner, day-to-day affairs included.
 counterargument muc_no_vote : (VotesDayToDay [usufruct]).
-cut (VotesDayToDay [usufruct] -> PartnerStatus [usufruct]) r.
-by default.
-next.
+cut (VotesDayToDay [usufruct] - PartnerStatus [usufruct]) th.
 elim.
-axiom.
 moxia bgh_partner.
+axiom th.
+by default.
 dixi.
 #+end_src
 
@@ -435,12 +436,11 @@ therefore not called for to disclose the liability position [...].
 #+begin_src fspy
 # II.2 d): liability is bound to partner status (§§ 128, 171 HGB); not a partner.
 counterargument muc_no_liab : (Liability [usufruct]).
-cut (Liability [usufruct] -> PartnerStatus [usufruct]) r.
-by default.
-next.
+cut (Liability [usufruct] - PartnerStatus [usufruct]) th.
 elim.
-axiom.
 moxia bgh_partner.
+axiom th.
+by default.
 dixi.
 #+end_src
 
@@ -474,12 +474,11 @@ disclose (=g_repr=).
 #+begin_src fspy
 # II.2 e): no more rights than the limited partner, who does not represent.
 counterargument muc_no_repr : (Representation [usufruct]).
-cut (Representation [usufruct] -> LimitedPartnerRepresents) r.
-by default.
-next.
+cut (Representation [usufruct] - LimitedPartnerRepresents) th.
 elim.
-axiom.
 moxia s_170.
+axiom th.
+by default.
 dixi.
 #+end_src
 

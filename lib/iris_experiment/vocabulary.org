@@ -201,7 +201,7 @@ deny dn_excl_need : (Excluded [usufruct] - ~Need [usufruct]).
 declare p_info : (InfoSuffices -> InfoInterest [usufruct] -> Need [usufruct]).
 declare p_info_deputy : (InfoSuffices -> InfoInterest [deputy_note] -> Need [deputy_note]).
 declare p_info_gmbh : (InfoSuffices -> InfoInterest [gmbh_executorship] -> Need [gmbh_executorship]).
-declare p_liab_only : (LiabilityOnly -> Need [usufruct] -> Liability [usufruct]).
+declare p_liab_only : (LiabilityOnly -> ~(Need [usufruct] - Liability [usufruct])).
 declare p_delay : (DelayDefeatsInterest -> DelayedFilings [usufruct] -> ~Need [usufruct]).
 declare p_delay_decl : (DelayDefeatsInterest -> ~DeclaratoryRegistrable).
 # Grounds of a need that no court disputes as grounds: the register
@@ -298,13 +298,18 @@ moxia dn_un_proc.
 dixi.
 #+end_src
 
-AI NOTE: =p_liab_only= is stated in contraposed form ("if the register
-shows liability only, a need requires liability"). The form with the
-negated premise =~Liability= made Fellowship prove that premise as a
-λ typed =Liability -> false=. That spelled the statement two ways, and
-it forced the expanded type check of the whole combined term (62,000
-AST nodes instead of 1,800; see =README.org=).
+AI NOTE: =p_liab_only= states a necessary condition of the need, under
+the principle as its guard: if the register is to show liability only,
+a need without liability is excluded (the subtraction on the context
+side, =analysis.org=, decisions of 2026-11-16).
+- A first form with the negated premise =~Liability= made Fellowship
+  prove that premise as a λ typed =Liability -> false=. That spelled the
+  statement two ways, and it forced the expanded type check of the whole
+  combined term (62,000 AST nodes instead of 1,800; see =README.org=).
+- The contraposed implication that replaced it ("a need requires
+  liability", used by modus tollens) became the subtraction on
+  2026-11-16. Neither form has a negated premise.
 
-AI NOTE: in =p_info= and =p_liab_only= a general principle and its
-condition are curried. That is analysis.org §4 recommendation 3: the
-schema "principle, condition, conclusion" is closed by its source.
+AI NOTE: in =p_info= a general principle and its condition are curried.
+That is analysis.org §4 recommendation 3: the schema "principle,
+condition, conclusion" is closed by its source.

@@ -43,11 +43,11 @@ It must be checked whether the usufruct is registrable. Starting check alt1:
 │           │     │     │           │     │           │  │        │     │  └─ but
 │           │     │     │           │     │           │  │        │     │     └─ It must be checked whether the usufruct makes its holder liable towards third parties. Starting check muc_no_liab:
 │           │     │     │           │     │           │  │        │     │        ├─ Check muc_no_liab completed (refuted).
-│           │     │     │           │     │           │  │        │     │        └─ It must be checked whether the usufruct makes its holder liable towards third parties. Starting check r_3:
-│           │     │     │           │     │           │  │        │     │           ├─ unless something speaks against it: the usufruct makes its holder liable towards third parties implies the holder of the usufruct is a partner
-│           │     │     │           │     │           │  │        │     │           ├─ and
-│           │     │     │           │     │           │  │        │     │           ├─ Check r_3 completed (refuted).
-│           │     │     │           │     │           │  │        │     │           └─ it is excluded that: the holder of the usufruct is a partner (bgh_partner)
+│           │     │     │           │     │           │  │        │     │        └─ For the usufruct makes its holder liable towards third parties it is necessary that the holder of the usufruct is a partner holds. Starting check th_2:
+│           │     │     │           │     │           │  │        │     │           ├─ because
+│           │     │     │           │     │           │  │        │     │           │  ├─ unless shown otherwise, deny: the usufruct makes its holder liable towards third parties without the holder of the usufruct is a partner
+│           │     │     │           │     │           │  │        │     │           │  └─ it is excluded that: the holder of the usufruct is a partner (bgh_partner)
+│           │     │     │           │     │           │  │        │     │           └─ Check th_2 completed.
 │           │     │     │           │     │           │  │        │     └─ Check alt5 completed (holds).
 │           │     │     │           │     │           │  │        └─ and point 2:
 │           │     │     │           │     │           │  │           └─ Check alt5 completed (holds).

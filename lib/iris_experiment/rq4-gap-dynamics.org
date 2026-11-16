@@ -105,7 +105,12 @@ axiom r.
 dixi.
 
 counterargument lit_no_reg_uf : (Passed [e2]).
-cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
+cut (Passed [e2] - Registrable [uf]) th.
+elim.
+by default.
+next.
+axiom th.
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Registrable [f])) r.
 axiom n_reg.
 elim [e2].
 elim [court].
@@ -114,7 +119,6 @@ elim.
 axiom entering_uf.
 elim.
 axiom.
-by default.
 dixi.
 
 argument bgh2012_need_uf : (Registrable [uf]).

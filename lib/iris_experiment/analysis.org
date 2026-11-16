@@ -34,9 +34,24 @@ results are in =rq3-combined.org= (Results) and =rq3-fragments.org=.
   - The owed site is C's refutation itself, the node an objection to C
     lands on; a premise =~C= would be a node of its own, unconnected
     until the negation bridge exists (=tasks.org=, BACKLOG).
-  - Used first for the meta-norm's conditions (=rq4-6-7-metanorm.org=).
-    The older first-order denials of the requirements (=n_reg=,
-    =n_doc=, =n_cor=) are still implications.
+  - Where a premise guards the condition (the entry's reification
+    =Enter e c f=, a document being required or properly demanded, a
+    principle like =LiabilityOnly=), the guard stays a premise and the
+    condition is the subtraction under it: =∀…, G -> ~(H - C)=, a
+    negated subtraction on the term side, i.e. the subtraction on the
+    context side. The proof cuts the subtraction first (=cut (H - C) th.=),
+    since AIDA's term grammar cannot read the other order
+    (=aida-derived-conjunction=).
+  - Applied across the experiment on 2026-11-16: the meta-norm's
+    conditions (denied existentials), the requirements of the
+    examination (=n_reg=, =n_doc=, =n_cor=, =n_dem=, guarded),
+    München's membership conditions (=muc_no_mgmt=, =muc_no_vote=,
+    =muc_no_liab=, =muc_no_repr=: a presumed denial in place of a
+    presumed rule) and =p_liab_only= (Oldenburg, Stuttgart). Left as
+    they are: the counterexamples to a principle (=muc_counter_deputy=,
+    =muc_counter_gmbh=), which refute =InfoSuffices= through instances
+    of principles used forwards elsewhere, not a necessary condition;
+    and the spikes of § 5, a record of 2026-11-13.
 
 * 1. Argument maps
 

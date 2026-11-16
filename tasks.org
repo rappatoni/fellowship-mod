@@ -702,6 +702,14 @@ case law is Part 2, the usufruct's open limb.
   now rests on =!IN:MetaNorm e1= alone (was =!IN:MetaNorm=,
   =!IN:Passed e1=). Decision on necessary conditions recorded in
   =analysis.org= (2026-11-16).
+- The older denials converted to the subtraction (2026-11-16): the
+  requirements of the examination (=n_reg=, =n_doc=, =n_cor=, =n_dem=)
+  as guarded denials =∀…, G -> ~(Passed e - C)=; München's membership
+  conditions as presumed denials of =X - PartnerStatus= (was a presumed
+  rule used by modus tollens); =p_liab_only= as
+  =LiabilityOnly -> ~(Need - Liability)=. The counterexamples to
+  =InfoSuffices= and the spikes of =analysis.org= § 5 are left as they
+  are (=analysis.org=, decisions of 2026-11-16).
 Awaiting R3.
 
 *** REVIEW Phase 4: RQ 6, burden of proof in the same example

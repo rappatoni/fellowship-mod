@@ -88,7 +88,11 @@ dixi.
 # Köln Rn. 5), not presumed: presuming it would oppose the presumption of
 # liability (München's appellant, Köln Rn. 4) - both sides delegating.
 counterargument rc_stg_no_need : (Need [usufruct]).
-cut (LiabilityOnly -> Need [usufruct] -> Liability [usufruct]) r.
+cut (Need [usufruct] - Liability [usufruct]) th.
+elim.
+next.
+axiom th.
+cut (LiabilityOnly -> ~(Need [usufruct] - Liability [usufruct])) r.
 axiom p_liab_only.
 elim.
 by default.
