@@ -84,12 +84,12 @@ decides, because the restraint is presumed.
 The meta-norm delegated (4a) against owed (4b). The two scripts differ
 in one line, =by default.= at the meta-norm.
 
-Delegated (block =duty=):
+Delegated (block =draft_metanorm=):
 #+include: "paper/out/E3-4a-delegated.fspy" src fspy
 #+include: "paper/out/E3-4a-delegated.verdict.txt" example
 #+include: "paper/out/E3-4a-delegated.checklist.txt" example
 
-Owed (block =duty_owed=):
+Owed (block =draft_metanorm_owed=):
 #+include: "paper/out/E3-4b-owed.fspy" src fspy
 #+include: "paper/out/E3-4b-owed.verdict.txt" example
 #+include: "paper/out/E3-4b-owed.checklist.txt" example
@@ -107,7 +107,7 @@ Complete application:
 Missing document:
 #+include: "paper/out/E4-6b-missing.verdict.txt" example
 
-Justified doubt (block =doubt=):
+Justified doubt (block =bgh2011_doubt=):
 #+include: "paper/out/E4-6c-doubt.fspy" src fspy
 #+include: "paper/out/E4-6c-doubt.verdict.txt" example
 

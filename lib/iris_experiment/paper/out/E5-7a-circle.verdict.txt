@@ -1,2 +1,2 @@
-claim, stable, skeptical: open
+lit_corr_claim, stable, skeptical: open
 ?UNDEC:Claim app court e1

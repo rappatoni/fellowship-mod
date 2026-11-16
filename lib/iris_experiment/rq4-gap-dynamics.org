@@ -1,14 +1,9 @@
 #+title: RQ 4 (and RQ 8): the gap as a process
 #+language: en
 #+property: header-args:fspy :tangle build/rq4-gap-dynamics.fspy
-#+fspy_prelude: vocabulary.org
-#+fspy_include: rq3-stuttgart.org
-#+fspy_include: rq3-oldenburg.org
-#+fspy_include: rq3-muenchen.org
-#+fspy_include: rq3-koeln.org
 
 AI DRAFT (extension of Phase 3, task =aida-iris-usufruct=, after the
-author's remarks of 2026-11-14).
+author's remarks of 2026-11-14 and 2026-11-15).
 
 - *The question.* A gap is not only a state of the law but a task.
   Practitioners close it tentatively, case by case, by interpretation,
@@ -23,37 +18,410 @@ author's remarks of 2026-11-14).
   - *Open structure.* The concept is constrained by necessary conditions
     and exceptions that later decisions add to examples already
     established.
-- *The connection to RQ 8* (open texture, analogy): the second limb of
-  the meta-norm, "a substantial need of legal dealings", is an
-  open-textured term. The courts even word its threshold differently.
-  Its meaning is what the two patterns build up.
-- *The material.* The four decisions of RQ 3 and the precedents they cite,
-  read as one process in time: a closed debate =lawdev= whose moves come
-  in the order the decisions were handed down, with the state queried
-  after each stage. The document only grows. What changes is the status
+- *The example* is the one RQ 4 starts from (=rq4-6-7-metanorm.org=):
+  the missing meta-norm that obliges the register court to enter a fact.
+  It is followed as one process in two parts.
+  - *Part 1: the meta-norm takes shape.* The steps by which, according
+    to the IRIS draft (§§ 3.1-3.2 and the decisions and commentaries it
+    cites), the gap was closed: the meta-norm presupposed, the
+    requirements of the examination added one by one, the power to
+    examine and its limits, the claim to registration and the circle
+    between claim and scope (RQ 7), and finally the draft's candidate
+    wording. Each step is asked for two entries side by side:
+    - C's entry as limited partner, which a statute provides for;
+    - the usufruct on the limited partner's interest, which no statute
+      provides for.
+  - *Part 2: the open limb, argued.* The candidate's second limb,
+    abstract registrability by "a substantial need of legal dealings",
+    is an open-textured term. For the usufruct, Part 1 ends open at
+    exactly that limb. The four decisions of RQ 3, read in the order
+    they were handed down, are the process in which it is argued.
+- *The connection to RQ 8* (open texture, analogy): the courts even word
+  the threshold of the second limb differently. Its meaning is what the
+  two patterns of Part 2 build up.
+- *How it is represented.* Each part is one closed debate per question,
+  whose moves come in the order of the process, with the state queried
+  after each stage. The record only grows. What changes is the status
   of its statements.
 
 * How the two patterns appear in AIDA
 
 | Pattern | In the material | AIDA construct | What adding a step does |
 |---------+-----------------+----------------+-------------------------|
-| Open enumeration, positive | the executorship held registrable (BGH 2012); the usufruct argued to be like it (Stuttgart) | a precedent as a strict fact (=bgh_exec_reg=); an analogy schema (=analogy_exec=) whose similarity premise is argued (=stg_like_exec=) | one more supporter of =Registrable=; nothing existing is edited |
-| Open enumeration, negative | the deputy note and the GmbH executorship note held not registrable although of interest | precedents as strict denials (=bgh_deputy_reg=, =bgh_gmbh_reg=), used as counter-instances (=muc_counter_deputy=, =muc_counter_gmbh=) | a counter-instance refutes a generalisation (=InfoSuffices=: information interest suffices) |
-| Defeasible closure of the enumeration | not registrable unless provided by statute or needed | the restraint as a presumption (=Excluded=) with one exception per limb (=excl_needs_no_statute=, =excl_needs_no_need=) | a new example of either limb defeats the closure for that fact |
-| Open structure, conditions | München: the analogy needs one of the executor's features (disposal, liability, procedural position); Köln: influence needs a constitutive consent | a helper with one denial per necessary condition (=Unlike= with three; =Powerless= with two) | a later court adds a denial; it constrains every earlier example of the concept that does not meet it |
-| Revision | München distinguishes the executorship; Köln denies influence from § 1071 | a counterargument against an earlier step (=muc_unlike=, =koe_no_codet=) | the earlier conclusion changes its label; its argument stays in the record |
-| A disputed threshold (RQ 8) | "unabweisbar" (München), "erheblich" (Oldenburg, Köln), "berechtigt" (Stuttgart) | not separated in this encoding: all courts argue the one statement =Need= | see AI NOTE below |
+| Tentative closure, revision (Part 1) | the meta-norm presumed; the objection that only a written norm binds; the answer that the written rules presuppose it | the meta-norm as a delegation (=draft_metanorm=), a counterargument against it (=nosrc_positivist=), a counterargument against that (=leg1980_anchor=) | each step flips the status of the meta-norm; no argument is edited |
+| Open structure, conditions (Part 1) | the requirements of the examination: abstract registrability, the documents the law requires, the correctness of the reported facts | one denial of the helper =Passed= per requirement (=lit_no_reg=, =hgb12_no_doc=, =bgh2011_no_cor=) | a new requirement constrains every entry; an entry that does not meet it loses its duty |
+| Open structure, limits (Part 1) | the power to examine, limited by the presumption of correctness and the normative scope | presumptions against the examination's reach (=bgh2011_face_value=, =karlsruhe2001_scope=) | a limit defeats a demand that was within the examination before |
+| The circle (Part 1, RQ 7) | the claim limits the scope; the limited scope grounds the claim | arguments that depend on each other (=lit_corr_claim=, =bgh1991_claim_limits=, =bgh1991_improper_demand=, =lit_corr_duty=) | the circle alone leaves two readings; an independent limit decides it |
+| Open enumeration, by kind (Part 1) | registrable facts: those a statute provides for, then those with a substantial need | one argument per limb (=hgb162_reg= via =reg_stat=, =bgh2012_need_uf= via =reg_need=) | a new limb is one more way to establish registrability |
+| Open enumeration, positive (Part 2) | the executorship held registrable (BGH 2012); the usufruct argued to be like it (Stuttgart) | a precedent as a strict fact (=bgh_exec_reg=); an analogy schema (=analogy_exec=) whose similarity premise is argued (=stg_like_exec=) | one more supporter of =Registrable=; nothing existing is edited |
+| Open enumeration, negative (Part 2) | the deputy note and the GmbH executorship note held not registrable although of interest | precedents as strict denials (=bgh_deputy_reg=, =bgh_gmbh_reg=), used as counter-instances (=muc_counter_deputy=, =muc_counter_gmbh=) | a counter-instance refutes a generalisation (=InfoSuffices=: information interest suffices) |
+| Defeasible closure of the enumeration (Part 2) | not registrable unless provided by statute or needed | the restraint as a presumption (=Excluded=) with one exception per limb (=excl_needs_no_statute=, =excl_needs_no_need=) | a new example of either limb defeats the closure for that fact |
+| Open structure, conditions (Part 2) | München: the analogy needs one of the executor's features (disposal, liability, procedural position); Köln: influence needs a constitutive consent | a helper with one denial per necessary condition (=Unlike= with three; =Powerless= with two) | a later court adds a denial; it constrains every earlier example of the concept that does not meet it |
+| Revision (Part 2) | München distinguishes the executorship; Köln denies influence from § 1071 | a counterargument against an earlier step (=muc_unlike=, =koe_no_codet=) | the earlier conclusion changes its label; its argument stays in the record |
+| A disputed threshold (Part 2, RQ 8) | "unabweisbar" (München), "erheblich" (Oldenburg, Köln), "berechtigt" (Stuttgart) | not separated in this encoding: all courts argue the one statement =Need= | see AI NOTE in Part 2 |
 
-AI NOTE (limits):
-- The thresholds are one statement here. Separating them, as three
-  statements with rules between them (=Compelling -> Substantial ->
-  Legitimate=), would make the courts' disagreement about the test itself
-  arguable. That is not done here.
-- A precedent's holding is strict, and its reasons are presumed or owed
-  like any other argument. A court that overrules a precedent rather than
-  distinguishing it would need the holding to be defeasible.
+* Part 1: the meta-norm takes shape
 
-* The case law as one debate
+The arguments are those of =rq4-6-7-metanorm.org=, defined there and
+reused here unchanged (the tangler's named include; Emacs's own tangling
+leaves it out): the vocabulary and facts, the meta-norm (=bridge=) and
+the duty to enter C (=draft_metanorm=), the positivist objection and its answer
+(=nosrc_positivist=, =leg1980_anchor=), the requirements (=requirements=), the
+submitted application (=submitted=), the court's extra demand and the
+circle (=cycle=) and the normative scope (=scope_principle=).
+
+#+fspy_include: rq4-6-7-metanorm.org vocab facts bridge draft_metanorm nosrc_positivist leg1980_anchor requirements submitted cycle scope_principle
+
+New here is the second entry, the usufruct, with the arguments that
+differ from C's: the duty to enter it (=draft_metanorm_uf=, the same argument as
+=draft_metanorm=), the restraint applied to it (=lit_no_reg_uf=, as =lit_no_reg=) and the
+candidate's second limb (=reg_need=, =bgh2012_need_uf=). Whether there is a
+substantial need for the usufruct is *owed* in =bgh2012_need_uf= (=next.=): this
+part does not argue it. Part 2 does.
+
+#+name: usufruct_entry
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+declare uf : Fact.
+declare e2 : Ev.
+declare Need : Fact -> bool.
+decorate uf : "the usufruct on the limited partner's interest".
+decorate e2 : "the entry of the usufruct applied for".
+decorate Need : "legal dealings have a substantial need to know @arg1".
+declare entering_uf : (Enter [e2] [court] [uf]).
+declare reg_need : (forall f:Fact, Need [f] -> Registrable [f]).
+
+argument draft_metanorm_uf : (Duty [court] [app] [e2]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> MetaNorm [e] -> Duty [c] [app] [e]) r.
+axiom bridge.
+elim [e2].
+elim [court].
+elim [uf].
+elim.
+axiom entering_uf.
+elim.
+by default.
+next.
+axiom r.
+dixi.
+
+counterargument lit_no_reg_uf : (Passed [e2]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
+axiom n_reg.
+elim [e2].
+elim [court].
+elim [uf].
+elim.
+axiom entering_uf.
+elim.
+axiom.
+by default.
+dixi.
+
+argument bgh2012_need_uf : (Registrable [uf]).
+cut (forall f:Fact, Need [f] -> Registrable [f]) r.
+axiom reg_need.
+elim [uf].
+elim.
+next.
+axiom r.
+dixi.
+#+end_src
+
+AI NOTE (the sources of Part 1, mostly not consulted):
+- The stages below were written from the IRIS draft's text (§§ 3.1-3.2)
+  and its footnotes, without reading the sources it cites.
+- Checked afterwards (=sources/metanorm-sources.org=): the free texts
+  of three sources, and beck-online copies of two rulings the author
+  obtained (BGH 1991; BGH 2011 and OLG Stuttgart 2020 confirmed):
+  - the legislative materials of note 19 (BT-Drs. 8/1347, 36, of 1977;
+    BT-Drs. 8/3908, 72, of 1980). They confirm the note and give stage
+    2's argument in the legislature's words: the duty to refuse an
+    improperly established GmbH presupposes the examination;
+  - BGH II ZB 15/10 (2011) is the draft's BGH NJW-RR 2011, 1184. Its
+    Rn. 10 carries notes 25 and 26 (stage 4);
+  - BGH II ZR 104/90 (1991) is the draft's BGH NJW 1991, 1754. It
+    recognises the claim to registration of the GmbH and of the capital
+    increase and limits the examination with it (stage 5);
+  - OLG Stuttgart 8 W 295/19 (2020) is the draft's BeckRS 2020, 12065.
+    Its Rn. 10 follows the BGH (stage 5).
+- *For the encoding:* both court sources of the step "from the claim to
+  the limited scope" make it a weighing, not a rule. The court must
+  weigh its duty to examine against the claim to a swift entry, and
+  may not demand detailed proofs without concrete indications of
+  defects. Stage 5 (and layer 3) encode the step as a rule (=bgh_rule=).
+  Both sources concern the GmbH.
+- The rest is unchecked, so their holdings, their scope and their dates
+  rest on the draft:
+  - BayObLGZ 1982, 198 and OLG Karlsruhe 2001;
+  - all commentaries and articles. Ammon (DStR 1995) is among them: a
+    copy is kept locally but was not read, since it is not an official
+    work and its publisher reserves use with AI systems.
+  - In particular, that Krafka 2004 extends the circle to every register
+    procedure rests on the draft.
+- The years of the unchecked sources are those of the citations, not
+  checked decision dates.
+- BGH NZG 2012, 385 is known only through OLG Köln's citation of it.
+- 2009 for § 59 FamFG comes from general knowledge, not from a source.
+
+AI NOTE (the order of the stages):
+- The stages follow the IRIS draft's exposition in § 3.1, which
+  reconstructs how the gap was closed. Where the cited sources are dated
+  decisions, the order is chronological: BGH 1991 and Ammon 1995
+  (stage 5) come before OLG Karlsruhe 2001 (stage 6).
+- Two exceptions:
+  - the power to examine substantive requirements (stage 4) is older
+    doctrine; the draft cites it to BGH 2011;
+  - the circle (stage 5) is also restated after 2001 (Krafka 2004, OLG
+    Stuttgart 2020, Wicke 2022).
+- The commentaries are cited in current editions of long-standing
+  doctrine, so their years do not date the step.
+- The notes are those of the IRIS draft. The draft is unpublished, so
+  this file cites it by section and note and does not quote it.
+
+** C's entry, stage by stage
+
+*** Stage 0: no written meta-norm (§ 3.1; note 19)
+
+No written norm orders the register court to enter a fact, and
+proposals to codify the requirements were held unnecessary (the
+legislative materials of the 1980 GmbH reform, note 19). The duty
+argument hands the meta-norm on as a delegation: =MetaNorm e1=, the
+meta-norm applied to C's entry, presumed. Nothing yet conditions it.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+debate pro closed meta_c : (Duty [court] [app] [e1]).
+draft_metanorm.
+label meta_c stable.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 1: only a written norm binds
+
+The objection the draft's § 3.2 answers: without a written norm there
+is no duty. No source in the draft makes it; it is the positivist
+reading of note 19's silence. It attacks the norm's existence
+(=InForce=), so the meta-norm's first condition is moved with it: it
+yields a duty only if it is in force (=draft_mn_in_force=).
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+draft_mn_in_force.
+nosrc_positivist.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 2: the written rules presuppose the meta-norm (§ 3.2; notes 24, 32)
+
+§ 59 (1), (2) FamFG (2009) presupposes an impaired subjective right in
+every appeal; § 9c (2) GmbHG (1980) and § 38 (2) AktG only limit an
+examination that is otherwise presupposed.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+leg1980_anchor.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 3: the formal requirements (notes 20, 21)
+
+From the rule-of-law principle the court examines the formal
+requirements, among them the abstract registrability of the fact. The
+restraint makes registrability something the applicants have to
+establish (its refutation is presumed in =lit_no_reg=); for C, §§ 162 (1),
+106 (2), 107 HGB establish it (=hgb162_reg=). The documents the law requires
+are a formal requirement too (§ 12 (1) HGB: =hgb12_no_doc=), and the
+application is submitted (=case_doc_appl=). The requirements enter the
+meta-norm as its second condition: it yields a duty only if the
+examination is passed (=draft_mn_passed=).
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+draft_mn_passed.
+lit_no_reg.
+hgb162_reg.
+hgb12_no_doc.
+case_doc_appl.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 4: the substantive requirements and the power to examine (notes 22, 25, 26)
+
+The court also examines whether the reported facts are correct (=bgh2011_no_cor=,
+its refutation owed: the court must find a reason). The power to do so
+follows from its duty to avoid incorrect entries (BGH NJW-RR 2011, 1184
+Rn. 10). On the level of evidence it is restricted: the court has to
+assume that the reported facts are correct (=bgh2011_face_value=; BGH 2011 and
+BayObLGZ 1982, 198). The court of this case uses its power: it demands
+the transfer agreement, which the law does not require (=case_court_extra=).
+That the demand is within its examination is presumed. Its reason is the
+court's own argument against correctness (=case_court_flaw=): an error
+in the agreement would show the report incorrect. That the agreement
+shows an error is owed, and nobody can supply it without the agreement,
+so the presumption of correctness stands; the demand defeats the
+examination on its own, because the agreement is not submitted.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+bgh2011_no_cor.
+bgh2011_face_value.
+case_court_flaw.
+case_court_extra.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 5: the claim to registration and the circle (notes 28-31)
+
+BGH NJW 1991, 1754 (1758) recognises an unwritten claim to registration
+and limits the scope of examination with it (=bgh1991_claim_limits=, =bgh1991_improper_demand=:
+a limited scope makes the demand improper). The limit has two
+exceptions, each a denial of the presumption that it applies to the
+demand: the law requires the document (=case_court_required=), or there
+are concrete indications that the report is incorrect
+(=bgh1991_indication=, supplied by =case_indication= from a conflict
+with the register). In C's case both fail: no statute requires the
+transfer agreement, and nothing in the register contradicts the report.
+Then the inference runs both ways:
+- from the claim to the limited scope (OLG Stuttgart 2020, on § 9c
+  GmbHG);
+- from the limited scope to the claim (Ammon 1995 for the GmbH; Krafka
+  2004 for every register procedure).
+
+Duty, power of examination and claim are taken always to correspond
+(Wicke 2022). In the encoding the claim follows from the duty (=lit_corr_claim=,
+correlativity) and the duty from the claim (=lit_corr_duty=).
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+bgh1991_claim_limits.
+lit_corr_claim.
+bgh1991_improper_demand.
+case_court_required.
+bgh1991_indication.
+case_indication.
+lit_corr_duty.
+label meta_c stable.
+evaluate meta_c stable.
+evaluate meta_c credulous stable.
+#+end_src
+
+*** Stage 6: the normative scope (note 27)
+
+The examination extends only as far as the law requires the relevant
+facts to be submitted (OLG Karlsruhe 2001). It is unwritten, so it is a
+delegation (=karlsruhe2001_scope=), and it does not depend on the claim.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+karlsruhe2001_scope.
+label meta_c stable.
+evaluate meta_c stable.
+#+end_src
+
+*** Stage 7: the candidate wording (§ 3.2; notes 34, 35)
+
+The draft's candidate assembles the steps: the court has to enter a
+fact if the formal and substantive requirements are met (=bridge=,
+=Passed=); abstract registrability is among the formal requirements
+(=lit_no_reg=); abstractly registrable are facts a statute provides for
+(=reg_stat=) or for which legal dealings have a substantial need
+(=reg_need=). The second limb is taken from the four OLG decisions
+(note 35), which trace it to BGH NZG 2012, 385 Rn. 16. For C nothing is
+added: its entry is provided by statute.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+cedat tempus.
+#+end_src
+
+** The usufruct, the same stages
+
+The same steps asked for the usufruct. Stages 4 to 6 concern the court's
+demand in C's case and have no counterpart here: the documents and the
+correctness of the usufruct's report are not modelled.
+
+#+begin_src fspy :tangle build/rq4-metanorm-dynamics.fspy
+debate pro closed meta_uf : (Duty [court] [app] [e2]).
+# Stage 0: no written meta-norm
+draft_metanorm_uf.
+evaluate meta_uf stable.
+# Stage 1: only a written norm binds
+draft_mn_in_force.
+nosrc_positivist.
+evaluate meta_uf stable.
+# Stage 2: the written rules presuppose the meta-norm
+leg1980_anchor.
+evaluate meta_uf stable.
+# Stage 3: the formal requirements; no statute provides for the usufruct
+draft_mn_passed.
+lit_no_reg_uf.
+evaluate meta_uf stable.
+# Stage 7: the candidate's second limb, a substantial need (owed)
+bgh2012_need_uf.
+label meta_uf stable.
+evaluate meta_uf stable.
+explain meta_uf stable.
+cedat tempus.
+#+end_src
+
+** Results (run 2026-11-15, stable)
+
+How to read the classes: both debates are =pro=. A value means the
+court has to enter the fact. Open means the duty is not established, and
+the normal form names the site that failed (=?OUT=, or =?UNDEC= where the
+readings differ).
+
+| Stage | Step | C's entry | The usufruct |
+|-------+------+-----------+--------------|
+| 0 | no written meta-norm | value (=!IN:MetaNorm e1=) | value |
+| 1 | only a written norm binds | open: =InForce= refuted, =MetaNorm e1= OUT | open |
+| 2 | the written rules presuppose it | value | value |
+| 3 | formal requirements | value: registrable by statute, application submitted | open: =Registrable uf= OUT (its refutation presumed), so =Passed e2= refuted and =MetaNorm e2= OUT |
+| 4 | power to examine; the court's demand | open: the demand stands, =Passed e1= refuted | - |
+| 5 | claim and circle | 2 labellings: claim, limited scope, examination, duty all IN, or all OUT with the demand standing; skeptically open (=?UNDEC=), credulously value | - |
+| 6 | normative scope | value: =Limited e1= IN by the delegation, the demand improper | - |
+| 7 | candidate, second limb | (no move) value | open: =Need uf= OUT (owed, never supplied), =Registrable uf= OUT |
+
+AI NOTE (observations for the authors):
+- *Tentative closure, then revision, in one record.* At stage 0 the gap
+  is closed by a bare presumption, and the closure is over-inclusive:
+  the usufruct would have to be entered too. Stages 1 and 2 reopen and
+  close it again. From stage 3 on, each requirement added to the
+  examination narrows what the presumed meta-norm yields, and the
+  usufruct drops out at the first of them.
+- *Widening, then narrowing.* The power to examine lets the court's
+  demand defeat the examination (stage 4). The claim offers a limit, but
+  one that only supports itself: the circle leaves two readings (stage
+  5), the formal counterpart of the draft's observation that duty, power
+  and claim were assumed always to correspond. The normative scope,
+  which does not depend on the claim, decides it (stage 6). These are
+  scenarios 7a and 7b of =rq4-6-7-metanorm.org=, now as two moments of
+  one process, and in the order of the sources (BGH 1991, Ammon 1995,
+  OLG Karlsruhe 2001).
+- *The red thread.* The candidate's second limb adds nothing for C and
+  changes, for the usufruct, only where the failure lies: from "no
+  statute provides for it" to "nobody has shown a substantial need".
+  That owed need is the question of Part 2 and of RQ 3.
+- *Open enumeration by kind.* The registrable facts are enumerated by
+  limb: those a statute provides for, then those with a substantial
+  need. Each limb is one more argument for =Registrable=.
+
+AI NOTE (limits, for legal review):
+- The sources of the circle (notes 28-31) concern the GmbH, except
+  Krafka 2004, who extends the inference to every register procedure.
+  The encoding states the rules for every entry, as the draft's summary
+  does. A finer model would record the claim for GmbH procedures and its
+  generalisation as a step of open enumeration of its own, and would
+  show that for a limited partnership the circle depends on that
+  generalisation.
+- The court's demand for the transfer agreement is an illustration
+  (layer 3 of =rq4-6-7-metanorm.org=), not a fact of a reported case.
+- Stage 1's objection has no source in the draft.
+
+* Part 2: the open limb, argued for the usufruct (2012-2019)
+
+The question Part 1 leaves open, whether legal dealings have a
+substantial need to know of the usufruct, is the question of the four
+decisions of RQ 3 and the precedents they cite. They are read here as
+one process in time: a closed debate =lawdev= whose moves come in the
+order the decisions were handed down. Part 2 uses the propositional
+vocabulary of RQ 3 (=vocabulary.org=), in which =Registrable [usufruct]=
+is the statement Part 1 writes =Registrable uf=. The two parts are
+separate scripts.
+
+** The case law as one debate
 
 The debate opens with the register court's restraint (Stuttgart's
 register court, 2012): not registrable, as no statute provides for it.
@@ -81,6 +449,12 @@ AI NOTE (type check switched off for this debate):
 - The verdicts are the same with and without the replay for every stage
   that completed with it.
 
+#+fspy_include: vocabulary.org
+#+fspy_include: rq3-stuttgart.org
+#+fspy_include: rq3-oldenburg.org
+#+fspy_include: rq3-muenchen.org
+#+fspy_include: rq3-koeln.org
+
 #+begin_src fspy
 typecheck off.
 debate con closed lawdev : Registrable [usufruct].
@@ -91,7 +465,7 @@ label lawdev stable.
 evaluate lawdev stable.
 #+end_src
 
-** Stage 1: OLG Stuttgart, 28.1.2013 (registrable)
+*** Stage 1: OLG Stuttgart, 28.1.2013 (registrable)
 
 Open enumeration by analogy: the usufruct is like the executorship
 because of the usufructuary's participation rights. Besides that, a need
@@ -118,7 +492,7 @@ evaluate lawdev stable.
 evaluate lawdev credulous stable.
 #+end_src
 
-** Stage 2: OLG Oldenburg, 9.3.2015 (registrable)
+*** Stage 2: OLG Oldenburg, 9.3.2015 (registrable)
 
 A second route to co-determination (the § 1071 consent right), with the
 vote in day-to-day affairs left undecided; the late-filings argument
@@ -137,7 +511,7 @@ evaluate lawdev stable.
 evaluate lawdev credulous stable.
 #+end_src
 
-** Stage 3: OLG München, 8.8.2016 (not registrable)
+*** Stage 3: OLG München, 8.8.2016 (not registrable)
 
 Open structure and revision: the analogy is distinguished (three
 necessary features, none of which the usufruct has), the participation
@@ -168,7 +542,7 @@ evaluate lawdev stable.
 evaluate lawdev credulous stable.
 #+end_src
 
-** Stage 4: OLG Köln, 7.10.2019 (not registrable)
+*** Stage 4: OLG Köln, 7.10.2019 (not registrable)
 
 A further necessary condition for influence: the consent must be
 constitutive, which Köln refutes (the usufruct can be created without
@@ -187,7 +561,7 @@ cedat tempus.
 typecheck on.
 #+end_src
 
-* Results (run 2026-11-14, stable)
+** Results (run 2026-11-14, stable)
 
 How to read the classes: =lawdev= is a =con= debate. A value means the
 restraint stands (not registrable). An exception means it aborts,
@@ -241,3 +615,12 @@ AI NOTE (observations for the authors):
   is what keeps four of five readings pro after München refutes the
   vote. A model that records only verdicts would not show why a later
   refutation does not end the matter.
+
+
+AI NOTE (limits of Part 2):
+- The thresholds are one statement here. Separating them, as three
+  statements with rules between them (=Compelling -> Substantial ->
+  Legitimate=), would make the courts' disagreement about the test itself
+  arguable. That is not done here.
+- A precedent's holding is strict, and its reasons are presumed or owed
+  like any other argument. A court that overrules a precedent rather than

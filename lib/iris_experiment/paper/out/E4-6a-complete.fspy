@@ -2,11 +2,11 @@ declare n_reg : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> P
 declare n_doc : (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]).
 declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]).
 
-argument face_value : (Correct [?f]).
+argument bgh2011_face_value : (Correct [?f]).
 by default.
 dixi.
 
-counterargument no_reg : (Passed [e1]).
+counterargument lit_no_reg : (Passed [e1]).
 cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
 axiom n_reg.
 elim [e1].
@@ -19,7 +19,7 @@ axiom.
 by default.
 dixi.
 
-counterargument no_doc : (Passed [e1]).
+counterargument hgb12_no_doc : (Passed [e1]).
 cut (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]) r.
 axiom n_doc.
 elim [d_appl].
@@ -31,7 +31,7 @@ axiom.
 by default.
 dixi.
 
-counterargument no_cor : (Passed [e1]).
+counterargument bgh2011_no_cor : (Passed [e1]).
 cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]) r.
 axiom n_cor.
 elim [e1].
@@ -43,7 +43,7 @@ elim.
 axiom.
 dixi.
 
-argument reg : (Registrable [kp_c]).
+argument hgb162_reg : (Registrable [kp_c]).
 cut (forall f:Fact, ProvidedByStatute [f] -> Registrable [f]) r.
 axiom reg_stat.
 elim [kp_c].

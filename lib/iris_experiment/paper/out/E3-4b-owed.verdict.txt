@@ -1,2 +1,2 @@
-duty, stable, skeptical: open
+draft_metanorm, stable, skeptical: open
 ?OUT:Duty court app e1

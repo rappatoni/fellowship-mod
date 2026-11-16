@@ -1,2 +1,2 @@
-duty, stable, skeptical: value
-μduty:Duty court app e1.<bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||!IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*duty:Duty court app e1>
+draft_metanorm, stable, skeptical: value
+μdraft_metanorm:Duty court app e1.<bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*draft_metanorm:Duty court app e1>

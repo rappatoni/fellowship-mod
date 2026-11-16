@@ -44,6 +44,24 @@ def test_include_takes_blocks_without_prelude_or_combined_no(tmp_path):
     assert text.rstrip().endswith("label pArg.")
 
 
+def test_include_of_named_blocks_takes_just_those(tmp_path):
+    """``#+fspy_include: FILE NAME ...`` inserts the named blocks of FILE in
+    the order listed, even blocks FILE does not tangle itself."""
+    (tmp_path / "defs.org").write_text(
+        "#+name: a\n#+begin_src fspy\ndeclare A : bool.\n#+end_src\n"
+        "#+name: b\n#+begin_src fspy :noweb yes\n<<a>>\ndeclare B : bool.\n#+end_src\n"
+        "#+begin_src fspy :tangle defs.fspy\nnot included\n#+end_src\n")
+    (tmp_path / "use.org").write_text(
+        "#+fspy_include: defs.org b a\n"
+        "#+begin_src fspy :tangle use.fspy\nlabel x.\n#+end_src\n")
+    text = tangle_text(read_org(tmp_path / "use.org"))[(tmp_path / "use.fspy").resolve()]
+    assert text == "declare A : bool.\ndeclare B : bool.\ndeclare A : bool.\nlabel x.\n"
+    (tmp_path / "bad.org").write_text(
+        "#+fspy_include: defs.org nowhere\n#+begin_src fspy :tangle x.fspy\nx\n#+end_src\n")
+    with pytest.raises(TangleError, match="no block named 'nowhere' to include"):
+        tangle_text(read_org(tmp_path / "bad.org"))
+
+
 def test_org_comma_escapes_are_undone():
     assert unescape(",* heading") == "* heading"
     assert unescape("  ,#+begin_src") == "  #+begin_src"
@@ -69,7 +87,8 @@ def test_tangled_smoke_document_checks(prover, tmp_path):
 
 
 def _iris_scripts(tmp):
-    return tangle(sorted(IRIS.glob("*.org")), tmp)
+    # not Emacs lock files (.#NAME.org), which Path.glob matches
+    return tangle(sorted(p for p in IRIS.glob("*.org") if not p.name.startswith(".")), tmp)
 
 
 def test_every_iris_document_checks(prover, tmp_path):
@@ -239,18 +258,18 @@ def test_rq3_combined_stable_labellings(prover, tmp_path):
 
 METANORM = [
     # script, target, skeptical class, mark in the normal form
-    ("rq4-a.fspy", "duty", "value", "!IN:MetaNorm"),
-    ("rq4-b.fspy", "duty", "open", "?OUT:Duty court app e1"),
-    ("rq4-c.fspy", "duty", "open", "?OUT:Duty court app e1"),
-    ("rq4-d.fspy", "duty", "value", "!IN:MetaNorm"),
-    ("rq6-a.fspy", "duty", "value", "!IN:Passed e1"),
-    ("rq6-b.fspy", "duty", "open", "?OUT:Duty court app e1"),
-    ("rq6-c.fspy", "duty", "open", "?OUT:Duty court app e1"),
-    ("rq6-d.fspy", "duty", "value", "!IN:Passed e1"),
-    ("rq7-a.fspy", "claim", "open", "?UNDEC:Claim app court e1"),
-    ("rq7-b.fspy", "claim", "value", "μclaim:Claim app court e1"),
-    ("rq7-c.fspy", "claim", "open", "?OUT:Claim app court e1"),
-    ("rq7-d.fspy", "claim", "value", "μclaim:Claim app court e1"),
+    ("rq4-a.fspy", "draft_metanorm", "value", "!IN:MetaNorm e1"),
+    ("rq4-b.fspy", "draft_metanorm", "open", "?OUT:Duty court app e1"),
+    ("rq4-c.fspy", "draft_metanorm", "open", "?OUT:Duty court app e1"),
+    ("rq4-d.fspy", "draft_metanorm", "value", "!IN:MetaNorm e1"),
+    ("rq6-a.fspy", "draft_metanorm", "value", "!IN:MetaNorm e1"),
+    ("rq6-b.fspy", "draft_metanorm", "open", "?OUT:Duty court app e1"),
+    ("rq6-c.fspy", "draft_metanorm", "open", "?OUT:Duty court app e1"),
+    ("rq6-d.fspy", "draft_metanorm", "value", "!IN:MetaNorm e1"),
+    ("rq7-a.fspy", "lit_corr_claim", "open", "?UNDEC:Claim app court e1"),
+    ("rq7-b.fspy", "lit_corr_claim", "value", "μlit_corr_claim:Claim app court e1"),
+    ("rq7-c.fspy", "lit_corr_claim", "open", "?OUT:Claim app court e1"),
+    ("rq7-d.fspy", "lit_corr_claim", "value", "μlit_corr_claim:Claim app court e1"),
 ]
 
 
@@ -267,19 +286,44 @@ def test_metanorm_scenarios(prover, tmp_path, script, target, cls, mark):
 
 def test_rq7_cycle_two_readings(prover, tmp_path):
     """The claim-scope cycle alone: grounded undecided; two stable
-    labellings, claim and duty IN together or OUT together."""
+    labellings, claim, duty, limited scope and the meta-norm's instance
+    IN together or OUT together."""
     svc, text = Service.of(prover), _spike("rq7-a.fspy", tmp_path)
     assert svc.check(text).ok
-    tgt = svc.target("claim")
+    tgt = svc.target("lit_corr_claim")
     lab = svc.label(tgt, "stable")
     key = {str(v): k for k, v in lab.graph.nodes.items()}
     rows = {s: [L.get((key[s], "term")) for L in lab.labellings]
-            for s in ("Claim app court e1", "Duty court app e1", "Limited e1", "Passed e1")}
+            for s in ("Claim app court e1", "Duty court app e1", "Limited e1", "MetaNorm e1")}
     assert sorted(rows["Claim app court e1"]) == ["IN", "OUT"]
     for s in rows:
         assert rows[s] == rows["Claim app court e1"], s
     grounded = svc.label(tgt, "grounded").labellings[0]
     assert grounded.get((key["Claim app court e1"], "term")) == "UNDEC"
+
+
+def test_rq7_limit_exception_for_concrete_indications(prover, tmp_path):
+    """The limited scope makes the court's demand improper unless an
+    exception denies that it applies: without a conflict with the register
+    the indication is OUT and the limit applies (7b); with the conflict
+    (7c) and the normative scope, the indication is IN, the limit does not
+    reach the demand and the demand is proper again."""
+    svc = Service.of(prover)
+
+    def rows(text):
+        assert svc.check(text).ok
+        lab = svc.label(svc.target("lit_corr_claim"), "stable")
+        key = {str(v): k for k, v in lab.graph.nodes.items()}
+        return {s: [L.get((key[s], "term")) for L in lab.labellings]
+                for s in ("Limited e1", "Indicated e1", "Applies d_contract e1", "Proper d_contract e1")}
+
+    assert rows(_spike("rq7-b.fspy", tmp_path)) == {
+        "Limited e1": ["IN"], "Indicated e1": ["OUT"],
+        "Applies d_contract e1": ["IN"], "Proper d_contract e1": ["OUT"]}
+    scope = "argument karlsruhe2001_scope : (Limited [e1]).\nby default.\ndixi.\n"
+    assert rows(_spike("rq7-c.fspy", tmp_path) + scope) == {
+        "Limited e1": ["IN"], "Indicated e1": ["IN"],
+        "Applies d_contract e1": ["OUT"], "Proper d_contract e1": ["IN"]}
 
 
 # --- RQ 6 processing: the evaluation returns the court's order --------------
@@ -296,7 +340,7 @@ def test_rq6_decision_witness(prover, tmp_path, script, witness):
     assert cls == "value" and f"<({witness}," in nf, nf
 
 
-# --- RQ 4 dynamics: the case law as one debate (rq4-gap-dynamics.org) -------
+# --- RQ 4 dynamics, part 2: the case law as one debate (rq4-gap-dynamics.org)
 
 def test_rq4_gap_dynamics_stages(prover, tmp_path):
     """The status of the issue after each stage of the case law: closed by
@@ -314,6 +358,45 @@ def test_rq4_gap_dynamics_stages(prover, tmp_path):
                            if e.status in ("refused", "error", "fatal")]
         assert svc.evaluate(svc.target("lawdev"), semantics="stable").nf_class == cls
         assert len(svc.label(svc.target("lawdev"), "stable").labellings) == n
+
+
+# --- RQ 4 dynamics, part 1: the meta-norm takes shape ----------------------
+
+def _stages(svc, text, debate):
+    """Verdict and number of stable labellings of DEBATE after each stage
+    (each ``evaluate DEBATE stable.`` line), the debate closed there."""
+    import re
+    out = []
+    for m in re.finditer(rf"^evaluate {debate} stable\.", text, re.M):
+        report = svc.check(text[: m.start()] + "cedat tempus.\n")
+        assert report.ok, [(e.status, e.message) for e in report.entries
+                           if e.status in ("refused", "error", "fatal")]
+        tgt = svc.target(debate)
+        out.append((svc.evaluate(tgt, semantics="stable").nf_class,
+                    svc.evaluate(tgt, semantics="stable", mode="credulous").nf_class,
+                    len(svc.label(tgt, "stable").labellings)))
+    return out
+
+
+def test_rq4_metanorm_dynamics_stages(prover, tmp_path):
+    """The meta-norm's history for C's entry and for the usufruct: closed
+    by the presumed meta-norm, reopened by the positivist objection, closed
+    by the anchor; then C's entry stays a value until the court's demand,
+    the circle leaves two readings, the normative scope decides it; the
+    usufruct drops out at the restraint and stays open at the owed need."""
+    svc, text = Service.of(prover), _spike("rq4-metanorm-dynamics.fspy", tmp_path)
+    head = text[: text.index("debate pro closed meta_uf")]
+    v, o = "value", "open"
+    assert _stages(svc, head, "meta_c") == [
+        (v, v, 1), (o, o, 1), (v, v, 1), (v, v, 1), (o, o, 1), (o, v, 2), (v, v, 1)]
+    assert _stages(svc, text, "meta_uf") == [
+        (v, v, 1), (o, o, 1), (v, v, 1), (o, o, 1), (o, o, 1)]
+    _, nf = _verdict(svc, text, "meta_uf", semantics="stable")
+    assert nf == "?OUT:Duty court app e2"
+    lab = svc.label(svc.target("meta_uf"), "stable")
+    key = {str(n): k for k, n in lab.graph.nodes.items()}
+    assert [L.get((key["Need uf"], "term")) for L in lab.labellings] == ["OUT"]
+    assert [L.get((key["Registrable uf"], "term")) for L in lab.labellings] == ["OUT"]
 
 
 # --- RQ 3: the course of a debate (rq3-debate-dynamics.org) -----------------

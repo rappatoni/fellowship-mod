@@ -1,19 +1,17 @@
-It suffices to check that the applicants can claim the entry applied for from the register court. Starting check claim:
+It suffices to check that the applicants can claim the entry applied for from the register court. Starting check lit_corr_claim:
 ├─ established: for all a of type Ag, for all b of type Ag, for all e of type Ev, b owes a e implies a can claim e from b (corr1)
 ├─ instantiating a with the applicants
 ├─ instantiating b with the register court
 ├─ instantiating e with the entry applied for
 ├─ and
 ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check b1:
-│  ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-│  ├─ and
-│  ├─ unless something speaks against it: the unwritten meta-norm is in force
+│  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
 │  ├─ instantiating e with the entry applied for
 │  ├─ instantiating c with the register court
 │  ├─ instantiating f with C's entry as limited partner
 │  ├─ and
 │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
 │  ├─ and
-│  ├─ unless something speaks against it: the examination of the entry applied for is passed
+│  ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
 │  └─ Check b1 completed (holds).
-└─ Check claim completed (holds).
+└─ Check lit_corr_claim completed (holds).

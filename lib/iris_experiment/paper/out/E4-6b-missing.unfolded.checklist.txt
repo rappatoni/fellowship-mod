@@ -3,94 +3,116 @@ It suffices to check that the register court owes the applicants the entry appli
 └─ Against the register court owes the applicants the entry applied for:
    │  └─ Check alt1 completed (holds).
    └─ but
-      └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check duty:
+      └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check draft_metanorm:
          ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check r:
-         │  ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-         │  ├─ and
-         │  ├─ unless something speaks against it: the unwritten meta-norm is in force
+         │  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
          │  ├─ instantiating e with the entry applied for
          │  ├─ instantiating c with the register court
          │  ├─ instantiating f with C's entry as limited partner
          │  ├─ and
          │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
          │  ├─ and
-         │  ├─ It suffices to check that the examination of the entry applied for is passed. Starting check alt2:
-         │  │  ├─ unless something speaks against it: the examination of the entry applied for is passed
-         │  │  └─ To check the examination of the entry applied for is passed, the following points must be worked through:
+         │  ├─ It suffices to check that under the meta-norm the court has to make the entry applied for. Starting check alt2:
+         │  │  ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
+         │  │  └─ To check under the meta-norm the court has to make the entry applied for, the following points must be worked through:
          │  │     ├─ Point 1:
-         │  │     │  └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt3:
-         │  │     │     ├─ In favour of the examination of the entry applied for is passed:
+         │  │     │  └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check alt3:
+         │  │     │     ├─ In favour of under the meta-norm the court has to make the entry applied for:
          │  │     │     │  │  └─ Check alt3 completed (refuted).
          │  │     │     │  └─ but
-         │  │     │     │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt5:
-         │  │     │     │        ├─ In favour of the examination of the entry applied for is passed:
-         │  │     │     │        │  │  └─ Check alt5 completed (refuted).
+         │  │     │     │     └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check alt4:
+         │  │     │     │        ├─ In favour of under the meta-norm the court has to make the entry applied for:
+         │  │     │     │        │  │  └─ Check alt4 completed (refuted).
          │  │     │     │        │  └─ but
-         │  │     │     │        │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check no_cor:
-         │  │     │     │        │        ├─ Check no_cor completed (refuted).
-         │  │     │     │        │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_5:
-         │  │     │     │        │           ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies the reported f is correct (n_cor)
-         │  │     │     │        │           ├─ instantiating e with the entry applied for
-         │  │     │     │        │           ├─ instantiating c with the register court
-         │  │     │     │        │           ├─ instantiating f with C's entry as limited partner
+         │  │     │     │        │     └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check draft_mn_passed:
+         │  │     │     │        │        ├─ Check draft_mn_passed completed (refuted).
+         │  │     │     │        │        └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check th_2:
+         │  │     │     │        │           ├─ witnessed by the entry applied for
          │  │     │     │        │           ├─ and
-         │  │     │     │        │           ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
-         │  │     │     │        │           ├─ and
-         │  │     │     │        │           ├─ Check r_5 completed (refuted).
-         │  │     │     │        │           └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt8:
-         │  │     │     │        │              ├─ The check b8 of whether the reported C's entry as limited partner is correct holds splits into the following cases:
-         │  │     │     │        │              │  ├─ Case 1:
-         │  │     │     │        │              │  │  └─ Check alt8 completed (refuted).
-         │  │     │     │        │              │  └─ or case 2:
-         │  │     │     │        │              │     └─ Check alt8 completed (refuted).
-         │  │     │     │        │              └─ otherwise not established: the reported C's entry as limited partner is correct
-         │  │     │     │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt4:
-         │  │     │     │           ├─ In favour of the examination of the entry applied for is passed:
-         │  │     │     │           │  │  └─ Check alt4 completed (refuted).
-         │  │     │     │           │  └─ but
-         │  │     │     │           │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check no_doc:
-         │  │     │     │           │        ├─ Check no_doc completed (refuted).
-         │  │     │     │           │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_4:
-         │  │     │     │           │           ├─ established: for all d of type Doc, for all e of type Ev, the law requires d for e implies the examination of e is passed implies d is submitted (n_doc)
-         │  │     │     │           │           ├─ instantiating d with the application in certified form
-         │  │     │     │           │           ├─ instantiating e with the entry applied for
-         │  │     │     │           │           ├─ and
-         │  │     │     │           │           ├─ established: the law requires the application in certified form for the entry applied for (req_appl)
-         │  │     │     │           │           ├─ and
-         │  │     │     │           │           ├─ Check r_4 completed (refuted).
-         │  │     │     │           │           └─ unless shown otherwise, deny: the application in certified form is submitted
-         │  │     │     │           └─ It must be checked whether the examination of the entry applied for is passed. Starting check no_reg:
-         │  │     │     │              ├─ Check no_reg completed (refuted).
-         │  │     │     │              └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_2:
-         │  │     │     │                 ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies f is abstractly registrable (n_reg)
-         │  │     │     │                 ├─ instantiating e with the entry applied for
-         │  │     │     │                 ├─ instantiating c with the register court
-         │  │     │     │                 ├─ instantiating f with C's entry as limited partner
-         │  │     │     │                 ├─ and
-         │  │     │     │                 ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
-         │  │     │     │                 ├─ and
-         │  │     │     │                 ├─ Check r_2 completed (refuted).
-         │  │     │     │                 └─ It must be checked whether C's entry as limited partner is abstractly registrable. Starting check alt6:
-         │  │     │     │                    ├─ The check b6 of whether C's entry as limited partner is abstractly registrable holds splits into the following cases:
-         │  │     │     │                    │  ├─ Case 1:
-         │  │     │     │                    │  │  └─ Check alt6 completed (refuted).
-         │  │     │     │                    │  └─ or case 2:
-         │  │     │     │                    │     └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check alt7:
-         │  │     │     │                    │        ├─ Check alt6 completed (refuted).
-         │  │     │     │                    │        └─ Against C's entry as limited partner is abstractly registrable:
-         │  │     │     │                    │           │  └─ Check alt7 completed (holds).
-         │  │     │     │                    │           └─ but
-         │  │     │     │                    │              └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check reg:
-         │  │     │     │                    │                 ├─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check r_3:
-         │  │     │     │                    │                 │  ├─ established: for all f of type Fact, the entry of f is provided by statute implies f is abstractly registrable (reg_stat)
-         │  │     │     │                    │                 │  ├─ instantiating f with C's entry as limited partner
-         │  │     │     │                    │                 │  ├─ and
-         │  │     │     │                    │                 │  ├─ established: the entry of C's entry as limited partner is provided by statute (s_162)
-         │  │     │     │                    │                 │  └─ Check r_3 completed (holds).
-         │  │     │     │                    │                 └─ Check reg completed (holds).
-         │  │     │     │                    └─ unless shown otherwise, deny: C's entry as limited partner is abstractly registrable
+         │  │     │     │        │           ├─ It must be checked whether the examination of the entry applied for is passed. Starting check alt5:
+         │  │     │     │        │           │  ├─ In favour of the examination of the entry applied for is passed:
+         │  │     │     │        │           │  │  │  └─ Check alt5 completed (refuted).
+         │  │     │     │        │           │  │  └─ but
+         │  │     │     │        │           │  │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt7:
+         │  │     │     │        │           │  │        ├─ In favour of the examination of the entry applied for is passed:
+         │  │     │     │        │           │  │        │  │  └─ Check alt7 completed (refuted).
+         │  │     │     │        │           │  │        │  └─ but
+         │  │     │     │        │           │  │        │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check bgh2011_no_cor:
+         │  │     │     │        │           │  │        │        ├─ Check bgh2011_no_cor completed (refuted).
+         │  │     │     │        │           │  │        │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_5:
+         │  │     │     │        │           │  │        │           ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies the reported f is correct (n_cor)
+         │  │     │     │        │           │  │        │           ├─ instantiating e with the entry applied for
+         │  │     │     │        │           │  │        │           ├─ instantiating c with the register court
+         │  │     │     │        │           │  │        │           ├─ instantiating f with C's entry as limited partner
+         │  │     │     │        │           │  │        │           ├─ and
+         │  │     │     │        │           │  │        │           ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  │     │     │        │           │  │        │           ├─ and
+         │  │     │     │        │           │  │        │           ├─ Check r_5 completed (refuted).
+         │  │     │     │        │           │  │        │           └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt10:
+         │  │     │     │        │           │  │        │              ├─ The check b10 of whether the reported C's entry as limited partner is correct holds splits into the following cases:
+         │  │     │     │        │           │  │        │              │  ├─ Case 1:
+         │  │     │     │        │           │  │        │              │  │  └─ Check alt10 completed (refuted).
+         │  │     │     │        │           │  │        │              │  └─ or case 2:
+         │  │     │     │        │           │  │        │              │     └─ Check alt10 completed (refuted).
+         │  │     │     │        │           │  │        │              └─ otherwise not established: the reported C's entry as limited partner is correct
+         │  │     │     │        │           │  │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt6:
+         │  │     │     │        │           │  │           ├─ In favour of the examination of the entry applied for is passed:
+         │  │     │     │        │           │  │           │  │  └─ Check alt6 completed (refuted).
+         │  │     │     │        │           │  │           │  └─ but
+         │  │     │     │        │           │  │           │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check hgb12_no_doc:
+         │  │     │     │        │           │  │           │        ├─ Check hgb12_no_doc completed (refuted).
+         │  │     │     │        │           │  │           │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_4:
+         │  │     │     │        │           │  │           │           ├─ established: for all d of type Doc, for all e of type Ev, the law requires d for e implies the examination of e is passed implies d is submitted (n_doc)
+         │  │     │     │        │           │  │           │           ├─ instantiating d with the application in certified form
+         │  │     │     │        │           │  │           │           ├─ instantiating e with the entry applied for
+         │  │     │     │        │           │  │           │           ├─ and
+         │  │     │     │        │           │  │           │           ├─ established: the law requires the application in certified form for the entry applied for (req_appl)
+         │  │     │     │        │           │  │           │           ├─ and
+         │  │     │     │        │           │  │           │           ├─ Check r_4 completed (refuted).
+         │  │     │     │        │           │  │           │           └─ unless shown otherwise, deny: the application in certified form is submitted
+         │  │     │     │        │           │  │           └─ It must be checked whether the examination of the entry applied for is passed. Starting check lit_no_reg:
+         │  │     │     │        │           │  │              ├─ Check lit_no_reg completed (refuted).
+         │  │     │     │        │           │  │              └─ It must be checked whether the examination of the entry applied for is passed. Starting check r_2:
+         │  │     │     │        │           │  │                 ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies f is abstractly registrable (n_reg)
+         │  │     │     │        │           │  │                 ├─ instantiating e with the entry applied for
+         │  │     │     │        │           │  │                 ├─ instantiating c with the register court
+         │  │     │     │        │           │  │                 ├─ instantiating f with C's entry as limited partner
+         │  │     │     │        │           │  │                 ├─ and
+         │  │     │     │        │           │  │                 ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  │     │     │        │           │  │                 ├─ and
+         │  │     │     │        │           │  │                 ├─ Check r_2 completed (refuted).
+         │  │     │     │        │           │  │                 └─ It must be checked whether C's entry as limited partner is abstractly registrable. Starting check alt8:
+         │  │     │     │        │           │  │                    ├─ The check b8 of whether C's entry as limited partner is abstractly registrable holds splits into the following cases:
+         │  │     │     │        │           │  │                    │  ├─ Case 1:
+         │  │     │     │        │           │  │                    │  │  └─ Check alt8 completed (refuted).
+         │  │     │     │        │           │  │                    │  └─ or case 2:
+         │  │     │     │        │           │  │                    │     └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check alt9:
+         │  │     │     │        │           │  │                    │        ├─ Check alt8 completed (refuted).
+         │  │     │     │        │           │  │                    │        └─ Against C's entry as limited partner is abstractly registrable:
+         │  │     │     │        │           │  │                    │           │  └─ Check alt9 completed (holds).
+         │  │     │     │        │           │  │                    │           └─ but
+         │  │     │     │        │           │  │                    │              └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check hgb162_reg:
+         │  │     │     │        │           │  │                    │                 ├─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check r_3:
+         │  │     │     │        │           │  │                    │                 │  ├─ established: for all f of type Fact, the entry of f is provided by statute implies f is abstractly registrable (reg_stat)
+         │  │     │     │        │           │  │                    │                 │  ├─ instantiating f with C's entry as limited partner
+         │  │     │     │        │           │  │                    │                 │  ├─ and
+         │  │     │     │        │           │  │                    │                 │  ├─ established: the entry of C's entry as limited partner is provided by statute (s_162)
+         │  │     │     │        │           │  │                    │                 │  └─ Check r_3 completed (holds).
+         │  │     │     │        │           │  │                    │                 └─ Check hgb162_reg completed (holds).
+         │  │     │     │        │           │  │                    └─ unless shown otherwise, deny: C's entry as limited partner is abstractly registrable
+         │  │     │     │        │           │  └─ otherwise not established: the examination of the entry applied for is passed
+         │  │     │     │        │           ├─ Check th_2 completed (refuted).
+         │  │     │     │        │           └─ it is excluded that: for some e of type Ev, under the meta-norm the court has to make e without the examination of e is passed (dn_mn_passed)
+         │  │     │     │        └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check draft_mn_in_force:
+         │  │     │     │           ├─ Check draft_mn_in_force completed (refuted).
+         │  │     │     │           └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check th:
+         │  │     │     │              ├─ witnessed by the entry applied for
+         │  │     │     │              ├─ and
+         │  │     │     │              ├─ to be checked: the unwritten meta-norm is in force
+         │  │     │     │              ├─ Check th completed (refuted).
+         │  │     │     │              └─ it is excluded that: for some e of type Ev, under the meta-norm the court has to make e without the unwritten meta-norm is in force (dn_mn_in_force)
          │  │     │     └─ Check alt2 completed (holds).
          │  │     └─ and point 2:
          │  │        └─ Check alt2 completed (holds).
          │  └─ Check r completed (holds).
-         └─ Check duty completed (holds).
+         └─ Check draft_metanorm completed (holds).

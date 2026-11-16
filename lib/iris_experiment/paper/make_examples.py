@@ -48,13 +48,13 @@ EXAMPLES = {
     "E1-frag_g-skeptical": ("rq3-fragments.fspy", "frag_g", {}, False, None),
     "E2-frag_a": ("rq3-fragments.fspy", "frag_a", {}, True,
                   ("rq3-fragments.org", "(a) Refutation only")),
-    "E3-4a-delegated": ("rq4-a.fspy", "duty", {}, False, ("rq4-6-7-metanorm.org", "#duty")),
-    "E3-4b-owed": ("rq4-b.fspy", "duty", {}, False, ("rq4-6-7-metanorm.org", "#duty_owed")),
-    "E4-6a-complete": ("rq6-a.fspy", "duty", {}, True, ("rq4-6-7-metanorm.org", "#requirements")),
-    "E4-6b-missing": ("rq6-b.fspy", "duty", {}, False, None),
-    "E4-6c-doubt": ("rq6-c.fspy", "duty", {}, False, ("rq4-6-7-metanorm.org", "#doubt")),
-    "E5-7a-circle": ("rq7-a.fspy", "claim", {}, True, ("rq4-6-7-metanorm.org", "#cycle")),
-    "E5-7b-anchored": ("rq7-b.fspy", "claim", {}, False, ("rq4-6-7-metanorm.org", "#scope_principle")),
+    "E3-4a-delegated": ("rq4-a.fspy", "draft_metanorm", {}, False, ("rq4-6-7-metanorm.org", "#draft_metanorm")),
+    "E3-4b-owed": ("rq4-b.fspy", "draft_metanorm", {}, False, ("rq4-6-7-metanorm.org", "#draft_metanorm_owed")),
+    "E4-6a-complete": ("rq6-a.fspy", "draft_metanorm", {}, True, ("rq4-6-7-metanorm.org", "#requirements")),
+    "E4-6b-missing": ("rq6-b.fspy", "draft_metanorm", {}, False, None),
+    "E4-6c-doubt": ("rq6-c.fspy", "draft_metanorm", {}, False, ("rq4-6-7-metanorm.org", "#bgh2011_doubt")),
+    "E5-7a-circle": ("rq7-a.fspy", "lit_corr_claim", {}, True, ("rq4-6-7-metanorm.org", "#cycle")),
+    "E5-7b-anchored": ("rq7-b.fspy", "lit_corr_claim", {}, False, ("rq4-6-7-metanorm.org", "#scope_principle")),
     "E9-6p-b-order": ("rq6p-b.fspy", "decision", {}, False, ("rq4-6-7-metanorm.org", "#orders")),
     "E9-6w-b-constructive": ("rq6w-b.fspy", "decision_c", {}, False,
                              ("rq4-6-7-metanorm.org", "#witness_constructive")),
@@ -114,7 +114,8 @@ def main() -> None:
         shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     tmp = Path(tempfile.mkdtemp())
-    scripts = {p.name: p for p in tangle(sorted(IRIS.glob("*.org")), tmp)}
+    orgs = sorted(p for p in IRIS.glob("*.org") if not p.name.startswith("."))  # not Emacs locks
+    scripts = {p.name: p for p in tangle(orgs, tmp)}
     prover = setup_prover()
     prover.render_files = False
     svc = Service.of(prover)
@@ -150,7 +151,8 @@ def main() -> None:
                 result = svc.graph(svc.target(target), labels=True, semantics="stable", mode=mode)
                 dot = OUT / f"{name}.dot"
                 dot.write_text(result.graph.to_dot(labels=result.labels, labelling=result.labelling,
-                                                   node_text=_decorated_text(prover), prose=True))
+                                                   node_text=_decorated_text(prover), prose=True,
+                                                   order=result.order, order_source=result.order_source))
                 subprocess.run(["dot", "-Tpng", str(dot), "-o", str(dot.with_suffix(".png"))], check=True)
             summary.append(f"{name}: {target} ({script}), stable {mode}: {ev.nf_class}; {sizes}")
 

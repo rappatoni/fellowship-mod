@@ -1,5 +1,5 @@
 declare reg_conflict : (Conflict [kp_c]).
-counterargument doubt : (Correct [kp_c]).
+counterargument bgh2011_doubt : (Correct [kp_c]).
 cut (Conflict [kp_c] -> ~Correct [kp_c]) r.
 by default.
 next.

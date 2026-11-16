@@ -22,7 +22,7 @@ Authorship: the paper's prose is the authors'. These files hold:
 | =analysis.org=          | Phase 1: argument maps, logic choice, conjunction encodings, spike |
 | =vocabulary.org=        | the shared signature every formalisation tangles first           |
 | =rq3-*.org=             | Phase 2: the four decisions, formalised in full; =rq3-debate-dynamics.org=: the course of a debate and its readers |
-| =rq4-gap-dynamics.org=  | RQ 4/8: the case law as one debate in time (open enumeration, open structure, revision) |
+| =rq4-gap-dynamics.org=  | RQ 4/8: the gap as a process. Part 1: the meta-norm takes shape (IRIS draft §§ 3.1-3.2), for C's entry and the usufruct. Part 2: its open limb, the case law as one debate in time (open enumeration, open structure, revision) |
 | =rq4-6-7-metanorm.org=  | Phases 3-5: the meta-norm, the burden of proof and its processing (the court's order as output, witnesses rising to the top), the cycle (22 scenarios) |
 | =figures/=              | images written by =graph ... show=                               |
 | =paper-examples.org=, =paper-examples.md=, =paper/= | the extracts assembled for the paper: snippet, verdict, vanilla and check-list renderings, decorated figures (=paper/make_examples.py= writes =paper/out/= and exports the Markdown version, which GitHub shows with the includes expanded) |
@@ -140,10 +140,10 @@ or reject, and every legal reading still needs review.
   shows this as which sites are delegations and which obligations.
 
 ** E3 (RQ 4): the gap as a delegation
-- Snippet: =rq4-6-7-metanorm.org=, block =duty=, against =duty_owed=.
+- Snippet: =rq4-6-7-metanorm.org=, block =draft_metanorm=, against =draft_metanorm_owed=.
   The two differ in one line: =by default.= at the meta-norm.
-- Verdict: delegated, a value with =!IN:MetaNorm= in the normal form;
-  owed, open with =MetaNorm= OUT. A positivist objection and the IRIS
+- Verdict: delegated, a value with =!IN:MetaNorm e1= in the normal form;
+  owed, open with =MetaNorm e1= OUT. A positivist objection and the IRIS
   draft's answer (the written rules presuppose the meta-norm) move the
   verdict as expected (4c, 4d).
 - Claim: an unwritten norm the written law presupposes can be
@@ -152,7 +152,7 @@ or reject, and every legal reading still needs review.
 
 ** E4 (RQ 6): the burden of proof per requirement
 - Snippet: block =requirements= and the table of who must act.
-- Figure: =figures/duty_graph.png= (scenario 6a).
+- Figure: =figures/draft_metanorm_graph.png= (scenario 6a).
 - Verdict: complete application: a value; missing document: open with
   the missing item named (the interim order); justified doubt: open;
   doubt answered by proof: a value. No opposing presumptions in any
@@ -164,7 +164,7 @@ or reject, and every legal reading still needs review.
 
 ** E5 (RQ 7): the circle between claim and scope of examination
 - Snippet: block =cycle=.
-- Figure: =figures/claim_graph.png= (scenario 7a).
+- Figure: =figures/lit_corr_claim_graph.png= (scenario 7a).
 - Verdict: alone, grounded undecided and two stable labellings (claim,
   limited scope and duty all IN, or all OUT); with an independent anchor,
   a value (a presumption from case law, or strict from a statute as in
@@ -190,11 +190,22 @@ or reject, and every legal reading still needs review.
   answers. AIDA shows it as the state of the debate after every move.
 
 ** E8 (RQ 4, RQ 8): the gap as a process
-- Snippet: =rq4-gap-dynamics.org=, the case law from the register court
-  (2012) to Köln (2019) as one debate.
-- Verdict: closed by the restraint; filled for the usufruct by Stuttgart
-  and Oldenburg (one labelling, registrable); contested from München on
-  (5 labellings, 1 con).
+- Snippet: =rq4-gap-dynamics.org=, one process in two parts.
+  - Part 1: the meta-norm from the missing written norm to the IRIS
+    draft's candidate wording, asked for C's entry and for the usufruct
+    side by side (debates =meta_c=, =meta_uf=).
+  - Part 2: the case law from the register court (2012) to Köln (2019)
+    as one debate (=lawdev=).
+- Verdict, Part 1:
+  - C's entry: value, open (positivist objection), value (anchor), value
+    (formal requirements), open (the court's demand), two readings (the
+    circle), value (normative scope);
+  - the usufruct: value, open, value, then open from the formal
+    requirements on, and still open at the candidate's second limb,
+    where the substantial need is owed.
+- Verdict, Part 2: closed by the restraint; filled for the usufruct by
+  Stuttgart and Oldenburg (one labelling, registrable); contested from
+  München on (5 labellings, 1 con).
 - Claim: gaps are closed tentatively and revised. With an append-only
   record whose statuses change, open enumeration is one more supporting
   argument per example, open structure is one more denial per added

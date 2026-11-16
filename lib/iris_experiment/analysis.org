@@ -22,6 +22,21 @@ results are in =rq3-combined.org= (Results) and =rq3-fragments.org=.
   - Transpositions are added by hand.
   - Preference is the order of arguments within each stack.
   - No opposing presumptions is a consistency condition.
+- 2026-11-16, necessary conditions: the subtraction on the context side
+  is the connective for a necessary condition. "H requires C" is
+  =deny d : (H - C)=, used directly: a counterargument against H builds
+  =H - C= from H and C's refutation (presumed or owed) and closes with
+  =moxia d=. No implication =H -> C= applied by modus tollens.
+  - At first order the denial is a denied existential,
+    =deny d : (exists e:Ev, H [e] - C [e])=: the refutation of an
+    existential is the universal of refutations, so one declaration
+    covers every instance.
+  - The owed site is C's refutation itself, the node an objection to C
+    lands on; a premise =~C= would be a node of its own, unconnected
+    until the negation bridge exists (=tasks.org=, BACKLOG).
+  - Used first for the meta-norm's conditions (=rq4-6-7-metanorm.org=).
+    The older first-order denials of the requirements (=n_reg=,
+    =n_doc=, =n_cor=) are still implications.
 
 * 1. Argument maps
 

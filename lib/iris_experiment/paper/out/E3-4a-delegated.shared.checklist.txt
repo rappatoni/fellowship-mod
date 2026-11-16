@@ -3,17 +3,45 @@ It suffices to check that the register court owes the applicants the entry appli
 └─ Against the register court owes the applicants the entry applied for:
    │  └─ Check alt1 completed (holds).
    └─ but
-      └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check duty:
+      └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check draft_metanorm:
          ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check r:
-         │  ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-         │  ├─ and
-         │  ├─ unless something speaks against it: the unwritten meta-norm is in force
+         │  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
          │  ├─ instantiating e with the entry applied for
          │  ├─ instantiating c with the register court
          │  ├─ instantiating f with C's entry as limited partner
          │  ├─ and
          │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
          │  ├─ and
-         │  ├─ unless something speaks against it: the examination of the entry applied for is passed
+         │  ├─ It suffices to check that under the meta-norm the court has to make the entry applied for. Starting check alt4:
+         │  │  ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
+         │  │  └─ To check under the meta-norm the court has to make the entry applied for, the following points must be worked through:
+         │  │     ├─ Point 1:
+         │  │     │  └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check alt5:
+         │  │     │     ├─ In favour of under the meta-norm the court has to make the entry applied for:
+         │  │     │     │  │  └─ Check alt5 completed (refuted).
+         │  │     │     │  └─ but
+         │  │     │     │     └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check alt6:
+         │  │     │     │        ├─ In favour of under the meta-norm the court has to make the entry applied for:
+         │  │     │     │        │  │  └─ Check alt6 completed (refuted).
+         │  │     │     │        │  └─ but
+         │  │     │     │        │     └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check draft_mn_passed:
+         │  │     │     │        │        ├─ Check draft_mn_passed completed (refuted).
+         │  │     │     │        │        └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check th_2:
+         │  │     │     │        │           ├─ witnessed by the entry applied for
+         │  │     │     │        │           ├─ and
+         │  │     │     │        │           ├─ to be checked: the examination of the entry applied for is passed
+         │  │     │     │        │           ├─ Check th_2 completed (refuted).
+         │  │     │     │        │           └─ it is excluded that: for some e of type Ev, under the meta-norm the court has to make e without the examination of e is passed (dn_mn_passed)
+         │  │     │     │        └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check draft_mn_in_force:
+         │  │     │     │           ├─ Check draft_mn_in_force completed (refuted).
+         │  │     │     │           └─ It must be checked whether under the meta-norm the court has to make the entry applied for. Starting check th:
+         │  │     │     │              ├─ witnessed by the entry applied for
+         │  │     │     │              ├─ and
+         │  │     │     │              ├─ to be checked: the unwritten meta-norm is in force
+         │  │     │     │              ├─ Check th completed (refuted).
+         │  │     │     │              └─ it is excluded that: for some e of type Ev, under the meta-norm the court has to make e without the unwritten meta-norm is in force (dn_mn_in_force)
+         │  │     │     └─ Check alt4 completed (holds).
+         │  │     └─ and point 2:
+         │  │        └─ Check alt4 completed (holds).
          │  └─ Check r completed (holds).
-         └─ Check duty completed (holds).
+         └─ Check draft_metanorm completed (holds).

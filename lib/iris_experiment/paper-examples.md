@@ -193,14 +193,11 @@ decides, because the restraint is presumed.
 The meta-norm delegated (4a) against owed (4b). The two scripts differ
 in one line, `by default.` at the meta-norm.
 
-Delegated (block `duty`):
+Delegated (block `draft_metanorm`):
 
-    argument duty : (Duty [court] [app] [e1]).
-    cut (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]) r.
+    argument draft_metanorm : (Duty [court] [app] [e1]).
+    cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> MetaNorm [e] -> Duty [c] [app] [e]) r.
     axiom bridge.
-    elim.
-    by default.
-    next.
     elim [e1].
     elim [court].
     elim [kp_c].
@@ -212,41 +209,36 @@ Delegated (block `duty`):
     axiom r.
     dixi.
 
-    duty, stable, skeptical: value
-    μduty:Duty court app e1.<bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||!IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*duty:Duty court app e1>
+    draft_metanorm, stable, skeptical: value
+    μdraft_metanorm:Duty court app e1.<bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*draft_metanorm:Duty court app e1>
 
-    It suffices to check that the register court owes the applicants the entry applied for. Starting check duty:
-    ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-    ├─ and
-    ├─ unless something speaks against it: the unwritten meta-norm is in force
+    It suffices to check that the register court owes the applicants the entry applied for. Starting check draft_metanorm:
+    ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
     ├─ instantiating e with the entry applied for
     ├─ instantiating c with the register court
     ├─ instantiating f with C's entry as limited partner
     ├─ and
     ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
     ├─ and
-    ├─ unless something speaks against it: the examination of the entry applied for is passed
-    └─ Check duty completed (holds).
+    ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
+    └─ Check draft_metanorm completed (holds).
 
-Owed (block `duty_owed`):
+Owed (block `draft_metanorm_owed`):
 
-    argument duty : (Duty [court] [app] [e1]).
-    cut (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]) r.
+    argument draft_metanorm : (Duty [court] [app] [e1]).
+    cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> MetaNorm [e] -> Duty [c] [app] [e]) r.
     axiom bridge.
-    elim.
-    next.
     elim [e1].
     elim [court].
     elim [kp_c].
     elim.
     axiom entering.
     elim.
-    by default.
     next.
     axiom r.
     dixi.
 
-    duty, stable, skeptical: open
+    draft_metanorm, stable, skeptical: open
     ?OUT:Duty court app e1
 
     not established: the register court owes the applicants the entry applied for
@@ -260,11 +252,11 @@ Complete application (6a), missing document (6b), justified doubt (6c).
     declare n_doc : (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]).
     declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]).
     
-    argument face_value : (Correct [?f]).
+    argument bgh2011_face_value : (Correct [?f]).
     by default.
     dixi.
     
-    counterargument no_reg : (Passed [e1]).
+    counterargument lit_no_reg : (Passed [e1]).
     cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Registrable [f]) r.
     axiom n_reg.
     elim [e1].
@@ -277,7 +269,7 @@ Complete application (6a), missing document (6b), justified doubt (6c).
     by default.
     dixi.
     
-    counterargument no_doc : (Passed [e1]).
+    counterargument hgb12_no_doc : (Passed [e1]).
     cut (forall d:Doc, forall e:Ev, Required [d] [e] -> Passed [e] -> Submitted [d]) r.
     axiom n_doc.
     elim [d_appl].
@@ -289,7 +281,7 @@ Complete application (6a), missing document (6b), justified doubt (6c).
     by default.
     dixi.
     
-    counterargument no_cor : (Passed [e1]).
+    counterargument bgh2011_no_cor : (Passed [e1]).
     cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Correct [f]) r.
     axiom n_cor.
     elim [e1].
@@ -301,7 +293,7 @@ Complete application (6a), missing document (6b), justified doubt (6c).
     axiom.
     dixi.
     
-    argument reg : (Registrable [kp_c]).
+    argument hgb162_reg : (Registrable [kp_c]).
     cut (forall f:Fact, ProvidedByStatute [f] -> Registrable [f]) r.
     axiom reg_stat.
     elim [kp_c].
@@ -312,31 +304,29 @@ Complete application (6a), missing document (6b), justified doubt (6c).
 
 Complete application:
 
-    duty, stable, skeptical: value
-    μduty:Duty court app e1.<bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||!IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*duty:Duty court app e1>
+    draft_metanorm, stable, skeptical: value
+    μdraft_metanorm:Duty court app e1.<bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*draft_metanorm:Duty court app e1>
 
-    It suffices to check that the register court owes the applicants the entry applied for. Starting check duty:
-    ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-    ├─ and
-    ├─ unless something speaks against it: the unwritten meta-norm is in force
+    It suffices to check that the register court owes the applicants the entry applied for. Starting check draft_metanorm:
+    ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
     ├─ instantiating e with the entry applied for
     ├─ instantiating c with the register court
     ├─ instantiating f with C's entry as limited partner
     ├─ and
     ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
     ├─ and
-    ├─ unless something speaks against it: the examination of the entry applied for is passed
-    └─ Check duty completed (holds).
+    ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
+    └─ Check draft_metanorm completed (holds).
 
 Missing document:
 
-    duty, stable, skeptical: open
+    draft_metanorm, stable, skeptical: open
     ?OUT:Duty court app e1
 
-Justified doubt (block `doubt`):
+Justified doubt (block `bgh2011_doubt`):
 
     declare reg_conflict : (Conflict [kp_c]).
-    counterargument doubt : (Correct [kp_c]).
+    counterargument bgh2011_doubt : (Correct [kp_c]).
     cut (Conflict [kp_c] -> ~Correct [kp_c]) r.
     by default.
     next.
@@ -346,7 +336,7 @@ Justified doubt (block `doubt`):
     axiom.
     dixi.
 
-    duty, stable, skeptical: open
+    draft_metanorm, stable, skeptical: open
     ?OUT:Duty court app e1
 
 ![img](paper/out/E4-6a-complete.png)
@@ -365,11 +355,14 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
     declare n_dem : (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]).
     declare bgh_rule : (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]).
-    declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]).
+    declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Applies [d] [e] -> ~Proper [d] [e]).
+    declare req_exc : (forall d:Doc, forall e:Ev, Required [d] [e] -> ~Applies [d] [e]).
+    declare ind_exc : (forall d:Doc, forall e:Ev, Indicated [e] -> ~Applies [d] [e]).
+    declare ind_rule : (forall f:Fact, forall e:Ev, forall c:Ag, Enter [e] [c] [f] -> Conflict [f] -> Indicated [e]).
     declare dem : (Demanded [d_contract] [e1]).
-    declare unreq : (Unrequired [d_contract] [e1]).
+    declare flaw_rule : (forall d:Doc, forall f:Fact, Flaw [d] [f] -> ~Correct [f]).
     
-    argument claim : (Claim [app] [court] [e1]).
+    argument lit_corr_claim : (Claim [app] [court] [e1]).
     cut (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]) r.
     axiom corr1.
     elim [app].
@@ -380,7 +373,7 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     axiom r.
     dixi.
     
-    argument duty_back : (Duty [court] [app] [e1]).
+    argument lit_corr_duty : (Duty [court] [app] [e1]).
     cut (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]) r.
     axiom corr2.
     elim [app].
@@ -391,7 +384,7 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     axiom r.
     dixi.
     
-    counterargument court_extra : (Passed [e1]).
+    counterargument case_court_extra : (Passed [e1]).
     cut (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> Passed [e] -> Submitted [d]) r.
     axiom n_dem.
     elim [d_contract].
@@ -406,7 +399,18 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     by default.
     dixi.
     
-    argument limited : (Limited [e1]).
+    counterargument case_court_flaw : (Correct [kp_c]).
+    cut (forall d:Doc, forall f:Fact, Flaw [d] [f] -> ~Correct [f]) r.
+    axiom flaw_rule.
+    elim [d_contract].
+    elim [kp_c].
+    elim.
+    next.
+    elim.
+    axiom.
+    dixi.
+    
+    argument bgh1991_claim_limits : (Limited [e1]).
     cut (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]) r.
     axiom bgh_rule.
     elim [app].
@@ -417,61 +421,95 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     axiom r.
     dixi.
     
-    counterargument bgh_limit : (Proper [d_contract] [e1]).
-    cut (forall d:Doc, forall e:Ev, Limited [e] -> Unrequired [d] [e] -> ~Proper [d] [e]) r.
+    counterargument bgh1991_improper_demand : (Proper [d_contract] [e1]).
+    cut (forall d:Doc, forall e:Ev, Limited [e] -> Applies [d] [e] -> ~Proper [d] [e]) r.
     axiom scope_rule.
     elim [d_contract].
     elim [e1].
     elim.
     next.
     elim.
-    axiom unreq.
+    by default.
+    next.
     elim.
     axiom.
     dixi.
+    
+    counterargument case_court_required : (Applies [d_contract] [e1]).
+    cut (forall d:Doc, forall e:Ev, Required [d] [e] -> ~Applies [d] [e]) r.
+    axiom req_exc.
+    elim [d_contract].
+    elim [e1].
+    elim.
+    next.
+    elim.
+    axiom.
+    dixi.
+    
+    counterargument bgh1991_indication : (Applies [d_contract] [e1]).
+    cut (forall d:Doc, forall e:Ev, Indicated [e] -> ~Applies [d] [e]) r.
+    axiom ind_exc.
+    elim [d_contract].
+    elim [e1].
+    elim.
+    next.
+    elim.
+    axiom.
+    dixi.
+    
+    argument case_indication : (Indicated [e1]).
+    cut (forall f:Fact, forall e:Ev, forall c:Ag, Enter [e] [c] [f] -> Conflict [f] -> Indicated [e]) r.
+    axiom ind_rule.
+    elim [kp_c].
+    elim [e1].
+    elim [court].
+    elim.
+    axiom entering.
+    elim.
+    next.
+    axiom r.
+    dixi.
 
-    claim, stable, skeptical: open
+    lit_corr_claim, stable, skeptical: open
     ?UNDEC:Claim app court e1
 
     undecided: the applicants can claim the entry applied for from the register court
 
 Anchored (block `scope_principle`):
 
-    argument scope_n7 : (Limited [e1]).
+    argument karlsruhe2001_scope : (Limited [e1]).
     by default.
     dixi.
 
-    claim, stable, skeptical: value
-    μclaim:Claim app court e1.<corr1:forall a:Ag,forall b:Ag,forall e:Ev,Duty b a e->Claim a b e||app*court*e1*μb1:Duty court app e1.<bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||!IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*b1:Duty court app e1>*claim:Claim app court e1>
+    lit_corr_claim, stable, skeptical: value
+    μlit_corr_claim:Claim app court e1.<corr1:forall a:Ag,forall b:Ag,forall e:Ev,Duty b a e->Claim a b e||app*court*e1*μb1:Duty court app e1.<bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*b1:Duty court app e1>*lit_corr_claim:Claim app court e1>
 
-    μclaim:Claim app court e1.<
+    μlit_corr_claim:Claim app court e1.<
     ├─ corr1:forall a:Ag,forall b:Ag,forall e:Ev,Duty b a e->Claim a b e||
     └─ app*court*e1*μb1:Duty court app e1.<
-       ├─ bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||
-       └─ !IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*b1:Duty court app e1
+       ├─ bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||
+       └─ e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*b1:Duty court app e1
        >
-       *claim:Claim app court e1
+       *lit_corr_claim:Claim app court e1
     >
 
-    It suffices to check that the applicants can claim the entry applied for from the register court. Starting check claim:
+    It suffices to check that the applicants can claim the entry applied for from the register court. Starting check lit_corr_claim:
     ├─ established: for all a of type Ag, for all b of type Ag, for all e of type Ev, b owes a e implies a can claim e from b (corr1)
     ├─ instantiating a with the applicants
     ├─ instantiating b with the register court
     ├─ instantiating e with the entry applied for
     ├─ and
     ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check b1:
-    │  ├─ established: the unwritten meta-norm is in force implies (for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies the examination of e is passed implies c owes the applicants e) (bridge)
-    │  ├─ and
-    │  ├─ unless something speaks against it: the unwritten meta-norm is in force
+    │  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies under the meta-norm the court has to make e implies c owes the applicants e (bridge)
     │  ├─ instantiating e with the entry applied for
     │  ├─ instantiating c with the register court
     │  ├─ instantiating f with C's entry as limited partner
     │  ├─ and
     │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
     │  ├─ and
-    │  ├─ unless something speaks against it: the examination of the entry applied for is passed
+    │  ├─ unless something speaks against it: under the meta-norm the court has to make the entry applied for
     │  └─ Check b1 completed (holds).
-    └─ Check claim completed (holds).
+    └─ Check lit_corr_claim completed (holds).
 
 ![img](paper/out/E5-7a-circle.png)
 
@@ -672,18 +710,18 @@ Anchored (block `scope_principle`):
     dixi.
 
     decision_k, stable, skeptical: value
-    μalt14:exists o:Order,Lawful o.<(o_submit,μb1:Lawful o_submit.<remedy_rule:(Duty court app e1->false)->Lawful o_submit||!IN:Duty court app e1->false*b1:Lawful o_submit>)||alt14:exists o:Order,Lawful o>
+    μalt16:exists o:Order,Lawful o.<(o_submit,μb1:Lawful o_submit.<remedy_rule:(Duty court app e1->false)->Lawful o_submit||!IN:Duty court app e1->false*b1:Lawful o_submit>)||alt16:exists o:Order,Lawful o>
 
-    μalt14:exists o:Order,Lawful o.<
+    μalt16:exists o:Order,Lawful o.<
     ├─ (o_submit,μb1:Lawful o_submit.<
     │  ├─ remedy_rule:(Duty court app e1->false)->Lawful o_submit||
     │  └─ !IN:Duty court app e1->false*b1:Lawful o_submit
     │  >
     │  )||
-    └─ alt14:exists o:Order,Lawful o
+    └─ alt16:exists o:Order,Lawful o
     >
 
-    It suffices to check that for some o of type Order, o is the lawful order. Starting check alt14:
+    It suffices to check that for some o of type Order, o is the lawful order. Starting check alt16:
     ├─ witnessed by an interim order to remedy the application
     ├─ For an interim order to remedy the application is the lawful order it suffices that the register court owes the applicants the entry applied for implies false holds. Starting check b1:
     │  ├─ because
@@ -691,7 +729,7 @@ Anchored (block `scope_principle`):
     │  ├─ and
     │  │  └─ unless something speaks against it: the register court owes the applicants the entry applied for implies false
     │  └─ Check b1 completed.
-    └─ Check alt14 completed (holds).
+    └─ Check alt16 completed (holds).
 
 
 ## S (RQ 3, presentation): sharing abridges a large debate

@@ -1,2 +1,2 @@
 decision_k, stable, skeptical: value
-μalt14:exists o:Order,Lawful o.<(o_submit,μb1:Lawful o_submit.<remedy_rule:(Duty court app e1->false)->Lawful o_submit||!IN:Duty court app e1->false*b1:Lawful o_submit>)||alt14:exists o:Order,Lawful o>
+μalt16:exists o:Order,Lawful o.<(o_submit,μb1:Lawful o_submit.<remedy_rule:(Duty court app e1->false)->Lawful o_submit||!IN:Duty court app e1->false*b1:Lawful o_submit>)||alt16:exists o:Order,Lawful o>

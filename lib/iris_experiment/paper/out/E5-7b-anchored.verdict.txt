@@ -1,2 +1,2 @@
-claim, stable, skeptical: value
-μclaim:Claim app court e1.<corr1:forall a:Ag,forall b:Ag,forall e:Ev,Duty b a e->Claim a b e||app*court*e1*μb1:Duty court app e1.<bridge:MetaNorm->(forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->Passed e->Duty c app e)||!IN:MetaNorm*e1*court*kp_c*entering:Enter e1 court kp_c*!IN:Passed e1*b1:Duty court app e1>*claim:Claim app court e1>
+lit_corr_claim, stable, skeptical: value
+μlit_corr_claim:Claim app court e1.<corr1:forall a:Ag,forall b:Ag,forall e:Ev,Duty b a e->Claim a b e||app*court*e1*μb1:Duty court app e1.<bridge:forall e:Ev,forall c:Ag,forall f:Fact,Enter e c f->MetaNorm e->Duty c app e||e1*court*kp_c*entering:Enter e1 court kp_c*!IN:MetaNorm e1*b1:Duty court app e1>*lit_corr_claim:Claim app court e1>

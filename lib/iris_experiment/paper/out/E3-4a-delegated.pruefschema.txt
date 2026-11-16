@@ -1,12 +1,10 @@
-Es genügt zu prüfen, dass the register court owes the applicants the entry applied for. Beginn der Prüfung duty:
-├─ es liegt vor: the unwritten meta-norm is in force impliziert (für alle e vom Typ Ev gilt: für alle c vom Typ Ag gilt: für alle f vom Typ Fact gilt: e is an entering of f by c impliziert the examination of e is passed impliziert c owes the applicants e) (bridge)
-├─ und
-├─ sofern nichts entgegensteht: the unwritten meta-norm is in force
+Es genügt zu prüfen, dass the register court owes the applicants the entry applied for. Beginn der Prüfung draft_metanorm:
+├─ es liegt vor: für alle e vom Typ Ev gilt: für alle c vom Typ Ag gilt: für alle f vom Typ Fact gilt: e is an entering of f by c impliziert under the meta-norm the court has to make e impliziert c owes the applicants e (bridge)
 ├─ eingesetzt für e: the entry applied for
 ├─ eingesetzt für c: the register court
 ├─ eingesetzt für f: C's entry as limited partner
 ├─ und
 ├─ es liegt vor: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
 ├─ und
-├─ sofern nichts entgegensteht: the examination of the entry applied for is passed
-└─ Prüfung duty abgeschlossen (bejaht).
+├─ sofern nichts entgegensteht: under the meta-norm the court has to make the entry applied for
+└─ Prüfung draft_metanorm abgeschlossen (bejaht).

@@ -1,15 +1,12 @@
-argument duty : (Duty [court] [app] [e1]).
-cut (MetaNorm -> forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> Passed [e] -> Duty [c] [app] [e]) r.
+argument draft_metanorm : (Duty [court] [app] [e1]).
+cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> MetaNorm [e] -> Duty [c] [app] [e]) r.
 axiom bridge.
-elim.
-next.
 elim [e1].
 elim [court].
 elim [kp_c].
 elim.
 axiom entering.
 elim.
-by default.
 next.
 axiom r.
 dixi.

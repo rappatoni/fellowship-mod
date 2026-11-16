@@ -1,4 +1,4 @@
-It suffices to check that for some o of type Order, o is the lawful order. Starting check alt14:
+It suffices to check that for some o of type Order, o is the lawful order. Starting check alt16:
 ├─ witnessed by an interim order to remedy the application
 ├─ For an interim order to remedy the application is the lawful order it suffices that the register court owes the applicants the entry applied for implies false holds. Starting check b1:
 │  ├─ because
@@ -6,4 +6,4 @@ It suffices to check that for some o of type Order, o is the lawful order. Start
 │  ├─ and
 │  │  └─ unless something speaks against it: the register court owes the applicants the entry applied for implies false
 │  └─ Check b1 completed.
-└─ Check alt14 completed (holds).
+└─ Check alt16 completed (holds).

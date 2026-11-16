@@ -1,0 +1,229 @@
+#+title: The sources of the meta-norm process (rq4-gap-dynamics.org, Part 1)
+#+language: de
+
+AI DRAFT (2026-11-15). The sources the IRIS draft cites in §§ 3.1-3.2
+(notes 19-35), with what was found of each, free of charge, and the
+passages of the official texts that bear on the stages of Part 1.
+- Court decisions and Bundestag printed papers are official works
+  (§ 5 UrhG); their passages are quoted.
+- Headnotes and annotations of the journals and websites that print
+  them are not reproduced; they are cited only.
+- Where a passage was found, a short AI NOTE says what it shows for the
+  encoding. Every reading needs legal review.
+
+* Overview
+
+| Note | As cited in the IRIS draft | Found? | Where |
+|------+----------------------------+--------+-------|
+| 19 | BT-Drs. 8/1347, 36; BT-Drs. 8/3908, 72 | yes, both pages | dserver.bundestag.de (below) |
+| 20, 22 | Schaub, in Ebenroth/Boujong, HGB, § 8 | no (commentary, paywalled) | |
+| 21 | Krafka, MüKo; Müther, BeckOK HGB, § 8 | no (commentary, paywalled) | |
+| 25, 26 | BGH NJW-RR 2011, 1184 Rn. 10 | yes: BGH, Beschluss vom 21.6.2011, II ZB 15/10 (confirmed by the beck-online copy) | lorenz.userweb.mwn.de (below); beck-online copy kept local |
+| 26 | BayObLGZ 1982, 198 (202) | no | |
+| 27 | OLG Karlsruhe BeckRS 2001, 30194012 | no | |
+| 28 | BGH NJW 1991, 1754 (1758) | yes: BGH, Urteil vom 18.2.1991, II ZR 104/90 | beck-online copy kept local (below) |
+| 29 | OLG Stuttgart BeckRS 2020, 12065 Rn. 10 | yes: OLG Stuttgart, Beschluss vom 9.3.2020, 8 W 295/19 (confirmed by the beck-online copy) | MittBayNot 2/2021, 152 (Nr. 19), notare.bayern.de (below); beck-online copy kept local |
+| 29, 31 | Jaeger, BeckOK GmbHG; Wicke, MüKo GmbHG, § 9c | no (commentary); Wicke § 9c Rn. 12 is quoted by name in OLG Stuttgart's Rn. 10 | |
+| 30 | Ammon, DStR 1995, 1311; Krafka, Einführung in das Registerrecht, Rn. 67 | Ammon: a beck-online copy is kept local but was not read (not an official work; Beck reserves use with AI systems); Krafka: no | |
+| 32 | Frank, in Musielak/Borth, FamFG, § 59 Rn. 5 | no (commentary) | |
+| 35 | the four OLG decisions on the usufruct | yes (Phase 0) | =olg-*.org= |
+
+* BT-Drs. 8/1347 (Regierungsentwurf, 15.12.1977), S. 36
+
+Source: https://dserver.bundestag.de/btd/08/013/0801347.pdf, retrieved
+2026-11-15. Reasons of the government draft to § 9 d GmbHG (enacted as
+§ 9c):
+
+#+begin_quote
+— § 9 d GmbHG. Die Vorschrift ist neu. Sie regelt Inhalt und Umfang der
+Prüfung des Gerichts bei der Anmeldung einer Gesellschaft zur Eintragung
+in das Handelsregister. Absatz 1 bestätigt ausdrücklich, was schon
+bisher für die GmbH weitgehend als rechtens anerkannt ist, daß nämlich
+das Gericht zu prüfen hat, ob die Gesellschaft ordnungsgemäß errichtet
+und angemeldet worden ist.
+[...]
+Absatz 3 regelt die Rechtsfolgen für den Fall einer nicht
+ordnungsgemäßen Errichtung oder Anmeldung der Gesellschaft. In einem
+solchen Fall hat das Gericht die Eintragung der Gesellschaft abzulehnen.
+#+end_quote
+
+* BT-Drs. 8/3908 (Beschlußempfehlung und Bericht des Rechtsausschusses, 16.4.1980), S. 72
+
+Source: https://dserver.bundestag.de/btd/08/039/0803908.pdf, retrieved
+2026-11-15. On § 9 c (= § 9 d of the government draft):
+
+#+begin_quote
+Der Rechtsausschuß hält es für sachgerecht, daß das Registergericht, wie
+dies schon nach geltendem Recht anerkannt ist, nicht nur das Recht,
+sondern auch die Pflicht hat, vor der Eintragung zu prüfen, ob die
+Gesellschaft ordnungsgemäß errichtet und angemeldet ist. [...]
+Eine ausdrückliche positive Umschreibung des gerichtlichen
+Prüfungsrechts und der Prüfungspflicht, wie sie in den Absätzen 1 und 2
+des Regierungsentwurfs vorgesehen ist, hält der Rechtsausschuß nicht für
+erforderlich. Es ist gesetzestechnisch ausreichend, wie in Absatz 3 des
+Regierungsentwurfs zu regeln, daß das Gericht die Eintragung der
+Gesellschaft abzulehnen hat, wenn sie nicht ordnungsgemäß errichtet und
+angemeldet worden ist. Das gleiche soll gelten, wenn Sacheinlagen
+überbewertet worden sind. Aus dieser Regelung ergibt sich
+notwendigerweise, daß das Gericht diese Eintragungsvoraussetzungen vor
+einer Eintragung oder deren Ablehnung prüfen muß.
+#+end_quote
+
+(The print has "Regelug" for "Regelung".)
+
+AI NOTE:
+- This confirms note 19, and dates it: the positive rule was proposed
+  (1977) and dropped as unnecessary (1980).
+- The committee's reason is the argument of stage 2 (=anchor=): a rule
+  that the court must refuse an improperly established company
+  presupposes the examination. So the committee itself answers the
+  objection of stage 1 for this case.
+- Its scope is the GmbH's first registration, and the duty it affirms
+  is the duty to *examine*, not a claim to registration.
+
+* BGH, Beschluss vom 21.6.2011, II ZB 15/10 (NJW-RR 2011, 1184)
+
+Source: https://lorenz.userweb.mwn.de/urteile/iizb15_10.htm (full text
+with Rn.; the page gives no reporter citation, "Fundstelle: noch nicht
+bekannt"), retrieved 2026-11-15. The page's headnote and remarks are
+Lorenz's and are not reproduced.
+
+#+begin_quote
+10 aa) Das Registergericht hat die Pflicht, darüber zu wachen, dass
+Eintragungen im Handelsregister den gesetzlichen Erfordernissen und der
+tatsächlichen Rechtslage entsprechen (BGH, Urteil vom 24. Juni 1982 -
+III ZR 19/81, BGHZ 84, 285, 287). Dabei ist es aber nicht verpflichtet,
+verwickelte Rechtsverhältnisse oder zweifelhafte Rechtsfragen zu klären
+(RGZ 127, 153, 158). Dadurch würden die Registergerichte überlastet und
+es bestünde die Gefahr, dass Handelsregistereintragungen auf
+unangemessene Zeit blockiert würden. Eine Pflicht zur Amtsermittlung
+nach §§ 26, 382 FamFG besteht vielmehr nur dann, wenn entweder die
+formalen Mindestanforderungen für eine Eintragung nicht erfüllt sind
+oder wenn begründete Zweifel an der Wirksamkeit der zur Eintragung
+angemeldeten Erklärungen oder an der Richtigkeit der mitgeteilten
+Tatsachen bestehen (vgl. BayObLG, DB 1981, 2219 f.; [...]).
+
+11 bb) Zwar steht danach der Umfang der Ermittlungstätigkeit
+grundsätzlich im pflichtgemäßen Ermessen des Registerrichters und des
+Beschwerdegerichts. Das Rechtsbeschwerdegericht kann aber überprüfen,
+ob das vorinstanzliche Gericht die Grenzen seines Ermessens
+überschritten und insbesondere ohne berechtigten Grund inhaltliche
+Bedenken gegen eine Eintragung gesehen hat.
+#+end_quote
+
+AI NOTE:
+- Rn. 10 carries both of the draft's notes 25 and 26: the duty to
+  watch over the entries' correctness (whence the power to examine), and
+  its limit, an investigation only on justified doubts. That is
+  =no_cor= with its refutation owed and the generic presumption
+  =face_value=, defeated by a justified doubt (=doubt=), as layer 2
+  encodes it.
+- The decision says nothing about a claim to registration. It is not a
+  source of the circle (layer 3's attribution needs correcting).
+- The case is a GmbH (registration of a managing director's
+  resignation), not a limited partnership.
+
+* OLG Stuttgart, Beschluss vom 9.3.2020, 8 W 295/19 (BeckRS 2020, 12065)
+
+Source: MittBayNot 2/2021, 152 (Nr. 19), free issue at
+https://www.notare.bayern.de/media/otgjuxec/mittbaynot_heft_2_2021.pdf
+(the prod.notare.bayern.de host refused the connection), retrieved
+2026-11-15. The journal's headnotes are not reproduced.
+
+#+begin_quote
+8 Im Ausgangspunkt zutreffend und vom Beschwerdeführer auch nicht
+beanstandet stellt das Registergericht fest, dass es wegen § 55 Abs. 1
+UmwG, §§ 57a, 9c GmbHG gehalten ist, die Kapitalerbringung auch im
+Falle einer Kapitalerhöhung zu prüfen, und dass die Prüfungspflicht sich
+auch auf ein als Sacheinlage einzubringendes Unternehmen erstreckt,
+weshalb die für die Prüfung erforderlichen Unterlagen auch zum Register
+jenes Unternehmens einzureichen sind.
+
+9 Hieraus folgt jedoch nicht, dass zwingend die Vorlage eines
+Gutachtens eines unabhängigen Wirtschaftsprüfers erforderlich wäre.
+
+10 a) Die Amtsermittlungspflicht hat dem Spannungsverhältnis, welches
+zwischen dem Gebot hinreichender Sachverhaltsaufklärung im Einzelfall
+einerseits und dem Eintragungsanspruch der Beteiligten und ihrem
+Interesse an einer zügigen und kostengünstigen Eintragung andererseits
+besteht, Rechnung zu tragen (MünchKomm-GmbHG/Wicke, 3. Aufl. 2018, § 9c
+Rdnr. 12). Hieraus folgt, dass jedenfalls kostenträchtige Unterlagen wie
+Gutachten eines Wirtschaftsprüfers nicht generell verlangt werden
+dürfen, sondern nur dann, wenn konkrete Umstände des Einzelfalls die
+Vorlage gebieten, so zum Beispiel wenn eingereichte Unterlagen unklar,
+in sich widersprüchlich oder lückenhaft sind oder sonstige konkrete
+Anhaltspunkte für eine Fehlerhaftigkeit des vorgetragenen Sachverhalts
+benannt werden können (MünchKomm-GmbHG/Wicke, § 9c Rdnr. 12, 13).
+#+end_quote
+
+AI NOTE:
+- This is the step "from the claim to the limited scope" (note 29),
+  and it names Wicke (note 31) as its source.
+- But the court does not derive the limit from the claim as a rule. It
+  *weighs* the claim (with the interest in a quick and cheap entry)
+  against the need to clarify the facts, and concludes that a costly
+  document may be demanded only on concrete grounds. In the encoding the
+  claim limits the scope by a rule (=bgh_rule=); a faithful encoding
+  would make the claim a reason in a weighing.
+- The demand at issue (an auditor's report) is close to layer 3's
+  illustration (a document the law does not require), but here it is
+  not unrequired as such: it is required only if concrete doubts exist.
+- The case is a GmbH (capital increase by hiving off a sole trader's
+  business, § 55 UmwG, §§ 57a, 9c GmbHG).
+
+* BGH, Urteil vom 18.2.1991, II ZR 104/90 (NJW 1991, 1754)
+
+Source: beck-online copy, kept local (=sources/*.pdf=, not published),
+retrieved 2026-11-15. The case: a bank's liability for a false
+confirmation of a cash contribution in a GmbH capital increase by the
+"Ausschüttungs-Rückhol-Verfahren". The journal's headnotes are not
+reproduced. The court's reasons, NJW 1991, 1754 (1758):
+
+#+begin_quote
+Des weiteren besteht im Schrifttum trotz im einzelnen unterschiedlicher
+Formulierung (vgl. Hachenburg-Ulmer, § 9c Rdnrn. 11 f., 29;
+Scholz-Winter, § 9c Rdnrn. 13, 23; Fischer-Lutter-Hommelhoff, § 9c
+Rdnr. 2) im großen und ganzen Einigkeit, daß das Registergericht bei der
+Durchführung dieser Prüfung gehalten ist zu bedenken, daß der Anmeldende
+einen Anspruch auf Eintragung der GmbH oder der Kapitalerhöhung hat, den
+das Gericht nicht dadurch praktisch einschränken darf, daß es auch dort
+Prüfungen vornimmt und ins einzelne gehende Nachweise verlangt, wo keine
+konkreten Anhaltspunkte für Mängel bestehen. Unter diesem Gesichtspunkt
+wird sich das Registergericht regelmäßig mit der Versicherung der
+Geschäftsführer nach §§ 57 II, 7 II, 8 II GmbHG begnügen, wenn es keinen
+Anlaß hat, an ihrer inhaltlichen Richtigkeit zu zweifeln [...]. Dies ist
+schon deshalb geboten, weil der Gesetzgeber der GmbH-Novelle von 1980
+ausdrücklich davon abgesehen hat, einen generellen Nachweis über die
+Leistung der Bareinlagen nach aktienrechtlichem Muster (§ 37 I 2, 3
+AktG) vorzuschreiben (vgl. BT-Dr 8/3908, S. 71) [...]. Die Folge ist,
+daß das, was das Aktiengesetz generell und zwingend als
+Eintragungserfordernis vorschreibt, im GmbH-Recht dem pflichtgemäßen
+Prüfungsermessen des Registergerichts im Einzelfall überlassen bleibt,
+wobei es stets zwischen der ihm durch § 9c GmbHG ausdrücklich
+auferlegten Pflicht zur Prüfung der Rechtmäßigkeit einer Gründung oder
+Kapitalerhöhung einerseits und dem Anspruch der Beteiligten auf eine
+zügige Erledigung ihrer Anmeldungen andererseits abzuwägen hat.
+#+end_quote
+
+AI NOTE:
+- This is note 28: the BGH recognises the claim to registration (as
+  the literature's broad consensus) for the GmbH and the capital
+  increase, and limits the examination with it.
+- Like OLG Stuttgart 2020, which follows it nearly word for word, the
+  BGH does not let the claim limit the scope by a rule. It forbids
+  examinations and detailed proofs "where there are no concrete
+  indications of defects", and it has the court *weigh* the duty to
+  examine against the claim to a swift handling. Both court sources of
+  the step "from the claim to the limited scope" are a weighing.
+- The BGH grounds this in the 1980 reform (BT-Drs. 8/3908, 71 f.): the
+  legislature chose a material, not exhaustively defined right to
+  examine. That ties note 28 to note 19.
+- The passage is part of the reasons of a liability case (II ZR), not
+  of a register proceeding.
+
+* Not found
+
+- BayObLGZ 1982, 198 (note 26), OLG Karlsruhe BeckRS 2001, 30194012
+  (note 27): no free text found.
+- The commentaries and articles (notes 20-22, 29-32): not freely
+  available.

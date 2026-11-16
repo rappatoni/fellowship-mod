@@ -654,6 +654,54 @@ debate in time. It shows open enumeration, open structure and revision.
   exceeds the prover I/O timeout on the stock build; with the native
   path-copying build it replays except for one credulous evaluation
   ([[id:aida-pexpect-read-window]] on main).
+Extended 2026-11-15 (one example throughout): the document now starts
+with Part 1, the meta-norm taking shape along the IRIS draft's §§ 3.1-3.2
+and its notes, asked for C's entry and the usufruct side by side; the
+case law is Part 2, the usufruct's open limb.
+- Part 1 reuses the arguments of =rq4-6-7-metanorm.org= through a named
+  include (=#+fspy_include: FILE NAME ...=, new in =tools/tangle_fspy.py=).
+- Verdicts per stage pinned (=test_rq4_metanorm_dynamics_stages=): C's
+  entry value, open, value, value, open, open (2 labellings), value; the
+  usufruct value, open, value, open, open (=Need uf= owed, OUT).
+- The draft's notes 28-31 put the circle with BGH NJW 1991, 1754, OLG
+  Stuttgart 2020, Ammon 1995, Krafka 2004 and Wicke 2022; layer 3 of
+  =rq4-6-7-metanorm.org= cited BGH NJW-RR 2011, 1184 Rn. 10 for it
+  (notes 25, 26: the power to examine, the presumption of correctness).
+  Corrected 2026-11-15, with an AI NOTE.
+- Arguments renamed after their sources (2026-11-15), so the graph
+  shows where each step comes from: =draft_=, =nosrc_=, =leg1980_=,
+  =hgb12_=/=hgb162_=, =lit_=, =bgh2011_=, =bgh1991_=, =karlsruhe2001_=,
+  =bgh2012_=, =case_=, =hyp_= (key in =rq4-6-7-metanorm.org=). Graph
+  targets are now =draft_metanorm= and =lit_corr_claim=; figures,
+  paper examples and pins follow. Layers 2b/2c keep their names.
+  =tests/iris=: 43 passed, 1 xfailed.
+- The court's reason for its demand added (2026-11-16, =case_court_flaw=):
+  an error in the transfer agreement would refute =Correct kp_c=; the
+  error is owed and never supplied, so the argument fails. Verdicts
+  unchanged (=tests/iris=: 43 passed, 1 xfailed).
+- The limit's exceptions (2026-11-16): =bgh1991_improper_demand= now
+  presumes a helper =Applies d e= (the limit reaches this demand), denied
+  by =case_court_required= (the law requires the document; owed) and
+  =bgh1991_indication= (concrete indications; owed, supplied by
+  =case_indication= from a register conflict). Replaces the strict
+  =Unrequired= premise. The direct form (a presumed =~Indicated e=) does
+  not work: the graph does not connect =~K= with K's refutation, the
+  negation bridge of the BACKLOG task below. Pinned verdicts unchanged;
+  new test =test_rq7_limit_exception_for_concrete_indications=.
+- The meta-norm as a helper per entry (2026-11-16): =MetaNorm e=
+  ("under the meta-norm the court has to make e") presumed in
+  =draft_metanorm=, strict rule =Enter e c f -> MetaNorm e -> Duty c app e=;
+  the old 0-ary statement is =InForce= (attacked by the positivist
+  objection, defended by the anchor). Its conditions are denials, the
+  subtraction on the context side as denied existentials
+  (=deny dn_mn_in_force : (exists e:Ev, MetaNorm [e] - InForce)=, likewise
+  =Passed e=), each with one generic counterargument over =MetaNorm [?e]=
+  owing the condition's refutation; so courts' further conditions and
+  exceptions are further denials, not a replacement norm. Verdicts of all
+  pinned scenarios and both Part 1 debates unchanged; the certificate
+  now rests on =!IN:MetaNorm e1= alone (was =!IN:MetaNorm=,
+  =!IN:Passed e1=). Decision on necessary conditions recorded in
+  =analysis.org= (2026-11-16).
 Awaiting R3.
 
 *** REVIEW Phase 4: RQ 6, burden of proof in the same example
@@ -724,7 +772,8 @@ Awaiting R4.
 
 Done 2026-11-14, layer 3, scenarios 7a-7d.
 - The cycle: the court demands a document the law does not require; the
-  claim limits the scope (BGH NJW-RR 2011, 1184 Rn. 10), which makes the
+  claim limits the scope (BGH NJW 1991, 1754; first cited wrongly as BGH
+  NJW-RR 2011, 1184 Rn. 10, corrected 2026-11-15), which makes the
   demand improper, which lets the examination pass, which grounds the
   duty, hence the claim (Hohfeld correlativity as two rules).
 - 7a: grounded undecided, two stable labellings (all IN or all OUT).

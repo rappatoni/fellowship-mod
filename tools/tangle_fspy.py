@@ -21,6 +21,10 @@ literate AIDA documents without Emacs (lib/iris_experiment/):
   and without its blocks marked ``:combined no`` - into every target of
   this file: one document assembled from several (the combined RQ 3
   graph). The included blocks come before the blocks below the keyword.
+  ``#+fspy_include: OTHER.org NAME ...`` inserts only the blocks of
+  OTHER.org named NAME, in the order listed, whether or not OTHER.org
+  tangles them: definitions reused by another document (the meta-norm
+  process of rq4-gap-dynamics.org).
 
 Usage: ``python tools/tangle_fspy.py [--outdir DIR] FILE.org ...``
 With ``--outdir`` each target is written to DIR under its base name.
@@ -39,7 +43,7 @@ END = re.compile(r"^\s*#\+end_src\s*$", re.IGNORECASE)
 NAME = re.compile(r"^\s*#\+name:\s*(\S+)\s*$", re.IGNORECASE)
 PROPERTY = re.compile(r"^\s*#\+property:\s*header-args:fspy\s+(.*)$", re.IGNORECASE)
 PRELUDE = re.compile(r"^\s*#\+fspy_prelude:\s*(\S+)\s*$", re.IGNORECASE)
-INCLUDE = re.compile(r"^\s*#\+fspy_include:\s*(\S+)\s*$", re.IGNORECASE)
+INCLUDE = re.compile(r"^\s*#\+fspy_include:\s*(\S+)((?:\s+\S+)*)\s*$", re.IGNORECASE)
 NOWEB_REF = re.compile(r"^(\s*)<<([^<>\s]+)>>\s*$")
 
 
@@ -61,8 +65,9 @@ class OrgFile:
     blocks: list[Block] = field(default_factory=list)
     defaults: dict[str, str] = field(default_factory=dict)
     prelude: Path | None = None
-    # (position in org.blocks, included file): included text goes before block N
-    includes: list[tuple[int, Path]] = field(default_factory=list)
+    # (position in org.blocks, included file, block names or ()): the
+    # included text goes before block N
+    includes: list[tuple[int, Path, tuple[str, ...]]] = field(default_factory=list)
 
 
 def parse_args(text: str) -> dict[str, str]:
@@ -94,7 +99,8 @@ def read_org(path: Path) -> OrgFile:
         elif m := PRELUDE.match(line):
             org.prelude = (path.parent / m.group(1)).resolve()
         elif m := INCLUDE.match(line):
-            org.includes.append((len(org.blocks), (path.parent / m.group(1)).resolve()))
+            org.includes.append((len(org.blocks), (path.parent / m.group(1)).resolve(),
+                                 tuple(m.group(2).split())))
         elif m := NAME.match(line):
             pending_name = m.group(1)
             i += 1
@@ -141,15 +147,23 @@ def expand(org: OrgFile, block: Block, seen: tuple[str, ...] = ()) -> list[str]:
     return out
 
 
-def included_text(path: Path) -> str:
+def included_text(path: Path, names: tuple[str, ...] = ()) -> str:
     """What an included file contributes: its tangled blocks, in order, with
-    neither its prelude nor its blocks marked ``:combined no``."""
+    neither its prelude nor its blocks marked ``:combined no``; or, if NAMES
+    are given, just the blocks so named, in that order."""
     org = read_org(path)
     out = []
+    if names:
+        named = {b.name: b for b in org.blocks if b.name}
+        for name in names:
+            if name not in named:
+                raise TangleError(f"{path}: no block named {name!r} to include")
+            out.append("\n".join(expand(org, named[name])).rstrip("\n"))
+        return "\n".join(out) + "\n"
     for i, block in enumerate(org.blocks):
-        for pos, inc in org.includes:
+        for pos, inc, sub in org.includes:
             if pos == i:
-                out.append(included_text(inc).rstrip("\n"))
+                out.append(included_text(inc, sub).rstrip("\n"))
         if block.args.get("tangle", "no") in ("no", "") or block.args.get("combined") == "no":
             continue
         out.append("\n".join(expand(org, block)).rstrip("\n"))
@@ -161,7 +175,7 @@ def tangle_text(org: OrgFile) -> dict[Path, str]:
     chunks: dict[Path, list[str]] = {}
     pending: list[str] = []
     for i, block in enumerate(org.blocks):
-        pending.extend(included_text(inc).rstrip("\n") for pos, inc in org.includes if pos == i)
+        pending.extend(included_text(inc, sub).rstrip("\n") for pos, inc, sub in org.includes if pos == i)
         target = block.args.get("tangle", "no")
         if target in ("no", ""):
             continue

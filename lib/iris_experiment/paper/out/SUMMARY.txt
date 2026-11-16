@@ -1,14 +1,14 @@
 E1-frag_g-credulous: frag_g (rq3-fragments.fspy), stable credulous: value; unfolded 136 lines
 E1-frag_g-skeptical: frag_g (rq3-fragments.fspy), stable skeptical: open; unfolded 136 lines
 E2-frag_a: frag_a (rq3-fragments.fspy), stable skeptical: value; unfolded 66 lines
-E3-4a-delegated: duty (rq4-a.fspy), stable skeptical: value; unfolded 19 lines, shared 19
-E3-4b-owed: duty (rq4-b.fspy), stable skeptical: open; unfolded 19 lines, shared 19
-E4-6a-complete: duty (rq6-a.fspy), stable skeptical: value; unfolded 109 lines, shared 109
-E4-6b-missing: duty (rq6-b.fspy), stable skeptical: open; unfolded 96 lines, shared 96
-E4-6c-doubt: duty (rq6-c.fspy), stable skeptical: open; unfolded 124 lines, shared 124
-E5-7a-circle: claim (rq7-a.fspy), stable skeptical: open; unfolded 193 lines, shared 193
-E5-7b-anchored: claim (rq7-b.fspy), stable skeptical: value; unfolded 193 lines, shared 193
-E9-6p-b-order: decision (rq6p-b.fspy), stable skeptical: value; unfolded 422 lines, shared 229
+E3-4a-delegated: draft_metanorm (rq4-a.fspy), stable skeptical: value; unfolded 47 lines, shared 47
+E3-4b-owed: draft_metanorm (rq4-b.fspy), stable skeptical: open; unfolded 47 lines, shared 47
+E4-6a-complete: draft_metanorm (rq6-a.fspy), stable skeptical: value; unfolded 131 lines, shared 131
+E4-6b-missing: draft_metanorm (rq6-b.fspy), stable skeptical: open; unfolded 118 lines, shared 118
+E4-6c-doubt: draft_metanorm (rq6-c.fspy), stable skeptical: open; unfolded 146 lines, shared 146
+E5-7a-circle: lit_corr_claim (rq7-a.fspy), stable skeptical: open; unfolded 288 lines, shared 288
+E5-7b-anchored: lit_corr_claim (rq7-b.fspy), stable skeptical: value; unfolded 288 lines, shared 288
+E9-6p-b-order: decision (rq6p-b.fspy), stable skeptical: value; unfolded 488 lines, shared 252
 E9-6w-b-constructive: decision_c (rq6w-b.fspy), stable skeptical: value; unfolded 55 lines, shared 55
-E9-6k-b-classical: decision_k (rq6k-b.fspy), stable skeptical: value; unfolded 163 lines, shared 163
+E9-6k-b-classical: decision_k (rq6k-b.fspy), stable skeptical: value; unfolded 185 lines, shared 185
 S-combined: issue :Registrable[usufruct] (rq3-combined.fspy): expanded 34065 lines, shared 1133 lines, 12 named sub-debates, 38 citations
