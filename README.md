@@ -727,6 +727,14 @@ logic*.
     whose refutation is in play is drawn as its negation ("it is not the
     case that ..."), so its fill, arrowheads and dashes read the right
     way round
+  - the arguments the user wrote are numbered, so the course of a debate
+    can be read from the drawing: "3. duty" on an argument's arrow or
+    small box. For a debate the number is the order of first utterance
+    (its moves); for an argument, an issue or the document it is the
+    argument's place in the document. An argument that only presumes or
+    owes its own statement has no edge; its number stands under that
+    statement ("9. face_value"). Subarguments and declared axioms stay
+    unnumbered
   - `show` renders the graph and opens it in the platform viewer; without
     Graphviz installed it prints an indented text view instead
   - the drawing (DOT file or picture) carries a legend of the symbols it

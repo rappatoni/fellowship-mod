@@ -255,6 +255,10 @@ class GraphResult:
     labels: Optional[Dict] = None             # the labelling drawn over the graph
     labels_unavailable: Optional[str] = None  # why there is none
     labelling: Optional[str] = None           # which labelling ``labels`` is
+    #: {argument name: number}: the arguments the user wrote, numbered in the
+    #: document's order, or for a debate in the order of first utterance
+    order: Dict[str, int] = field(default_factory=dict)
+    order_source: str = "document"            # "document" or "debate"
     diagnostics: List[Diagnostic] = field(default_factory=list)
 
 
@@ -1130,6 +1134,11 @@ class Service:
             self._report_onus_conflicts(graph)
             self._remember_strict_edges(graph, name)
             result = GraphResult(target, found.argument, found.debate, graph, term)
+        if result.debate is not None:
+            result.order = {a: k for k, a in enumerate(result.debate.arguments, 1)}
+            result.order_source = "debate"
+        else:
+            result.order = {a: k for k, a in enumerate(s.arguments, 1)}
         if labels:
             if mode == "credulous" and semantics != "grounded" and issue is None:
                 raise InvalidRequest("graph: credulous needs an issue to accept; "

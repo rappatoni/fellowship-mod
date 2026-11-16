@@ -428,6 +428,10 @@ class DebateGraph:
         #: what reaches the instances of a generic statement, unlike a
         #: marker a site sets (tasks.org, aida-referents-instantiation).
         self.asserted: dict[tuple, set] = {}
+        #: Who asserts them: (key, side) -> the names of those arguments, for
+        #: display (``to_dot`` numbers them with ``order``); copied to
+        #: instances and merged like ``asserted``.
+        self.asserted_by: dict[tuple, set] = {}
         #: (generic, instance) for every instance nearest to its generic
         #: statement, for display; the edges themselves are copied.
         self.instantiations: list = []
@@ -595,6 +599,8 @@ class DebateGraph:
                     for side in ("term", "context"):
                         for kind in self.asserted.get((g, side), ()):
                             self.mark_default(i, side, kind)
+                        for name in self.asserted_by.get((g, side), ()):
+                            self.asserted_by.setdefault((i, side), set()).add(name)
                         for e in originals.get(g, ()):
                             if e.target_side != side:
                                 continue
@@ -692,6 +698,8 @@ class DebateGraph:
             if edge.generic is None and edge.sources[0].kind in ("obligation", "presumption"):
                 self.asserted.setdefault((edge.target_key, edge.target_side), set()).add(
                     edge.sources[0].kind)
+                self.asserted_by.setdefault((edge.target_key, edge.target_side), set()).add(
+                    edge.name)
             if not getattr(self, "quiet", False):
                 logger.debug("compile: '%s' is an identity edge on %s; kept as a default marker only",
                              edge.name, self._show_edge_target(edge))
@@ -753,6 +761,8 @@ class DebateGraph:
             self.defaults.setdefault((key, side), set()).update(kinds)
         for (key, side), kinds in getattr(other, "asserted", {}).items():
             self.asserted.setdefault((key, side), set()).update(kinds)
+        for (key, side), names in getattr(other, "asserted_by", {}).items():
+            self.asserted_by.setdefault((key, side), set()).update(names)
         self.sorts.update(getattr(other, "sorts", {}))
         self.edges.extend(e for e in other.edges
                           if e.role != "weakening" and e.generic is None and not self._holds(e))
@@ -944,7 +954,8 @@ class DebateGraph:
         return sides
 
     def to_dot(self, labels=None, legend: bool = True, labelling: Optional[str] = None,
-               node_text=None, prose: bool = False) -> str:
+               node_text=None, prose: bool = False, order: Optional[dict] = None,
+               order_source: str = "document") -> str:
         """Graphviz source.  With ``labels``, nodes are filled by status;
         with ``legend``, a box explains the symbols the drawing uses, and
         ``labelling`` (which labelling ``labels`` is) heads its table.
@@ -956,8 +967,19 @@ class DebateGraph:
         A node only whose refutation is in play is drawn as the negation of
         its statement, so its proof is that refutation and its fill reads
         the right way round: a green "the usufruct is registrable" under an
-        argument against it read as the opposite."""
+        argument against it read as the opposite.
+
+        ``order`` ({argument name: number}) numbers the edges of the
+        arguments the user wrote, "3. duty": their place in the document,
+        or, with ``order_source`` "debate", in the debate's course (the
+        order of first utterance). Subarguments and declared axioms are not
+        in it and stay unnumbered."""
         fill = _DOT_FILL
+        order = order or {}
+
+        def edge_label(name):
+            return f"{order[name]}. {name}" if name in order else name
+
         lines = ["digraph debate {", "  rankdir=BT;",
                  '  node [shape=box, style="rounded,filled", fillcolor=white];']
         ids = {key: f"n{i}" for i, key in enumerate(self.nodes)}
@@ -969,11 +991,14 @@ class DebateGraph:
                 self._prose_negated.add(key)
             marks = []
             statuses = []
+            asserters = []                      # "9. face_value": numbered moves without an edge
             for side in ("term", "context"):
                 word = "proof" if (side == "term") != negated else "refutation"
                 for kind in sorted(self.defaults.get((key, side), ())):
                     marks.append(f"{word} {_DOT_KIND_WORD.get(kind, kind)}" if prose
                                  else f"{side[0]}:{kind[0]}")
+                asserters += sorted((order[n], n) for n in self.asserted_by.get((key, side), ())
+                                    if n in order)
                 if labels and (key, side) in labels:
                     statuses.append(f"{word}: {labels[(key, side)]}" if prose
                                     else f"{side[0]}={labels[(key, side)]}")
@@ -995,6 +1020,8 @@ class DebateGraph:
                     shown = node_text(shown) or shown
                 except Exception:                   # noqa: BLE001 - draw the formula instead
                     pass
+            if asserters:
+                suffix += "\\n" + ", ".join(f"{k}. {n}" for k, n in sorted(set(asserters)))
             label = shown.replace('"', '\\"')
             colour = ""
             if labels:
@@ -1027,13 +1054,13 @@ class DebateGraph:
                     dashed = " style=dotted fontcolor=gray50"
                 lines.append(
                     f"  {ids[source.key]} -> {ids[edge.target_key]} "
-                    f'[color={colour}{width}{dashed} arrowhead={head} label="{edge.name}"];'
+                    f'[color={colour}{width}{dashed} arrowhead={head} label="{edge_label(edge.name)}"];'
                 )
                 continue
             junction = f"e{i}"
             lines.append(
                 f'  {junction} [shape=box, style="rounded", fontsize=9, color={colour}, '
-                f'label="{edge.name}"];'
+                f'label="{edge_label(edge.name)}"];'
             )
             for source in edge.sources:
                 dashed = (" style=dashed" if (source.side == "context") != (source.key in flip)
@@ -1052,11 +1079,14 @@ class DebateGraph:
                 lines.append(f'  {ids[generic]} -> {ids[instance]} [color={colour} style=dotted '
                              f'arrowhead=onormal fontcolor=gray50 label="instance"];')
         if legend and (self.nodes or self.edges):
-            lines.extend(self._dot_legend(labels, labelling, prose=prose))
+            numbered = order_source if (any(e.name in order for e in self.edges) or any(
+                n in order for names in self.asserted_by.values() for n in names)) else None
+            lines.extend(self._dot_legend(labels, labelling, prose=prose, numbered=numbered))
         lines.append("}")
         return "\n".join(lines)
 
-    def _dot_legend(self, labels=None, labelling: Optional[str] = None, prose: bool = False) -> list:
+    def _dot_legend(self, labels=None, labelling: Optional[str] = None, prose: bool = False,
+                    numbered: Optional[str] = None) -> list:
         """A cluster explaining the symbols ``to_dot`` drew for this graph,
         and only those: a sample of every edge style in use, drawn as the
         edges are, and the node markings with their meaning."""
@@ -1105,6 +1135,13 @@ class DebateGraph:
         if any(not e.sources for e in self.edges):
             rows.append('<TR><TD ALIGN="LEFT"><B>double border</B></TD><TD ALIGN="LEFT">'
                         'derived by an argument that rests on nothing</TD></TR>')
+        if numbered:
+            place = ("the n-th argument moved in the debate" if numbered == "debate"
+                     else "the n-th argument of the document")
+            rows.append('<TR><TD ALIGN="LEFT"><B>n. name</B></TD><TD ALIGN="LEFT">'
+                        f'{place}; on an arrow or small box, that argument; under a '
+                        'statement, an argument that only presumes or owes it. A name '
+                        'without a number is a subargument or a declared axiom</TD></TR>')
         if prose and getattr(self, "_prose_negated", None):
             rows.append('<TR><TD ALIGN="LEFT"><B>"it is not the case that"</B></TD><TD ALIGN="LEFT">'
                         'a statement only whose refutation is in play, drawn as its '

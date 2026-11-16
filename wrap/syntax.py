@@ -365,7 +365,8 @@ def _eval_options(verb, rest_words):
 def _p_query(verb):
     usage = {
         "graph": ('Use: graph ARG|DEBATE|issue :X|X:|document [all] '
-                  '[grounded|complete|preferred|stable] [skeptical|credulous] ["FILE.dot"] [show].'),
+                  '[grounded|complete|preferred|stable] [skeptical|credulous] [decorated] '
+                  '["FILE.dot"] [show].'),
         "label": "Use: label ARG|DEBATE|issue :X|X: [grounded|complete|preferred|stable].",
         "evaluate": "Use: evaluate ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",
         "explain": "Use: explain ARG|DEBATE|issue :X|X: [MODE] [SEMANTICS] [BASE] [N|all] [favour].",

@@ -1232,13 +1232,15 @@ def _show_graph(prover: ProverWrapper, name: str, result, dot_path: Optional[str
             with open(dot_path, "w") as fh:
                 fh.write(graph.to_dot(labels=labels, labelling=labelling,
                                       node_text=_decorated_text(prover) if decorated else None,
-                                      prose=decorated))
+                                      prose=decorated, order=result.order,
+                                      order_source=result.order_source))
             logger.info("DOT written to %s (render: dot -Tpng %s -o graph.png)", dot_path, dot_path)
         else:
             logger.info("File output is off (ACDC_NO_RENDER): not writing %s.", dot_path)
     if show:
         dot = graph.to_dot(labels=labels, labelling=labelling,
-                           node_text=_decorated_text(prover) if decorated else None, prose=decorated)
+                           node_text=_decorated_text(prover) if decorated else None, prose=decorated,
+                           order=result.order, order_source=result.order_source)
         image = (_render_graph_image(dot, f"{name}_graph")
                  if may_render else None)
         if image and _open_file(image):

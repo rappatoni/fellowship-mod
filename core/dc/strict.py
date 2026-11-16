@@ -545,6 +545,9 @@ def document_issue_graph(source: DebateGraph, issue, strict_edges=(), name: str 
     for (key, side), kinds in source.defaults.items():
         if (key, side) in keep:
             graph.defaults.setdefault((key, side), set()).update(kinds)
+    for (key, side), names in getattr(source, "asserted_by", {}).items():
+        if (key, side) in keep:
+            graph.asserted_by.setdefault((key, side), set()).update(names)
     for key, side in graph.statements():
         graph.nodes.setdefault(key, source.nodes.get(key, key))
         if key in source.contexts:
