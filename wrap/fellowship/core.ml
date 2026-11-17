@@ -617,7 +617,17 @@ let rec pretty_t3rm =
       let body = pretty_t3rm t in
       let body = (match t with Cons' _ -> "(" ^ body ^ ")" | _ -> body) in
       sprintf "%s%s:%s.%s" (symbol ()).lambda id (pretty_sort p) body
-  | Cons' (c,t) -> sprintf "%s*%s" (pretty_context c) (pretty_t3rm t)
+  | Cons' (c,t) ->
+      (* `*` nests to the right, so a left operand that is itself built with
+         `*` must be parenthesised: a stack (th*1!)*r would print as th*1!*r,
+         which reads as th*(1!*r) with th a context variable.  A first-order
+         destructor's body extends maximally and would swallow the `*`. *)
+      let left = pretty_context c in
+      let left =
+       (match c with
+          Cons _ | ConsFO _ | DestructTermsPairFO _ -> "(" ^ left ^ ")"
+        | _ -> left) in
+      sprintf "%s*%s" left (pretty_t3rm t)
   | TermsPair (t,t') -> sprintf "(%s,%s)" (pretty_t3rm t) (pretty_t3rm t')
   | TermsPairFO (_,t,t') -> sprintf "(%s,%s)" (pretty_term t) (pretty_t3rm t')
   | Left t -> sprintf "L(%s)" (pretty_t3rm t)
@@ -634,7 +644,12 @@ and pretty_context =
   | DelegationContextMeta id -> sprintf "%s!" id
   | False_eliminator -> "_F_"
   | Concl id -> id
-  | Cons (t,c) -> sprintf "%s*%s" (pretty_t3rm t) (pretty_context c)
+  | Cons (t,c) ->
+      (* The mirror case of Cons': a subtraction introduction (1!*!2)*r as
+         the head of a stack would print as 1!*!2*r. *)
+      let left = pretty_t3rm t in
+      let left = (match t with Cons' _ -> "(" ^ left ^ ")" | _ -> left) in
+      sprintf "%s*%s" left (pretty_context c)
   | ConsFO (t,c) -> sprintf "%s*%s" (pretty_term t) (pretty_context c)
   | Lambda' (id,p,t) ->
       let body = pretty_context t in

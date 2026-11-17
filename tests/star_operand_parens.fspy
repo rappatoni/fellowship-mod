@@ -1,0 +1,48 @@
+# Regression fixture: a `*` term as the left operand of `*`.
+#
+# `*` nests to the right in AIDA's term grammar (core/ac/syntax.py), so
+# Fellowship must parenthesise a left operand that is itself built with
+# `*`.  Without the parentheses:
+# - stack_in_subtraction: the stack (th*1!) on the left of a subtraction
+#   introduction printed as th*1!*req, read as th*(1!*req) with th a
+#   context variable; the argument silently missed the document graph.
+# - subtraction_in_stack: the subtraction introduction (1!*!2) at the head
+#   of a stack printed as 1!*!2*r, which did not parse at all
+#   (tasks.org, aida-parse-subtraction-intro-in-stack).
+lk.
+declare Doc, Ev : type.
+declare d0 : Doc.
+declare e0 : Ev.
+declare Required : Doc -> Ev -> bool.
+declare Passed : Ev -> bool.
+declare Submitted : Doc -> bool.
+declare req : (Required [d0] [e0]).
+deny dn : (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])).
+
+counterargument stack_in_subtraction : (Passed [e0]).
+cut (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])) th.
+elim [d0].
+elim [e0].
+elim.
+elim.
+axiom th.
+by default.
+next.
+axiom req.
+moxia dn.
+dixi.
+
+declare A, B, C : bool.
+declare rule : ((A - ~B) -> C).
+
+argument subtraction_in_stack : (C).
+cut ((A - ~B) -> C) r.
+axiom rule.
+elim.
+elim.
+by default.
+next.
+by default.
+next.
+axiom r.
+dixi.
