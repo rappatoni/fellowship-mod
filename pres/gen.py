@@ -88,6 +88,16 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
         """
         return f'({node.pres})' if isinstance(node, (Cons, ConsFO, Sonc)) else node.pres
 
+    @staticmethod
+    def _left_operand(node, star_types) -> str:
+        """The left operand of `*`, parenthesised when it is itself built
+        with `*` (or is a first-order destructor, whose body extends
+        maximally).  `*` nests to the right, so the stack ``(th*1!)*r`` left
+        bare would read back as ``th*(1!*r)``, with ``th`` a context
+        variable; core.ml guards Cons and Cons' the same way.
+        """
+        return f'({node.pres})' if isinstance(node, star_types) else node.pres
+
     _labelled = staticmethod(labelled_prop)
 
     def _typed_leaf(self, name, prop, node=None):
@@ -133,7 +143,7 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Cons(self, node: Cons):
         node = super().visit_Cons(node)
-        node.pres = f'{node.term.pres}*{node.context.pres}'
+        node.pres = f'{self._left_operand(node.term, Sonc)}*{node.context.pres}'
         return node
 
     def visit_Admal(self, node: Admal):
@@ -143,7 +153,8 @@ class ProofTermGenerationVisitor(ProofTermVisitor):
 
     def visit_Sonc(self, node: Sonc):
         node = super().visit_Sonc(node)
-        node.pres = f'{node.context.pres}*{node.term.pres}'
+        left = self._left_operand(node.context, (Cons, ConsFO, DestructTermsPairFO))
+        node.pres = f'{left}*{node.term.pres}'
         return node
 
     def visit_Goal(self, node: Goal):
@@ -218,7 +229,7 @@ def pres_scaffolds(node) -> str:
     scaffold as ``SUP[alt,b](original, scion)`` / ``ATT[alt,b](original,
     wing)`` (``SUP~``, ``ATT~`` on the context side), everything else in
     the proof-term syntax.  For tests and lessons about unfolding."""
-    from core.ac.ast import Mu, Mutilde, Cons, Sonc, Lamda, Admal, Goal, Deleg, Laog, Geled, ID, DI
+    from core.ac.ast import Mu, Mutilde, Cons, ConsFO, Sonc, Lamda, Admal, Goal, Deleg, Laog, Geled, ID, DI, DestructTermsPairFO
     from core.dc.debate_graph import _match_paper_scaffold
 
     def c(n):
@@ -232,9 +243,11 @@ def pres_scaffolds(node) -> str:
         if isinstance(n, Mutilde):
             return f"μ'{n.di.name}:{n.prop}.<{c(n.term)}||{c(n.context)}>"
         if isinstance(n, Cons):
-            return f"{c(n.term)}*{c(n.context)}"
+            left = f"({c(n.term)})" if isinstance(n.term, Sonc) else c(n.term)
+            return f"{left}*{c(n.context)}"
         if isinstance(n, Sonc):
-            return f"{c(n.context)}*{c(n.term)}"
+            left = f"({c(n.context)})" if isinstance(n.context, (Cons, ConsFO, DestructTermsPairFO)) else c(n.context)
+            return f"{left}*{c(n.term)}"
         if isinstance(n, Lamda):
             return f"λ{n.di.di.name}:{n.di.prop}.{c(n.term)}"
         if isinstance(n, Admal):

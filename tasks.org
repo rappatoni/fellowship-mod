@@ -10323,7 +10323,8 @@ has not been located). Workaround: refute by applying the rule directly
 state negative facts as denials (=deny=, used with =moxia=), so no =~X=
 lemma is cut.
 
-** BACKLOG Read a subtraction introduction that is the left operand of a stack
+** DONE Read a subtraction introduction that is the left operand of a stack
+CLOSED: [2026-11-17 Tue]
 :PROPERTIES:
 :ID:             aida-parse-subtraction-intro-in-stack
 :AREA:           phd
@@ -10374,3 +10375,30 @@ term position, =μc:Bird.<1.1.1!*!1.1.2||μ'rr.<r||rr*c>>=:
 cut ((Fly - ~Feathers) -> Bird) rr. axiom r. elim. axiom. axiom c.=
 A derived conjunction connective defined as =A - ~B= would meet this
 whenever its introduction is applied directly.
+
+The mirror case, found 2026-11-17 (IRIS, a necessary condition denied
+as =exists d e, Required d e - (Passed e -> Submitted d)=), failed
+silently: the stack =(th*1!)= as the left operand of a subtraction
+introduction printed as =th*1!*req=, which the grammar reads as
+=th*(1!*req)= with =th= a context variable; the argument was reported
+registered but missed the document graph ("free context variable
+'th'"), so a scenario that should be open came out a value. Both cases
+have one cause: =*= nests to the right, and no printer parenthesised a
+left operand that is itself built with =*=.
+
+Fixed in the printers, not the grammar (without types it cannot tell
+the two readings apart): Fellowship's =pretty_t3rm= / =pretty_context=
+(=wrap/fellowship/core.ml=) and AIDA's =ProofTermGenerationVisitor= and
+=pres_scaffolds= (=pres/gen.py=) parenthesise a stack or a first-order
+destructor on the left of a subtraction introduction, and a subtraction
+introduction at the head of a stack. AIDA's printer matters past
+display: =reduce.py= compares subtrees by their printed string.
+
+Evidence (branch fellowship-star-parens): the reproduction above
+registers =bird= with the conclusion =Bird=; the document graph has the
+node =Fly-~Feathers= (edge =bird.c1=) with the presumed sources =Fly=
+(term) and =~Feathers= (context). =tests/test_star_operand_parens.py=
+(fixture =tests/star_operand_parens.fspy=, both cases): 9 passed; with
+the old Fellowship binary the two end-to-end tests error, with the old
+=pres/gen.py= five round-trip checks fail. Suite (=pytest -n auto
+tests=): 2291 passed, 7 skipped, 3 xfailed.
