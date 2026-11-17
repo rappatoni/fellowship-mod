@@ -66,17 +66,14 @@ dixi.
 # I: the register shows liability only, and there is no liability; that there
 # is no liability is owed, not presumed (see rq3-stuttgart.org, Rn. 7).
 counterargument rc_old_no_need : (Need [usufruct]).
-cut (Need [usufruct] - Liability [usufruct]) th.
+cut (LiabilityOnly - (Need [usufruct] -> Liability [usufruct])) th.
 elim.
-next.
+elim.
 axiom th.
-cut (LiabilityOnly -> ~(Need [usufruct] - Liability [usufruct])) r.
-axiom p_liab_only.
-elim.
+next.
 by default.
 next.
-elim.
-axiom.
+moxia p_liab_only.
 dixi.
 
 # I: such applications are often filed late, which defeats the interest.

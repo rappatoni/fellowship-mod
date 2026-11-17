@@ -1,6 +1,6 @@
 declare corr1 : (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]).
 declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
-declare n_dem : (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> ~(Passed [e] - Submitted [d])).
+deny n_dem : (exists d:Doc, exists e:Ev, Demanded [d] [e] - (Proper [d] [e] -> Passed [e] -> Submitted [d])).
 declare bgh_rule : (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]).
 declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Applies [d] [e] -> ~Proper [d] [e]).
 declare req_exc : (forall d:Doc, forall e:Ev, Required [d] [e] -> ~Applies [d] [e]).
@@ -32,22 +32,19 @@ axiom r.
 dixi.
 
 counterargument case_court_extra : (Passed [e1]).
-cut (Passed [e1] - Submitted [d_contract]) th.
-elim.
-by default.
-next.
-axiom th.
-cut (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> ~(Passed [e] - Submitted [d])) r.
-axiom n_dem.
+cut (exists d:Doc, exists e:Ev, Demanded [d] [e] - (Proper [d] [e] -> Passed [e] -> Submitted [d])) th.
 elim [d_contract].
 elim [e1].
 elim.
-axiom dem.
 elim.
 by default.
 next.
 elim.
-axiom.
+axiom th.
+by default.
+next.
+axiom dem.
+moxia n_dem.
 dixi.
 
 counterargument case_court_flaw : (Correct [kp_c]).

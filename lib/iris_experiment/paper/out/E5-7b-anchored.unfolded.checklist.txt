@@ -52,233 +52,209 @@ It suffices to check that the applicants can claim the entry applied for from th
          │  │           │  │  │     │     │        │           │  │        │  └─ but
          │  │           │  │  │     │     │        │           │  │        │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check case_court_extra:
          │  │           │  │  │     │     │        │           │  │        │        ├─ Check case_court_extra completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │        └─ For the examination of the entry applied for is passed it is necessary that the transfer agreement is submitted holds. Starting check th_6:
-         │  │           │  │  │     │     │        │           │  │        │           ├─ because
-         │  │           │  │  │     │     │        │           │  │        │           │  ├─ It must be checked whether the examination of the entry applied for is passed without the transfer agreement is submitted. Starting check r_8:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ established: for all d of type Doc, for all e of type Ev, the court demands d for e implies the demand of d for e is within the scope of examination implies it is not the case that the examination of e is passed without d is submitted (n_dem)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ instantiating d with the transfer agreement
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ established: the court demands the transfer agreement for the entry applied for (dem)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  ├─ It suffices to check that the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check alt17:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │  ├─ unless something speaks against it: the demand of the transfer agreement for the entry applied for is within the scope of examination
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │  └─ To check the demand of the transfer agreement for the entry applied for is within the scope of examination, the following points must be worked through:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     ├─ Point 1:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │  └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check alt18:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     ├─ In favour of the demand of the transfer agreement for the entry applied for is within the scope of examination:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │  │  └─ Check alt18 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │  └─ but
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │     └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check bgh1991_improper_demand:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │        ├─ Check bgh1991_improper_demand completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │        └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check r_9:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ established: for all d of type Doc, for all e of type Ev, the examination of e is limited to what the law requires to be submitted implies the limit of the scope applies to the demand of d for e implies it is not the case that the demand of d for e is within the scope of examination (scope_rule)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ instantiating d with the transfer agreement
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check alt19:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │  ├─ unless something speaks against it: the examination of the entry applied for is limited to what the law requires to be submitted
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │  └─ Against the examination of the entry applied for is limited to what the law requires to be submitted:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │  └─ Check alt19 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     └─ but
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │        └─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check bgh1991_claim_limits:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           ├─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check r_10:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ established: for all a of type Ag, for all c of type Ag, for all e of type Ev, a can claim e from c implies the examination of e is limited to what the law requires to be submitted (bgh_rule)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ instantiating a with the applicants
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ instantiating c with the register court
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  ├─ established: the applicants can claim the entry applied for from the register court (b1)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           │  └─ Check r_10 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │           └─ Check bgh1991_claim_limits completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           ├─ It suffices to check that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt20:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │  ├─ unless something speaks against it: the limit of the scope applies to the demand of the transfer agreement for the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │  └─ To check the limit of the scope applies to the demand of the transfer agreement for the entry applied for, the following points must be worked through:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     ├─ Point 1:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │  └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt21:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     ├─ In favour of the limit of the scope applies to the demand of the transfer agreement for the entry applied for:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │  │  └─ Check alt21 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │  └─ but
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │     └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt22:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        ├─ In favour of the limit of the scope applies to the demand of the transfer agreement for the entry applied for:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │  │  └─ Check alt22 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │  └─ but
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │     └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check bgh1991_indication:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │        ├─ Check bgh1991_indication completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │        └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check r_12:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           ├─ established: for all d of type Doc, for all e of type Ev, there are concrete indications that the report for e is incorrect implies it is not the case that the limit of the scope applies to the demand of d for e (ind_exc)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           ├─ instantiating d with the transfer agreement
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           ├─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check alt23:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │  ├─ otherwise not established: there are concrete indications that the report for the entry applied for is incorrect
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │  └─ Against there are concrete indications that the report for the entry applied for is incorrect:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │     │  └─ Check alt23 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │     └─ but
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │        └─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check case_indication:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           ├─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check r_13:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ established: for all f of type Fact, for all e of type Ev, for all c of type Ag, e is an entering of f by c implies the register contradicts f implies there are concrete indications that the report for e is incorrect (ind_rule)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ instantiating f with C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ instantiating c with the register court
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  ├─ to be checked: the register contradicts C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           │  └─ Check r_13 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           │           └─ Check case_indication completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │           └─ It must be checked whether it is not the case that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check H1_6:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │              ├─ Check H1_6 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │              ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │              ├─ Check r_12 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        │              └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │        └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check case_court_required:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │           ├─ Check case_court_required completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │           └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check r_11:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              ├─ established: for all d of type Doc, for all e of type Ev, the law requires d for e implies it is not the case that the limit of the scope applies to the demand of d for e (req_exc)
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              ├─ instantiating d with the transfer agreement
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              ├─ to be checked: the law requires the transfer agreement for the entry applied for
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │              └─ It must be checked whether it is not the case that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check H1_5:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │                 ├─ Check H1_5 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │                 ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │                 ├─ Check r_11 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     │                 └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     │     └─ Check alt20 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │     └─ and point 2:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           │        └─ Check alt20 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │           └─ It must be checked whether it is not the case that the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check H1_7:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │              ├─ Check H1_7 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │              ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │              ├─ Check r_9 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     │              └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     │     └─ Check alt17 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │     └─ and point 2:
-         │  │           │  │  │     │     │        │           │  │        │           │  │  │        └─ Check alt17 completed (holds).
-         │  │           │  │  │     │     │        │           │  │        │           │  │  └─ It must be checked whether it is not the case that the examination of the entry applied for is passed without the transfer agreement is submitted. Starting check H1_8:
-         │  │           │  │  │     │     │        │           │  │        │           │  │     ├─ Check H1_8 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │     ├─ and
-         │  │           │  │  │     │     │        │           │  │        │           │  │     ├─ Check r_8 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │        │           │  │     └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │        │           │  └─ unless shown otherwise, deny: the transfer agreement is submitted
-         │  │           │  │  │     │     │        │           │  │        │           └─ Check th_6 completed.
+         │  │           │  │  │     │     │        │           │  │        │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check th_6:
+         │  │           │  │  │     │     │        │           │  │        │           ├─ witnessed by the transfer agreement
+         │  │           │  │  │     │     │        │           │  │        │           ├─ witnessed by the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           ├─ It suffices to check that the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check alt17:
+         │  │           │  │  │     │     │        │           │  │        │           │  ├─ unless something speaks against it: the demand of the transfer agreement for the entry applied for is within the scope of examination
+         │  │           │  │  │     │     │        │           │  │        │           │  └─ To check the demand of the transfer agreement for the entry applied for is within the scope of examination, the following points must be worked through:
+         │  │           │  │  │     │     │        │           │  │        │           │     ├─ Point 1:
+         │  │           │  │  │     │     │        │           │  │        │           │     │  └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check alt18:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     ├─ In favour of the demand of the transfer agreement for the entry applied for is within the scope of examination:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │  │  └─ Check alt18 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │  └─ but
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │     └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check bgh1991_improper_demand:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │        ├─ Check bgh1991_improper_demand completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │        └─ It must be checked whether the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check r_5:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ established: for all d of type Doc, for all e of type Ev, the examination of e is limited to what the law requires to be submitted implies the limit of the scope applies to the demand of d for e implies it is not the case that the demand of d for e is within the scope of examination (scope_rule)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ instantiating d with the transfer agreement
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ instantiating e with the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check alt19:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │  ├─ unless something speaks against it: the examination of the entry applied for is limited to what the law requires to be submitted
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │  └─ Against the examination of the entry applied for is limited to what the law requires to be submitted:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │  └─ Check alt19 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     └─ but
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │        └─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check bgh1991_claim_limits:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           ├─ It suffices to check that the examination of the entry applied for is limited to what the law requires to be submitted. Starting check r_6:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ established: for all a of type Ag, for all c of type Ag, for all e of type Ev, a can claim e from c implies the examination of e is limited to what the law requires to be submitted (bgh_rule)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ instantiating a with the applicants
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ instantiating c with the register court
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ instantiating e with the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  ├─ established: the applicants can claim the entry applied for from the register court (b1)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           │  └─ Check r_6 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │           └─ Check bgh1991_claim_limits completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           ├─ It suffices to check that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt20:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │  ├─ unless something speaks against it: the limit of the scope applies to the demand of the transfer agreement for the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │  └─ To check the limit of the scope applies to the demand of the transfer agreement for the entry applied for, the following points must be worked through:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     ├─ Point 1:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │  └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt21:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     ├─ In favour of the limit of the scope applies to the demand of the transfer agreement for the entry applied for:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │  │  └─ Check alt21 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │  └─ but
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │     └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check alt22:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        ├─ In favour of the limit of the scope applies to the demand of the transfer agreement for the entry applied for:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │  │  └─ Check alt22 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │  └─ but
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │     └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check bgh1991_indication:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │        ├─ Check bgh1991_indication completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │        └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check r_8:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           ├─ established: for all d of type Doc, for all e of type Ev, there are concrete indications that the report for e is incorrect implies it is not the case that the limit of the scope applies to the demand of d for e (ind_exc)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           ├─ instantiating d with the transfer agreement
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           ├─ instantiating e with the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           ├─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check alt23:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │  ├─ otherwise not established: there are concrete indications that the report for the entry applied for is incorrect
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │  └─ Against there are concrete indications that the report for the entry applied for is incorrect:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │     │  └─ Check alt23 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │     └─ but
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │        └─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check case_indication:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           ├─ It suffices to check that there are concrete indications that the report for the entry applied for is incorrect. Starting check r_9:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ established: for all f of type Fact, for all e of type Ev, for all c of type Ag, e is an entering of f by c implies the register contradicts f implies there are concrete indications that the report for e is incorrect (ind_rule)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ instantiating f with C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ instantiating e with the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ instantiating c with the register court
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  ├─ to be checked: the register contradicts C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           │  └─ Check r_9 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           │           └─ Check case_indication completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │           └─ It must be checked whether it is not the case that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check H1_3:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │              ├─ Check H1_3 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │              ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │              ├─ Check r_8 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        │              └─ contradiction.
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │        └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check case_court_required:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │           ├─ Check case_court_required completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │           └─ It must be checked whether the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check r_7:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              ├─ established: for all d of type Doc, for all e of type Ev, the law requires d for e implies it is not the case that the limit of the scope applies to the demand of d for e (req_exc)
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              ├─ instantiating d with the transfer agreement
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              ├─ instantiating e with the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              ├─ to be checked: the law requires the transfer agreement for the entry applied for
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │              └─ It must be checked whether it is not the case that the limit of the scope applies to the demand of the transfer agreement for the entry applied for. Starting check H1_2:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │                 ├─ Check H1_2 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │                 ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │                 ├─ Check r_7 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     │                 └─ contradiction.
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     │     └─ Check alt20 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │     └─ and point 2:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           │        └─ Check alt20 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │           └─ It must be checked whether it is not the case that the demand of the transfer agreement for the entry applied for is within the scope of examination. Starting check H1_4:
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │              ├─ Check H1_4 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │              ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │              ├─ Check r_5 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           │     │     │              └─ contradiction.
+         │  │           │  │  │     │     │        │           │  │        │           │     │     └─ Check alt17 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           │     └─ and point 2:
+         │  │           │  │  │     │     │        │           │  │        │           │        └─ Check alt17 completed (holds).
+         │  │           │  │  │     │     │        │           │  │        │           ├─ and
+         │  │           │  │  │     │     │        │           │  │        │           ├─ Check th_6 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │        │           ├─ unless shown otherwise, deny: the transfer agreement is submitted
+         │  │           │  │  │     │     │        │           │  │        │           ├─ established: the court demands the transfer agreement for the entry applied for (dem)
+         │  │           │  │  │     │     │        │           │  │        │           └─ it is excluded that: for some d of type Doc, for some e of type Ev, the court demands d for e without the demand of d for e is within the scope of examination implies the examination of e is passed implies d is submitted (n_dem)
          │  │           │  │  │     │     │        │           │  │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt9:
          │  │           │  │  │     │     │        │           │  │           ├─ In favour of the examination of the entry applied for is passed:
          │  │           │  │  │     │     │        │           │  │           │  │  └─ Check alt9 completed (refuted).
          │  │           │  │  │     │     │        │           │  │           │  └─ but
          │  │           │  │  │     │     │        │           │  │           │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check bgh2011_no_cor:
          │  │           │  │  │     │     │        │           │  │           │        ├─ Check bgh2011_no_cor completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │        └─ For the examination of the entry applied for is passed it is necessary that the reported C's entry as limited partner is correct holds. Starting check th_5:
-         │  │           │  │  │     │     │        │           │  │           │           ├─ because
-         │  │           │  │  │     │     │        │           │  │           │           │  ├─ It must be checked whether the examination of the entry applied for is passed without the reported C's entry as limited partner is correct. Starting check r_7:
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies it is not the case that the examination of e is passed without the reported f is correct (n_cor)
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ instantiating c with the register court
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ instantiating f with C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ and
-         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
-         │  │           │  │  │     │     │        │           │  │           │           │  │  └─ It must be checked whether it is not the case that the examination of the entry applied for is passed without the reported C's entry as limited partner is correct. Starting check H1_4:
-         │  │           │  │  │     │     │        │           │  │           │           │  │     ├─ Check H1_4 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │  │     ├─ and
-         │  │           │  │  │     │     │        │           │  │           │           │  │     ├─ Check r_7 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │  │     └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │           │           │  └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt16:
-         │  │           │  │  │     │     │        │           │  │           │           │     ├─ The check b16 of whether the reported C's entry as limited partner is correct holds splits into the following cases:
-         │  │           │  │  │     │     │        │           │  │           │           │     │  ├─ Case 1:
-         │  │           │  │  │     │     │        │           │  │           │           │     │  │  └─ Check alt16 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │     │  └─ or case 2:
-         │  │           │  │  │     │     │        │           │  │           │           │     │     └─ Check alt16 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │     └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt15:
-         │  │           │  │  │     │     │        │           │  │           │           │        ├─ In favour of the reported C's entry as limited partner is correct:
-         │  │           │  │  │     │     │        │           │  │           │           │        │  │  └─ Check alt15 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │        │  └─ but
-         │  │           │  │  │     │     │        │           │  │           │           │        │     └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check case_court_flaw:
-         │  │           │  │  │     │     │        │           │  │           │           │        │        ├─ Check case_court_flaw completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │        │        └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check r_6:
-         │  │           │  │  │     │     │        │           │  │           │           │        │           ├─ established: for all d of type Doc, for all f of type Fact, d shows that the reported f is incorrect implies it is not the case that the reported f is correct (flaw_rule)
-         │  │           │  │  │     │     │        │           │  │           │           │        │           ├─ instantiating d with the transfer agreement
-         │  │           │  │  │     │     │        │           │  │           │           │        │           ├─ instantiating f with C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │           │           │        │           ├─ and
-         │  │           │  │  │     │     │        │           │  │           │           │        │           ├─ to be checked: the transfer agreement shows that the reported C's entry as limited partner is incorrect
-         │  │           │  │  │     │     │        │           │  │           │           │        │           └─ It must be checked whether it is not the case that the reported C's entry as limited partner is correct. Starting check H1_3:
-         │  │           │  │  │     │     │        │           │  │           │           │        │              ├─ Check H1_3 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │        │              ├─ and
-         │  │           │  │  │     │     │        │           │  │           │           │        │              ├─ Check r_6 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │           │           │        │              └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │           │           │        └─ otherwise not established: the reported C's entry as limited partner is correct
-         │  │           │  │  │     │     │        │           │  │           │           └─ Check th_5 completed.
+         │  │           │  │  │     │     │        │           │  │           │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check th_5:
+         │  │           │  │  │     │     │        │           │  │           │           ├─ witnessed by the entry applied for
+         │  │           │  │  │     │     │        │           │  │           │           ├─ witnessed by the register court
+         │  │           │  │  │     │     │        │           │  │           │           ├─ witnessed by C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │           │           ├─ and
+         │  │           │  │  │     │     │        │           │  │           │           ├─ and
+         │  │           │  │  │     │     │        │           │  │           │           ├─ Check th_5 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           ├─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt16:
+         │  │           │  │  │     │     │        │           │  │           │           │  ├─ The check b16 of whether the reported C's entry as limited partner is correct holds splits into the following cases:
+         │  │           │  │  │     │     │        │           │  │           │           │  │  ├─ Case 1:
+         │  │           │  │  │     │     │        │           │  │           │           │  │  │  └─ Check alt16 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │  │  └─ or case 2:
+         │  │           │  │  │     │     │        │           │  │           │           │  │     └─ Check alt16 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │  └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check alt15:
+         │  │           │  │  │     │     │        │           │  │           │           │     ├─ In favour of the reported C's entry as limited partner is correct:
+         │  │           │  │  │     │     │        │           │  │           │           │     │  │  └─ Check alt15 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │     │  └─ but
+         │  │           │  │  │     │     │        │           │  │           │           │     │     └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check case_court_flaw:
+         │  │           │  │  │     │     │        │           │  │           │           │     │        ├─ Check case_court_flaw completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │     │        └─ It must be checked whether the reported C's entry as limited partner is correct. Starting check r_4:
+         │  │           │  │  │     │     │        │           │  │           │           │     │           ├─ established: for all d of type Doc, for all f of type Fact, d shows that the reported f is incorrect implies it is not the case that the reported f is correct (flaw_rule)
+         │  │           │  │  │     │     │        │           │  │           │           │     │           ├─ instantiating d with the transfer agreement
+         │  │           │  │  │     │     │        │           │  │           │           │     │           ├─ instantiating f with C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │           │           │     │           ├─ and
+         │  │           │  │  │     │     │        │           │  │           │           │     │           ├─ to be checked: the transfer agreement shows that the reported C's entry as limited partner is incorrect
+         │  │           │  │  │     │     │        │           │  │           │           │     │           └─ It must be checked whether it is not the case that the reported C's entry as limited partner is correct. Starting check H1:
+         │  │           │  │  │     │     │        │           │  │           │           │     │              ├─ Check H1 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │     │              ├─ and
+         │  │           │  │  │     │     │        │           │  │           │           │     │              ├─ Check r_4 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │           │           │     │              └─ contradiction.
+         │  │           │  │  │     │     │        │           │  │           │           │     └─ otherwise not established: the reported C's entry as limited partner is correct
+         │  │           │  │  │     │     │        │           │  │           │           ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  │           │  │  │     │     │        │           │  │           │           └─ it is excluded that: for some e of type Ev, for some c of type Ag, for some f of type Fact, e is an entering of f by c without the examination of e is passed implies the reported f is correct (n_cor)
          │  │           │  │  │     │     │        │           │  │           └─ It must be checked whether the examination of the entry applied for is passed. Starting check alt8:
          │  │           │  │  │     │     │        │           │  │              ├─ In favour of the examination of the entry applied for is passed:
          │  │           │  │  │     │     │        │           │  │              │  │  └─ Check alt8 completed (refuted).
          │  │           │  │  │     │     │        │           │  │              │  └─ but
          │  │           │  │  │     │     │        │           │  │              │     └─ It must be checked whether the examination of the entry applied for is passed. Starting check hgb12_no_doc:
          │  │           │  │  │     │     │        │           │  │              │        ├─ Check hgb12_no_doc completed (refuted).
-         │  │           │  │  │     │     │        │           │  │              │        └─ For the examination of the entry applied for is passed it is necessary that the application in certified form is submitted holds. Starting check th_4:
-         │  │           │  │  │     │     │        │           │  │              │           ├─ because
-         │  │           │  │  │     │     │        │           │  │              │           │  ├─ It must be checked whether the examination of the entry applied for is passed without the application in certified form is submitted. Starting check r_5:
-         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ established: for all d of type Doc, for all e of type Ev, the law requires d for e implies it is not the case that the examination of e is passed without d is submitted (n_doc)
-         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ instantiating d with the application in certified form
-         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ and
-         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ established: the law requires the application in certified form for the entry applied for (req_appl)
-         │  │           │  │  │     │     │        │           │  │              │           │  │  └─ It must be checked whether it is not the case that the examination of the entry applied for is passed without the application in certified form is submitted. Starting check H1_2:
-         │  │           │  │  │     │     │        │           │  │              │           │  │     ├─ Check H1_2 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │              │           │  │     ├─ and
-         │  │           │  │  │     │     │        │           │  │              │           │  │     ├─ Check r_5 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │              │           │  │     └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │              │           │  └─ It must be checked whether the application in certified form is submitted. Starting check alt13:
-         │  │           │  │  │     │     │        │           │  │              │           │     ├─ The check b13 of whether the application in certified form is submitted holds splits into the following cases:
-         │  │           │  │  │     │     │        │           │  │              │           │     │  ├─ Case 1:
-         │  │           │  │  │     │     │        │           │  │              │           │     │  │  └─ Check alt13 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │              │           │     │  └─ or case 2:
-         │  │           │  │  │     │     │        │           │  │              │           │     │     └─ It suffices to check that the application in certified form is submitted. Starting check alt14:
-         │  │           │  │  │     │     │        │           │  │              │           │     │        ├─ Check alt13 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │              │           │     │        └─ Against the application in certified form is submitted:
-         │  │           │  │  │     │     │        │           │  │              │           │     │           │  └─ Check alt14 completed (holds).
-         │  │           │  │  │     │     │        │           │  │              │           │     │           └─ but
-         │  │           │  │  │     │     │        │           │  │              │           │     │              └─ It suffices to check that the application in certified form is submitted. Starting check case_doc_appl:
-         │  │           │  │  │     │     │        │           │  │              │           │     │                 ├─ established: the application in certified form is submitted (submitted_appl)
-         │  │           │  │  │     │     │        │           │  │              │           │     │                 └─ Check case_doc_appl completed (holds).
-         │  │           │  │  │     │     │        │           │  │              │           │     └─ unless shown otherwise, deny: the application in certified form is submitted
-         │  │           │  │  │     │     │        │           │  │              │           └─ Check th_4 completed.
+         │  │           │  │  │     │     │        │           │  │              │        └─ It must be checked whether the examination of the entry applied for is passed. Starting check th_4:
+         │  │           │  │  │     │     │        │           │  │              │           ├─ witnessed by the application in certified form
+         │  │           │  │  │     │     │        │           │  │              │           ├─ witnessed by the entry applied for
+         │  │           │  │  │     │     │        │           │  │              │           ├─ and
+         │  │           │  │  │     │     │        │           │  │              │           ├─ and
+         │  │           │  │  │     │     │        │           │  │              │           ├─ Check th_4 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │              │           ├─ It must be checked whether the application in certified form is submitted. Starting check alt13:
+         │  │           │  │  │     │     │        │           │  │              │           │  ├─ The check b13 of whether the application in certified form is submitted holds splits into the following cases:
+         │  │           │  │  │     │     │        │           │  │              │           │  │  ├─ Case 1:
+         │  │           │  │  │     │     │        │           │  │              │           │  │  │  └─ Check alt13 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │              │           │  │  └─ or case 2:
+         │  │           │  │  │     │     │        │           │  │              │           │  │     └─ It suffices to check that the application in certified form is submitted. Starting check alt14:
+         │  │           │  │  │     │     │        │           │  │              │           │  │        ├─ Check alt13 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │              │           │  │        └─ Against the application in certified form is submitted:
+         │  │           │  │  │     │     │        │           │  │              │           │  │           │  └─ Check alt14 completed (holds).
+         │  │           │  │  │     │     │        │           │  │              │           │  │           └─ but
+         │  │           │  │  │     │     │        │           │  │              │           │  │              └─ It suffices to check that the application in certified form is submitted. Starting check case_doc_appl:
+         │  │           │  │  │     │     │        │           │  │              │           │  │                 ├─ established: the application in certified form is submitted (submitted_appl)
+         │  │           │  │  │     │     │        │           │  │              │           │  │                 └─ Check case_doc_appl completed (holds).
+         │  │           │  │  │     │     │        │           │  │              │           │  └─ unless shown otherwise, deny: the application in certified form is submitted
+         │  │           │  │  │     │     │        │           │  │              │           ├─ established: the law requires the application in certified form for the entry applied for (req_appl)
+         │  │           │  │  │     │     │        │           │  │              │           └─ it is excluded that: for some d of type Doc, for some e of type Ev, the law requires d for e without the examination of e is passed implies d is submitted (n_doc)
          │  │           │  │  │     │     │        │           │  │              └─ It must be checked whether the examination of the entry applied for is passed. Starting check lit_no_reg:
          │  │           │  │  │     │     │        │           │  │                 ├─ Check lit_no_reg completed (refuted).
-         │  │           │  │  │     │     │        │           │  │                 └─ For the examination of the entry applied for is passed it is necessary that C's entry as limited partner is abstractly registrable holds. Starting check th_3:
-         │  │           │  │  │     │     │        │           │  │                    ├─ because
-         │  │           │  │  │     │     │        │           │  │                    │  ├─ It must be checked whether the examination of the entry applied for is passed without C's entry as limited partner is abstractly registrable. Starting check r_4:
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ established: for all e of type Ev, for all c of type Ag, for all f of type Fact, e is an entering of f by c implies it is not the case that the examination of e is passed without f is abstractly registrable (n_reg)
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ instantiating e with the entry applied for
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ instantiating c with the register court
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ instantiating f with C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ and
-         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
-         │  │           │  │  │     │     │        │           │  │                    │  │  └─ It must be checked whether it is not the case that the examination of the entry applied for is passed without C's entry as limited partner is abstractly registrable. Starting check H1:
-         │  │           │  │  │     │     │        │           │  │                    │  │     ├─ Check H1 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │                    │  │     ├─ and
-         │  │           │  │  │     │     │        │           │  │                    │  │     ├─ Check r_4 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │                    │  │     └─ contradiction.
-         │  │           │  │  │     │     │        │           │  │                    │  └─ It must be checked whether C's entry as limited partner is abstractly registrable. Starting check alt11:
-         │  │           │  │  │     │     │        │           │  │                    │     ├─ The check b11 of whether C's entry as limited partner is abstractly registrable holds splits into the following cases:
-         │  │           │  │  │     │     │        │           │  │                    │     │  ├─ Case 1:
-         │  │           │  │  │     │     │        │           │  │                    │     │  │  └─ Check alt11 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │                    │     │  └─ or case 2:
-         │  │           │  │  │     │     │        │           │  │                    │     │     └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check alt12:
-         │  │           │  │  │     │     │        │           │  │                    │     │        ├─ Check alt11 completed (refuted).
-         │  │           │  │  │     │     │        │           │  │                    │     │        └─ Against C's entry as limited partner is abstractly registrable:
-         │  │           │  │  │     │     │        │           │  │                    │     │           │  └─ Check alt12 completed (holds).
-         │  │           │  │  │     │     │        │           │  │                    │     │           └─ but
-         │  │           │  │  │     │     │        │           │  │                    │     │              └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check hgb162_reg:
-         │  │           │  │  │     │     │        │           │  │                    │     │                 ├─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check r_3:
-         │  │           │  │  │     │     │        │           │  │                    │     │                 │  ├─ established: for all f of type Fact, the entry of f is provided by statute implies f is abstractly registrable (reg_stat)
-         │  │           │  │  │     │     │        │           │  │                    │     │                 │  ├─ instantiating f with C's entry as limited partner
-         │  │           │  │  │     │     │        │           │  │                    │     │                 │  ├─ and
-         │  │           │  │  │     │     │        │           │  │                    │     │                 │  ├─ established: the entry of C's entry as limited partner is provided by statute (s_162)
-         │  │           │  │  │     │     │        │           │  │                    │     │                 │  └─ Check r_3 completed (holds).
-         │  │           │  │  │     │     │        │           │  │                    │     │                 └─ Check hgb162_reg completed (holds).
-         │  │           │  │  │     │     │        │           │  │                    │     └─ unless shown otherwise, deny: C's entry as limited partner is abstractly registrable
-         │  │           │  │  │     │     │        │           │  │                    └─ Check th_3 completed.
+         │  │           │  │  │     │     │        │           │  │                 └─ It must be checked whether the examination of the entry applied for is passed. Starting check th_3:
+         │  │           │  │  │     │     │        │           │  │                    ├─ witnessed by the entry applied for
+         │  │           │  │  │     │     │        │           │  │                    ├─ witnessed by the register court
+         │  │           │  │  │     │     │        │           │  │                    ├─ witnessed by C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │                    ├─ and
+         │  │           │  │  │     │     │        │           │  │                    ├─ and
+         │  │           │  │  │     │     │        │           │  │                    ├─ Check th_3 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │                    ├─ It must be checked whether C's entry as limited partner is abstractly registrable. Starting check alt11:
+         │  │           │  │  │     │     │        │           │  │                    │  ├─ The check b11 of whether C's entry as limited partner is abstractly registrable holds splits into the following cases:
+         │  │           │  │  │     │     │        │           │  │                    │  │  ├─ Case 1:
+         │  │           │  │  │     │     │        │           │  │                    │  │  │  └─ Check alt11 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │                    │  │  └─ or case 2:
+         │  │           │  │  │     │     │        │           │  │                    │  │     └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check alt12:
+         │  │           │  │  │     │     │        │           │  │                    │  │        ├─ Check alt11 completed (refuted).
+         │  │           │  │  │     │     │        │           │  │                    │  │        └─ Against C's entry as limited partner is abstractly registrable:
+         │  │           │  │  │     │     │        │           │  │                    │  │           │  └─ Check alt12 completed (holds).
+         │  │           │  │  │     │     │        │           │  │                    │  │           └─ but
+         │  │           │  │  │     │     │        │           │  │                    │  │              └─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check hgb162_reg:
+         │  │           │  │  │     │     │        │           │  │                    │  │                 ├─ It suffices to check that C's entry as limited partner is abstractly registrable. Starting check r_3:
+         │  │           │  │  │     │     │        │           │  │                    │  │                 │  ├─ established: for all f of type Fact, the entry of f is provided by statute implies f is abstractly registrable (reg_stat)
+         │  │           │  │  │     │     │        │           │  │                    │  │                 │  ├─ instantiating f with C's entry as limited partner
+         │  │           │  │  │     │     │        │           │  │                    │  │                 │  ├─ and
+         │  │           │  │  │     │     │        │           │  │                    │  │                 │  ├─ established: the entry of C's entry as limited partner is provided by statute (s_162)
+         │  │           │  │  │     │     │        │           │  │                    │  │                 │  └─ Check r_3 completed (holds).
+         │  │           │  │  │     │     │        │           │  │                    │  │                 └─ Check hgb162_reg completed (holds).
+         │  │           │  │  │     │     │        │           │  │                    │  └─ unless shown otherwise, deny: C's entry as limited partner is abstractly registrable
+         │  │           │  │  │     │     │        │           │  │                    ├─ established: the entry applied for is an entering of C's entry as limited partner by the register court (entering)
+         │  │           │  │  │     │     │        │           │  │                    └─ it is excluded that: for some e of type Ev, for some c of type Ag, for some f of type Fact, e is an entering of f by c without the examination of e is passed implies f is abstractly registrable (n_reg)
          │  │           │  │  │     │     │        │           │  └─ otherwise not established: the examination of the entry applied for is passed
          │  │           │  │  │     │     │        │           ├─ Check th_2 completed (refuted).
          │  │           │  │  │     │     │        │           └─ it is excluded that: for some e of type Ev, under the meta-norm the court has to make e without the examination of e is passed (dn_mn_passed)
@@ -299,14 +275,14 @@ It suffices to check that the applicants can claim the entry applied for from th
          │  │              │  └─ Check alt3 completed (holds).
          │  │              └─ but
          │  │                 └─ It suffices to check that the register court owes the applicants the entry applied for. Starting check lit_corr_duty:
-         │  │                    ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check r_14:
+         │  │                    ├─ It suffices to check that the register court owes the applicants the entry applied for. Starting check r_10:
          │  │                    │  ├─ established: for all a of type Ag, for all b of type Ag, for all e of type Ev, a can claim e from b implies b owes a e (corr2)
          │  │                    │  ├─ instantiating a with the applicants
          │  │                    │  ├─ instantiating b with the register court
          │  │                    │  ├─ instantiating e with the entry applied for
          │  │                    │  ├─ and
          │  │                    │  ├─ established: the applicants can claim the entry applied for from the register court (b1)
-         │  │                    │  └─ Check r_14 completed (holds).
+         │  │                    │  └─ Check r_10 completed (holds).
          │  │                    └─ Check lit_corr_duty completed (holds).
          │  └─ Check r completed (holds).
          └─ Check lit_corr_claim completed (holds).

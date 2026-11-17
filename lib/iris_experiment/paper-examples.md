@@ -248,61 +248,52 @@ Owed (block `draft_metanorm_owed`):
 
 Complete application (6a), missing document (6b), justified doubt (6c).
 
-    declare n_reg : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Registrable [f])).
-    declare n_doc : (forall d:Doc, forall e:Ev, Required [d] [e] -> ~(Passed [e] - Submitted [d])).
-    declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Correct [f])).
+    deny n_reg : (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Registrable [f])).
+    deny n_doc : (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])).
+    deny n_cor : (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Correct [f])).
     
     argument bgh2011_face_value : (Correct [?f]).
     by default.
     dixi.
     
     counterargument lit_no_reg : (Passed [e1]).
-    cut (Passed [e1] - Registrable [kp_c]) th.
-    elim.
-    by default.
-    next.
-    axiom th.
-    cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Registrable [f])) r.
-    axiom n_reg.
+    cut (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Registrable [f])) th.
     elim [e1].
     elim [court].
     elim [kp_c].
     elim.
-    axiom entering.
     elim.
-    axiom.
+    axiom th.
+    by default.
+    next.
+    axiom entering.
+    moxia n_reg.
     dixi.
     
     counterargument hgb12_no_doc : (Passed [e1]).
-    cut (Passed [e1] - Submitted [d_appl]) th.
-    elim.
-    by default.
-    next.
-    axiom th.
-    cut (forall d:Doc, forall e:Ev, Required [d] [e] -> ~(Passed [e] - Submitted [d])) r.
-    axiom n_doc.
+    cut (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])) th.
     elim [d_appl].
     elim [e1].
     elim.
-    axiom req_appl.
     elim.
-    axiom.
+    axiom th.
+    by default.
+    next.
+    axiom req_appl.
+    moxia n_doc.
     dixi.
     
     counterargument bgh2011_no_cor : (Passed [e1]).
-    cut (Passed [e1] - Correct [kp_c]) th.
-    elim.
-    next.
-    axiom th.
-    cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Correct [f])) r.
-    axiom n_cor.
+    cut (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Correct [f])) th.
     elim [e1].
     elim [court].
     elim [kp_c].
     elim.
-    axiom entering.
     elim.
-    axiom.
+    axiom th.
+    next.
+    axiom entering.
+    moxia n_cor.
     dixi.
     
     argument hgb162_reg : (Registrable [kp_c]).
@@ -365,7 +356,7 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
 
     declare corr1 : (forall a:Ag, forall b:Ag, forall e:Ev, Duty [b] [a] [e] -> Claim [a] [b] [e]).
     declare corr2 : (forall a:Ag, forall b:Ag, forall e:Ev, Claim [a] [b] [e] -> Duty [b] [a] [e]).
-    declare n_dem : (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> ~(Passed [e] - Submitted [d])).
+    deny n_dem : (exists d:Doc, exists e:Ev, Demanded [d] [e] - (Proper [d] [e] -> Passed [e] -> Submitted [d])).
     declare bgh_rule : (forall a:Ag, forall c:Ag, forall e:Ev, Claim [a] [c] [e] -> Limited [e]).
     declare scope_rule : (forall d:Doc, forall e:Ev, Limited [e] -> Applies [d] [e] -> ~Proper [d] [e]).
     declare req_exc : (forall d:Doc, forall e:Ev, Required [d] [e] -> ~Applies [d] [e]).
@@ -397,22 +388,19 @@ The cycle alone (7a), and anchored by the unwritten normative scope (7b).
     dixi.
     
     counterargument case_court_extra : (Passed [e1]).
-    cut (Passed [e1] - Submitted [d_contract]) th.
-    elim.
-    by default.
-    next.
-    axiom th.
-    cut (forall d:Doc, forall e:Ev, Demanded [d] [e] -> Proper [d] [e] -> ~(Passed [e] - Submitted [d])) r.
-    axiom n_dem.
+    cut (exists d:Doc, exists e:Ev, Demanded [d] [e] - (Proper [d] [e] -> Passed [e] -> Submitted [d])) th.
     elim [d_contract].
     elim [e1].
     elim.
-    axiom dem.
     elim.
     by default.
     next.
     elim.
-    axiom.
+    axiom th.
+    by default.
+    next.
+    axiom dem.
+    moxia n_dem.
     dixi.
     
     counterargument case_court_flaw : (Correct [kp_c]).

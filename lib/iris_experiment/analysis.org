@@ -34,17 +34,10 @@ results are in =rq3-combined.org= (Results) and =rq3-fragments.org=.
   - The owed site is C's refutation itself, the node an objection to C
     lands on; a premise =~C= would be a node of its own, unconnected
     until the negation bridge exists (=tasks.org=, BACKLOG).
-  - Where a premise guards the condition (the entry's reification
-    =Enter e c f=, a document being required or properly demanded, a
-    principle like =LiabilityOnly=), the guard stays a premise and the
-    condition is the subtraction under it: =∀…, G -> ~(H - C)=, a
-    negated subtraction on the term side, i.e. the subtraction on the
-    context side. The proof cuts the subtraction first (=cut (H - C) th.=),
-    since AIDA's term grammar cannot read the other order
-    (=aida-derived-conjunction=).
   - Applied across the experiment on 2026-11-16: the meta-norm's
     conditions (denied existentials), the requirements of the
-    examination (=n_reg=, =n_doc=, =n_cor=, =n_dem=, guarded),
+    examination (=n_reg=, =n_doc=, =n_cor=, =n_dem=; since 2026-11-17
+    in the guarded form of the next decision),
     München's membership conditions (=muc_no_mgmt=, =muc_no_vote=,
     =muc_no_liab=, =muc_no_repr=: a presumed denial in place of a
     presumed rule) and =p_liab_only= (Oldenburg, Stuttgart). Left as
@@ -52,6 +45,23 @@ results are in =rq3-combined.org= (Results) and =rq3-fragments.org=.
     =muc_counter_gmbh=), which refute =InfoSuffices= through instances
     of principles used forwards elsewhere, not a necessary condition;
     and the spikes of § 5, a record of 2026-11-13.
+- 2026-11-17, a guarded necessary condition and the length of
+  arguments:
+  - Arguments are kept as short as possible: of equivalent encodings,
+    the one with the fewest proof steps is preferred.
+  - Where a premise G guards the condition (the entry's reification
+    =Enter e c f=, a document being required or properly demanded, a
+    principle like =LiabilityOnly=), "under G, H requires C" is
+    =deny d : (exists x, G - (H -> C))=: the context-side form of
+    =forall x, G -> H -> C=, in which only the outer implication becomes
+    a subtraction. It takes the fewest steps of the equivalent forms
+    (=n_doc=: 10, against 11 for =(H - C) - ~G= and 13 for
+    =forall x, G -> ~(H - C)=), and G stays a plain premise.
+  - It needed a fix on main: Fellowship printed the stack =H*C= on the
+    left of the subtraction introduction without parentheses, and AIDA
+    read it the other way and silently dropped the counterargument
+    (tasks.org on main, =aida-parse-subtraction-intro-in-stack= and
+    =aida-refuse-dropped-argument=).
 
 * 1. Argument maps
 

@@ -1,58 +1,49 @@
-declare n_reg : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Registrable [f])).
-declare n_doc : (forall d:Doc, forall e:Ev, Required [d] [e] -> ~(Passed [e] - Submitted [d])).
-declare n_cor : (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Correct [f])).
+deny n_reg : (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Registrable [f])).
+deny n_doc : (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])).
+deny n_cor : (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Correct [f])).
 
 argument bgh2011_face_value : (Correct [?f]).
 by default.
 dixi.
 
 counterargument lit_no_reg : (Passed [e1]).
-cut (Passed [e1] - Registrable [kp_c]) th.
-elim.
-by default.
-next.
-axiom th.
-cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Registrable [f])) r.
-axiom n_reg.
+cut (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Registrable [f])) th.
 elim [e1].
 elim [court].
 elim [kp_c].
 elim.
-axiom entering.
 elim.
-axiom.
+axiom th.
+by default.
+next.
+axiom entering.
+moxia n_reg.
 dixi.
 
 counterargument hgb12_no_doc : (Passed [e1]).
-cut (Passed [e1] - Submitted [d_appl]) th.
-elim.
-by default.
-next.
-axiom th.
-cut (forall d:Doc, forall e:Ev, Required [d] [e] -> ~(Passed [e] - Submitted [d])) r.
-axiom n_doc.
+cut (exists d:Doc, exists e:Ev, Required [d] [e] - (Passed [e] -> Submitted [d])) th.
 elim [d_appl].
 elim [e1].
 elim.
-axiom req_appl.
 elim.
-axiom.
+axiom th.
+by default.
+next.
+axiom req_appl.
+moxia n_doc.
 dixi.
 
 counterargument bgh2011_no_cor : (Passed [e1]).
-cut (Passed [e1] - Correct [kp_c]) th.
-elim.
-next.
-axiom th.
-cut (forall e:Ev, forall c:Ag, forall f:Fact, Enter [e] [c] [f] -> ~(Passed [e] - Correct [f])) r.
-axiom n_cor.
+cut (exists e:Ev, exists c:Ag, exists f:Fact, Enter [e] [c] [f] - (Passed [e] -> Correct [f])) th.
 elim [e1].
 elim [court].
 elim [kp_c].
 elim.
-axiom entering.
 elim.
-axiom.
+axiom th.
+next.
+axiom entering.
+moxia n_cor.
 dixi.
 
 argument hgb162_reg : (Registrable [kp_c]).

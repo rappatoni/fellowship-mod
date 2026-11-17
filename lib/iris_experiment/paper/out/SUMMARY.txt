@@ -3,12 +3,12 @@ E1-frag_g-skeptical: frag_g (rq3-fragments.fspy), stable skeptical: open; unfold
 E2-frag_a: frag_a (rq3-fragments.fspy), stable skeptical: value; unfolded 66 lines
 E3-4a-delegated: draft_metanorm (rq4-a.fspy), stable skeptical: value; unfolded 47 lines, shared 47
 E3-4b-owed: draft_metanorm (rq4-b.fspy), stable skeptical: open; unfolded 47 lines, shared 47
-E4-6a-complete: draft_metanorm (rq6-a.fspy), stable skeptical: value; unfolded 149 lines, shared 149
-E4-6b-missing: draft_metanorm (rq6-b.fspy), stable skeptical: open; unfolded 136 lines, shared 136
-E4-6c-doubt: draft_metanorm (rq6-c.fspy), stable skeptical: open; unfolded 164 lines, shared 164
-E5-7a-circle: lit_corr_claim (rq7-a.fspy), stable skeptical: open; unfolded 312 lines, shared 312
-E5-7b-anchored: lit_corr_claim (rq7-b.fspy), stable skeptical: value; unfolded 312 lines, shared 312
-E9-6p-b-order: decision (rq6p-b.fspy), stable skeptical: value; unfolded 542 lines, shared 270
+E4-6a-complete: draft_metanorm (rq6-a.fspy), stable skeptical: value; unfolded 131 lines, shared 131
+E4-6b-missing: draft_metanorm (rq6-b.fspy), stable skeptical: open; unfolded 118 lines, shared 118
+E4-6c-doubt: draft_metanorm (rq6-c.fspy), stable skeptical: open; unfolded 146 lines, shared 146
+E5-7a-circle: lit_corr_claim (rq7-a.fspy), stable skeptical: open; unfolded 288 lines, shared 288
+E5-7b-anchored: lit_corr_claim (rq7-b.fspy), stable skeptical: value; unfolded 288 lines, shared 288
+E9-6p-b-order: decision (rq6p-b.fspy), stable skeptical: value; unfolded 488 lines, shared 252
 E9-6w-b-constructive: decision_c (rq6w-b.fspy), stable skeptical: value; unfolded 55 lines, shared 55
-E9-6k-b-classical: decision_k (rq6k-b.fspy), stable skeptical: value; unfolded 203 lines, shared 203
-S-combined: issue :Registrable[usufruct] (rq3-combined.fspy): expanded 34681 lines, shared 1162 lines, 13 named sub-debates, 40 citations
+E9-6k-b-classical: decision_k (rq6k-b.fspy), stable skeptical: value; unfolded 185 lines, shared 185
+S-combined: issue :Registrable[usufruct] (rq3-combined.fspy): expanded 34065 lines, shared 1133 lines, 12 named sub-debates, 38 citations

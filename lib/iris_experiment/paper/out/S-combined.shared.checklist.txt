@@ -164,7 +164,6 @@ Check anon_1:
    presumed: legal dealings have an interest in knowing of the usufruct
    presumed: late filing defeats the interest in registration
    presumed: applications to register facts like the usufruct are often filed late
-   to be shown: ?
    presumed: the register is to show the liability position only
    to be shown: ?
    It suffices to check that legal dealings need the usufruct to be entered. Starting check alt20:
@@ -348,28 +347,28 @@ Check anon_1:
       │     │        │        └─ It must be checked whether legal dealings need the usufruct to be entered. Starting check r_19:
       │     │        │           ├─ established: late filing defeats the interest in registration implies applications to register facts like the usufruct are often filed late implies it is not the case that legal dealings need the usufruct to be entered (p_delay)
       │     │        │           ├─ and
-      │     │        │           ├─ It suffices to check that late filing defeats the interest in registration. Starting check alt57:
+      │     │        │           ├─ It suffices to check that late filing defeats the interest in registration. Starting check alt58:
       │     │        │           │  ├─ unless something speaks against it: late filing defeats the interest in registration
       │     │        │           │  └─ To check late filing defeats the interest in registration, the following points must be worked through:
       │     │        │           │     ├─ Point 1:
-      │     │        │           │     │  └─ It must be checked whether late filing defeats the interest in registration. Starting check alt58:
+      │     │        │           │     │  └─ It must be checked whether late filing defeats the interest in registration. Starting check alt59:
       │     │        │           │     │     ├─ In favour of late filing defeats the interest in registration:
-      │     │        │           │     │     │  │  └─ Check alt58 completed (refuted).
+      │     │        │           │     │     │  │  └─ Check alt59 completed (refuted).
       │     │        │           │     │     │  └─ but
       │     │        │           │     │     │     └─ It must be checked whether late filing defeats the interest in registration. Starting check old_no_delay:
       │     │        │           │     │     │        ├─ Check old_no_delay completed (refuted).
-      │     │        │           │     │     │        └─ It must be checked whether late filing defeats the interest in registration. Starting check r_43:
+      │     │        │           │     │     │        └─ It must be checked whether late filing defeats the interest in registration. Starting check r_41:
       │     │        │           │     │     │           ├─ established: late filing defeats the interest in registration implies it is not the case that facts without constitutive entry can be registrable (§ 15 (2) HGB) (p_delay_decl)
       │     │        │           │     │     │           ├─ and
-      │     │        │           │     │     │           ├─ Check r_43 completed (refuted).
-      │     │        │           │     │     │           └─ It must be checked whether it is not the case that facts without constitutive entry can be registrable (§ 15 (2) HGB). Starting check H1_16:
-      │     │        │           │     │     │              ├─ Check H1_16 completed (refuted).
+      │     │        │           │     │     │           ├─ Check r_41 completed (refuted).
+      │     │        │           │     │     │           └─ It must be checked whether it is not the case that facts without constitutive entry can be registrable (§ 15 (2) HGB). Starting check H1_14:
+      │     │        │           │     │     │              ├─ Check H1_14 completed (refuted).
       │     │        │           │     │     │              ├─ and
       │     │        │           │     │     │              ├─ established: facts without constitutive entry can be registrable (§ 15 (2) HGB) (s_15)
       │     │        │           │     │     │              └─ contradiction.
-      │     │        │           │     │     └─ Check alt57 completed (holds).
+      │     │        │           │     │     └─ Check alt58 completed (holds).
       │     │        │           │     └─ and point 2:
-      │     │        │           │        └─ Check alt57 completed (holds).
+      │     │        │           │        └─ Check alt58 completed (holds).
       │     │        │           ├─ and
       │     │        │           ├─ unless something speaks against it: applications to register facts like the usufruct are often filed late
       │     │        │           └─ It must be checked whether it is not the case that legal dealings need the usufruct to be entered. Starting check H1_5:
@@ -383,18 +382,22 @@ Check anon_1:
       │     │           │  └─ but
       │     │           │     └─ It must be checked whether legal dealings need the usufruct to be entered. Starting check rc_old_no_need:
       │     │           │        ├─ Check rc_old_no_need completed (refuted).
-      │     │           │        └─ For legal dealings need the usufruct to be entered it is necessary that the usufruct makes its holder liable towards third parties holds. Starting check th_2:
-      │     │           │           ├─ because
-      │     │           │           │  ├─ see check anon_8: legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties
-      │     │           │           │  └─ see check anon_7: the usufruct makes its holder liable towards third parties
-      │     │           │           └─ Check th_2 completed.
+      │     │           │        └─ It must be checked whether legal dealings need the usufruct to be entered. Starting check th_2:
+      │     │           │           ├─ and
+      │     │           │           ├─ and
+      │     │           │           ├─ Check th_2 completed (refuted).
+      │     │           │           ├─ see check anon_7: the usufruct makes its holder liable towards third parties
+      │     │           │           ├─ see check anon_8: the register is to show the liability position only
+      │     │           │           └─ it is excluded that: the register is to show the liability position only without legal dealings need the usufruct to be entered implies the usufruct makes its holder liable towards third parties (p_liab_only)
       │     │           └─ It must be checked whether legal dealings need the usufruct to be entered. Starting check rc_stg_no_need:
       │     │              ├─ Check rc_stg_no_need completed (refuted).
-      │     │              └─ For legal dealings need the usufruct to be entered it is necessary that the usufruct makes its holder liable towards third parties holds. Starting check th:
-      │     │                 ├─ because
-      │     │                 │  ├─ see check anon_8: legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties
-      │     │                 │  └─ see check anon_7: the usufruct makes its holder liable towards third parties
-      │     │                 └─ Check th completed.
+      │     │              └─ It must be checked whether legal dealings need the usufruct to be entered. Starting check th:
+      │     │                 ├─ and
+      │     │                 ├─ and
+      │     │                 ├─ Check th completed (refuted).
+      │     │                 ├─ see check anon_7: the usufruct makes its holder liable towards third parties
+      │     │                 ├─ see check anon_8: the register is to show the liability position only
+      │     │                 └─ it is excluded that: the register is to show the liability position only without legal dealings need the usufruct to be entered implies the usufruct makes its holder liable towards third parties (p_liab_only)
       │     └─ Check alt20 completed (holds).
       └─ and point 2:
          └─ Check alt20 completed (holds).
@@ -463,40 +466,40 @@ Check anon_2:
       │     │        └─ It must be checked whether the usufruct shares the features for which the executorship was held registrable. Starting check r_22:
       │     │           ├─ established: the usufruct lacks every feature for which the executorship was held registrable implies it is not the case that the usufruct shares the features for which the executorship was held registrable (m_unlike)
       │     │           ├─ and
-      │     │           ├─ It suffices to check that the usufruct lacks every feature for which the executorship was held registrable. Starting check alt59:
+      │     │           ├─ It suffices to check that the usufruct lacks every feature for which the executorship was held registrable. Starting check alt60:
       │     │           │  ├─ unless something speaks against it: the usufruct lacks every feature for which the executorship was held registrable
       │     │           │  └─ To check the usufruct lacks every feature for which the executorship was held registrable, the following points must be worked through:
       │     │           │     ├─ Point 1:
-      │     │           │     │  └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt60:
+      │     │           │     │  └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt61:
       │     │           │     │     ├─ In favour of the usufruct lacks every feature for which the executorship was held registrable:
-      │     │           │     │     │  │  └─ Check alt60 completed (refuted).
+      │     │           │     │     │  │  └─ Check alt61 completed (refuted).
       │     │           │     │     │  └─ but
-      │     │           │     │     │     └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt62:
+      │     │           │     │     │     └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt63:
       │     │           │     │     │        ├─ In favour of the usufruct lacks every feature for which the executorship was held registrable:
-      │     │           │     │     │        │  │  └─ Check alt62 completed (refuted).
+      │     │           │     │     │        │  │  └─ Check alt63 completed (refuted).
       │     │           │     │     │        │  └─ but
       │     │           │     │     │        │     └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check unlike_needs_no_procedural:
       │     │           │     │     │        │        ├─ Check unlike_needs_no_procedural completed (refuted).
       │     │           │     │     │        │        └─ For the usufruct lacks every feature for which the executorship was held registrable it is necessary that it is not the case that creditors must sue the holder of the usufruct as a party holds. Starting check th_9:
       │     │           │     │     │        │           ├─ because
       │     │           │     │     │        │           │  ├─ it is excluded that: the usufruct lacks every feature for which the executorship was held registrable without it is not the case that creditors must sue the holder of the usufruct as a party (dn_un_proc)
-      │     │           │     │     │        │           │  └─ It must be checked whether it is not the case that creditors must sue the holder of the usufruct as a party. Starting check H1_19:
-      │     │           │     │     │        │           │     ├─ Check H1_19 completed (refuted).
+      │     │           │     │     │        │           │  └─ It must be checked whether it is not the case that creditors must sue the holder of the usufruct as a party. Starting check H1_17:
+      │     │           │     │     │        │           │     ├─ Check H1_17 completed (refuted).
       │     │           │     │     │        │           │     ├─ and
       │     │           │     │     │        │           │     ├─ to be checked: creditors must sue the holder of the usufruct as a party
       │     │           │     │     │        │           │     └─ contradiction.
       │     │           │     │     │        │           └─ Check th_9 completed.
-      │     │           │     │     │        └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt61:
+      │     │           │     │     │        └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check alt62:
       │     │           │     │     │           ├─ In favour of the usufruct lacks every feature for which the executorship was held registrable:
-      │     │           │     │     │           │  │  └─ Check alt61 completed (refuted).
+      │     │           │     │     │           │  │  └─ Check alt62 completed (refuted).
       │     │           │     │     │           │  └─ but
       │     │           │     │     │           │     └─ It must be checked whether the usufruct lacks every feature for which the executorship was held registrable. Starting check unlike_needs_no_liability:
       │     │           │     │     │           │        ├─ Check unlike_needs_no_liability completed (refuted).
       │     │           │     │     │           │        └─ For the usufruct lacks every feature for which the executorship was held registrable it is necessary that it is not the case that the usufruct makes its holder liable towards third parties holds. Starting check th_8:
       │     │           │     │     │           │           ├─ because
       │     │           │     │     │           │           │  ├─ it is excluded that: the usufruct lacks every feature for which the executorship was held registrable without it is not the case that the usufruct makes its holder liable towards third parties (dn_un_liab)
-      │     │           │     │     │           │           │  └─ It must be checked whether it is not the case that the usufruct makes its holder liable towards third parties. Starting check H1_18:
-      │     │           │     │     │           │           │     ├─ Check H1_18 completed (refuted).
+      │     │           │     │     │           │           │  └─ It must be checked whether it is not the case that the usufruct makes its holder liable towards third parties. Starting check H1_16:
+      │     │           │     │     │           │           │     ├─ Check H1_16 completed (refuted).
       │     │           │     │     │           │           │     ├─ and
       │     │           │     │     │           │           │     ├─ see check anon_6: the usufruct makes its holder liable towards third parties
       │     │           │     │     │           │           │     └─ contradiction.
@@ -506,15 +509,15 @@ Check anon_2:
       │     │           │     │     │              └─ For the usufruct lacks every feature for which the executorship was held registrable it is necessary that it is not the case that the holder of the usufruct has power of disposal over the interest holds. Starting check th_7:
       │     │           │     │     │                 ├─ because
       │     │           │     │     │                 │  ├─ it is excluded that: the usufruct lacks every feature for which the executorship was held registrable without it is not the case that the holder of the usufruct has power of disposal over the interest (dn_un_disp)
-      │     │           │     │     │                 │  └─ It must be checked whether it is not the case that the holder of the usufruct has power of disposal over the interest. Starting check H1_17:
-      │     │           │     │     │                 │     ├─ Check H1_17 completed (refuted).
+      │     │           │     │     │                 │  └─ It must be checked whether it is not the case that the holder of the usufruct has power of disposal over the interest. Starting check H1_15:
+      │     │           │     │     │                 │     ├─ Check H1_15 completed (refuted).
       │     │           │     │     │                 │     ├─ and
       │     │           │     │     │                 │     ├─ to be checked: the holder of the usufruct has power of disposal over the interest
       │     │           │     │     │                 │     └─ contradiction.
       │     │           │     │     │                 └─ Check th_7 completed.
-      │     │           │     │     └─ Check alt59 completed (holds).
+      │     │           │     │     └─ Check alt60 completed (holds).
       │     │           │     └─ and point 2:
-      │     │           │        └─ Check alt59 completed (holds).
+      │     │           │        └─ Check alt60 completed (holds).
       │     │           └─ It must be checked whether it is not the case that the usufruct shares the features for which the executorship was held registrable. Starting check H1_6:
       │     │              ├─ Check H1_6 completed (refuted).
       │     │              ├─ and
@@ -561,7 +564,6 @@ Check anon_3:
    presumed: legal dealings have an interest in knowing of the usufruct
    presumed: late filing defeats the interest in registration
    presumed: applications to register facts like the usufruct are often filed late
-   to be shown: ?
    presumed: the register is to show the liability position only
    to be shown: ?
    to be shown: the statute provides for entering the usufruct
@@ -596,17 +598,17 @@ Check anon_3:
       │     │              │  └─ It must be checked whether it is not the case that the statute provides for entering the usufruct. Starting check H1_7:
       │     │              │     ├─ Check H1_7 completed (refuted).
       │     │              │     ├─ and
-      │     │              │     ├─ It suffices to check that the statute provides for entering the usufruct. Starting check alt63:
+      │     │              │     ├─ It suffices to check that the statute provides for entering the usufruct. Starting check alt64:
       │     │              │     │  ├─ otherwise not established: the statute provides for entering the usufruct
       │     │              │     │  └─ To check the statute provides for entering the usufruct, the following points must be worked through:
       │     │              │     │     ├─ Point 1:
-      │     │              │     │     │  └─ It must be checked whether the statute provides for entering the usufruct. Starting check alt64:
+      │     │              │     │     │  └─ It must be checked whether the statute provides for entering the usufruct. Starting check alt65:
       │     │              │     │     │     ├─ In favour of the statute provides for entering the usufruct:
-      │     │              │     │     │     │  │  └─ Check alt64 completed (refuted).
+      │     │              │     │     │     │  │  └─ Check alt65 completed (refuted).
       │     │              │     │     │     │  └─ but
-      │     │              │     │     │     │     └─ It must be checked whether the statute provides for entering the usufruct. Starting check alt65:
+      │     │              │     │     │     │     └─ It must be checked whether the statute provides for entering the usufruct. Starting check alt66:
       │     │              │     │     │     │        ├─ In favour of the statute provides for entering the usufruct:
-      │     │              │     │     │     │        │  │  └─ Check alt65 completed (refuted).
+      │     │              │     │     │     │        │  │  └─ Check alt66 completed (refuted).
       │     │              │     │     │     │        │  └─ but
       │     │              │     │     │     │        │     └─ It must be checked whether the statute provides for entering the usufruct. Starting check koe_not_statute:
       │     │              │     │     │     │        │        ├─ Check koe_not_statute completed (refuted).
@@ -614,9 +616,9 @@ Check anon_3:
       │     │              │     │     │     │        └─ It must be checked whether the statute provides for entering the usufruct. Starting check muc_not_statute:
       │     │              │     │     │     │           ├─ Check muc_not_statute completed (refuted).
       │     │              │     │     │     │           └─ it is excluded that: the statute provides for entering the usufruct (s_162)
-      │     │              │     │     │     └─ Check alt63 completed (holds).
+      │     │              │     │     │     └─ Check alt64 completed (holds).
       │     │              │     │     └─ and point 2:
-      │     │              │     │        └─ Check alt63 completed (holds).
+      │     │              │     │        └─ Check alt64 completed (holds).
       │     │              │     └─ contradiction.
       │     │              └─ Check th_3 completed.
       │     └─ Check alt28 completed (holds).
@@ -658,18 +660,18 @@ Check anon_4:
             │  │  ├─ because
             │  │  │  └─ unless something speaks against it: the holder of the usufruct is to be treated like a partner (§ 108 HGB) implies the register court needs to know of the usufruct
             │  │  ├─ and
-            │  │  │  └─ It suffices to check that the holder of the usufruct is to be treated like a partner (§ 108 HGB). Starting check alt66:
+            │  │  │  └─ It suffices to check that the holder of the usufruct is to be treated like a partner (§ 108 HGB). Starting check alt67:
             │  │  │     ├─ otherwise not established: the holder of the usufruct is to be treated like a partner (§ 108 HGB)
             │  │  │     └─ Against the holder of the usufruct is to be treated like a partner (§ 108 HGB):
-            │  │  │        │  └─ Check alt66 completed (holds).
+            │  │  │        │  └─ Check alt67 completed (holds).
             │  │  │        └─ but
             │  │  │           └─ It suffices to check that the holder of the usufruct is to be treated like a partner (§ 108 HGB). Starting check stg_equated:
-            │  │  │              ├─ For the holder of the usufruct is to be treated like a partner (§ 108 HGB) it suffices that the partner's management rights are split with the holder of the usufruct holds. Starting check r_44:
+            │  │  │              ├─ For the holder of the usufruct is to be treated like a partner (§ 108 HGB) it suffices that the partner's management rights are split with the holder of the usufruct holds. Starting check r_42:
             │  │  │              │  ├─ because
             │  │  │              │  │  └─ unless something speaks against it: the partner's management rights are split with the holder of the usufruct implies the holder of the usufruct is to be treated like a partner (§ 108 HGB)
             │  │  │              │  ├─ and
             │  │  │              │  │  └─ see check anon_9: the partner's management rights are split with the holder of the usufruct
-            │  │  │              │  └─ Check r_44 completed.
+            │  │  │              │  └─ Check r_42 completed.
             │  │  │              └─ Check stg_equated completed (holds).
             │  │  └─ Check r_23 completed.
             │  └─ Check stg_court_info completed (holds).
@@ -928,45 +930,38 @@ Check anon_7:
 
 Check anon_8:
    presumed: the register is to show the liability position only
-   to be shown: ?
-   It must be checked whether legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check alt55:
-   ├─ In favour of legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties:
-   │  │  └─ Check alt55 completed (refuted).
-   │  └─ but
-   │     └─ It must be checked whether legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check alt56:
-   │        ├─ In favour of legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties:
-   │        │  │  └─ Check alt56 completed (refuted).
-   │        │  └─ but
-   │        │     └─ It must be checked whether legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check r_42:
-   │        │        ├─ established: the register is to show the liability position only implies it is not the case that legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties (p_liab_only)
-   │        │        ├─ and
-   │        │        ├─ see check anon_13: the register is to show the liability position only
-   │        │        └─ It must be checked whether it is not the case that legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check H1_15:
-   │        │           ├─ Check H1_15 completed (refuted).
-   │        │           ├─ and
-   │        │           ├─ Check r_42 completed (refuted).
-   │        │           └─ contradiction.
-   │        └─ It must be checked whether legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check r_41:
-   │           ├─ established: the register is to show the liability position only implies it is not the case that legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties (p_liab_only)
-   │           ├─ and
-   │           ├─ see check anon_13: the register is to show the liability position only
-   │           └─ It must be checked whether it is not the case that legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties. Starting check H1_14:
-   │              ├─ Check H1_14 completed (refuted).
-   │              ├─ and
-   │              ├─ Check r_41 completed (refuted).
-   │              └─ contradiction.
-   └─ otherwise not established: legal dealings need the usufruct to be entered without the usufruct makes its holder liable towards third parties
+   It suffices to check that the register is to show the liability position only. Starting check alt55:
+   ├─ unless something speaks against it: the register is to show the liability position only
+   └─ To check the register is to show the liability position only, the following points must be worked through:
+      ├─ Point 1:
+      │  └─ It must be checked whether the register is to show the liability position only. Starting check alt56:
+      │     ├─ In favour of the register is to show the liability position only:
+      │     │  │  └─ Check alt56 completed (refuted).
+      │     │  └─ but
+      │     │     └─ It must be checked whether the register is to show the liability position only. Starting check alt57:
+      │     │        ├─ In favour of the register is to show the liability position only:
+      │     │        │  │  └─ Check alt57 completed (refuted).
+      │     │        │  └─ but
+      │     │        │     └─ It must be checked whether the register is to show the liability position only. Starting check old_not_liab_only:
+      │     │        │        ├─ Check old_not_liab_only completed (refuted).
+      │     │        │        └─ it is excluded that: the register is to show the liability position only (bgh_participants)
+      │     │        └─ It must be checked whether the register is to show the liability position only. Starting check stg_not_liab_only:
+      │     │           ├─ Check stg_not_liab_only completed (refuted).
+      │     │           └─ it is excluded that: the register is to show the liability position only (bgh_participants)
+      │     └─ Check alt55 completed (holds).
+      └─ and point 2:
+         └─ Check alt55 completed (holds).
 
 Check anon_9:
    presumed: the partner's management rights are split with the holder of the usufruct
    to be shown: !
-   It suffices to check that the partner's management rights are split with the holder of the usufruct. Starting check alt67:
+   It suffices to check that the partner's management rights are split with the holder of the usufruct. Starting check alt68:
    ├─ unless something speaks against it: the partner's management rights are split with the holder of the usufruct
    └─ To check the partner's management rights are split with the holder of the usufruct, the following points must be worked through:
       ├─ Point 1:
-      │  └─ It must be checked whether the partner's management rights are split with the holder of the usufruct. Starting check alt68:
+      │  └─ It must be checked whether the partner's management rights are split with the holder of the usufruct. Starting check alt69:
       │     ├─ In favour of the partner's management rights are split with the holder of the usufruct:
-      │     │  │  └─ Check alt68 completed (refuted).
+      │     │  │  └─ Check alt69 completed (refuted).
       │     │  └─ but
       │     │     └─ It must be checked whether the partner's management rights are split with the holder of the usufruct. Starting check muc_no_mgmt:
       │     │        ├─ Check muc_no_mgmt completed (refuted).
@@ -975,37 +970,37 @@ Check anon_9:
       │     │           │  ├─ unless shown otherwise, deny: the partner's management rights are split with the holder of the usufruct without the holder of the usufruct is a partner
       │     │           │  └─ it is excluded that: the holder of the usufruct is a partner (bgh_partner)
       │     │           └─ Check th_10 completed.
-      │     └─ Check alt67 completed (holds).
+      │     └─ Check alt68 completed (holds).
       └─ and point 2:
-         └─ Check alt67 completed (holds).
+         └─ Check alt68 completed (holds).
 
 Check anon_10:
    presumed: the usufruct gives its holder a vote on day-to-day affairs
    presumed: the vote on the interest burdened by the usufruct can only be exercised uniformly implies it is not the case that the usufruct gives its holder a vote on day-to-day affairs
    presumed: the vote on the interest burdened by the usufruct can only be exercised uniformly
    to be shown: !
-   It suffices to check that the usufruct gives its holder a vote on day-to-day affairs. Starting check alt69:
+   It suffices to check that the usufruct gives its holder a vote on day-to-day affairs. Starting check alt70:
    ├─ unless something speaks against it: the usufruct gives its holder a vote on day-to-day affairs
    └─ To check the usufruct gives its holder a vote on day-to-day affairs, the following points must be worked through:
       ├─ Point 1:
-      │  └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check alt70:
+      │  └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check alt71:
       │     ├─ In favour of the usufruct gives its holder a vote on day-to-day affairs:
-      │     │  │  └─ Check alt70 completed (refuted).
+      │     │  │  └─ Check alt71 completed (refuted).
       │     │  └─ but
-      │     │     └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check alt71:
+      │     │     └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check alt72:
       │     │        ├─ In favour of the usufruct gives its holder a vote on day-to-day affairs:
-      │     │        │  │  └─ Check alt71 completed (refuted).
+      │     │        │  │  └─ Check alt72 completed (refuted).
       │     │        │  └─ but
       │     │        │     └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check koe_no_vote:
       │     │        │        ├─ Check koe_no_vote completed (refuted).
-      │     │        │        └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check r_45:
+      │     │        │        └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check r_43:
       │     │        │           ├─ unless something speaks against it: the vote on the interest burdened by the usufruct can only be exercised uniformly implies it is not the case that the usufruct gives its holder a vote on day-to-day affairs
       │     │        │           ├─ and
       │     │        │           ├─ unless something speaks against it: the vote on the interest burdened by the usufruct can only be exercised uniformly
-      │     │        │           └─ It must be checked whether it is not the case that the usufruct gives its holder a vote on day-to-day affairs. Starting check H1_20:
-      │     │        │              ├─ Check H1_20 completed (refuted).
+      │     │        │           └─ It must be checked whether it is not the case that the usufruct gives its holder a vote on day-to-day affairs. Starting check H1_18:
+      │     │        │              ├─ Check H1_18 completed (refuted).
       │     │        │              ├─ and
-      │     │        │              ├─ Check r_45 completed (refuted).
+      │     │        │              ├─ Check r_43 completed (refuted).
       │     │        │              └─ contradiction.
       │     │        └─ It must be checked whether the usufruct gives its holder a vote on day-to-day affairs. Starting check muc_no_vote:
       │     │           ├─ Check muc_no_vote completed (refuted).
@@ -1014,9 +1009,9 @@ Check anon_10:
       │     │              │  ├─ unless shown otherwise, deny: the usufruct gives its holder a vote on day-to-day affairs without the holder of the usufruct is a partner
       │     │              │  └─ it is excluded that: the holder of the usufruct is a partner (bgh_partner)
       │     │              └─ Check th_11 completed.
-      │     └─ Check alt69 completed (holds).
+      │     └─ Check alt70 completed (holds).
       └─ and point 2:
-         └─ Check alt69 completed (holds).
+         └─ Check alt70 completed (holds).
 
 Check anon_11:
    to be shown: the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
@@ -1025,67 +1020,67 @@ Check anon_11:
    presumed: the usufruct can be created without the partnership's involvement
    presumed: acting without consent under the usufruct gives rise only to damages implies it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
    presumed: acting without consent under the usufruct gives rise only to damages
-   It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt74:
-   ├─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt72:
+   It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt75:
+   ├─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt73:
    │  ├─ otherwise not established: the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
    │  └─ Against the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
-   │     │  └─ Check alt72 completed (holds).
+   │     │  └─ Check alt73 completed (holds).
    │     └─ but
-   │        └─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt73:
+   │        └─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt74:
    │           ├─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check stg_constitutive:
-   │           │  ├─ For the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_46:
+   │           │  ├─ For the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_44:
    │           │  │  ├─ because
    │           │  │  │  └─ unless something speaks against it: measures affecting the usufruct need its holder's consent (§ 1071 BGB) implies the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
    │           │  │  ├─ and
    │           │  │  │  └─ established: measures affecting the usufruct need its holder's consent (§ 1071 BGB) (s_1071)
-   │           │  │  └─ Check r_46 completed.
+   │           │  │  └─ Check r_44 completed.
    │           │  └─ Check stg_constitutive completed (holds).
    │           └─ Against the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
-   │              │  └─ Check alt73 completed (holds).
+   │              │  └─ Check alt74 completed (holds).
    │              └─ but
    │                 └─ It suffices to check that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check app_constitutive:
-   │                    ├─ For the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_47:
+   │                    ├─ For the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) it suffices that measures affecting the usufruct need its holder's consent (§ 1071 BGB) holds. Starting check r_45:
    │                    │  ├─ because
    │                    │  │  └─ unless something speaks against it: measures affecting the usufruct need its holder's consent (§ 1071 BGB) implies the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
    │                    │  ├─ and
    │                    │  │  └─ established: measures affecting the usufruct need its holder's consent (§ 1071 BGB) (s_1071)
-   │                    │  └─ Check r_47 completed.
+   │                    │  └─ Check r_45 completed.
    │                    └─ Check app_constitutive completed (holds).
    └─ To check the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct), the following points must be worked through:
       ├─ Point 1:
-      │  └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt75:
+      │  └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt76:
       │     ├─ In favour of the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
-      │     │  │  └─ Check alt75 completed (refuted).
+      │     │  │  └─ Check alt76 completed (refuted).
       │     │  └─ but
-      │     │     └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt76:
+      │     │     └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check alt77:
       │     │        ├─ In favour of the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct):
-      │     │        │  │  └─ Check alt76 completed (refuted).
+      │     │        │  │  └─ Check alt77 completed (refuted).
       │     │        │  └─ but
       │     │        │     └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check koe_not_constitutive:
       │     │        │        ├─ Check koe_not_constitutive completed (refuted).
-      │     │        │        └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check r_49:
+      │     │        │        └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check r_47:
       │     │        │           ├─ unless something speaks against it: the usufruct can be created without the partnership's involvement implies it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
       │     │        │           ├─ and
       │     │        │           ├─ unless something speaks against it: the usufruct can be created without the partnership's involvement
-      │     │        │           └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_22:
-      │     │        │              ├─ Check H1_22 completed (refuted).
+      │     │        │           └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_20:
+      │     │        │              ├─ Check H1_20 completed (refuted).
       │     │        │              ├─ and
-      │     │        │              ├─ Check r_49 completed (refuted).
+      │     │        │              ├─ Check r_47 completed (refuted).
       │     │        │              └─ contradiction.
       │     │        └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check muc_not_constitutive:
       │     │           ├─ Check muc_not_constitutive completed (refuted).
-      │     │           └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check r_48:
+      │     │           └─ It must be checked whether the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check r_46:
       │     │              ├─ unless something speaks against it: acting without consent under the usufruct gives rise only to damages implies it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
       │     │              ├─ and
       │     │              ├─ unless something speaks against it: acting without consent under the usufruct gives rise only to damages
-      │     │              └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_21:
-      │     │                 ├─ Check H1_21 completed (refuted).
+      │     │              └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_19:
+      │     │                 ├─ Check H1_19 completed (refuted).
       │     │                 ├─ and
-      │     │                 ├─ Check r_48 completed (refuted).
+      │     │                 ├─ Check r_46 completed (refuted).
       │     │                 └─ contradiction.
-      │     └─ Check alt74 completed (holds).
+      │     └─ Check alt75 completed (holds).
       └─ and point 2:
-         └─ Check alt74 completed (holds).
+         └─ Check alt75 completed (holds).
 
 Check anon_12:
    presumed: the holder of the usufruct has no means of influence
@@ -1099,25 +1094,25 @@ Check anon_12:
    presumed: the vote on the interest burdened by the usufruct can only be exercised uniformly implies it is not the case that the usufruct gives its holder a vote on day-to-day affairs
    presumed: the vote on the interest burdened by the usufruct can only be exercised uniformly
    to be shown: !
-   It suffices to check that the holder of the usufruct has no means of influence. Starting check alt77:
+   It suffices to check that the holder of the usufruct has no means of influence. Starting check alt78:
    ├─ unless something speaks against it: the holder of the usufruct has no means of influence
    └─ To check the holder of the usufruct has no means of influence, the following points must be worked through:
       ├─ Point 1:
-      │  └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check alt78:
+      │  └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check alt79:
       │     ├─ In favour of the holder of the usufruct has no means of influence:
-      │     │  │  └─ Check alt78 completed (refuted).
+      │     │  │  └─ Check alt79 completed (refuted).
       │     │  └─ but
-      │     │     └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check alt79:
+      │     │     └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check alt80:
       │     │        ├─ In favour of the holder of the usufruct has no means of influence:
-      │     │        │  │  └─ Check alt79 completed (refuted).
+      │     │        │  │  └─ Check alt80 completed (refuted).
       │     │        │  └─ but
       │     │        │     └─ It must be checked whether the holder of the usufruct has no means of influence. Starting check powerless_needs_no_constitutive:
       │     │        │        ├─ Check powerless_needs_no_constitutive completed (refuted).
       │     │        │        └─ For the holder of the usufruct has no means of influence it is necessary that it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) holds. Starting check th_13:
       │     │        │           ├─ because
       │     │        │           │  ├─ it is excluded that: the holder of the usufruct has no means of influence without it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct) (dn_pw_cons)
-      │     │        │           │  └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_24:
-      │     │        │           │     ├─ Check H1_24 completed (refuted).
+      │     │        │           │  └─ It must be checked whether it is not the case that the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct). Starting check H1_22:
+      │     │        │           │     ├─ Check H1_22 completed (refuted).
       │     │        │           │     ├─ and
       │     │        │           │     ├─ see check anon_11: the holder's consent under § 1071 BGB conditions the validity of the partners' measures (the usufruct)
       │     │        │           │     └─ contradiction.
@@ -1127,36 +1122,12 @@ Check anon_12:
       │     │           └─ For the holder of the usufruct has no means of influence it is necessary that it is not the case that the usufruct gives its holder a vote on day-to-day affairs holds. Starting check th_12:
       │     │              ├─ because
       │     │              │  ├─ it is excluded that: the holder of the usufruct has no means of influence without it is not the case that the usufruct gives its holder a vote on day-to-day affairs (dn_pw_vote)
-      │     │              │  └─ It must be checked whether it is not the case that the usufruct gives its holder a vote on day-to-day affairs. Starting check H1_23:
-      │     │              │     ├─ Check H1_23 completed (refuted).
+      │     │              │  └─ It must be checked whether it is not the case that the usufruct gives its holder a vote on day-to-day affairs. Starting check H1_21:
+      │     │              │     ├─ Check H1_21 completed (refuted).
       │     │              │     ├─ and
       │     │              │     ├─ see check anon_10: the usufruct gives its holder a vote on day-to-day affairs
       │     │              │     └─ contradiction.
       │     │              └─ Check th_12 completed.
-      │     └─ Check alt77 completed (holds).
+      │     └─ Check alt78 completed (holds).
       └─ and point 2:
-         └─ Check alt77 completed (holds).
-
-Check anon_13:
-   presumed: the register is to show the liability position only
-   It suffices to check that the register is to show the liability position only. Starting check alt80:
-   ├─ unless something speaks against it: the register is to show the liability position only
-   └─ To check the register is to show the liability position only, the following points must be worked through:
-      ├─ Point 1:
-      │  └─ It must be checked whether the register is to show the liability position only. Starting check alt81:
-      │     ├─ In favour of the register is to show the liability position only:
-      │     │  │  └─ Check alt81 completed (refuted).
-      │     │  └─ but
-      │     │     └─ It must be checked whether the register is to show the liability position only. Starting check alt82:
-      │     │        ├─ In favour of the register is to show the liability position only:
-      │     │        │  │  └─ Check alt82 completed (refuted).
-      │     │        │  └─ but
-      │     │        │     └─ It must be checked whether the register is to show the liability position only. Starting check old_not_liab_only:
-      │     │        │        ├─ Check old_not_liab_only completed (refuted).
-      │     │        │        └─ it is excluded that: the register is to show the liability position only (bgh_participants)
-      │     │        └─ It must be checked whether the register is to show the liability position only. Starting check stg_not_liab_only:
-      │     │           ├─ Check stg_not_liab_only completed (refuted).
-      │     │           └─ it is excluded that: the register is to show the liability position only (bgh_participants)
-      │     └─ Check alt80 completed (holds).
-      └─ and point 2:
-         └─ Check alt80 completed (holds).
+         └─ Check alt78 completed (holds).
