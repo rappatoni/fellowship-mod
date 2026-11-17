@@ -264,12 +264,13 @@ def test_a_document_check_reports_every_command(svc):
     assert evaluation["span"]["line"] == 46 and evaluation["result"]["verdict"] == "open"
 
 
-def test_a_dropped_argument_is_marked_on_its_own_entry(svc, monkeypatch):
-    """tasks.org, aida-check-dropped-argument: an argument Fellowship
-    accepts but the document graph cannot take carries the warning on its
-    `dixi` entry, not only on the report.  (The presumed open formula that
-    used to be dropped is a presumption in its context since 2026-10-20;
-    the refusal is forced here.)"""
+def test_an_argument_the_graph_cannot_take_is_refused_on_its_own_entry(svc, monkeypatch):
+    """An argument Fellowship accepts but the document graph cannot take is
+    refused at its `dixi` and not registered (tasks.org,
+    aida-refuse-dropped-argument; it used to be registered with a warning,
+    aida-check-dropped-argument).  The presumed open formula that used to
+    be dropped is a presumption in its context since 2026-10-20, so the
+    refusal is forced here."""
     import wrap.prover
     from core.dc.debate_graph import DebateCompileError
 
@@ -281,10 +282,10 @@ def test_a_dropped_argument_is_marked_on_its_own_entry(svc, monkeypatch):
         warnings.simplefilter("ignore")
         report = svc.check("lk.\ndeclare A : bool.\nargument a : (A -> A).\nelim h.\naxiom h.\ndixi.\n")
     dixi = [e for e in report.entries if e.kind == "dixi"]
-    assert len(dixi) == 1 and dixi[0].status == "ok"
-    assert any(d.level == "warning" and "not added to the document graph" in d.message
-               for d in dixi[0].diagnostics)
-    assert any("not added to the document graph" in d.message for d in report.diagnostics)
+    assert len(dixi) == 1 and dixi[0].status == "refused"
+    assert "cannot be added to the document graph" in dixi[0].message
+    assert "a" not in svc.session.arguments
+    assert "a" not in svc.session.names
 
 
 def test_an_argument_over_a_conjunction_is_refused_in_one_line(svc):

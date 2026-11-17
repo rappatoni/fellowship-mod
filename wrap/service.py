@@ -153,8 +153,8 @@ def _operation(method):
     diagnostics onto the result (a dataclass with ``diagnostics``) or onto
     the AidaError it raises.  Nested operations share the outer collector,
     and each also gets what was logged during its own call - so an entry
-    of a document check carries its own warnings, such as an argument left
-    out of the document graph (tasks.org, aida-check-dropped-argument)."""
+    of a document check carries its own warnings (tasks.org,
+    aida-check-dropped-argument)."""
 
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
@@ -686,9 +686,9 @@ class Service:
             # Not `strict`: registered either way, and held by Fellowship if
             # it turns out closed - the same rule as `end argument`, and the
             # same argument discipline (wrap/registry.py).
-            from wrap.registry import enforce_discipline
+            from wrap.registry import accept_argument
             arg.execute(declare=True if strict else "auto", preserve_input_body=True,
-                        accept=enforce_discipline)
+                        accept=accept_argument)
             s.register_argument(arg)
         except ProverError as e:
             raise ContentRefused(str(e), stage="register", cause=e)
@@ -783,7 +783,7 @@ class Service:
             # classical (Peirce's s1*), and adopting it is how a debate's
             # result becomes a theorem.  Fellowship checks it; the compiler
             # reads a theorem as a strict leaf (aida-rational-closure).
-            arg.execute(declare=True, preserve_input_body=True)
+            arg.execute(declare=True, preserve_input_body=True, accept=s.require_compilable)
             s.register_argument(arg)
         except ProverError as e:
             logger.warning("Adopting '%s' as '%s' refused: %s", edge_name, name, e)
