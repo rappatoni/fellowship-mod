@@ -264,21 +264,21 @@ def test_a_document_check_reports_every_command(svc):
     assert evaluation["span"]["line"] == 46 and evaluation["result"]["verdict"] == "open"
 
 
-def test_a_dropped_argument_is_marked_on_its_own_entry(svc):
-    """tasks.org, aida-check-dropped-argument: an argument Fellowship
-    accepts but the document graph cannot take (here one that owes an open
-    formula) carries the warning on its `dixi` entry, not only on the
-    report."""
+def test_an_argument_the_graph_cannot_take_is_refused_on_its_own_entry(svc):
+    """An argument Fellowship accepts but the document graph cannot take
+    (here one that owes an open formula) is refused at its `dixi` and not
+    registered (tasks.org, aida-refuse-dropped-argument; it used to be
+    registered with a warning, aida-check-dropped-argument)."""
     from pathlib import Path
     text = (Path(__file__).parent / "first_order" / "birds_fly_open.fspy").read_text()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         report = svc.check(text)
     dixi = [e for e in report.entries if e.kind == "dixi"]
-    assert len(dixi) == 1 and dixi[0].status == "ok"
-    assert any(d.level == "warning" and "not added to the document graph" in d.message
-               for d in dixi[0].diagnostics)
-    assert any("not added to the document graph" in d.message for d in report.diagnostics)
+    assert len(dixi) == 1 and dixi[0].status == "refused"
+    assert "cannot be added to the document graph" in dixi[0].message
+    assert "birds_fly" not in svc.session.arguments
+    assert "birds_fly" not in svc.session.names
 
 
 def test_an_argument_over_a_conjunction_is_refused_in_one_line(svc):

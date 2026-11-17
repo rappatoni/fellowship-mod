@@ -356,7 +356,8 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         with Fellowship's reconstructed proof term.
 
         *accept*, if given, is called with the argument once its body is
-        built and before Fellowship is asked to hold it (``qed.``); if it
+        built and enriched and before Fellowship is asked to hold it
+        (``qed.``); if it
         raises, the open theorem is discarded and the exception propagates,
         so a refused argument leaves the prover clean (the argument
         discipline, wrap/registry.py).
@@ -533,6 +534,12 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
             self.representation = pretty_natural(self.body, natural_language_rendering, **render_context)
         elif self.rendering == "pruefschema":
             self.representation = pretty_natural(self.body, pruefschema_rendering, **render_context)
+        # Enriched before `accept`, which may compile the body into the
+        # document graph (wrap/registry.py, accept_argument): the compiler
+        # needs every node's proposition.
+        if self.enrich == "PROPS":
+            self.enrich_props()
+            self.generate_proof_term()
         open_sites = self.open_sites()
         if accept is not None:
             try:
@@ -564,9 +571,6 @@ Currently, a normalization of an argumentation Arg about issue A returns a non-a
         logger.info("")  # spacer before proof term artifact
         logger.info("Argument term: '%s'.", self.proof_term)
         logger.info("")  # spacer after proof term artifact
-        if self.enrich == "PROPS":
-            self.enrich_props()
-            self.generate_proof_term()
         self.executed = True
 
     @staticmethod

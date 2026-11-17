@@ -53,8 +53,8 @@ tracked in `tasks.org`:
 - **No transposition closure.** Strict edges are not yet closed under
   transposition, so there are no premise-attacks through strict edges.
 - **First-order debates need closed sites.** An argument that presumes or
-  owes an open formula under a quantifier is left out of the document
-  graph (see *First-order logic*).
+  owes an open formula under a quantifier is refused at its `dixi`, since
+  the document graph cannot take it (see *First-order logic*).
 - **s(CASP) import is partial.** The importer translates the positive
   parts of a justification tree; negation as failure and global
   constraints are not translated yet, some query shapes are refused, and
@@ -1143,10 +1143,12 @@ default) and the unfolded (decided with the author 2026-10-16; tasks.org,
   (`elim [tweety]`) is a step of the argument, not a point of attack: an
   exception for one individual has to refute the rule itself.
 - Only a statement can be presumed or owed, not an open formula. An
-  argument that owes `Wings [x]` under `forall x` is left out of the
-  document graph, with the reason on its `dixi`; presume or owe a closed
-  statement - `forall x, Wings [x]`, `forall x, Bird [x] -> Wings [x]`, or
-  whatever proves it - and instantiate it. Likewise, a lemma whose
+  argument that owes `Wings [x]` under `forall x` is refused at its
+  `dixi`, with the reason: the document graph cannot take it, and an
+  argument is registered only together with its place in the graph.
+  Presume or owe a closed statement - `forall x, Wings [x]`,
+  `forall x, Bird [x] -> Wings [x]`, or whatever proves it - and
+  instantiate it. Likewise, a lemma whose
   statement mentions such a variable is part of its argument, not a node
   of its own.
 - Evaluation has two more rules, both strict: a universal introduction

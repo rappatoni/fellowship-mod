@@ -53,6 +53,12 @@ class StrictnessRefused(ProverError):
     obligations or presumptions.  Nothing reaches Fellowship's theorems."""
 
 
+class GraphRefused(ProverError):
+    """The argument cannot be compiled into the document graph, so it is
+    not registered.  Registering it anyway would leave an argument the
+    term-level commands know and the labelling never sees."""
+
+
 #: Prefixes of the names the wrapper generates itself: the ones it sends to
 #: Fellowship (the type oracle's replay, the theta-expansion names) and the
 #: ones it gives to sub-debates nobody named (core/dc/share.py).  A user name
@@ -823,6 +829,9 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
         The name must be free, or held by the recording or statement this
         argument refines; otherwise NameClash, and nothing is registered."""
+        # Compiled before anything changes: an argument the document graph
+        # cannot take is refused (GraphRefused), not registered without it.
+        graph = None if getattr(argument, "composed", False) else self._compile_argument(argument)
         if not (replace and argument.name in self.arguments):
             self.claim_name(argument.name, "argument", refine=True)
         else:
@@ -832,8 +841,8 @@ TODO: Mechanism to declare a scenario of default assumptions.
         # key does, and registration order is the order unfolding nests
         # scaffolds in.
         self.arguments[argument.name] = argument
-        if not getattr(argument, "composed", False):
-            self.document_add(argument)
+        if graph is not None:
+            self._merge_into_document(graph, argument)
         self.bump_revision()
 
     def rebuild_document(self) -> None:
@@ -871,19 +880,20 @@ TODO: Mechanism to declare a scenario of default assumptions.
 
     def document_add(self, argument: Any) -> None:
         """Compile an argument into hyperedges and merge them into the
-        document graph.  Refusals are logged, not raised: the argument is
-        still registered for the term-level commands."""
-        graph = self._compile_argument(argument, "the document graph")
-        if graph is None:
-            return
+        document graph; GraphRefused if it cannot be compiled."""
+        graph = self._compile_argument(argument)
+        if graph is not None:
+            self._merge_into_document(graph, argument)
+
+    def _merge_into_document(self, graph: DebateGraph, argument: Any) -> None:
         self.graph.merge(graph)
         logger.debug("Document graph: +%d edges from '%s'", len(graph.edges), argument.name)
 
-    def _compile_argument(self, argument: Any, into: str):
-        """The hyperedges of one argument, or None (logged) if it cannot
-        be compiled."""
-        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
-            return None
+    def require_compilable(self, argument: Any) -> DebateGraph:
+        """The hyperedges of one argument's (enriched) body, or GraphRefused.
+        ``Argument.execute`` calls it through its ``accept`` hook
+        (wrap/registry.py), before Fellowship is asked to hold the argument,
+        so that a refusal leaves the prover clean."""
         # A citation is a name leaf in the body; the compiler reads it as an
         # obligation on the cited conclusion, or a strict leaf if Fellowship
         # holds the cited argument (core/dc/cite.py).
@@ -892,8 +902,16 @@ TODO: Mechanism to declare a scenario of default assumptions.
                                   strict_names=self.declarations.keys(),
                                   strict_kinds=declaration_kinds(self.declarations))
         except (DebateCompileError, FirstOrderNotSupported) as e:
-            logger.warning("Argument '%s' not added to %s: %s", argument.name, into, e)
+            raise GraphRefused(
+                f"'{argument.name}' cannot be added to the document graph: {e} "
+                f"The argument is not registered.") from e
+
+    def _compile_argument(self, argument: Any):
+        """The hyperedges of one argument; None for one not yet executed;
+        GraphRefused if it cannot be compiled."""
+        if not getattr(argument, "executed", False) or getattr(argument, "body", None) is None:
             return None
+        return self.require_compilable(argument)
 
     # -- debates (core/dc/debate.py, aida-debate-objects) ------------------
 
@@ -934,7 +952,7 @@ TODO: Mechanism to declare a scenario of default assumptions.
         graph = DebateGraph()
         for name in scope_names(debate, cited):
             argument = self.arguments.get(name)
-            compiled = self._compile_argument(argument, f"debate '{debate.name}'") if argument else None
+            compiled = self._compile_argument(argument) if argument else None
             if compiled is not None:
                 graph.merge(compiled)
         return graph

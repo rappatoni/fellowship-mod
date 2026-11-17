@@ -36,7 +36,7 @@ def session():
 
 def test_both_arguments_join_the_document_graph(session):
     prover, _svc, report = session
-    assert not any("not added to the document graph" in str(d) for d in report.diagnostics)
+    assert report.ok, [(e.text, e.message) for e in report.entries if e.status != "ok"]
     edges = {e.name: e for e in prover.graph.edges}
     assert {"x1", "x2", "x1.c1", "x2.c1", "na"} <= set(edges)
     for cell in ("x1.c1", "x2.c1"):

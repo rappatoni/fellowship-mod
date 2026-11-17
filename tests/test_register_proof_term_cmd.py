@@ -16,6 +16,9 @@ class _FakeProver:
     def claim_name(self, *args, **kwargs):
         pass
 
+    def require_compilable(self, argument):
+        pass
+
     def send_command(self, cmd, *args, **kwargs):
         self.commands.append(cmd)
         return {

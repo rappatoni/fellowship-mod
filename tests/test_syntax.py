@@ -393,10 +393,8 @@ declare upd : i -> bool -> bool.
 declare c : i.
 declare B : bool.
 argument a : (forall x:i, P[x] -> Q[x]).
-elim y.
 dixi.
 prove a.
-elim z.
 dixi.
 argument u : (upd[c][B]).
 dixi.

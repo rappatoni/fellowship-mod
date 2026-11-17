@@ -9385,6 +9385,54 @@ fixture the VERIFY names, no longer drops anything
 ([[id:aida-negation-cell-horn]]). Suite: 2172 passed, 8 skipped, 2
 xfailed, 1 xpassed; no existing pin moved.
 
+Superseded 2026-11-17 by [[id:aida-refuse-dropped-argument]]: such an
+argument is now refused, not registered with a warning.
+
+** DONE Refuse an argument the document graph cannot take
+CLOSED: [2026-11-17 Tue]
+:PROPERTIES:
+:ID:             aida-refuse-dropped-argument
+:AREA:           phd
+:PROJECT:        aida
+:REPO:           AIDA
+:IMPORTANT:      yes
+:URGENT:         yes
+:EISENHOWER:     Q1
+:ICK:            1
+:EFFORT:         1:30
+:DEFERRALS:      0
+:OUTCOME:        An argument whose body cannot be compiled into the document graph is refused (=GraphRefused=) and not registered; the refusal comes before Fellowship is asked to hold the argument, so a strict one is not left behind as a theorem.
+:VERIFY:         tests/test_graph_refusal.py: a defeasible and a strict argument the compiler refuses are not registered, their name is free, Fellowship holds no theorem, and the next argument records as usual; =register_argument= refuses on its own too; the suite passes.
+:END:
+
+Decided by the author 2026-11-17, after
+[[id:aida-parse-subtraction-intro-in-stack]]: a counterargument printed
+ambiguously was reported "executed and registered" but missed the
+document graph, so a scenario that should have been open came out a
+value, with only a log line to show for it.
+
+Done: =ProverWrapper.require_compilable= (wrap/prover.py) compiles the
+enriched body or raises =GraphRefused=. =Argument.execute= now enriches
+before its =accept= hook, and =accept_argument= (wrap/registry.py, the
+argument discipline plus the graph) is the hook of =end argument= and of
+the service's =register=; =adopt= checks the graph alone.
+=register_argument= compiles before it changes anything, as a backstop
+for the paths without the hook (projections, replays), and a closed
+debate scope no longer skips an argument it cannot compile. A
+first-order argument that owes an open formula is now refused at its
+=dixi= with the remedy (README, /First-order logic/);
+=test_prove_reopens_a_first_order_argument_in_the_repl= reopens one that
+owes its closed statement instead.
+
+Evidence (branch fellowship-star-parens): tests/test_graph_refusal.py,
+4 passed; the dropped-argument tests of tests/test_service.py and
+tests/test_first_order.py now pin the refusal. Suite (=pytest -n auto
+tests=): 2296 passed, 7 skipped, 3 xfailed. The 217 scripts under
+eval/: one argument is now refused, =s1= of
+eval/literature3/fo_t_exchange.fspy, which owes =exists y:D, R x y= with
+=x= bound by the argument (the first-order limitation above); it used
+to be dropped with a warning.
+
 ** BACKLOG Remove the recursion-depth limit from term traversals
 :PROPERTIES:
 :ID:             aida-deep-term-recursion

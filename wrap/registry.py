@@ -83,6 +83,14 @@ def enforce_discipline(argument) -> None:
             + " Debates, not arguments, may be classical.")
 
 
+def accept_argument(argument) -> None:
+    """The checks an argument passes before Fellowship is asked to hold it
+    and before it is registered: the argument discipline, and that the
+    document graph can take it (GraphRefused otherwise, wrap/prover.py)."""
+    enforce_discipline(argument)
+    argument.prover.require_compilable(argument)
+
+
 class RefinementRefused(ProverError):
     """`refine NAME` on something that cannot be reopened."""
 
@@ -208,7 +216,7 @@ def finish_recording(prover, current: dict, *, demand_strict: bool):
         instructions=current["instructions"],
         is_anti=current.get("is_anti", False),
     )
-    arg.execute(declare=True if demand_strict else "auto", accept=enforce_discipline)
+    arg.execute(declare=True if demand_strict else "auto", accept=accept_argument)
     if before is not None and getattr(before, "statement_kind", None):
         arg.statement_kind = before.statement_kind
     prover.register_argument(arg)

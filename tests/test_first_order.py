@@ -110,11 +110,12 @@ class TestTheGraph:
         prover, _svc, report = session("birds_fly_open")
         try:
             dixi, = [e for e in report.entries if e.kind == "dixi"]
-            message = " ".join(d.message for d in dixi.diagnostics)
-            assert "not added to the document graph" in message
-            assert "owes 'Wings x', which mentions x, bound by the argument" in message
-            assert "presume or owe a closed one" in message
-            assert prover.graph.edges == [] or "birds_fly" not in edges(prover)
+            assert dixi.status == "refused"
+            assert "cannot be added to the document graph" in dixi.message
+            assert "owes 'Wings x', which mentions x, bound by the argument" in dixi.message
+            assert "presume or owe a closed one" in dixi.message
+            assert "birds_fly" not in prover.arguments
+            assert "birds_fly" not in edges(prover)
         finally:
             prover.close()
 

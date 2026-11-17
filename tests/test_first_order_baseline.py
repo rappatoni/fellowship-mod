@@ -88,7 +88,7 @@ def test_a_quantifier_step_joins_the_document_graph(check):
     prover, svc, report = check("fo_dropped.fspy")
     dixi, = [e for e in report.entries if e.kind == "dixi"]
     assert "ConsFO" in kinds(prover.arguments["flies_tweety"].body)
-    assert not any("not added to the document graph" in d.message for d in dixi.diagnostics)
+    assert dixi.status == "ok", dixi.message
     assert "flies_tweety" in {e.name for e in prover.graph.edges}
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
